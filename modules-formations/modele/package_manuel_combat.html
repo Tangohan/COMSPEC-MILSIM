@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCORM Module — Le Manuel de l'Opérateur</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --panel: rgba(255,255,255,0.84);
+      --line: rgba(15,23,42,0.08);
+      --text: #0f172a;
+      --muted: #64748b;
+      --green: #10b981;
+      --green-2: #34d399;
+      --dark: #050810;
+      --dark-2: #0b1220;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+    .grain {
+      position: fixed; inset: 0; pointer-events: none; z-index: 2; opacity: 0.028;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+    .panel {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 42px rgba(15,23,42,0.06);
+    }
+    .dark-panel {
+      background: rgba(5,8,16,0.96);
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 20px 50px rgba(2,6,23,0.45);
+    }
+    .lesson-section { display: none; }
+    .lesson-section.active { display: block; }
+    .menu-item.active {
+      background: linear-gradient(90deg, rgba(16,185,129,0.12), rgba(16,185,129,0.02));
+      border-color: rgba(16,185,129,0.28);
+      color: #fff;
+    }
+    .progress-fill { transition: width .35s ease; background: linear-gradient(90deg, #10b981, #34d399); }
+    .badge {
+      display: inline-flex; align-items: center; gap: .45rem; border-radius: 999px; padding: .55rem .85rem;
+      font-size: 10px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase;
+    }
+    .badge-green { background: rgba(16,185,129,.1); color: #047857; border: 1px solid rgba(16,185,129,.18); }
+    .badge-dark { background: rgba(15,23,42,.06); color: #334155; border: 1px solid rgba(15,23,42,.08); }
+    .badge-red { background: rgba(239,68,68,.1); color: #b91c1c; border: 1px solid rgba(239,68,68,.18); }
+    .badge-amber { background: rgba(245,158,11,.12); color: #b45309; border: 1px solid rgba(245,158,11,.2); }
+    .stat-card:hover, .reading-card:hover, .quiz-card:hover { transform: translateY(-3px); }
+    .reading-card, .stat-card, .quiz-card { transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
+    .reading-card:hover, .stat-card:hover, .quiz-card:hover { box-shadow: 0 18px 38px rgba(15,23,42,.08); border-color: rgba(16,185,129,.16); }
+    .icon-box {
+      width: 48px; height: 48px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.16); color: #047857;
+    }
+    .check-item::before {
+      content: ""; width: 8px; height: 8px; border-radius: 999px; background: #10b981; display: inline-block; margin-top: 8px; flex: none;
+    }
+    .certificate-grid {
+      background-image: linear-gradient(rgba(15,23,42,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.06) 1px, transparent 1px);
+      background-size: 34px 34px;
+    }
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(2,6,23,.68); backdrop-filter: blur(10px); z-index: 70; display: none;
+      align-items: center; justify-content: center; padding: 1.25rem;
+    }
+    .modal-backdrop.open { display: flex; }
+    .radio-card input { position: absolute; opacity: 0; pointer-events: none; }
+    .radio-ui {
+      display: block; border: 1px solid rgba(15,23,42,.08); border-radius: 1.25rem; padding: 1rem 1rem 1rem 3.25rem; background: #fff; position: relative;
+      transition: all .2s ease;
+    }
+    .radio-ui::before {
+      content: ""; position: absolute; left: 1rem; top: 1rem; width: 22px; height: 22px; border-radius: 999px; border: 2px solid #cbd5e1; background: #fff; transition: all .2s ease;
+    }
+    .radio-card input:checked + .radio-ui { border-color: rgba(16,185,129,.3); box-shadow: 0 0 0 3px rgba(16,185,129,.08); }
+    .radio-card input:checked + .radio-ui::before { border-color: #10b981; box-shadow: inset 0 0 0 5px #10b981; }
+    .table-like > div { border-bottom: 1px solid rgba(15,23,42,.06); }
+    .table-like > div:last-child { border-bottom: none; }
+  </style>
+</head>
+<body class="overflow-x-hidden">
+  <div class="grain"></div>
+
+  <div id="readingModal" class="modal-backdrop">
+    <div class="w-full max-w-4xl panel rounded-[2rem] overflow-hidden">
+      <div class="bg-slate-900 text-white px-6 md:px-8 py-5 flex items-center justify-between gap-4">
+        <div>
+          <p class="text-[8px] font-black tracking-[0.3em] uppercase text-emerald-400 mb-2">Reading Brief</p>
+          <h3 id="modalTitle" class="text-xl md:text-2xl font-black tracking-tight uppercase">Lecture</h3>
+        </div>
+        <button id="closeModalBtn" class="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div class="p-6 md:p-8 lg:p-10">
+        <div id="modalContent" class="space-y-5 text-[15px] leading-8 text-slate-700 font-medium"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="min-h-screen relative z-10 grid xl:grid-cols-[340px_1fr]">
+    <aside class="dark-panel text-white p-6 xl:p-8 flex flex-col min-h-screen sticky top-0">
+      <div class="pb-8 border-b border-white/10">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center text-slate-900 font-black">OM</div>
+          <div>
+            <p class="text-[8px] font-black tracking-[0.35em] uppercase text-emerald-400">Training Command / SCORM</p>
+            <p class="text-[10px] font-mono uppercase text-white/30">Package Block 01</p>
+          </div>
+        </div>
+        <h1 class="text-2xl font-black tracking-tight uppercase leading-none">Le Manuel de l'Opérateur</h1>
+        <p class="text-[11px] text-white/40 mt-4 leading-relaxed font-medium">
+          Module fondamental Arma 3. Lecture du terrain, préparation pré-opérationnelle, comportement tactique et bases de progression.
+        </p>
+      </div>
+
+      <div class="pt-8 space-y-3" id="moduleMenu">
+        <button data-step="0" class="menu-item active w-full text-left rounded-2xl border border-white/10 px-4 py-3 transition-all">
+          <span class="block text-[8px] font-black tracking-[0.28em] uppercase text-emerald-400">01</span>
+          <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Préambule</span>
+        </button>
+        <button data-step="1" class="menu-item w-full text-left rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-all">
+          <span class="block text-[8px] font-black tracking-[0.28em] uppercase text-white/25">02</span>
+          <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">F-F-O-M-C</span>
+        </button>
+        <button data-step="2" class="menu-item w-full text-left rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-all">
+          <span class="block text-[8px] font-black tracking-[0.28em] uppercase text-white/25">03</span>
+          <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Check-up pré-op</span>
+        </button>
+        <button data-step="3" class="menu-item w-full text-left rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-all">
+          <span class="block text-[8px] font-black tracking-[0.28em] uppercase text-white/25">04</span>
+          <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Progression</span>
+        </button>
+        <button data-step="4" class="menu-item w-full text-left rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-all">
+          <span class="block text-[8px] font-black tracking-[0.28em] uppercase text-white/25">05</span>
+          <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Sources & doctrine</span>
+        </button>
+        <button data-step="5" class="menu-item w-full text-left rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-all">
+          <span class="block text-[8px] font-black tracking-[0.28em] uppercase text-white/25">06</span>
+          <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Évaluation</span>
+        </button>
+        <button data-step="6" class="menu-item w-full text-left rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-all">
+          <span class="block text-[8px] font-black tracking-[0.28em] uppercase text-white/25">07</span>
+          <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Certificat</span>
+        </button>
+      </div>
+
+      <div class="mt-10 pt-8 border-t border-white/10 space-y-5">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[9px] font-black tracking-[0.28em] uppercase text-white/30">Progression</span>
+            <span id="progressLabel" class="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-400">14%</span>
+          </div>
+          <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+            <div id="progressBar" class="progress-fill h-full" style="width:14%"></div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-white/[0.03] border border-white/5 p-4">
+          <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/30 mb-2">Package Data</p>
+          <div class="space-y-2 text-[11px] text-white/55 font-medium">
+            <div class="flex justify-between gap-3"><span>Package ID</span><span class="font-mono">OM-01-ARMA3</span></div>
+            <div class="flex justify-between gap-3"><span>Version</span><span class="font-mono">0.1.0-alpha</span></div>
+            <div class="flex justify-between gap-3"><span>Format</span><span class="font-mono">SCORM-like HTML</span></div>
+            <div class="flex justify-between gap-3"><span>Score requis</span><span class="font-mono">80%</span></div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-white/[0.03] border border-white/5 p-4">
+          <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/30 mb-2">Statut pédagogique</p>
+          <div class="flex flex-wrap gap-2">
+            <span class="badge badge-green">Lecture active</span>
+            <span class="badge" style="background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.08);">Quiz requis</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-auto pt-8 border-t border-white/10">
+        <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/20">Build</p>
+        <div class="flex items-center justify-between mt-3">
+          <span class="text-[10px] font-mono text-white/35 tracking-[0.22em] uppercase">SCORM-Lite v0.2</span>
+          <span class="text-[10px] font-black uppercase text-emerald-400">Ready</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="p-5 md:p-8 xl:p-10 space-y-8">
+      <header class="panel rounded-[2rem] p-6 md:p-8 overflow-hidden relative">
+        <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500/80 via-emerald-500/20 to-transparent"></div>
+        <div class="flex flex-col 2xl:flex-row 2xl:items-end 2xl:justify-between gap-8">
+          <div class="max-w-3xl">
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="badge badge-green">Module initial</span>
+              <span class="badge badge-dark">Arma 3</span>
+              <span class="badge badge-dark">Infantry fundamentals</span>
+            </div>
+            <p class="text-[9px] font-black tracking-[0.45em] text-emerald-600 uppercase mb-4">Arma 3 Training Package</p>
+            <h2 class="text-3xl md:text-5xl font-black tracking-tight uppercase leading-none mb-5">
+              Manuel Initial De<br>L'Opérateur
+            </h2>
+            <div class="h-[1px] w-20 bg-slate-900/10 mb-5"></div>
+            <p class="text-slate-500 text-[11px] font-bold tracking-[0.18em] uppercase leading-relaxed max-w-2xl">
+              Socle fondamental pour préparer un opérateur, améliorer sa survie, structurer son comportement tactique et rendre son action cohérente au sein d'une escouade.
+            </p>
+          </div>
+          <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 min-w-full 2xl:min-w-[620px]">
+            <div class="stat-card bg-slate-50 rounded-2xl border border-slate-200 p-4">
+              <p class="text-[8px] font-black tracking-[0.28em] uppercase text-slate-400 mb-2">Niveau</p>
+              <p class="text-2xl font-black tracking-tight">Initial</p>
+            </div>
+            <div class="stat-card bg-slate-50 rounded-2xl border border-slate-200 p-4">
+              <p class="text-[8px] font-black tracking-[0.28em] uppercase text-slate-400 mb-2">Durée</p>
+              <p class="text-2xl font-black tracking-tight">25 min</p>
+            </div>
+            <div class="stat-card bg-slate-50 rounded-2xl border border-slate-200 p-4">
+              <p class="text-[8px] font-black tracking-[0.28em] uppercase text-slate-400 mb-2">Format</p>
+              <p class="text-2xl font-black tracking-tight">Lecture</p>
+            </div>
+            <div class="stat-card bg-slate-50 rounded-2xl border border-slate-200 p-4">
+              <p class="text-[8px] font-black tracking-[0.28em] uppercase text-slate-400 mb-2">Validation</p>
+              <p class="text-2xl font-black tracking-tight text-emerald-600">Quiz</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section id="step-0" class="lesson-section active panel rounded-[2rem] p-6 md:p-8">
+        <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-3">Préambule</p>
+        <h3 class="text-2xl md:text-4xl font-black tracking-tight uppercase leading-none mb-6">Cadre, finalité, données du package</h3>
+        <div class="grid 2xl:grid-cols-[1.05fr_0.95fr] gap-8 mb-8">
+          <div class="space-y-5 text-[15px] leading-8 text-slate-700 font-medium">
+            <p>
+              Ce module constitue une entrée en matière doctrinale destinée à poser les premiers réflexes d'un opérateur. Il ne cherche pas à transformer une lecture en compétence acquise par magie. Il installe une grammaire commune : voir, comprendre, se préparer, puis agir sans incohérence.
+            </p>
+            <p>
+              Le Manuel de l'Opérateur a été rédigé à partir de logiques issues de l'infanterie, de la progression tactique, de la préparation individuelle et de la discipline collective. Son adaptation Arma 3 vise un résultat simple : rendre chaque joueur plus fiable, plus lisible et plus utile à son élément.
+            </p>
+            <p>
+              Le contenu ne vaut que s'il est ensuite corrigé, répété et contrôlé en exercice. La lecture ouvre un cadre. L'entraînement le rend réel.
+            </p>
+          </div>
+          <div class="rounded-[1.75rem] bg-slate-900 text-white p-6 md:p-7">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="icon-box bg-white/5 border-white/10 text-emerald-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"></path></svg>
+              </div>
+              <div>
+                <p class="text-[8px] font-black tracking-[0.3em] uppercase text-emerald-400">Preamble</p>
+                <h4 class="text-lg font-black uppercase tracking-tight">Données du package</h4>
+              </div>
+            </div>
+            <div class="table-like divide-y divide-white/10 text-[12px] text-white/75 font-medium">
+              <div class="py-3 flex justify-between gap-4"><span>Intitulé</span><span class="font-black uppercase">Le Manuel de l'Opérateur</span></div>
+              <div class="py-3 flex justify-between gap-4"><span>Code module</span><span class="font-mono">OM-01-ARMA3</span></div>
+              <div class="py-3 flex justify-between gap-4"><span>Bloc</span><span class="font-black uppercase">Initial / fondation</span></div>
+              <div class="py-3 flex justify-between gap-4"><span>Population visée</span><span class="font-black uppercase">Recrues / opérateurs</span></div>
+              <div class="py-3 flex justify-between gap-4"><span>Modalité</span><span class="font-black uppercase">Lecture + quiz</span></div>
+              <div class="py-3 flex justify-between gap-4"><span>Score minimal</span><span class="font-black uppercase">80%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-5">
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="context">
+            <div class="flex items-start justify-between gap-4 mb-5">
+              <div class="icon-box">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+              <span class="badge badge-dark">Lecture</span>
+            </div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Contexte d'emploi</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Pourquoi ce module existe et ce qu'il doit produire chez un opérateur entrant.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="goals">
+            <div class="flex items-start justify-between gap-4 mb-5">
+              <div class="icon-box">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              </div>
+              <span class="badge badge-dark">Objectifs</span>
+            </div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Effets recherchés</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Les acquis attendus sur la discrétion, la cohérence de charge et la progression.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="limits">
+            <div class="flex items-start justify-between gap-4 mb-5">
+              <div class="icon-box">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v4m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"></path></svg>
+              </div>
+              <span class="badge badge-amber">Avertissement</span>
+            </div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Limites du package</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Ce que la lecture ne remplace pas : drill, correction, exercice et évaluation en situation.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="step-1" class="lesson-section panel rounded-[2rem] p-6 md:p-8">
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-6">
+          <div>
+            <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-3">F-F-O-M-C</p>
+            <h3 class="text-2xl md:text-4xl font-black tracking-tight uppercase leading-none">Les fondamentaux de la discrétion</h3>
+          </div>
+          <span class="badge badge-green">Base impérative</span>
+        </div>
+        <p class="text-[15px] leading-8 text-slate-700 font-medium mb-8">
+          Avant toute technique avancée, il existe un noyau de basiques à connaître impérativement. Ils conditionnent la capacité à se fondre dans le terrain, à limiter sa détection et à rendre sa progression plus crédible et plus efficace. Ils doivent devenir des réflexes, pas des slogans.
+        </p>
+        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="fond">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 19h18M5 17l4-6 4 3 6-8"></path></svg></div><span class="badge badge-dark">F</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Fond</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Lire le décor et l'arrière-plan afin de ne pas détonner en progression ou à l'arrêt.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="forme">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3l7 18H5L12 3z"></path></svg></div><span class="badge badge-dark">F</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Forme</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Casser la géométrie identifiable du corps humain et éviter la silhouette évidente.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="ombre">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3a7 7 0 107 7c0-3.866-3.134-7-7-7z"></path></svg></div><span class="badge badge-dark">O</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Ombre</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Maîtriser la projection de son ombre et éviter qu'elle révèle sa position avant le corps.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="mouvement">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 4l-2 8h6l-6 8 2-8H7l6-8z"></path></svg></div><span class="badge badge-dark">M</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Mouvement</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Éliminer les gestes brusques et privilégier un déplacement mesuré, fluide, voulu.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer md:col-span-2 xl:col-span-2" data-reading="couleur">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 7h.01M17 7h.01M7 17h.01M17 17h.01M12 12h.01M3 12h18M12 3v18"></path></svg></div><span class="badge badge-dark">C</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Couleur</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Faire correspondre sa palette visuelle au théâtre et comprendre qu'aucun camouflage n'est universel.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="step-2" class="lesson-section panel rounded-[2rem] p-6 md:p-8">
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-6">
+          <div>
+            <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-3">Préparation</p>
+            <h3 class="text-2xl md:text-4xl font-black tracking-tight uppercase leading-none">Le check-up pré-opération</h3>
+          </div>
+          <span class="badge badge-green">Avant départ</span>
+        </div>
+        <div class="grid xl:grid-cols-[0.95fr_1.05fr] gap-8 mb-8">
+          <div class="space-y-5 text-[15px] leading-8 text-slate-700 font-medium">
+            <p>Une opération se perd souvent avant le premier contact. La préparation pré-opérationnelle n'est pas une formalité. C'est le moment où l'on élimine les incohérences qui deviendront des handicaps en mission.</p>
+            <p>L'opérateur ne prépare pas sa charge pour « avoir tout ». Il prépare sa charge pour rester mobile, utile, lisible et autonome sur la durée prévue de l'action.</p>
+          </div>
+          <div class="rounded-[1.75rem] bg-slate-900 text-white p-6 md:p-7">
+            <p class="text-[8px] font-black tracking-[0.3em] uppercase text-emerald-400 mb-4">Checklist de base</p>
+            <div class="space-y-4 text-[13px] leading-6 text-white/75 font-medium">
+              <div class="flex gap-3 check-item"><span><strong>Tenue :</strong> adaptée à l'environnement, à la météo, à la durée et à la nature de l'action.</span></div>
+              <div class="flex gap-3 check-item"><span><strong>Équipement :</strong> meilleur ratio protection, poids, volume, accès.</span></div>
+              <div class="flex gap-3 check-item"><span><strong>Armement :</strong> cohérent avec espace ouvert, confiné ou mixte.</span></div>
+              <div class="flex gap-3 check-item"><span><strong>Spécifique :</strong> médical, grenades, optiques, outils selon mission.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-5">
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="prep-errors">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v4m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"></path></svg></div><span class="badge badge-red">Erreur fréquente</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Charge incohérente</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Trop de poids, trop d'objets, pas d'ordre logique, perte immédiate de mobilité.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="prep-standard">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 13l4 4L19 7"></path></svg></div><span class="badge badge-green">Standard</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Préparation attendue</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Dotation claire, testée, rangée selon une logique stable et immédiatement exploitable.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="step-3" class="lesson-section panel rounded-[2rem] p-6 md:p-8">
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-6">
+          <div>
+            <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-3">Progression</p>
+            <h3 class="text-2xl md:text-4xl font-black tracking-tight uppercase leading-none">Les réflexes à adopter en déplacement</h3>
+          </div>
+          <span class="badge badge-green">Application terrain</span>
+        </div>
+        <p class="text-[15px] leading-8 text-slate-700 font-medium mb-8">Une progression correcte ne consiste pas à avancer jusqu'au prochain tir ennemi. Elle consiste à penser à l'étape suivante avant même d'avoir quitté sa position actuelle.</p>
+        <div class="grid md:grid-cols-2 gap-5">
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="move-1">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></div><span class="badge badge-dark">01</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Visualiser avant de bouger</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Identifier la prochaine position couverte et l'itinéraire avant le départ.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="move-2">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 12h10M7 12l3-3m-3 3l3 3"></path></svg></div><span class="badge badge-dark">02</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Réduire les bonds</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Découper le terrain et diminuer la fenêtre d'exposition.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="move-3">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 17l6-6 4 4 8-8"></path></svg></div><span class="badge badge-dark">03</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Utiliser le relief</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Exploiter buttes, creux, revers de terrain et couverts naturels.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="move-4">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5V4H2v16h5m10 0v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4m10 0H7"></path></svg></div><span class="badge badge-dark">04</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Rester lisible pour l'équipe</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Un bon déplacement protège aussi la cohérence du groupe et sa sécurité globale.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="step-4" class="lesson-section panel rounded-[2rem] p-6 md:p-8">
+        <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-3">Sources & doctrine</p>
+        <h3 class="text-2xl md:text-4xl font-black tracking-tight uppercase leading-none mb-6">Ancrage doctrinal du module</h3>
+        <div class="grid xl:grid-cols-2 gap-8 mb-8">
+          <div class="rounded-[1.75rem] bg-white border border-slate-200 p-6">
+            <div class="flex items-center gap-3 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6v12m6-6H6"></path></svg></div><div><p class="text-[8px] font-black tracking-[0.3em] uppercase text-emerald-600">Références françaises</p><h4 class="text-lg font-black uppercase tracking-tight">Cadre TTA / logique française</h4></div></div>
+            <div class="space-y-4 text-[13px] leading-7 text-slate-700 font-medium">
+              <p>Le module s'inscrit dans une logique proche des publications françaises de tactique générale, de combat débarqué et d'emploi des groupes d'infanterie.</p>
+              <p>Les principes utilisés rejoignent les raisonnements liés à la progression, à l'utilisation du terrain, à la cohérence de la manœuvre, à l'appui et à l'action collective, souvent rattachés dans la littérature française au TTA 106, au TTA 150 et à des documents interarmées ou CICDE dérivés.</p>
+            </div>
+          </div>
+          <div class="rounded-[1.75rem] bg-slate-900 text-white p-6">
+            <div class="flex items-center gap-3 mb-5"><div class="icon-box bg-white/5 border-white/10 text-emerald-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 3l14 9-14 9V3z"></path></svg></div><div><p class="text-[8px] font-black tracking-[0.3em] uppercase text-emerald-400">Références américaines</p><h4 class="text-lg font-black uppercase tracking-tight">Army / infantry doctrine</h4></div></div>
+            <div class="space-y-4 text-[13px] leading-7 text-white/75 font-medium">
+              <p>La structuration pédagogique rejoint plusieurs références américaines de base concernant la progression d'infanterie, la discipline tactique, la reconnaissance et la sécurité.</p>
+              <p>Les documents les plus pertinents pour ce niveau sont l'ATP 3-21.8 Infantry Platoon and Squad et le TC 3-21.76 Ranger Handbook, utilisés ici comme bases logiques et non comme copies brutes.</p>
+            </div>
+          </div>
+        </div>
+        <div class="grid lg:grid-cols-3 gap-5">
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="source-fr">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h16"></path></svg></div><span class="badge badge-dark">FR</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Pôle français</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Résumé des familles documentaires françaises mobilisées pour le fond du module.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="source-us">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z"></path></svg></div><span class="badge badge-dark">US</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Pôle américain</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Références U.S. Army utiles à la progression, à la sécurité et à la standardisation.</p>
+          </article>
+          <article class="reading-card rounded-3xl border border-slate-200 bg-white p-5 cursor-pointer" data-reading="source-adapt">
+            <div class="flex items-start justify-between gap-4 mb-5"><div class="icon-box"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div><span class="badge badge-green">Adaptation</span></div>
+            <h4 class="text-lg font-black uppercase tracking-tight mb-2">Transposition MILSIM</h4>
+            <p class="text-[13px] leading-7 text-slate-600 font-medium">Comment le matériau doctrinal est simplifié puis rendu exécutable dans Arma 3.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="step-5" class="lesson-section panel rounded-[2rem] p-6 md:p-8">
+        <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-3">Évaluation</p>
+        <h3 class="text-2xl md:text-4xl font-black tracking-tight uppercase leading-none mb-6">Validation du module</h3>
+        <div class="space-y-6">
+          <div class="rounded-[1.75rem] bg-slate-50 border border-slate-200 p-5">
+            <div class="flex flex-wrap gap-2 mb-3">
+              <span class="badge badge-dark">3 questions</span>
+              <span class="badge badge-dark">1 bonne réponse</span>
+              <span class="badge badge-green">80% requis</span>
+            </div>
+            <p class="text-[15px] leading-8 text-slate-700 font-medium">Cette évaluation ne remplace pas un contrôle en exercice. Elle valide simplement l'acquisition des notions essentielles du module.</p>
+          </div>
+
+          <form id="quizForm" class="space-y-5">
+            <div class="quiz-card rounded-3xl border border-slate-200 bg-white p-6">
+              <div class="flex items-center justify-between gap-4 mb-5"><p class="text-sm font-black uppercase tracking-[0.14em]">1. Quel est le premier réflexe avant de quitter une position ?</p><span class="badge badge-dark">Q1</span></div>
+              <div class="space-y-3">
+                <label class="radio-card block cursor-pointer"><input type="radio" name="q1" value="a"><span class="radio-ui text-[14px] text-slate-700 font-medium leading-7">Recharger systématiquement</span></label>
+                <label class="radio-card block cursor-pointer"><input type="radio" name="q1" value="b"><span class="radio-ui text-[14px] text-slate-700 font-medium leading-7">Visualiser la prochaine position couverte et l'itinéraire</span></label>
+                <label class="radio-card block cursor-pointer"><input type="radio" name="q1" value="c"><span class="radio-ui text-[14px] text-slate-700 font-medium leading-7">Accélérer pour réduire le temps d'exposition</span></label>
+              </div>
+            </div>
+            <div class="quiz-card rounded-3xl border border-slate-200 bg-white p-6">
+              <div class="flex items-center justify-between gap-4 mb-5"><p class="text-sm font-black uppercase tracking-[0.14em]">2. Dans F-F-O-M-C, que cherche-t-on à casser avec la “forme” ?</p><span class="badge badge-dark">Q2</span></div>
+              <div class="space-y-3">
+                <label class="radio-card block cursor-pointer"><input type="radio" name="q2" value="a"><span class="radio-ui text-[14px] text-slate-700 font-medium leading-7">Le rythme radio</span></label>
+                <label class="radio-card block cursor-pointer"><input type="radio" name="q2" value="b"><span class="radio-ui text-[14px] text-slate-700 font-medium leading-7">La charge emportée</span></label>
+                <label class="radio-card block cursor-pointer"><input type="radio" name="q2" value="c"><span class="radio-ui text-[14px] text-slate-700 font-medium leading-7">La silhouette humaine identifiable</span></label>
+              </div>
+            </div>
+            <div class="quiz-card rounded-3xl border border-slate-200 bg-white p-6">
+              <div class="flex items-center justify-between gap-4 mb-5"><p class="text-sm font-black uppercase tracking-[0.14em]">3. Quel principe décrit le mieux une bonne préparation pré-opérationnelle ?</p><span class="badge badge-dark">Q3</span></div>
+              <div class="space-y-3">
+                <label class="radio-card block cursor-pointer"><input type="radio" name="q3" value="a"><span class="radio-ui text-[14px] text-slate-700 font-medium leading-7">Emporter le maximum de matériel possible</span></label>
+                <label class="radio-card block cursor-pointer"><input type="radio" name="q3" value="b"><span class="radio-ui text-[14px] text-slate-700 font-medium leading-7">Adapter tenue, équipement et armement à la mission et au terrain</span></label>
+                <label class="radio-card block cursor-pointer"><input type="radio" name="q3" value="c"><span class="radio-ui text-[14px] text-slate-700 font-medium leading-7">Garder toujours la même dotation</span></label>
+              </div>
+            </div>
+            <button type="button" id="submitQuiz" class="px-6 py-4 rounded-2xl bg-slate-900 text-white text-[11px] font-black tracking-[0.18em] uppercase">Valider l'évaluation</button>
+          </form>
+
+          <div id="quizResult" class="hidden rounded-[1.75rem] border p-5"></div>
+        </div>
+      </section>
+
+      <section id="step-6" class="lesson-section panel rounded-[2rem] p-6 md:p-8">
+        <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-3">Certificat</p>
+        <h3 class="text-2xl md:text-4xl font-black tracking-tight uppercase leading-none mb-6">Attestation de réussite</h3>
+        <div class="certificate-grid rounded-[2rem] border border-slate-200 bg-white p-6 md:p-10">
+          <div class="border-2 border-slate-900/10 rounded-[1.5rem] p-6 md:p-10">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-10">
+              <div>
+                <p class="text-[9px] font-black tracking-[0.42em] uppercase text-emerald-600 mb-3">Training Command Certification</p>
+                <h4 class="text-3xl md:text-5xl font-black tracking-tight uppercase leading-none">Certificate of Completion</h4>
+              </div>
+              <div class="text-left md:text-right">
+                <p class="text-[8px] font-black tracking-[0.28em] uppercase text-slate-400 mb-2">Module</p>
+                <p class="text-lg font-black uppercase tracking-[0.14em]">Le Manuel de l'Opérateur</p>
+              </div>
+            </div>
+
+            <p class="text-[14px] leading-8 text-slate-700 font-medium mb-8">
+              Le présent certificat atteste que l'apprenant a validé le module initial consacré aux fondamentaux de l'opérateur, incluant les principes de discrétion, la préparation pré-opérationnelle et les réflexes élémentaires de progression tactique en environnement Arma 3.
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-10">
+              <div class="rounded-2xl bg-slate-50 border border-slate-200 p-5">
+                <p class="text-[8px] font-black tracking-[0.28em] uppercase text-slate-400 mb-2">Nom de l'opérateur</p>
+                <input id="certificateName" type="text" placeholder="Renseigner le nom ou callsign" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none">
+              </div>
+              <div class="rounded-2xl bg-slate-50 border border-slate-200 p-5">
+                <p class="text-[8px] font-black tracking-[0.28em] uppercase text-slate-400 mb-2">Statut</p>
+                <p id="certificateStatus" class="text-lg font-black uppercase tracking-[0.14em] text-amber-500">En attente de validation</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+              <div>
+                <p class="text-[8px] font-black tracking-[0.28em] uppercase text-slate-400 mb-2">Session date</p>
+                <p id="certificateDate" class="text-sm font-black uppercase tracking-[0.14em]"></p>
+              </div>
+              <div>
+                <p class="text-[8px] font-black tracking-[0.28em] uppercase text-slate-400 mb-2">Validation code</p>
+                <p class="text-sm font-black uppercase tracking-[0.14em]">OM-01-ARMA3</p>
+              </div>
+              <div>
+                <p class="text-[8px] font-black tracking-[0.28em] uppercase text-slate-400 mb-2">Authority</p>
+                <p class="text-sm font-black uppercase tracking-[0.14em]">Training Command</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="panel rounded-[2rem] p-5 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <button id="prevBtn" class="w-full md:w-auto px-6 py-4 rounded-2xl bg-white border border-slate-200 text-slate-900 text-[11px] font-black tracking-[0.18em] uppercase">Section précédente</button>
+        <div class="text-[10px] font-black tracking-[0.18em] uppercase text-slate-400">Navigation pédagogique</div>
+        <button id="nextBtn" class="w-full md:w-auto px-6 py-4 rounded-2xl bg-slate-900 text-white text-[11px] font-black tracking-[0.18em] uppercase">Section suivante</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const readingData = {
+      context: {
+        title: "Contexte d'emploi",
+        content: [
+          "Le module existe pour éviter l'écart classique entre l'intention affichée et le comportement réel sur le terrain. Beaucoup de joueurs veulent produire un effet 'operator', mais reproduisent en pratique des gestes incohérents : silhouette sur crête, course sans point d'arrivée, tenue inadaptée, charge irrationnelle, absence de lecture du terrain.",
+          "Le premier objectif du package est donc correctif. Il réintroduit des principes simples, durables et immédiatement applicables.",
+          "Le second objectif est collectif. Une escouade ne devient pas propre parce qu'elle utilise des mots tactiques. Elle devient propre quand ses membres partagent les mêmes réflexes de base."
+        ]
+      },
+      goals: {
+        title: "Effets recherchés",
+        content: [
+          "À l'issue du module, l'apprenant doit être capable de préparer une action simple sans surcharge incohérente, d'analyser rapidement un environnement, de réduire sa signature et de choisir un déplacement plus rationnel.",
+          "Il doit aussi comprendre qu'un bon opérateur ne cherche pas à multiplier les gestes. Il cherche à réduire les erreurs visibles, répétées et coûteuses.",
+          "Enfin, le module doit créer une base commune exploitable ensuite par les instructeurs lors des séances en jeu."
+        ]
+      },
+      limits: {
+        title: "Limites du package",
+        content: [
+          "La lecture ne remplace jamais la correction en action. Lire une règle ne garantit pas sa bonne application au moment utile.",
+          "Ce premier jet est donc un bloc préparatoire. Il doit être suivi de démonstrations, de drills, puis de contrôles en situation.",
+          "Autrement dit : la théorie fixe le cadre, mais seule la répétition transforme le cadre en réflexe."
+        ]
+      },
+      fond: {
+        title: "Fond",
+        content: [
+          "Le fond désigne le décor et l'arrière-plan dans lequel on se trouve. Un opérateur peut être couvert physiquement mais rester visible s'il tranche brutalement avec le décor derrière lui.",
+          "Il faut observer non seulement ce qui est devant soi, mais aussi ce qui se trouve derrière sa position. Une silhouette sombre sur fond clair, ou inversement, ressort immédiatement.",
+          "Dans Arma 3, cela impose d'éviter les bords de collines, les seuils de fenêtres trop lumineux et les positions qui découpent nettement le corps sur le ciel."
+        ]
+      },
+      forme: {
+        title: "Forme",
+        content: [
+          "La forme humaine est identifiable par ses lignes simples. Le triangle tête-épaules est l'une des signatures visuelles les plus faciles à détecter.",
+          "Casser cette forme consiste à profiter des obstacles, à choisir le bon angle, à éviter de se tenir debout en plein axe et à réduire les contours trop nets.",
+          "Une bonne forme n'est pas 'belle'. Elle est difficile à lire."
+        ]
+      },
+      ombre: {
+        title: "Ombre",
+        content: [
+          "L'ombre est souvent négligée alors qu'elle trahit la présence avant même que le corps n'apparaisse. Toute source lumineuse, même faible, produit une projection exploitable par l'observateur.",
+          "Il faut donc surveiller la direction de la lumière, vérifier si son ombre déborde d'un couvert et réduire sa hauteur lorsque l'arrêt est imposé.",
+          "En zone bâtie, une ombre qui dépasse d'un angle de mur vaut parfois révélation complète."
+        ]
+      },
+      mouvement: {
+        title: "Mouvement",
+        content: [
+          "L'œil humain perçoit très vite les variations de mouvement. Un geste rapide, une accélération brutale ou un changement de direction inutile attirent immédiatement l'attention.",
+          "Le mouvement utile est donc réduit, souple et intentionnel. Courir n'est pas interdit. Courir sans nécessité l'est pratiquement.",
+          "En jeu, il faut apprendre à préférer un déplacement mesuré à une agitation continue."
+        ]
+      },
+      couleur: {
+        title: "Couleur",
+        content: [
+          "La couleur portée doit rester compatible avec l'environnement. Il n'existe aucun camouflage universel capable d'être optimal en tout lieu.",
+          "Le principe directeur n'est pas la mode visuelle. Il est la cohérence avec le théâtre, la lumière, les dominantes et la distance probable d'observation.",
+          "Une tenue acceptable est une tenue qui ne produit pas de contraste absurde avec le milieu parcouru."
+        ]
+      },
+      'prep-errors': {
+        title: "Charge incohérente — erreur fréquente",
+        content: [
+          "L'erreur classique consiste à confondre sécurité et accumulation. Ajouter du matériel sans hiérarchie donne l'illusion d'être prêt, mais produit souvent l'inverse.",
+          "La surcharge dégrade la vitesse, la lisibilité, l'endurance et l'accès rapide aux objets réellement utiles.",
+          "Une charge doit être conçue pour la mission, pas pour rassurer psychologiquement le porteur."
+        ]
+      },
+      'prep-standard': {
+        title: "Préparation attendue",
+        content: [
+          "Une préparation correcte repose sur une logique stable : même place pour les objets critiques, même ordre de rangement, même séquence de vérification.",
+          "L'opérateur doit pouvoir récupérer un moyen médical, une grenade ou un outil sans réfléchir longtemps, y compris sous pression.",
+          "La cohérence de préparation est un multiplicateur de calme en opération."
+        ]
+      },
+      'move-1': {
+        title: "Visualiser avant de bouger",
+        content: [
+          "Tout déplacement doit partir d'une décision claire : d'où je pars, où je vais et par quel itinéraire minimal j'y vais.",
+          "Quitter un couvert sans prochaine position identifiée revient à transformer son mouvement en pari.",
+          "La bonne pratique consiste donc à lire, décider, puis exécuter."
+        ]
+      },
+      'move-2': {
+        title: "Réduire les bonds",
+        content: [
+          "Plus un bond est long, plus la fenêtre d'exposition augmente. Réduire la distance parcourue d'un seul coup augmente les chances de garder le contrôle du mouvement.",
+          "Il faut découper le terrain en segments utiles et exploiter chaque micro-couvert disponible.",
+          "Le terrain se gagne par étapes."
+        ]
+      },
+      'move-3': {
+        title: "Utiliser le relief",
+        content: [
+          "Le relief naturel doit être lu comme un réseau de protections possibles : buttes, creux, revers, lignes de terrain, fossés, végétation épaisse.",
+          "Être derrière une butte vaut mieux qu'au sommet ; être dans un creux vaut mieux qu'en surface plate.",
+          "Le terrain protège surtout ceux qui prennent le temps de le comprendre."
+        ]
+      },
+      'move-4': {
+        title: "Rester lisible pour l'équipe",
+        content: [
+          "Un déplacement individuel peut être techniquement prudent mais tactiquement mauvais s'il casse la cohérence de l'élément.",
+          "Le chef doit pouvoir lire ce que fait son personnel. Les autres doivent pouvoir l'intégrer à leur propre sécurité.",
+          "La progression individuelle n'a de valeur que si elle reste compatible avec la manœuvre du groupe."
+        ]
+      },
+      'source-fr': {
+        title: "Pôle français",
+        content: [
+          "Le module s'inspire de la logique doctrinale française relative à la manœuvre, à l'emploi du terrain, au combat débarqué et à la cohérence des missions élémentaires.",
+          "Le matériau de fond renvoie à la famille TTA et aux publications interarmées ou CICDE qui en reprennent l'esprit, notamment pour les notions d'appui, de progression, de terrain, de mission et de comportement collectif.",
+          "Le but n'est pas de reproduire un manuel complet, mais d'adosser la pédagogie à une logique sérieuse."
+        ]
+      },
+      'source-us': {
+        title: "Pôle américain",
+        content: [
+          "La structuration pratique rejoint des références américaines de base sur l'infanterie, la sécurité, la reconnaissance et la discipline tactique.",
+          "Les documents les plus utiles pour ce niveau sont l'ATP 3-21.8 Infantry Platoon and Squad et le TC 3-21.76 Ranger Handbook.",
+          "Ils servent ici de socle logique pour articuler des principes simples et exécutables en environnement MILSIM."
+        ]
+      },
+      'source-adapt': {
+        title: "Transposition MILSIM",
+        content: [
+          "Une adaptation MILSIM sérieuse ne consiste pas à recopier un texte réel sans filtre. Elle consiste à traduire des principes en comportements jouables, reproductibles et vérifiables en équipe.",
+          "Le module réduit volontairement la densité théorique afin de conserver uniquement ce qui produit un effet observable chez l'apprenant.",
+          "La priorité reste la lisibilité tactique, la cohérence de posture et la réduction des fautes grossières."
+        ]
+      }
+    };
+
+    const sections = [...document.querySelectorAll('.lesson-section')];
+    const menuItems = [...document.querySelectorAll('.menu-item')];
+    const progressBar = document.getElementById('progressBar');
+    const progressLabel = document.getElementById('progressLabel');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const certificateDate = document.getElementById('certificateDate');
+    const certificateStatus = document.getElementById('certificateStatus');
+    const modal = document.getElementById('readingModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalContent = document.getElementById('modalContent');
+    let currentStep = 0;
+    let quizPassed = false;
+
+    certificateDate.textContent = new Date().toLocaleDateString('fr-FR');
+
+    function updateView(step) {
+      currentStep = step;
+      sections.forEach((section, index) => section.classList.toggle('active', index === step));
+      menuItems.forEach((item, index) => item.classList.toggle('active', index === step));
+      const percent = Math.round(((step + 1) / sections.length) * 100);
+      progressBar.style.width = percent + '%';
+      progressLabel.textContent = percent + '%';
+      prevBtn.disabled = step === 0;
+      prevBtn.classList.toggle('opacity-50', step === 0);
+      nextBtn.textContent = step === sections.length - 1 ? 'Module terminé' : 'Section suivante';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    menuItems.forEach((item, index) => item.addEventListener('click', () => updateView(index)));
+    prevBtn.addEventListener('click', () => { if (currentStep > 0) updateView(currentStep - 1); });
+    nextBtn.addEventListener('click', () => { if (currentStep < sections.length - 1) updateView(currentStep + 1); });
+
+    document.querySelectorAll('[data-reading]').forEach(card => {
+      card.addEventListener('click', () => {
+        const key = card.getAttribute('data-reading');
+        const entry = readingData[key];
+        if (!entry) return;
+        modalTitle.textContent = entry.title;
+        modalContent.innerHTML = entry.content.map(p => `<p>${p}</p>`).join('');
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      });
+    });
+
+    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    function closeModal() {
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('submitQuiz').addEventListener('click', () => {
+      const answers = { q1: 'b', q2: 'c', q3: 'b' };
+      let score = 0;
+      Object.entries(answers).forEach(([name, correct]) => {
+        const checked = document.querySelector(`input[name="${name}"]:checked`);
+        if (checked && checked.value === correct) score++;
+      });
+      const percent = Math.round((score / 3) * 100);
+      const result = document.getElementById('quizResult');
+      result.classList.remove('hidden');
+      if (percent >= 80) {
+        quizPassed = true;
+        result.className = 'rounded-[1.75rem] border p-5 border-emerald-200 bg-emerald-50';
+        result.innerHTML = `<p class="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 mb-2">Résultat</p><p class="text-lg font-black uppercase tracking-tight text-emerald-800">Validation obtenue — ${percent}%</p><p class="text-sm text-emerald-700 mt-2 font-medium">Le module est considéré comme réussi. Le certificat peut être renseigné.</p>`;
+        certificateStatus.textContent = 'Validé';
+        certificateStatus.className = 'text-lg font-black uppercase tracking-[0.14em] text-emerald-600';
+      } else {
+        quizPassed = false;
+        result.className = 'rounded-[1.75rem] border p-5 border-red-200 bg-red-50';
+        result.innerHTML = `<p class="text-[10px] font-black uppercase tracking-[0.18em] text-red-700 mb-2">Résultat</p><p class="text-lg font-black uppercase tracking-tight text-red-800">Validation refusée — ${percent}%</p><p class="text-sm text-red-700 mt-2 font-medium">Relire le module puis recommencer l'évaluation.</p>`;
+        certificateStatus.textContent = 'Non validé';
+        certificateStatus.className = 'text-lg font-black uppercase tracking-[0.14em] text-red-600';
+      }
+    });
+
+    updateView(0);
+  </script>
+</body>
+</html>

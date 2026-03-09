@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roster Task Force Aegis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f3f4f6;
+            --card: rgba(255,255,255,0.92);
+            --line: rgba(15,23,42,0.18);
+            --text: #0f172a;
+            --muted: #64748b;
+            --blue: #60a5fa;
+            --blue-dark: #2563eb;
+            --green: #86efac;
+            --green-dark: #16a34a;
+            --amber: #facc15;
+            --red: #f87171;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background:
+                linear-gradient(rgba(255,255,255,0.82), rgba(255,255,255,0.82)),
+                repeating-linear-gradient(
+                    0deg,
+                    #e5e7eb 0px,
+                    #e5e7eb 1px,
+                    transparent 1px,
+                    transparent 72px
+                ),
+                repeating-linear-gradient(
+                    90deg,
+                    #e5e7eb 0px,
+                    #e5e7eb 1px,
+                    transparent 1px,
+                    transparent 72px
+                );
+            color: var(--text);
+        }
+
+        .watermark {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            user-select: none;
+            opacity: 0.05;
+            font-weight: 900;
+            font-size: clamp(4rem, 16vw, 13rem);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .tree-root {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-width: max-content;
+        }
+
+        .node-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            padding: 0 10px;
+        }
+
+        .node-card {
+            min-width: 132px;
+            max-width: 170px;
+            background: var(--card);
+            border: 1px solid rgba(15,23,42,0.08);
+            border-radius: 16px;
+            padding: 12px 12px 10px;
+            backdrop-filter: blur(8px);
+            box-shadow:
+                0 12px 30px rgba(15,23,42,0.06),
+                inset 0 1px 0 rgba(255,255,255,0.6);
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        }
+
+        .node-card:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 18px 34px rgba(15,23,42,0.10),
+                inset 0 1px 0 rgba(255,255,255,0.7);
+            border-color: rgba(15,23,42,0.16);
+        }
+
+        .node-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .insignia {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 900;
+            color: #0f172a;
+            border: 1px solid rgba(15,23,42,0.16);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+        }
+
+        .type-command { background: linear-gradient(180deg, #bfdbfe, #93c5fd); }
+        .type-alpha   { background: linear-gradient(180deg, #bfdbfe, #93c5fd); }
+        .type-bravo   { background: linear-gradient(180deg, #bbf7d0, #86efac); }
+        .type-support { background: linear-gradient(180deg, #fde68a, #fcd34d); }
+        .type-special { background: linear-gradient(180deg, #fecaca, #fca5a5); }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            flex-shrink: 0;
+            border: 1px solid rgba(15,23,42,0.14);
+        }
+
+        .status-active { background: #22c55e; }
+        .status-partial { background: #facc15; }
+        .status-inactive { background: #ef4444; }
+
+        .node-label {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #0f172a;
+            line-height: 1.2;
+        }
+
+        .node-sub {
+            margin-top: 4px;
+            font-size: 10px;
+            color: #475569;
+            font-weight: 700;
+        }
+
+        .node-meta {
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 800;
+        }
+
+        .collapse-btn {
+            margin-top: 8px;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: #334155;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            padding: 5px 8px;
+            line-height: 1;
+        }
+
+        .children-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+            margin-top: 34px;
+            padding-top: 22px;
+        }
+
+        .children-container.has-children::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1px;
+            height: 22px;
+            background: var(--line);
+        }
+
+        .children-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+        }
+
+        .children-row::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 24px;
+            right: 24px;
+            height: 1px;
+            background: var(--line);
+        }
+
+        .child-branch {
+            position: relative;
+            padding-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .child-branch::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1px;
+            height: 20px;
+            background: var(--line);
+        }
+
+        .hidden-children {
+            display: none;
+        }
+
+        .panel {
+            background: rgba(255,255,255,0.88);
+            border: 1px solid rgba(15,23,42,0.08);
+            box-shadow: 0 16px 36px rgba(15,23,42,0.06);
+            backdrop-filter: blur(10px);
+        }
+
+        .legend-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 999px;
+            display: inline-block;
+        }
+
+        @media (max-width: 900px) {
+            .node-card {
+                min-width: 124px;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="relative min-h-screen overflow-hidden">
+        <div class="watermark">Aegis</div>
+
+        <header class="relative z-10 border-b border-slate-200/80 bg-white/75 backdrop-blur-xl">
+            <div class="max-w-[1800px] mx-auto px-6 py-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
+                <div>
+                    <p class="text-[10px] font-black tracking-[0.32em] uppercase text-slate-400 mb-2">Command Structure</p>
+                    <h1 class="text-3xl font-black tracking-tight uppercase leading-none">Roster — Task Force Aegis</h1>
+                    <p class="text-sm text-slate-500 mt-3 font-medium">Structure organique, disponibilité des unités, consultation dynamique.</p>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 min-w-[320px]">
+                    <div class="panel rounded-2xl p-4">
+                        <p class="text-[9px] font-black tracking-[0.22em] uppercase text-slate-400">Unités</p>
+                        <p id="stat-units" class="text-2xl font-black tracking-tight mt-1">0</p>
+                    </div>
+                    <div class="panel rounded-2xl p-4">
+                        <p class="text-[9px] font-black tracking-[0.22em] uppercase text-slate-400">Effectif</p>
+                        <p id="stat-personnel" class="text-2xl font-black tracking-tight mt-1">0</p>
+                    </div>
+                    <div class="panel rounded-2xl p-4">
+                        <p class="text-[9px] font-black tracking-[0.22em] uppercase text-slate-400">Actives</p>
+                        <p id="stat-active" class="text-2xl font-black tracking-tight mt-1">0</p>
+                    </div>
+                    <div class="panel rounded-2xl p-4">
+                        <p class="text-[9px] font-black tracking-[0.22em] uppercase text-slate-400">Partielles / Inactives</p>
+                        <p id="stat-other" class="text-2xl font-black tracking-tight mt-1">0</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="relative z-10 max-w-[1800px] mx-auto px-6 pt-6">
+            <div class="panel rounded-3xl p-4 md:p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-4 md:gap-6 text-[10px] font-black tracking-[0.18em] uppercase text-slate-500">
+                    <span class="flex items-center gap-2"><span class="legend-dot bg-green-500"></span> Active</span>
+                    <span class="flex items-center gap-2"><span class="legend-dot bg-yellow-400"></span> Partielle</span>
+                    <span class="flex items-center gap-2"><span class="legend-dot bg-red-500"></span> Inactive</span>
+                    <span class="flex items-center gap-2"><span class="legend-dot bg-blue-400"></span> Command / Alpha</span>
+                    <span class="flex items-center gap-2"><span class="legend-dot bg-green-300"></span> Bravo</span>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input id="searchInput" type="text" placeholder="Recherche unité, rôle, officier..." class="w-full sm:w-80 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium outline-none focus:border-slate-400">
+                    <button id="expandAllBtn" class="rounded-2xl bg-slate-900 text-white px-5 py-3 text-[11px] font-black tracking-[0.16em] uppercase">Déployer tout</button>
+                    <button id="collapseAllBtn" class="rounded-2xl bg-white border border-slate-200 text-slate-900 px-5 py-3 text-[11px] font-black tracking-[0.16em] uppercase">Réduire tout</button>
+                </div>
+            </div>
+        </section>
+
+        <main class="relative z-10 max-w-[1800px] mx-auto px-6 py-8">
+            <div class="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6">
+                <section class="panel rounded-[2rem] p-6 md:p-8 overflow-auto">
+                    <div id="treeContainer" class="min-w-max"></div>
+                </section>
+
+                <aside class="panel rounded-[2rem] p-6">
+                    <p class="text-[10px] font-black tracking-[0.28em] uppercase text-slate-400 mb-3">Fiche Unité</p>
+                    <div id="detailsPanel" class="space-y-5">
+                        <div>
+                            <h2 id="detail-name" class="text-2xl font-black tracking-tight uppercase">Aucune sélection</h2>
+                            <p id="detail-role" class="text-sm text-slate-500 font-semibold mt-1">Sélectionnez un élément du roster.</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                                <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Type</p>
+                                <p id="detail-type" class="text-sm font-black uppercase mt-2">—</p>
+                            </div>
+                            <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                                <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Statut</p>
+                                <p id="detail-status" class="text-sm font-black uppercase mt-2">—</p>
+                            </div>
+                            <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                                <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Effectif</p>
+                                <p id="detail-strength" class="text-sm font-black uppercase mt-2">—</p>
+                            </div>
+                            <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                                <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Chef d’unité</p>
+                                <p id="detail-lead" class="text-sm font-black uppercase mt-2">—</p>
+                            </div>
+                        </div>
+
+                        <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                            <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Mission</p>
+                            <p id="detail-mission" class="text-sm text-slate-700 font-medium mt-2 leading-relaxed">—</p>
+                        </div>
+
+                        <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                            <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Composition</p>
+                            <div id="detail-children" class="mt-3 space-y-2 text-sm font-medium text-slate-700"></div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const rosterData = {
+            id: "command",
+            label: "Command",
+            role: "Commandement opérationnel",
+            type: "command",
+            status: "active",
+            strength: 4,
+            leader: "COL. Hart",
+            mission: "Direction générale, validation des opérations, coordination inter-unités.",
+            children: [
+                {
+                    id: "a-co",
+                    label: "A Co",
+                    role: "Compagnie Alpha",
+                    type: "alpha",
+                    status: "active",
+                    strength: 22,
+                    leader: "CPT. Walker",
+                    mission: "Manœuvre principale, assaut, progression tactique, sécurisation d’objectif.",
+                    children: [
+                        { id: "a-1", label: "1st Pl", role: "1er Platoon", type: "alpha", status: "active", strength: 8, leader: "LT. Nolan", mission: "Élément d’assaut prioritaire.", children: [] },
+                        { id: "a-2", label: "2nd Pl", role: "2e Platoon", type: "alpha", status: "active", strength: 7, leader: "LT. Briggs", mission: "Soutien de ligne et renfort latéral.", children: [] },
+                        { id: "a-3", label: "3rd Pl", role: "3e Platoon", type: "alpha", status: "partial", strength: 5, leader: "LT. Hayes", mission: "Réserve d’engagement et relève.", children: [] },
+                        { id: "a-4", label: "4th Pl", role: "4e Platoon", type: "alpha", status: "inactive", strength: 0, leader: "Vacant", mission: "Structure non projetée à cette date.", children: [] }
+                    ]
+                },
+                {
+                    id: "hq-sqn",
+                    label: "1st Sqdn",
+                    role: "Escadron de coordination",
+                    type: "command",
+                    status: "active",
+                    strength: 6,
+                    leader: "MAJ. Reeves",
+                    mission: "Appui de commandement, contrôle des détachements et synchronisation inter-compagnies.",
+                    children: []
+                },
+                {
+                    id: "b-co",
+                    label: "B Co",
+                    role: "Compagnie Bravo",
+                    type: "bravo",
+                    status: "active",
+                    strength: 27,
+                    leader: "CPT. Mercer",
+                    mission: "Manœuvre secondaire, enveloppement, stabilisation de zone, maintien de contact.",
+                    children: [
+                        { id: "b-1", label: "1st Pl", role: "1er Platoon", type: "bravo", status: "active", strength: 6, leader: "LT. Porter", mission: "Avant-garde et prise de contact.", children: [] },
+                        { id: "b-2", label: "2nd Pl", role: "2e Platoon", type: "bravo", status: "active", strength: 5, leader: "LT. Shaw", mission: "Tenue d’axe et exploitation.", children: [] },
+                        { id: "b-3", label: "3rd Pl", role: "3e Platoon", type: "bravo", status: "partial", strength: 4, leader: "LT. Dale", mission: "Renfort d’appui et couverture.", children: [] },
+                        { id: "b-4", label: "4th Pl", role: "4e Platoon", type: "bravo", status: "active", strength: 6, leader: "LT. Cross", mission: "Élément de fixation.", children: [] },
+                        { id: "b-5", label: "5th Pl", role: "5e Platoon", type: "bravo", status: "active", strength: 6, leader: "LT. Voss", mission: "Réserve mobile et exploitation finale.", children: [] }
+                    ]
+                },
+                {
+                    id: "support-sqn",
+                    label: "1st Sqdn",
+                    role: "Escadron d’appui",
+                    type: "support",
+                    status: "partial",
+                    strength: 5,
+                    leader: "MAJ. Cole",
+                    mission: "Transmission, support logistique, coordination appuis externes.",
+                    children: []
+                }
+            ]
+        };
+
+        const collapsedState = new Map();
+
+        function getStatusLabel(status) {
+            if (status === "active") return "Active";
+            if (status === "partial") return "Partielle";
+            return "Inactive";
+        }
+
+        function getTypeLabel(type) {
+            const labels = {
+                command: "Command",
+                alpha: "Alpha",
+                bravo: "Bravo",
+                support: "Support",
+                special: "Special"
+            };
+            return labels[type] || type;
+        }
+
+        function countStats(node) {
+            let units = 1;
+            let personnel = node.strength || 0;
+            let active = node.status === "active" ? 1 : 0;
+            let other = node.status !== "active" ? 1 : 0;
+
+            for (const child of (node.children || [])) {
+                const c = countStats(child);
+                units += c.units;
+                personnel += c.personnel;
+                active += c.active;
+                other += c.other;
+            }
+
+            return { units, personnel, active, other };
+        }
+
+        function flattenNodes(node, arr = []) {
+            arr.push(node);
+            (node.children || []).forEach(child => flattenNodes(child, arr));
+            return arr;
+        }
+
+        function createNodeCard(node) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "node-wrapper";
+
+            const card = document.createElement("div");
+            card.className = "node-card";
+            card.dataset.nodeId = node.id;
+
+            const top = document.createElement("div");
+            top.className = "node-top";
+
+            const insignia = document.createElement("div");
+            insignia.className = `insignia type-${node.type}`;
+            insignia.textContent = node.label.split(" ")[0].substring(0, 2).toUpperCase();
+
+            const status = document.createElement("div");
+            status.className = `status-dot status-${node.status}`;
+
+            top.appendChild(insignia);
+            top.appendChild(status);
+
+            const label = document.createElement("div");
+            label.className = "node-label";
+            label.textContent = node.label;
+
+            const sub = document.createElement("div");
+            sub.className = "node-sub";
+            sub.textContent = node.role;
+
+            const meta = document.createElement("div");
+            meta.className = "node-meta";
+            meta.innerHTML = `
+                <span>${getTypeLabel(node.type)}</span>
+                <span>${node.strength} pax</span>
+            `;
+
+            card.appendChild(top);
+            card.appendChild(label);
+            card.appendChild(sub);
+            card.appendChild(meta);
+
+            card.addEventListener("click", (e) => {
+                e.stopPropagation();
+                selectNode(node);
+            });
+
+            wrapper.appendChild(card);
+
+            if ((node.children || []).length > 0) {
+                const btn = document.createElement("button");
+                btn.className = "collapse-btn";
+                btn.textContent = collapsedState.get(node.id) ? "Déployer" : "Réduire";
+
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    collapsedState.set(node.id, !collapsedState.get(node.id));
+                    renderTree(filteredTree(currentSearch));
+                });
+
+                wrapper.appendChild(btn);
+
+                const childrenContainer = document.createElement("div");
+                childrenContainer.className = "children-container has-children";
+                if (collapsedState.get(node.id)) childrenContainer.classList.add("hidden-children");
+
+                const row = document.createElement("div");
+                row.className = "children-row";
+
+                node.children.forEach(child => {
+                    const branch = document.createElement("div");
+                    branch.className = "child-branch";
+                    branch.appendChild(createNodeCard(child));
+                    row.appendChild(branch);
+                });
+
+                childrenContainer.appendChild(row);
+                wrapper.appendChild(childrenContainer);
+            }
+
+            return wrapper;
+        }
+
+        function renderTree(data) {
+            const treeContainer = document.getElementById("treeContainer");
+            treeContainer.innerHTML = "";
+
+            if (!data) {
+                treeContainer.innerHTML = `
+                    <div class="py-24 text-center">
+                        <p class="text-sm font-bold uppercase tracking-[0.24em] text-slate-400">Aucun résultat</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const root = document.createElement("div");
+            root.className = "tree-root";
+            root.appendChild(createNodeCard(data));
+            treeContainer.appendChild(root);
+
+            const stats = countStats(data);
+            document.getElementById("stat-units").textContent = stats.units;
+            document.getElementById("stat-personnel").textContent = stats.personnel;
+            document.getElementById("stat-active").textContent = stats.active;
+            document.getElementById("stat-other").textContent = stats.other;
+        }
+
+        function selectNode(node) {
+            document.getElementById("detail-name").textContent = node.label;
+            document.getElementById("detail-role").textContent = node.role;
+            document.getElementById("detail-type").textContent = getTypeLabel(node.type);
+            document.getElementById("detail-status").textContent = getStatusLabel(node.status);
+            document.getElementById("detail-strength").textContent = `${node.strength} personnels`;
+            document.getElementById("detail-lead").textContent = node.leader || "Non renseigné";
+            document.getElementById("detail-mission").textContent = node.mission || "Aucune mission renseignée.";
+
+            const childrenBox = document.getElementById("detail-children");
+            childrenBox.innerHTML = "";
+
+            if (!node.children || node.children.length === 0) {
+                childrenBox.innerHTML = `<p class="text-slate-500">Aucune sous-unité.</p>`;
+                return;
+            }
+
+            node.children.forEach(child => {
+                const row = document.createElement("div");
+                row.className = "flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3";
+                row.innerHTML = `
+                    <div>
+                        <p class="font-black uppercase text-[11px] tracking-[0.14em]">${child.label}</p>
+                        <p class="text-xs text-slate-500 font-medium">${child.role}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-black uppercase">${child.strength} pax</p>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase">${getStatusLabel(child.status)}</p>
+                    </div>
+                `;
+                row.addEventListener("click", () => selectNode(child));
+                childrenBox.appendChild(row);
+            });
+        }
+
+        function nodeMatches(node, term) {
+            const haystack = [
+                node.label,
+                node.role,
+                node.type,
+                node.status,
+                node.leader,
+                node.mission
+            ].join(" ").toLowerCase();
+
+            return haystack.includes(term);
+        }
+
+        function filterNode(node, term) {
+            const children = (node.children || [])
+                .map(child => filterNode(child, term))
+                .filter(Boolean);
+
+            if (nodeMatches(node, term) || children.length > 0) {
+                return { ...node, children };
+            }
+
+            return null;
+        }
+
+        function filteredTree(term) {
+            if (!term) return structuredClone(rosterData);
+            return filterNode(structuredClone(rosterData), term.toLowerCase());
+        }
+
+        let currentSearch = "";
+
+        document.getElementById("searchInput").addEventListener("input", (e) => {
+            currentSearch = e.target.value.trim();
+            renderTree(filteredTree(currentSearch));
+        });
+
+        document.getElementById("expandAllBtn").addEventListener("click", () => {
+            flattenNodes(rosterData).forEach(n => collapsedState.set(n.id, false));
+            renderTree(filteredTree(currentSearch));
+        });
+
+        document.getElementById("collapseAllBtn").addEventListener("click", () => {
+            flattenNodes(rosterData).forEach(n => {
+                if ((n.children || []).length > 0) collapsedState.set(n.id, true);
+            });
+            collapsedState.set(rosterData.id, false);
+            renderTree(filteredTree(currentSearch));
+        });
+
+        flattenNodes(rosterData).forEach(n => collapsedState.set(n.id, false));
+        renderTree(structuredClone(rosterData));
+        selectNode(rosterData);
+    </script>
+</body>
+</html>

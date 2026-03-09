@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COMSPEC Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Orbitron:wght@500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body class="dashboard-shell">
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="dashboard.html">
+        <div class="brand-mark"><span>CC</span></div>
+        <div class="brand-copy">
+          <strong>COMSPEC Command Center</strong>
+          <span>Joint Aviation Training Oversight</span>
+        </div>
+      </a>
+      <nav class="nav">
+        <a href="index.html">Landing</a>
+        <a href="personnel-file.html">Personnel File</a>
+        <a href="training-module.html">SCORM Module</a>
+        <a href="enlistment.html">Enlistment</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="tactical-label">Network modules</div>
+      <div class="nav-stack">
+        <a class="tab active" href="dashboard.html">Command Overview</a>
+        <a class="tab" href="personnel-file.html">Personnel File</a>
+        <a class="tab" href="training-module.html">Training Programs</a>
+        <a class="tab" href="training-module.html#scorm">SCORM Module</a>
+        <a class="tab" href="dashboard.html#records">Training Records</a>
+        <a class="tab" href="enlistment.html">Enlistment Management</a>
+      </div>
+    </aside>
+
+    <section class="main-panel">
+      <div class="kicker">Dashboard</div>
+      <h1 class="page-title">COMSPEC Command Center</h1>
+      <p class="section-copy">Static dashboard presentation for command supervision, operator training oversight and certification readiness.</p>
+
+      <div class="metrics-row">
+        <div class="metric"><small>Operator files</small><div class="metric-value">128</div></div>
+        <div class="metric"><small>Modules active</small><div class="metric-value">14</div></div>
+        <div class="metric"><small>Certified operators</small><div class="metric-value">73</div></div>
+        <div class="metric"><small>Pending enlistments</small><div class="metric-value">09</div></div>
+      </div>
+
+      <div class="content-grid">
+        <article class="table-panel" style="padding:1.2rem;">
+          <div class="section-header" style="margin-bottom:1rem;">
+            <div>
+              <div class="kicker">Training status</div>
+              <h2 class="section-title" style="font-size:1.8rem;">Operational certifications</h2>
+            </div>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Status</th>
+                <th>Score</th>
+                <th>Validation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>MH-60 Tactical Operations</td>
+                <td><span class="badge ok">Certified</span></td>
+                <td>96%</td>
+                <td>2026-02-28</td>
+              </tr>
+              <tr>
+                <td>Night Insertion Procedures</td>
+                <td><span class="badge ok">Completed</span></td>
+                <td>88%</td>
+                <td>2026-03-03</td>
+              </tr>
+              <tr>
+                <td>JSOC Coordination</td>
+                <td><span class="badge warn">In Progress</span></td>
+                <td>61%</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>Combat Aviation Doctrine</td>
+                <td><span class="badge danger">Not Started</span></td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+
+        <div style="display:grid; gap:1rem;">
+          <article class="card">
+            <div class="card-title">Personnel File</div>
+            <p>Operator file contains service number, callsign, squadron, enlistment date, flight hours, clearance level and readiness status.</p>
+            <a class="button secondary" href="personnel-file.html">Open File</a>
+          </article>
+          <article class="card">
+            <div class="card-title">Training Module</div>
+            <p>SCORM-style training pipeline with slides, knowledge check, final assessment and certification issuance.</p>
+            <a class="button secondary" href="training-module.html">Open Module</a>
+          </article>
+        </div>
+      </div>
+
+      <section id="records" class="section" style="padding-bottom:0;">
+        <div class="section-header">
+          <div>
+            <div class="kicker">Readiness</div>
+            <h2 class="section-title" style="font-size:1.8rem;">Training records</h2>
+          </div>
+        </div>
+        <div class="grid-3">
+          <article class="card">
+            <div class="card-title">Operator Readiness</div>
+            <p>Current readiness level reflects module completion, operational certifications and command review status.</p>
+            <div class="progress"><span style="width:82%"></span></div>
+          </article>
+          <article class="card">
+            <div class="card-title">Flight Hours Tracking</div>
+            <p>Accumulated flight time and mission participation are indexed in the digital personnel record.</p>
+            <div class="progress"><span style="width:67%"></span></div>
+          </article>
+          <article class="card">
+            <div class="card-title">Certification Compliance</div>
+            <p>Command view of expired, active and pending tactical qualifications.</p>
+            <div class="progress"><span style="width:91%"></span></div>
+          </article>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
