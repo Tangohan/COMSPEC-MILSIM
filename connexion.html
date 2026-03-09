@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Authentification – COMSPEC</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+
+.hero-clip{
+    clip-path: polygon(12% 0,100% 0,100% 100%,0 100%);
+}
+
+</style>
+</head>
+
+
+<body class="bg-white font-sans">
+
+<div class="min-h-screen flex flex-col lg:flex-row">
+        
+        <!-- Panneau Gauche -->
+        <div class="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-24 pt-32 lg:pt-24">
+            <div class="max-w-md w-full">
+                
+                <div class="mb-10">
+                    <h2 class="text-4xl font-black text-[#001529] tracking-tighter uppercase italic">Authentification</h2>
+                    <p class="text-slate-500 text-sm font-bold uppercase tracking-widest mt-2">Protocol: Cerbere // Auth: Required</p>
+                    <div class="h-1.5 w-16 bg-blue-600 mt-4"></div>
+                </div>
+
+                <form method="POST" action="/auth/login.php" class="space-y-6">
+
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-black text-slate-400 uppercase tracking-wider">Identifiant (Email)</label>
+                        <input type="email" name="email" required
+                        class="w-full p-4 bg-slate-50 border border-slate-200 focus:border-blue-600 outline-none transition-all font-medium text-sm"
+                        placeholder="nom.prenom@defense.gouv.fr">
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label class="text-[11px] font-black text-slate-400 uppercase tracking-wider">Mot de passe</label>
+                            <a href="/mot-de-passe-oublie" class="text-[10px] font-bold text-blue-600 hover:text-blue-800 uppercase underline">
+                                Oublié ?
+                            </a>
+                        </div>
+
+                        <input type="password" name="motDePasse" required
+                        class="w-full p-4 bg-slate-50 border border-slate-200 focus:border-blue-600 outline-none transition-all font-medium text-sm"
+                        placeholder="••••••••">
+                    </div>
+
+                    <label class="flex items-start gap-3 cursor-pointer group">
+                        <input type="checkbox" required class="mt-1 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-600">
+                        <span class="text-[11px] text-slate-500 leading-tight group-hover:text-slate-700">
+                            Je confirme avoir pris connaissance de la <strong>directive de sécurité défense</strong> et j'accepte le traçage de mes activités.
+                        </span>
+                    </label>
+
+                    <button type="submit"
+                    class="w-full bg-[#001529] text-white py-5 font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/10">
+                        <span>Ouvrir la session</span>
+
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </button>
+
+                </form>
+
+
+                <div class="mt-12 space-y-6">
+
+                    <div class="text-center">
+
+                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-6 flex items-center gap-4 before:content-[''] before:h-px before:flex-1 before:bg-slate-100 after:content-[''] after:h-px after:flex-1 after:bg-slate-100">
+                            Accréditation
+                        </p>
+
+                        <a href="/inscription"
+                        class="text-xs font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-widest">
+                            Demander un accès personnel
+                        </a>
+
+                    </div>
+                    
+                    <div class="text-center pt-6 border-t border-slate-100">
+
+                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3">
+                            Email non reçu ?
+                        </p>
+
+                        <button onclick="ouvrirModalRenvoyerEmail()"
+                        class="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest underline">
+                            Renvoyer l'email de vérification
+                        </button>
+
+                        <div id="renvoyer-email-message" class="hidden text-xs mt-2 font-semibold"></div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- Panneau Droit -->
+        <div class="hidden lg:block lg:w-1/2 relative hero-clip">
+
+            <img src="https://cerbere.sengager-sur-arma.fr/img/armee-de-terre-recrute-analyste-images.jpg"
+            class="absolute inset-0 w-full h-full object-cover">
+
+            <div class="absolute inset-0 bg-blue-900/20 mix-blend-multiply"></div>
+            
+            <div class="absolute bottom-12 left-12 right-12 flex justify-between items-end text-white z-10">
+
+                <div class="space-y-2">
+
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">
+                        Situation Tactique
+                    </p>
+
+                    <div class="flex gap-6 text-xs font-mono">
+                        <div>Lat: 47.2184° N</div>
+                        <div>Lon: 1.5536° W</div>
+                    </div>
+
+                </div>
+
+                <div class="text-right">
+
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">
+                        Status
+                    </p>
+
+                    <p class="text-xs font-bold uppercase">
+                        Système Nominal
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+</div>
+
+
+<script>
+
+function ouvrirModalRenvoyerEmail(){
+    const email = document.querySelector('input[name="email"]').value;
+
+    if(!email){
+        alert("Saisir l'email avant.");
+        return;
+    }
+
+    fetch('/api/authentification/renvoyer-verification-email.php',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email:email})
+    })
+    .then(res=>res.json())
+    .then(data=>{
+
+        const msg=document.getElementById('renvoyer-email-message');
+
+        msg.classList.remove('hidden');
+
+        if(data.success){
+            msg.classList.remove('text-red-600');
+            msg.classList.add('text-emerald-600');
+            msg.textContent=data.message || "Email envoyé.";
+        }else{
+            msg.classList.remove('text-emerald-600');
+            msg.classList.add('text-red-600');
+            msg.textContent=data.error || "Erreur.";
+        }
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
