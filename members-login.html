@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training Command | Connexion Membres</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050810;
+      --surface: #0b1220;
+      --line: rgba(255,255,255,0.08);
+      --accent: #10b981;
+      --intel: #3b82f6;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #e5edf8;
+      --muted: #93a4bb;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, rgba(16,185,129,0.08), transparent 45%), var(--bg);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.02), rgba(255,255,255,0.02) 1px, transparent 2px, transparent 4px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: auto, 72px 72px;
+      opacity: 0.35;
+    }
+
+    .ui-commandbar {
+      border-bottom: 1px solid var(--line);
+      background: rgba(5, 8, 16, 0.86);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .command-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      gap: 1rem;
+    }
+
+    .unit-title,
+    .label,
+    .login-title,
+    .ui-badge,
+    .ui-button {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .unit-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .unit-sub {
+      color: var(--muted);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .status-wrap {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .ui-badge {
+      font-size: 0.65rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.35rem 0.6rem;
+      font-weight: 700;
+    }
+
+    .online { color: var(--accent); }
+
+    .clock {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      color: var(--muted);
+    }
+
+    .shell {
+      max-width: 1200px;
+      margin: 1.5rem auto;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 1rem;
+      padding: 0 1rem 1.5rem;
+    }
+
+    .ui-sidebar,
+    .ui-panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .ui-sidebar {
+      padding: 1.2rem;
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+
+    .nav a {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .nav a.active { color: var(--text); }
+
+    .ui-panel {
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ui-panel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-top: 2px solid rgba(16,185,129,0.4);
+      pointer-events: none;
+    }
+
+    .label {
+      color: var(--warning);
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    .login-title {
+      margin: 0.6rem 0 0.8rem;
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      font-weight: 900;
+    }
+
+    .copy {
+      color: #b9c7da;
+      line-height: 1.7;
+      max-width: 58ch;
+    }
+
+    .form-grid {
+      margin-top: 1.3rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 0.9rem;
+    }
+
+    .field {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .field label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+    }
+
+    .field input {
+      min-height: 48px;
+      background: rgba(5,8,16,0.8);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 0 0.9rem;
+      border-radius: 10px;
+    }
+
+    .field input:focus {
+      outline: 2px solid rgba(59,130,246,0.45);
+      border-color: rgba(59,130,246,0.9);
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    .ui-button {
+      min-height: 50px;
+      border-radius: 10px;
+      border: 1px solid rgba(16,185,129,0.65);
+      background: linear-gradient(180deg, rgba(16,185,129,0.22), rgba(16,185,129,0.08));
+      color: var(--text);
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .2s ease, border-color .2s ease;
+    }
+
+    .ui-button:hover { transform: translateY(-1px); border-color: var(--accent); }
+
+    .meta {
+      margin-top: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      font-size: 0.73rem;
+    }
+
+    @media (max-width: 920px) {
+      .shell { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="ui-commandbar">
+    <div class="command-inner">
+      <div>
+        <div class="unit-title">Training Command Interface</div>
+        <div class="unit-sub">COMSPEC MILSIM — Internal Training Network</div>
+      </div>
+      <div class="status-wrap">
+        <span class="ui-badge online">● Online</span>
+        <span class="ui-badge">Active Roster</span>
+        <span class="clock">SYS-TIME: 22:14:08 Z</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <aside class="ui-sidebar">
+      <div>
+        <div class="unit-title">Module</div>
+        <div class="unit-sub">Member Access Control</div>
+      </div>
+      <nav class="nav">
+        <a href="#" class="active">Overview</a>
+        <a href="#">Modules</a>
+        <a href="#">Training</a>
+        <a href="#">Certificates</a>
+        <a href="#">Profile</a>
+      </nav>
+      <span class="ui-badge">Progress 01/05</span>
+    </aside>
+
+    <section class="ui-panel">
+      <div class="label">Authentification sécurisée</div>
+      <h1 class="login-title">Connexion des membres</h1>
+      <p class="copy">Accès réservé au personnel autorisé. Identifiez-vous pour ouvrir les modules de formation, consulter les sections de mission et accéder à la progression de certification.</p>
+
+      <form class="form-grid" data-demo-login>
+        <div class="field">
+          <label for="operator">Operator Name</label>
+          <input id="operator" type="text" placeholder="SGT A. MARTIN" required>
+        </div>
+        <div class="field">
+          <label for="unit">Unit</label>
+          <input id="unit" type="text" placeholder="JSOC-ALPHA" required>
+        </div>
+        <div class="field">
+          <label for="token">Session Token</label>
+          <input id="token" type="text" placeholder="TRN-8F2A-19D4" required>
+        </div>
+        <div class="field">
+          <label for="password">Security Passphrase</label>
+          <input id="password" type="password" placeholder="••••••••••" required>
+        </div>
+        <button class="ui-button full" type="submit">Open Training Package</button>
+      </form>
+
+      <div class="meta">AUTH_PROTOCOL: MILSIM-V3 | CLEARANCE_REQUIRED: LEVEL-2 | QUIZ PASS SCORE: 80%</div>
+    </section>
+  </main>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
