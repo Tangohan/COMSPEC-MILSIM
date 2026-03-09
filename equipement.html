@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Équipement Opérateur</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #030507;
+      --panel: #0a0e12;
+      --line: rgba(255,255,255,0.08);
+      --text: #f8fafc;
+      --muted: rgba(255,255,255,0.5);
+      --accent: #eab308;
+      --accent-2: #60a5fa;
+      --success: #10b981;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top, rgba(96,165,250,0.08), transparent 24%), #000;
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 56px 56px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .38em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.38);
+      margin-bottom: 1rem;
+    }
+
+    .operator-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 680px;
+      border-radius: 2rem;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        radial-gradient(circle at 50% 35%, rgba(96,165,250,0.18), transparent 28%),
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+        #04070b;
+      isolation: isolate;
+      cursor: pointer;
+      transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease;
+    }
+
+    .operator-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(255,255,255,0.16);
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    }
+
+    .operator-card::before {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,0.16), transparent 18%);
+      opacity: 0;
+      transition: opacity .25s ease;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .operator-card:hover::before { opacity: 1; }
+
+    .operator-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.35) 38%, rgba(0,0,0,0.85));
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .operator-watermark {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      font-size: clamp(52px, 8vw, 110px);
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: .06em;
+      color: rgba(255,255,255,0.045);
+      text-transform: uppercase;
+      padding-top: 2rem;
+      z-index: 0;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .operator-figure {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 3rem 1.5rem 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .operator-placeholder {
+      width: min(84%, 420px);
+      height: min(78%, 780px);
+      border-radius: 1.75rem 1.75rem 0 0;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(255,255,255,0.18), transparent 12%),
+        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02)),
+        linear-gradient(180deg, rgba(96,165,250,0.18), transparent 30%),
+        #0d1218;
+      border: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow:
+        0 0 120px rgba(96,165,250,0.15),
+        inset 0 -80px 100px rgba(0,0,0,0.45);
+      overflow: hidden;
+    }
+
+    .operator-placeholder::before {
+      content: "IMAGE OPÉRATEUR";
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .35em;
+      color: rgba(255,255,255,0.22);
+      text-transform: uppercase;
+    }
+
+    .operator-silhouette {
+      width: 62%;
+      height: 82%;
+      position: relative;
+      filter: drop-shadow(0 0 25px rgba(255,255,255,0.08));
+    }
+
+    .operator-silhouette .head {
+      width: 24%;
+      height: 14%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.30), rgba(255,255,255,0.12));
+      border-radius: 50% 50% 42% 42%;
+      margin: 0 auto;
+    }
+
+    .operator-silhouette .torso {
+      width: 46%;
+      height: 36%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.24), rgba(255,255,255,0.08));
+      border-radius: 22% 22% 12% 12%;
+      margin: -2% auto 0;
+      position: relative;
+    }
+
+    .operator-silhouette .torso::before,
+    .operator-silhouette .torso::after {
+      content: "";
+      position: absolute;
+      top: 6%;
+      width: 24%;
+      height: 90%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04));
+      border-radius: 18px;
+    }
+
+    .operator-silhouette .torso::before { left: -18%; transform: rotate(14deg); }
+    .operator-silhouette .torso::after { right: -18%; transform: rotate(-14deg); }
+
+    .operator-silhouette .legs {
+      width: 44%;
+      height: 34%;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .operator-silhouette .legs span {
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05));
+      border-radius: 18px 18px 12px 12px;
+    }
+
+    .operator-meta {
+      position: absolute;
+      inset: auto 0 0 0;
+      z-index: 2;
+      padding: 2rem;
+    }
+
+    .operator-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: .65rem;
+    }
+
+    .operator-title {
+      font-size: clamp(34px, 4vw, 56px);
+      line-height: .95;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .operator-subtitle {
+      margin-top: .8rem;
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.64);
+      font-weight: 500;
+      max-width: 480px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+
+    .operator-status {
+      margin-top: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      padding: .7rem 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--success);
+      box-shadow: 0 0 10px rgba(16,185,129,.55);
+    }
+
+    .hidden-view { display: none; }
+
+    .detail-shell {
+      display: grid;
+      grid-template-columns: 360px 1fr 360px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .detail-card {
+      border-radius: 1.75rem;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: #05070b;
+      padding: 1.25rem;
+      box-shadow: 0 16px 44px rgba(0,0,0,0.32);
+    }
+
+    .detail-heading {
+      font-size: clamp(28px, 4vw, 56px);
+      font-weight: 900;
+      line-height: .95;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      text-align: center;
+      margin: 0 0 .4rem;
+    }
+
+    .detail-subheading {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.52);
+      margin-bottom: 1.5rem;
+    }
+
+    .compass {
+      display: flex;
+      justify-content: center;
+      gap: .8rem;
+      font-size: 10px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.55);
+      margin-bottom: .8rem;
+      font-weight: 900;
+    }
+
+    .operator-full {
+      position: relative;
+      min-height: 980px;
+      border-radius: 1.75rem;
+      border: 1px solid rgba(255,255,255,0.10);
+      background:
+        radial-gradient(circle at 50% 30%, rgba(96,165,250,0.16), transparent 20%),
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+        #020406;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 2rem;
+      overflow: hidden;
+    }
+
+    .operator-full::before {
+      content: "IMAGE OPÉRATEUR PLEIN PIED";
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .34em;
+      color: rgba(255,255,255,0.18);
+      text-transform: uppercase;
+    }
+
+    .operator-full .operator-placeholder {
+      width: min(88%, 520px);
+      height: 88%;
+      border-radius: 2rem;
+    }
+
+    .equipment-box {
+      margin-bottom: 1.25rem;
+    }
+
+    .equipment-box:last-child { margin-bottom: 0; }
+
+    .equipment-title {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .equipment-item {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: .8rem;
+      margin-bottom: 1rem;
+    }
+
+    .item-name {
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 800;
+      color: rgba(255,255,255,0.92);
+    }
+
+    .item-note {
+      font-size: 11px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.34);
+    }
+
+    .img-placeholder {
+      position: relative;
+      min-height: 140px;
+      border-radius: 1.25rem;
+      border: 1px dashed rgba(255,255,255,0.14);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)),
+        #0b1015;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .img-placeholder.large { min-height: 220px; }
+    .img-placeholder.medium { min-height: 180px; }
+    .img-placeholder.slim { min-height: 100px; }
+
+    .img-placeholder::before {
+      content: attr(data-label);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .28em;
+      color: rgba(255,255,255,0.22);
+      text-transform: uppercase;
+      text-align: center;
+      padding: 0 1rem;
+    }
+
+    .gallery-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .85rem;
+    }
+
+    .wide-gallery {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: .9rem;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .7rem;
+      padding: .95rem 1.2rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,.92);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all .22s ease;
+    }
+
+    .back-btn:hover {
+      border-color: rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+    }
+
+    @media (max-width: 1440px) {
+      .detail-shell { grid-template-columns: 320px 1fr 320px; }
+      .wide-gallery { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @media (max-width: 1180px) {
+      .detail-shell {
+        grid-template-columns: 1fr;
+      }
+      .operator-full { min-height: 720px; }
+      .wide-gallery { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 900px) {
+      .operator-card { min-height: 560px; }
+      .gallery-row { grid-template-columns: 1fr; }
+      .wide-gallery { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 640px) {
+      .wide-gallery { grid-template-columns: 1fr; }
+      .operator-meta { padding: 1.25rem; }
+      .operator-title { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grain"></div>
+
+  <div class="relative min-h-screen grid-bg overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.04),transparent_20%)]"></div>
+
+    <main class="relative z-10 max-w-[1880px] mx-auto px-5 md:px-8 py-8 md:py-10">
+      <header class="panel rounded-[2rem] px-6 md:px-8 py-6 md:py-7 mb-8">
+        <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
+          <div>
+            <p class="section-title">Equipment Command</p>
+            <h1 class="text-4xl md:text-6xl font-black tracking-[0.08em] uppercase leading-none m-0">Choix d'opérateur</h1>
+            <p class="mt-4 max-w-3xl text-sm md:text-[15px] leading-7 text-white/55 font-medium uppercase tracking-[0.10em]">
+              Sélection d'un profil opérateur. Au clic, ouverture d'une fiche équipement complète avec armement, protections, sacs, kit médical et dotation d'intervention.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 min-w-full xl:min-w-[620px]">
+            <div class="panel rounded-2xl p-4">
+              <p class="text-[9px] font-black tracking-[0.25em] uppercase text-white/35 mb-2">Profils</p>
+              <p class="text-2xl font-black tracking-tight">03</p>
+            </div>
+            <div class="panel rounded-2xl p-4">
+              <p class="text-[9px] font-black tracking-[0.25em] uppercase text-white/35 mb-2">État</p>
+              <p class="text-2xl font-black tracking-tight text-emerald-400">Ready</p>
+            </div>
+            <div class="panel rounded-2xl p-4">
+              <p class="text-[9px] font-black tracking-[0.25em] uppercase text-white/35 mb-2">Catalogue</p>
+              <p class="text-2xl font-black tracking-tight">Loadout</p>
+            </div>
+            <div class="panel rounded-2xl p-4">
+              <p class="text-[9px] font-black tracking-[0.25em] uppercase text-white/35 mb-2">Mode</p>
+              <p class="text-2xl font-black tracking-tight">Interactive</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section id="selectionView">
+        <div class="grid xl:grid-cols-3 gap-6">
+          <article class="operator-card operator-choice" data-operator="lowvis">
+            <div class="operator-watermark">Low Vis</div>
+            <div class="operator-figure">
+              <div class="operator-placeholder">
+                <div class="operator-silhouette">
+                  <div class="head"></div>
+                  <div class="torso"></div>
+                  <div class="legs"><span></span><span></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="operator-meta">
+              <div class="operator-tag">Profile / Civilian cover</div>
+              <h2 class="operator-title">Low Vis</h2>
+              <p class="operator-subtitle">Configuration discrète, emport réduit, signature visuelle contenue, emploi à faible visibilité tactique.</p>
+              <div class="operator-status"><span class="dot"></span> Ouvrir l'équipement</div>
+            </div>
+          </article>
+
+          <article class="operator-card operator-choice" data-operator="ksm">
+            <div class="operator-watermark">KSM</div>
+            <div class="operator-figure">
+              <div class="operator-placeholder" style="box-shadow:0 0 120px rgba(59,130,246,0.16), inset 0 -80px 100px rgba(0,0,0,0.45);">
+                <div class="operator-silhouette">
+                  <div class="head"></div>
+                  <div class="torso"></div>
+                  <div class="legs"><span></span><span></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="operator-meta">
+              <div class="operator-tag">Profile / Assault maritime</div>
+              <h2 class="operator-title">KSM</h2>
+              <p class="operator-subtitle">Opérateur lourd, casque FAST, plateträger, configuration d'assaut, armement principal et options de portage modularisées.</p>
+              <div class="operator-status"><span class="dot"></span> Ouvrir l'équipement</div>
+            </div>
+          </article>
+
+          <article class="operator-card operator-choice" data-operator="luftwaffe">
+            <div class="operator-watermark">Luftwaffe</div>
+            <div class="operator-figure">
+              <div class="operator-placeholder" style="box-shadow:0 0 120px rgba(34,197,94,0.12), inset 0 -80px 100px rgba(0,0,0,0.45);">
+                <div class="operator-silhouette">
+                  <div class="head"></div>
+                  <div class="torso"></div>
+                  <div class="legs"><span></span><span></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="operator-meta">
+              <div class="operator-tag">Profile / Air support</div>
+              <h2 class="operator-title">Luftwaffe</h2>
+              <p class="operator-subtitle">Configuration liée au soutien aérien, casque spécifique, protection adaptée, dotation orientée mobilité et intervention.</p>
+              <div class="operator-status"><span class="dot"></span> Ouvrir l'équipement</div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="detailView" class="hidden-view">
+        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <button id="backToSelection" class="back-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            Retour à
