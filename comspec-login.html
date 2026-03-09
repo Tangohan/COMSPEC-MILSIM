@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COMSPEC Access Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Orbitron:wght@500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body class="login-shell">
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="index.html">
+        <div class="brand-mark"><span>CSC</span></div>
+        <div class="brand-copy">
+          <strong>COMSPEC Command Extranet</strong>
+          <span>Command Special Operations Extranet Center</span>
+        </div>
+      </a>
+      <nav class="nav">
+        <a href="index.html">Return to landing</a>
+        <a href="dashboard.html">Dashboard demo</a>
+        <a href="enlistment.html">Enlistment</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="login-hero">
+    <div class="container">
+      <section class="login-panel">
+        <div class="tactical-label">Access terminal</div>
+        <h1 class="login-title">Authorized Personnel Only</h1>
+        <p class="login-copy">Command terminal for access to operator records, training modules, certification logs and enlistment review queues.</p>
+        <form class="form-grid" data-demo-login>
+          <div class="field">
+            <label for="operator-id">Operator ID</label>
+            <input id="operator-id" type="text" placeholder="OPR-24017">
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" placeholder="••••••••••••">
+          </div>
+          <button class="button" type="submit">Access COMSPEC Network</button>
+        </form>
+        <div style="margin-top:1.25rem;" class="notice">Demo mode active. Submission routes directly to the dashboard showcase.</div>
+      </section>
+    </div>
+  </main>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
