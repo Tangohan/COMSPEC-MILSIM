@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Équipement Opérateur</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: rgba(255,255,255,0.96);
+      --surface-solid: #ffffff;
+      --surface-soft: #f1f5f9;
+      --line: rgba(15,23,42,0.06);
+      --line-strong: rgba(15,23,42,0.10);
+      --text: #0f172a;
+      --muted: #64748b;
+      --muted-soft: #94a3b8;
+      --accent: #10b981;
+      --accent-blue: #60a5fa;
+      --shadow: 0 14px 32px rgba(15,23,42,0.05);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(96,165,250,0.06), transparent 20%), linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.016;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px);
+      background-size: 56px 56px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .36em;
+      text-transform: uppercase;
+      color: var(--muted-soft);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .section-title::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(15,23,42,0.08);
+    }
+
+    .operator-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 680px;
+      border-radius: 2rem;
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 50% 35%, rgba(96,165,250,0.08), transparent 28%),
+        linear-gradient(180deg, rgba(255,255,255,0.99), rgba(248,250,252,0.98)),
+        #ffffff;
+      isolation: isolate;
+      cursor: pointer;
+      transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease;
+      box-shadow: 0 12px 28px rgba(15,23,42,0.05);
+    }
+
+    .operator-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(16,185,129,0.18);
+      box-shadow: 0 18px 36px rgba(15,23,42,0.08);
+    }
+
+    .operator-card::before {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,0.72), transparent 18%);
+      opacity: 0;
+      transition: opacity .25s ease;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .operator-card:hover::before { opacity: 1; }
+
+    .operator-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(248,250,252,0.10) 38%, rgba(255,255,255,0.94));
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .operator-watermark {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      font-size: clamp(52px, 8vw, 110px);
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: .06em;
+      color: rgba(15,23,42,0.04);
+      text-transform: uppercase;
+      padding-top: 2rem;
+      z-index: 0;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .operator-figure {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 3rem 1.5rem 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .operator-placeholder {
+      width: min(84%, 420px);
+      height: min(78%, 780px);
+      border-radius: 1.75rem 1.75rem 0 0;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(255,255,255,0.92), transparent 12%),
+        linear-gradient(180deg, rgba(255,255,255,0.82), rgba(248,250,252,0.98)),
+        linear-gradient(180deg, rgba(96,165,250,0.10), transparent 30%),
+        #f8fafc;
+      border: 1px solid rgba(15,23,42,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow:
+        0 0 90px rgba(96,165,250,0.06),
+        inset 0 -80px 100px rgba(15,23,42,0.06);
+      overflow: hidden;
+    }
+
+    .operator-placeholder::before {
+      content: "IMAGE OPÉRATEUR";
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .32em;
+      color: rgba(15,23,42,0.20);
+      text-transform: uppercase;
+    }
+
+    .operator-silhouette {
+      width: 62%;
+      height: 82%;
+      position: relative;
+      filter: drop-shadow(0 0 20px rgba(15,23,42,0.08));
+    }
+
+    .operator-silhouette .head {
+      width: 24%;
+      height: 14%;
+      background: linear-gradient(180deg, rgba(15,23,42,0.22), rgba(15,23,42,0.08));
+      border-radius: 50% 50% 42% 42%;
+      margin: 0 auto;
+    }
+
+    .operator-silhouette .torso {
+      width: 46%;
+      height: 36%;
+      background: linear-gradient(180deg, rgba(15,23,42,0.18), rgba(15,23,42,0.06));
+      border-radius: 22% 22% 12% 12%;
+      margin: -2% auto 0;
+      position: relative;
+    }
+
+    .operator-silhouette .torso::before,
+    .operator-silhouette .torso::after {
+      content: "";
+      position: absolute;
+      top: 6%;
+      width: 24%;
+      height: 90%;
+      background: linear-gradient(180deg, rgba(15,23,42,0.12), rgba(15,23,42,0.04));
+      border-radius: 18px;
+    }
+
+    .operator-silhouette .torso::before { left: -18%; transform: rotate(14deg); }
+    .operator-silhouette .torso::after { right: -18%; transform: rotate(-14deg); }
+
+    .operator-silhouette .legs {
+      width: 44%;
+      height: 34%;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .operator-silhouette .legs span {
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(180deg, rgba(15,23,42,0.14), rgba(15,23,42,0.05));
+      border-radius: 18px 18px 12px 12px;
+    }
+
+    .operator-meta {
+      position: absolute;
+      inset: auto 0 0 0;
+      z-index: 2;
+      padding: 2rem;
+    }
+
+    .operator-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      color: var(--muted-soft);
+      margin-bottom: .65rem;
+    }
+
+    .operator-title {
+      font-size: clamp(34px, 4vw, 56px);
+      line-height: .95;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin: 0;
+      color: var(--text);
+    }
+
+    .operator-subtitle {
+      margin-top: .8rem;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--muted);
+      font-weight: 700;
+      max-width: 480px;
+      text-transform: uppercase;
+      letter-spacing: .10em;
+    }
+
+    .operator-status {
+      margin-top: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      padding: .7rem 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(16,185,129,0.14);
+      background: rgba(16,185,129,0.06);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: #047857;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(16,185,129,.35);
+    }
+
+    .hidden-view { display: none; }
+
+    .detail-shell {
+      display: grid;
+      grid-template-columns: 360px 1fr 360px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .detail-card {
+      border-radius: 1.75rem;
+      border: 1px solid var(--line);
+      background: var(--surface-solid);
+      padding: 1.25rem;
+      box-shadow: 0 10px 24px rgba(15,23,42,0.04);
+    }
+
+    .detail-heading {
+      font-size: clamp(28px, 4vw, 56px);
+      font-weight: 900;
+      line-height: .95;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      text-align: center;
+      margin: 0 0 .4rem;
+      color: var(--text);
+    }
+
+    .detail-subheading {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .compass {
+      display: flex;
+      justify-content: center;
+      gap: .8rem;
+      font-size: 10px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .8rem;
+      font-weight: 900;
+    }
+
+    .operator-full {
+      position: relative;
+      min-height: 980px;
+      border-radius: 1.75rem;
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 50% 30%, rgba(96,165,250,0.14), transparent 20%),
+        linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94)),
+        #ffffff;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 2rem;
+      overflow: hidden;
+      box-shadow: 0 18px 50px rgba(15,23,42,0.08);
+    }
+
+    .operator-full::before {
+      content: "IMAGE OPÉRATEUR PLEIN PIED";
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .34em;
+      color: rgba(15,23,42,0.18);
+      text-transform: uppercase;
+    }
+
+    .operator-full .operator-placeholder {
+      width: min(88%, 520px);
+      height: 88%;
+      border-radius: 2rem;
+    }
+
+    .equipment-box { margin-bottom: 1.25rem; }
+    .equipment-box:last-child { margin-bottom: 0; }
+
+    .equipment-title {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    .equipment-item {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: .8rem;
+      margin-bottom: 1rem;
+    }
+
+    .item-name {
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .item-note {
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .img-placeholder {
+      position: relative;
+      min-height: 140px;
+      border-radius: 1.25rem;
+      border: 1px dashed rgba(15,23,42,0.10);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96)),
+        #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .img-placeholder.large { min-height: 220px; }
+    .img-placeholder.medium { min-height: 180px; }
+    .img-placeholder.slim { min-height: 100px; }
+
+    .img-placeholder::before {
+      content: attr(data-label);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .28em;
+      color: rgba(15,23,42,0.24);
+      text-transform: uppercase;
+      text-align: center;
+      padding: 0 1rem;
+    }
+
+    .gallery-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .85rem;
+    }
+
+    .wide-gallery {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: .9rem;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .7rem;
+      padding: .95rem 1.2rem;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      background: rgba(255,255,255,0.78);
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all .22s ease;
+      box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+    }
+
+    .back-btn:hover {
+      border-color: rgba(16,185,129,0.22);
+      background: #ffffff;
+    }
+
+    .soft-badge {
+      padding: .6rem 1rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.78);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .soft-badge.accent {
+      border-color: rgba(16,185,129,0.18);
+      background: rgba(16,185,129,0.08);
+      color: #047857;
+    }
+
+    @media (max-width: 1440px) {
+      .detail-shell { grid-template-columns: 320px 1fr 320px; }
+      .wide-gallery { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @media (max-width: 1180px) {
+      .detail-shell { grid-template-columns: 1fr; }
+      .operator-full { min-height: 720px; }
+      .wide-gallery { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 900px) {
+      .operator-card { min-height: 560px; }
+      .gallery-row { grid-template-columns: 1fr; }
+      .wide-gallery { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 640px) {
+      .wide-gallery { grid-template-columns: 1fr; }
+      .operator-meta { padding: 1.25rem; }
+      .operator-title { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <section class="relative min-h-[70vh] flex items-end overflow-hidden bg-slate-900 text-white">
+    <div class="absolute inset-0 z-0">
+        <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ahri_0.jpg" 
+             class="w-full h-full object-cover object-top opacity-60">
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-900/20 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-slate-50 via-transparent to-transparent"></div>
+    </div>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-8 pb-16 w-full">
+        <div class="max-w-2xl">
+            <p class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400 mb-2 italic">Expertise_Système</p>
+            <h1 class="text-8xl font-black uppercase tracking-tighter italic leading-none mb-6 text-slate-900">
+                Architecte
+            </h1>
+            <p class="text-lg text-slate-700 leading-relaxed italic font-medium">
+                Maître de la structure et des flux. Responsable de la robustesse des fondations et de l'élégance des routes logiques. Manipule les environnements haute charge avec une précision chirurgicale.
+            </p>
+        </div>
+
+        <div class="mt-12 flex flex-wrap gap-12 border-t border-slate-200/50 pt-8">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full border border-slate-300 flex items-center justify-center bg-white/10 backdrop-blur-md">
+                    <span class="text-slate-900 font-black text-xl italic">A</span>
+                </div>
+                <div>
+                    <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Rôle principal</p>
+                    <p class="text-sm font-black uppercase text-slate-900 tracking-tight">Backend / Core</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="flex gap-1">
+                    <div class="w-2 h-4 bg-slate-900"></div>
+                    <div class="w-2 h-4 bg-slate-900"></div>
+                    <div class="w-2 h-4 bg-slate-300"></div>
+                </div>
+                <div>
+                    <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Difficulté</p>
+                    <p class="text-sm font-black uppercase text-slate-900 tracking-tight">Élevée</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="bg-slate-50 py-20 px-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="mb-12">
+            <h2 class="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400 mb-2">Build_Recommandé</h2>
+            <p class="text-2xl font-black uppercase tracking-tighter italic text-slate-900">Équipement Système</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            
+            <div class="group relative aspect-square bg-white border border-slate-200 rounded-2xl p-4 transition-all hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 cursor-help">
+                <div class="w-full h-full rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
+                    <img src="https://raw.githubusercontent.com/InvenGlobal/lol-resources/master/icon/item/3089.png" class="w-full h-full grayscale group-hover:grayscale-0 transition-all">
+                </div>
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-slate-900 text-white text-[10px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                    <p class="font-black uppercase text-blue-400 mb-1">Docker Container</p>
+                    <p class="italic text-slate-300 leading-tight">Augmente la portabilité de 40% et l'isolation des ressources.</p>
+                </div>
+            </div>
+
+            <div class="aspect-square border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center">
+                <span class="text-slate-200 font-black text-2xl">+</span>
+            </div>
+
+            </div>
+    </div>
+</section>
+  <div class="w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-[1880px] mx-auto px-5 md:px-8 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <span class="text-[8px] font-black tracking-[0.32em] uppercase text-emerald-600">Equipment Command</span>
+        <span class="hidden md:block h-4 w-px bg-slate-200"></span>
+        <span class="hidden md:block text-[9px] font-mono tracking-[0.18em] uppercase text-slate-400">Registry / Loadout / White Theme</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.35)]"></span>
+        <span class="text-[8px] font-black tracking-[0.24em] uppercase text-slate-400">Net Active</span>
+      </div>
+    </div>
+  </div>
+  <div class="grain"></div>
+
+  <div class="relative min-h-screen grid-bg overflow-hidden">
+    <main class="relative z-10 max-w-[1880px] mx-auto px-5 md:px-8 py-8 md:py-10">
+      <header class="panel rounded-[2rem] px-6 md:px-8 py-6 md:py-7 mb-8 mt-6">
+        <div class="flex items-center justify-between gap-4 mb-6 pb-5 border-b border-slate-200/80">
+          <div class="flex items-center gap-4">
+            <div class="w-11 h-11 rounded-2xl bg-emerald-500/12 border border-emerald-500/18 flex items-center justify-center text-emerald-700 font-black tracking-tight">EQ</div>
+            <div>
+              <p class="text-[8px] font-black tracking-[0.32em] uppercase text-slate-400 mb-1">Command Inventory</p>
+              <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Equipment operator registry</p>
+            </div>
+          </div>
+          <div class="hidden md:flex items-center gap-3">
+            <span class="soft-badge">Catalogue actif</span>
+            <span class="soft-badge accent">UI blanche</span>
+          </div>
+        </div>
+        <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
+          <div>
+            <p class="section-title">Equipment Command</p>
+            <h1 class="text-4xl md:text-6xl font-black tracking-[0.06em] uppercase leading-none m-0 text-slate-900">Choix d'opérateur</h1>
+            <p class="mt-4 max-w-3xl text-sm md:text-[14px] leading-7 text-slate-500 font-bold uppercase tracking-[0.08em]">
+              Sélection d'un profil opérateur. Au clic, ouverture d'une fiche équipement complète avec armement, protections, sacs, kit médical et dotation d'intervention.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 min-w-full xl:min-w-[620px]">
+            <div class="panel rounded-2xl p-4 bg-white/90">
+              <p class="text-[8px] font-black tracking-[0.25em] uppercase text-slate-400 mb-2">Profils</p>
+              <p class="text-2xl font-black tracking-tight text-slate-900">03</p>
+            </div>
+            <div class="panel rounded-2xl p-4 bg-white/90">
+              <p class="text-[8px] font-black tracking-[0.25em] uppercase text-slate-400 mb-2">État</p>
+              <p class="text-2xl font-black tracking-tight text-emerald-600">Ready</p>
+            </div>
+            <div class="panel rounded-2xl p-4 bg-white/90">
+              <p class="text-[8px] font-black tracking-[0.25em] uppercase text-slate-400 mb-2">Catalogue</p>
+              <p class="text-2xl font-black tracking-tight text-slate-900">Loadout</p>
+            </div>
+            <div class="panel rounded-2xl p-4 bg-white/90">
+              <p class="text-[8px] font-black tracking-[0.25em] uppercase text-slate-400 mb-2">Mode</p>
+              <p class="text-2xl font-black tracking-tight text-slate-900">Interactive</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section id="selectionView">
+        <div class="grid xl:grid-cols-3 gap-6">
+          <article class="operator-card operator-choice" data-operator="lowvis">
+            <div class="operator-watermark">Low Vis</div>
+            <div class="operator-figure">
+              <div class="operator-placeholder">
+                <div class="operator-silhouette">
+                  <div class="head"></div>
+                  <div class="torso"></div>
+                  <div class="legs"><span></span><span></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="operator-meta">
+              <div class="operator-tag">Profile / Civilian cover</div>
+              <h2 class="operator-title">Low Vis</h2>
+              <p class="operator-subtitle">Configuration discrète, emport réduit, signature visuelle contenue, emploi à faible visibilité tactique.</p>
+              <div class="operator-status"><span class="dot"></span> Ouvrir l'équipement</div>
+            </div>
+          </article>
+
+          <article class="operator-card operator-choice" data-operator="ksm">
+            <div class="operator-watermark">KSM</div>
+            <div class="operator-figure">
+              <div class="operator-placeholder" style="box-shadow:0 0 120px rgba(59,130,246,0.08), inset 0 -80px 100px rgba(15,23,42,0.08);">
+                <div class="operator-silhouette">
+                  <div class="head"></div>
+                  <div class="torso"></div>
+                  <div class="legs"><span></span><span></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="operator-meta">
+              <div class="operator-tag">Profile / Assault maritime</div>
+              <h2 class="operator-title">KSM</h2>
+              <p class="operator-subtitle">Opérateur lourd, casque FAST, plateträger, configuration d'assaut, armement principal et options de portage modularisées.</p>
+              <div class="operator-status"><span class="dot"></span> Ouvrir l'équipement</div>
+            </div>
+          </article>
+
+          <article class="operator-card operator-choice" data-operator="luftwaffe">
+            <div class="operator-watermark">Luftwaffe</div>
+            <div class="operator-figure">
+              <div class="operator-placeholder" style="box-shadow:0 0 120px rgba(16,185,129,0.08), inset 0 -80px 100px rgba(15,23,42,0.08);">
+                <div class="operator-silhouette">
+                  <div class="head"></div>
+                  <div class="torso"></div>
+                  <div class="legs"><span></span><span></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="operator-meta">
+              <div class="operator-tag">Profile / Air support</div>
+              <h2 class="operator-title">Luftwaffe</h2>
+              <p class="operator-subtitle">Configuration liée au soutien aérien, casque spécialisé, protection adaptée, dotation orientée mobilité et intervention.</p>
+              <div class="operator-status"><span class="dot"></span> Ouvrir l'équipement</div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="detailView" class="hidden-view">
+        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <button id="backToSelection" class="back-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            Retour à la sélection
+          </button>
+
+          <div class="flex flex-wrap gap-2">
+            <span class="soft-badge">Fiche opérateur</span>
+            <span id="detailBadge" class="soft-badge accent">Profile</span>
+          </div>
+        </div>
+
+        <div class="detail-shell">
+          <aside>
+            <div class="detail-card equipment-box">
+              <h3 class="text-4xl font-black tracking-[0.05em] uppercase leading-none mb-6 text-slate-900">Bewaffnung</h3>
+              <div class="equipment-box">
+                <div class="equipment-title">Primärwaffen</div>
+                <div class="equipment-item">
+                  <div><div class="item-name" id="primary1Name">Heckler & Koch G95K</div></div>
+                  <div class="img-placeholder medium" data-label="Placeholder arme principale"></div>
+                </div>
+                <div class="equipment-item">
+                  <div><div class="item-name" id="primary2Name">Heckler & Koch G39K</div></div>
+                  <div class="img-placeholder medium" data-label="Placeholder arme secondaire longue"></div>
+                </div>
+                <div class="equipment-item">
+                  <div><div class="item-name" id="primary3Name">Heckler & Koch MP7A2</div></div>
+                  <div class="img-placeholder medium" data-label="Placeholder PDW / SMG"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-card equipment-box">
+              <div class="equipment-title">Sekundärwaffen</div>
+              <div class="equipment-item">
+                <div><div class="item-name" id="secondaryName">Walther P14K</div></div>
+                <div class="img-placeholder slim" data-label="Placeholder arme de poing"></div>
+              </div>
+            </div>
+          </aside>
+
+          <section>
+            <h2 class="detail-heading" id="detailTitle">Operator</h2>
+            <div class="compass"><span>W</span><span>N</span><span>E</span><span>S</span></div>
+            <div class="detail-subheading" id="detailSubtitle">Configuration opérateur</div>
+
+            <div class="operator-full mb-6">
+              <div class="operator-placeholder">
+                <div class="operator-silhouette" style="width:48%; height:86%;">
+                  <div class="head"></div>
+                  <div class="torso" style="height:38%; width:52%;"></div>
+                  <div class="legs" style="width:48%; height:36%;"><span></span><span></span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-card equipment-box">
+              <div class="equipment-title">Rucksäcke</div>
+              <div class="wide-gallery">
+                <div><div class="item-name">Zip-On Panel</div><div class="item-note">Variante 01</div><div class="img-placeholder large mt-3" data-label="Placeholder zip-on 01"></div></div>
+                <div><div class="item-name">Zip-On Panel</div><div class="item-note">Variante 02</div><div class="img-placeholder large mt-3" data-label="Placeholder zip-on 02"></div></div>
+                <div><div class="item-name">Zip-On Panel</div><div class="item-note">Variante 03</div><div class="img-placeholder large mt-3" data-label="Placeholder zip-on 03"></div></div>
+                <div><div class="item-name">Taktisches Panel</div><div class="item-note">Variante 2x pouches</div><div class="img-placeholder large mt-3" data-label="Placeholder panel tactique"></div></div>
+                <div><div class="item-name">Taktisches Panel</div><div class="item-note">Variante LBX</div><div class="img-placeholder large mt-3" data-label="Placeholder panel LBX"></div></div>
+                <div><div class="item-name">Normaler Rucksack</div><div class="item-note">Mit GK2 freigabe</div><div class="img-placeholder large mt-3" data-label="Placeholder sac normal"></div></div>
+                <div><div class="item-name">3Day Pack</div><div class="item-note">Mit GK3 freigabe</div><div class="img-placeholder large mt-3" data-label="Placeholder 3 day pack"></div></div>
+              </div>
+            </div>
+
+            <div class="detail-card">
+              <h3 class="text-4xl font-black tracking-[0.05em] uppercase leading-none text-center mb-6 text-slate-900">IFAK</h3>
+              <div class="grid xl:grid-cols-[1fr_420px] gap-6 items-start">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <div class="grid md:grid-cols-2 gap-6 text-[15px] leading-8">
+                    <div>
+                      <div class="font-black text-slate-900 mb-2">Wundversorgung</div>
+                      <ul class="list-disc pl-5 text-slate-600 font-medium space-y-1">
+                        <li>15x Bandage (Field Dressing)</li>
+                        <li>4x Tourniquet</li>
+                        <li>2x Chest Seal</li>
+                      </ul>
+                      <div class="font-black text-slate-900 mt-4 mb-2">Medikamente</div>
+                      <ul class="list-disc pl-5 text-slate-600 font-medium space-y-1">
+                        <li>2x Morphin-Autoinjektor</li>
+                        <li>1x Schmerzmittel</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div class="font-black text-slate-900 mb-2">Atemwegsversorgung</div>
+                      <ul class="list-disc pl-5 text-slate-600 font-medium space-y-1">
+                        <li>2x Guedeltubus</li>
+                      </ul>
+                      <div class="font-black text-slate-900 mt-4 mb-2">Zugang</div>
+                      <ul class="list-disc pl-5 text-slate-600 font-medium space-y-1">
+                        <li>1x 16g IV</li>
+                        <li>1x 1000ml Kochsalzlösung</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="img-placeholder large" data-label="Placeholder IFAK / matériel médical"></div>
+              </div>
+            </div>
+          </section>
+
+          <aside>
+            <div class="detail-card equipment-box">
+              <h3 class="text-4xl font-black tracking-[0.05em] uppercase leading-none mb-6 text-center text-slate-900">Ausrüstung</h3>
+              <div class="equipment-box">
+                <div class="equipment-title">Kopfbedeckungen</div>
+                <div class="gallery-row">
+                  <div><div class="item-name">Ops-Core FAST XP | Peltors</div><div class="img-placeholder medium mt-3" data-label="Placeholder casque 01"></div></div>
+                  <div><div class="item-name">Ops-Core FAST XP | AMP</div><div class="img-placeholder medium mt-3" data-label="Placeholder casque 02"></div></div>
+                  <div><div class="item-name">Mich 2001 | Peltors</div><div class="img-placeholder medium mt-3" data-label="Placeholder casque 03"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-card equipment-box">
+              <div class="equipment-title">Westen</div>
+              <div class="equipment-item">
+                <div><div class="item-name" id="vestName">Plattenträger | Assaulter</div></div>
+                <div class="img-placeholder large" data-label="Placeholder gilet / plate carrier"></div>
+              </div>
+            </div>
+
+            <div class="detail-card equipment-box">
+              <div class="equipment-title">Einsatzausrüstung</div>
+              <div class="equipment-item">
+                <div>
+                  <div class="item-name" id="miscName">Mission essentials</div>
+                  <div class="item-note">Équipement spécifique, accessoires, outils et modules d'emport.</div>
+                </div>
+                <div class="img-placeholder large" data-label="Placeholder équipement mission"></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const operators = {
+      lowvis: {
+        title: 'Low Vis',
+        badge: 'Low visibility profile',
+        subtitle: 'Configuration discrète, tenue non ostensible, dotation réduite et signature tactique contenue.',
+        primary1: 'Carbine compact | low profile',
+        primary2: 'SBR suppressed platform',
+        primary3: 'PDW / fallback compact',
+        secondary: 'Compact sidearm',
+        vest: 'Concealed carrier | light rig',
+        misc: 'Cover items, communication discrète, accessoires civils et médical compact.'
+      },
+      ksm: {
+        title: 'KSM',
+        badge: 'Kommando Spezialkräfte der Marine',
+        subtitle: 'Profil d’assaut lourd, casque FAST, gilet rigide, solutions d’emport modulaires et configuration d’intervention.',
+        primary1: 'Heckler & Koch G95K',
+        primary2: 'Heckler & Koch G39K',
+        primary3: 'Heckler & Koch MP7A2',
+        secondary: 'Walther P14K',
+        vest: 'Plattenträger | Assaulter',
+        misc: 'Casque, protections, sacs de mission, accessoires d’assaut et IFAK complet.'
+      },
+      luftwaffe: {
+        title: 'Luftwaffe',
+        badge: 'Air support profile',
+        subtitle: 'Configuration orientée mobilité, intégration air, casque spécialisé et équipements de mission associés.',
+        primary1: 'Compact rifle | air support role',
+        primary2: 'Carbine platform',
+        primary3: 'SMG fallback',
+        secondary: 'Standard sidearm',
+        vest: 'Flight-compatible carrier',
+        misc: 'Équipements d’intervention, modules radio, protections spécifiques et éléments de liaison air-sol.'
+      }
+    };
+
+    const selectionView = document.getElementById('selectionView');
+    const detailView = document.getElementById('detailView');
+    const detailTitle = document.getElementById('detailTitle');
+    const detailSubtitle = document.getElementById('detailSubtitle');
+    const detailBadge = document.getElementById('detailBadge');
+    const primary1Name = document.getElementById('primary1Name');
+    const primary2Name = document.getElementById('primary2Name');
+    const primary3Name = document.getElementById('primary3Name');
+    const secondaryName = document.getElementById('secondaryName');
+    const vestName = document.getElementById('vestName');
+    const miscName = document.getElementById('miscName');
+
+    document.querySelectorAll('.operator-card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        card.style.setProperty('--x', `${x}%`);
+        card.style.setProperty('--y', `${y}%`);
+      });
+    });
+
+    document.querySelectorAll('.operator-choice').forEach(card => {
+      card.addEventListener('click', () => {
+        const key = card.dataset.operator;
+        const data = operators[key];
+        if (!data) return;
+
+        detailTitle.textContent = data.title;
+        detailSubtitle.textContent = data.subtitle;
+        detailBadge.textContent = data.badge;
+        primary1Name.textContent = data.primary1;
+        primary2Name.textContent = data.primary2;
+        primary3Name.textContent = data.primary3;
+        secondaryName.textContent = data.secondary;
+        vestName.textContent = data.vest;
+        miscName.textContent = data.misc;
+
+        selectionView.classList.add('hidden-view');
+        detailView.classList.remove('hidden-view');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+
+    document.getElementById('backToSelection').addEventListener('click', () => {
+      detailView.classList.add('hidden-view');
+      selectionView.classList.remove('hidden-view');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  </script>
+</body>
+</html>

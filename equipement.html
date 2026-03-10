@@ -1,880 +1,643 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Équipement Opérateur</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #f8fafc;
-      --surface: rgba(255,255,255,0.96);
-      --surface-solid: #ffffff;
-      --surface-soft: #f1f5f9;
-      --line: rgba(15,23,42,0.06);
-      --line-strong: rgba(15,23,42,0.10);
-      --text: #0f172a;
-      --muted: #64748b;
-      --muted-soft: #94a3b8;
-      --accent: #10b981;
-      --accent-blue: #60a5fa;
-      --shadow: 0 14px 32px rgba(15,23,42,0.05);
-    }
-
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      background:
-        radial-gradient(circle at top, rgba(96,165,250,0.06), transparent 20%), linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      color: var(--text);
-      overflow-x: hidden;
-    }
-
-    .grain {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 2;
-      opacity: 0.016;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    }
-
-    .grid-bg {
-      background-image:
-        linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px);
-      background-size: 56px 56px;
-    }
-
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      backdrop-filter: blur(12px);
-      box-shadow: var(--shadow);
-    }
-
-    .section-title {
-      font-size: 8px;
-      font-weight: 900;
-      letter-spacing: .36em;
-      text-transform: uppercase;
-      color: var(--muted-soft);
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .section-title::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: rgba(15,23,42,0.08);
-    }
-
-    .operator-card {
-      position: relative;
-      overflow: hidden;
-      min-height: 680px;
-      border-radius: 2rem;
-      border: 1px solid var(--line);
-      background:
-        radial-gradient(circle at 50% 35%, rgba(96,165,250,0.08), transparent 28%),
-        linear-gradient(180deg, rgba(255,255,255,0.99), rgba(248,250,252,0.98)),
-        #ffffff;
-      isolation: isolate;
-      cursor: pointer;
-      transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease;
-      box-shadow: 0 12px 28px rgba(15,23,42,0.05);
-    }
-
-    .operator-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(16,185,129,0.18);
-      box-shadow: 0 18px 36px rgba(15,23,42,0.08);
-    }
-
-    .operator-card::before {
-      content: "";
-      position: absolute;
-      inset: -30%;
-      background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,0.72), transparent 18%);
-      opacity: 0;
-      transition: opacity .25s ease;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .operator-card:hover::before { opacity: 1; }
-
-    .operator-card::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(248,250,252,0.10) 38%, rgba(255,255,255,0.94));
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    .operator-watermark {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      font-size: clamp(52px, 8vw, 110px);
-      line-height: 1;
-      font-weight: 900;
-      letter-spacing: .06em;
-      color: rgba(15,23,42,0.04);
-      text-transform: uppercase;
-      padding-top: 2rem;
-      z-index: 0;
-      user-select: none;
-      pointer-events: none;
-    }
-
-    .operator-figure {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding: 3rem 1.5rem 0;
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    .operator-placeholder {
-      width: min(84%, 420px);
-      height: min(78%, 780px);
-      border-radius: 1.75rem 1.75rem 0 0;
-      background:
-        radial-gradient(circle at 50% 18%, rgba(255,255,255,0.92), transparent 12%),
-        linear-gradient(180deg, rgba(255,255,255,0.82), rgba(248,250,252,0.98)),
-        linear-gradient(180deg, rgba(96,165,250,0.10), transparent 30%),
-        #f8fafc;
-      border: 1px solid rgba(15,23,42,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      box-shadow:
-        0 0 90px rgba(96,165,250,0.06),
-        inset 0 -80px 100px rgba(15,23,42,0.06);
-      overflow: hidden;
-    }
-
-    .operator-placeholder::before {
-      content: "IMAGE OPÉRATEUR";
-      position: absolute;
-      top: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 9px;
-      font-weight: 900;
-      letter-spacing: .32em;
-      color: rgba(15,23,42,0.20);
-      text-transform: uppercase;
-    }
-
-    .operator-silhouette {
-      width: 62%;
-      height: 82%;
-      position: relative;
-      filter: drop-shadow(0 0 20px rgba(15,23,42,0.08));
-    }
-
-    .operator-silhouette .head {
-      width: 24%;
-      height: 14%;
-      background: linear-gradient(180deg, rgba(15,23,42,0.22), rgba(15,23,42,0.08));
-      border-radius: 50% 50% 42% 42%;
-      margin: 0 auto;
-    }
-
-    .operator-silhouette .torso {
-      width: 46%;
-      height: 36%;
-      background: linear-gradient(180deg, rgba(15,23,42,0.18), rgba(15,23,42,0.06));
-      border-radius: 22% 22% 12% 12%;
-      margin: -2% auto 0;
-      position: relative;
-    }
-
-    .operator-silhouette .torso::before,
-    .operator-silhouette .torso::after {
-      content: "";
-      position: absolute;
-      top: 6%;
-      width: 24%;
-      height: 90%;
-      background: linear-gradient(180deg, rgba(15,23,42,0.12), rgba(15,23,42,0.04));
-      border-radius: 18px;
-    }
-
-    .operator-silhouette .torso::before { left: -18%; transform: rotate(14deg); }
-    .operator-silhouette .torso::after { right: -18%; transform: rotate(-14deg); }
-
-    .operator-silhouette .legs {
-      width: 44%;
-      height: 34%;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .operator-silhouette .legs span {
-      width: 40%;
-      height: 100%;
-      background: linear-gradient(180deg, rgba(15,23,42,0.14), rgba(15,23,42,0.05));
-      border-radius: 18px 18px 12px 12px;
-    }
-
-    .operator-meta {
-      position: absolute;
-      inset: auto 0 0 0;
-      z-index: 2;
-      padding: 2rem;
-    }
-
-    .operator-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: .5rem;
-      font-size: 9px;
-      font-weight: 900;
-      letter-spacing: .24em;
-      text-transform: uppercase;
-      color: var(--muted-soft);
-      margin-bottom: .65rem;
-    }
-
-    .operator-title {
-      font-size: clamp(34px, 4vw, 56px);
-      line-height: .95;
-      font-weight: 900;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      margin: 0;
-      color: var(--text);
-    }
-
-    .operator-subtitle {
-      margin-top: .8rem;
-      font-size: 12px;
-      line-height: 1.7;
-      color: var(--muted);
-      font-weight: 700;
-      max-width: 480px;
-      text-transform: uppercase;
-      letter-spacing: .10em;
-    }
-
-    .operator-status {
-      margin-top: 1.25rem;
-      display: inline-flex;
-      align-items: center;
-      gap: .6rem;
-      padding: .7rem 1rem;
-      border-radius: 999px;
-      border: 1px solid rgba(16,185,129,0.14);
-      background: rgba(16,185,129,0.06);
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      color: #047857;
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--accent);
-      box-shadow: 0 0 10px rgba(16,185,129,.35);
-    }
-
-    .hidden-view { display: none; }
-
-    .detail-shell {
-      display: grid;
-      grid-template-columns: 360px 1fr 360px;
-      gap: 1.5rem;
-      align-items: start;
-    }
-
-    .detail-card {
-      border-radius: 1.75rem;
-      border: 1px solid var(--line);
-      background: var(--surface-solid);
-      padding: 1.25rem;
-      box-shadow: 0 10px 24px rgba(15,23,42,0.04);
-    }
-
-    .detail-heading {
-      font-size: clamp(28px, 4vw, 56px);
-      font-weight: 900;
-      line-height: .95;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      text-align: center;
-      margin: 0 0 .4rem;
-      color: var(--text);
-    }
-
-    .detail-subheading {
-      text-align: center;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1.5rem;
-    }
-
-    .compass {
-      display: flex;
-      justify-content: center;
-      gap: .8rem;
-      font-size: 10px;
-      letter-spacing: .22em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: .8rem;
-      font-weight: 900;
-    }
-
-    .operator-full {
-      position: relative;
-      min-height: 980px;
-      border-radius: 1.75rem;
-      border: 1px solid var(--line);
-      background:
-        radial-gradient(circle at 50% 30%, rgba(96,165,250,0.14), transparent 20%),
-        linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94)),
-        #ffffff;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding: 2rem;
-      overflow: hidden;
-      box-shadow: 0 18px 50px rgba(15,23,42,0.08);
-    }
-
-    .operator-full::before {
-      content: "IMAGE OPÉRATEUR PLEIN PIED";
-      position: absolute;
-      top: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 9px;
-      font-weight: 900;
-      letter-spacing: .34em;
-      color: rgba(15,23,42,0.18);
-      text-transform: uppercase;
-    }
-
-    .operator-full .operator-placeholder {
-      width: min(88%, 520px);
-      height: 88%;
-      border-radius: 2rem;
-    }
-
-    .equipment-box { margin-bottom: 1.25rem; }
-    .equipment-box:last-child { margin-bottom: 0; }
-
-    .equipment-title {
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-      margin-bottom: 1rem;
-      color: var(--text);
-    }
-
-    .equipment-item {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: .8rem;
-      margin-bottom: 1rem;
-    }
-
-    .item-name {
-      font-size: 13px;
-      line-height: 1.5;
-      font-weight: 800;
-      color: var(--text);
-    }
-
-    .item-note {
-      font-size: 11px;
-      line-height: 1.5;
-      color: var(--muted);
-    }
-
-    .img-placeholder {
-      position: relative;
-      min-height: 140px;
-      border-radius: 1.25rem;
-      border: 1px dashed rgba(15,23,42,0.10);
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96)),
-        #f8fafc;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    .img-placeholder.large { min-height: 220px; }
-    .img-placeholder.medium { min-height: 180px; }
-    .img-placeholder.slim { min-height: 100px; }
-
-    .img-placeholder::before {
-      content: attr(data-label);
-      font-size: 9px;
-      font-weight: 900;
-      letter-spacing: .28em;
-      color: rgba(15,23,42,0.24);
-      text-transform: uppercase;
-      text-align: center;
-      padding: 0 1rem;
-    }
-
-    .gallery-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: .85rem;
-    }
-
-    .wide-gallery {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: .9rem;
-    }
-
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: .7rem;
-      padding: .95rem 1.2rem;
-      border-radius: 999px;
-      border: 1px solid var(--line-strong);
-      background: rgba(255,255,255,0.78);
-      color: var(--text);
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all .22s ease;
-      box-shadow: 0 10px 24px rgba(15,23,42,0.06);
-    }
-
-    .back-btn:hover {
-      border-color: rgba(16,185,129,0.22);
-      background: #ffffff;
-    }
-
-    .soft-badge {
-      padding: .6rem 1rem;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,0.78);
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .soft-badge.accent {
-      border-color: rgba(16,185,129,0.18);
-      background: rgba(16,185,129,0.08);
-      color: #047857;
-    }
-
-    @media (max-width: 1440px) {
-      .detail-shell { grid-template-columns: 320px 1fr 320px; }
-      .wide-gallery { grid-template-columns: repeat(4, 1fr); }
-    }
-
-    @media (max-width: 1180px) {
-      .detail-shell { grid-template-columns: 1fr; }
-      .operator-full { min-height: 720px; }
-      .wide-gallery { grid-template-columns: repeat(3, 1fr); }
-    }
-
-    @media (max-width: 900px) {
-      .operator-card { min-height: 560px; }
-      .gallery-row { grid-template-columns: 1fr; }
-      .wide-gallery { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    @media (max-width: 640px) {
-      .wide-gallery { grid-template-columns: 1fr; }
-      .operator-meta { padding: 1.25rem; }
-      .operator-title { font-size: 28px; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forward Observations Group | Equipment Command</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="assets/css/styles.css" rel="stylesheet">
 </head>
-<body>
-  <div class="w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-30">
-    <div class="max-w-[1880px] mx-auto px-5 md:px-8 h-14 flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <span class="text-[8px] font-black tracking-[0.32em] uppercase text-emerald-600">Equipment Command</span>
-        <span class="hidden md:block h-4 w-px bg-slate-200"></span>
-        <span class="hidden md:block text-[9px] font-mono tracking-[0.18em] uppercase text-slate-400">Registry / Loadout / White Theme</span>
-      </div>
-      <div class="flex items-center gap-3">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.35)]"></span>
-        <span class="text-[8px] font-black tracking-[0.24em] uppercase text-slate-400">Net Active</span>
-      </div>
+<body class="bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
+    <div id="bodyOverlay" class="overlay fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110]" onclick="toggleMenu()"></div>
+
+    <div id="navDrawer" class="drawer-translate fixed top-0 left-0 w-[300px] h-full bg-slate-50 z-[120] shadow-2xl p-6 flex flex-col">
+        <div class="flex justify-between items-center mb-10">
+            <span class="text-[10px] font-black tracking-[0.3em] uppercase opacity-50">Menu</span>
+            <button onclick="toggleMenu()" class="hover:rotate-90 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <nav class="flex flex-col gap-6">
+            <a href="#" class="text-xs font-bold tracking-[0.2em] uppercase">ACCUEIL</a>
+            <a href="#" class="text-xs font-bold tracking-[0.2em] uppercase">ÉQUIPEMENT</a>
+            <a href="#" class="text-xs font-bold tracking-[0.2em] uppercase">TEXTILE</a>
+            <a href="#" class="text-xs font-bold tracking-[0.2em] uppercase">DIVERS</a>
+        </nav>
+
+        <div class="mt-auto pt-10 border-t border-slate-100">
+            <div class="flex flex-col gap-4 mb-8">
+                <a href="#" class="text-xs font-bold tracking-[0.2em] uppercase">Connexion</a>
+                <a href="#" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-400">Créer un compte</a>
+            </div>
+            <div class="flex gap-4">
+                <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                    <span class="text-[10px] font-bold">IG</span>
+                </div>
+                <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                    <span class="text-[10px] font-bold">YT</span>
+                </div>
+            </div>
+        </div>
     </div>
+    <div class="w-full bg-slate-900 text-white/30 h-8 flex items-center border-b border-white/5 overflow-hidden select-none">
+        <div class="max-w-5xl mx-auto px-8 w-full flex justify-between items-center font-mono text-[8px] tracking-[0.15em] uppercase">
+            
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 group">
+                    <span class="text-emerald-500 font-black tracking-[0.3em]">ZULU</span>
+                    <span id="t-zulu" class="text-white text-[10px] font-medium tracking-normal w-[65px]">00:00:00</span>
+                </div>
+                
+                <span class="text-white/10 text-[10px]">|</span>
+                
+                <div class="hidden sm:flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity">
+                    <span class="label">PST</span>
+                    <span id="t-pst" class="text-white/80 tracking-normal w-[65px]">00:00:00</span>
+                    <span class="text-white/10">|</span>
+                    <span class="label">MTN</span>
+                    <span id="t-mtn" class="text-white/80 tracking-normal w-[65px]">00:00:00</span>
+                    <span class="text-white/10">|</span>
+                    <span class="label">EST</span>
+                    <span id="t-est" class="text-white/80 tracking-normal w-[65px]">00:00:00</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3 text-[7px] tracking-[0.25em]">
+                <span class="flex h-1.5 w-1.5 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-20"></span>
+                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500/80"></span>
+                </span>
+                <span class="opacity-40 italic">ACTIF</span>
+            </div>
+        </div>
+    </div>
+    
+    <header class="sticky top-0 z-[100] w-full bg-slate-50/95 backdrop-blur-md border-b border-slate-900/[0.03]">
+        </header>
+    
+    <script>
+        function formatClock(date, timeZone = 'UTC') {
+            return new Intl.DateTimeFormat('en-GB', { // en-GB pour le format 24h naturel
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: false,
+                timeZone: timeZone
+            }).format(date);
+        }
+    
+        function updateOperationalClocks() {
+            const now = new Date();
+            
+            // Mapping des IDs et fuseaux
+            const zones = {
+                't-zulu': 'UTC',
+                't-pst': 'America/Los_Angeles',
+                't-mtn': 'America/Denver',
+                't-est': 'America/New_York',
+                'clock-local': Intl.DateTimeFormat().resolvedOptions().timeZone
+            };
+    
+            for (const [id, tz] of Object.entries(zones)) {
+                const el = document.getElementById(id);
+                if (el) el.textContent = formatClock(now, tz);
+            }
+        }
+    
+        setInterval(updateOperationalClocks, 1000);
+        updateOperationalClocks();
+    </script>
+<section class="relative min-h-[85vh] flex items-end overflow-hidden bg-slate-50 font-sans group">
+  <div class="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+
+  <div class="absolute inset-0 z-0">
+      <img src="https://www.3dmilitaryassets.com/cdn/shop/files/Vest_CRYE_JPC_20_V3_re_04.jpg?v=1766803093&width=1946" 
+           class="w-full h-full object-cover object-center scale-110 transition-transform duration-1000 group-hover:scale-105 opacity-80">
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-50/20 to-transparent"></div>
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-50 via-transparent to-transparent"></div>
   </div>
-  <div class="grain"></div>
 
-  <div class="relative min-h-screen grid-bg overflow-hidden">
-    <main class="relative z-10 max-w-[1880px] mx-auto px-5 md:px-8 py-8 md:py-10">
-      <header class="panel rounded-[2rem] px-6 md:px-8 py-6 md:py-7 mb-8 mt-6">
-        <div class="flex items-center justify-between gap-4 mb-6 pb-5 border-b border-slate-200/80">
-          <div class="flex items-center gap-4">
-            <div class="w-11 h-11 rounded-2xl bg-emerald-500/12 border border-emerald-500/18 flex items-center justify-center text-emerald-700 font-black tracking-tight">EQ</div>
-            <div>
-              <p class="text-[8px] font-black tracking-[0.32em] uppercase text-slate-400 mb-1">Command Inventory</p>
-              <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Equipment operator registry</p>
-            </div>
-          </div>
-          <div class="hidden md:flex items-center gap-3">
-            <span class="soft-badge">Catalogue actif</span>
-            <span class="soft-badge accent">UI blanche</span>
-          </div>
-        </div>
-        <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
-          <div>
-            <p class="section-title">Equipment Command</p>
-            <h1 class="text-4xl md:text-6xl font-black tracking-[0.06em] uppercase leading-none m-0 text-slate-900">Choix d'opérateur</h1>
-            <p class="mt-4 max-w-3xl text-sm md:text-[14px] leading-7 text-slate-500 font-bold uppercase tracking-[0.08em]">
-              Sélection d'un profil opérateur. Au clic, ouverture d'une fiche équipement complète avec armement, protections, sacs, kit médical et dotation d'intervention.
-            </p>
+  <div class="relative z-10 max-w-7xl mx-auto px-8 pb-20 w-full">
+      <div class="max-w-3xl">
+          <p class="text-[11px] font-black uppercase tracking-[0.4em] text-blue-600 mb-4 italic transition-all group-hover:tracking-[0.5em]">
+              System_Liaison / Kilo-06
+          </p>
+          
+          <div class="relative mb-8">
+              <h1 class="text-9xl md:text-[12rem] font-[950] uppercase italic tracking-tighter text-slate-900 leading-[0.75] mix-blend-multiply opacity-90">
+                  JTAC
+              </h1>
+              <span class="absolute -top-4 -right-4 text-blue-600 font-mono text-sm font-bold tracking-widest bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">
+                  AIR_COORD
+              </span>
           </div>
 
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 min-w-full xl:min-w-[620px]">
-            <div class="panel rounded-2xl p-4 bg-white/90">
-              <p class="text-[8px] font-black tracking-[0.25em] uppercase text-slate-400 mb-2">Profils</p>
-              <p class="text-2xl font-black tracking-tight text-slate-900">03</p>
-            </div>
-            <div class="panel rounded-2xl p-4 bg-white/90">
-              <p class="text-[8px] font-black tracking-[0.25em] uppercase text-slate-400 mb-2">État</p>
-              <p class="text-2xl font-black tracking-tight text-emerald-600">Ready</p>
-            </div>
-            <div class="panel rounded-2xl p-4 bg-white/90">
-              <p class="text-[8px] font-black tracking-[0.25em] uppercase text-slate-400 mb-2">Catalogue</p>
-              <p class="text-2xl font-black tracking-tight text-slate-900">Loadout</p>
-            </div>
-            <div class="panel rounded-2xl p-4 bg-white/90">
-              <p class="text-[8px] font-black tracking-[0.25em] uppercase text-slate-400 mb-2">Mode</p>
-              <p class="text-2xl font-black tracking-tight text-slate-900">Interactive</p>
-            </div>
-          </div>
-        </div>
-      </header>
+          <p class="text-xl text-slate-700 leading-relaxed italic font-medium max-w-xl border-l-8 border-slate-900 pl-8 py-2">
+              L'architecte de l'espace aérien. Liaison vitale entre les forces au sol et l'appui feu. Spécialiste du guidage laser et de la gestion de trajectoires complexes.
+          </p>
+      </div>
 
-      <section id="selectionView">
-        <div class="grid xl:grid-cols-3 gap-6">
-          <article class="operator-card operator-choice" data-operator="lowvis">
-            <div class="operator-watermark">Low Vis</div>
-            <div class="operator-figure">
-              <div class="operator-placeholder">
-                <div class="operator-silhouette">
-                  <div class="head"></div>
-                  <div class="torso"></div>
-                  <div class="legs"><span></span><span></span></div>
-                </div>
+      <div class="mt-16 flex flex-wrap gap-8 border-t border-slate-200 pt-10">
+          <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center gap-5">
+              <div class="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center shadow-inner">
+                  <span class="text-white font-black text-2xl italic">J</span>
               </div>
-            </div>
-            <div class="operator-meta">
-              <div class="operator-tag">Profile / Civilian cover</div>
-              <h2 class="operator-title">Low Vis</h2>
-              <p class="operator-subtitle">Configuration discrète, emport réduit, signature visuelle contenue, emploi à faible visibilité tactique.</p>
-              <div class="operator-status"><span class="dot"></span> Ouvrir l'équipement</div>
-            </div>
-          </article>
-
-          <article class="operator-card operator-choice" data-operator="ksm">
-            <div class="operator-watermark">KSM</div>
-            <div class="operator-figure">
-              <div class="operator-placeholder" style="box-shadow:0 0 120px rgba(59,130,246,0.08), inset 0 -80px 100px rgba(15,23,42,0.08);">
-                <div class="operator-silhouette">
-                  <div class="head"></div>
-                  <div class="torso"></div>
-                  <div class="legs"><span></span><span></span></div>
-                </div>
+              <div>
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Rôle principal</p>
+                  <p class="text-lg font-black uppercase text-slate-900 tracking-tight">Appui / Liaison</p>
               </div>
-            </div>
-            <div class="operator-meta">
-              <div class="operator-tag">Profile / Assault maritime</div>
-              <h2 class="operator-title">KSM</h2>
-              <p class="operator-subtitle">Opérateur lourd, casque FAST, plateträger, configuration d'assaut, armement principal et options de portage modularisées.</p>
-              <div class="operator-status"><span class="dot"></span> Ouvrir l'équipement</div>
-            </div>
-          </article>
+          </div>
 
-          <article class="operator-card operator-choice" data-operator="luftwaffe">
-            <div class="operator-watermark">Luftwaffe</div>
-            <div class="operator-figure">
-              <div class="operator-placeholder" style="box-shadow:0 0 120px rgba(16,185,129,0.08), inset 0 -80px 100px rgba(15,23,42,0.08);">
-                <div class="operator-silhouette">
-                  <div class="head"></div>
-                  <div class="torso"></div>
-                  <div class="legs"><span></span><span></span></div>
-                </div>
+          <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center gap-5">
+              <div class="flex items-center gap-1.5">
+                  <div class="w-2.5 h-6 bg-slate-900 rounded-full"></div>
+                  <div class="w-2.5 h-6 bg-slate-900 rounded-full"></div>
+                  <div class="w-2.5 h-6 bg-blue-600 rounded-full animate-pulse"></div>
               </div>
-            </div>
-            <div class="operator-meta">
-              <div class="operator-tag">Profile / Air support</div>
-              <h2 class="operator-title">Luftwaffe</h2>
-              <p class="operator-subtitle">Configuration liée au soutien aérien, casque spécialisé, protection adaptée, dotation orientée mobilité et intervention.</p>
-              <div class="operator-status"><span class="dot"></span> Ouvrir l'équipement</div>
-            </div>
-          </article>
-        </div>
-      </section>
+              <div>
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Expertise</p>
+                  <p class="text-lg font-black uppercase text-slate-900 tracking-tight">Niveau Expert</p>
+              </div>
+          </div>
+      </div>
+  </div>
+</section>
+<section class="relative bg-slate-50 py-24 px-6 overflow-visible">
+  <div class="max-w-6xl mx-auto relative">
+      
+      <div class="relative z-10 bg-white border border-slate-200 rounded-[3rem] p-12 shadow-sm">
+          <div class="mb-10">
+              <h2 class="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400 mb-2">Inventory_Scan</h2>
+              <p class="text-2xl font-black uppercase tracking-tighter italic text-slate-900">Kit de Coordination Aérienne</p>
+          </div>
 
-      <section id="detailView" class="hidden-view">
-        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <button id="backToSelection" class="back-btn">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            Retour à la sélection
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-16 pb-48">
+              <div class="space-y-6">
+                  <h3 class="font-mono text-[9px] font-black text-blue-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                      <span class="w-2 h-2 bg-blue-500 rounded-full"></span> Communications
+                  </h3>
+                  <ul class="space-y-4 font-bold text-slate-900 italic">
+                      <li class="flex flex-col border-l-2 border-slate-100 pl-4">
+                          <span class="text-sm">AN/PRC-117G Radio</span>
+                          <span class="text-[10px] text-slate-400 uppercase tracking-widest font-black">Multi-bande / Satcom</span>
+                      </li>
+                      <li class="flex flex-col border-l-2 border-slate-100 pl-4">
+                          <span class="text-sm">Tablette Durcie (ATAK)</span>
+                          <span class="text-[10px] text-slate-400 uppercase tracking-widest font-black">Logiciel de ciblage temps réel</span>
+                      </li>
+                  </ul>
+              </div>
+
+              <div class="space-y-6">
+                  <h3 class="font-mono text-[9px] font-black text-blue-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                      <span class="w-2 h-2 bg-blue-500 rounded-full"></span> Acquisition
+                  </h3>
+                  <ul class="space-y-4 font-bold text-slate-900 italic">
+                      <li class="flex flex-col border-l-2 border-slate-100 pl-4">
+                          <span class="text-sm">Désignateur Laser PLRF</span>
+                          <span class="text-[10px] text-slate-400 uppercase tracking-widest font-black">Portée 2500m / Télémétrie</span>
+                      </li>
+                      <li class="flex flex-col border-l-2 border-slate-100 pl-4">
+                          <span class="text-sm">Strobe IR (MS2000)</span>
+                          <span class="text-[10px] text-slate-400 uppercase tracking-widest font-black">Identification Friendly Forces</span>
+                      </li>
+                  </ul>
+              </div>
+          </div>
+      </div>
+
+      <div class="relative z-20 -mt-64 flex justify-center pointer-events-none px-4">
+          <div class="relative">
+              <img src="E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\assets\images\Vest_CRYE_JPC_20_V3_re_04.webp"
+                   alt="JTAC JPC Setup" 
+                   class="h-[450px] md:h-[550px] w-auto drop-shadow-[0_50px_50px_rgba(0,0,0,0.15)] filter brightness-110">
+              
+              <div class="absolute top-1/4 -right-8 bg-blue-600 text-white p-4 rounded-3xl shadow-2xl rotate-12 flex items-center gap-3">
+                  <span class="text-xs font-black italic uppercase tracking-tighter">Approved for CAS</span>
+              </div>
+          </div>
+      </div>
+      
+  </div>
+</section>
+<section class="bg-slate-50 py-16 px-8 relative overflow-hidden">
+  <div class="absolute inset-0 font-mono text-[9px] text-slate-100 tracking-[0.5em] uppercase pointer-events-none p-10">
+      48.8584° N, 2.2945° E / GRID_ALPHA
+  </div>
+
+  <div class="max-w-7xl mx-auto relative z-10">
+      <div class="mb-16">
+          <p class="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Build_Recommandé</p>
+          <h2 class="mt-2 text-3xl font-black uppercase tracking-tighter italic text-slate-900">Configuration Gilet Tactique (JPC)</h2>
+      </div>
+
+      <div class="relative w-full max-w-4xl mx-auto flex items-center justify-center h-[550px]">
+          
+          <img src="E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\assets\images\Vest_CRYE_JPC_20_V3_re_01.webp" 
+               class="h-full object-contain object-center opacity-90 select-none z-0">
+
+
+          </div>
+
+      <div class="mt-16 flex justify-center">
+          <button class="px-8 py-5 bg-slate-900 hover:bg-slate-800 text-white transition-all rounded-full flex items-center gap-3 group">
+              <span class="text-[11px] font-black uppercase tracking-[0.3em]">Ouvrir l'inventaire complet</span>
+              <svg class="w-4 h-4 text-white transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+              </svg>
           </button>
-
-          <div class="flex flex-wrap gap-2">
-            <span class="soft-badge">Fiche opérateur</span>
-            <span id="detailBadge" class="soft-badge accent">Profile</span>
-          </div>
-        </div>
-
-        <div class="detail-shell">
-          <aside>
-            <div class="detail-card equipment-box">
-              <h3 class="text-4xl font-black tracking-[0.05em] uppercase leading-none mb-6 text-slate-900">Bewaffnung</h3>
-              <div class="equipment-box">
-                <div class="equipment-title">Primärwaffen</div>
-                <div class="equipment-item">
-                  <div><div class="item-name" id="primary1Name">Heckler & Koch G95K</div></div>
-                  <div class="img-placeholder medium" data-label="Placeholder arme principale"></div>
-                </div>
-                <div class="equipment-item">
-                  <div><div class="item-name" id="primary2Name">Heckler & Koch G39K</div></div>
-                  <div class="img-placeholder medium" data-label="Placeholder arme secondaire longue"></div>
-                </div>
-                <div class="equipment-item">
-                  <div><div class="item-name" id="primary3Name">Heckler & Koch MP7A2</div></div>
-                  <div class="img-placeholder medium" data-label="Placeholder PDW / SMG"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="detail-card equipment-box">
-              <div class="equipment-title">Sekundärwaffen</div>
-              <div class="equipment-item">
-                <div><div class="item-name" id="secondaryName">Walther P14K</div></div>
-                <div class="img-placeholder slim" data-label="Placeholder arme de poing"></div>
-              </div>
-            </div>
-          </aside>
-
-          <section>
-            <h2 class="detail-heading" id="detailTitle">Operator</h2>
-            <div class="compass"><span>W</span><span>N</span><span>E</span><span>S</span></div>
-            <div class="detail-subheading" id="detailSubtitle">Configuration opérateur</div>
-
-            <div class="operator-full mb-6">
-              <div class="operator-placeholder">
-                <div class="operator-silhouette" style="width:48%; height:86%;">
-                  <div class="head"></div>
-                  <div class="torso" style="height:38%; width:52%;"></div>
-                  <div class="legs" style="width:48%; height:36%;"><span></span><span></span></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="detail-card equipment-box">
-              <div class="equipment-title">Rucksäcke</div>
-              <div class="wide-gallery">
-                <div><div class="item-name">Zip-On Panel</div><div class="item-note">Variante 01</div><div class="img-placeholder large mt-3" data-label="Placeholder zip-on 01"></div></div>
-                <div><div class="item-name">Zip-On Panel</div><div class="item-note">Variante 02</div><div class="img-placeholder large mt-3" data-label="Placeholder zip-on 02"></div></div>
-                <div><div class="item-name">Zip-On Panel</div><div class="item-note">Variante 03</div><div class="img-placeholder large mt-3" data-label="Placeholder zip-on 03"></div></div>
-                <div><div class="item-name">Taktisches Panel</div><div class="item-note">Variante 2x pouches</div><div class="img-placeholder large mt-3" data-label="Placeholder panel tactique"></div></div>
-                <div><div class="item-name">Taktisches Panel</div><div class="item-note">Variante LBX</div><div class="img-placeholder large mt-3" data-label="Placeholder panel LBX"></div></div>
-                <div><div class="item-name">Normaler Rucksack</div><div class="item-note">Mit GK2 freigabe</div><div class="img-placeholder large mt-3" data-label="Placeholder sac normal"></div></div>
-                <div><div class="item-name">3Day Pack</div><div class="item-note">Mit GK3 freigabe</div><div class="img-placeholder large mt-3" data-label="Placeholder 3 day pack"></div></div>
-              </div>
-            </div>
-
-            <div class="detail-card">
-              <h3 class="text-4xl font-black tracking-[0.05em] uppercase leading-none text-center mb-6 text-slate-900">IFAK</h3>
-              <div class="grid xl:grid-cols-[1fr_420px] gap-6 items-start">
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                  <div class="grid md:grid-cols-2 gap-6 text-[15px] leading-8">
-                    <div>
-                      <div class="font-black text-slate-900 mb-2">Wundversorgung</div>
-                      <ul class="list-disc pl-5 text-slate-600 font-medium space-y-1">
-                        <li>15x Bandage (Field Dressing)</li>
-                        <li>4x Tourniquet</li>
-                        <li>2x Chest Seal</li>
-                      </ul>
-                      <div class="font-black text-slate-900 mt-4 mb-2">Medikamente</div>
-                      <ul class="list-disc pl-5 text-slate-600 font-medium space-y-1">
-                        <li>2x Morphin-Autoinjektor</li>
-                        <li>1x Schmerzmittel</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <div class="font-black text-slate-900 mb-2">Atemwegsversorgung</div>
-                      <ul class="list-disc pl-5 text-slate-600 font-medium space-y-1">
-                        <li>2x Guedeltubus</li>
-                      </ul>
-                      <div class="font-black text-slate-900 mt-4 mb-2">Zugang</div>
-                      <ul class="list-disc pl-5 text-slate-600 font-medium space-y-1">
-                        <li>1x 16g IV</li>
-                        <li>1x 1000ml Kochsalzlösung</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <div class="img-placeholder large" data-label="Placeholder IFAK / matériel médical"></div>
-              </div>
-            </div>
-          </section>
-
-          <aside>
-            <div class="detail-card equipment-box">
-              <h3 class="text-4xl font-black tracking-[0.05em] uppercase leading-none mb-6 text-center text-slate-900">Ausrüstung</h3>
-              <div class="equipment-box">
-                <div class="equipment-title">Kopfbedeckungen</div>
-                <div class="gallery-row">
-                  <div><div class="item-name">Ops-Core FAST XP | Peltors</div><div class="img-placeholder medium mt-3" data-label="Placeholder casque 01"></div></div>
-                  <div><div class="item-name">Ops-Core FAST XP | AMP</div><div class="img-placeholder medium mt-3" data-label="Placeholder casque 02"></div></div>
-                  <div><div class="item-name">Mich 2001 | Peltors</div><div class="img-placeholder medium mt-3" data-label="Placeholder casque 03"></div></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="detail-card equipment-box">
-              <div class="equipment-title">Westen</div>
-              <div class="equipment-item">
-                <div><div class="item-name" id="vestName">Plattenträger | Assaulter</div></div>
-                <div class="img-placeholder large" data-label="Placeholder gilet / plate carrier"></div>
-              </div>
-            </div>
-
-            <div class="detail-card equipment-box">
-              <div class="equipment-title">Einsatzausrüstung</div>
-              <div class="equipment-item">
-                <div>
-                  <div class="item-name" id="miscName">Mission essentials</div>
-                  <div class="item-note">Équipement spécifique, accessoires, outils et modules d'emport.</div>
-                </div>
-                <div class="img-placeholder large" data-label="Placeholder équipement mission"></div>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </section>
-    </main>
+      </div>
   </div>
+</section>
+<section class="relative bg-slate-50 py-20 px-6 overflow-visible">
+  <div class="max-w-5xl mx-auto relative">
+      
+      <div class="relative z-10 bg-white border border-slate-200 rounded-[2rem] p-12 shadow-sm">
+          <div class="grid grid-cols-2 gap-12 pb-32"> <div>
+                  <h3 class="font-black text-[10px] uppercase tracking-[0.3em] text-slate-400 mb-6">Wundversorgung</h3>
+                  <ul class="space-y-3 font-bold text-slate-900 italic">
+                      <li class="flex justify-between border-b border-slate-100 pb-1">
+                          <span>15x Bandage (Field Dressing)</span>
+                      </li>
+                      <li class="flex justify-between border-b border-slate-100 pb-1 text-red-600">
+                          <span>4x Tourniquet</span>
+                      </li>
+                      <li class="flex justify-between border-b border-slate-100 pb-1">
+                          <span>2x Chest Seal</span>
+                      </li>
+                  </ul>
+              </div>
 
-  <script>
-    const operators = {
-      lowvis: {
-        title: 'Low Vis',
-        badge: 'Low visibility profile',
-        subtitle: 'Configuration discrète, tenue non ostensible, dotation réduite et signature tactique contenue.',
-        primary1: 'Carbine compact | low profile',
-        primary2: 'SBR suppressed platform',
-        primary3: 'PDW / fallback compact',
-        secondary: 'Compact sidearm',
-        vest: 'Concealed carrier | light rig',
-        misc: 'Cover items, communication discrète, accessoires civils et médical compact.'
-      },
-      ksm: {
-        title: 'KSM',
-        badge: 'Kommando Spezialkräfte der Marine',
-        subtitle: 'Profil d’assaut lourd, casque FAST, gilet rigide, solutions d’emport modulaires et configuration d’intervention.',
-        primary1: 'Heckler & Koch G95K',
-        primary2: 'Heckler & Koch G39K',
-        primary3: 'Heckler & Koch MP7A2',
-        secondary: 'Walther P14K',
-        vest: 'Plattenträger | Assaulter',
-        misc: 'Casque, protections, sacs de mission, accessoires d’assaut et IFAK complet.'
-      },
-      luftwaffe: {
-        title: 'Luftwaffe',
-        badge: 'Air support profile',
-        subtitle: 'Configuration orientée mobilité, intégration air, casque spécialisé et équipements de mission associés.',
-        primary1: 'Compact rifle | air support role',
-        primary2: 'Carbine platform',
-        primary3: 'SMG fallback',
-        secondary: 'Standard sidearm',
-        vest: 'Flight-compatible carrier',
-        misc: 'Équipements d’intervention, modules radio, protections spécifiques et éléments de liaison air-sol.'
-      }
-    };
+              <div>
+                  <h3 class="font-black text-[10px] uppercase tracking-[0.3em] text-slate-400 mb-6">Atemwegsversorgung</h3>
+                  <ul class="space-y-3 font-bold text-slate-900 italic">
+                      <li class="flex justify-between border-b border-slate-100 pb-1">
+                          <span>2x Guedeltubus</span>
+                      </li>
+                  </ul>
+              </div>
+          </div>
+      </div>
 
-    const selectionView = document.getElementById('selectionView');
-    const detailView = document.getElementById('detailView');
-    const detailTitle = document.getElementById('detailTitle');
-    const detailSubtitle = document.getElementById('detailSubtitle');
-    const detailBadge = document.getElementById('detailBadge');
-    const primary1Name = document.getElementById('primary1Name');
-    const primary2Name = document.getElementById('primary2Name');
-    const primary3Name = document.getElementById('primary3Name');
-    const secondaryName = document.getElementById('secondaryName');
-    const vestName = document.getElementById('vestName');
-    const miscName = document.getElementById('miscName');
+      <div class="relative z-20 -mt-48 flex justify-center pointer-events-none">
+          <img src="https://static.wixstatic.com/media/44674e_dd27a75055ff4cf898a7085be62633f5~mv2.webp/v1/fill/w_1479,h_1001,al_c,q_85,enc_avif,quality_auto/Belt.webp" 
+               alt="IFAK Pouch" 
+               class="h-[550px] w-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.2)] transform hover:scale-105 transition-transform duration-500">
+      </div>
+      
+  </div>
+</section>
+<section class="bg-slate-50 py-24 px-8 relative">
+  <div class="max-w-7xl mx-auto">
+      
+      <div class="mb-12 border-b border-slate-200 pb-8">
+          <h2 class="text-[11px] font-[950] uppercase tracking-[0.5em] text-blue-600 mb-2 italic">Database_Indexing</h2>
+          <p class="text-3xl font-black uppercase tracking-tighter italic text-slate-900">Ressources & Apprentissage</p>
+      </div>
 
-    document.querySelectorAll('.operator-card').forEach(card => {
-      card.addEventListener('mousemove', e => {
-        const rect = card.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        card.style.setProperty('--x', `${x}%`);
-        card.style.setProperty('--y', `${y}%`);
-      });
-    });
+      <div class="overflow-hidden border border-slate-200 rounded-3xl bg-white shadow-sm">
+          <table class="w-full text-left border-collapse">
+              <thead class="bg-slate-900 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                  <tr>
+                      <th class="px-8 py-5 border-r border-slate-800">Type / Source</th>
+                      <th class="px-8 py-5 border-r border-slate-800">Référence & Ressource</th>
+                      <th class="px-8 py-5 border-r border-slate-800 text-center">Niveau</th>
+                      <th class="px-8 py-5 text-right">Language / Tech</th>
+                  </tr>
+              </thead>
+              
+              <tbody class="text-slate-900 font-medium italic">
+                  <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <div class="flex items-center gap-3">
+                              <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                              <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">YouTube</span>
+                          </div>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <a href="#" class="group-hover:text-blue-600 transition-colors font-bold">Protocoles de Frappe Close Air Support</a>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100 text-center">
+                          <span class="px-3 py-1 bg-green-50 text-green-600 text-[9px] font-black uppercase rounded-full">Initiation</span>
+                      </td>
+                      <td class="px-8 py-6 text-right font-mono text-[10px] text-slate-400 uppercase tracking-widest">FR / Vidéo</td>
+                  </tr>
 
-    document.querySelectorAll('.operator-choice').forEach(card => {
-      card.addEventListener('click', () => {
-        const key = card.dataset.operator;
-        const data = operators[key];
-        if (!data) return;
+                  <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <div class="flex items-center gap-3">
+                              <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                              <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Reddit</span>
+                          </div>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <a href="#" class="group-hover:text-blue-600 transition-colors font-bold">r/TacticalGear : JPC Loadout Optimization</a>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100 text-center">
+                          <span class="px-3 py-1 bg-blue-50 text-blue-600 text-[9px] font-black uppercase rounded-full">Intermédiaire</span>
+                      </td>
+                      <td class="px-8 py-6 text-right font-mono text-[10px] text-slate-400 uppercase tracking-widest">EN / Community</td>
+                  </tr>
 
-        detailTitle.textContent = data.title;
-        detailSubtitle.textContent = data.subtitle;
-        detailBadge.textContent = data.badge;
-        primary1Name.textContent = data.primary1;
-        primary2Name.textContent = data.primary2;
-        primary3Name.textContent = data.primary3;
-        secondaryName.textContent = data.secondary;
-        vestName.textContent = data.vest;
-        miscName.textContent = data.misc;
+                  <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <div class="flex items-center gap-3">
+                              <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                              <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">SCORM</span>
+                          </div>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <span class="font-bold">E-learning : Coordination ATAK v4.2</span>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100 text-center">
+                          <span class="px-3 py-1 bg-slate-900 text-white text-[9px] font-black uppercase rounded-full">Expert</span>
+                      </td>
+                      <td class="px-8 py-6 text-right font-mono text-[10px] text-slate-400 uppercase tracking-widest">JS / XML / SCORM 2004</td>
+                  </tr>
 
-        selectionView.classList.add('hidden-view');
-        detailView.classList.remove('hidden-view');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    });
+                  <tr class="hover:bg-slate-50 transition-colors group">
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <div class="flex items-center gap-3">
+                              <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                              <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Docs</span>
+                          </div>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <a href="#" class="group-hover:text-blue-600 transition-colors font-bold">Manuel de Liaison Radio (Kilo-Alpha)</a>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100 text-center">
+                          <span class="px-3 py-1 bg-blue-50 text-blue-600 text-[9px] font-black uppercase rounded-full">Intermédiaire</span>
+                      </td>
+                      <td class="px-8 py-6 text-right font-mono text-[10px] text-slate-400 uppercase tracking-widest">PDF / FR</td>
+                  </tr>
+              </tbody>
+          </table>
+      </div>
 
-    document.getElementById('backToSelection').addEventListener('click', () => {
-      detailView.classList.add('hidden-view');
-      selectionView.classList.remove('hidden-view');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  </script>
-</body>
-</html>
+      <div class="mt-8 flex justify-end gap-4 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+          <span>Total_Records: 04</span>
+          <span class="text-slate-200">|</span>
+          <span>Last_Sync: 2026-03-10</span>
+      </div>
+  </div>
+</section><section class="bg-slate-50 py-24 px-8 relative">
+  <div class="max-w-7xl mx-auto">
+      
+      <div class="mb-12 flex justify-between items-end border-b border-slate-200 pb-8">
+          <div>
+              <h2 class="text-[11px] font-[950] uppercase tracking-[0.5em] text-blue-600 mb-2 italic">Personnel_Operations</h2>
+              <p class="text-3xl font-black uppercase tracking-tighter italic text-slate-900">Registre des Qualifications & Sessions</p>
+          </div>
+          <div class="hidden md:block text-right">
+              <p class="text-[10px] font-mono font-bold text-slate-400 uppercase">Status: Live_Sync</p>
+              <p class="text-[10px] font-mono font-bold text-green-600 uppercase">Operational: 100%</p>
+          </div>
+      </div>
+
+      <div class="overflow-hidden border border-slate-200 rounded-[2rem] bg-white shadow-sm">
+          <table class="w-full text-left border-collapse">
+              <thead class="bg-slate-900 text-[10px] font-[950] uppercase tracking-[0.4em] text-slate-400">
+                  <tr>
+                      <th class="px-8 py-5 border-r border-slate-800">Opérateur / Instructeur</th>
+                      <th class="px-8 py-5 border-r border-slate-800">Brevet / Habilitation</th>
+                      <th class="px-8 py-5 border-r border-slate-800 text-center">Session Actuelle</th>
+                      <th class="px-8 py-5 text-right">Statut Opérationnel</th>
+                  </tr>
+              </thead>
+              
+              <tbody class="text-slate-900 font-medium italic">
+                  
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-all group">
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <div class="flex items-center gap-4">
+                              <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black not-italic shadow-lg shadow-blue-500/20">I</div>
+                              <div>
+                                  <p class="text-sm font-black uppercase not-italic">Maj. Blackwood</p>
+                                  <p class="text-[9px] font-mono text-slate-400 uppercase tracking-widest">Lead Instructor / JTAC-E</p>
+                              </div>
+                          </div>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <div class="flex flex-wrap gap-2">
+                              <span class="px-2 py-0.5 bg-slate-900 text-white text-[8px] font-black uppercase rounded tracking-widest">Master_Wings</span>
+                              <span class="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-black uppercase rounded tracking-widest">Liaison_Level_4</span>
+                          </div>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100 text-center">
+                          <p class="text-xs font-bold text-slate-600">Module_Alpha : CAS Advanced</p>
+                          <p class="text-[9px] font-mono text-slate-300 uppercase italic">Fin de session : 14:00</p>
+                      </td>
+                      <td class="px-8 py-6 text-right">
+                          <span class="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 text-[9px] font-black uppercase rounded-full border border-green-100">
+                              <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                              En Instruction
+                          </span>
+                      </td>
+                  </tr>
+
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-all group">
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <div class="flex items-center gap-4">
+                              <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-black not-italic">O</div>
+                              <div>
+                                  <p class="text-sm font-black uppercase not-italic">Sgt. Miller</p>
+                                  <p class="text-[9px] font-mono text-slate-400 uppercase tracking-widest">Qualified Operator</p>
+                              </div>
+                          </div>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <div class="flex flex-wrap gap-2">
+                              <span class="px-2 py-0.5 bg-slate-100 text-slate-500 text-[8px] font-black uppercase rounded tracking-widest">JTAC_Basic</span>
+                          </div>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100 text-center text-slate-300">
+                          <span class="text-[10px] italic">— No Active Session —</span>
+                      </td>
+                      <td class="px-8 py-6 text-right">
+                          <span class="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-full border border-slate-200">
+                              <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span>
+                              Standby
+                          </span>
+                      </td>
+                  </tr>
+
+                  <tr class="hover:bg-slate-50/80 transition-all group">
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <div class="flex items-center gap-4">
+                              <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 font-black not-italic">C</div>
+                              <div>
+                                  <p class="text-sm font-black uppercase not-italic">Cpl. Henderson</p>
+                                  <p class="text-[9px] font-mono text-slate-400 uppercase tracking-widest">Candidate / Trainee</p>
+                              </div>
+                          </div>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100">
+                          <span class="text-[10px] italic text-slate-400">En cours d'acquisition...</span>
+                      </td>
+                      <td class="px-8 py-6 border-r border-slate-100 text-center">
+                          <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden max-w-[120px] mx-auto mb-1">
+                              <div class="bg-blue-600 h-full w-[65%]"></div>
+                          </div>
+                          <p class="text-[9px] font-black uppercase text-blue-600">65% Progress</p>
+                      </td>
+                      <td class="px-8 py-6 text-right">
+                          <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 text-[9px] font-black uppercase rounded-full border border-blue-100">
+                              <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                              Formation active
+                          </span>
+                      </td>
+                  </tr>
+
+              </tbody>
+          </table>
+      </div>
+
+      <div class="mt-8 flex justify-between items-center text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 px-4">
+          <div class="flex gap-6">
+              <span>Active_Sessions: 02</span>
+              <span>Total_Certified: 142</span>
+          </div>
+          <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+              <span>Auto-Refresh Active</span>
+          </div>
+      </div>
+  </div>
+</section>
+<section class="bg-slate-50 py-24 px-8 relative overflow-hidden">
+  <div class="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+
+  <div class="max-w-7xl mx-auto relative z-10">
+      
+      <div class="mb-16">
+          <h2 class="text-[11px] font-[950] uppercase tracking-[0.4em] text-blue-600 mb-2 italic">Data_Repository</h2>
+          <p class="text-4xl font-black uppercase tracking-tighter italic text-slate-900">Références & Certifications</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          
+          <div class="group bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500 flex flex-col justify-between min-h-[300px]">
+              <div>
+                  <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors duration-500">
+                      <svg class="w-6 h-6 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l-9-5 9-5 9 5-9 5zm0 0v6"/>
+                      </svg>
+                  </div>
+                  <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-3">Certification_01</h3>
+                  <p class="text-xl font-black text-slate-900 leading-tight mb-4">Qualification TACP/JTAC</p>
+                  <p class="text-sm text-slate-500 italic font-medium leading-relaxed">Formation avancée sur le contrôle terminal des frappes aériennes et la gestion d'espace aérien saturé.</p>
+              </div>
+              <div class="mt-8 pt-6 border-t border-slate-50">
+                  <span class="text-[9px] font-mono font-bold text-blue-600 uppercase tracking-widest">ID: 8842-DELTA</span>
+              </div>
+          </div>
+
+          <a href="#" class="group bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-900/5 transition-all duration-500 flex flex-col justify-between min-h-[300px]">
+              <div>
+                  <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-slate-900 transition-colors duration-500">
+                      <svg class="w-6 h-6 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                      </svg>
+                  </div>
+                  <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-3">Technical_Manual</h3>
+                  <p class="text-xl font-black text-slate-900 leading-tight mb-4">Documentation ATAK-CIV</p>
+                  <p class="text-sm text-slate-500 italic font-medium leading-relaxed">Guide complet sur l'utilisation de l'Android Tactical Assault Kit pour la coordination terrain.</p>
+              </div>
+              <div class="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
+                  <span class="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest italic font-medium">Accéder à la ressource</span>
+                  <svg class="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                  </svg>
+              </div>
+          </a>
+
+          <div class="group bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-900/5 transition-all duration-500 flex flex-col justify-between min-h-[300px]">
+              <div>
+                  <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-slate-900 transition-colors duration-500">
+                      <svg class="w-6 h-6 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                      </svg>
+                  </div>
+                  <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-3">Operational_Ref</h3>
+                  <p class="text-xl font-black text-slate-900 leading-tight mb-4">Architecture Réseau Maillé</p>
+                  <p class="text-sm text-slate-500 italic font-medium leading-relaxed">Mise en place de nœuds de communication résilients en environnement dégradé.</p>
+              </div>
+              <div class="mt-8 pt-6 border-t border-slate-50">
+                  <div class="flex gap-2">
+                      <span class="px-2 py-1 bg-slate-100 rounded text-[8px] font-black uppercase text-slate-500">Network</span>
+                      <span class="px-2 py-1 bg-blue-50 rounded text-[8px] font-black uppercase text-blue-600">Active</span>
+                  </div>
+              </div>
+          </div>
+
+      </div>
+  </div>
+</section>
+<section class="relative bg-slate-900 overflow-hidden font-sans select-none min-h-[700px]">
+  <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-[0.15]"></div>
+  
+  <div class="relative max-w-7xl mx-auto px-6 md:px-10 py-16 z-10">
+      
+      <div class="mb-12 text-center">
+          <p class="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Inventory_Ref</p>
+          <h1 class="mt-2 text-3xl font-[950] uppercase italic tracking-tighter text-white">Kit Médical IFAK</h1>
+      </div>
+
+      <div class="relative w-full h-[550px]">
+          
+          <div class="absolute inset-x-0 bottom-0 z-0 h-full flex items-end justify-center">
+              <img src="https://static.wixstatic.com/media/44674e_dd27a75055ff4cf898a7085be62633f5~mv2.webp/v1/fill/w_1479,h_1001,al_c,q_85,enc_avif,quality_auto/Belt.webp" 
+                   class="h-full object-contain object-bottom opacity-70">
+          </div>
+
+          <div class="absolute top-[10%] left-0 right-0 z-10 w-full max-w-5xl mx-auto p-10 bg-white/[0.03] backdrop-blur-sm border border-white/5 rounded-3xl shadow-2xl">
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  
+                  <div class="space-y-6">
+                      <div class="space-y-2">
+                          <h3 class="font-mono text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Wundversorgung</h3>
+                          <ul class="space-y-1 text-xs font-bold text-white/90 font-mono">
+                              <li>15x Bandage (Einfach) [Field Dressing]</li>
+                              <li class="text-blue-400">4x Tourniquet [Critique]</li>
+                              <li>2x Chest Seal</li>
+                          </ul>
+                      </div>
+
+                      <div class="space-y-2">
+                          <h3 class="font-mono text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Medikamente</h3>
+                          <ul class="space-y-1 text-xs font-bold text-white/90 font-mono">
+                              <li>2x Morphin-Autoinjektor</li>
+                              <li>1x Schmerzmittel [Painkiller]</li>
+                          </ul>
+                      </div>
+                  </div>
+
+                  <div class="space-y-6">
+                      <div class="space-y-2">
+                          <h3 class="font-mono text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Atemwegsversorgung</h3>
+                          <ul class="space-y-1 text-xs font-bold text-white/90 font-mono">
+                              <li>2x Guedeltubus</li>
+                          </ul>
+                      </div>
+
+                      <div class="space-y-2">
+                          <h3 class="font-mono text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Zugang</h3>
+                          <ul class="space-y-1 text-xs font-bold text-white/90 font-mono">
+                              <li class="text-amber-400">1x 16g IV [freiwillig]</li>
+                              <li class="text-amber-400">1x 1000ml Kochsalzlösung [Saline IV]</li>
+                          </ul>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="mt-10 pt-6 border-t border-white/5 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.4em] text-white/20">
+                  <span>Validation : Nominal</span>
+                  <span>Habilitation : Alpha_Ops</span>
+              </div>
+          </div>
+      </div>
+
+  </div>
+</section>
