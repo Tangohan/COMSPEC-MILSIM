@@ -375,6 +375,21 @@ CREATE TABLE IF NOT EXISTS `tenant_atak_config` (
   CONSTRAINT `tenant_atak_config_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Cartes ATAK (globales, liste des cartes disponibles pour l'overlay)
+CREATE TABLE IF NOT EXISTS `atak_maps` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `slug` varchar(50) NOT NULL,
+  `label` varchar(100) NOT NULL,
+  `world_name` varchar(50) NOT NULL DEFAULT 'altis',
+  `tile_pattern` varchar(500) NOT NULL,
+  `config` json DEFAULT NULL,
+  `display_order` int NOT NULL DEFAULT 0,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `slug` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Code OTAN des grades (OR-1 à OR-9, OF-1 à OF-10, WO-1 à WO-5)
 -- (Si la colonne existe déjà, commenter la ligne suivante.)
 ALTER TABLE `grades` ADD COLUMN `nato_code` varchar(10) DEFAULT NULL AFTER `short_name`;

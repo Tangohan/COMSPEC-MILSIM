@@ -537,11 +537,25 @@
     
                 <!-- Colonne droite -->
                 <aside class="space-y-8">
+                    <?php
+                    $cu = $currentUser ?? null;
+                    $pe = $personnelExtras ?? null;
+                    $gr = $grade ?? null;
+                    $displayName = $cu ? ($cu['display_name'] ?? $cu['email']) : '—';
+                    $initials = $cu && !empty($cu['display_name']) ? strtoupper(preg_replace('/[^A-Z]/', '', substr((string)$cu['display_name'], 0, 2)) ?: 'OP') : 'OP';
+                    $matricule = $pe ? ($pe['service_number'] ?? null) : null;
+                    $idLine = $matricule ? 'Matricule: ' . $matricule : ($cu ? 'ID: ' . (int)$cu['id'] : '—');
+                    $statut = $cu ? ($cu['status'] ?? '—') : '—';
+                    $statutLabel = ($statut === 'active') ? 'Opérationnel' : $statut;
+                    $gradeName = $gr ? ($gr['short_name'] ?? $gr['name']) : '—';
+                    $clearance = $pe ? ($pe['clearance_level'] ?? '—') : '—';
+                    $squadron = $pe ? ($pe['squadron'] ?? '—') : '—';
+                    ?>
                     <section class="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-sm shadow-slate-200/50 transition-all hover:shadow-xl hover:shadow-slate-200/60">
                         <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
                             <div class="space-y-1">
                                 <p class="text-[10px] font-[900] uppercase tracking-[0.3em] text-blue-600">Identité Opérateur</p>
-                                <h2 class="text-xl font-black uppercase tracking-tighter text-slate-900">Dossier Analyste</h2>
+                                <h2 class="text-xl font-black uppercase tracking-tighter text-slate-900">Dossier personnel</h2>
                             </div>
                             <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                         </div>
@@ -551,32 +565,32 @@
                                 <div class="relative group">
                                     <div class="absolute inset-0 bg-blue-600 rounded-full blur opacity-10 group-hover:opacity-20 transition-opacity"></div>
                                     <div class="relative w-16 h-16 rounded-full border-2 border-slate-900 flex items-center justify-center bg-white overflow-hidden">
-                                        <span class="text-xl font-black text-slate-900 italic tracking-tighter">OP</span>
+                                        <span class="text-xl font-black text-slate-900 italic tracking-tighter"><?= htmlspecialchars($initials) ?></span>
                                     </div>
                                 </div>
                 
                                 <div class="min-w-0">
-                                    <h3 class="text-2xl font-[950] uppercase italic tracking-tighter text-slate-900 leading-none">Nom Prénom</h3>
-                                    <p class="mt-2 font-mono text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: FR-CMS-02418</p>
+                                    <h3 class="text-2xl font-[950] uppercase italic tracking-tighter text-slate-900 leading-none"><?= htmlspecialchars($displayName) ?></h3>
+                                    <p class="mt-2 font-mono text-[10px] font-bold text-slate-400 uppercase tracking-widest"><?= htmlspecialchars($idLine) ?></p>
                                 </div>
                             </div>
                 
                             <div class="grid grid-cols-2 gap-px bg-slate-100 border border-slate-100 mt-10 rounded-2xl overflow-hidden">
                                 <div class="bg-slate-50 p-5 space-y-1">
                                     <span class="block text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Statut</span>
-                                    <span class="block text-xs font-black uppercase text-emerald-600 italic">Opérationnel</span>
+                                    <span class="block text-xs font-black uppercase <?= $statut === 'active' ? 'text-emerald-600 italic' : 'text-slate-900' ?>"><?= htmlspecialchars($statutLabel) ?></span>
                                 </div>
                                 <div class="bg-slate-50 p-5 space-y-1 text-right lg:text-left">
-                                    <span class="block text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Classe</span>
-                                    <span class="block text-xs font-black uppercase text-slate-900">Analyste</span>
+                                    <span class="block text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Rang</span>
+                                    <span class="block text-xs font-black uppercase text-slate-900"><?= htmlspecialchars($gradeName) ?></span>
                                 </div>
                                 <div class="bg-slate-50 p-5 space-y-1">
                                     <span class="block text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Habilitation</span>
-                                    <span class="block text-xs font-black uppercase text-slate-900">Alpha II</span>
+                                    <span class="block text-xs font-black uppercase text-slate-900"><?= htmlspecialchars($clearance ?: '—') ?></span>
                                 </div>
                                 <div class="bg-slate-50 p-5 space-y-1 text-right lg:text-left">
-                                    <span class="block text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Expiration</span>
-                                    <span class="block text-xs font-black uppercase text-slate-400 italic">31.12.2026</span>
+                                    <span class="block text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Unité</span>
+                                    <span class="block text-xs font-black uppercase text-slate-400 italic"><?= htmlspecialchars($squadron) ?></span>
                                 </div>
                             </div>
                 
@@ -588,7 +602,7 @@
                                     </svg>
                                 </a>
                                 <p class="mt-4 text-center text-[9px] font-bold text-slate-300 uppercase tracking-widest italic">
-                                    Dernière consultation : Aujourd'hui à 09:53
+                                    Fiche détaillée et données administratives
                                 </p>
                             </div>
                         </div>

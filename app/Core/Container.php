@@ -84,9 +84,11 @@ class Container
             ),
             \App\Services\Tactical\AtakTokenService::class => new \App\Services\Tactical\AtakTokenService(),
             \App\Repositories\TenantAtakConfigRepository::class => new \App\Repositories\TenantAtakConfigRepository(),
+            \App\Repositories\AtakMapRepository::class => new \App\Repositories\AtakMapRepository(),
             \App\Controllers\Web\AtakController::class => new \App\Controllers\Web\AtakController(
                 self::get(\App\Services\Tactical\AtakTokenService::class),
-                self::get(\App\Repositories\TenantAtakConfigRepository::class)
+                self::get(\App\Repositories\TenantAtakConfigRepository::class),
+                self::get(\App\Repositories\AtakMapRepository::class)
             ),
             \App\Controllers\Admin\AdminUsersController::class => new \App\Controllers\Admin\AdminUsersController(
                 self::get(UserRepository::class)
@@ -97,6 +99,19 @@ class Container
             ),
             \App\Controllers\Admin\AdminModpackController::class => new \App\Controllers\Admin\AdminModpackController(
                 self::get(\App\Repositories\ModpackRepository::class)
+            ),
+            \App\Controllers\Admin\AdminAtakConfigController::class => new \App\Controllers\Admin\AdminAtakConfigController(
+                self::get(\App\Repositories\TenantAtakConfigRepository::class),
+                self::get(\App\Repositories\AtakMapRepository::class)
+            ),
+            \App\Controllers\Admin\AdminConfigurationController::class => new \App\Controllers\Admin\AdminConfigurationController(
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\TenantMatriculeConfigRepository::class),
+                self::get(\App\Repositories\PersonnelAdminPanelRepository::class)
+            ),
+            \App\Controllers\Admin\AdminRecruitmentsController::class => new \App\Controllers\Admin\AdminRecruitmentsController(
+                self::get(\App\Repositories\EnlistmentRepository::class)
             ),
             \App\Repositories\ForumCategoryRepository::class => new \App\Repositories\ForumCategoryRepository(),
             \App\Repositories\ForumTopicRepository::class => new \App\Repositories\ForumTopicRepository(),

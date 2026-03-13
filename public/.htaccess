@@ -1,21 +1,52 @@
-RewriteEngine On
+# Athena — public/.htaccess
+# Réécriture vers index.php (front controller)
 
-# Redirect legacy .html to clean URLs
-RewriteRule ^index\.html$ / [R=301,L]
-RewriteRule ^dashboard\.html$ /dashboard [R=301,L]
-RewriteRule ^connexion\.html$ /login [R=301,L]
-RewriteRule ^comspec-login\.html$ /login [R=301,L]
-RewriteRule ^personnel-file\.html$ /personnel/me [R=301,L]
-RewriteRule ^orbat\.html$ /orbat [R=301,L]
-RewriteRule ^atak\.html$ /atak [R=301,L]
-RewriteRule ^tacmap\.html$ /tacmap [R=301,L]
-RewriteRule ^enlistment\.html$ /enlistment [R=301,L]
-RewriteRule ^recrutement\.html$ /recrutement [R=301,L]
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
 
-# Real files and directories
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
+    # ——— Redirections 301 (anciennes URLs → URLs propres) ———
+    RewriteRule ^index\.html$ / [R=301,L]
+    RewriteRule ^dashboard\.html$ /dashboard [R=301,L]
+    RewriteRule ^connexion\.html$ /login [R=301,L]
+    RewriteRule ^comspec-login\.html$ /login [R=301,L]
+    RewriteRule ^personnel-file\.html$ /personnel/me [R=301,L]
+    RewriteRule ^orbat\.html$ /orbat [R=301,L]
+    RewriteRule ^atak\.html$ /atak [R=301,L]
+    RewriteRule ^tacmap\.html$ /tacmap [R=301,L]
+    RewriteRule ^enlistment\.html$ /enlistment [R=301,L]
+    RewriteRule ^recrutement\.html$ /recrutement [R=301,L]
+    RewriteRule ^equipement\.html$ /equipement [R=301,L]
+    RewriteRule ^documents\.html$ /documents [R=301,L]
+    RewriteRule ^formations\.html$ /formations [R=301,L]
+    RewriteRule ^modpacks\.html$ /modpacks [R=301,L]
+    RewriteRule ^forum\.html$ /forum [R=301,L]
+    RewriteRule ^compte\.html$ /account [R=301,L]
+    RewriteRule ^mot-de-passe-oublie\.html$ /forgot-password [R=301,L]
 
-# Front controller
-RewriteRule ^ index.php [QSA,L]
+    # Fichiers et répertoires réels (pas de réécriture)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Front controller
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# ——— Sécurité ———
+<IfModule mod_headers.c>
+    # Empêcher le sniff MIME
+    Header set X-Content-Type-Options "nosniff"
+    # Referrer minimal (optionnel)
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Désactiver l’affichage des répertoires
+Options -Indexes
+
+# Bloquer l’accès direct à des fichiers sensibles (si jamais exposés)
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>

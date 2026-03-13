@@ -145,6 +145,33 @@ if ($stmt && !$stmt->fetch()) {
     $pdo->exec("ALTER TABLE grades ADD COLUMN nato_code varchar(10) DEFAULT NULL AFTER short_name");
 }
 
+// Colonne default_map_slug sur tenant_atak_config (si absente)
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = 'default_map_slug'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Ajout colonne tenant_atak_config.default_map_slug...\n";
+    $pdo->exec("ALTER TABLE tenant_atak_config ADD COLUMN default_map_slug varchar(50) DEFAULT 'altis' AFTER instructions");
+}
+
+// Seed atak_maps (Altis) si table vide
+$stmt = $pdo->query("SELECT 1 FROM atak_maps LIMIT 1");
+if ($stmt && !$stmt->fetch()) {
+    echo "Seed atak_maps (Altis)...\n";
+    $config = json_encode([
+        'center' => [15000, 15000],
+        'defaultZoom' => 3,
+        'minZoom' => 0,
+        'maxZoom' => 6,
+        'tileSize' => 212,
+        'worldSize' => 30720,
+        'crs' => ['factorx' => 0.006839, 'factory' => 0.006836, 'tileWidth' => 212],
+        'attribution' => '&copy; Bohemia Interactive',
+        'title' => 'Altis',
+    ]);
+    $ins = $pdo->prepare("INSERT INTO atak_maps (slug, label, world_name, tile_pattern, config, display_order) VALUES ('altis', 'Altis', 'altis', ?, ?, 0)");
+    $ins->execute(['/assets/maps/altis/{z}/{x}/{y}.png', $config]);
+    echo "atak_maps seed OK.\n";
+}
+
 // ----- Seed forum (permissions, rôles, catégories) — idempotent -----
 $run_forum_seed = function (PDO $pdo, int $tenantId): void {
     $stmt = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'forum.view' LIMIT 1");
@@ -157,6 +184,7 @@ $run_forum_seed = function (PDO $pdo, int $tenantId): void {
     echo "Seed forum : permissions et rôles...\n";
 
     $permissions = [
+        ['admin.access', 'Accès administration', 'admin'],
         ['forum.view', 'Voir le forum', 'forum'],
         ['forum.create_topic', 'Créer un sujet', 'forum'],
         ['forum.reply', 'Répondre', 'forum'],
@@ -264,6 +292,23 @@ if ($stmt && $stmt->fetch()) {
     }
 
     $run_forum_seed($pdo, $tenantId);
+
+    // S'assurer que la permission admin.access existe et est liée au rôle Administrator (menu Admin)
+    $stmt = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'admin.access' LIMIT 1");
+    $stmt->execute([$tenantId]);
+    if (!$stmt->fetch()) {
+        $pdo->prepare("INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, 'Accès administration', 'admin.access', 'admin', NOW())")
+            ->execute([$tenantId]);
+        $permId = (int) $pdo->lastInsertId();
+        $adminRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'tenant_admin' LIMIT 1");
+        $adminRole->execute([$tenantId]);
+        $adminRoleId = $adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
+        if ($adminRoleId && $permId) {
+            $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)")->execute([$adminRoleId, $permId]);
+        }
+        echo "Permission admin.access ajoutée et liée au rôle Administrator.\n";
+    }
+
     echo "Migrations terminées.\n";
     exit(0);
 }

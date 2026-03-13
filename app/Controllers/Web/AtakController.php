@@ -7,6 +7,7 @@ namespace App\Controllers\Web;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\AtakMapRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Services\Tactical\AtakTokenService;
 
@@ -14,7 +15,8 @@ class AtakController
 {
     public function __construct(
         private AtakTokenService $atakTokenService,
-        private TenantAtakConfigRepository $atakConfigRepository
+        private TenantAtakConfigRepository $atakConfigRepository,
+        private AtakMapRepository $atakMapRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -31,6 +33,8 @@ class AtakController
         $jwtSecret = isset($config['jwt_secret']) && $config['jwt_secret'] !== '' ? $config['jwt_secret'] : null;
         $token = $this->atakTokenService->generate($jwtSecret);
 
+        $atakMap = $tenantId ? $this->atakMapRepository->getDefaultForTenant($tenantId) : $this->atakMapRepository->getBySlug('altis');
+
         return Response::view('atak', [
             'atakToken' => $token,
             'nodeAtakUrl' => $nodeUrl,
@@ -40,6 +44,15 @@ class AtakController
                 'arma_mod_credentials' => $config['arma_mod_credentials'] ?? null,
                 'instructions' => $config['instructions'] ?? null,
             ] : null,
+            'atakMapConfig' => $atakMap,
+        ]);
+    }
+
+    public function tuto(Request $request, array $params = []): Response
+    {
+        return Response::view('layout.main', [
+            'content' => 'atak-tuto',
+            'title' => 'Tutoriel — Mod Arma COMSPEC Overwatch',
         ]);
     }
 }

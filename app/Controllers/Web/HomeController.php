@@ -18,14 +18,30 @@ class HomeController
     public function dashboard(Request $request, array $params = []): Response
     {
         $modpack = null;
+        $currentUser = null;
+        $personnelExtras = null;
+        $grade = null;
         $tenantId = Session::get('tenant_id');
         if ($tenantId) {
-            $repo = \App\Core\Container::get(\App\Repositories\ModpackRepository::class);
-            $modpack = $repo->getPrimaryForTenant((int) $tenantId);
+            $modpackRepo = \App\Core\Container::get(\App\Repositories\ModpackRepository::class);
+            $modpack = $modpackRepo->getPrimaryForTenant((int) $tenantId);
+            $auth = \App\Core\Container::get(\App\Services\Auth\AuthService::class);
+            $currentUser = $auth->user();
+            if ($currentUser) {
+                $extrasRepo = \App\Core\Container::get(\App\Repositories\PersonnelExtrasRepository::class);
+                $gradeRepo = \App\Core\Container::get(\App\Repositories\GradeRepository::class);
+                $personnelExtras = $extrasRepo->getByUserId((int) $currentUser['id']);
+                if (!empty($currentUser['grade_id'])) {
+                    $grade = $gradeRepo->findById((int) $currentUser['grade_id'], (int) $tenantId);
+                }
+            }
         }
         return Response::view('dashboard', [
             'title' => 'Dashboard — Athena',
             'modpack' => $modpack,
+            'currentUser' => $currentUser,
+            'personnelExtras' => $personnelExtras,
+            'grade' => $grade,
         ]);
     }
 

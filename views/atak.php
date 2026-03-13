@@ -1,4 +1,26 @@
-<?php $base = url(''); $atakToken = $atakToken ?? ''; $nodeAtakUrl = $nodeAtakUrl ?? ''; ?>
+<?php
+$base = url('');
+$atakToken = $atakToken ?? '';
+$nodeAtakUrl = $nodeAtakUrl ?? '';
+$atakConfig = $atakConfig ?? null;
+$atakMapConfig = $atakMapConfig ?? null;
+$hasGameConfig = $atakConfig && ($atakConfig['arma_server_host'] ?? $atakConfig['arma_mod_credentials'] ?? $atakConfig['instructions'] ?? null);
+$atakMapConfigForJs = null;
+if ($atakMapConfig) {
+  $c = $atakMapConfig['config'] ?? [];
+  $atakMapConfigForJs = [
+    'slug' => $atakMapConfig['slug'] ?? 'altis',
+    'tilePattern' => $base . ($atakMapConfig['tile_pattern'] ?? '/assets/maps/altis/{z}/{x}/{y}.png'),
+    'center' => $c['center'] ?? [15000, 15000],
+    'defaultZoom' => (int)($c['defaultZoom'] ?? 3),
+    'minZoom' => (int)($c['minZoom'] ?? 0),
+    'maxZoom' => (int)($c['maxZoom'] ?? 6),
+    'tileSize' => (int)($c['tileSize'] ?? 212),
+    'attribution' => $c['attribution'] ?? '&copy; Bohemia Interactive',
+    'crs' => $c['crs'] ?? ['factorx' => 0.006839, 'factory' => 0.006836, 'tileWidth' => 212],
+  ];
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -8,7 +30,12 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="<?= $base ?>/assets/css/atak.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <script>window.ATAK_TOKEN = <?= json_encode($atakToken) ?>; window.NODE_ATAK_URL = <?= json_encode($nodeAtakUrl) ?>;</script>
+  <script>
+    window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
+    window.NODE_ATAK_URL = <?= json_encode($nodeAtakUrl) ?>;
+    window.ATAK_TEAM_CONFIG = <?= json_encode($atakConfig ?: new stdClass()) ?>;
+    <?php if ($atakMapConfigForJs): ?>window.ATAK_MAP_CONFIG = <?= json_encode($atakMapConfigForJs) ?>;<?php endif; ?>
+  </script>
 </head>
 <body class="atak-page">
   <header class="atak-header">
@@ -23,6 +50,26 @@
     </div>
     <a href="<?= url('dashboard') ?>" style="color: var(--atak-muted); font-size: 0.75rem;">Dashboard</a>
   </header>
+
+  <?php if ($hasGameConfig): ?>
+  <div class="atak-game-config" id="atak-game-config" style="background: rgba(0,0,0,0.85); border-bottom: 1px solid var(--atak-border); padding: 0.5rem 1rem; font-size: 0.75rem;">
+    <button type="button" id="atak-game-config-toggle" style="color: var(--atak-muted); cursor: pointer;">▼ Configuration pour le jeu (Arma / mod)</button>
+    <div id="atak-game-config-body" style="display:none; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--atak-border);">
+      <?php if (!empty($atakConfig['arma_server_host'])): ?>
+        <p><strong>Serveur Arma :</strong> <?= htmlspecialchars($atakConfig['arma_server_host']) ?><?= !empty($atakConfig['arma_server_port']) ? ':' . (int)$atakConfig['arma_server_port'] : '' ?></p>
+      <?php endif; ?>
+      <?php if (!empty($atakConfig['arma_mod_credentials'])): ?>
+        <p><strong>Identifiants / config mod :</strong></p>
+        <pre style="white-space: pre-wrap; word-break: break-all; margin: 0.25rem 0; font-size: 0.7rem;"><?= htmlspecialchars($atakConfig['arma_mod_credentials']) ?></pre>
+      <?php endif; ?>
+      <?php if (!empty($atakConfig['instructions'])): ?>
+        <p><strong>Instructions :</strong></p>
+        <p style="white-space: pre-wrap; margin: 0.25rem 0;"><?= nl2br(htmlspecialchars($atakConfig['instructions'])) ?></p>
+      <?php endif; ?>
+      <p style="margin-top: 0.5rem;"><a href="<?= url('atak/tuto') ?>" style="color: var(--atak-muted); text-decoration: underline;">Guide complet — Tuto mod Arma</a></p>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <div class="atak-connection-lost" id="atak-connection-lost">Connexion perdue. Reconnexion…</div>
 
@@ -101,7 +148,8 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
-  <script src="<?= $base ?>/assets/js/maps/altis.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-map-crs.js"></script>
+  <?php if (!$atakMapConfigForJs): ?><script src="<?= $base ?>/assets/js/maps/altis.js"></script><?php endif; ?>
   <script src="<?= $base ?>/assets/js/atak-map.js"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js"></script>
   <script src="<?= $base ?>/assets/js/atak-units.js"></script>
@@ -162,6 +210,16 @@
       if (window.ATAKPings) ATAKPings.fetchPings();
       if (window.ATAKJTAC) ATAKJTAC.fetchNineLines();
       if (window.ATAKCams) ATAKCams.fetchIntelPhotos();
+
+      var configToggle = document.getElementById('atak-game-config-toggle');
+      var configBody = document.getElementById('atak-game-config-body');
+      if (configToggle && configBody) {
+        configToggle.addEventListener('click', function () {
+          var open = configBody.style.display !== 'none';
+          configBody.style.display = open ? 'none' : 'block';
+          configToggle.textContent = (open ? '▼' : '▲') + ' Configuration pour le jeu (Arma / mod)';
+        });
+      }
     })();
   </script>
 </body>

@@ -18,11 +18,10 @@ class EnlistmentRepository
 
     public function create(int $tenantId, array $data): int
     {
+        // Colonnes de la table de base (CREATE TABLE) — toujours présentes
         $stmt = $this->pdo->prepare(
-            'INSERT INTO enlistments (tenant_id, first_name, last_name, email, callsign, country, experience, specialty, platform, availability, notes,
-             age, timezone, weekly_availability, system_config, microphone_quality, past_milsim_experience, ace_acre_level, motivation_why_join, motivation_accountability, commitment_effort, availability_wed_sat, no_ai_confirmed,
-             status, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+            'INSERT INTO enlistments (tenant_id, first_name, last_name, email, callsign, country, experience, specialty, platform, availability, notes, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
         );
         $stmt->execute([
             $tenantId,
@@ -36,21 +35,45 @@ class EnlistmentRepository
             $data['platform'] ?? null,
             $data['availability'] ?? null,
             $data['notes'] ?? null,
-            isset($data['age']) && $data['age'] !== '' ? (int) $data['age'] : null,
-            $data['timezone'] ?? null,
-            $data['weekly_availability'] ?? null,
-            $data['system_config'] ?? null,
-            $data['microphone_quality'] ?? null,
-            $data['past_milsim_experience'] ?? null,
-            $data['ace_acre_level'] ?? null,
-            $data['motivation_why_join'] ?? null,
-            $data['motivation_accountability'] ?? null,
-            $data['commitment_effort'] ?? null,
-            $data['availability_wed_sat'] ?? null,
-            !empty($data['no_ai_confirmed']) ? 1 : 0,
             $data['status'] ?? 'submitted',
         ]);
-        return (int) $this->pdo->lastInsertId();
+        $id = (int) $this->pdo->lastInsertId();
+        if ($id > 0) {
+            $this->updateOlympusColumns($id, $data);
+        }
+        return $id;
+    }
+
+    /** Met à jour les colonnes Olympus (ajoutées par ALTER) si elles existent. */
+    private function updateOlympusColumns(int $enlistmentId, array $data): void
+    {
+        $columns = [
+            'age' => isset($data['age']) && $data['age'] !== '' ? (int) $data['age'] : null,
+            'timezone' => $data['timezone'] ?? null,
+            'weekly_availability' => $data['weekly_availability'] ?? null,
+            'system_config' => $data['system_config'] ?? null,
+            'microphone_quality' => $data['microphone_quality'] ?? null,
+            'past_milsim_experience' => $data['past_milsim_experience'] ?? null,
+            'ace_acre_level' => $data['ace_acre_level'] ?? null,
+            'motivation_why_join' => $data['motivation_why_join'] ?? null,
+            'motivation_accountability' => $data['motivation_accountability'] ?? null,
+            'commitment_effort' => $data['commitment_effort'] ?? null,
+            'availability_wed_sat' => $data['availability_wed_sat'] ?? null,
+            'no_ai_confirmed' => !empty($data['no_ai_confirmed']) ? 1 : 0,
+        ];
+        try {
+            $sets = [];
+            $params = [];
+            foreach ($columns as $col => $val) {
+                $sets[] = "`{$col}` = ?";
+                $params[] = $val;
+            }
+            $params[] = $enlistmentId;
+            $stmt = $this->pdo->prepare('UPDATE enlistments SET ' . implode(', ', $sets) . ' WHERE id = ?');
+            $stmt->execute($params);
+        } catch (\Throwable) {
+            // Colonnes Olympus absentes (ALTER non exécuté) — on ignore
+        }
     }
 
     public function allForTenant(int $tenantId, ?string $status = null): array

@@ -9,9 +9,11 @@ $examples = [
         'title' => 'Opérateur JTAC',
         'code' => 'Module T-01',
         'category' => 'tactique',
-        'duration_label' => 'Durée: 12 Semaines',
+        'duration_meta' => 'Durée de formation',
+        'duration_label' => '12 Semaines',
         'status_label' => 'Actif',
-        'status_class' => 'bg-emerald-500',
+        'badge_position' => 'right',
+        'badge_style' => 'slate',
         'badge_class' => 'text-emerald-400',
         'image' => 'https://media.defense.gov/2019/Sep/12/2002181666/2000/2000/0/190905-F-BT441-0001.JPG',
         'from_db' => false,
@@ -28,9 +30,11 @@ $examples = [
         'title' => 'Architecture & DDD',
         'code' => 'Module TECH-09',
         'category' => 'technique',
-        'duration_label' => 'Niveau: Expert',
+        'duration_meta' => 'Niveau Requis',
+        'duration_label' => 'Accréditation Expert',
         'status_label' => '',
-        'status_class' => '',
+        'badge_position' => '',
+        'badge_style' => '',
         'badge_class' => 'text-blue-400',
         'image' => 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop',
         'from_db' => false,
@@ -47,9 +51,11 @@ $examples = [
         'title' => 'TCCC / Trauma Care',
         'code' => 'Module MED-03',
         'category' => 'médical',
-        'duration_label' => 'Statut: Prochainement',
-        'status_label' => "Liste d'attente",
-        'status_class' => '',
+        'duration_meta' => 'Statut Actuel',
+        'duration_label' => 'Prochainement',
+        'status_label' => 'Waitlist',
+        'badge_position' => 'left',
+        'badge_style' => 'rose',
         'badge_class' => 'text-rose-500',
         'image' => 'https://media.defense.gov/2022/Jun/14/2003017004/-1/-1/0/220607-F-DA916-1189.JPG',
         'from_db' => false,
@@ -71,9 +77,11 @@ foreach ($modules as $m) {
         'title' => $m['title'],
         'code' => $m['code'] ?? ('MOD-' . (int)$m['id']),
         'category' => 'tactique',
-        'duration_label' => isset($m['estimated_duration_min']) ? 'Durée: ' . (int)$m['estimated_duration_min'] . ' min' : '',
+        'duration_meta' => 'Durée',
+        'duration_label' => isset($m['estimated_duration_min']) ? (int)$m['estimated_duration_min'] . ' min' : '—',
         'status_label' => 'Actif',
-        'status_class' => 'bg-emerald-500',
+        'badge_position' => 'right',
+        'badge_style' => 'slate',
         'badge_class' => 'text-emerald-400',
         'image' => 'https://media.defense.gov/2019/Sep/12/2002181666/2000/2000/0/190905-F-BT441-0001.JPG',
         'from_db' => true,
@@ -118,54 +126,69 @@ $categories = ['all' => 'Tous les modules', 'tactique' => 'tactique', 'technique
         </div>
     </nav>
 
-    <main class="py-16 md:py-24">
-        <div class="max-w-7xl mx-auto px-6">
+    <main class="min-h-screen pt-24 pb-32 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-8">
 
-            <header class="mb-20">
-                <div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
-                    <div>
-                        <p class="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600 mb-3 italic">Operational Readiness</p>
-                        <h1 class="text-5xl md:text-7xl font-black uppercase italic tracking-tighter leading-none text-slate-900">
-                            Catalogue <br> Formations
+            <header class="mb-24">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-12">
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4">
+                            <span class="w-12 h-[1px] bg-slate-900"></span>
+                            <span class="text-[10px] font-black uppercase tracking-[0.5em] text-emerald-600 italic">Operational Readiness</span>
+                        </div>
+                        <h1 class="text-6xl md:text-9xl font-black uppercase italic tracking-tighter leading-[0.8] text-slate-900">
+                            Catalogue <br> <span class="text-slate-300">Formations</span>
                         </h1>
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                        <?php foreach ($categories as $key => $label): ?>
-                        <button type="button"
-                                @click="activeCategory = '<?= $key ?>'"
-                                :class="activeCategory === '<?= $key ?>' ? 'bg-slate-900 text-white border-slate-900' : 'bg-transparent text-slate-400 border-slate-200 hover:border-slate-900'"
-                                class="px-6 py-2 border text-[10px] font-black uppercase tracking-widest transition-all duration-300 italic">
-                            <?= htmlspecialchars($label) ?>
+
+                    <nav class="flex flex-wrap gap-4 border-l border-slate-200 pl-8">
+                        <button type="button" @click="activeCategory = 'all'" :class="activeCategory === 'all' ? 'text-slate-900 underline underline-offset-8' : 'text-slate-400 hover:text-slate-600'" class="text-[10px] font-black uppercase tracking-[0.3em] transition-all italic">
+                            All_Modules
                         </button>
-                        <?php endforeach; ?>
-                    </div>
+                        <button type="button" @click="activeCategory = 'tactique'" :class="activeCategory === 'tactique' ? 'text-slate-900 underline underline-offset-8' : 'text-slate-400 hover:text-slate-600'" class="text-[10px] font-black uppercase tracking-[0.3em] transition-all italic">
+                            Tactique
+                        </button>
+                        <button type="button" @click="activeCategory = 'technique'" :class="activeCategory === 'technique' ? 'text-slate-900 underline underline-offset-8' : 'text-slate-400 hover:text-slate-600'" class="text-[10px] font-black uppercase tracking-[0.3em] transition-all italic">
+                            Technique
+                        </button>
+                        <button type="button" @click="activeCategory = 'médical'" :class="activeCategory === 'médical' ? 'text-slate-900 underline underline-offset-8' : 'text-slate-400 hover:text-slate-600'" class="text-[10px] font-black uppercase tracking-[0.3em] transition-all italic">
+                            Médical
+                        </button>
+                    </nav>
                 </div>
-                <div class="h-[1px] w-full bg-slate-200 mt-12"></div>
             </header>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
-                <?php foreach ($allItems as $i => $item): ?>
-                <div x-show="activeCategory === 'all' || activeCategory === '<?= htmlspecialchars($item['category']) ?>'"
-                     class="group cursor-pointer"
-                     @click="openModal('<?= htmlspecialchars($item['slug'], ENT_QUOTES) ?>')">
-                    <div class="relative aspect-[3/4] overflow-hidden rounded-3xl mb-6 shadow-xl transition-all duration-500 group-hover:-translate-y-2 group-hover:shadow-2xl">
-                        <img src="<?= htmlspecialchars($item['image']) ?>" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="<?= htmlspecialchars($item['title']) ?>">
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
-                        <?php if ($item['status_label']): ?>
-                        <div class="absolute top-6 left-6 flex gap-2">
-                            <span class="px-3 py-1 <?= $item['status_class'] ?> text-[8px] font-black text-white uppercase tracking-widest rounded-full"><?= htmlspecialchars($item['status_label']) ?></span>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-20">
+                <?php foreach ($allItems as $item): ?>
+                <article x-show="activeCategory === 'all' || activeCategory === '<?= htmlspecialchars($item['category']) ?>'"
+                         class="group relative cursor-pointer"
+                         @click="openModal('<?= htmlspecialchars($item['slug'], ENT_QUOTES) ?>')">
+                    <div class="relative aspect-[4/5] overflow-hidden rounded-3xl mb-8 bg-slate-200">
+                        <img src="<?= htmlspecialchars($item['image']) ?>" class="absolute inset-0 w-full h-full object-cover grayscale transition-all duration-700 group-hover:scale-110 group-hover:grayscale-0" alt="<?= htmlspecialchars($item['title']) ?>">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-60"></div>
+                        <?php if (!empty($item['status_label'])): ?>
+                        <div class="absolute top-6 <?= ($item['badge_position'] ?? '') === 'left' ? 'left-6' : 'right-6' ?>">
+                            <?php if (($item['badge_style'] ?? '') === 'rose'): ?>
+                            <span class="px-3 py-1 bg-rose-600 text-[8px] font-black text-white uppercase tracking-widest rounded-sm italic animate-pulse"><?= htmlspecialchars($item['status_label']) ?></span>
+                            <?php else: ?>
+                            <span class="px-3 py-1 bg-slate-900/40 backdrop-blur-md border border-white/10 text-[8px] font-black text-white uppercase tracking-widest rounded-sm"><?= htmlspecialchars($item['status_label']) ?></span>
+                            <?php endif; ?>
                         </div>
                         <?php endif; ?>
-                        <div class="absolute bottom-8 left-8 right-8">
-                            <p class="text-[9px] font-black <?= $item['badge_class'] ?> uppercase tracking-[0.3em] mb-2"><?= htmlspecialchars($item['code']) ?></p>
-                            <h3 class="text-2xl font-black text-white uppercase italic leading-none tracking-tighter"><?= htmlspecialchars($item['title']) ?></h3>
+                        <div class="absolute bottom-8 left-8 right-8 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                            <p class="text-[8px] font-black <?= htmlspecialchars($item['badge_class']) ?> uppercase tracking-[0.5em] mb-3"><?= htmlspecialchars($item['code']) ?></p>
+                            <h3 class="text-3xl font-black text-white uppercase italic leading-none tracking-tighter group-hover:tracking-normal transition-all"><?= htmlspecialchars($item['title']) ?></h3>
                         </div>
                     </div>
-                    <div class="flex justify-between items-start px-2">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest"><?= htmlspecialchars($item['duration_label']) ?: '—' ?></p>
-                        <span class="text-[10px] font-black italic text-slate-900 group-hover:text-emerald-600">VOIR DÉTAILS +</span>
+                    <div class="flex justify-between items-center px-2">
+                        <div class="flex flex-col">
+                            <span class="text-[7px] font-black text-slate-400 uppercase tracking-widest italic mb-1"><?= htmlspecialchars($item['duration_meta'] ?? 'Durée') ?></span>
+                            <span class="text-[10px] font-bold text-slate-900 uppercase <?= ($item['category'] ?? '') === 'technique' ? 'italic underline decoration-blue-500 underline-offset-4' : '' ?> <?= ($item['category'] ?? '') === 'médical' ? 'text-rose-600 italic' : '' ?>"><?= htmlspecialchars($item['duration_label'] ?? '—') ?></span>
+                        </div>
+                        <div class="h-8 w-[1px] bg-slate-200"></div>
+                        <span class="text-[9px] font-black italic text-slate-900 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">Details +</span>
                     </div>
-                </div>
+                </article>
                 <?php endforeach; ?>
             </div>
         </div>

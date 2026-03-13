@@ -19,6 +19,9 @@ use App\Controllers\Admin\AdminDashboardController;
 use App\Controllers\Admin\AdminUsersController;
 use App\Controllers\Admin\AdminUnitsController;
 use App\Controllers\Admin\AdminModpackController;
+use App\Controllers\Admin\AdminAtakConfigController;
+use App\Controllers\Admin\AdminConfigurationController;
+use App\Controllers\Admin\AdminRecruitmentsController;
 use App\Controllers\Auth\AuthController;
 use App\Core\Router;
 use App\Middleware\AuthMiddleware;
@@ -50,6 +53,8 @@ return function (Router $router) {
     $router->get('/orbat', [PersonnelController::class, 'orbat'], [AuthMiddleware::class]);
     $router->get('/enlistment', [EnlistmentController::class, 'show']);
     $router->post('/enlistment', [EnlistmentController::class, 'store']);
+    $router->get('/enlistment/success', [EnlistmentController::class, 'success']);
+    $router->get('/enlistment/error', [EnlistmentController::class, 'error']);
     $router->get('/recrutement', [HomeController::class, 'recrutement']);
     $router->get('/equipement', [HomeController::class, 'equipement']);
     $router->get('/documents', [DocumentsController::class, 'index'], [AuthMiddleware::class]);
@@ -61,6 +66,7 @@ return function (Router $router) {
     $router->get('/formations', [TrainingController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/formations/{slug}', [TrainingController::class, 'show'], [AuthMiddleware::class]);
     $router->get('/atak', [AtakController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/atak/tuto', [AtakController::class, 'tuto'], [AuthMiddleware::class]);
     $router->get('/tacmap', [HomeController::class, 'tacmap'], [AuthMiddleware::class]);
     $router->get('/admin', [AdminDashboardController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/admin/users', [AdminUsersController::class, 'index'], [AuthMiddleware::class]);
@@ -77,6 +83,10 @@ return function (Router $router) {
     $router->get('/admin/modpacks/{id}/edit', [AdminModpackController::class, 'edit'], [AuthMiddleware::class]);
     $router->post('/admin/modpacks/{id}/update', [AdminModpackController::class, 'update'], [AuthMiddleware::class]);
     $router->post('/admin/modpacks/{id}/delete', [AdminModpackController::class, 'delete'], [AuthMiddleware::class]);
+    $router->get('/admin/atak-config', [AdminAtakConfigController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/admin/atak-config', [AdminAtakConfigController::class, 'store'], [AuthMiddleware::class]);
+    $router->get('/admin/configuration', [AdminConfigurationController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/admin/recruitments', [AdminRecruitmentsController::class, 'index'], [AuthMiddleware::class]);
 
     // Forum
     $router->get('/forum', [ForumController::class, 'index'], [AuthMiddleware::class]);

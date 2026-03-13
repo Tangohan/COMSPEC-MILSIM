@@ -5,10 +5,35 @@ window.ATAKMap = (function () {
   var markersById = {};
   var config;
 
+  function buildConfigFromAtakMapConfig(raw) {
+    if (!raw || !raw.tilePattern) return null;
+    var crsOpt = raw.crs || {};
+    var factorx = crsOpt.factorx != null ? crsOpt.factorx : 0.006839;
+    var factory = crsOpt.factory != null ? crsOpt.factory : 0.006836;
+    var tileWidth = crsOpt.tileWidth != null ? crsOpt.tileWidth : 212;
+    var CRS = typeof window.MGRS_CRS === 'function' ? window.MGRS_CRS(factorx, factory, tileWidth) : L.CRS.Simple;
+    return {
+      CRS: CRS,
+      tilePattern: raw.tilePattern,
+      minZoom: raw.minZoom != null ? raw.minZoom : 0,
+      maxZoom: raw.maxZoom != null ? raw.maxZoom : 6,
+      defaultZoom: raw.defaultZoom != null ? raw.defaultZoom : 3,
+      attribution: raw.attribution || '&copy; Bohemia Interactive',
+      tileSize: raw.tileSize != null ? raw.tileSize : 212,
+      center: Array.isArray(raw.center) ? raw.center : [15000, 15000]
+    };
+  }
+
   function init(mapId) {
-    config = window.Arma3Map && window.Arma3Map.Maps && window.Arma3Map.Maps.altis;
+    config = null;
+    if (window.ATAK_MAP_CONFIG) {
+      config = buildConfigFromAtakMapConfig(window.ATAK_MAP_CONFIG);
+    }
+    if (!config && window.Arma3Map && window.Arma3Map.Maps && window.Arma3Map.Maps.altis) {
+      config = window.Arma3Map.Maps.altis;
+    }
     if (!config) {
-      console.error('ATAKMap: Arma3Map.Maps.altis not found');
+      console.error('ATAKMap: no map config (set window.ATAK_MAP_CONFIG or load a map script)');
       return null;
     }
     var el = document.getElementById('atak-map');

@@ -7,6 +7,10 @@ window.ATAKSocket = (function () {
 
   function getApiBase() {
     if (apiBase) return apiBase;
+    if (window.NODE_ATAK_URL && typeof window.NODE_ATAK_URL === 'string' && window.NODE_ATAK_URL.trim() !== '') {
+      apiBase = window.NODE_ATAK_URL.replace(/\/$/, '');
+      return apiBase;
+    }
     var u = window.location;
     apiBase = u.protocol + '//' + u.hostname + ':3001';
     return apiBase;

@@ -66,6 +66,25 @@ app.get('/api/units', (req, res) => {
   res.json(rows);
 });
 
+// --- REST: ATAK mod position update (upsert by call_sign) ---
+app.post('/api/atak/position', (req, res) => {
+  const map = req.body.mapId || req.body.map_id || mapId;
+  const call_sign = req.body.call_sign || req.body.callsign || 'Unknown';
+  const pos_x = req.body.pos_x ?? req.body.pos?.[0] ?? 0;
+  const pos_y = req.body.pos_y ?? req.body.pos?.[1] ?? 0;
+  const grid_ref = `${Math.round(pos_x)} ${Math.round(pos_y)}`;
+  const heading = req.body.heading != null ? req.body.heading : null;
+  const existing = db.prepare('SELECT id FROM units WHERE map_id = ? AND call_sign = ?').get(map, call_sign);
+  if (existing) {
+    db.prepare('UPDATE units SET grid_ref = ?, heading = ?, updated_at = datetime("now") WHERE id = ?').run(grid_ref, heading, existing.id);
+  } else {
+    db.prepare('INSERT INTO units (map_id, call_sign, role, status, grid_ref, heading) VALUES (?, ?, ?, ?, ?, ?)').run(map, call_sign, '', 'linked', grid_ref, heading);
+  }
+  const units = db.prepare('SELECT * FROM units WHERE map_id = ?').all(map);
+  io.to(`map-${map}`).emit('ProfilesUpdate', { units });
+  res.status(200).json({ ok: true });
+});
+
 app.post('/api/units', (req, res) => {
   const map = req.body.mapId || mapId;
   const { call_sign, role, status, grid_ref, heading, extra } = req.body;

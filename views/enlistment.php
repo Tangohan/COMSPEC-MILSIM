@@ -24,7 +24,7 @@ $ref = 'JTFO-' . str_pad((string) random_int(1, 999999), 6, '0', STR_PAD_LEFT);
 </head>
 <body class="bg-slate-100 min-h-screen">
 
-    <div id="preamble" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-6 transition-all duration-1000">
+    <div id="preamble" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-6 transition-all duration-1000" data-skip-if-stored="1">
         <div class="max-w-2xl w-full">
             <div class="mb-12 flex items-center gap-4 border-b border-white/10 pb-6">
                 <div class="w-12 h-12 bg-emerald-500 rounded-lg flex items-center justify-center font-black text-slate-900 text-xl">F</div>
@@ -276,9 +276,32 @@ $ref = 'JTFO-' . str_pad((string) random_int(1, 999999), 6, '0', STR_PAD_LEFT);
             if (text) text.textContent = 'FORMULAIRE : ' + completed + ' / ' + total + ' RÉPONSES';
         }
         function startApp() {
+            try {
+                localStorage.setItem('athena_access_controlled', JSON.stringify({
+                    label: 'Accès Contrôlé',
+                    accepted: true,
+                    at: new Date().toISOString()
+                }));
+            } catch (e) {}
             var p = document.getElementById('preamble');
             if (p) { p.style.opacity = '0'; p.style.pointerEvents = 'none'; setTimeout(function() { p.classList.add('hidden'); }, 1000); }
         }
+        (function checkStoredAccess() {
+            try {
+                var raw = localStorage.getItem('athena_access_controlled');
+                if (raw) {
+                    var data = JSON.parse(raw);
+                    if (data && data.accepted === true) {
+                        var p = document.getElementById('preamble');
+                        if (p && p.getAttribute('data-skip-if-stored') === '1') {
+                            p.classList.add('hidden');
+                            p.style.opacity = '0';
+                            p.style.pointerEvents = 'none';
+                        }
+                    }
+                }
+            } catch (e) {}
+        })();
         setInterval(updateClock, 1000);
         updateClock();
         document.querySelectorAll('.track-field').forEach(function(f) {

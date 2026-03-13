@@ -37,11 +37,12 @@ class TenantAtakConfigRepository
             'arma_server_port' => isset($data['arma_server_port']) && $data['arma_server_port'] !== '' ? (int) $data['arma_server_port'] : null,
             'arma_mod_credentials' => $data['arma_mod_credentials'] ?? null,
             'instructions' => $data['instructions'] ?? null,
+            'default_map_slug' => isset($data['default_map_slug']) && $data['default_map_slug'] !== '' ? (string) $data['default_map_slug'] : 'altis',
         ];
 
         if ($exists) {
             $stmt = $this->pdo->prepare(
-                'UPDATE tenant_atak_config SET node_url = ?, jwt_secret = ?, arma_server_host = ?, arma_server_port = ?, arma_mod_credentials = ?, instructions = ?, updated_at = NOW() WHERE tenant_id = ?'
+                'UPDATE tenant_atak_config SET node_url = ?, jwt_secret = ?, arma_server_host = ?, arma_server_port = ?, arma_mod_credentials = ?, instructions = ?, default_map_slug = ?, updated_at = NOW() WHERE tenant_id = ?'
             );
             $stmt->execute([
                 $fields['node_url'],
@@ -50,11 +51,12 @@ class TenantAtakConfigRepository
                 $fields['arma_server_port'],
                 $fields['arma_mod_credentials'],
                 $fields['instructions'],
+                $fields['default_map_slug'],
                 $tenantId,
             ]);
         } else {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO tenant_atak_config (tenant_id, node_url, jwt_secret, arma_server_host, arma_server_port, arma_mod_credentials, instructions, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                'INSERT INTO tenant_atak_config (tenant_id, node_url, jwt_secret, arma_server_host, arma_server_port, arma_mod_credentials, instructions, default_map_slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
             );
             $stmt->execute([
                 $tenantId,
@@ -64,6 +66,7 @@ class TenantAtakConfigRepository
                 $fields['arma_server_port'],
                 $fields['arma_mod_credentials'],
                 $fields['instructions'],
+                $fields['default_map_slug'],
             ]);
         }
     }
