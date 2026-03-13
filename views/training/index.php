@@ -1,22 +1,265 @@
 <?php
+$base = url('');
 $modules = $modules ?? [];
+
+// Exemples statics pour démo (toujours affichés)
+$examples = [
+    [
+        'slug' => 'operateur-jtac',
+        'title' => 'Opérateur JTAC',
+        'code' => 'Module T-01',
+        'category' => 'tactique',
+        'duration_label' => 'Durée: 12 Semaines',
+        'status_label' => 'Actif',
+        'status_class' => 'bg-emerald-500',
+        'badge_class' => 'text-emerald-400',
+        'image' => 'https://media.defense.gov/2019/Sep/12/2002181666/2000/2000/0/190905-F-BT441-0001.JPG',
+        'from_db' => false,
+        'objectives' => [
+            'Gestion des vecteurs aériens et appui feu rapproché (CAS).',
+            'Maîtrise des protocoles radio OTAN et désignation laser.',
+            'Coordination inter-armes en environnement dégradé.',
+        ],
+        'next_cycle' => '12 Mars 2026',
+        'location' => "Zone d'entraînement Nord",
+    ],
+    [
+        'slug' => 'architecture-ddd',
+        'title' => 'Architecture & DDD',
+        'code' => 'Module TECH-09',
+        'category' => 'technique',
+        'duration_label' => 'Niveau: Expert',
+        'status_label' => '',
+        'status_class' => '',
+        'badge_class' => 'text-blue-400',
+        'image' => 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop',
+        'from_db' => false,
+        'objectives' => [
+            'Principes SOLID et architectures modernes.',
+            'Domain Driven Design (DDD) et modélisation.',
+            'Optimisation des performances sous charge.',
+        ],
+        'next_cycle' => '25 Avril 2026',
+        'location' => 'Campus Paris / Visio',
+    ],
+    [
+        'slug' => 'tccc-trauma-care',
+        'title' => 'TCCC / Trauma Care',
+        'code' => 'Module MED-03',
+        'category' => 'médical',
+        'duration_label' => 'Statut: Prochainement',
+        'status_label' => "Liste d'attente",
+        'status_class' => '',
+        'badge_class' => 'text-rose-500',
+        'image' => 'https://media.defense.gov/2022/Jun/14/2003017004/-1/-1/0/220607-F-DA916-1189.JPG',
+        'from_db' => false,
+        'objectives' => [
+            'Tactical Combat Casualty Care (TCCC).',
+            'Gestes de sauvetage au combat et évacuation.',
+            'Coordination avec les équipes médicales.',
+        ],
+        'next_cycle' => 'À définir',
+        'location' => 'À définir',
+    ],
+];
+
+// Modules venant de la BDD (on leur attribue une catégorie par défaut)
+$dbItems = [];
+foreach ($modules as $m) {
+    $dbItems[] = [
+        'slug' => $m['slug'],
+        'title' => $m['title'],
+        'code' => $m['code'] ?? ('MOD-' . (int)$m['id']),
+        'category' => 'tactique',
+        'duration_label' => isset($m['estimated_duration_min']) ? 'Durée: ' . (int)$m['estimated_duration_min'] . ' min' : '',
+        'status_label' => 'Actif',
+        'status_class' => 'bg-emerald-500',
+        'badge_class' => 'text-emerald-400',
+        'image' => 'https://media.defense.gov/2019/Sep/12/2002181666/2000/2000/0/190905-F-BT441-0001.JPG',
+        'from_db' => true,
+        'description' => $m['description'] ?? '',
+        'objectives' => $m['description'] ? array_filter(array_map('trim', explode("\n", $m['description']))) : ['Voir le module pour le détail.'],
+        'next_cycle' => '—',
+        'location' => '—',
+    ];
+}
+
+$allItems = array_merge($examples, $dbItems);
+$categories = ['all' => 'Tous les modules', 'tactique' => 'tactique', 'technique' => 'technique', 'médical' => 'médical'];
 ?>
-<div class="max-w-4xl mx-auto px-6 py-12">
-    <h1 class="text-2xl font-black text-slate-900 mb-6">Formations</h1>
-    <p class="text-slate-600 mb-8">Catalogue des modules de formation.</p>
-    <?php if (empty($modules)): ?>
-    <p class="text-slate-500">Aucun module pour le moment.</p>
-    <?php else: ?>
-    <ul class="space-y-2">
-        <?php foreach ($modules as $m): ?>
-        <li class="p-3 border border-slate-200 rounded-lg">
-            <a href="<?= url('formations/' . $m['slug']) ?>" class="font-medium text-slate-900 hover:underline"><?= htmlspecialchars($m['title']) ?></a>
-            <?php if (!empty($m['description'])): ?>
-            <p class="text-sm text-slate-500 mt-1"><?= htmlspecialchars($m['description']) ?></p>
-            <?php endif; ?>
-        </li>
-        <?php endforeach; ?>
-    </ul>
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalogue Formations — Athena</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
+    <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
     <?php endif; ?>
-    <p class="mt-8 text-sm text-slate-500"><a href="<?= url('dashboard') ?>" class="underline">Retour au dashboard</a></p>
-</div>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white" x-data="trainingCatalogue()">
+
+    <nav class="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="<?= $base ?>/" class="text-[11px] font-black tracking-[0.5em] uppercase hover:text-emerald-600 transition-colors">FORWARD</a>
+            <div class="flex items-center gap-6">
+                <a href="<?= url('dashboard') ?>" class="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900">Dashboard</a>
+                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Training_Protocol_v4.0</span>
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="py-16 md:py-24">
+        <div class="max-w-7xl mx-auto px-6">
+
+            <header class="mb-20">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600 mb-3 italic">Operational Readiness</p>
+                        <h1 class="text-5xl md:text-7xl font-black uppercase italic tracking-tighter leading-none text-slate-900">
+                            Catalogue <br> Formations
+                        </h1>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <?php foreach ($categories as $key => $label): ?>
+                        <button type="button"
+                                @click="activeCategory = '<?= $key ?>'"
+                                :class="activeCategory === '<?= $key ?>' ? 'bg-slate-900 text-white border-slate-900' : 'bg-transparent text-slate-400 border-slate-200 hover:border-slate-900'"
+                                class="px-6 py-2 border text-[10px] font-black uppercase tracking-widest transition-all duration-300 italic">
+                            <?= htmlspecialchars($label) ?>
+                        </button>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div class="h-[1px] w-full bg-slate-200 mt-12"></div>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+                <?php foreach ($allItems as $i => $item): ?>
+                <div x-show="activeCategory === 'all' || activeCategory === '<?= htmlspecialchars($item['category']) ?>'"
+                     class="group cursor-pointer"
+                     @click="openModal('<?= htmlspecialchars($item['slug'], ENT_QUOTES) ?>')">
+                    <div class="relative aspect-[3/4] overflow-hidden rounded-3xl mb-6 shadow-xl transition-all duration-500 group-hover:-translate-y-2 group-hover:shadow-2xl">
+                        <img src="<?= htmlspecialchars($item['image']) ?>" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="<?= htmlspecialchars($item['title']) ?>">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
+                        <?php if ($item['status_label']): ?>
+                        <div class="absolute top-6 left-6 flex gap-2">
+                            <span class="px-3 py-1 <?= $item['status_class'] ?> text-[8px] font-black text-white uppercase tracking-widest rounded-full"><?= htmlspecialchars($item['status_label']) ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <div class="absolute bottom-8 left-8 right-8">
+                            <p class="text-[9px] font-black <?= $item['badge_class'] ?> uppercase tracking-[0.3em] mb-2"><?= htmlspecialchars($item['code']) ?></p>
+                            <h3 class="text-2xl font-black text-white uppercase italic leading-none tracking-tighter"><?= htmlspecialchars($item['title']) ?></h3>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-start px-2">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest"><?= htmlspecialchars($item['duration_label']) ?: '—' ?></p>
+                        <span class="text-[10px] font-black italic text-slate-900 group-hover:text-emerald-600">VOIR DÉTAILS +</span>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div class="flex flex-col items-center md:items-start">
+                <span class="text-[10px] font-black tracking-[0.5em] uppercase">Athena — Formations</span>
+                <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Operational Excellence</span>
+            </div>
+            <div class="flex gap-12">
+                <a href="<?= url('documents') ?>" class="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors italic">Documentation</a>
+                <a href="<?= url('dashboard') ?>" class="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors italic">Dashboard</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal détail formation -->
+    <template x-if="openModalSlug">
+        <div class="fixed inset-0 z-[200] flex items-center justify-center p-4" x-show="openModalSlug">
+            <div class="absolute inset-0 bg-slate-950/95 backdrop-blur-md" @click="openModalSlug = null"></div>
+            <div class="relative bg-white w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row shadow-emerald-900/20"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100">
+                <button type="button" @click="openModalSlug = null" class="absolute top-8 right-8 z-10 p-3 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+                <template x-if="selectedItem">
+                    <div class="flex-1 flex flex-col md:flex-row min-h-0">
+                        <div class="w-full md:w-1/2 h-64 md:min-h-[400px] relative bg-slate-900 flex-shrink-0">
+                            <img :src="selectedItem.image" class="w-full h-full object-cover opacity-60" :alt="selectedItem.title">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-center">
+                                    <span class="text-[10px] font-black text-emerald-400 uppercase tracking-[1em] block mb-4 italic">Détail module</span>
+                                    <a :href="selectedItem.from_db ? '<?= $base ?>/formations/' + selectedItem.slug : '#'" 
+                                       class="w-16 h-16 border-2 border-white/20 rounded-full flex items-center justify-center mx-auto hover:border-emerald-500 transition-colors">
+                                        <svg class="w-6 h-6 text-white fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex-1 p-8 md:p-16 overflow-y-auto bg-white">
+                            <p class="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600 mb-6 italic" x-text="selectedItem.code"></p>
+                            <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter text-slate-900 mb-8 italic leading-none" x-text="selectedItem.title"></h2>
+                            <div class="grid grid-cols-2 gap-8 mb-12 border-y border-slate-100 py-10">
+                                <div>
+                                    <span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Prochain Cycle</span>
+                                    <span class="text-sm font-bold text-slate-900 uppercase" x-text="selectedItem.next_cycle"></span>
+                                </div>
+                                <div>
+                                    <span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Localisation</span>
+                                    <span class="text-sm font-bold text-slate-900 uppercase" x-text="selectedItem.location"></span>
+                                </div>
+                            </div>
+                            <div class="space-y-6 mb-12" x-show="selectedItem.objectives && selectedItem.objectives.length">
+                                <h4 class="text-xs font-black uppercase tracking-widest text-slate-900 underline decoration-emerald-500 underline-offset-4">Objectifs de mission</h4>
+                                <ul class="text-sm text-slate-600 space-y-4">
+                                    <template x-for="(obj, idx) in selectedItem.objectives" :key="idx">
+                                        <li class="flex items-start gap-3 italic">
+                                            <span class="text-emerald-500 font-black" x-text="String(idx + 1).padStart(2, '0') + ' /'"></span>
+                                            <span x-text="obj"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                            <a :href="selectedItem.from_db ? '<?= $base ?>/formations/' + selectedItem.slug : '#'"
+                               class="block w-full py-6 bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.4em] rounded-2xl hover:bg-emerald-600 transition-all hover:translate-y-[-4px] shadow-2xl shadow-slate-200 text-center">
+                                <span x-text="selectedItem.from_db ? 'Accéder au module' : 'S\'inscrire au programme de sélection'"></span>
+                            </a>
+                            <p class="mt-6 text-[8px] text-center font-bold text-slate-300 uppercase tracking-widest">Sous réserve d'accréditation</p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        function trainingCatalogue() {
+            const items = <?= json_encode(array_values($allItems)) ?>;
+            return {
+                activeCategory: 'all',
+                openModalSlug: null,
+                get selectedItem() {
+                    if (!this.openModalSlug) return null;
+                    return items.find(m => m.slug === this.openModalSlug) || null;
+                },
+                openModal(slug) {
+                    this.openModalSlug = slug;
+                }
+            };
+        }
+    </script>
+</body>
+</html>

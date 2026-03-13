@@ -41,6 +41,12 @@ if (!function_exists('url')) {
     function url(string $path = ''): string
     {
         $base = rtrim(env('APP_URL', ''), '/');
+        $prefix = rtrim((string) env('APP_BASE_PATH', ''), '/');
+        // Si APP_BASE_PATH non défini (ex. .env non chargé), déduire /public depuis SCRIPT_NAME
+        if ($prefix === '' && isset($_SERVER['SCRIPT_NAME']) && str_contains((string) $_SERVER['SCRIPT_NAME'], '/public/')) {
+            $prefix = '/public';
+        }
+        $base = $base . $prefix;
         return $base . ($path ? '/' . ltrim($path, '/') : '');
     }
 }

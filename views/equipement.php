@@ -1,0 +1,924 @@
+<?php $base = url(''); ?>
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Équipement — Athena</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,600;1,700;1,900&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:       #0b0d11;
+            --surface:  #0f1318;
+            --card:     #131920;
+            --border:   rgba(255,255,255,0.06);
+            --border2:  rgba(255,255,255,0.11);
+            --text:     #dde1e7;
+            --dim:      #5a6474;
+            --faint:    rgba(255,255,255,0.12);
+            --blue:     #3b82f6;
+            --blue-dim: rgba(59,130,246,0.14);
+            --green:    #22c55e;
+            --red:      #ef4444;
+            --amber:    #f59e0b;
+            --mono:     'JetBrains Mono', monospace;
+            --cond:     'Barlow Condensed', sans-serif;
+            --body:     'Barlow', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { background:var(--bg); color:var(--text); font-family:var(--body); overflow-x:hidden; }
+        ::selection { background:var(--blue); color:#fff; }
+        ::-webkit-scrollbar { width:3px; }
+        ::-webkit-scrollbar-thumb { background:var(--border2); }
+
+        body::after {
+            content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+            background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity:.028; mix-blend-mode:overlay;
+        }
+
+        /* ── TOP BAR ── */
+        .topbar {
+            position:fixed; top:0; left:0; right:0; height:34px; z-index:200;
+            background:rgba(11,13,17,.97); border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+            padding:0 2.5rem;
+            font-family:var(--mono); font-size:9px; letter-spacing:.15em; text-transform:uppercase;
+        }
+        .tb-left { display:flex; align-items:center; gap:1.25rem; }
+        .tb-zulu { color:var(--blue); font-weight:700; letter-spacing:.2em; }
+        .tb-sep  { color:var(--border2); }
+        .tb-zone { color:var(--dim); }
+        .tb-zone b { color:rgba(255,255,255,.45); margin-left:.4rem; font-weight:500; }
+        .tb-right { display:flex; align-items:center; gap:.75rem; font-size:8px; color:var(--faint); }
+        .dot-pulse {
+            width:6px; height:6px; border-radius:50%; background:var(--green);
+            box-shadow:0 0 7px var(--green); animation:dpulse 2s ease infinite;
+        }
+        @keyframes dpulse { 0%,100%{opacity:1;box-shadow:0 0 7px var(--green)} 50%{opacity:.4;box-shadow:0 0 2px var(--green)} }
+
+        /* ── NAV ── */
+        .nav {
+            position:fixed; top:34px; left:0; right:0; height:54px; z-index:199;
+            background:rgba(11,13,17,.95); backdrop-filter:blur(16px);
+            border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+            padding:0 2.5rem;
+        }
+        .nav-logo {
+            display:flex; align-items:center; gap:10px;
+            font-family:var(--cond); font-weight:900; font-size:17px;
+            letter-spacing:.3em; text-transform:uppercase; color:#fff; text-decoration:none;
+        }
+        .nav-badge {
+            width:26px; height:26px; border-radius:5px; background:var(--blue);
+            display:flex; align-items:center; justify-content:center;
+            font-size:11px; font-weight:900; color:#fff;
+        }
+        .nav-links { display:flex; gap:2rem; list-style:none; }
+        .nav-links a {
+            font-family:var(--mono); font-size:9px; font-weight:700;
+            letter-spacing:.18em; text-transform:uppercase;
+            color:var(--dim); text-decoration:none; transition:color .2s;
+        }
+        .nav-links a:hover { color:var(--text); }
+        .nav-links a.on { color:var(--blue); }
+        .nav-btn {
+            font-family:var(--mono); font-size:9px; font-weight:700;
+            letter-spacing:.18em; text-transform:uppercase;
+            background:var(--blue); color:#fff; padding:7px 16px;
+            border-radius:4px; text-decoration:none; transition:background .2s;
+        }
+        .nav-btn:hover { background:#2563eb; }
+
+        main { padding-top:88px; }
+
+        /* ── SECTION UTILITIES ── */
+        .section { padding:6rem 0; border-bottom:1px solid var(--border); }
+        .wrap { max-width:1160px; margin:0 auto; padding:0 3rem; }
+        .s-label {
+            font-family:var(--mono); font-size:9px; font-weight:700;
+            letter-spacing:.4em; text-transform:uppercase; color:var(--blue);
+            display:flex; align-items:center; gap:10px; margin-bottom:.75rem;
+        }
+        .s-label::before { content:''; width:18px; height:1px; background:var(--blue); }
+        .s-title {
+            font-family:var(--cond); font-weight:900; font-style:italic;
+            font-size:clamp(2rem,4vw,3.25rem); text-transform:uppercase;
+            letter-spacing:-.02em; color:#fff; line-height:1;
+        }
+        .s-head { margin-bottom:3.5rem; }
+
+        /* ══════════════════════════════════════
+           HERO
+        ══════════════════════════════════════ */
+        .hero {
+            position:relative; min-height:calc(100vh - 88px);
+            display:grid; grid-template-columns:55% 45%;
+            overflow:hidden; border-bottom:1px solid var(--border);
+        }
+        .hero::before {
+            content:''; position:absolute; inset:0; pointer-events:none;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size:64px 64px;
+            mask-image:radial-gradient(ellipse 70% 80% at 20% 50%, black 30%, transparent 100%);
+        }
+        .hero-left {
+            position:relative; z-index:10;
+            padding:6rem 3rem 6rem 4rem;
+            display:flex; flex-direction:column; justify-content:center;
+        }
+        .hero-tag {
+            display:inline-flex; align-items:center; gap:8px;
+            font-family:var(--mono); font-size:9px; font-weight:700;
+            letter-spacing:.3em; text-transform:uppercase; color:var(--blue);
+            padding:5px 13px; border-radius:3px;
+            border:1px solid rgba(59,130,246,.3); background:var(--blue-dim);
+            margin-bottom:2.5rem; align-self:flex-start;
+        }
+        .hero-tag::before {
+            content:''; width:5px; height:5px; border-radius:50%;
+            background:var(--blue); animation:dpulse 2s ease infinite;
+        }
+        .hero-h1 {
+            font-family:var(--cond); font-weight:900; font-style:italic;
+            font-size:clamp(6rem,11vw,10rem); line-height:.82;
+            letter-spacing:-.02em; text-transform:uppercase; color:#fff;
+            margin-bottom:2.5rem;
+        }
+        .hero-h1 .sub { color:var(--blue); display:block; font-size:.55em; letter-spacing:.05em; }
+        .hero-desc {
+            font-size:14px; line-height:1.75; color:var(--dim);
+            max-width:400px; margin-bottom:3rem;
+            padding-left:1.25rem; border-left:2px solid var(--border2);
+        }
+        .hero-pills { display:flex; gap:1rem; flex-wrap:wrap; }
+        .hero-pill {
+            display:flex; align-items:center; gap:10px;
+            background:var(--card); border:1px solid var(--border2);
+            border-radius:10px; padding:12px 16px; transition:all .25s;
+        }
+        .hero-pill:hover { border-color:var(--blue); transform:translateY(-2px); }
+        .pill-icon {
+            width:34px; height:34px; border-radius:7px;
+            background:var(--blue-dim); color:var(--blue);
+            display:flex; align-items:center; justify-content:center;
+            font-family:var(--cond); font-weight:900; font-style:italic; font-size:17px;
+        }
+        .pill-label {
+            font-family:var(--mono); font-size:8px; font-weight:700;
+            letter-spacing:.2em; text-transform:uppercase; color:var(--dim);
+            display:block; margin-bottom:2px;
+        }
+        .pill-val {
+            font-family:var(--cond); font-weight:800; font-size:13px;
+            text-transform:uppercase; color:#fff; display:block;
+        }
+        .hero-right { position:relative; overflow:hidden; }
+        .hero-right img {
+            width:100%; height:100%; object-fit:cover; object-position:center top;
+            filter:brightness(.65) contrast(1.1) saturate(.85);
+            transition:transform 8s ease; transform:scale(1.06);
+        }
+        .hero-right:hover img { transform:scale(1); }
+        .hero-right::before {
+            content:''; position:absolute; inset:0; z-index:1;
+            background:linear-gradient(to right, var(--bg) 0%, transparent 40%);
+        }
+        .hero-right::after {
+            content:''; position:absolute; inset:0; z-index:1;
+            background:linear-gradient(to top, var(--bg) 0%, transparent 30%);
+        }
+        .hero-badge-float {
+            position:absolute; top:15%; right:8%; z-index:10;
+            background:var(--blue); color:#fff; padding:14px 18px;
+            border-radius:18px; transform:rotate(8deg);
+            font-family:var(--cond); font-weight:900; font-style:italic;
+            font-size:13px; letter-spacing:.05em; text-transform:uppercase;
+            box-shadow:0 20px 50px rgba(59,130,246,.35);
+        }
+        .hero-ref {
+            position:absolute; bottom:1.5rem; right:1.5rem; z-index:10;
+            font-family:var(--mono); font-size:8px; font-weight:700;
+            letter-spacing:.3em; text-transform:uppercase; color:var(--faint);
+            writing-mode:vertical-rl; transform:rotate(180deg);
+        }
+
+        /* ══════════════════════════════════════
+           KIT — card + image flottante par-dessus
+        ══════════════════════════════════════ */
+        .kit-section { position:relative; overflow:visible; }
+        .kit-card {
+            background:var(--card); border:1px solid var(--border2);
+            border-radius:2.5rem; padding:3.5rem 3.5rem 14rem 3.5rem;
+        }
+        .kit-grid { display:grid; grid-template-columns:1fr 1fr; gap:3rem; }
+        .kit-col-label {
+            display:flex; align-items:center; gap:8px;
+            font-family:var(--mono); font-size:8px; font-weight:700;
+            letter-spacing:.3em; text-transform:uppercase; color:var(--blue);
+            margin-bottom:1.5rem;
+        }
+        .kit-col-label::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--blue); }
+        .kit-list { list-style:none; display:flex; flex-direction:column; gap:1rem; }
+        .kit-item { border-left:2px solid var(--border2); padding-left:1rem; transition:border-color .2s; }
+        .kit-item:hover { border-color:var(--blue); }
+        .kit-name { font-family:var(--cond); font-size:17px; font-weight:700; color:#fff; }
+        .kit-spec {
+            font-family:var(--mono); font-size:8px; font-weight:500;
+            letter-spacing:.18em; text-transform:uppercase; color:var(--dim); margin-top:2px;
+        }
+        /* Image flottante qui remonte sur la carte */
+        .kit-float {
+            position:relative; z-index:20;
+            margin-top:-11rem;
+            display:flex; justify-content:center;
+            pointer-events:none;
+        }
+        .kit-float img {
+            height:500px; width:auto;
+            filter:drop-shadow(0 50px 70px rgba(0,0,0,.8));
+            transition:transform .6s ease;
+        }
+        .kit-float:hover img { transform:scale(1.03) translateY(-8px); }
+        .kit-float-badge {
+            position:absolute; top:22%; right:calc(50% - 290px);
+            background:var(--blue); color:#fff; padding:14px 18px;
+            border-radius:18px; transform:rotate(10deg);
+            font-family:var(--cond); font-weight:900; font-style:italic;
+            font-size:13px; letter-spacing:.05em; text-transform:uppercase;
+            box-shadow:0 20px 50px rgba(59,130,246,.4);
+            pointer-events:all;
+        }
+
+        /* ══════════════════════════════════════
+           VEST — image annotée centrée
+        ══════════════════════════════════════ */
+        .vest-stage {
+            position:relative; height:600px;
+            display:flex; align-items:flex-end; justify-content:center;
+            margin-bottom:2.5rem;
+        }
+        .vest-stage img {
+            height:100%; width:auto; object-fit:contain;
+            filter:drop-shadow(0 40px 70px rgba(0,0,0,.9));
+            position:relative; z-index:5;
+        }
+        .ann {
+            position:absolute; z-index:10;
+            background:var(--card); border:1px solid var(--border2);
+            border-radius:10px; padding:9px 13px;
+            font-family:var(--mono); font-size:9px; font-weight:700;
+            letter-spacing:.1em; text-transform:uppercase;
+            color:var(--text); white-space:nowrap;
+            box-shadow:0 8px 30px rgba(0,0,0,.5);
+            display:flex; align-items:center; gap:7px;
+        }
+        .ann-dot { width:5px; height:5px; border-radius:50%; background:var(--blue); flex-shrink:0; }
+        /* lignes de connexion SVG */
+        .ann-line {
+            position:absolute; z-index:8;
+            background:var(--border2); height:1px;
+            transform-origin:left center;
+        }
+
+        .vest-cta { display:flex; justify-content:center; margin-top:2.5rem; }
+        .btn-primary {
+            display:inline-flex; align-items:center; gap:10px;
+            background:#fff; color:var(--bg);
+            font-family:var(--mono); font-size:9px; font-weight:700;
+            letter-spacing:.2em; text-transform:uppercase;
+            padding:14px 26px; border-radius:100px; text-decoration:none; transition:all .2s;
+        }
+        .btn-primary:hover { background:var(--blue); color:#fff; }
+        .btn-primary svg { width:14px; height:14px; transition:transform .2s; }
+        .btn-primary:hover svg { transform:translateX(4px); }
+
+        /* ══════════════════════════════════════
+           MÉDICAL — card + Belt flottante
+        ══════════════════════════════════════ */
+        .med-card {
+            background:var(--card); border:1px solid var(--border2);
+            border-radius:2rem; padding:3rem 3rem 14rem 3rem;
+        }
+        .med-grid { display:grid; grid-template-columns:1fr 1fr; gap:3rem; }
+        .med-col-label {
+            font-family:var(--mono); font-size:8px; font-weight:700;
+            letter-spacing:.3em; text-transform:uppercase; color:var(--dim); margin-bottom:1.25rem;
+        }
+        .med-list { list-style:none; display:flex; flex-direction:column; gap:.6rem; }
+        .med-item { font-family:var(--cond); font-size:16px; font-weight:600; color:var(--text); }
+        .med-item.crit { color:var(--red); }
+        .med-item.warn { color:var(--amber); }
+        .med-count { font-family:var(--mono); font-size:10px; font-weight:700; color:var(--dim); margin-right:7px; }
+        .med-float {
+            position:relative; z-index:20; margin-top:-11rem;
+            display:flex; justify-content:center; pointer-events:none;
+        }
+        .med-float img {
+            height:540px; width:auto;
+            filter:drop-shadow(0 50px 70px rgba(0,0,0,.8));
+            transition:transform .6s ease;
+        }
+        .med-float:hover img { transform:scale(1.03) translateY(-8px); }
+
+        /* Dark IFAK overlay section */
+        .med-dark {
+            position:relative; overflow:hidden;
+            border-bottom:1px solid var(--border);
+        }
+        .med-dark-bg {
+            position:absolute; inset:0;
+        }
+        .med-dark-bg img {
+            width:100%; height:100%; object-fit:cover; object-position:center;
+            filter:brightness(.2) saturate(.4);
+        }
+        .med-dark-bg::after {
+            content:''; position:absolute; inset:0;
+            background:linear-gradient(to bottom, rgba(11,13,17,.92) 0%, rgba(11,13,17,.7) 100%);
+        }
+        .med-dark-content {
+            position:relative; z-index:10; max-width:1160px; margin:0 auto;
+            padding:5rem 3rem;
+        }
+        .med-dark-panel {
+            background:rgba(255,255,255,.03); backdrop-filter:blur(8px);
+            border:1px solid var(--border2); border-radius:2rem;
+            padding:3rem; max-width:860px; margin:0 auto;
+        }
+        .med-dark-grid { display:grid; grid-template-columns:1fr 1fr; gap:2.5rem; }
+        .mdg-label {
+            font-family:var(--mono); font-size:8px; font-weight:700;
+            letter-spacing:.3em; text-transform:uppercase; color:var(--dim); margin-bottom:1rem;
+        }
+        .mdg-list { list-style:none; display:flex; flex-direction:column; gap:.5rem; }
+        .mdg-item { font-family:var(--mono); font-size:11px; font-weight:700; color:rgba(255,255,255,.8); }
+        .mdg-item.blue { color:var(--blue); }
+        .mdg-item.warn { color:var(--amber); }
+        .mdg-footer {
+            margin-top:2rem; padding-top:1.25rem; border-top:1px solid var(--border);
+            display:flex; justify-content:space-between;
+            font-family:var(--mono); font-size:8px; font-weight:700;
+            letter-spacing:.3em; text-transform:uppercase; color:var(--faint);
+        }
+
+        /* ── TABLES ── */
+        .table-wrap { border:1px solid var(--border2); border-radius:14px; overflow:hidden; }
+        table { width:100%; border-collapse:collapse; }
+        thead { background:#0d1117; }
+        thead th {
+            padding:1.1rem 1.5rem;
+            font-family:var(--mono); font-size:8px; font-weight:700;
+            letter-spacing:.28em; text-transform:uppercase; color:var(--dim);
+            border-bottom:1px solid var(--border); text-align:left;
+        }
+        thead th:last-child { text-align:right; }
+        tbody tr { border-bottom:1px solid var(--border); transition:background .2s; }
+        tbody tr:last-child { border-bottom:none; }
+        tbody tr:hover { background:rgba(255,255,255,.025); }
+        tbody td { padding:1.1rem 1.5rem; vertical-align:middle; }
+        .td-src {
+            display:flex; align-items:center; gap:9px;
+            font-family:var(--mono); font-size:9px; font-weight:700;
+            letter-spacing:.2em; text-transform:uppercase; color:var(--dim);
+        }
+        .src-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+        .td-link {
+            font-family:var(--cond); font-size:16px; font-weight:700;
+            color:var(--text); text-decoration:none; transition:color .2s;
+        }
+        .td-link:hover { color:var(--blue); }
+        .lv {
+            display:inline-block; padding:3px 10px; border-radius:3px;
+            font-family:var(--mono); font-size:8px; font-weight:700;
+            letter-spacing:.18em; text-transform:uppercase;
+        }
+        .lv-init   { background:rgba(34,197,94,.12); color:var(--green); border:1px solid rgba(34,197,94,.25); }
+        .lv-inter  { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(59,130,246,.25); }
+        .lv-expert { background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.15); }
+        .td-lang { font-family:var(--mono); font-size:9px; color:var(--faint); letter-spacing:.1em; text-align:right; }
+
+        /* ── PERSONNEL ── */
+        .op-avatar {
+            width:38px; height:38px; border-radius:8px;
+            display:flex; align-items:center; justify-content:center;
+            font-family:var(--cond); font-weight:900; font-size:17px;
+            color:#fff; flex-shrink:0;
+        }
+        .op-name {
+            font-family:var(--cond); font-size:15px; font-weight:800;
+            text-transform:uppercase; color:#fff; letter-spacing:.04em;
+        }
+        .op-rank {
+            font-family:var(--mono); font-size:8px; font-weight:500;
+            letter-spacing:.18em; text-transform:uppercase; color:var(--dim);
+        }
+        .cert {
+            display:inline-block; padding:3px 8px; border-radius:3px;
+            font-family:var(--mono); font-size:8px; font-weight:700;
+            letter-spacing:.12em; text-transform:uppercase;
+        }
+        .cert-m { background:rgba(255,255,255,.09); color:#fff; }
+        .cert-l { background:var(--blue-dim); color:var(--blue); }
+        .cert-b { background:rgba(255,255,255,.04); color:var(--dim); border:1px solid var(--border); }
+        .prog-bar { width:110px; height:3px; background:rgba(255,255,255,.07); border-radius:2px; overflow:hidden; margin-bottom:4px; }
+        .prog-fill { height:100%; background:var(--blue); border-radius:2px; }
+        .status {
+            display:inline-flex; align-items:center; gap:6px;
+            padding:5px 12px; border-radius:100px;
+            font-family:var(--mono); font-size:8px; font-weight:700;
+            letter-spacing:.18em; text-transform:uppercase;
+        }
+        .st-act   { background:rgba(34,197,94,.1); color:var(--green); border:1px solid rgba(34,197,94,.2); }
+        .st-std   { background:rgba(255,255,255,.04); color:var(--dim); border:1px solid var(--border); }
+        .st-train { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(59,130,246,.2); }
+        .sd { width:5px; height:5px; border-radius:50%; }
+        .sd-g { background:var(--green); animation:dpulse 2s ease infinite; }
+        .sd-d { background:var(--dim); }
+        .sd-b { background:var(--blue); animation:dpulse 2s ease infinite; }
+
+        /* ── CERTIFICATIONS ── */
+        .cert-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border); border:1px solid var(--border2); border-radius:14px; overflow:hidden; }
+        .cert-card {
+            background:var(--card); padding:2.5rem;
+            display:flex; flex-direction:column; gap:1.25rem;
+            transition:background .3s; text-decoration:none; color:inherit;
+        }
+        .cert-card:hover { background:#161d26; }
+        .cc-icon {
+            width:44px; height:44px; border-radius:10px;
+            background:rgba(255,255,255,.04); border:1px solid var(--border2);
+            display:flex; align-items:center; justify-content:center;
+            color:var(--dim); transition:all .3s;
+        }
+        .cert-card:hover .cc-icon { background:var(--blue-dim); border-color:rgba(59,130,246,.35); color:var(--blue); }
+        .cc-icon svg { width:20px; height:20px; }
+        .cc-id { font-family:var(--mono); font-size:8px; font-weight:700; letter-spacing:.28em; text-transform:uppercase; color:var(--dim); }
+        .cc-title { font-family:var(--cond); font-size:22px; font-weight:800; font-style:italic; text-transform:uppercase; color:#fff; line-height:1.1; }
+        .cc-desc { font-size:12px; line-height:1.65; color:var(--dim); flex:1; }
+        .cc-foot { padding-top:1rem; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+        .cc-link {
+            font-family:var(--mono); font-size:8px; font-weight:700;
+            letter-spacing:.2em; text-transform:uppercase; color:var(--dim);
+            display:flex; align-items:center; gap:6px; transition:color .2s;
+        }
+        .cert-card:hover .cc-link { color:var(--blue); }
+        .cc-link svg { width:10px; height:10px; transition:transform .2s; }
+        .cert-card:hover .cc-link svg { transform:translateX(3px); }
+        .cc-tag { font-family:var(--mono); font-size:8px; font-weight:700; padding:3px 8px; border-radius:3px; text-transform:uppercase; letter-spacing:.12em; }
+
+        /* ── FOOTER ── */
+        footer {
+            padding:2.5rem 3rem; display:flex; align-items:center; justify-content:space-between;
+            border-top:1px solid var(--border); max-width:100%;
+        }
+        .ft-logo { font-family:var(--cond); font-weight:900; font-style:italic; font-size:22px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.18); }
+        .ft-meta { font-family:var(--mono); font-size:8px; font-weight:700; letter-spacing:.28em; text-transform:uppercase; color:var(--faint); text-align:right; line-height:2; }
+
+        /* ── ANIMATIONS ── */
+        .fi { opacity:0; transform:translateY(18px); animation:fadeup .5s ease forwards; }
+        .fi.d1{animation-delay:.1s}.fi.d2{animation-delay:.2s}.fi.d3{animation-delay:.3s}.fi.d4{animation-delay:.4s}
+        @keyframes fadeup { to { opacity:1; transform:translateY(0); } }
+    </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+    <div class="tb-left">
+        <span class="tb-zulu" id="t-z">00:00:00Z</span>
+        <span class="tb-sep">|</span>
+        <span class="tb-zone">PST<b id="t-p">00:00</b></span>
+        <span class="tb-zone">MTN<b id="t-m">00:00</b></span>
+        <span class="tb-zone">EST<b id="t-e">00:00</b></span>
+    </div>
+    <div class="tb-right">
+        <div class="dot-pulse"></div>
+        ACTIF · FOG-KILO06
+    </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+    <a href="<?= $base ?>/" class="nav-logo"><div class="nav-badge">F</div>FOG</a>
+    <ul class="nav-links">
+        <li><a href="<?= $base ?>/">Accueil</a></li>
+        <li><a href="<?= url('equipement') ?>" class="on">Équipement</a></li>
+        <li><a href="<?= url('documents') ?>">Documents</a></li>
+        <li><a href="<?= url('orbat') ?>">Personnel</a></li>
+        <li><a href="<?= url('documents') ?>">Docs</a></li>
+    </ul>
+    <a href="<?= url('login') ?>" class="nav-btn">Connexion →</a>
+</nav>
+
+<main>
+
+<!-- ════ HERO ════ -->
+<section class="hero">
+    <div class="hero-left">
+        <div class="hero-tag fi">System_Liaison / Kilo-06</div>
+        <h1 class="hero-h1 fi d1">JTAC<span class="sub">Air_Coord</span></h1>
+        <p class="hero-desc fi d2">L'architecte de l'espace aérien. Liaison vitale entre les forces au sol et l'appui feu. Spécialiste du guidage laser et de la gestion de trajectoires complexes.</p>
+        <div class="hero-pills fi d3">
+            <div class="hero-pill">
+                <div class="pill-icon">J</div>
+                <div>
+                    <span class="pill-label">Rôle principal</span>
+                    <span class="pill-val">Appui / Liaison</span>
+                </div>
+            </div>
+            <div class="hero-pill">
+                <div class="pill-icon" style="background:rgba(255,255,255,.05);color:#fff;">⊕</div>
+                <div>
+                    <span class="pill-label">Expertise</span>
+                    <span class="pill-val">Niveau Expert</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="hero-right">
+        <img src="https://www.3dmilitaryassets.com/cdn/shop/files/Vest_CRYE_JPC_20_V3_re_04.jpg?v=1766803093&width=1946" alt="JTAC JPC">
+        <div class="hero-badge-float">Approved for CAS</div>
+        <div class="hero-ref">FOG · Equipment Command · JTAC · 2026</div>
+    </div>
+</section>
+
+
+<!-- ════ KIT COORDINATION — card + image flottante ════ -->
+<section class="section kit-section">
+    <div class="wrap">
+        <div class="s-head">
+            <div class="s-label">Inventory_Scan</div>
+            <div class="s-title">Kit de Coordination Aérienne</div>
+        </div>
+
+        <div class="kit-card">
+            <div class="kit-grid">
+                <div>
+                    <div class="kit-col-label">Communications</div>
+                    <ul class="kit-list">
+                        <li class="kit-item">
+                            <div class="kit-name">AN/PRC-117G Radio</div>
+                            <div class="kit-spec">Multi-bande / Satcom</div>
+                        </li>
+                        <li class="kit-item">
+                            <div class="kit-name">Tablette Durcie (ATAK)</div>
+                            <div class="kit-spec">Logiciel de ciblage temps réel</div>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="kit-col-label">Acquisition Cibles</div>
+                    <ul class="kit-list">
+                        <li class="kit-item">
+                            <div class="kit-name">Désignateur Laser PLRF</div>
+                            <div class="kit-spec">Portée 2500m / Télémétrie</div>
+                        </li>
+                        <li class="kit-item">
+                            <div class="kit-name">Strobe IR MS2000</div>
+                            <div class="kit-spec">Identification Friendly Forces</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image débordante -->
+        <div class="kit-float">
+            <img src="https://www.3dmilitaryassets.com/cdn/shop/files/Vest_CRYE_JPC_20_V3_re_04.jpg?v=1766803093&width=1946" alt="JPC Setup">
+            <div class="kit-float-badge">Approved for CAS</div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════ VEST CONFIG — image annotée centrée ════ -->
+<section class="section" style="background:var(--surface);">
+    <div class="wrap">
+        <div class="s-head" style="text-align:center;">
+            <div class="s-label" style="justify-content:center;">Build_Recommandé</div>
+            <div class="s-title">Configuration Gilet Tactique (JPC 2.0)</div>
+        </div>
+
+        <div class="vest-stage">
+            <!-- annotations gauche -->
+            <div class="ann" style="top:18%; left:2%;">
+                <span class="ann-dot"></span>Plate Carrier CRYE JPC 2.0
+            </div>
+            <div class="ann" style="top:36%; left:4%;">
+                <span class="ann-dot"></span>Admin Pouch + Strobe IR
+            </div>
+            <div class="ann" style="top:54%; left:2%;">
+                <span class="ann-dot"></span>IFAK Pouch (accessible)
+            </div>
+
+            <!-- image centrale -->
+            <img src="https://www.3dmilitaryassets.com/cdn/shop/files/Vest_CRYE_JPC_20_V3_re_04.jpg?v=1766803093&width=1946" alt="JPC config">
+
+            <!-- annotations droite -->
+            <div class="ann" style="top:22%; right:2%;">
+                Radio Pouch AN/PRC-117G<span class="ann-dot" style="margin-left:7px;margin-right:0;"></span>
+            </div>
+            <div class="ann" style="top:40%; right:4%;">
+                Mag Pouches ×4<span class="ann-dot" style="margin-left:7px;margin-right:0;"></span>
+            </div>
+            <div class="ann" style="top:58%; right:2%;">
+                Hydration Carrier<span class="ann-dot" style="margin-left:7px;margin-right:0;"></span>
+            </div>
+        </div>
+
+        <div class="vest-cta">
+            <a href="#" class="btn-primary">
+                Ouvrir l'inventaire complet
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════ MÉDICAL — card + Belt flottante ════ -->
+<section class="section" style="overflow:visible;">
+    <div class="wrap">
+        <div class="s-head">
+            <div class="s-label">IFAK_Contents</div>
+            <div class="s-title">Kit Médical Individual</div>
+        </div>
+
+        <div class="med-card">
+            <div class="med-grid">
+                <div>
+                    <div class="med-col-label">Wundversorgung</div>
+                    <ul class="med-list">
+                        <li class="med-item"><span class="med-count">×15</span>Bandage (Field Dressing)</li>
+                        <li class="med-item crit"><span class="med-count">×4</span>Tourniquet</li>
+                        <li class="med-item"><span class="med-count">×2</span>Chest Seal</li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="med-col-label">Atemwegsversorgung</div>
+                    <ul class="med-list">
+                        <li class="med-item"><span class="med-count">×2</span>Guedeltubus</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Belt flottante -->
+        <div class="med-float">
+            <img src="https://static.wixstatic.com/media/44674e_dd27a75055ff4cf898a7085be62633f5~mv2.webp/v1/fill/w_1479,h_1001,al_c,q_85,enc_avif,quality_auto/Belt.webp" alt="IFAK Belt">
+        </div>
+    </div>
+</section>
+
+
+<!-- ════ DARK IFAK — image bg + overlay panel ════ -->
+<section class="med-dark">
+    <div class="med-dark-bg">
+        <img src="https://static.wixstatic.com/media/44674e_dd27a75055ff4cf898a7085be62633f5~mv2.webp/v1/fill/w_1479,h_1001,al_c,q_85,enc_avif,quality_auto/Belt.webp" alt="">
+    </div>
+    <div class="med-dark-content">
+        <div class="s-head" style="text-align:center; position:relative; z-index:10;">
+            <div class="s-label" style="justify-content:center;">Inventory_Ref</div>
+            <div class="s-title">Kit Médical IFAK — Détail Complet</div>
+        </div>
+        <div class="med-dark-panel">
+            <div class="med-dark-grid">
+                <div>
+                    <div class="mdg-label">Wundversorgung</div>
+                    <ul class="mdg-list">
+                        <li class="mdg-item">15× Bandage (Einfach)</li>
+                        <li class="mdg-item blue">4× Tourniquet [Critique]</li>
+                        <li class="mdg-item">2× Chest Seal</li>
+                    </ul>
+                    <div style="margin-top:1.5rem;">
+                        <div class="mdg-label">Medikamente</div>
+                        <ul class="mdg-list">
+                            <li class="mdg-item warn">2× Morphin-Autoinjektor</li>
+                            <li class="mdg-item">1× Schmerzmittel</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <div class="mdg-label">Atemwegsversorgung</div>
+                    <ul class="mdg-list">
+                        <li class="mdg-item">2× Guedeltubus</li>
+                    </ul>
+                    <div style="margin-top:1.5rem;">
+                        <div class="mdg-label">Zugang</div>
+                        <ul class="mdg-list">
+                            <li class="mdg-item warn">1× 16g IV [freiwillig]</li>
+                            <li class="mdg-item warn">1× 1000ml Saline IV</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="mdg-footer">
+                <span>Validation : Nominal</span>
+                <span>Habilitation : Alpha_Ops</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════ RESSOURCES ════ -->
+<section class="section">
+    <div class="wrap">
+        <div class="s-head">
+            <div class="s-label">Database_Indexing</div>
+            <div class="s-title">Ressources & Apprentissage</div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type / Source</th>
+                        <th>Référence & Ressource</th>
+                        <th style="text-align:center;">Niveau</th>
+                        <th>Language</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><div class="td-src"><div class="src-dot" style="background:#ef4444;"></div>YouTube</div></td>
+                        <td><a href="#" class="td-link">Protocoles de Frappe Close Air Support</a></td>
+                        <td style="text-align:center;"><span class="lv lv-init">Initiation</span></td>
+                        <td><span class="td-lang">FR · Vidéo</span></td>
+                    </tr>
+                    <tr>
+                        <td><div class="td-src"><div class="src-dot" style="background:#f97316;"></div>Reddit</div></td>
+                        <td><a href="#" class="td-link">r/TacticalGear — JPC Loadout Optimization</a></td>
+                        <td style="text-align:center;"><span class="lv lv-inter">Intermédiaire</span></td>
+                        <td><span class="td-lang">EN · Community</span></td>
+                    </tr>
+                    <tr>
+                        <td><div class="td-src"><div class="src-dot" style="background:#8b5cf6;"></div>SCORM</div></td>
+                        <td><span class="td-link" style="cursor:default;">E-learning : Coordination ATAK v4.2</span></td>
+                        <td style="text-align:center;"><span class="lv lv-expert">Expert</span></td>
+                        <td><span class="td-lang">JS · XML · SCORM 2004</span></td>
+                    </tr>
+                    <tr>
+                        <td><div class="td-src"><div class="src-dot" style="background:var(--dim);"></div>Docs</div></td>
+                        <td><a href="#" class="td-link">Manuel de Liaison Radio (Kilo-Alpha)</a></td>
+                        <td style="text-align:center;"><span class="lv lv-inter">Intermédiaire</span></td>
+                        <td><span class="td-lang">PDF · FR</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top:1rem; display:flex; justify-content:flex-end; gap:1.5rem; font-family:var(--mono); font-size:8px; font-weight:700; letter-spacing:.3em; text-transform:uppercase; color:var(--faint);">
+            <span>Total_Records: 04</span><span style="color:var(--border2);">|</span><span>Last_Sync: 2026-03-10</span>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════ PERSONNEL ════ -->
+<section class="section" style="background:var(--surface);">
+    <div class="wrap">
+        <div class="s-head" style="display:flex; justify-content:space-between; align-items:flex-end;">
+            <div>
+                <div class="s-label">Personnel_Operations</div>
+                <div class="s-title">Registre des Qualifications</div>
+            </div>
+            <div style="text-align:right; font-family:var(--mono); font-size:8px; font-weight:700; letter-spacing:.28em; text-transform:uppercase; color:var(--faint);">
+                <div>Status: Live_Sync</div>
+                <div style="color:var(--green); margin-top:3px;">Operational: 100%</div>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Opérateur / Instructeur</th>
+                        <th>Brevet / Habilitation</th>
+                        <th style="text-align:center;">Session Actuelle</th>
+                        <th style="text-align:right;">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div class="op-avatar" style="background:var(--blue);">I</div>
+                                <div><div class="op-name">Maj. Blackwood</div><div class="op-rank">Lead Instructor / JTAC-E</div></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <span class="cert cert-m">Master_Wings</span>
+                                <span class="cert cert-l">Liaison_L4</span>
+                            </div>
+                        </td>
+                        <td style="text-align:center;">
+                            <div style="font-family:var(--cond);font-size:14px;font-weight:700;color:#fff;">Module_Alpha : CAS Advanced</div>
+                            <div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:3px;">Fin : 14:00Z</div>
+                        </td>
+                        <td style="text-align:right;"><span class="status st-act"><span class="sd sd-g"></span>En Instruction</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div class="op-avatar" style="background:rgba(255,255,255,.06);color:var(--dim);">O</div>
+                                <div><div class="op-name">Sgt. Miller</div><div class="op-rank">Qualified Operator</div></div>
+                            </div>
+                        </td>
+                        <td><span class="cert cert-b">JTAC_Basic</span></td>
+                        <td style="text-align:center;font-family:var(--mono);font-size:9px;color:var(--faint);">— No Active Session —</td>
+                        <td style="text-align:right;"><span class="status st-std"><span class="sd sd-d"></span>Standby</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div class="op-avatar" style="background:rgba(245,158,11,.14);color:var(--amber);">C</div>
+                                <div><div class="op-name">Cpl. Henderson</div><div class="op-rank">Candidate / Trainee</div></div>
+                            </div>
+                        </td>
+                        <td><span style="font-family:var(--mono);font-size:9px;color:var(--faint);font-style:italic;">En cours d'acquisition…</span></td>
+                        <td style="text-align:center;">
+                            <div class="prog-bar" style="margin:0 auto 5px;"><div class="prog-fill" style="width:65%;"></div></div>
+                            <div style="font-family:var(--mono);font-size:8px;font-weight:700;color:var(--blue);">65% PROGRESS</div>
+                        </td>
+                        <td style="text-align:right;"><span class="status st-train"><span class="sd sd-b"></span>Formation active</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:var(--faint);">
+            <div style="display:flex;gap:2rem;"><span>Active_Sessions: 02</span><span>Total_Certified: 142</span></div>
+            <div style="display:flex;align-items:center;gap:6px;"><div class="dot-pulse"></div><span>Auto-Refresh Active</span></div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════ CERTIFICATIONS ════ -->
+<section class="section">
+    <div class="wrap">
+        <div class="s-head">
+            <div class="s-label">Data_Repository</div>
+            <div class="s-title">Références & Certifications</div>
+        </div>
+        <div class="cert-cards">
+            <div class="cert-card">
+                <div class="cc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14v6"/></svg></div>
+                <div>
+                    <div class="cc-id">Certification_01 · ID: 8842-DELTA</div>
+                    <div class="cc-title">Qualification TACP/JTAC</div>
+                </div>
+                <div class="cc-desc">Formation avancée sur le contrôle terminal des frappes aériennes et la gestion d'espace aérien saturé.</div>
+                <div class="cc-foot"><span class="cc-tag" style="background:var(--blue-dim);color:var(--blue);">Active</span></div>
+            </div>
+            <a href="#" class="cert-card">
+                <div class="cc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></div>
+                <div>
+                    <div class="cc-id">Technical_Manual</div>
+                    <div class="cc-title">Documentation ATAK-CIV</div>
+                </div>
+                <div class="cc-desc">Guide complet sur l'utilisation de l'Android Tactical Assault Kit pour la coordination terrain.</div>
+                <div class="cc-foot"><span class="cc-link">Accéder à la ressource <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span></div>
+            </a>
+            <div class="cert-card">
+                <div class="cc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg></div>
+                <div>
+                    <div class="cc-id">Operational_Ref</div>
+                    <div class="cc-title">Architecture Réseau Maillé</div>
+                </div>
+                <div class="cc-desc">Mise en place de nœuds de communication résilients en environnement dégradé.</div>
+                <div class="cc-foot">
+                    <div style="display:flex;gap:6px;">
+                        <span class="cc-tag" style="background:rgba(255,255,255,.06);color:var(--dim);">Network</span>
+                        <span class="cc-tag" style="background:rgba(34,197,94,.1);color:var(--green);">Active</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<footer>
+    <div class="ft-logo">Forward Observations Group</div>
+    <div class="ft-meta"><div>© 2026 FOG · Equipment Command</div><div>JTAC · System_Liaison · Kilo-06</div></div>
+</footer>
+
+<script>
+    function ft(d,tz){
+        return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:tz}).format(d);
+    }
+    function tick(){
+        const n=new Date();
+        document.getElementById('t-z').textContent=ft(n,'UTC')+'Z';
+        document.getElementById('t-p').textContent=ft(n,'America/Los_Angeles');
+        document.getElementById('t-m').textContent=ft(n,'America/Denver');
+        document.getElementById('t-e').textContent=ft(n,'America/New_York');
+    }
+    setInterval(tick,1000);tick();
+</script>
+</body>
+</html>

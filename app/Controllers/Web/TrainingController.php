@@ -22,8 +22,7 @@ class TrainingController
             return Response::redirect(url('login'));
         }
         $modules = $this->trainingRepository->listPublishedForTenant((int) $tenantId);
-        return Response::view('layout.main', [
-            'content' => 'training.index',
+        return Response::view('training.index', [
             'title' => 'Formations',
             'modules' => $modules,
         ]);
@@ -40,8 +39,7 @@ class TrainingController
         if (!$module) {
             return (new Response())->setStatusCode(404)->setBody('Module non trouvé.');
         }
-        return Response::view('layout.main', [
-            'content' => 'training.show',
+        return Response::view('training.show', [
             'title' => $module['title'],
             'module' => $module,
         ]);

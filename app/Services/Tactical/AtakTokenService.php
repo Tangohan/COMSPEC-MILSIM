@@ -10,9 +10,12 @@ class AtakTokenService
 {
     private const LIFETIME_SECONDS = 3600;
 
-    public function generate(): string
+    /** @param string|null $jwtSecretOverride Secret JWT de l'équipe (tenant), ou null pour utiliser env */
+    public function generate(?string $jwtSecretOverride = null): string
     {
-        $secret = env('JWT_SECRET', 'athena-secret-change-me');
+        $secret = $jwtSecretOverride !== null && $jwtSecretOverride !== ''
+            ? $jwtSecretOverride
+            : (string) env('JWT_SECRET', 'athena-secret-change-me');
         $payload = [
             'sub' => Session::get('user_id'),
             'tenant_id' => Session::get('tenant_id'),

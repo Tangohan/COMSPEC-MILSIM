@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+app/Config/database.local.php
 /storage/logs/*
 !/storage/logs/.gitkeep
 /storage/cache/*

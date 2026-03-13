@@ -23,6 +23,29 @@ register_shutdown_function(function () {
 
 require $root . '/bootstrap/app.php';
 
+// Mode maintenance : si activé et IP non autorisée, afficher 503 et arrêter
+$maintenance = $GLOBALS['__app_config']['maintenance'] ?? [];
+if (!empty($maintenance['enabled'])) {
+    $clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_CLIENT_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+    if (is_string($clientIp) && str_contains($clientIp, ',')) {
+        $clientIp = trim(explode(',', $clientIp)[0]);
+    }
+    $allowedIps = $maintenance['allowed_ips'] ?? [];
+    if (!is_array($allowedIps) || !in_array($clientIp, $allowedIps, true)) {
+        $message = $maintenance['message'] ?? 'Maintenance en cours. Merci de réessayer dans quelques minutes.';
+        $viewPath = $root . '/views/errors/503.php';
+        header('HTTP/1.1 503 Service Unavailable');
+        header('Retry-After: 300');
+        header('Content-Type: text/html; charset=utf-8');
+        if (is_file($viewPath)) {
+            require $viewPath;
+        } else {
+            echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Maintenance</title></head><body><h1>Maintenance</h1><p>' . htmlspecialchars($message) . '</p></body></html>';
+        }
+        exit;
+    }
+}
+
 try {
     $config = $GLOBALS['__app_config'];
 

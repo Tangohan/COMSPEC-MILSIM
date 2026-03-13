@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS `personnel_extras` (
   CONSTRAINT `personnel_extras_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Enlistments
+-- Enlistments (colonnes de base ; colonnes Olympus ajoutées par ALTER en fin de fichier)
 CREATE TABLE IF NOT EXISTS `enlistments` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned NOT NULL,
@@ -326,6 +326,219 @@ CREATE TABLE IF NOT EXISTS `training_certificates` (
   CONSTRAINT `training_certificates_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `training_certificates_module_fk` FOREIGN KEY (`training_module_id`) REFERENCES `training_modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `training_certificates_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================================
+-- ALTER enlistments : colonnes formulaire Olympus
+-- S'exécute après le CREATE : nouvelle install ou table existante.
+-- Si la table a déjà ces colonnes, commenter ou ignorer ce bloc.
+-- ============================================================
+ALTER TABLE `enlistments` ADD COLUMN `age` smallint unsigned DEFAULT NULL AFTER `notes`;
+ALTER TABLE `enlistments` ADD COLUMN `timezone` varchar(100) DEFAULT NULL AFTER `age`;
+ALTER TABLE `enlistments` ADD COLUMN `weekly_availability` varchar(255) DEFAULT NULL AFTER `timezone`;
+ALTER TABLE `enlistments` ADD COLUMN `system_config` varchar(500) DEFAULT NULL AFTER `weekly_availability`;
+ALTER TABLE `enlistments` ADD COLUMN `microphone_quality` varchar(20) DEFAULT NULL AFTER `system_config`;
+ALTER TABLE `enlistments` ADD COLUMN `past_milsim_experience` text AFTER `microphone_quality`;
+ALTER TABLE `enlistments` ADD COLUMN `ace_acre_level` varchar(50) DEFAULT NULL AFTER `past_milsim_experience`;
+ALTER TABLE `enlistments` ADD COLUMN `motivation_why_join` text AFTER `ace_acre_level`;
+ALTER TABLE `enlistments` ADD COLUMN `motivation_accountability` text AFTER `motivation_why_join`;
+ALTER TABLE `enlistments` ADD COLUMN `commitment_effort` varchar(20) DEFAULT NULL AFTER `motivation_accountability`;
+ALTER TABLE `enlistments` ADD COLUMN `availability_wed_sat` varchar(20) DEFAULT NULL AFTER `commitment_effort`;
+ALTER TABLE `enlistments` ADD COLUMN `no_ai_confirmed` tinyint(1) DEFAULT 0 AFTER `availability_wed_sat`;
+
+-- ============================================================
+-- Matricules personnalisables (par tenant)
+-- format_pattern : ex. "{prefix}-{seq}" ou "FOG-{seq:5}" (5 chiffres)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `tenant_matricule_config` (
+  `tenant_id` int unsigned NOT NULL,
+  `prefix` varchar(20) DEFAULT '',
+  `format_pattern` varchar(80) NOT NULL DEFAULT '{prefix}-{seq}',
+  `next_number` int unsigned NOT NULL DEFAULT 1,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`tenant_id`),
+  CONSTRAINT `tenant_matricule_config_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Configuration ATAK / Arma par équipe (tenant)
+CREATE TABLE IF NOT EXISTS `tenant_atak_config` (
+  `tenant_id` int unsigned NOT NULL,
+  `node_url` varchar(500) DEFAULT NULL,
+  `jwt_secret` varchar(255) DEFAULT NULL,
+  `arma_server_host` varchar(255) DEFAULT NULL,
+  `arma_server_port` smallint unsigned DEFAULT NULL,
+  `arma_mod_credentials` text DEFAULT NULL,
+  `instructions` text DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`tenant_id`),
+  CONSTRAINT `tenant_atak_config_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Code OTAN des grades (OR-1 à OR-9, OF-1 à OF-10, WO-1 à WO-5)
+-- (Si la colonne existe déjà, commenter la ligne suivante.)
+ALTER TABLE `grades` ADD COLUMN `nato_code` varchar(10) DEFAULT NULL AFTER `short_name`;
+
+-- Panneaux de données administratives (définis par tenant)
+CREATE TABLE IF NOT EXISTS `personnel_admin_panels` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `slug` varchar(80) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  `display_order` int DEFAULT 0,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
+  CONSTRAINT `personnel_admin_panels_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Données par panel et par utilisateur (JSON flexible)
+CREATE TABLE IF NOT EXISTS `personnel_admin_data` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `panel_id` int unsigned NOT NULL,
+  `data` json DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id_panel_id` (`user_id`,`panel_id`),
+  CONSTRAINT `personnel_admin_data_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `personnel_admin_data_panel_id_fk` FOREIGN KEY (`panel_id`) REFERENCES `personnel_admin_panels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Forum
+CREATE TABLE IF NOT EXISTS `forum_categories` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `parent_id` int unsigned DEFAULT NULL,
+  `name` varchar(255) NOT NULL,
+  `slug` varchar(100) NOT NULL,
+  `description` text,
+  `color_theme` varchar(50) DEFAULT 'slate',
+  `display_order` int DEFAULT 0,
+  `is_locked` tinyint(1) DEFAULT 0,
+  `min_role_id` int unsigned DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_id` (`tenant_id`),
+  KEY `parent_id` (`parent_id`),
+  UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
+  CONSTRAINT `forum_categories_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `forum_categories_parent_id_fk` FOREIGN KEY (`parent_id`) REFERENCES `forum_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `forum_categories_min_role_id_fk` FOREIGN KEY (`min_role_id`) REFERENCES `roles` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `forum_topics` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `category_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  `title` varchar(500) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `is_pinned` tinyint(1) DEFAULT 0,
+  `is_locked` tinyint(1) DEFAULT 0,
+  `is_archived` tinyint(1) DEFAULT 0,
+  `is_hidden` tinyint(1) DEFAULT 0,
+  `view_count` int unsigned DEFAULT 0,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_id` (`tenant_id`),
+  KEY `category_id` (`category_id`),
+  KEY `category_updated` (`category_id`,`updated_at`),
+  CONSTRAINT `forum_topics_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `forum_topics_category_id_fk` FOREIGN KEY (`category_id`) REFERENCES `forum_categories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `forum_topics_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `forum_posts` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `topic_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  `body` text NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_id` (`tenant_id`),
+  KEY `topic_id` (`topic_id`),
+  KEY `topic_created` (`topic_id`,`created_at`),
+  CONSTRAINT `forum_posts_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `forum_posts_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `forum_posts_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `forum_topic_subscriptions` (
+  `user_id` int unsigned NOT NULL,
+  `topic_id` int unsigned NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`,`topic_id`),
+  CONSTRAINT `forum_topic_subscriptions_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `forum_topic_subscriptions_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `forum_reports` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `reporter_id` int unsigned NOT NULL,
+  `post_id` int unsigned DEFAULT NULL,
+  `topic_id` int unsigned DEFAULT NULL,
+  `reason` text,
+  `status` varchar(20) DEFAULT 'pending',
+  `handled_by` int unsigned DEFAULT NULL,
+  `handled_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_id` (`tenant_id`),
+  KEY `status` (`status`),
+  CONSTRAINT `forum_reports_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `forum_reports_reporter_id_fk` FOREIGN KEY (`reporter_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `forum_reports_post_id_fk` FOREIGN KEY (`post_id`) REFERENCES `forum_posts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `forum_reports_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `forum_reports_handled_by_fk` FOREIGN KEY (`handled_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `forum_read` (
+  `user_id` int unsigned NOT NULL,
+  `topic_id` int unsigned NOT NULL,
+  `read_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`,`topic_id`),
+  CONSTRAINT `forum_read_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `forum_read_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Modpacks (par tenant)
+CREATE TABLE IF NOT EXISTS `modpacks` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `slug` varchar(100) NOT NULL,
+  `url` varchar(500) DEFAULT NULL,
+  `version` varchar(50) DEFAULT NULL,
+  `file_path` varchar(500) DEFAULT NULL,
+  `size` int unsigned DEFAULT NULL,
+  `released_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `description` text,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
+  KEY `tenant_id` (`tenant_id`),
+  CONSTRAINT `modpacks_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `modpacks_created_by_fk` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `modpack_images` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `modpack_id` int unsigned NOT NULL,
+  `file_path` varchar(500) NOT NULL,
+  `display_order` int DEFAULT 0,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `modpack_id` (`modpack_id`),
+  CONSTRAINT `modpack_images_modpack_id_fk` FOREIGN KEY (`modpack_id`) REFERENCES `modpacks` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;

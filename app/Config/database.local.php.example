@@ -1,0 +1,17 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Configuration base de données (PHP).
+ * Copier en database.local.php et renseigner les valeurs.
+ * database.local.php est ignoré par Git (ne pas committer les identifiants).
+ */
+return [
+    'host'     => '127.0.0.1',
+    'port'     => 3306,
+    'database' => 'votre_base',
+    'username' => 'votre_user',
+    'password' => 'votre_mot_de_passe',
+    'charset'  => 'utf8mb4',
+];

@@ -20,7 +20,7 @@ class EnlistmentController
 
     public function show(Request $request, array $params = []): Response
     {
-        return Response::view('layout.main', ['content' => 'enlistment', 'title' => 'Enrôlement']);
+        return Response::view('enlistment');
     }
 
     public function store(Request $request, array $params = []): Response
@@ -32,14 +32,30 @@ class EnlistmentController
             Session::flash('error', 'Session expirée. Réessayez.');
             return Response::redirect(url('enlistment'));
         }
+        if (!$request->input('no_ai_confirmed')) {
+            Session::flash('error', 'Vous devez confirmer l\'absence d\'IA dans ce rapport (case à cocher).');
+            return Response::redirect(url('enlistment'));
+        }
         $tenant = $this->tenantRepository->getDefaultTenant();
         if (!$tenant) {
             Session::flash('error', 'Organisation non configurée.');
             return Response::redirect(url('enlistment'));
         }
+        $fullName = trim((string) $request->input('full_name'));
+        $first = $fullName;
+        $last = '';
+        if ($fullName !== '' && str_contains($fullName, ' ')) {
+            $pos = strpos($fullName, ' ');
+            $first = substr($fullName, 0, $pos);
+            $last = trim(substr($fullName, $pos));
+        }
+        if ($first === '' && trim((string) $request->input('first_name')) !== '') {
+            $first = trim((string) $request->input('first_name'));
+            $last = trim((string) $request->input('last_name'));
+        }
         $this->enlistmentRepository->create((int) $tenant['id'], [
-            'first_name' => trim((string) $request->input('first_name')),
-            'last_name' => trim((string) $request->input('last_name')),
+            'first_name' => $first ?: '—',
+            'last_name' => $last ?: '—',
             'email' => trim((string) $request->input('email')),
             'callsign' => trim((string) $request->input('callsign')) ?: null,
             'country' => trim((string) $request->input('country')) ?: null,
@@ -48,6 +64,18 @@ class EnlistmentController
             'platform' => trim((string) $request->input('platform')) ?: null,
             'availability' => trim((string) $request->input('availability')) ?: null,
             'notes' => trim((string) $request->input('notes')) ?: null,
+            'age' => $request->input('age'),
+            'timezone' => trim((string) $request->input('timezone')) ?: null,
+            'weekly_availability' => trim((string) $request->input('weekly_availability')) ?: null,
+            'system_config' => trim((string) $request->input('system_config')) ?: null,
+            'microphone_quality' => trim((string) $request->input('microphone_quality')) ?: null,
+            'past_milsim_experience' => trim((string) $request->input('past_milsim_experience')) ?: null,
+            'ace_acre_level' => trim((string) $request->input('ace_acre_level')) ?: null,
+            'motivation_why_join' => trim((string) $request->input('motivation_why_join')) ?: null,
+            'motivation_accountability' => trim((string) $request->input('motivation_accountability')) ?: null,
+            'commitment_effort' => trim((string) $request->input('commitment_effort')) ?: null,
+            'availability_wed_sat' => trim((string) $request->input('availability_wed_sat')) ?: null,
+            'no_ai_confirmed' => $request->input('no_ai_confirmed'),
         ]);
         Session::flash('success', 'Candidature enregistrée. Nous vous recontacterons.');
         return Response::redirect(url('enlistment'));

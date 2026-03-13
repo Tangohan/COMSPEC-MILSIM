@@ -166,7 +166,7 @@ class AccountController
                 if (!in_array($mime, $allowed, true) || $file['size'] > 2 * 1024 * 1024) {
                     $errors['avatar'] = ['Format non autorisé ou fichier trop volumineux (max 2 Mo).'];
                 } else {
-                    $dir = base_path('storage/uploads/avatars');
+                    $dir = base_path('public/uploads/avatars');
                     if (!is_dir($dir)) {
                         mkdir($dir, 0755, true);
                     }
@@ -179,7 +179,7 @@ class AccountController
                     $name = $user['id'] . '_' . time() . '.' . $ext;
                     $path = $dir . DIRECTORY_SEPARATOR . $name;
                     if (move_uploaded_file($file['tmp_name'], $path)) {
-                        $urlPath = 'storage/uploads/avatars/' . $name;
+                        $urlPath = 'uploads/avatars/' . $name;
                         $this->userRepository->update((int) $user['id'], (int) $user['tenant_id'], ['avatar_url' => $urlPath]);
                         Session::flash('success', 'Photo de profil mise à jour.');
                         return Response::redirect(url('account/image'));

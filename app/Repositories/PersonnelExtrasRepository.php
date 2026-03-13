@@ -31,4 +31,19 @@ class PersonnelExtrasRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
     }
+
+    /** Crée une ligne personnel_extras si elle n'existe pas. */
+    public function ensureRecord(int $userId): void
+    {
+        $stmt = $this->pdo->prepare('INSERT IGNORE INTO personnel_extras (user_id, created_at, updated_at) VALUES (?, NOW(), NOW())');
+        $stmt->execute([$userId]);
+    }
+
+    public function updateServiceNumber(int $userId, string $serviceNumber): bool
+    {
+        $this->ensureRecord($userId);
+        $stmt = $this->pdo->prepare('UPDATE personnel_extras SET service_number = ?, updated_at = NOW() WHERE user_id = ?');
+        $stmt->execute([$serviceNumber, $userId]);
+        return $stmt->rowCount() > 0;
+    }
 }

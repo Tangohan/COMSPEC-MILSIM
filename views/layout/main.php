@@ -23,9 +23,14 @@ $baseUrl = url('');
                 <a href="<?= $baseUrl ?>/" class="text-xs font-semibold uppercase text-slate-600 hover:text-slate-900">Accueil</a>
                 <a href="<?= $baseUrl ?>/dashboard" class="text-xs font-semibold uppercase text-slate-600 hover:text-slate-900">Dashboard</a>
                 <?php if (\App\Core\Session::get('user_id')): ?>
+                <a href="<?= $baseUrl ?>/forum" class="text-xs font-semibold uppercase text-slate-600 hover:text-slate-900">Salle de brief</a>
                 <a href="<?= $baseUrl ?>/personnel/me" class="text-xs font-semibold uppercase text-slate-600 hover:text-slate-900">Ma fiche</a>
+                <a href="<?= $baseUrl ?>/account" class="text-xs font-semibold uppercase text-slate-600 hover:text-slate-900">Mon compte</a>
                 <a href="<?= $baseUrl ?>/orbat" class="text-xs font-semibold uppercase text-slate-600 hover:text-slate-900">ORBAT</a>
                 <a href="<?= $baseUrl ?>/atak" class="text-xs font-semibold uppercase text-slate-600 hover:text-slate-900">ATAK</a>
+                <?php if (function_exists('can') && can('forum.moderate')): ?>
+                <a href="<?= $baseUrl ?>/forum/moderation" class="text-xs font-semibold uppercase text-rose-600 hover:text-rose-800">Terminal de Contrôle</a>
+                <?php endif; ?>
                 <a href="<?= $baseUrl ?>/admin" class="text-xs font-semibold uppercase text-slate-600 hover:text-slate-900">Admin</a>
                 <form method="post" action="<?= $baseUrl ?>/logout" class="inline"><?= \App\Core\Csrf::field() ?><button type="submit" class="text-xs font-semibold uppercase text-slate-600 hover:text-slate-900 cursor-pointer">Déconnexion</button></form>
                 <?php else: ?>
@@ -36,7 +41,8 @@ $baseUrl = url('');
     </header>
     <main class="min-h-[80vh]">
         <?php
-        $innerPath = base_path('views/' . $content . '.php');
+        $contentPath = str_replace('.', '/', $content);
+        $innerPath = base_path('views/' . $contentPath . '.php');
         if (is_file($innerPath)) {
             require $innerPath;
         } else {
