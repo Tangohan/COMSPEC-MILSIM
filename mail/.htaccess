@@ -1,0 +1,15 @@
+# Protection des fichiers de configuration mail
+# Empêcher l'accès direct aux fichiers PHP de configuration
+
+<FilesMatch "\.(php|inc|conf|config)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Autoriser uniquement l'accès depuis le serveur local
+<FilesMatch "^(config|config_mail)\.php$">
+    Order Deny,Allow
+    Deny from all
+    Allow from 127.0.0.1
+    Allow from ::1
+</FilesMatch>

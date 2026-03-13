@@ -1,0 +1,14 @@
+[2025-08-18 01:32:48] REQUEST_START RID=d06f0404e871f4df UID=guest IP=103.196.9.190 GET /includes/utils/status.php | Début de traitement | GET{} POST{}
+[2025-08-18 01:32:50] REQUEST_START RID=711c9b89cc148fe9 UID=guest IP=103.196.9.190 GET /api/auth/post_login.php | Début de traitement | GET{} POST{}
+[2025-08-18 02:40:23] REQUEST_START RID=db17da86f8987bc4 UID=guest IP=103.196.9.238 GET /includes/utils/status.php | Début de traitement | GET{} POST{}
+[2025-08-18 02:40:25] REQUEST_START RID=ffd4e2a4e71bfa5c UID=guest IP=103.196.9.238 GET /api/auth/post_login.php | Début de traitement | GET{} POST{}
+[2025-08-18 13:33:55] REQUEST_START RID=a0e42643ad70ed7d UID=guest IP=154.28.229.66 GET /api/auth/post_login.php | Début de traitement | GET{} POST{}
+[2025-08-18 13:33:57] REQUEST_START RID=d9a7ee4307aaead3 UID=guest IP=154.28.229.66 GET /includes/utils/status.php | Début de traitement | GET{} POST{}
+[2025-08-18 15:31:13] REQUEST_START RID=b14f8e75d0430de1 UID=guest IP=185.24.185.25 GET /accueil.php | Début de traitement | GET{} POST{}
+[2025-08-18 15:31:21] REQUEST_START RID=ceac03b78a8eb577 UID=guest IP=185.24.185.33 POST /backend/mail/send_code.php | Début de traitement | GET{} POST{}
+[2025-08-18 15:32:00] REQUEST_START RID=05fd6bf1df6b48a5 UID=guest IP=185.24.185.25 POST /backend/mail/verify_code.php | Début de traitement | GET{} POST{}
+[2025-08-18 15:32:02] REQUEST_START RID=bb721fceeb952051 UID=120 IP=185.24.185.25 GET /api/auth/post_login.php | Début de traitement | GET{} POST{}
+[2025-08-18 16:50:03] REQUEST_START RID=c4829c2f0e75f2de UID=3 IP=2a01:e0a:992:1730:ed04:12a4:1cdf:8a65 GET /api/natinf/redirect_natinf.php | Début de traitement | GET{} POST{}
+[2025-08-18 16:50:03] REQUEST_START RID=14b25389f8c4db1f UID=3 IP=2a01:e0a:992:1730:ed04:12a4:1cdf:8a65 GET /pages/user/natinfs_updated.php | Début de traitement | GET{} POST{}
+[2025-08-18 16:50:06] REQUEST_START RID=2f956f34b6680875 UID=3 IP=2a01:e0a:992:1730:ed04:12a4:1cdf:8a65 GET /api/favorites/get_favorites.php | Début de traitement | GET{} POST{}
+[2025-08-18 16:50:06] REQUEST_START RID=7a08d6ef486f0d27 UID=3 IP=2a01:e0a:992:1730:ed04:12a4:1cdf:8a65 GET /api/favorites/get_favorites.php | Début de traitement | GET{} POST{}
