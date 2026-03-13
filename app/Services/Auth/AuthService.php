@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Auth;
+
+use App\Core\Session;
+use App\Repositories\UserRepository;
+use App\Repositories\TenantRepository;
+
+class AuthService
+{
+    public function __construct(
+        private UserRepository $userRepository,
+        private TenantRepository $tenantRepository
+    ) {}
+
+    public function attempt(int $tenantId, string $email, string $password): bool
+    {
+        $user = $this->userRepository->findByEmail($tenantId, $email);
+        if (!$user || !password_verify($password, $user['password_hash'])) {
+            return false;
+        }
+        if (($user['status'] ?? '') !== 'active') {
+            return false;
+        }
+        $this->loginUser($user);
+        return true;
+    }
+
+    public function loginUser(array $user): void
+    {
+        Session::regenerate();
+        Session::set('user_id', (int) $user['id']);
+        Session::set('tenant_id', (int) $user['tenant_id']);
+        Session::set('email', $user['email']);
+        Session::set('display_name', $user['display_name'] ?? '');
+        Session::set('callsign', $user['callsign'] ?? '');
+        Session::set('role_id', $user['role_id'] ? (int) $user['role_id'] : null);
+        $this->userRepository->updateLastLogin((int) $user['id']);
+    }
+
+    public function logout(): void
+    {
+        Session::destroy();
+    }
+
+    public function user(): ?array
+    {
+        $userId = Session::get('user_id');
+        if (!$userId) {
+            return null;
+        }
+        $tenantId = Session::get('tenant_id');
+        return $this->userRepository->findById((int) $userId, $tenantId ? (int) $tenantId : null);
+    }
+
+    public function tenant(): ?array
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return null;
+        }
+        return $this->tenantRepository->findById((int) $tenantId);
+    }
+
+    public function check(): bool
+    {
+        return Session::get('user_id') !== null;
+    }
+}

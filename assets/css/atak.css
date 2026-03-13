@@ -108,6 +108,10 @@ body.atak-page {
   overflow: hidden;
 }
 
+.atak-panel-left .atak-tabs-content {
+  background: var(--atak-panel-alt);
+}
+
 .atak-panel-left.collapsed { width: 44px; min-width: 44px; }
 .atak-panel-left.collapsed .atak-tabs-content,
 .atak-panel-left.collapsed .atak-tabs-headers > *:not(.atak-toggle) { display: none; }
@@ -120,6 +124,10 @@ body.atak-page {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.atak-panel-right .atak-units-list {
+  background: var(--atak-panel-alt);
 }
 
 .atak-panel-right.collapsed { width: 44px; min-width: 44px; }
@@ -136,7 +144,7 @@ body.atak-page {
 #atak-map {
   width: 100%;
   height: 100%;
-  background: #1e293b;
+  background: var(--atak-bg);
 }
 
 /* Tabs panneau gauche */
@@ -160,6 +168,7 @@ body.atak-page {
 
 .atak-tab:hover { color: var(--atak-text); }
 .atak-tab.active { color: var(--atak-accent); border-bottom: 2px solid var(--atak-accent); margin-bottom: -1px; }
+.atak-toggle:hover { color: var(--atak-text); }
 
 .atak-toggle {
   margin-left: auto;
@@ -220,7 +229,9 @@ body.atak-page {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
+  font-weight: 600;
 }
+.atak-chat-input-wrap button:hover { filter: brightness(1.1); }
 
 /* Pings */
 .atak-pings-list { padding: 0.5rem; font-size: 0.8rem; }
@@ -229,7 +240,7 @@ body.atak-page {
   border-bottom: 1px solid var(--atak-border);
   cursor: pointer;
 }
-.atak-ping-item:hover { background: rgba(56, 189, 248, 0.1); }
+.atak-ping-item:hover { background: var(--atak-accent-dim); }
 
 /* JTAC 9-Line */
 .atak-jtac-form, .atak-jtac-list { padding: 0.5rem; }
@@ -298,6 +309,30 @@ body.atak-page {
   color: var(--atak-bg);
   border-color: var(--atak-accent);
 }
+.atak-filter .btn-live:hover, .atak-filter .btn-all:hover { color: var(--atak-text); }
+
+.atak-units-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  color: var(--atak-muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+.atak-units-empty-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+}
+.atak-units-empty-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
 
 .atak-units-list {
   flex: 1;
@@ -315,7 +350,7 @@ body.atak-page {
 .atak-unit-card:hover { border-color: var(--atak-accent); }
 .atak-unit-card.linked { border-left: 3px solid var(--atak-success); }
 .atak-unit-card.delayed { border-left: 3px solid var(--atak-warning); }
-.atak-unit-callsign { font-size: 0.7rem; color: var(--atak-accent); text-transform: uppercase; }
+.atak-unit-callsign { font-size: 0.7rem; color: var(--atak-accent); text-transform: uppercase; letter-spacing: 0.05em; }
 .atak-unit-role { font-weight: 700; font-size: 0.9rem; }
 .atak-unit-status { font-size: 0.65rem; text-transform: uppercase; padding: 0.2rem 0.4rem; border-radius: 999px; }
 .atak-unit-status.linked { background: rgba(34, 197, 94, 0.2); color: var(--atak-success); }

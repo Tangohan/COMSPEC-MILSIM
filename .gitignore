@@ -1,0 +1,17 @@
+/vendor/
+.env
+.env.local
+.env.*.local
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/cache/*
+!/storage/cache/.gitkeep
+/storage/sessions/*
+!/storage/sessions/.gitkeep
+/storage/uploads/*
+!/storage/uploads/.gitkeep
+composer.lock
+.idea/
+.vscode/
+*.log
+config/phinx.php

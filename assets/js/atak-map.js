@@ -29,7 +29,7 @@ window.ATAKMap = (function () {
     L.control.scale({ maxWidth: 200, imperial: false }).addTo(map);
 
     var gridEl = L.DomUtil.create('div', 'leaflet-grid-mouseposition');
-    gridEl.style.cssText = 'position:absolute;top:10px;right:10px;padding:6px 8px;background:rgba(30,41,59,0.95);color:#e2e8f0;font-size:11px;border-radius:4px;z-index:1000;';
+    gridEl.style.cssText = 'position:absolute;top:10px;right:10px;padding:6px 8px;background:rgba(18,18,26,0.95);color:#e8e8ed;font-size:11px;border-radius:4px;z-index:1000;border:1px solid #2a2a35;';
     gridEl.textContent = '0 - 0';
     map.getContainer().appendChild(gridEl);
     map.on('mousemove', function (e) {
@@ -77,7 +77,7 @@ window.ATAKMap = (function () {
     var layer = ensureLayer(layerId);
     var icon = L.divIcon({
       className: 'atak-marker-icon',
-      html: '<span style="width:12px;height:12px;border-radius:50%;background:#38bdf8;border:2px solid #0f172a;"></span>',
+      html: '<span style="width:12px;height:12px;border-radius:50%;background:#34d399;border:2px solid #0a0a0f;"></span>',
       iconSize: [16, 16],
       iconAnchor: [8, 8]
     });
