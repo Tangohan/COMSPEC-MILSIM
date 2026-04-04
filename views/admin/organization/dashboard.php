@@ -7,6 +7,10 @@
     <p class="text-slate-600 mb-8">Gestion des utilisateurs, groupes, équipes et rôles métier.</p>
     <ul class="space-y-2">
         <li><a href="<?= url('admin/organization/users') ?>" class="text-slate-700 hover:underline font-medium">Utilisateurs</a></li>
+        <li><a href="<?= url('admin/organization/invitations') ?>" class="text-slate-700 hover:underline font-medium">Invitations</a></li>
+        <li><a href="<?= url('admin/organization/moderation') ?>" class="text-slate-700 hover:underline font-medium">Modération &amp; sanctions</a></li>
+        <li><a href="<?= url('admin/organization/analytics') ?>" class="text-slate-700 hover:underline font-medium">Analytics</a></li>
+        <li><a href="<?= url('admin/organization/events') ?>" class="text-slate-700 hover:underline font-medium">Événements</a></li>
         <li><a href="<?= url('admin/organization/roles') ?>" class="text-slate-700 hover:underline font-medium">Rôles</a></li>
         <li><a href="<?= url('admin/organization/categories') ?>" class="text-slate-700 hover:underline font-medium">Catégories</a></li>
         <li><a href="<?= url('admin/organization/referentiels/grades') ?>" class="text-slate-700 hover:underline font-medium">Référentiels &gt; Grades</a></li>

@@ -30,6 +30,12 @@ class HomeController
                 ->listTenantsForEmail((string) $email);
         }
         if ($tenantId) {
+            try {
+                $usage = \App\Core\Container::get(\App\Repositories\PlatformUsageRepository::class);
+                $uid = Session::get('user_id') ? (int) Session::get('user_id') : null;
+                $usage->record((int) $tenantId, $uid, 'dashboard_visit', 'view');
+            } catch (\Throwable) {
+            }
             $modpackRepo = \App\Core\Container::get(\App\Repositories\ModpackRepository::class);
             $modpack = $modpackRepo->getPrimaryForTenant((int) $tenantId);
             $auth = \App\Core\Container::get(\App\Services\Auth\AuthService::class);

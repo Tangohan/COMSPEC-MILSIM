@@ -12,27 +12,72 @@ use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
 use App\Repositories\MapShapeRepository;
 use App\Repositories\LaserCodeRepository;
+use App\Repositories\TenantRepository;
 
 class AtakApiController
 {
     private const DEFAULT_MAP_ID = 1;
+
+    /** @var array<string, mixed>|null Cache php://input (une seule lecture par requête). */
+    private ?array $jsonBodyCache = null;
 
     public function __construct(
         private AtakDataRepository $atak,
         private CasNineLineRepository $casRepo,
         private ReconImageRepository $reconRepo,
         private MapShapeRepository $mapShapeRepo,
-        private LaserCodeRepository $laserCodeRepo
+        private LaserCodeRepository $laserCodeRepo,
+        private TenantRepository $tenantRepository
     ) {
     }
 
-    private function tenantId(Request $request): int
+    /**
+     * Résout le tenant pour l’API ATAK : session, puis query/body (tenant_id), puis tenant_slug, puis env explicite.
+     * Ne retombe plus silencieusement sur le tenant 1 — configurez ATAK_DEFAULT_TENANT_ID pour les déploiements mono-tenant.
+     */
+    private function resolveTenantId(Request $request): ?int
     {
-        $id = Session::get('tenant_id');
-        if ($id !== null && $id !== '') {
-            return (int) $id;
+        $sid = Session::get('tenant_id');
+        if ($sid !== null && $sid !== '') {
+            $n = (int) $sid;
+            return $n > 0 ? $n : null;
         }
-        return (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: getenv('APP_ATAK_DEFAULT_TENANT_ID') ?: '1');
+        $q = $request->query('tenant_id');
+        if ($q !== null && $q !== '') {
+            $n = (int) $q;
+            return $n > 0 ? $n : null;
+        }
+        $body = $this->jsonBody($request);
+        if (!empty($body['tenant_id'])) {
+            $n = (int) $body['tenant_id'];
+            return $n > 0 ? $n : null;
+        }
+        $slug = $request->query('tenant_slug');
+        if (is_string($slug) && trim($slug) !== '') {
+            $t = $this->tenantRepository->findBySlug(trim($slug));
+
+            return $t ? (int) $t['id'] : null;
+        }
+        $env = getenv('ATAK_DEFAULT_TENANT_ID') ?: getenv('APP_ATAK_DEFAULT_TENANT_ID');
+        if ($env !== false && $env !== null && $env !== '') {
+            return (int) $env;
+        }
+
+        return null;
+    }
+
+    /** @return int|Response */
+    private function requireTenant(Request $request): int|Response
+    {
+        $id = $this->resolveTenantId($request);
+        if ($id === null) {
+            return Response::json([
+                'error' => 'tenant_context_required',
+                'message' => 'Indiquez tenant_id ou tenant_slug (query/body), une session avec tenant_id, ou définissez ATAK_DEFAULT_TENANT_ID pour un déploiement mono-tenant.',
+            ], 403);
+        }
+
+        return $id;
     }
 
     private function mapId(Request $request, bool $fromBody = false): int
@@ -48,12 +93,19 @@ class AtakApiController
 
     private function jsonBody(Request $request): array
     {
+        if ($this->jsonBodyCache !== null) {
+            return $this->jsonBodyCache;
+        }
         $raw = file_get_contents('php://input');
-        if ($raw === false) {
-            return [];
+        if ($raw === false || $raw === '') {
+            $this->jsonBodyCache = [];
+
+            return $this->jsonBodyCache;
         }
         $decoded = json_decode($raw, true);
-        return is_array($decoded) ? $decoded : [];
+        $this->jsonBodyCache = is_array($decoded) ? $decoded : [];
+
+        return $this->jsonBodyCache;
     }
 
     private function authArma(Request $request): bool
@@ -90,7 +142,11 @@ class AtakApiController
 
     public function stats(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $last = $this->atak->getLastActivity($tenantId, $mapId);
         $ago = null;
@@ -111,7 +167,11 @@ class AtakApiController
 
     public function markersIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $since = $request->query('since');
         $rows = $this->atak->getMarkers($tenantId, $mapId, $since);
@@ -121,7 +181,11 @@ class AtakApiController
 
     public function markersStore(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? self::DEFAULT_MAP_ID);
         $layerId = (int) ($body['layerId'] ?? 1);
@@ -132,7 +196,11 @@ class AtakApiController
 
     public function markersDelete(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0) {
             return Response::json(['error' => 'Not found'], 404);
@@ -150,7 +218,11 @@ class AtakApiController
         if (!$this->authArma($request)) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? self::DEFAULT_MAP_ID);
         $layerId = (int) ($body['layerId'] ?? 1);
@@ -165,7 +237,11 @@ class AtakApiController
 
     public function unitsIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $rows = $this->atak->getUnits($tenantId, $mapId);
         return Response::json($rows);
@@ -173,7 +249,11 @@ class AtakApiController
 
     public function unitsStore(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? self::DEFAULT_MAP_ID);
         $row = $this->atak->addUnit($tenantId, $mapId, $body);
@@ -182,7 +262,11 @@ class AtakApiController
 
     public function unitsUpdate(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         $body = $this->jsonBody($request);
         $row = $this->atak->updateUnit($tenantId, $id, $body);
@@ -197,7 +281,11 @@ class AtakApiController
         if (!$this->authArma($request)) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
         $callSign = $body['call_sign'] ?? $body['callsign'] ?? 'Unknown';
@@ -227,7 +315,11 @@ class AtakApiController
 
     public function chatIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $limit = (int) ($request->query('limit') ?: 100);
         $rows = $this->atak->getChatMessages($tenantId, $mapId, min($limit, 500));
@@ -236,7 +328,11 @@ class AtakApiController
 
     public function chatStore(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? self::DEFAULT_MAP_ID);
         $author = $body['author'] ?? 'Anonymous';
@@ -247,7 +343,11 @@ class AtakApiController
 
     public function pingsIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $limit = (int) ($request->query('limit') ?: 50);
         $rows = $this->atak->getPings($tenantId, $mapId, min($limit, 200));
@@ -256,7 +356,11 @@ class AtakApiController
 
     public function pingsStore(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? self::DEFAULT_MAP_ID);
         $author = $body['author'] ?? 'Anonymous';
@@ -269,7 +373,11 @@ class AtakApiController
 
     public function nineLineIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $rows = $this->atak->getNineLines($tenantId, $mapId);
         return Response::json($rows);
@@ -277,7 +385,11 @@ class AtakApiController
 
     public function nineLineStore(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? self::DEFAULT_MAP_ID);
         $author = $body['author'] ?? 'JTAC';
@@ -287,7 +399,11 @@ class AtakApiController
 
     public function nineLineUpdate(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         $body = $this->jsonBody($request);
         $status = $body['status'] ?? 'active';
@@ -300,7 +416,11 @@ class AtakApiController
 
     public function designatorIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $rows = $this->atak->getDesignators($tenantId, $mapId);
         return Response::json($rows);
@@ -308,7 +428,11 @@ class AtakApiController
 
     public function designatorStore(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? self::DEFAULT_MAP_ID);
         $callSign = $body['call_sign'] ?? $body['callsign'] ?? 'Unknown';
@@ -320,7 +444,11 @@ class AtakApiController
 
     public function sigintStore(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? self::DEFAULT_MAP_ID);
         $callSign = $body['call_sign'] ?? $body['callsign'] ?? 'Unknown';
@@ -333,7 +461,11 @@ class AtakApiController
 
     public function sigintZones(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $limit = min((int) ($request->query('limit') ?: 50), 200);
         $rows = $this->atak->getSigintZones($tenantId, $mapId, $limit);
@@ -342,7 +474,11 @@ class AtakApiController
 
     public function intelPhotosIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $rows = $this->atak->getIntelPhotos($tenantId, $mapId);
         foreach ($rows as &$r) {
@@ -363,7 +499,11 @@ class AtakApiController
                 return Response::json(['error' => 'Unauthorized'], 401);
             }
         }
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = (int) ($_POST['mapId'] ?? self::DEFAULT_MAP_ID);
         $author = $_POST['author'] ?? $_POST['callsign'] ?? 'Unknown';
         $posX = isset($_POST['pos_x']) ? (float) $_POST['pos_x'] : null;
@@ -392,7 +532,11 @@ class AtakApiController
         if (!$this->authArma($request)) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
         $callsign = $body['callsign'] ?? $body['call_sign'] ?? 'Unknown';
@@ -415,7 +559,11 @@ class AtakApiController
     // --- CAS / 9-Line ---
     public function casIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $assignedTo = $request->query('assignedTo') ?? $request->query('assigned_to');
         $status = $request->query('status');
@@ -425,7 +573,11 @@ class AtakApiController
 
     public function casStore(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
         $author = $body['author'] ?? $body['jtac'] ?? 'JTAC';
@@ -435,7 +587,11 @@ class AtakApiController
 
     public function casShow(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         $row = $this->casRepo->getCas($tenantId, $id);
         if ($row === null) {
@@ -446,7 +602,11 @@ class AtakApiController
 
     public function casUpdate(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         $body = $this->jsonBody($request);
         $row = $this->casRepo->patchCas($tenantId, $id, $body);
@@ -458,7 +618,11 @@ class AtakApiController
 
     public function casAck(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         $row = $this->casRepo->ackCas($tenantId, $id);
         if ($row === null) {
@@ -469,7 +633,11 @@ class AtakApiController
 
     public function casCheckLine(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         $body = $this->jsonBody($request);
         $line = $body['line'] ?? $body['lineKey'] ?? '';
@@ -487,7 +655,11 @@ class AtakApiController
 
     public function casStatus(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         $body = $this->jsonBody($request);
         $status = $body['status'] ?? '';
@@ -504,7 +676,11 @@ class AtakApiController
     // --- Recon images ---
     public function reconImagesIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $missionId = $request->query('mission_id') ?? $request->query('missionId');
         $author = $request->query('author');
         $dateFrom = $request->query('date_from');
@@ -522,7 +698,11 @@ class AtakApiController
         if (!$this->authArma($request)) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         if (empty($_FILES['image']) && empty($_FILES['photo'])) {
             return Response::json(['error' => 'Missing image file'], 400);
         }
@@ -563,7 +743,11 @@ class AtakApiController
 
     public function reconImagesShow(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         $row = $this->reconRepo->get($tenantId, $id);
         if ($row === null) {
@@ -575,7 +759,11 @@ class AtakApiController
 
     public function reconImagesLinkCas(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         $body = $this->jsonBody($request);
         $casId = (int) ($body['cas_id'] ?? $body['casId'] ?? 0);
@@ -592,7 +780,11 @@ class AtakApiController
     // --- Map shapes ---
     public function mapShapesIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $missionId = $request->query('mission_id') ?? $request->query('missionId');
         $since = $request->query('since');
@@ -602,7 +794,11 @@ class AtakApiController
 
     public function mapShapesStore(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
         $row = $this->mapShapeRepo->create($tenantId, $mapId, $body);
@@ -611,7 +807,11 @@ class AtakApiController
 
     public function mapShapesUpdate(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         $body = $this->jsonBody($request);
         $row = $this->mapShapeRepo->update($tenantId, $id, $body);
@@ -623,7 +823,11 @@ class AtakApiController
 
     public function mapShapesDelete(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
         if (!$this->mapShapeRepo->delete($tenantId, $id)) {
             return Response::json(['error' => 'Not found'], 404);
@@ -634,7 +838,11 @@ class AtakApiController
     // --- Laser codes ---
     public function laserCodesIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $rows = $this->laserCodeRepo->list($tenantId, $mapId);
         return Response::json($rows);
@@ -645,7 +853,11 @@ class AtakApiController
         if (!$this->authArma($request)) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
         $callSign = $body['call_sign'] ?? $body['callsign'] ?? $body['unit'] ?? 'Unknown';
@@ -659,7 +871,11 @@ class AtakApiController
 
     public function airAssetsIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $rows = $this->atak->getActiveAirAssets($tenantId, $mapId);
         $cutoff = time() - 30;
@@ -693,7 +909,11 @@ class AtakApiController
         if (!$this->authArma($request)) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
-        $tenantId = $this->tenantId($request);
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
         $mapId = $this->mapId($request);
         $callsign = $params['callsign'] ?? '';
         $body = $this->jsonBody($request);

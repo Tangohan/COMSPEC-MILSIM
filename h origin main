@@ -1,0 +1,53 @@
+[33mcommit 94a4b616fa052a4c98e2f608e2f90d7c738c3790[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Tangohan <tetard.tanguy@gmail.com>
+Date:   Sat Apr 4 15:00:48 2026 +0200
+
+    Fix
+
+ .env.example                                      |   7 [32m+[m
+ app/Controllers/Api/StripeWebhookController.php   |  98 [32m++++++++[m
+ app/Controllers/Auth/AuthController.php           |  18 [32m+[m[31m-[m
+ app/Controllers/Web/CommunityController.php       | 150 [32m++++++++++++[m
+ app/Controllers/Web/HomeController.php            |   7 [32m+[m
+ app/Core/Container.php                            |  20 [32m++[m
+ app/Repositories/SubscriptionPlanRepository.php   |  33 [32m+++[m
+ app/Repositories/TenantRepository.php             |  50 [32m++++[m
+ app/Repositories/UserRepository.php               |  53 [32m++++[m
+ app/Services/Auth/AuthService.php                 |  17 [32m++[m
+ app/Services/Community/TenantBootstrapService.php |  76 [32m++++++[m
+ app/Services/Community/TenantSeedHelper.php       | 260 [32m++++++++++++++++++++[m
+ app/Services/Platform/FeatureGateService.php      |  69 [32m++++++[m
+ app/Support/Stripe/StripeWebhookSignature.php     |  98 [32m++++++++[m
+ app/Support/Stripe/WebhookSignatureException.php  |  12 [32m+[m
+ bootstrap/community_platform_migration.php        |  94 [32m++++++++[m
+ docs/AUDIT-TENANT-FILTRAGE.md                     |  42 [32m++++[m
+ docs/DECISION-IDENTITE-MULTI-TENANT.md            |  24 [32m++[m
+ docs/GUIDE-EPICS-PREMIUM.md                       |  46 [32m++++[m
+ docs/GUIDE-FONCTIONNEL-REFERENCE-COMMUNAUTE.md    | 258 [32m++++++++++++++++++++[m
+ docs/INVENTAIRE-FONCTIONNALITES.md                | 171 [32m+++++++++++++[m
+ docs/ROUTES.md                                    | 280 [32m++++++++++++++++[m[31m------[m
+ docs/VISION-COMMUNAUTES-PREMIUM.md                |  89 [32m+++++++[m
+ routes/web.php                                    |   9 [32m+[m
+ run-migrations.php                                |   6 [32m+[m
+ views/auth/login.php                              |   8 [32m+[m
+ views/community/create.php                        |  21 [32m++[m
+ views/community/show.php                          |  22 [32m++[m
+ views/dashboard.php                               |  23 [32m++[m
+ 29 files changed, 1991 insertions(+), 70 deletions(-)
+ create mode 100644 app/Controllers/Api/StripeWebhookController.php
+ create mode 100644 app/Controllers/Web/CommunityController.php
+ create mode 100644 app/Repositories/SubscriptionPlanRepository.php
+ create mode 100644 app/Services/Community/TenantBootstrapService.php
+ create mode 100644 app/Services/Community/TenantSeedHelper.php
+ create mode 100644 app/Services/Platform/FeatureGateService.php
+ create mode 100644 app/Support/Stripe/StripeWebhookSignature.php
+ create mode 100644 app/Support/Stripe/WebhookSignatureException.php
+ create mode 100644 bootstrap/community_platform_migration.php
+ create mode 100644 docs/AUDIT-TENANT-FILTRAGE.md
+ create mode 100644 docs/DECISION-IDENTITE-MULTI-TENANT.md
+ create mode 100644 docs/GUIDE-EPICS-PREMIUM.md
+ create mode 100644 docs/GUIDE-FONCTIONNEL-REFERENCE-COMMUNAUTE.md
+ create mode 100644 docs/INVENTAIRE-FONCTIONNALITES.md
+ create mode 100644 docs/VISION-COMMUNAUTES-PREMIUM.md
+ create mode 100644 views/community/create.php
+ create mode 100644 views/community/show.php

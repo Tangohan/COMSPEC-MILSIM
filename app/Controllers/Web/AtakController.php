@@ -12,6 +12,7 @@ use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Platform\FeatureGateService;
 use App\Services\Tactical\AtakTokenService;
 
 class AtakController
@@ -22,12 +23,21 @@ class AtakController
         private AtakMapRepository $atakMapRepository,
         private AuthService $authService,
         private UserProfileRepository $userProfileRepository,
-        private UserRepository $userRepository
+        private UserRepository $userRepository,
+        private FeatureGateService $featureGate
     ) {}
 
     public function index(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId && !$this->featureGate->allows($tenantId, 'atak')) {
+            return Response::view('layout.main', [
+                'title' => 'ATAK / Overwatch',
+                'content' => 'platform.upgrade',
+                'feature' => 'atak',
+                'planName' => 'standard',
+            ]);
+        }
         $config = $tenantId ? $this->atakConfigRepository->getByTenantId($tenantId) : null;
 
         $nodeUrl = $config['node_url'] ?? env('NODE_ATAK_URL', '');
@@ -142,8 +152,27 @@ class AtakController
         ]);
     }
 
+    private function requireAtakFeature(): ?Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId > 0 && !$this->featureGate->allows($tenantId, 'atak')) {
+            return Response::view('layout.main', [
+                'title' => 'ATAK / Overwatch',
+                'content' => 'platform.upgrade',
+                'feature' => 'atak',
+                'planName' => 'standard',
+            ]);
+        }
+
+        return null;
+    }
+
     public function downloadMod(Request $request, array $params = []): Response
     {
+        $block = $this->requireAtakFeature();
+        if ($block !== null) {
+            return $block;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -170,6 +199,10 @@ class AtakController
 
     public function setup(Request $request, array $params = []): Response
     {
+        $block = $this->requireAtakFeature();
+        if ($block !== null) {
+            return $block;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $config = $tenantId ? $this->atakConfigRepository->getByTenantId($tenantId) : null;
 
@@ -203,6 +236,11 @@ class AtakController
 
     public function tuto(Request $request, array $params = []): Response
     {
+        $block = $this->requireAtakFeature();
+        if ($block !== null) {
+            return $block;
+        }
+
         return Response::view('layout.main', [
             'content' => 'atak-tuto',
             'title' => 'Tutoriel — Mod Arma COMSPEC Overwatch',

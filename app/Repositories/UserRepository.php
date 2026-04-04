@@ -240,6 +240,16 @@ class UserRepository
         return $id !== false ? (int) $id : null;
     }
 
+    /** Premier compte trouvé pour cet email (tout tenant), pour rattachement invitation. */
+    public function findFirstByEmailGlobal(string $email): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE email = ? ORDER BY id ASC LIMIT 1');
+        $stmt->execute([strtolower(trim($email))]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     /**
      * Duplique un compte vers un autre tenant (même hash mot de passe) pour rejoindre une nouvelle communauté.
      *

@@ -14,6 +14,8 @@ use App\Services\Rbac\RbacService;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\PasswordResetRepository;
+use App\Services\Audit\AuditAction;
+use App\Services\Audit\AuditService;
 
 class AuthController
 {
@@ -24,7 +26,8 @@ class AuthController
         private RbacService $rbacService,
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
-        private PasswordResetRepository $passwordResetRepository
+        private PasswordResetRepository $passwordResetRepository,
+        private AuditService $auditService
     ) {}
 
     public function showLogin(Request $request, array $params = []): Response
@@ -76,15 +79,39 @@ class AuthController
             if ($user && !empty($user['role_id'])) {
                 $this->rbacService->setPermissionsForGate((int) $user['role_id']);
             }
+            if ($user) {
+                $this->auditService->log(
+                    AuditAction::AUTH_LOGIN_SUCCESS,
+                    (int) $tenant['id'],
+                    (int) $user['id'],
+                    'auth',
+                    (int) $user['id']
+                );
+            }
+
             return Response::redirect(url('dashboard'));
         }
 
+        $this->auditService->log(
+            AuditAction::AUTH_LOGIN_FAILURE,
+            (int) $tenant['id'],
+            null,
+            'auth',
+            null,
+            null,
+            substr($email, 0, 120)
+        );
         Session::flash('error', 'Identifiants incorrects ou compte inactif.');
         return Response::redirect(url('login'));
     }
 
     public function logout(Request $request, array $params = []): Response
     {
+        $u = $this->authService->user();
+        $tid = Session::get('tenant_id');
+        if ($u && $tid) {
+            $this->auditService->log(AuditAction::AUTH_LOGOUT, (int) $tid, (int) $u['id'], 'auth', (int) $u['id']);
+        }
         $this->authService->logout();
         return Response::redirect(url(''));
     }
@@ -137,6 +164,13 @@ class AuthController
             $body = "Bonjour,\n\nCliquez sur le lien suivant pour réinitialiser votre mot de passe (valide " . self::RESET_TOKEN_EXPIRE_HOURS . " h) :\n\n" . $resetUrl . "\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message.";
             $headers = 'From: ' . (env('MAIL_FROM', 'noreply@athena.local')) . "\r\nReply-To: " . (env('MAIL_FROM', 'noreply@athena.local')) . "\r\nContent-Type: text/plain; charset=utf-8";
             @mail($email, $subject, $body, $headers);
+            $this->auditService->log(
+                AuditAction::AUTH_PASSWORD_RESET_REQUESTED,
+                (int) $tenant['id'],
+                (int) $user['id'],
+                'user',
+                (int) $user['id']
+            );
         }
         Session::flash('success', 'Si cette adresse est connue, un lien de réinitialisation a été envoyé.');
         return Response::redirect(url('forgot-password'));
@@ -197,6 +231,13 @@ class AuthController
         $tenantId = $user ? (int) $user['tenant_id'] : 0;
         $this->userRepository->update((int) $reset['user_id'], $tenantId, ['password_hash' => $passwordHash]);
         $this->passwordResetRepository->deleteByToken($hash);
+        $this->auditService->log(
+            AuditAction::AUTH_PASSWORD_RESET_COMPLETED,
+            $tenantId,
+            (int) $reset['user_id'],
+            'user',
+            (int) $reset['user_id']
+        );
         Session::flash('success', 'Mot de passe réinitialisé. Connectez-vous.');
         return Response::redirect(url('login'));
     }

@@ -10,12 +10,15 @@ use App\Core\Session;
 use App\Core\Csrf;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumPostRepository;
+use App\Services\Audit\AuditAction;
+use App\Services\Audit\AuditService;
 
 class ForumModerationApiController
 {
     public function __construct(
         private ForumTopicRepository $topicRepository,
-        private ForumPostRepository $postRepository
+        private ForumPostRepository $postRepository,
+        private AuditService $auditService
     ) {}
 
     public function handle(Request $request, array $params = []): Response
@@ -38,6 +41,16 @@ class ForumModerationApiController
         $action = $input['action'] ?? $request->input('action', '');
         $topicId = isset($input['topic_id']) ? (int) $input['topic_id'] : 0;
         $postId = isset($input['post_id']) ? (int) $input['post_id'] : 0;
+
+        $this->auditService->log(
+            AuditAction::FORUM_MODERATION,
+            (int) $tenantId,
+            (int) $userId,
+            'forum_moderation',
+            $topicId > 0 ? $topicId : $postId,
+            null,
+            (string) $action
+        );
 
         return match ($action) {
             'lock_topic' => $this->setTopicLock($topicId, $tenantId, true),

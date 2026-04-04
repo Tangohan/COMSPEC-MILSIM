@@ -67,6 +67,7 @@ echo "[OK] Connexion base : $name\n";
 @ob_flush();
 
 require_once $root . '/bootstrap/community_platform_migration.php';
+require_once $root . '/bootstrap/platform_unit_commander_migration.php';
 
 // ----- Schéma (exécution statement par statement : PDO::exec ne gère qu'une requête) -----
 set_time_limit(300);
@@ -1395,6 +1396,7 @@ if ($stmt && $stmt->fetch()) {
     }
 
     run_community_platform_migration($pdo);
+    run_platform_unit_commander_migration($pdo);
 
     echo "Migrations terminées.\n";
     exit(0);
@@ -1435,6 +1437,7 @@ $run_forum_seed($pdo, $tenantId);
 $run_documents_seed($pdo, $tenantId);
 
 run_community_platform_migration($pdo);
+run_platform_unit_commander_migration($pdo);
 
 echo "Seed OK. Compte : admin@athena.local / admin\n";
 echo "Migrations terminées.\n";

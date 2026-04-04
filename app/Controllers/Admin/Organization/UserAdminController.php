@@ -143,6 +143,12 @@ class UserAdminController
             return Response::redirect(url('admin/organization/users/create'));
         }
 
+        $gate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+        if (!$gate->canAddMember($tenantId)) {
+            Session::flash('error', 'Limite de membres du plan atteinte.');
+            return Response::redirect(url('admin/organization/users/create'));
+        }
+
         $passwordHash = password_hash($password, PASSWORD_ARGON2ID);
         $userId = $this->userRepository->create($tenantId, [
             'email' => $email,

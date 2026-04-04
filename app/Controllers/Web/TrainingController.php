@@ -16,6 +16,7 @@ use App\Repositories\TrainingResourceRepository;
 use App\Services\Training\TrainingService;
 use App\Services\Training\TrainingProgressService;
 use App\Services\Training\TrainingCertificateService;
+use App\Services\Platform\FeatureGateService;
 
 class TrainingController
 {
@@ -28,7 +29,8 @@ class TrainingController
         private TrainingProgressService $progressService,
         private TrainingCertificateService $certificateService,
         private TrainingLessonRepository $lessonRepository,
-        private TrainingResourceRepository $resourceRepository
+        private TrainingResourceRepository $resourceRepository,
+        private FeatureGateService $featureGate
     ) {}
 
     /** Catalogue des formations (nouveau LMS + legacy). */
@@ -40,6 +42,14 @@ class TrainingController
             return Response::redirect(url('login'));
         }
         $tenantId = (int) $tenantId;
+        if (!$this->featureGate->allows($tenantId, 'training')) {
+            return Response::view('layout.main', [
+                'title' => 'Formations',
+                'content' => 'platform.upgrade',
+                'feature' => 'training',
+                'planName' => 'standard',
+            ]);
+        }
         $category = $request->query('category');
         $search = $request->query('search');
         $courses = $this->trainingService->getCatalogue($tenantId, $userId ? (int) $userId : null, $category, $search);

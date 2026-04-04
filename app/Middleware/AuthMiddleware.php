@@ -21,6 +21,27 @@ class AuthMiddleware
         $roleId = Session::get('role_id');
         $rbac = \App\Core\Container::get(RbacService::class);
         $rbac->setPermissionsForGate($roleId ? (int) $roleId : null);
+
+        $userId = Session::get('user_id');
+        $tenantId = Session::get('tenant_id');
+        if ($userId && $tenantId) {
+            try {
+                $mod = \App\Core\Container::get(\App\Services\Moderation\ModerationService::class);
+                if ($mod->isAccessBlocked((int) $tenantId, (int) $userId)) {
+                    Session::forget('user_id');
+                    Session::forget('tenant_id');
+                    Session::forget('email');
+                    Session::forget('display_name');
+                    Session::forget('callsign');
+                    Session::forget('role_id');
+                    Session::flash('error', 'Votre accès à cette communauté est restreint (sanction active).');
+
+                    return Response::redirect(url('login'));
+                }
+            } catch (\Throwable) {
+            }
+        }
+
         return $next($request);
     }
 }

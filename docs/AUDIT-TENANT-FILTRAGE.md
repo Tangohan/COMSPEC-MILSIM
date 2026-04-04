@@ -9,6 +9,8 @@ Objectif : à mesure que la plateforme accueille **plusieurs tenants** (communau
 3. **IDs métier** : accès à un enregistrement par `id` (topic, document, etc.) doit **toujours** être couplé à `tenant_id = :current_tenant` pour éviter l’énumération cross-tenant.
 4. **Super-admin / cross-tenant** : réservé aux routes d’administration système, avec contrôle d’accès explicite — ne pas réutiliser les mêmes méthodes repository que le périmètre membre.
 
+5. **API ATAK / intégrations headless** (`app/Controllers/Api/AtakApiController.php`) : le tenant actif ne doit **pas** être deviné par défaut (ex. tenant `1`). Ordre de résolution : `tenant_id` en session (utilisateur web) → paramètres `tenant_id` / `tenant_slug` (query ou corps JSON) → variable d’environnement **`ATAK_DEFAULT_TENANT_ID`** (ou `APP_ATAK_DEFAULT_TENANT_ID`) pour les déploiements explicitement mono-tenant. Sans résolution, l’API répond `403` avec `tenant_context_required`. Le corps JSON n’est lu qu’une fois par requête (cache interne) pour éviter de vider `php://input` avant les actions métier.
+
 ## Revue par couche (checklist)
 
 | Couche | Vérifier |

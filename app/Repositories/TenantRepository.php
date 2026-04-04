@@ -88,4 +88,23 @@ class TenantRepository
             $tenantId,
         ]);
     }
+
+    /** Fusionne un objet JSON dans tenants.settings. */
+    public function mergeSettings(int $tenantId, array $patch): void
+    {
+        $row = $this->findById($tenantId);
+        if (!$row) {
+            return;
+        }
+        $current = [];
+        if (!empty($row['settings'])) {
+            $decoded = json_decode((string) $row['settings'], true);
+            if (is_array($decoded)) {
+                $current = $decoded;
+            }
+        }
+        $merged = array_merge($current, $patch);
+        $stmt = $this->pdo->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([json_encode($merged, JSON_THROW_ON_ERROR), $tenantId]);
+    }
 }

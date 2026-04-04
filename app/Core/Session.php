@@ -44,6 +44,14 @@ class Session
         unset($_SESSION[$key]);
     }
 
+    /** @param list<string> $keys */
+    public static function forgetMany(array $keys): void
+    {
+        foreach ($keys as $key) {
+            unset($_SESSION[$key]);
+        }
+    }
+
     public static function regenerate(): void
     {
         session_regenerate_id(true);

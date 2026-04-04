@@ -115,6 +115,10 @@ $title = $title ?? 'Connexion';
             </form>
         </div>
 
+        <p class="mt-8 text-center text-sm text-slate-600">
+            Pas encore de compte ? <a href="<?= url('register') ?>" class="font-semibold text-emerald-700 hover:underline">Créer un compte</a>
+        </p>
+
         <div class="mt-12 flex justify-between items-center opacity-30 px-4">
             <span class="text-[8px] font-black tracking-widest uppercase">Encryption: AES-256</span>
             <span class="text-[8px] font-black tracking-widest uppercase">Node: Paris_FR</span>

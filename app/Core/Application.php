@@ -28,7 +28,16 @@ class Application
     public function run(): void
     {
         \App\Core\Session::start();
-        $response = $this->router->dispatch();
+        $runner = fn (\App\Core\Request $req): \App\Core\Response => $this->router->dispatch();
+        $global = [
+            new \App\Middleware\SecurityHeadersMiddleware(),
+            new \App\Middleware\RateLimitMiddleware(),
+        ];
+        foreach (array_reverse($global) as $mw) {
+            $next = $runner;
+            $runner = fn (\App\Core\Request $req): \App\Core\Response => $mw($req, $next);
+        }
+        $response = $runner($this->request);
         $response->send();
     }
 }

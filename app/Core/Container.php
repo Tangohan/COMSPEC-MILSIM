@@ -58,7 +58,61 @@ class Container
                 self::get(RbacService::class),
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\PasswordResetRepository::class)
+                self::get(\App\Repositories\PasswordResetRepository::class),
+                self::get(\App\Services\Audit\AuditService::class)
+            ),
+            \App\Controllers\Web\RegisterController::class => new \App\Controllers\Web\RegisterController(
+                self::get(AuthService::class),
+                self::get(TenantRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(RbacService::class),
+                self::get(\App\Services\Audit\AuditService::class)
+            ),
+            \App\Repositories\ModerationRepository::class => new \App\Repositories\ModerationRepository(),
+            \App\Services\Moderation\ModerationService::class => new \App\Services\Moderation\ModerationService(
+                self::get(\App\Repositories\ModerationRepository::class),
+                self::get(\App\Services\Audit\AuditService::class)
+            ),
+            \App\Repositories\CommunityInvitationRepository::class => new \App\Repositories\CommunityInvitationRepository(),
+            \App\Repositories\PlatformUsageRepository::class => new \App\Repositories\PlatformUsageRepository(),
+            \App\Repositories\CommunityEventRepository::class => new \App\Repositories\CommunityEventRepository(),
+            \App\Controllers\Web\InvitationAcceptController::class => new \App\Controllers\Web\InvitationAcceptController(
+                self::get(\App\Repositories\CommunityInvitationRepository::class),
+                self::get(TenantRepository::class),
+                self::get(UserRepository::class),
+                self::get(AuthService::class),
+                self::get(RbacService::class),
+                self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
+            ),
+            \App\Controllers\Admin\Organization\InvitationAdminController::class => new \App\Controllers\Admin\Organization\InvitationAdminController(
+                self::get(AuthService::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\CommunityInvitationRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Services\Audit\AuditService::class)
+            ),
+            \App\Controllers\Admin\Organization\ModerationOrganizationController::class => new \App\Controllers\Admin\Organization\ModerationOrganizationController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\ModerationRepository::class),
+                self::get(\App\Services\Moderation\ModerationService::class),
+                self::get(UserRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\OrganizationAnalyticsController::class => new \App\Controllers\Admin\Organization\OrganizationAnalyticsController(
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Repositories\PlatformUsageRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\CommunityEventsAdminController::class => new \App\Controllers\Admin\Organization\CommunityEventsAdminController(
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(AuthService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
+            ),
+            \App\Controllers\Web\CommunityEventsController::class => new \App\Controllers\Web\CommunityEventsController(
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(AuthService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
             ),
             \App\Controllers\Web\AccountController::class => new \App\Controllers\Web\AccountController(
                 self::get(AuthService::class),
@@ -247,7 +301,8 @@ class Container
                 self::get(\App\Services\Training\TrainingProgressService::class),
                 self::get(\App\Services\Training\TrainingCertificateService::class),
                 self::get(\App\Repositories\TrainingLessonRepository::class),
-                self::get(\App\Repositories\TrainingResourceRepository::class)
+                self::get(\App\Repositories\TrainingResourceRepository::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
             ),
             \App\Controllers\Web\EquipmentController::class => new \App\Controllers\Web\EquipmentController(
                 self::get(\App\Repositories\EquipmentClassRepository::class),
@@ -263,7 +318,8 @@ class Container
                 self::get(\App\Repositories\AtakMapRepository::class),
                 self::get(AuthService::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
-                self::get(UserRepository::class)
+                self::get(UserRepository::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
             ),
             \App\Controllers\Admin\AdminUsersController::class => new \App\Controllers\Admin\AdminUsersController(
                 self::get(UserRepository::class)
@@ -378,7 +434,8 @@ class Container
             ),
             \App\Controllers\Api\ForumModerationApiController::class => new \App\Controllers\Api\ForumModerationApiController(
                 self::get(\App\Repositories\ForumTopicRepository::class),
-                self::get(\App\Repositories\ForumPostRepository::class)
+                self::get(\App\Repositories\ForumPostRepository::class),
+                self::get(\App\Services\Audit\AuditService::class)
             ),
             \App\Controllers\Api\ForumUploadController::class => new \App\Controllers\Api\ForumUploadController(),
             \App\Repositories\AtakIntelRepository::class => new \App\Repositories\AtakIntelRepository(),
@@ -395,7 +452,8 @@ class Container
                 self::get(\App\Repositories\CasNineLineRepository::class),
                 self::get(\App\Repositories\ReconImageRepository::class),
                 self::get(\App\Repositories\MapShapeRepository::class),
-                self::get(\App\Repositories\LaserCodeRepository::class)
+                self::get(\App\Repositories\LaserCodeRepository::class),
+                self::get(TenantRepository::class)
             ),
             \App\Repositories\FireUnitRepository::class => new \App\Repositories\FireUnitRepository(),
             \App\Repositories\FireTableRepository::class => new \App\Repositories\FireTableRepository(),
