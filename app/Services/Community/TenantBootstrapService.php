@@ -23,7 +23,7 @@ final class TenantBootstrapService
      *
      * @return array{tenant_id: int, user_id: int}
      */
-    public function createCommunity(int $creatorUserId, string $name, string $slug): array
+    public function createCommunity(int $creatorUserId, string $name, string $slug, array $options = []): array
     {
         $slug = strtolower(trim($slug));
         if (!preg_match('/^[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$/', $slug)) {
@@ -39,7 +39,8 @@ final class TenantBootstrapService
         $pdo = Database::getPdo();
         $pdo->beginTransaction();
         try {
-            $tenantId = $this->tenantRepository->create($name, $slug, 'free');
+            $planSlug = in_array(($options['plan_slug'] ?? 'free'), ['free', 'premium'], true) ? (string) $options['plan_slug'] : 'free';
+            $tenantId = $this->tenantRepository->create($name, $slug, $planSlug);
 
             $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, created_at) VALUES (?, ?, ?, ?, 1, 1, NOW())')
                 ->execute([$tenantId, 'Super Administrator', 'super_admin', '']);
@@ -64,6 +65,14 @@ final class TenantBootstrapService
             $newUserId = $this->userRepository->cloneUserToTenant($creatorUserId, $tenantId, $superAdminRoleId, $gradeId);
 
             $this->tenantRepository->setOwner($tenantId, $newUserId);
+            $this->tenantRepository->updateSettings($tenantId, [
+                'community' => [
+                    'registration_mode' => ($options['registration_mode'] ?? 'milsim') === 'simple' ? 'simple' : 'milsim',
+                    'community_locked' => !empty($options['community_locked']),
+                    'require_ai_ack' => array_key_exists('require_ai_ack', $options) ? (bool) $options['require_ai_ack'] : true,
+                    'welcome_text' => trim((string) ($options['welcome_text'] ?? '')),
+                ],
+            ]);
 
             $pdo->commit();
 
