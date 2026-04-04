@@ -32,6 +32,15 @@ class CommunityController
         if (!$tenant) {
             return Response::view('errors.404', ['title' => 'Communauté introuvable'])->setStatusCode(404);
         }
+        $settings = [];
+        $rawSettings = $tenant['settings'] ?? null;
+        if (is_string($rawSettings) && trim($rawSettings) !== '') {
+            $decoded = json_decode($rawSettings, true);
+            if (is_array($decoded)) {
+                $settings = $decoded;
+            }
+        }
+        $communityConfig = is_array($settings['community'] ?? null) ? $settings['community'] : [];
         $memberships = [];
         if ($this->authService->check()) {
             $email = Session::get('email');
@@ -45,6 +54,7 @@ class CommunityController
             'content' => 'community.show',
             'tenant' => $tenant,
             'memberships' => $memberships,
+            'communityConfig' => $communityConfig,
         ]);
     }
 
@@ -106,7 +116,13 @@ class CommunityController
             return Response::redirect(url('login'));
         }
         try {
-            $result = $this->bootstrapService->createCommunity((int) $user['id'], $name, $slug);
+            $result = $this->bootstrapService->createCommunity((int) $user['id'], $name, $slug, [
+                'registration_mode' => (string) $request->input('registration_mode', 'milsim'),
+                'community_locked' => $request->input('community_locked') ? true : false,
+                'require_ai_ack' => $request->input('require_ai_ack') ? true : false,
+                'plan_slug' => (string) $request->input('plan_slug', 'free'),
+                'welcome_text' => trim((string) $request->input('welcome_text')),
+            ]);
             $newUserId = (int) $result['user_id'];
             $tenantId = (int) $result['tenant_id'];
             $u = $this->userRepository->findById($newUserId, $tenantId);

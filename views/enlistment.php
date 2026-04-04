@@ -3,13 +3,18 @@ $base = url('');
 $success = \App\Core\Session::getFlash('success');
 $error = \App\Core\Session::getFlash('error');
 $ref = 'JTFO-' . str_pad((string) random_int(1, 999999), 6, '0', STR_PAD_LEFT);
+$tenant = $tenant ?? [];
+$communityConfig = $communityConfig ?? [];
+$formAction = $formAction ?? url('enlistment');
+$tenantName = trim((string) ($tenant['name'] ?? 'Athena'));
+$requireAiAck = array_key_exists('require_ai_ack', $communityConfig) ? (bool) $communityConfig['require_ai_ack'] : true;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enrôlement — Athena</title>
+    <title>Enrôlement — <?= htmlspecialchars($tenantName) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -105,7 +110,7 @@ $ref = 'JTFO-' . str_pad((string) random_int(1, 999999), 6, '0', STR_PAD_LEFT);
                 <div class="flex justify-between items-end mb-8 gap-6 flex-wrap">
                     <div>
                         <span class="text-[8px] font-black tracking-[0.5em] text-slate-400 uppercase">Document Control</span>
-                        <h1 class="text-2xl font-black tracking-tighter uppercase leading-none">Candidature Olympus</h1>
+                        <h1 class="text-2xl font-black tracking-tighter uppercase leading-none">Candidature <?= htmlspecialchars($tenantName) ?></h1>
                         <div class="flex items-center gap-4 text-[9px] font-bold tracking-widest uppercase text-slate-400 mt-3">
                             <span class="flex items-center gap-2">
                                 <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
@@ -138,7 +143,7 @@ $ref = 'JTFO-' . str_pad((string) random_int(1, 999999), 6, '0', STR_PAD_LEFT);
                     </div>
                 </div>
 
-                <form method="post" action="<?= url('enlistment') ?>" class="p-8 md:p-12 space-y-12 relative z-10" id="recruitment-form">
+                <form method="post" action="<?= htmlspecialchars($formAction) ?>" class="p-8 md:p-12 space-y-12 relative z-10" id="recruitment-form">
                     <?= \App\Core\Csrf::field() ?>
                     <div class="p-6 bg-slate-50 border-l-4 border-slate-900 mb-10">
                         <p class="text-[11px] leading-relaxed text-slate-600 font-medium">
@@ -243,10 +248,14 @@ $ref = 'JTFO-' . str_pad((string) random_int(1, 999999), 6, '0', STR_PAD_LEFT);
                     </section>
 
                     <div class="pt-10 border-t border-slate-100">
-                        <div class="flex items-center gap-4 mb-8">
-                            <input type="checkbox" name="no_ai_confirmed" id="no-ai-check" value="1" class="w-5 h-5 rounded border-slate-300 accent-slate-900 track-field">
-                            <label for="no-ai-check" class="text-[10px] font-black tracking-widest uppercase text-slate-500 cursor-pointer">20 Je confirme l'absence d'IA dans ce rapport</label>
-                        </div>
+                        <?php if ($requireAiAck): ?>
+                            <div class="flex items-center gap-4 mb-8">
+                                <input type="checkbox" name="no_ai_confirmed" id="no-ai-check" value="1" class="w-5 h-5 rounded border-slate-300 accent-slate-900 track-field">
+                                <label for="no-ai-check" class="text-[10px] font-black tracking-widest uppercase text-slate-500 cursor-pointer">20 Je confirme l'absence d'IA dans ce rapport</label>
+                            </div>
+                        <?php else: ?>
+                            <input type="hidden" name="no_ai_confirmed" value="1">
+                        <?php endif; ?>
                         <button type="submit" class="w-full bg-slate-900 text-white p-6 rounded-2xl font-black tracking-[0.5em] uppercase hover:bg-emerald-600 transition-all duration-500 shadow-xl active:scale-[0.98]">Soumettre au Commandement</button>
                         <p class="text-[8px] text-center mt-4 text-slate-400 tracking-widest uppercase italic">Transmission sécurisée</p>
                     </div>
