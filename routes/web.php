@@ -29,6 +29,8 @@ use App\Controllers\Api\IntelController;
 use App\Controllers\Api\ReplayController;
 use App\Controllers\Api\IffController;
 use App\Controllers\Api\HealthController;
+use App\Controllers\Api\StripeWebhookController;
+use App\Controllers\Web\CommunityController;
 use App\Controllers\Admin\AdminDashboardController;
 use App\Controllers\Admin\AdminHubController;
 use App\Controllers\Admin\AdminUsersController;
@@ -70,6 +72,13 @@ use App\Middleware\OrganizationAdminMiddleware;
 
 return function (Router $router) {
     $router->get('/', [HomeController::class, 'index']);
+    // Communautés multi-tenant (slug) + Stripe (sans auth)
+    $router->get('/c/{slug}', [CommunityController::class, 'show']);
+    $router->get('/c/{slug}/forum', [CommunityController::class, 'enterForum'], [AuthMiddleware::class]);
+    $router->get('/communities/create', [CommunityController::class, 'createForm'], [AuthMiddleware::class]);
+    $router->post('/communities/create', [CommunityController::class, 'create'], [AuthMiddleware::class]);
+    $router->post('/community/switch', [CommunityController::class, 'switchTenant'], [AuthMiddleware::class]);
+    $router->post('/api/stripe/webhook', [StripeWebhookController::class, 'handle']);
     $router->get('/login', [AuthController::class, 'showLogin'], [GuestMiddleware::class]);
     $router->post('/login', [AuthController::class, 'login'], [GuestMiddleware::class]);
     $router->post('/logout', [AuthController::class, 'logout']);

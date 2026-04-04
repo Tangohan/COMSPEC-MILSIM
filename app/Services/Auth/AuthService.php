@@ -68,4 +68,21 @@ class AuthService
     {
         return Session::get('user_id') !== null;
     }
+
+    /**
+     * Bascule la session vers le compte utilisateur du même email dans un autre tenant (multi-communautés).
+     */
+    public function switchToTenant(int $tenantId): bool
+    {
+        $email = Session::get('email');
+        if ($email === null || $email === '') {
+            return false;
+        }
+        $user = $this->userRepository->findByEmail($tenantId, (string) $email);
+        if (!$user || ($user['status'] ?? '') !== 'active') {
+            return false;
+        }
+        $this->loginUser($user);
+        return true;
+    }
 }

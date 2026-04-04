@@ -211,4 +211,57 @@ class UserRepository
         $stmt->execute([$roleId]);
         return (int) $stmt->fetchColumn();
     }
+
+    /** Utilisateurs actifs pour quotas d'abonnement (plan premium). */
+    public function countActiveForTenant(int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'");
+        $stmt->execute([$tenantId]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * @return list<array{id: int, tenant_id: int, name: string, slug: string}>
+     */
+    public function listTenantsForEmail(string $email): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT u.id, u.tenant_id, t.name, t.slug FROM users u INNER JOIN tenants t ON t.id = u.tenant_id WHERE u.email = ? AND u.status = ? ORDER BY t.name ASC'
+        );
+        $stmt->execute([$email, 'active']);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findIdByTenantAndEmail(int $tenantId, string $email): ?int
+    {
+        $stmt = $this->pdo->prepare('SELECT id FROM users WHERE tenant_id = ? AND email = ? LIMIT 1');
+        $stmt->execute([$tenantId, $email]);
+        $id = $stmt->fetchColumn();
+        return $id !== false ? (int) $id : null;
+    }
+
+    /**
+     * Duplique un compte vers un autre tenant (même hash mot de passe) pour rejoindre une nouvelle communauté.
+     *
+     * @return int Nouvel id utilisateur
+     */
+    public function cloneUserToTenant(int $sourceUserId, int $newTenantId, int $roleId, int $gradeId): int
+    {
+        $u = $this->findById($sourceUserId, null);
+        if (!$u) {
+            throw new \InvalidArgumentException('Utilisateur source introuvable.');
+        }
+        if ($this->emailExistsInTenant($newTenantId, (string) $u['email'])) {
+            throw new \RuntimeException('Cet email est déjà inscrit dans cette communauté.');
+        }
+        return $this->create($newTenantId, [
+            'email' => $u['email'],
+            'password_hash' => $u['password_hash'],
+            'display_name' => $u['display_name'] ?? null,
+            'callsign' => $u['callsign'] ?? null,
+            'role_id' => $roleId,
+            'grade_id' => $gradeId,
+            'status' => 'active',
+        ]);
+    }
 }

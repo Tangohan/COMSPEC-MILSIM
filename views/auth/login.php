@@ -56,6 +56,14 @@ $title = $title ?? 'Connexion';
 
             <form method="post" action="<?= url('login') ?>" class="space-y-6">
                 <?= \App\Core\Csrf::field() ?>
+                <?php $tenantSlugPrefill = $tenant_slug_prefill ?? ''; ?>
+                <div class="space-y-2">
+                    <label for="tenant_slug" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Communauté (slug)</label>
+                    <input type="text" name="tenant_slug" id="tenant_slug" value="<?= htmlspecialchars($tenantSlugPrefill) ?>" autocomplete="organization"
+                           placeholder="ex. default — laisser vide pour l’organisation par défaut"
+                           class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs font-bold tracking-widest focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+
                 <div class="space-y-2">
                     <label for="email" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Identifiant_ID</label>
                     <input type="email" name="email" id="email" required autocomplete="email" placeholder="NOM.P_00"

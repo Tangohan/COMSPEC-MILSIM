@@ -25,6 +25,26 @@ class Container
     {
         return match ($id) {
             TenantRepository::class => new TenantRepository(),
+            \App\Repositories\SubscriptionPlanRepository::class => new \App\Repositories\SubscriptionPlanRepository(),
+            \App\Services\Platform\FeatureGateService::class => new \App\Services\Platform\FeatureGateService(
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\SubscriptionPlanRepository::class),
+                self::get(UserRepository::class),
+            ),
+            \App\Services\Community\TenantBootstrapService::class => new \App\Services\Community\TenantBootstrapService(
+                self::get(TenantRepository::class),
+                self::get(UserRepository::class),
+            ),
+            \App\Controllers\Web\CommunityController::class => new \App\Controllers\Web\CommunityController(
+                self::get(TenantRepository::class),
+                self::get(UserRepository::class),
+                self::get(AuthService::class),
+                self::get(\App\Services\Community\TenantBootstrapService::class),
+                self::get(RbacService::class),
+            ),
+            \App\Controllers\Api\StripeWebhookController::class => new \App\Controllers\Api\StripeWebhookController(
+                self::get(TenantRepository::class),
+            ),
             UserRepository::class => new UserRepository(),
             AuthService::class => new AuthService(
                 self::get(UserRepository::class),

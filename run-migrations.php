@@ -66,6 +66,8 @@ echo "[OK] Connexion base : $name\n";
 @flush();
 @ob_flush();
 
+require_once $root . '/bootstrap/community_platform_migration.php';
+
 // ----- Schéma (exécution statement par statement : PDO::exec ne gère qu'une requête) -----
 set_time_limit(300);
 $schemaPath = $root . '/migrations/schema.sql';
@@ -1392,6 +1394,8 @@ if ($stmt && $stmt->fetch()) {
         echo "Permissions courrier.* ajoutées.\n";
     }
 
+    run_community_platform_migration($pdo);
+
     echo "Migrations terminées.\n";
     exit(0);
 }
@@ -1429,6 +1433,8 @@ $pdo->exec("INSERT INTO tenant_matricule_config (tenant_id, prefix, format_patte
 
 $run_forum_seed($pdo, $tenantId);
 $run_documents_seed($pdo, $tenantId);
+
+run_community_platform_migration($pdo);
 
 echo "Seed OK. Compte : admin@athena.local / admin\n";
 echo "Migrations terminées.\n";

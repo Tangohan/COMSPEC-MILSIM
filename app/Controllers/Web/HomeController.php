@@ -23,6 +23,12 @@ class HomeController
         $grade = null;
         $tenantId = Session::get('tenant_id');
         $atakModDownloadUrl = null;
+        $communityMemberships = [];
+        $email = Session::get('email');
+        if ($email) {
+            $communityMemberships = \App\Core\Container::get(\App\Repositories\UserRepository::class)
+                ->listTenantsForEmail((string) $email);
+        }
         if ($tenantId) {
             $modpackRepo = \App\Core\Container::get(\App\Repositories\ModpackRepository::class);
             $modpack = $modpackRepo->getPrimaryForTenant((int) $tenantId);
@@ -48,6 +54,7 @@ class HomeController
             'personnelExtras' => $personnelExtras,
             'grade' => $grade,
             'atakModDownloadUrl' => $atakModDownloadUrl,
+            'communityMemberships' => $communityMemberships,
         ]);
     }
 

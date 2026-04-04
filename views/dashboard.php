@@ -167,6 +167,29 @@
     
     
     <main class="min-h-screen bg-[#f8fafc] text-slate-900">
+        <?php
+        $communityMemberships = $communityMemberships ?? [];
+        $currentTid = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+        ?>
+        <?php if (count($communityMemberships) > 0): ?>
+        <section class="border-b border-slate-200 bg-slate-100/90">
+            <div class="max-w-5xl mx-auto px-8 py-3 flex flex-wrap items-center gap-3 text-[11px]">
+                <span class="font-black uppercase tracking-widest text-slate-500">Communauté active</span>
+                <?php foreach ($communityMemberships as $m): ?>
+                    <?php if ((int) $m['tenant_id'] === $currentTid): ?>
+                        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-lg font-bold"><?= htmlspecialchars((string) $m['name']) ?></span>
+                    <?php else: ?>
+                        <form method="post" action="<?= url('community/switch') ?>" class="inline">
+                            <?= \App\Core\Csrf::field() ?>
+                            <input type="hidden" name="tenant_id" value="<?= (int) $m['tenant_id'] ?>">
+                            <button type="submit" class="text-slate-600 hover:text-emerald-700 underline font-semibold"><?= htmlspecialchars((string) $m['name']) ?></button>
+                        </form>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+                <a href="<?= url('communities/create') ?>" class="ml-auto font-black uppercase tracking-wider text-emerald-700 hover:text-slate-900">+ Nouvelle communauté</a>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <!-- HERO / HUB -->
         <section class="relative overflow-hidden border-b border-slate-200 bg-white">

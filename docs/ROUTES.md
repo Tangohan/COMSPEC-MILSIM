@@ -1,6 +1,6 @@
 # Feuille de route — Athena
 
-Routes de l’application, statut et pages manquantes ou partielles.
+Routes de l’application, statut et écarts connus. **Référence code** : [`routes/web.php`](../routes/web.php). Pour la description fonctionnelle détaillée, voir [INVENTAIRE-FONCTIONNALITES.md](INVENTAIRE-FONCTIONNALITES.md).
 
 ---
 
@@ -8,9 +8,9 @@ Routes de l’application, statut et pages manquantes ou partielles.
 
 | Statut | Signification |
 |--------|----------------|
-| ✅ Complet | Route + contrôleur + vue fonctionnels |
-| 🔶 Partiel | Route/vue existante mais fonctionnalité incomplète |
-| ⬜ À faire | Lien ou fonctionnalité prévue, non implémentée |
+| ✅ Complet | Route + contrôleur + vue (ou API) fonctionnels |
+| 🔶 Partiel | Existant mais fonctionnalité incomplète ou à consolider |
+| ⬜ À faire | Prévu / manquant |
 
 ---
 
@@ -19,120 +19,264 @@ Routes de l’application, statut et pages manquantes ou partielles.
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
 | GET | `/` | HomeController::index | ✅ | Accueil |
-| GET | `/login` | AuthController::showLogin | ✅ | Connexion (GuestMiddleware) |
+| GET | `/login` | AuthController::showLogin | ✅ | GuestMiddleware |
 | POST | `/login` | AuthController::login | ✅ | |
 | POST | `/logout` | AuthController::logout | ✅ | |
 | GET | `/forgot-password` | AuthController::showForgotPassword | ✅ | |
 | POST | `/forgot-password` | AuthController::sendResetLink | ✅ | |
 | GET | `/reset-password` | AuthController::showResetPassword | ✅ | |
 | POST | `/reset-password` | AuthController::processResetPassword | ✅ | |
-| GET | `/enlistment` | EnlistmentController::show | ✅ | Formulaire candidature |
-| POST | `/enlistment` | EnlistmentController::store | ✅ | Soumission candidature |
-| GET | `/recrutement` | HomeController::recrutement | ✅ | Page info recrutement |
-| GET | `/equipement` | HomeController::equipement | ✅ | Page équipement |
+| GET | `/enlistment` | EnlistmentController::show | ✅ | Candidature |
+| POST | `/enlistment` | EnlistmentController::store | ✅ | |
+| GET | `/enlistment/success` | EnlistmentController::success | ✅ | |
+| GET | `/enlistment/error` | EnlistmentController::error | ✅ | |
+| GET | `/recrutement` | HomeController::recrutement | ✅ | Page vitrine |
+| GET | `/equipement` | HomeController::equipement | ✅ | Page vitrine |
 
 ---
 
 ## 2. Authentifié (AuthMiddleware)
 
+### 2.1 Général, compte, hub
+
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
-| GET | `/dashboard` | HomeController::dashboard | ✅ | Dashboard principal |
-| GET | `/account` | AccountController::index | ✅ | Compte |
+| GET | `/dashboard` | HomeController::dashboard | ✅ | |
+| GET | `/hub` | HubController::index | ✅ | Menu modules |
+| GET | `/account` | AccountController::index | ✅ | |
 | GET/POST | `/account/preferences` | AccountController::preferences | ✅ | |
 | GET/POST | `/account/mail` | AccountController::mail | ✅ | |
 | GET/POST | `/account/image` | AccountController::image | ✅ | Avatar |
+| GET/POST | `/account/portrait` | AccountController::portrait | ✅ | Portrait |
 | GET/POST | `/account/password` | AccountController::password | ✅ | |
-| GET | `/personnel/me` | PersonnelController::me | ✅ | Ma fiche personnel |
-| GET | `/personnel/{id}` | PersonnelController::show | ✅ | Fiche d’un membre |
+
+### 2.2 Personnel et ORBAT
+
+| Méthode | Chemin | Contrôleur | Statut | Notes |
+|---------|--------|------------|--------|-------|
+| GET | `/personnel/me` | PersonnelController::me | ✅ | |
+| GET | `/personnel/me/edit` | PersonnelController::edit | ✅ | |
+| GET | `/personnel/{id}` | PersonnelController::show | ✅ | |
+| GET | `/personnel/{id}/edit` | PersonnelController::edit | ✅ | |
+| POST | `/personnel/{id}/update` | PersonnelController::update | ✅ | |
 | POST | `/personnel/{id}/generate-matricule` | PersonnelController::generateMatricule | ✅ | |
-| GET | `/orbat` | PersonnelController::orbat | ✅ | ORBAT |
-| GET | `/documents` | DocumentsController::index | ✅ | Liste documents |
-| GET | `/documents/{id}/download` | DocumentsController::download | ✅ | Téléchargement |
-| GET | `/modpacks` | ModpackController::index | ✅ | Liste modpacks |
-| GET | `/modpacks/images/{id}` | ModpackController::image | ✅ | Image modpack |
-| GET | `/modpacks/{id}/download` | ModpackController::download | ✅ | Téléchargement modpack |
-| GET | `/modpacks/{slug}` | ModpackController::show | ✅ | Détail modpack |
-| GET | `/formations` | TrainingController::index | ✅ | Catalogue formations |
-| GET | `/formations/{slug}` | TrainingController::show | ✅ | Détail formation |
-| GET | `/atak` | AtakController::index | ✅ | Page ATAK / TACMAP |
-| GET | `/tacmap` | HomeController::tacmap | ✅ | Vue tacmap (simple) |
-| GET | `/forum` | ForumController::index | ✅ | Forum (Briefing) |
-| GET | `/forum/category/{slug}` | ForumCategoryController::show | ✅ | Catégorie |
-| GET | `/forum/topic/{id}` | ForumTopicController::show | ✅ | Sujet |
-| POST | `/forum/topic/{id}/reply` | ForumTopicController::reply | ✅ | Réponse |
+| POST | `/personnel/{id}/notes` | PersonnelController::updateNotes | ✅ | |
+| GET | `/orbat` | PersonnelController::orbat | ✅ | |
+
+### 2.3 Documents (lecture + fichiers)
+
+| Méthode | Chemin | Contrôleur | Statut | Notes |
+|---------|--------|------------|--------|-------|
+| GET | `/documents` | DocumentsController::index | ✅ | Liste |
+| GET | `/documents/{slug}` | DocumentsController::show | ✅ | Détail |
+| GET | `/documents/{id}/file` | DocumentsController::file | ✅ | |
+| GET | `/documents/{id}/download` | DocumentsController::download | ✅ | |
+
+### 2.4 Documents (gestion — permissions `documents.*`)
+
+| Méthode | Chemin | Contrôleur | Statut | Notes |
+|---------|--------|------------|--------|-------|
+| GET | `/documents/gestion` | AdminDocumentsController::index | ✅ | |
+| GET | `/documents/gestion/ajout` | AdminDocumentsController::uploadForm | ✅ | |
+| POST | `/documents/gestion/ajout` | AdminDocumentsController::upload | ✅ | |
+| GET | `/documents/gestion/arborescence` | AdminDocumentsController::tree | ✅ | |
+| GET | `/documents/gestion/{id}` | AdminDocumentsController::show | ✅ | |
+| GET | `/documents/gestion/{id}/modifier` | AdminDocumentsController::edit | ✅ | |
+| POST | `/documents/gestion/{id}/modifier` | AdminDocumentsController::update | ✅ | |
+| POST | `/documents/gestion/{id}/nouvelle-version` | AdminDocumentsController::newVersion | ✅ | |
+| POST | `/documents/gestion/{id}/archiver` | AdminDocumentsController::archive | ✅ | |
+| GET | `/documents/gestion/{id}/historique` | AdminDocumentsController::history | ✅ | |
+| GET | `/documents/gestion/{id}/acces` | AdminDocumentsController::access | ✅ | |
+
+### 2.5 Équipement, modpacks, formations
+
+| Méthode | Chemin | Contrôleur | Statut | Notes |
+|---------|--------|------------|--------|-------|
+| GET | `/equipment` | EquipmentController::index | ✅ | |
+| GET | `/equipment/{slug}` | EquipmentController::show | ✅ | |
+| GET | `/modpacks` | ModpackController::index | ✅ | |
+| GET | `/modpacks/images/{id}` | ModpackController::image | ✅ | |
+| GET | `/modpacks/{id}/download` | ModpackController::download | ✅ | |
+| GET | `/modpacks/{slug}` | ModpackController::show | ✅ | |
+| GET | `/formations` | TrainingController::index | ✅ | Catalogue |
+| GET | `/formations/mes-formations` | TrainingController::myTraining | ✅ | |
+| GET | `/formations/lesson/{id}` | TrainingController::lesson | ✅ | |
+| GET | `/formations/quiz/{id}` | TrainingController::quiz | ✅ | |
+| GET | `/formations/certificate/{id}` | TrainingController::certificate | ✅ | |
+| GET | `/formations/{slug}` | TrainingController::showBySlug | ✅ | |
+
+### 2.6 ATAK et vues tactiques
+
+| Méthode | Chemin | Contrôleur | Statut | Notes |
+|---------|--------|------------|--------|-------|
+| GET | `/atak` | AtakController::index | ✅ | |
+| GET | `/atak/setup` | AtakController::setup | ✅ | |
+| GET | `/atak/mod/download` | AtakController::downloadMod | ✅ | |
+| GET | `/atak/tuto` | AtakController::tuto | ✅ | |
+| GET | `/tacmap` | HomeController::tacmap | 🔶 | Vue simple |
+| GET | `/overwatch` | HomeController::overwatch | ✅ | Poste de commandement |
+
+### 2.7 Forum
+
+| Méthode | Chemin | Contrôleur | Statut | Notes |
+|---------|--------|------------|--------|-------|
+| GET | `/forum` | ForumController::index | ✅ | |
+| GET | `/forum/category/{slug}` | ForumCategoryController::show | ✅ | |
+| GET | `/forum/topic/{id}` | ForumTopicController::show | ✅ | |
+| POST | `/forum/topic/{id}/reply` | ForumTopicController::reply | ✅ | |
 | POST | `/forum/topic/{id}/subscribe` | ForumTopicController::subscribe | ✅ | |
 | POST | `/forum/topic/{id}/unsubscribe` | ForumTopicController::unsubscribe | ✅ | |
-| GET | `/forum/new-topic` | ForumNewTopicController::form | ✅ | Nouveau sujet |
+| GET | `/forum/new-topic` | ForumNewTopicController::form | ✅ | |
 | POST | `/forum/new-topic` | ForumNewTopicController::store | ✅ | |
-| GET | `/forum/moderation` | ForumModerationController::index | ✅ | Modération (ForumModerateMiddleware) |
-| POST | `/forum/report/{id}/handle` | ForumModerationController::handleReport | ✅ | Traiter signalement |
+| GET | `/forum/moderation` | ForumModerationController::index | ✅ | ForumModerateMiddleware |
+| POST | `/forum/report/{id}/handle` | ForumModerationController::handleReport | ✅ | |
 | POST | `/forum/topic/{id}/lock` | ForumModerationController::lockTopic | ✅ | |
 | POST | `/forum/topic/{id}/unlock` | ForumModerationController::unlockTopic | ✅ | |
 | POST | `/forum/topic/{id}/pin` | ForumModerationController::pinTopic | ✅ | |
 | POST | `/forum/topic/{id}/unpin` | ForumModerationController::unpinTopic | ✅ | |
 
----
-
-## 3. Admin (AuthMiddleware + droits admin)
+### 2.8 Courrier
 
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
-| GET | `/admin` | AdminDashboardController::index | ✅ | Tableau de bord admin |
-| GET | `/admin/configuration` | AdminConfigurationController::index | ✅ | Unités + données |
-| GET | `/admin/recruitments` | AdminRecruitmentsController::index | ✅ | Liste candidatures (filtre statut) |
-| GET | `/admin/users` | AdminUsersController::index | ✅ | Utilisateurs |
-| GET | `/admin/users/create` | AdminUsersController::create | ✅ | Création utilisateur |
-| GET | `/admin/units` | AdminUnitsController::index | ✅ | Unités |
-| GET | `/admin/units/create` | AdminUnitsController::create | ✅ | |
-| POST | `/admin/units/store` | AdminUnitsController::store | ✅ | |
-| GET | `/admin/units/{id}/edit` | AdminUnitsController::edit | ✅ | |
+| GET | `/courrier` | CourrierDashboardController::index | ✅ | |
+| GET | `/courrier/editor` | CourrierEditorController::index | ✅ | |
+| GET | `/courrier/editor/{id}` | CourrierEditorController::edit | ✅ | |
+| GET | `/courrier/read/{id}` | CourrierReadController::show | ✅ | |
+| POST | `/courrier/editor/save` | CourrierEditorController::save | ✅ | |
+| GET | `/courrier/templates` | CourrierTemplateController::index | ✅ | |
+| GET | `/courrier/templates/create` | CourrierTemplateController::create | ✅ | |
+| POST | `/courrier/templates` | CourrierTemplateController::store | ✅ | |
+| GET | `/courrier/templates/{id}/edit` | CourrierTemplateController::edit | ✅ | |
+| POST | `/courrier/templates/{id}` | CourrierTemplateController::update | ✅ | |
+| GET | `/courrier/presets` | CourrierPresetController::index | ✅ | |
+| POST | `/courrier/presets/{id}/default` | CourrierPresetController::setDefault | ✅ | |
+| POST | `/courrier/documents/{id}/workflow` | CourrierWorkflowController::transition | ✅ | |
+| POST | `/courrier/documents/{id}/sign` | CourrierSignatureController::sign | ✅ | |
+| GET | `/courrier/documents/{id}/verify` | CourrierSignatureController::verify | ✅ | |
+| GET | `/courrier/documents/{id}/signature-image` | CourrierSignatureController::documentSignatureImage | ✅ | |
+| GET | `/courrier/verify` | CourrierSignatureController::verifyByUuid | ✅ | Public vérif |
+| GET | `/courrier/my-signatures` | CourrierSignatureController::mySignatures | ✅ | |
+| GET | `/courrier/signatures/{id}/image` | CourrierSignatureController::signatureImage | ✅ | |
+| GET | `/courrier/documents/{id}/print` | CourrierPdfController::print | ✅ | |
+| GET | `/courrier/history` | CourrierDashboardController::history | ✅ | |
+| GET | `/courrier/archives` | CourrierDashboardController::archives | ✅ | |
+
+---
+
+## 3. Administration
+
+### 3.1 Hub et legacy
+
+| Méthode | Chemin | Contrôleur | Statut | Notes |
+|---------|--------|------------|--------|-------|
+| GET | `/admin` | AdminHubController::index | ✅ | Choix sys / org |
+| GET | `/admin/users` | *redirect* | ✅ | → `admin/organization/users` |
+| GET | `/admin/users/create` | *redirect* | ✅ | → `admin/organization/users/create` |
+| GET | `/admin/units` | *redirect* | ✅ | → `admin/organization/groups` |
+| GET | `/admin/units/create` | *redirect* | ✅ | → `admin/organization/groups/create` |
+| GET | `/admin/units/{id}/edit` | *redirect* | ✅ | → `admin/organization/groups/{id}/edit` |
+| POST | `/admin/units/store` | AdminUnitsController::store | ✅ | ORBAT / unités |
 | POST | `/admin/units/{id}/update` | AdminUnitsController::update | ✅ | |
 | POST | `/admin/units/{id}/delete` | AdminUnitsController::delete | ✅ | |
-| GET | `/admin/modpacks` | AdminModpackController::index | ✅ | Modpacks |
+
+### 3.2 Administration système (SystemAdminMiddleware)
+
+| Méthode | Chemin | Contrôleur | Statut |
+|---------|--------|------------|--------|
+| GET | `/admin/system` | SystemDashboardController::index | ✅ |
+| GET | `/admin/system/roles` | SystemRoleController::index | ✅ |
+| GET | `/admin/system/roles/{id}` | SystemRoleController::show | ✅ |
+| GET | `/admin/system/roles/{id}/edit` | SystemRoleController::edit | ✅ |
+| POST | `/admin/system/roles/{id}/update` | SystemRoleController::update | ✅ |
+| GET | `/admin/system/settings` | SystemSettingsController::index | ✅ |
+| GET | `/admin/system/audit` | SystemAuditController::index | ✅ |
+
+### 3.3 Administration organisationnelle (OrganizationAdminMiddleware)
+
+| Méthode | Chemin | Contrôleur | Statut |
+|---------|--------|------------|--------|
+| GET | `/admin/organization` | OrganizationDashboardController::index | ✅ |
+| GET | `/admin/organization/users` | UserAdminController::index | ✅ |
+| GET | `/admin/organization/users/create` | UserAdminController::create | ✅ |
+| POST | `/admin/organization/users/store` | UserAdminController::store | ✅ |
+| GET | `/admin/organization/users/{id}` | UserAdminController::show | ✅ |
+| GET | `/admin/organization/users/{id}/edit` | UserAdminController::edit | ✅ |
+| POST | `/admin/organization/users/{id}/update` | UserAdminController::update | ✅ |
+| POST | `/admin/organization/users/{id}/deactivate` | UserAdminController::deactivate | ✅ |
+| GET | `/admin/organization/roles` | RoleAdminController::index | ✅ |
+| GET | `/admin/organization/roles/{id}` | RoleAdminController::show | ✅ |
+| GET | `/admin/organization/categories` | CategoryAdminController::index | ✅ |
+| GET | `/admin/organization/categories/create` | CategoryAdminController::create | ✅ |
+| POST | `/admin/organization/categories/store` | CategoryAdminController::store | ✅ |
+| GET | `/admin/organization/categories/{id}/edit` | CategoryAdminController::edit | ✅ |
+| POST | `/admin/organization/categories/{id}/update` | CategoryAdminController::update | ✅ |
+| GET | `/admin/organization/referentiels/grades` | GradeReferentielController::index | ✅ |
+| GET | `/admin/organization/referentiels/grades/create` | GradeReferentielController::create | ✅ |
+| POST | `/admin/organization/referentiels/grades/store` | GradeReferentielController::store | ✅ |
+| GET | `/admin/organization/referentiels/grades/{id}/edit` | GradeReferentielController::edit | ✅ |
+| POST | `/admin/organization/referentiels/grades/{id}/update` | GradeReferentielController::update | ✅ |
+| POST | `/admin/organization/referentiels/grades/{id}/deactivate` | GradeReferentielController::deactivate | ✅ |
+| GET | `/admin/organization/groups` | GroupAdminController::index | ✅ |
+| GET | `/admin/organization/groups/create` | GroupAdminController::create | ✅ |
+| POST | `/admin/organization/groups/store` | GroupAdminController::store | ✅ |
+| GET | `/admin/organization/groups/{id}` | GroupAdminController::show | ✅ |
+| GET | `/admin/organization/groups/{id}/edit` | GroupAdminController::edit | ✅ |
+| POST | `/admin/organization/groups/{id}/update` | GroupAdminController::update | ✅ |
+| POST | `/admin/organization/groups/{id}/delete` | GroupAdminController::delete | ✅ |
+| GET | `/admin/organization/teams` | TeamAdminController::index | ✅ |
+| GET | `/admin/organization/teams/create` | TeamAdminController::create | ✅ |
+| POST | `/admin/organization/teams/store` | TeamAdminController::store | ✅ |
+| GET | `/admin/organization/teams/{id}` | TeamAdminController::show | ✅ |
+| GET | `/admin/organization/teams/{id}/edit` | TeamAdminController::edit | ✅ |
+| POST | `/admin/organization/teams/{id}/update` | TeamAdminController::update | ✅ |
+| POST | `/admin/organization/teams/{id}/delete` | TeamAdminController::delete | ✅ |
+
+### 3.4 Autres pages admin (AuthMiddleware)
+
+| Méthode | Chemin | Contrôleur | Statut | Notes |
+|---------|--------|------------|--------|-------|
+| GET | `/admin/configuration` | AdminConfigurationController::index | ✅ | |
+| GET | `/admin/recruitments` | AdminRecruitmentsController::index | 🔶 | Liste ; détail / workflow à renforcer |
+| GET | `/admin/modpacks` | AdminModpackController::index | ✅ | |
 | GET | `/admin/modpacks/create` | AdminModpackController::create | ✅ | |
 | POST | `/admin/modpacks/store` | AdminModpackController::store | ✅ | |
 | GET | `/admin/modpacks/{id}/edit` | AdminModpackController::edit | ✅ | |
 | POST | `/admin/modpacks/{id}/update` | AdminModpackController::update | ✅ | |
 | POST | `/admin/modpacks/{id}/delete` | AdminModpackController::delete | ✅ | |
-| GET | `/admin/atak-config` | AdminAtakConfigController::index | ✅ | Config ATAK |
+| GET | `/admin/atak-config` | AdminAtakConfigController::index | ✅ | |
 | POST | `/admin/atak-config` | AdminAtakConfigController::store | ✅ | |
+| GET | `/admin/atak-mod` | AdminAtakModController::index | ✅ | |
+| POST | `/admin/atak-mod/upload` | AdminAtakModController::upload | ✅ | |
+| POST | `/admin/atak-mod/delete` | AdminAtakModController::delete | ✅ | |
+| GET | `/admin/training` | AdminTrainingController::dashboard | ✅ | |
+| GET | `/admin/training/courses` | AdminTrainingController::courses | ✅ | |
+| GET | `/admin/training/enrollments` | AdminTrainingController::enrollments | ✅ | |
+| GET | `/admin/training/reports` | AdminTrainingController::reports | ✅ | |
+| GET | `/admin/training/certificates` | AdminTrainingController::certificates | ✅ | |
+| GET | `/admin/training/audit` | AdminTrainingController::audit | ✅ | |
+| GET | `/admin/forum-config` | AdminForumConfigController::index | ✅ | |
 
 ---
 
-## 4. Options / pages manquantes ou partielles
+## 4. API (JSON / usage client)
 
-### Complétées dans cette mise à jour
+Les préfixes `/api/training/*`, `/api/atak/*`, `/api/cas`, `/api/recon/*`, `/api/map-shapes`, `/api/fire-support/*`, `/api/danger-zones`, `/api/logistics/*`, `/api/intel/*`, `/api/replay/*`, `/api/iff/*`, `/api/forum*`, `/api/admin/*`, `/api/health` sont définis dans [`routes/web.php`](../routes/web.php). Détail : voir inventaire [INVENTAIRE-FONCTIONNALITES.md](INVENTAIRE-FONCTIONNALITES.md) section ATAK / API.
 
-- **admin/recruitments** : route, contrôleur et vue liste des candidatures avec filtre par statut (submitted, reviewed, rejected). Le lien « Candidatures » du dashboard admin pointe maintenant vers une page fonctionnelle.
+---
 
-### Partiellement fait ou à compléter plus tard
+## 5. Partiellement fait ou pistes
 
 | Élément | État | Suggestion |
 |---------|------|------------|
-| **Admin utilisateurs** | Pas de `edit` / `update` / `delete` | Ajouter GET `/admin/users/{id}/edit`, POST update, POST delete si besoin. |
-| **Admin candidatures** | Liste seule, pas de détail ni changement de statut | Ajouter GET `/admin/recruitments/{id}` (détail) et POST pour accepter/rejeter + commentaire. |
-| **Admin grades** | Aucune route dédiée | Gestion des grades actuellement via Configuration (lecture seule). Créer `admin/grades` (CRUD) si besoin. |
-| **Admin panneaux personnel** | Aucune route dédiée | Idem, liste dans Configuration. Créer `admin/personnel-panels` pour CRUD si besoin. |
-| **Config matricule** | Lecture seule sur Configuration | Ajouter formulaire d’édition (préfixe, format, prochain numéro) ou page dédiée. |
-| **Tacmap** | Vue simple (HomeController::tacmap) | Enrichir avec carte / couches si nécessaire. |
-| **Erreurs 404/500** | Vues présentes | S’assurer que le Router renvoie bien ces vues en cas d’erreur. |
+| **Admin candidatures** | 🔶 | Détail par ID, changement de statut, commentaires |
+| **Tacmap** | 🔶 | Vue simple ; enrichissement cartographique optionnel |
+| **Erreurs 404/500** | 🔶 | Vérifier renvoi Router → vues d’erreur |
 
-### Redirections .htaccess
+### Redirections `.htaccess`
 
-Les anciennes URLs `.html` sont redirigées vers les URLs propres (voir `public/.htaccess`). Ajouts : `equipement`, `documents`, `formations`, `modpacks`, `forum`, `compte`, `mot-de-passe-oublie`.
+Les anciennes URLs `.html` sont redirigées vers les URLs propres (`public/.htaccess`).
 
 ---
 
-## 5. Résumé des fichiers modifiés / ajoutés
-
-- **public/.htaccess** : redirections 301 étendues, Options -Indexes, en-têtes de sécurité.
-- **routes/web.php** : ajout de `GET /admin/recruitments`.
-- **app/Controllers/Admin/AdminRecruitmentsController.php** : nouveau.
-- **views/admin/recruitments/index.php** : nouveau (liste + filtre statut).
-- **app/Core/Container.php** : enregistrement de `AdminRecruitmentsController`.
-- **docs/ROUTES.md** : cette feuille de route.
-
----
-
-*Dernière mise à jour : feuille de route et complétion admin candidatures.*
+*Dernière mise à jour : alignement sur `routes/web.php` (hub, organisation, système, courrier, documents gestion, équipement, overwatch, APIs).*

@@ -32,7 +32,10 @@ class AuthController
         if ($this->authService->check()) {
             return Response::redirect(url('dashboard'));
         }
-        return Response::view('auth.login', ['title' => 'Connexion']);
+        return Response::view('auth.login', [
+            'title' => 'Connexion',
+            'tenant_slug_prefill' => trim((string) $request->query('tenant_slug', '')),
+        ]);
     }
 
     public function login(Request $request, array $params = []): Response
@@ -51,7 +54,18 @@ class AuthController
             return Response::redirect(url('login'));
         }
 
-        $tenant = $this->tenantRepository->getDefaultTenant();
+        $tenantSlug = trim((string) $request->input('tenant_slug', ''));
+        $tenant = null;
+        if ($tenantSlug !== '') {
+            $tenant = $this->tenantRepository->findBySlug($tenantSlug);
+            if (!$tenant) {
+                Session::flash('error', 'Communauté inconnue (slug).');
+                return Response::redirect(url('login'));
+            }
+        }
+        if ($tenant === null) {
+            $tenant = $this->tenantRepository->getDefaultTenant();
+        }
         if (!$tenant) {
             Session::flash('error', 'Aucune organisation configurée. Exécutez les migrations et le seed.');
             return Response::redirect(url('login'));
