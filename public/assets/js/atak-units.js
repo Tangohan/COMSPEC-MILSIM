@@ -5,7 +5,11 @@ window.ATAKUnits = (function () {
   var filterText = '';
 
   function getApiBase() {
-    return window.ATAKSocket ? window.ATAKSocket.getApiBase() : (window.location.protocol + '//' + window.location.hostname + ':3001');
+    return window.ATAKSocket ? window.ATAKSocket.getApiBase() : '';
+  }
+  function isNodeConfigured() {
+    var b = getApiBase();
+    return b && b.trim() !== '';
   }
 
   function getMapId() {
@@ -13,11 +17,15 @@ window.ATAKUnits = (function () {
   }
 
   function fetchUnits() {
+    if (!isNodeConfigured()) return;
     var url = getApiBase() + '/api/units?mapId=' + getMapId();
-    fetch(url).then(function (r) { return r.json(); }).then(function (data) {
+    fetch(url, { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (data) {
       units = Array.isArray(data) ? data : (data.units || []);
       render();
-    }).catch(function () { render(); });
+    }).catch(function () {
+      if (window.ATAKShowError) window.ATAKShowError('Impossible de charger les unités.');
+      render();
+    });
   }
 
   function setUnits(list) {
@@ -47,14 +55,32 @@ window.ATAKUnits = (function () {
       return;
     }
     listEl.innerHTML = filtered.map(function (u) {
+      var ex = {};
+      try { ex = typeof u.extra === 'string' ? JSON.parse(u.extra) : (u.extra || {}); } catch (e) {}
+      var health = ex.health || u.health || 'ok';
       var statusClass = (u.status || 'linked').toLowerCase();
       var cardClass = 'atak-unit-card ' + (statusClass === 'delayed' ? 'delayed' : 'linked');
+      if (health === 'wounded' || health === 'unconscious') cardClass += ' atak-unit-bft-wounded';
       var grid = u.grid_ref || '—';
       var heading = u.heading != null ? (Math.round(u.heading) + '°') : '—';
-      return '<div class="' + cardClass + '" data-unit-id="' + (u.id || '') + '" data-grid="' + (u.grid_ref || '') + '" data-x="' + (u.pos_x || '') + '" data-y="' + (u.pos_y || '') + '">' +
+      var roleText = u.role || ex.role || '—';
+      var fuelAmmo = [];
+      if (ex.fuel !== undefined && ex.fuel !== '') fuelAmmo.push('Fuel ' + ex.fuel + '%');
+      if (ex.ammo !== undefined && ex.ammo !== 'n/a') fuelAmmo.push(ex.ammo);
+      if (ex.radio_freq !== undefined && ex.radio_freq !== '') fuelAmmo.push('Radio ' + ex.radio_freq);
+      var tooltip = (health !== 'ok' && health !== 'stable' ? 'Santé: ' + health + '. ' : '') + (fuelAmmo.length ? fuelAmmo.join(' · ') : '');
+      var callsignKey = (u.call_sign || '').toUpperCase().trim();
+      var userLink = (window.ATAK_CALLSIGN_TO_USER && callsignKey && window.ATAK_CALLSIGN_TO_USER[callsignKey])
+        ? '<a href="' + (window.ATAK_CALLSIGN_TO_USER[callsignKey].url || '') + '" class="atak-unit-fiche-link" onclick="event.stopPropagation();" title="Ouvrir la fiche personnel">Fiche</a>'
+        : '';
+      return '<div class="' + cardClass + '" data-unit-id="' + (u.id || '') + '" data-grid="' + (u.grid_ref || '') + '" data-x="' + (u.pos_x || '') + '" data-y="' + (u.pos_y || '') + '" title="' + (tooltip ? tooltip.replace(/"/g, '&quot;') : '') + '">' +
+        '<div class="atak-unit-callsign-wrap">' +
         '<div class="atak-unit-callsign">' + (u.call_sign || '—') + '</div>' +
-        '<div class="atak-unit-role">' + (u.role || '—') + '</div>' +
+        (userLink ? userLink : '') +
+        '</div>' +
+        '<div class="atak-unit-role">' + (roleText !== '—' ? roleText : '—') + '</div>' +
         '<span class="atak-unit-status ' + statusClass + '">' + (u.status || 'Linked') + '</span>' +
+        (fuelAmmo.length ? '<div class="atak-unit-bft-meta">' + fuelAmmo.join(' · ') + '</div>' : '') +
         '<div class="atak-unit-grid">Grid ' + grid + '</div>' +
         '<div class="atak-unit-heading">Heading ' + heading + '</div>' +
         '</div>';

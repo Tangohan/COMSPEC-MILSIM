@@ -46,4 +46,12 @@ class PersonnelExtrasRepository
         $stmt->execute([$serviceNumber, $userId]);
         return $stmt->rowCount() > 0;
     }
+
+    public function updateAdminNotes(int $userId, string $adminNotes): bool
+    {
+        $this->ensureRecord($userId);
+        $stmt = $this->pdo->prepare('UPDATE personnel_extras SET admin_notes = ?, updated_at = NOW() WHERE user_id = ?');
+        $stmt->execute([$adminNotes, $userId]);
+        return $stmt->rowCount() > 0;
+    }
 }

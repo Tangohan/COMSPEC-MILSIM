@@ -74,8 +74,8 @@ $adminPanels = $adminPanels ?? [];
                 <ul class="space-y-2">
                     <?php foreach ($grades as $g): ?>
                     <li class="flex justify-between items-center text-sm">
-                        <span class="font-medium"><?= htmlspecialchars($g['name']) ?></span>
-                        <span class="text-slate-500"><?= htmlspecialchars($g['short_name']) ?><?= !empty($g['nato_code']) ? ' · ' . htmlspecialchars($g['nato_code']) : '' ?></span>
+                        <span class="font-medium"><?= htmlspecialchars($g['label_long'] ?? $g['name'] ?? '') ?></span>
+                        <span class="text-slate-500"><?= htmlspecialchars($g['label_short'] ?? $g['short_name'] ?? '') ?><?= !empty($g['label_otan'] ?? $g['nato_code']) ? ' · ' . htmlspecialchars($g['label_otan'] ?? $g['nato_code']) : '' ?></span>
                     </li>
                     <?php endforeach; ?>
                 </ul>

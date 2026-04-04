@@ -8,6 +8,13 @@
         <li><a href="<?= url('admin/modpacks') ?>" class="text-slate-700 hover:underline font-medium">Modpacks</a></li>
         <li><a href="<?= url('admin/recruitments') ?>" class="text-slate-700 hover:underline font-medium">Candidatures</a></li>
         <li><a href="<?= url('admin/atak-config') ?>" class="text-slate-700 hover:underline font-medium">Configuration ATAK / Tacmap</a></li>
+        <li><a href="<?= url('admin/atak-mod') ?>" class="text-slate-700 hover:underline font-medium">Mod ATAK (upload COMSPEC Overwatch)</a></li>
+        <?php if (\App\Core\Gate::getInstance()->allows('admin.access') || \App\Core\Gate::getInstance()->allows('documents.upload')): ?>
+        <li><a href="<?= url('documents/gestion') ?>" class="text-slate-700 hover:underline font-medium">Documents</a></li>
+        <?php endif; ?>
+        <?php if (\App\Core\Gate::getInstance()->allows('admin.access') || \App\Core\Gate::getInstance()->allows('training.manage') || \App\Core\Gate::getInstance()->allows('training.assign')): ?>
+        <li><a href="<?= url('admin/training') ?>" class="text-slate-700 hover:underline font-medium">Formations (LMS)</a></li>
+        <?php endif; ?>
         <li><a href="<?= url('dashboard') ?>" class="text-slate-500 hover:underline text-sm">Retour dashboard</a></li>
     </ul>
 </div>

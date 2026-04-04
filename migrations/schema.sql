@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS `roles` (
   `slug` varchar(100) NOT NULL,
   `description` varchar(500) DEFAULT NULL,
   `is_system` tinyint(1) DEFAULT 0,
+  `is_locked` tinyint(1) DEFAULT 0,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
@@ -71,6 +72,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password_hash` varchar(255) NOT NULL,
   `display_name` varchar(100) DEFAULT NULL,
   `callsign` varchar(50) DEFAULT NULL,
+  `steam_id` varchar(20) DEFAULT NULL,
   `avatar_url` varchar(500) DEFAULT NULL,
   `role_id` int unsigned DEFAULT NULL,
   `grade_id` int unsigned DEFAULT NULL,
@@ -181,6 +183,7 @@ CREATE TABLE IF NOT EXISTS `user_profiles` (
   `nationality` varchar(100) DEFAULT NULL,
   `timezone` varchar(50) DEFAULT NULL,
   `language` varchar(10) DEFAULT NULL,
+  `arma_callsign` varchar(100) DEFAULT NULL,
   `bio` text,
   `phone` varchar(50) DEFAULT NULL,
   `emergency_contact` varchar(255) DEFAULT NULL,
@@ -237,6 +240,7 @@ CREATE TABLE IF NOT EXISTS `document_categories` (
   `tenant_id` int unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `slug` varchar(100) NOT NULL,
+  `color` varchar(50) DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
@@ -248,6 +252,7 @@ CREATE TABLE IF NOT EXISTS `documents` (
   `tenant_id` int unsigned NOT NULL,
   `title` varchar(255) NOT NULL,
   `slug` varchar(100) NOT NULL,
+  `description` text,
   `document_category_id` int unsigned DEFAULT NULL,
   `status` varchar(50) DEFAULT 'draft',
   `created_by` int unsigned DEFAULT NULL,
@@ -255,6 +260,8 @@ CREATE TABLE IF NOT EXISTS `documents` (
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
+  KEY `tenant_id` (`tenant_id`),
+  KEY `slug` (`slug`),
   CONSTRAINT `documents_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `documents_category_fk` FOREIGN KEY (`document_category_id`) REFERENCES `document_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -262,6 +269,7 @@ CREATE TABLE IF NOT EXISTS `documents` (
 CREATE TABLE IF NOT EXISTS `document_versions` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `document_id` int unsigned NOT NULL,
+  `version_number` int unsigned NOT NULL DEFAULT 1,
   `file_path` varchar(500) NOT NULL,
   `checksum` varchar(64) DEFAULT NULL,
   `mime_type` varchar(100) DEFAULT NULL,
@@ -272,8 +280,39 @@ CREATE TABLE IF NOT EXISTS `document_versions` (
   `is_current` tinyint(1) DEFAULT 1,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
+  KEY `document_id` (`document_id`),
   KEY `document_id_is_current` (`document_id`,`is_current`),
   CONSTRAINT `document_versions_document_id_fk` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `equipment_classes` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `slug` varchar(100) NOT NULL,
+  `category` varchar(100) DEFAULT NULL,
+  `description` text,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
+  KEY `tenant_id` (`tenant_id`),
+  CONSTRAINT `equipment_classes_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `document_links` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `document_id` int unsigned NOT NULL,
+  `entity_type` enum('training','equipment_class','unit','user') NOT NULL,
+  `entity_id` int unsigned NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `document_id` (`document_id`),
+  KEY `entity_type` (`entity_type`),
+  KEY `entity_id` (`entity_id`),
+  KEY `tenant_id` (`tenant_id`),
+  CONSTRAINT `document_links_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `document_links_document_id_fk` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Training
@@ -329,22 +368,7 @@ CREATE TABLE IF NOT EXISTS `training_certificates` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
--- ALTER enlistments : colonnes formulaire Olympus
--- S'exécute après le CREATE : nouvelle install ou table existante.
--- Si la table a déjà ces colonnes, commenter ou ignorer ce bloc.
--- ============================================================
-ALTER TABLE `enlistments` ADD COLUMN `age` smallint unsigned DEFAULT NULL AFTER `notes`;
-ALTER TABLE `enlistments` ADD COLUMN `timezone` varchar(100) DEFAULT NULL AFTER `age`;
-ALTER TABLE `enlistments` ADD COLUMN `weekly_availability` varchar(255) DEFAULT NULL AFTER `timezone`;
-ALTER TABLE `enlistments` ADD COLUMN `system_config` varchar(500) DEFAULT NULL AFTER `weekly_availability`;
-ALTER TABLE `enlistments` ADD COLUMN `microphone_quality` varchar(20) DEFAULT NULL AFTER `system_config`;
-ALTER TABLE `enlistments` ADD COLUMN `past_milsim_experience` text AFTER `microphone_quality`;
-ALTER TABLE `enlistments` ADD COLUMN `ace_acre_level` varchar(50) DEFAULT NULL AFTER `past_milsim_experience`;
-ALTER TABLE `enlistments` ADD COLUMN `motivation_why_join` text AFTER `ace_acre_level`;
-ALTER TABLE `enlistments` ADD COLUMN `motivation_accountability` text AFTER `motivation_why_join`;
-ALTER TABLE `enlistments` ADD COLUMN `commitment_effort` varchar(20) DEFAULT NULL AFTER `motivation_accountability`;
-ALTER TABLE `enlistments` ADD COLUMN `availability_wed_sat` varchar(20) DEFAULT NULL AFTER `commitment_effort`;
-ALTER TABLE `enlistments` ADD COLUMN `no_ai_confirmed` tinyint(1) DEFAULT 0 AFTER `availability_wed_sat`;
+-- Colonnes formulaire Olympus (age, timezone, etc.) : ajout conditionnel dans run-migrations.php si absentes.
 
 -- ============================================================
 -- Matricules personnalisables (par tenant)
@@ -390,9 +414,260 @@ CREATE TABLE IF NOT EXISTS `atak_maps` (
   UNIQUE KEY `slug` (`slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Code OTAN des grades (OR-1 à OR-9, OF-1 à OF-10, WO-1 à WO-5)
--- (Si la colonne existe déjà, commenter la ligne suivante.)
-ALTER TABLE `grades` ADD COLUMN `nato_code` varchar(10) DEFAULT NULL AFTER `short_name`;
+-- Données ATAK live (parité Node, multi-tenant)
+CREATE TABLE IF NOT EXISTS `atak_layers` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `label` varchar(255) NOT NULL,
+  `phase` int DEFAULT NULL,
+  `order` int NOT NULL DEFAULT 0,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_map` (`tenant_id`,`map_id`),
+  CONSTRAINT `atak_layers_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_markers` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `layer_id` int unsigned NOT NULL DEFAULT 1,
+  `marker_data` text NOT NULL,
+  `arma_name` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_map` (`tenant_id`,`map_id`),
+  CONSTRAINT `atak_markers_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_units` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `call_sign` varchar(255) NOT NULL,
+  `role` varchar(255) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'linked',
+  `grid_ref` varchar(100) DEFAULT NULL,
+  `heading` decimal(10,4) DEFAULT NULL,
+  `extra` json DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_map` (`tenant_id`,`map_id`),
+  KEY `map_callsign` (`map_id`,`call_sign`),
+  CONSTRAINT `atak_units_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_chat_messages` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `author` varchar(255) NOT NULL,
+  `body` text NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_map` (`tenant_id`,`map_id`),
+  CONSTRAINT `atak_chat_messages_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_pings` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `author` varchar(255) NOT NULL,
+  `pos_x` decimal(15,4) NOT NULL,
+  `pos_y` decimal(15,4) NOT NULL,
+  `message` text DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_map` (`tenant_id`,`map_id`),
+  CONSTRAINT `atak_pings_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_nine_line` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `mission_id` varchar(128) DEFAULT NULL,
+  `author` varchar(255) NOT NULL,
+  `assigned_aircraft` varchar(128) DEFAULT NULL,
+  `line1` varchar(255) DEFAULT NULL,
+  `line2` varchar(255) DEFAULT NULL,
+  `line3` varchar(255) DEFAULT NULL,
+  `line4` varchar(255) DEFAULT NULL,
+  `line5` varchar(255) DEFAULT NULL,
+  `line6` varchar(255) DEFAULT NULL,
+  `line7` varchar(255) DEFAULT NULL,
+  `line8` varchar(255) DEFAULT NULL,
+  `line9` text DEFAULT NULL,
+  `lines_checked` json DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'DRAFT',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_map` (`tenant_id`,`map_id`),
+  KEY `assigned_aircraft` (`assigned_aircraft`),
+  CONSTRAINT `atak_nine_line_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_intel_photos` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `filename` varchar(255) NOT NULL,
+  `path` varchar(500) NOT NULL,
+  `author` varchar(255) DEFAULT NULL,
+  `pos_x` decimal(15,4) DEFAULT NULL,
+  `pos_y` decimal(15,4) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_map` (`tenant_id`,`map_id`),
+  CONSTRAINT `atak_intel_photos_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_designator_targets` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `call_sign` varchar(255) NOT NULL,
+  `pos_x` decimal(15,4) NOT NULL,
+  `pos_y` decimal(15,4) NOT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tenant_map_callsign` (`tenant_id`,`map_id`,`call_sign`),
+  CONSTRAINT `atak_designator_targets_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_sigint_reports` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `call_sign` varchar(255) NOT NULL,
+  `pos_x` decimal(15,4) NOT NULL,
+  `pos_y` decimal(15,4) NOT NULL,
+  `bearing` decimal(10,4) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_map` (`tenant_id`,`map_id`),
+  CONSTRAINT `atak_sigint_reports_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_last_activity` (
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `last_activity_at` datetime NOT NULL,
+  PRIMARY KEY (`tenant_id`,`map_id`),
+  CONSTRAINT `atak_last_activity_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_air_assets` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `mission_id` varchar(128) DEFAULT NULL,
+  `callsign` varchar(128) NOT NULL,
+  `model` varchar(255) DEFAULT NULL,
+  `aircraft_type` varchar(32) DEFAULT NULL,
+  `freq` varchar(64) DEFAULT NULL,
+  `radio_main` varchar(64) DEFAULT NULL,
+  `radio_aux` varchar(64) DEFAULT NULL,
+  `laser` varchar(32) DEFAULT '1688',
+  `auth` varchar(128) DEFAULT NULL,
+  `auth_code` varchar(128) DEFAULT NULL,
+  `pilot` varchar(255) DEFAULT NULL,
+  `crew` json DEFAULT NULL,
+  `fuel_pct` int unsigned DEFAULT NULL,
+  `ordnance` json DEFAULT NULL,
+  `station` varchar(128) DEFAULT NULL,
+  `eta_minutes` int unsigned DEFAULT NULL,
+  `bingo_fuel` varchar(32) DEFAULT NULL,
+  `checklist` json DEFAULT NULL,
+  `pos_x` decimal(15,4) DEFAULT NULL,
+  `pos_y` decimal(15,4) DEFAULT NULL,
+  `pos_z` decimal(15,4) DEFAULT NULL,
+  `alt` decimal(10,2) DEFAULT NULL,
+  `heading` decimal(8,2) DEFAULT NULL,
+  `side` varchar(16) DEFAULT 'WEST',
+  `status` varchar(32) DEFAULT 'AVAILABLE',
+  `pilot_status` varchar(32) DEFAULT NULL,
+  `aircraft_count` int unsigned DEFAULT 1,
+  `last_update` bigint DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tenant_map_callsign` (`tenant_id`,`map_id`,`callsign`),
+  KEY `tenant_map` (`tenant_id`,`map_id`),
+  CONSTRAINT `atak_air_assets_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `recon_images` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `mission_id` varchar(128) DEFAULT NULL,
+  `author_callsign` varchar(128) NOT NULL,
+  `unit_name` varchar(255) DEFAULT NULL,
+  `side` varchar(16) DEFAULT 'WEST',
+  `image_path` varchar(500) NOT NULL,
+  `thumb_path` varchar(500) DEFAULT NULL,
+  `caption` text DEFAULT NULL,
+  `pos_x` decimal(15,4) DEFAULT NULL,
+  `pos_y` decimal(15,4) DEFAULT NULL,
+  `pos_z` decimal(15,4) DEFAULT NULL,
+  `grid_ref` varchar(32) DEFAULT NULL,
+  `heading` decimal(8,2) DEFAULT NULL,
+  `altitude` decimal(10,2) DEFAULT NULL,
+  `device_type` varchar(64) DEFAULT 'CTAB',
+  `captured_at` datetime DEFAULT NULL,
+  `atak_cas_id` int unsigned DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_mission` (`tenant_id`,`mission_id`),
+  KEY `author_callsign` (`author_callsign`),
+  KEY `captured_at` (`captured_at`),
+  CONSTRAINT `recon_images_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_map_shapes` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `mission_id` varchar(128) DEFAULT NULL,
+  `shape_uid` varchar(64) NOT NULL,
+  `type` varchar(32) NOT NULL,
+  `label` varchar(255) DEFAULT NULL,
+  `color` varchar(32) DEFAULT '#3388ff',
+  `stroke` int unsigned DEFAULT 2,
+  `fill_opacity` decimal(3,2) DEFAULT 0.15,
+  `created_by` varchar(128) DEFAULT NULL,
+  `visible_to` json DEFAULT NULL,
+  `geometry` json NOT NULL,
+  `meta` json DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tenant_map_uid` (`tenant_id`,`map_id`,`shape_uid`),
+  KEY `tenant_map` (`tenant_id`,`map_id`),
+  CONSTRAINT `atak_map_shapes_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_laser_codes` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `call_sign` varchar(128) NOT NULL,
+  `laser_code` varchar(32) NOT NULL,
+  `pos_x` decimal(15,4) DEFAULT NULL,
+  `pos_y` decimal(15,4) DEFAULT NULL,
+  `status` varchar(32) DEFAULT 'ACTIVE',
+  `last_update` bigint DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tenant_map_callsign` (`tenant_id`,`map_id`,`call_sign`),
+  KEY `tenant_map` (`tenant_id`,`map_id`),
+  CONSTRAINT `atak_laser_codes_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Colonne nato_code sur grades : ajout conditionnel dans run-migrations.php (compatible ancienne table ou grades_referentiel renommée).
 
 -- Panneaux de données administratives (définis par tenant)
 CREATE TABLE IF NOT EXISTS `personnel_admin_panels` (
@@ -429,6 +704,7 @@ CREATE TABLE IF NOT EXISTS `forum_categories` (
   `name` varchar(255) NOT NULL,
   `slug` varchar(100) NOT NULL,
   `description` text,
+  `icon` varchar(50) DEFAULT NULL,
   `color_theme` varchar(50) DEFAULT 'slate',
   `display_order` int DEFAULT 0,
   `is_locked` tinyint(1) DEFAULT 0,
@@ -473,6 +749,7 @@ CREATE TABLE IF NOT EXISTS `forum_posts` (
   `topic_id` int unsigned NOT NULL,
   `user_id` int unsigned NOT NULL,
   `body` text NOT NULL,
+  `is_hidden` tinyint(1) DEFAULT 0,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -491,6 +768,15 @@ CREATE TABLE IF NOT EXISTS `forum_topic_subscriptions` (
   PRIMARY KEY (`user_id`,`topic_id`),
   CONSTRAINT `forum_topic_subscriptions_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `forum_topic_subscriptions_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `forum_category_subscriptions` (
+  `user_id` int unsigned NOT NULL,
+  `category_id` int unsigned NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`,`category_id`),
+  CONSTRAINT `forum_category_subscriptions_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `forum_category_subscriptions_category_id_fk` FOREIGN KEY (`category_id`) REFERENCES `forum_categories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `forum_reports` (
@@ -554,6 +840,43 @@ CREATE TABLE IF NOT EXISTS `modpack_images` (
   PRIMARY KEY (`id`),
   KEY `modpack_id` (`modpack_id`),
   CONSTRAINT `modpack_images_modpack_id_fk` FOREIGN KEY (`modpack_id`) REFERENCES `modpacks` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Paramètres par tenant (clé/valeur, ex. forum_*)
+CREATE TABLE IF NOT EXISTS `site_settings` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `key` varchar(100) NOT NULL,
+  `value` text,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tenant_key` (`tenant_id`,`key`),
+  KEY `tenant_id` (`tenant_id`),
+  CONSTRAINT `site_settings_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Mots bannis (modération forum)
+CREATE TABLE IF NOT EXISTS `forum_banned_words` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `word` varchar(255) NOT NULL,
+  `severity` varchar(20) DEFAULT 'block',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_id` (`tenant_id`),
+  CONSTRAINT `forum_banned_words_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Domaines blacklistés (liens dans les messages)
+CREATE TABLE IF NOT EXISTS `forum_blacklisted_domains` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `domain` varchar(255) NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_id` (`tenant_id`),
+  CONSTRAINT `forum_blacklisted_domains_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;

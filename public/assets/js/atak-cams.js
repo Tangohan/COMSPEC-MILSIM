@@ -1,45 +1,94 @@
 /* COMSPEC ATAK - Lives cam (WebRTC) + photos CTAB / intel */
 window.ATAKCams = (function () {
-  var apiBase = '';
+  var apiBase = null;
 
   function getApiBase() {
-    if (apiBase) return apiBase;
-    apiBase = window.ATAKSocket ? window.ATAKSocket.getApiBase() : (window.location.protocol + '//' + window.location.hostname + ':3001');
-    return apiBase;
+    if (apiBase !== undefined && apiBase !== null) return apiBase;
+    apiBase = window.ATAKSocket ? window.ATAKSocket.getApiBase() : '';
+    return apiBase || '';
+  }
+  function isNodeConfigured() {
+    return true;
   }
 
   function getMapId() {
     return window.ATAKSocket ? window.ATAKSocket.getMapId() : 1;
   }
 
-  function fetchIntelPhotos() {
-    var url = getApiBase() + '/api/intel/photos?mapId=' + getMapId();
+  function getAuthor() {
+    var u = window.ATAK_USER;
+    if (u && (u.callsign || u.displayName)) return u.callsign || u.displayName;
+    return 'User';
+  }
+
+  function addPhotoMarkerOnMap(photo) {
+    if (!window.ATAKMap || !window.ATAKMap.addIntelPhotoMarker) return;
+    var px = photo.pos_x != null ? parseFloat(photo.pos_x) : null;
+    var py = photo.pos_y != null ? parseFloat(photo.pos_y) : null;
+    if (px == null || py == null) return;
+    var u = photo.url || photo.path || '';
+    var base = getApiBase();
+    var src = (u.indexOf('http') === 0 || u.indexOf('//') === 0) ? u : (base + (u.charAt(0) === '/' ? u : '/' + u));
+    window.ATAKMap.addIntelPhotoMarker(photo.id, py, px, src);
+  }
+
+  function fetchReconImages() {
+    var base = getApiBase();
+    var url = (base ? base : '') + '/api/recon/images?mapId=' + getMapId();
     fetch(url).then(function (r) { return r.json(); }).then(function (data) {
       var list = Array.isArray(data) ? data : [];
       var el = document.getElementById('atak-intel-photos');
       if (!el) return;
+      if (window.ATAKMap && window.ATAKMap.clearIntelMarkers) window.ATAKMap.clearIntelMarkers();
+      var html = list.length ? '<div style="padding:0.5rem;font-size:0.75rem;color:var(--atak-muted)">Recon Cams</div>' + list.map(function (p) {
+        var src = (p.url || '').indexOf('http') === 0 ? p.url : base + (p.url || '/uploads/recon/' + (p.image_path || '').split('/').pop());
+        if (window.ATAKMap && window.ATAKMap.addIntelPhotoMarker) window.ATAKMap.addIntelPhotoMarker(p.id, p.pos_y, p.pos_x, src);
+        return '<div class="atak-cam-item atak-recon-item" data-id="' + (p.id || '') + '"><img src="' + src + '" alt="" style="max-width:100%;max-height:120px;border-radius:4px;" /><div class="atak-recon-meta">' + (p.author_callsign || '') + ' ' + (p.caption || '') + '</div></div>';
+      }).join('') : '';
+      el.innerHTML = html;
+    }).catch(function () {});
+  }
+
+  function fetchIntelPhotos() {
+    var base = getApiBase();
+    var url = (base ? base : '') + '/api/intel/photos?mapId=' + getMapId();
+    fetch(url).then(function (r) { return r.json(); }).then(function (data) {
+      var list = Array.isArray(data) ? data : [];
+      var el = document.getElementById('atak-intel-photos');
+      if (!el) return;
+      if (window.ATAKMap && window.ATAKMap.clearIntelMarkers) window.ATAKMap.clearIntelMarkers();
       if (list.length === 0) {
         el.innerHTML = '';
         return;
       }
       var base = getApiBase();
-      el.innerHTML = '<div style="padding:0.5rem;font-size:0.75rem;color:var(--atak-muted)">Photos CTAB</div>' +
+      el.innerHTML = '<div style="padding:0.5rem;font-size:0.75rem;color:var(--atak-muted)">Photos CTAB (API PHP)</div>' +
         list.map(function (p) {
           var u = p.url || p.path || '';
           var src = (u.indexOf('http') === 0 || u.indexOf('//') === 0) ? u : (base + (u.charAt(0) === '/' ? u : '/' + u));
+          addPhotoMarkerOnMap(p);
           return '<div class="atak-cam-item"><img src="' + src + '" alt="" style="max-width:100%;max-height:120px;border-radius:4px;" /></div>';
         }).join('');
-    }).catch(function () {});
+    }).catch(function () {
+      if (window.ATAKShowError) window.ATAKShowError('Impossible de charger les photos CTAB.');
+    });
   }
 
   function appendIntelPhoto(photo) {
+    var author = photo.author || photo.callsign || 'Recon';
+    if (window.ATAKShowNotification) {
+      window.ATAKShowNotification('Nouvelle photo de recon reçue de ' + author);
+    }
     var el = document.getElementById('atak-intel-photos');
-    if (!el) return;
-    var src = photo.url || (getApiBase() + (photo.path || ''));
-    var div = document.createElement('div');
-    div.className = 'atak-cam-item';
-    div.innerHTML = '<img src="' + src + '" alt="" style="max-width:100%;max-height:120px;border-radius:4px;" />';
-    el.appendChild(div);
+    if (el) {
+      var src = photo.url || (getApiBase() + (photo.path || ''));
+      if (src.indexOf('http') !== 0 && src.indexOf('//') !== 0) src = getApiBase() + (src.charAt(0) === '/' ? src : '/' + src);
+      var div = document.createElement('div');
+      div.className = 'atak-cam-item';
+      div.innerHTML = '<img src="' + src + '" alt="" style="max-width:100%;max-height:120px;border-radius:4px;" />';
+      el.appendChild(div);
+    }
+    addPhotoMarkerOnMap(photo);
   }
 
   function addVideoElement(streamId, label) {
@@ -59,75 +108,23 @@ window.ATAKCams = (function () {
     if (videoEl && stream) videoEl.srcObject = stream;
   }
 
-  var peerConnections = {};
-  var pendingCandidates = {};
-
   function handleRemoteOffer(payload) {
-    var from = payload.from;
-    var streamId = payload.streamId || from;
-    var sdp = payload.sdp || payload.offer;
-    if (!sdp) return;
-    var video = addVideoElement(streamId, payload.label || 'Live ' + streamId);
-    if (!video) return;
-    var pc = new (window.RTCPeerConnection || window.webkitRTCPeerConnection)({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    });
-    peerConnections[streamId] = { pc: pc, video: video };
-    pc.ontrack = function (e) { attachStream(video, e.streams[0]); };
-    pc.addTransceiver('video', { direction: 'recvonly' });
-    pc.setRemoteDescription(new RTCSessionDescription(sdp)).then(function () {
-      return pc.createAnswer();
-    }).then(function (answer) {
-      return pc.setLocalDescription(answer);
-    }).then(function () {
-      if (window.ATAKSocket && window.ATAKSocket.getSocket()) {
-        window.ATAKSocket.getSocket().emit('webrtc-answer', { to: from, answer: pc.localDescription });
-      }
-    }).catch(function (err) { console.warn('ATAKCams WebRTC answer error', err); });
-  }
-
-  function handleRemoteAnswer(payload) {
-    var streamId = payload.streamId;
-    if (streamId && peerConnections[streamId]) {
-      var pc = peerConnections[streamId].pc;
-      if (payload.answer) pc.setRemoteDescription(new RTCSessionDescription(payload.answer)).catch(function (e) { console.warn(e); });
+    var listEl = document.getElementById('atak-cams-list');
+    if (listEl && !listEl.querySelector('.atak-cams-webrtc-disabled')) {
+      var msg = document.createElement('div');
+      msg.className = 'atak-muted atak-cams-webrtc-disabled';
+      msg.style.cssText = 'padding:0.5rem;font-size:0.75rem;';
+      msg.textContent = 'Lives WebRTC non disponibles en mode API PHP (pas de Socket.IO).';
+      listEl.appendChild(msg);
     }
   }
 
-  function handleIceCandidate(payload) {
-    var from = payload.from;
-    Object.keys(peerConnections).forEach(function (streamId) {
-      var pc = peerConnections[streamId].pc;
-      if (payload.candidate) pc.addIceCandidate(new RTCIceCandidate(payload.candidate)).catch(function () {});
-    });
-  }
-
-  function initUpload() {
-    var input = document.getElementById('atak-intel-upload');
-    if (!input) return;
-    input.addEventListener('change', function () {
-      var file = this.files && this.files[0];
-      if (!file) return;
-      var fd = new FormData();
-      fd.append('photo', file);
-      fd.append('mapId', getMapId());
-      fd.append('author', 'User');
-      fetch(getApiBase() + '/api/intel/photos', { method: 'POST', body: fd })
-        .then(function (r) { return r.json(); })
-        .then(function (p) { appendIntelPhoto(p); })
-        .catch(function () {});
-      this.value = '';
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initUpload);
-  } else {
-    initUpload();
-  }
+  function handleRemoteAnswer() {}
+  function handleIceCandidate() {}
 
   return {
     fetchIntelPhotos: fetchIntelPhotos,
+    fetchReconImages: fetchReconImages,
     appendIntelPhoto: appendIntelPhoto,
     addVideoElement: addVideoElement,
     attachStream: attachStream,

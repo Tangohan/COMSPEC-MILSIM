@@ -19,7 +19,7 @@ class TrainingRepository
     public function listPublishedForTenant(int $tenantId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM training_modules WHERE tenant_id = ? AND status = ? ORDER BY title ASC'
+            'SELECT * FROM legacy_training_modules WHERE tenant_id = ? AND status = ? ORDER BY title ASC'
         );
         $stmt->execute([$tenantId, 'published']);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -27,7 +27,7 @@ class TrainingRepository
 
     public function findBySlug(string $slug, ?int $tenantId = null): ?array
     {
-        $sql = 'SELECT * FROM training_modules WHERE slug = ? AND status = ?';
+        $sql = 'SELECT * FROM legacy_training_modules WHERE slug = ? AND status = ?';
         $params = [$slug, 'published'];
         if ($tenantId !== null) {
             $sql .= ' AND tenant_id = ?';

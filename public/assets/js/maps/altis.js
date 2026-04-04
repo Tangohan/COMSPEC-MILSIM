@@ -13,17 +13,19 @@
       infinite: true
     });
   }
+  var ALTIS_WORLD = 30720;
+  var ALTIS_FACTOR = 212 / ALTIS_WORLD;
   window.Arma3Map = window.Arma3Map || { Maps: {} };
   window.Arma3Map.Maps.altis = {
-    CRS: MGRS_CRS(0.006839, 0.006836, 212),
+    CRS: MGRS_CRS(ALTIS_FACTOR, ALTIS_FACTOR, 212),
     tilePattern: 'ressources/MapViewers/maps/altis/{z}/{x}/{y}.png',
     maxZoom: 6,
     minZoom: 0,
     defaultZoom: 3,
     attribution: '&copy; Bohemia Interactive',
     tileSize: 212,
-    center: [15000, 15000],
-    worldSize: 30720,
+    center: [ALTIS_WORLD / 2, ALTIS_WORLD / 2],
+    worldSize: ALTIS_WORLD,
     title: 'Altis',
     cities: [
       { name: 'Therisa', x: 10618.9, y: 12237.3 },

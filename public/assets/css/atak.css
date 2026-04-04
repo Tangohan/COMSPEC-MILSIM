@@ -70,6 +70,44 @@ body.atak-page {
   letter-spacing: 0.05em;
 }
 
+.atak-header-links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.atak-header-link {
+  color: var(--atak-muted);
+  font-size: 0.75rem;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.atak-header-link:hover {
+  color: var(--atak-accent);
+}
+
+.atak-header-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.atak-header-select-label {
+  font-size: 0.75rem;
+  color: var(--atak-muted);
+}
+
+.atak-header-select {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--atak-panel-alt);
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  color: var(--atak-text);
+  cursor: pointer;
+}
+
 .atak-header .atak-status {
   display: flex;
   align-items: center;
@@ -91,6 +129,304 @@ body.atak-page {
 
 .atak-status.offline { color: var(--atak-muted); }
 .atak-status.offline .dot { background: #4a4a55; box-shadow: none; }
+
+.atak-btn-account {
+  background: var(--atak-panel-alt);
+  border: 1px solid var(--atak-border);
+  color: var(--atak-text);
+  font-size: 0.75rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 0.5rem;
+}
+.atak-btn-account:hover {
+  background: var(--atak-border);
+  color: var(--atak-accent);
+}
+
+.atak-account-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+}
+.atak-account-overlay.show { display: block; }
+
+.atak-account-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
+  max-width: 95vw;
+  height: 100vh;
+  background: var(--atak-panel);
+  border-left: 1px solid var(--atak-border);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
+  z-index: 1001;
+  transform: translateX(100%);
+  transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+.atak-account-panel.open { transform: translateX(0); }
+
+.atak-account-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--atak-border);
+  flex-shrink: 0;
+}
+.atak-account-panel-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--atak-text);
+}
+.atak-account-panel-close {
+  background: none;
+  border: none;
+  color: var(--atak-muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+.atak-account-panel-close:hover { color: var(--atak-text); }
+
+.atak-account-panel-body {
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+.atak-account-section {
+  margin-bottom: 1.25rem;
+}
+.atak-account-section-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--atak-muted);
+}
+.atak-account-panel-body p { margin: 0.35rem 0; }
+.atak-account-panel-body a {
+  color: var(--atak-accent);
+  text-decoration: none;
+}
+.atak-account-panel-body a:hover { text-decoration: underline; }
+
+/* Section Configuration pour le jeu (Arma / mod) */
+.atak-game-config {
+  background: linear-gradient(180deg, rgba(18, 18, 26, 0.98) 0%, rgba(10, 10, 15, 0.98) 100%);
+  border-bottom: 1px solid var(--atak-border);
+  flex-shrink: 0;
+}
+.atak-game-config-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: none;
+  border: none;
+  color: var(--atak-muted);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.atak-game-config-toggle:hover {
+  color: var(--atak-accent);
+  background: rgba(52, 211, 153, 0.06);
+}
+.atak-game-config-toggle-icon {
+  font-size: 0.65rem;
+  transition: transform 0.2s ease;
+}
+.atak-game-config-body {
+  border-top: 1px solid var(--atak-border);
+  padding: 0;
+}
+.atak-game-config-body[hidden] { display: none; }
+.atak-game-config-inner {
+  padding: 1rem 1.25rem 1.25rem;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.atak-game-config-block {
+  margin-bottom: 1rem;
+}
+.atak-game-config-block:last-of-type { margin-bottom: 0; }
+.atak-game-config-label {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--atak-accent);
+}
+.atak-game-config-hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--atak-muted);
+  font-size: 0.7rem;
+}
+.atak-game-config-url-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.atak-game-config-url {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.75rem;
+  font-family: ui-monospace, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--atak-border);
+  border-radius: 6px;
+  color: var(--atak-text);
+}
+.atak-game-config-copy {
+  flex-shrink: 0;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--atak-accent-dim);
+  border: 1px solid var(--atak-accent);
+  color: var(--atak-accent);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.atak-game-config-copy:hover {
+  background: rgba(52, 211, 153, 0.25);
+  color: var(--atak-text);
+}
+.atak-game-config-warn {
+  color: var(--atak-warning, #eab308);
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0;
+}
+.atak-game-config-warn a { color: var(--atak-accent, #3b82f6); }
+.atak-game-config-value {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--atak-text);
+}
+.atak-game-config-pre {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--atak-border);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--atak-muted);
+}
+.atak-game-config-instructions { white-space: pre-wrap; }
+.atak-game-config-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--atak-accent);
+  background: var(--atak-accent-dim);
+  border: 1px solid var(--atak-accent);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.atak-game-config-download:hover {
+  background: rgba(52, 211, 153, 0.25);
+  color: var(--atak-text);
+}
+.atak-game-config-footer {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--atak-border);
+}
+.atak-game-config-link {
+  font-size: 0.78rem;
+  color: var(--atak-muted);
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+.atak-game-config-link:hover { color: var(--atak-accent); }
+
+/* État de santé */
+.atak-health-section { margin-top: 0.5rem; }
+.atak-health-body .atak-game-config-inner { padding: 0.75rem; }
+.atak-health-section,
+.atak-game-config {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--atak-border);
+}
+.atak-health-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+.atak-health-row { display: grid; grid-template-columns: 140px 1fr auto; gap: 0.75rem; align-items: center; font-size: 0.8rem; min-height: 1.75rem; }
+.atak-health-row .atak-health-label { color: var(--atak-muted); }
+.atak-health-row .atak-health-cell:first-of-type { grid-column: 2; }
+.atak-health-row .atak-health-status { grid-column: 3; }
+.atak-health-row .atak-health-cell.atak-health-dll-text { grid-column: 2 / -1; }
+.atak-health-label { color: var(--atak-muted); }
+.atak-health-cell { word-break: break-all; }
+.atak-health-muted { color: var(--atak-muted); font-size: 0.8rem; }
+.atak-health-status.ok { color: #22c55e; }
+.atak-health-status.err { color: #ef4444; }
+.atak-health-status.warn { color: #eab308; }
+.atak-health-err { color: var(--atak-warning); font-size: 0.75rem; }
+.atak-health-refresh { padding: 0.35rem 0.75rem; font-size: 0.85rem; cursor: pointer; background: var(--atak-bg-elevated); border: 1px solid var(--atak-border); border-radius: 4px; color: inherit; }
+.atak-health-refresh:hover { background: var(--atak-accent); color: #fff; border-color: var(--atak-accent); }
+.atak-health-body[hidden] { display: none; }
+
+.atak-error-toast {
+  display: none;
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  background: rgba(220, 38, 38, 0.95);
+  color: #fff;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  z-index: 2000;
+  max-width: 90vw;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.atak-error-toast.show { display: block; }
+
+.atak-notification-toast {
+  display: none;
+  position: fixed;
+  bottom: 4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.6rem 1rem;
+  background: rgba(16, 185, 129, 0.95);
+  color: #022c22;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  max-width: 90%;
+}
+.atak-notification-toast.show { display: block; }
 
 .atak-main {
   flex: 1;
@@ -181,6 +517,7 @@ body.atak-page {
 
 .atak-tabs-content {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   display: none;
 }
@@ -234,7 +571,7 @@ body.atak-page {
 .atak-chat-input-wrap button:hover { filter: brightness(1.1); }
 
 /* Pings */
-.atak-pings-list { padding: 0.5rem; font-size: 0.8rem; }
+.atak-pings-list { padding: 0.5rem; font-size: 0.8rem; max-height: 260px; overflow-y: auto; min-height: 80px; }
 .atak-ping-item {
   padding: 0.4rem 0;
   border-bottom: 1px solid var(--atak-border);
@@ -350,12 +687,61 @@ body.atak-page {
 .atak-unit-card:hover { border-color: var(--atak-accent); }
 .atak-unit-card.linked { border-left: 3px solid var(--atak-success); }
 .atak-unit-card.delayed { border-left: 3px solid var(--atak-warning); }
+.atak-unit-callsign-wrap { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
 .atak-unit-callsign { font-size: 0.7rem; color: var(--atak-accent); text-transform: uppercase; letter-spacing: 0.05em; }
+.atak-unit-fiche-link { font-size: 0.65rem; color: var(--atak-muted); text-decoration: none; padding: 0.15rem 0.35rem; border: 1px solid var(--atak-border); border-radius: 4px; white-space: nowrap; }
+.atak-unit-fiche-link:hover { color: var(--atak-accent); border-color: var(--atak-accent); }
 .atak-unit-role { font-weight: 700; font-size: 0.9rem; }
 .atak-unit-status { font-size: 0.65rem; text-transform: uppercase; padding: 0.2rem 0.4rem; border-radius: 999px; }
 .atak-unit-status.linked { background: rgba(34, 197, 94, 0.2); color: var(--atak-success); }
 .atak-unit-status.delayed { background: rgba(234, 179, 8, 0.2); color: var(--atak-warning); }
 .atak-unit-grid, .atak-unit-heading { font-size: 0.75rem; color: var(--atak-muted); margin-top: 0.25rem; }
+.atak-unit-bft-meta { font-size: 0.7rem; color: var(--atak-muted); margin-top: 0.2rem; }
+.atak-unit-card.atak-unit-bft-wounded { border-left-color: #ef4444; animation: atak-bft-blink 1.2s ease-in-out infinite; }
+@keyframes atak-bft-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
+
+/* Air Support Assets (Flight Manifest) */
+.atak-air-assets-header {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--atak-border);
+  background: var(--atak-panel);
+}
+.atak-air-assets-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--atak-muted);
+}
+.atak-air-assets-list {
+  padding: 0.5rem;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--atak-panel-alt);
+  border-bottom: 1px solid var(--atak-border);
+}
+.atak-air-assets-empty {
+  font-size: 0.75rem;
+  color: var(--atak-muted);
+  padding: 0.5rem;
+}
+.atak-air-asset-card {
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.4rem;
+  background: var(--atak-bg);
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  border-left: 3px solid var(--atak-success);
+}
+.atak-air-asset-card.atak-air-status-suspect { border-left-color: #f97316; background: rgba(249, 115, 22, 0.08); }
+.atak-air-asset-card.atak-air-status-offline { border-left-color: var(--atak-muted); opacity: 0.8; }
+.atak-air-asset-callsign { font-size: 0.7rem; color: var(--atak-accent); text-transform: uppercase; letter-spacing: 0.05em; }
+.atak-air-asset-model { font-weight: 600; font-size: 0.85rem; }
+.atak-air-asset-freq, .atak-air-asset-laser { font-size: 0.7rem; color: var(--atak-muted); }
+.atak-air-asset-status { font-size: 0.6rem; text-transform: uppercase; padding: 0.15rem 0.35rem; border-radius: 999px; background: rgba(52, 211, 153, 0.2); color: var(--atak-success); }
+.atak-air-asset-status.atak-air-status-suspect { background: rgba(249, 115, 22, 0.25); color: #f97316; }
+.atak-air-asset-status.atak-air-status-offline { background: rgba(138, 138, 150, 0.2); color: var(--atak-muted); }
+.atak-air-asset-pilot { font-size: 0.65rem; color: var(--atak-muted); margin-top: 0.25rem; }
 
 /* Leaflet dark override */
 .atak-map-wrap .leaflet-control-zoom { border: 1px solid var(--atak-border) !important; }

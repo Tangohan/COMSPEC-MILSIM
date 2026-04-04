@@ -13,6 +13,8 @@ return [
         'categories' => 'Canaux',
         'last_activity' => 'Dernier signal',
         'new_topic' => 'Émettre un brief',
+        'agora_title' => 'Agora Athena',
+        'agora_subtitle' => 'Publier dans l\'Agora',
         'recent_archives' => 'Archives récentes',
         'moderation_panel' => 'Terminal de Contrôle',
         'official_announcements' => 'Communiqués officiels',
@@ -30,4 +32,7 @@ return [
     ],
 
     'category_colors' => ['orange', 'indigo', 'violet', 'rose', 'emerald', 'slate'],
+
+    'forum_max_post_length' => 10000,
+    'enabled' => true,
 ];

@@ -58,3 +58,5 @@ if (!function_exists('can')) {
         return $gate->allows($permission);
     }
 }
+
+require __DIR__ . '/forum_helpers.php';

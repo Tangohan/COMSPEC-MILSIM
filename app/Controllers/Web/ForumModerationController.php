@@ -32,12 +32,14 @@ class ForumModerationController
         }
 
         $pendingReports = $this->reportRepository->listPending($tenantId);
+        $handledReports = $this->reportRepository->listHandled($tenantId, 15);
 
         return Response::view('layout.forum', [
             'content' => 'forum.moderation',
             'title' => 'Terminal de Contrôle',
             'forumConfig' => config('forum') ?? [],
             'pendingReports' => $pendingReports,
+            'handledReports' => $handledReports,
         ]);
     }
 
@@ -54,7 +56,7 @@ class ForumModerationController
             return Response::redirect(url('login'));
         }
 
-        if ($request->method() !== 'POST' || !Csrf::validate($request->post('_csrf_token'))) {
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
             return Response::redirect(url('forum/moderation'));
         }
@@ -106,7 +108,7 @@ class ForumModerationController
             return Response::redirect(url('forum'));
         }
 
-        if ($request->method() === 'POST' && Csrf::validate($request->post('_csrf_token'))) {
+        if ($request->method() === 'POST' && Csrf::validate($request->input('_csrf_token'))) {
             $this->topicRepository->update($id, $tenantId, ['is_locked' => $locked ? 1 : 0]);
             Session::flash('success', $locked ? 'Sujet verrouillé.' : 'Sujet déverrouillé.');
         }
@@ -129,7 +131,7 @@ class ForumModerationController
             return Response::redirect(url('forum'));
         }
 
-        if ($request->method() === 'POST' && Csrf::validate($request->post('_csrf_token'))) {
+        if ($request->method() === 'POST' && Csrf::validate($request->input('_csrf_token'))) {
             $this->topicRepository->update($id, $tenantId, ['is_pinned' => $pinned ? 1 : 0]);
             Session::flash('success', $pinned ? 'Sujet épinglé.' : 'Sujet désépinglé.');
         }

@@ -1,0 +1,12 @@
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\net8.0\win-x64\COMSPECExtension_x64.deps.json
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\net8.0\win-x64\COMSPECExtension_x64.dll
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\net8.0\win-x64\COMSPECExtension_x64.pdb
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\obj\Release\net8.0\win-x64\COMSPECExtension.GeneratedMSBuildEditorConfig.editorconfig
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\obj\Release\net8.0\win-x64\COMSPECExtension.AssemblyInfoInputs.cache
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\obj\Release\net8.0\win-x64\COMSPECExtension.AssemblyInfo.cs
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\obj\Release\net8.0\win-x64\COMSPECExtension.csproj.CoreCompileInputs.cache
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\obj\Release\net8.0\win-x64\COMSPECExtension.sourcelink.json
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\obj\Release\net8.0\win-x64\COMSPECExtension_x64.dll
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\obj\Release\net8.0\win-x64\refint\COMSPECExtension_x64.dll
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\obj\Release\net8.0\win-x64\COMSPECExtension_x64.pdb
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\obj\Release\net8.0\win-x64\ref\COMSPECExtension_x64.dll

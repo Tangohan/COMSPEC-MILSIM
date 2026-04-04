@@ -35,6 +35,7 @@ db.exec(`
     map_id INTEGER NOT NULL REFERENCES maps(id),
     layer_id INTEGER NOT NULL REFERENCES layers(id),
     marker_data TEXT NOT NULL,
+    arma_name TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
   );
@@ -105,9 +106,30 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS designator_targets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    map_id INTEGER NOT NULL REFERENCES maps(id),
+    call_sign TEXT NOT NULL,
+    pos_x REAL NOT NULL,
+    pos_y REAL NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(map_id, call_sign)
+  );
+
+  CREATE TABLE IF NOT EXISTS sigint_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    map_id INTEGER NOT NULL REFERENCES maps(id),
+    call_sign TEXT NOT NULL,
+    pos_x REAL NOT NULL,
+    pos_y REAL NOT NULL,
+    bearing REAL,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
   INSERT OR IGNORE INTO maps (id, label, world_name) VALUES (1, 'Default', 'altis');
   INSERT OR IGNORE INTO layers (id, map_id, label, "order") VALUES (1, 1, 'Base layer', 0);
 `);
+try { db.exec('ALTER TABLE markers ADD COLUMN arma_name TEXT'); } catch (e) { /* column may exist */ }
 
 const defaultMapId = 1;
 const defaultLayerId = 1;

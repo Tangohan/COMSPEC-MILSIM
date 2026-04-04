@@ -3,7 +3,7 @@ $labels = $forumConfig['labels'] ?? [];
 $baseUrl = url('');
 $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('email') ?? 'Connecté';
 ?>
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+<div class="w-full px-4 sm:px-6 lg:px-8 py-10">
   <!-- Ticker -->
   <div class="border-b border-white/5 bg-[#0a0a0b] py-2 overflow-hidden mb-8">
     <div class="flex animate-ticker whitespace-nowrap">
@@ -92,7 +92,7 @@ $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('em
 
   <div class="lg:grid lg:grid-cols-12 lg:gap-8">
     <div class="lg:col-span-8 space-y-8">
-      <!-- Annonces officielles -->
+      <!-- Annonces officielles — style Chambre des Murmures -->
       <?php if (!empty($pinnedAnnouncements) && isset($announcementsCategory)): ?>
         <section>
           <div class="flex items-center gap-3 mb-4">
@@ -100,27 +100,55 @@ $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('em
             <span class="text-[8px] font-black uppercase tracking-[0.4em] text-orange-500/70"><?= htmlspecialchars($labels['official_announcements'] ?? 'Communiqués officiels') ?></span>
             <span class="flex-1 h-px bg-white/5"></span>
           </div>
-          <div class="space-y-4">
+          <div class="flex flex-col gap-4">
             <?php foreach (array_slice($pinnedAnnouncements, 0, 3) as $i => $ann): ?>
-              <article class="bg-[#0a0a0c] border border-orange-500/20 p-8">
-                <div class="flex items-start justify-between gap-4 mb-3">
-                  <div class="flex items-center gap-3">
-                    <span class="h-12 w-12 bg-white text-black font-black italic flex items-center justify-center text-lg"><?= mb_substr($ann['author_name'] ?? 'A', 0, 1) ?></span>
+              <div class="bg-[#0a0a0c] border border-orange-500/20 p-8 anim-up" style="animation-delay:<?= 120 + $i * 40 ?>ms">
+                <!-- En-tête carte -->
+                <div class="flex items-start justify-between border-b border-white/5 pb-6 mb-6 gap-4">
+                  <div class="flex items-center gap-4">
+                    <div class="shrink-0 h-12 w-12 bg-white text-black font-black flex items-center justify-center italic text-lg select-none">
+                      <?= mb_strtoupper(mb_substr($ann['author_name'] ?? 'A', 0, 1)) ?>
+                    </div>
                     <div>
-                      <span class="text-[10px] font-black uppercase tracking-widest text-orange-500">Officiel</span>
-                      <p class="text-xl font-black text-white uppercase italic"><?= htmlspecialchars($ann['author_name'] ?? '') ?></p>
+                      <p class="text-[10px] font-black uppercase tracking-widest text-orange-500">Équipe</p>
+                      <h2 class="text-xl font-black text-white uppercase italic leading-tight"><?= htmlspecialchars($ann['author_name'] ?? '') ?></h2>
                     </div>
                   </div>
-                  <span class="text-[9px] text-neutral-500">Édit n°<?= $i + 1 ?> · <?= date('d/m/Y', strtotime($ann['updated_at'] ?? $ann['created_at'] ?? 'now')) ?></span>
+                  <div class="text-right shrink-0">
+                    <p class="text-[9px] font-bold text-neutral-600 uppercase tracking-tighter">Édit n°<?= str_pad((string)($i + 1), 3, '0', STR_PAD_LEFT) ?></p>
+                    <p class="text-[9px] font-bold text-neutral-400 uppercase"><?= date('d M Y', strtotime($ann['updated_at'] ?? $ann['created_at'] ?? 'now')) ?></p>
+                  </div>
                 </div>
-                <h2 class="text-base font-black text-white uppercase italic mb-2"><?= htmlspecialchars($ann['title']) ?></h2>
-                <p class="text-sm text-neutral-400 line-clamp-2"><?= htmlspecialchars(mb_substr(strip_tags($ann['title'] ?? ''), 0, 120)) ?>…</p>
-                <div class="flex flex-wrap gap-2 mt-4">
-                  <span class="text-[8px] font-black uppercase border border-orange-500/30 text-orange-500/80 px-2 py-0.5">Épinglé</span>
-                  <span class="text-[8px] font-black uppercase border border-orange-500/30 text-orange-500/80 px-2 py-0.5">Officiel</span>
+                <!-- Corps -->
+                <div>
+                  <p class="text-base font-black text-white leading-tight uppercase italic mb-4">
+                    <?= htmlspecialchars($ann['title']) ?>
+                  </p>
+                  <?php
+                  $excerpt = isset($ann['body']) ? strip_tags((string)$ann['body']) : '';
+                  if ($excerpt === '' && isset($ann['title'])) $excerpt = (string)$ann['title'];
+                  $excerpt = mb_substr($excerpt, 0, 220);
+                  if (mb_strlen($excerpt) >= 200) $excerpt .= '…';
+                  ?>
+                  <p class="text-sm text-neutral-400 leading-relaxed"><?= nl2br(htmlspecialchars($excerpt)) ?></p>
+                  <a href="<?= $baseUrl ?>/forum/topic/<?= (int) $ann['id'] ?>" class="inline-block mt-4 text-[9px] font-black uppercase tracking-widest text-orange-500 hover:text-orange-400 transition-colors">
+                    Lire la suite →
+                  </a>
                 </div>
-                <a href="<?= $baseUrl ?>/forum/topic/<?= (int) $ann['id'] ?>" class="inline-block mt-4 text-xs font-bold text-orange-400 hover:text-orange-300">Accéder au fil →</a>
-              </article>
+                <!-- Pied de carte -->
+                <div class="mt-8 pt-5 border-t border-white/5 flex items-center justify-between flex-wrap gap-3">
+                  <div class="flex gap-2">
+                    <span class="px-3 py-1 bg-white/5 text-[9px] font-black text-white uppercase tracking-widest">Épinglé</span>
+                    <span class="px-3 py-1 bg-orange-500/10 text-[9px] font-black text-orange-500 uppercase tracking-widest">Officiel</span>
+                  </div>
+                  <div class="flex items-center gap-5">
+                    <span class="text-[9px] font-bold text-neutral-700 tracking-widest uppercase">Réf : <?= htmlspecialchars($announcementsCategory['slug'] ?? '') ?>-<?= date('y', strtotime($ann['created_at'] ?? 'now')) ?>-<?= str_pad((string)(int)$ann['id'], 2, '0', STR_PAD_LEFT) ?></span>
+                    <a href="<?= $baseUrl ?>/forum/topic/<?= (int) $ann['id'] ?>" class="text-[9px] font-black uppercase tracking-widest text-neutral-600 hover:text-white transition-colors">
+                      Accéder au fil →
+                    </a>
+                  </div>
+                </div>
+              </div>
             <?php endforeach; ?>
           </div>
         </section>
@@ -179,6 +207,30 @@ $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('em
 
     <!-- Sidebar -->
     <aside class="lg:col-span-4 space-y-8 mt-10 lg:mt-0">
+      <!-- Accès rapides -->
+      <div>
+        <div class="flex items-center gap-2 mb-3">
+          <span class="h-px w-6 bg-indigo-500/50"></span>
+          <span class="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500/80">Accès rapides</span>
+        </div>
+        <div class="bg-[#0a0a0c] border border-white/5 divide-y divide-white/5">
+          <a href="<?= $baseUrl ?>/formations" class="block px-4 py-3 hover:bg-white/[0.02] transition">
+            <p class="text-xs font-bold text-white hover:text-orange-400">Formations</p>
+            <p class="text-[9px] text-neutral-600">Catalogue et suivi des formations</p>
+          </a>
+          <?php if (\App\Core\Gate::getInstance()->allows('documents.view')): ?>
+          <a href="<?= $baseUrl ?>/documents" class="block px-4 py-3 hover:bg-white/[0.02] transition">
+            <p class="text-xs font-bold text-white hover:text-orange-400">Documents</p>
+            <p class="text-[9px] text-neutral-600">Consultation des documents et fiches</p>
+          </a>
+          <?php endif; ?>
+          <a href="<?= $baseUrl ?>/atak" class="block px-4 py-3 hover:bg-white/[0.02] transition">
+            <p class="text-xs font-bold text-white hover:text-orange-400">ATAK / TACMAP</p>
+            <p class="text-[9px] text-neutral-600">Carte tactique, marqueurs et outils C2</p>
+          </a>
+        </div>
+      </div>
+
       <div>
         <div class="flex items-center gap-2 mb-3">
           <span class="w-1.5 h-1.5 bg-orange-500 rounded-full" style="box-shadow: 0 0 8px rgba(249,115,22,0.6);"></span>
@@ -237,6 +289,59 @@ $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('em
           <?php endif; ?>
         </div>
       <?php endif; ?>
+
+      <!-- Configuration complète du forum -->
+      <div>
+        <div class="flex items-center gap-2 mb-3">
+          <span class="h-px w-6 bg-indigo-500/50"></span>
+          <span class="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500/80">Configuration du forum</span>
+        </div>
+        <div class="bg-[#0a0a0c] border border-white/10 p-4 space-y-3 text-[10px]">
+          <div>
+            <p class="text-[8px] font-black uppercase text-neutral-600 tracking-wider">Nom</p>
+            <p class="text-white font-bold"><?= htmlspecialchars($forumConfig['name'] ?? '—') ?></p>
+          </div>
+          <div>
+            <p class="text-[8px] font-black uppercase text-neutral-600 tracking-wider">Sous-titre</p>
+            <p class="text-neutral-400"><?= htmlspecialchars($forumConfig['subtitle'] ?? '—') ?></p>
+          </div>
+          <div>
+            <p class="text-[8px] font-black uppercase text-neutral-600 tracking-wider">Contexte</p>
+            <p class="text-neutral-400"><?= htmlspecialchars($forumConfig['context'] ?? '—') ?></p>
+          </div>
+          <div>
+            <p class="text-[8px] font-black uppercase text-neutral-600 tracking-wider">Tagline</p>
+            <p class="text-neutral-400 italic"><?= htmlspecialchars($forumConfig['tagline'] ?? '—') ?></p>
+          </div>
+          <div>
+            <p class="text-[8px] font-black uppercase text-neutral-600 tracking-wider">État</p>
+            <p class="<?= !empty($forumConfig['enabled']) ? 'text-emerald-400' : 'text-amber-400' ?>"><?= !empty($forumConfig['enabled']) ? 'Activé' : 'Désactivé' ?></p>
+          </div>
+          <div>
+            <p class="text-[8px] font-black uppercase text-neutral-600 tracking-wider">Longueur max. message</p>
+            <p class="text-neutral-400"><?= (int) ($forumConfig['forum_max_post_length'] ?? 0) ?> caractères</p>
+          </div>
+          <?php if (!empty($forumConfig['category_colors'])): ?>
+          <div>
+            <p class="text-[8px] font-black uppercase text-neutral-600 tracking-wider">Thèmes de couleurs</p>
+            <p class="text-neutral-400"><?= htmlspecialchars(implode(', ', (array) $forumConfig['category_colors'])) ?></p>
+          </div>
+          <?php endif; ?>
+          <?php if (!empty($forumConfig['labels']) && is_array($forumConfig['labels'])): ?>
+          <div>
+            <p class="text-[8px] font-black uppercase text-neutral-600 tracking-wider mb-2">Libellés</p>
+            <dl class="space-y-1.5 border-t border-white/5 pt-2">
+              <?php foreach ($forumConfig['labels'] as $k => $v): ?>
+                <div class="flex justify-between gap-2">
+                  <dt class="text-neutral-600 shrink-0"><?= htmlspecialchars($k) ?></dt>
+                  <dd class="text-neutral-400 text-right truncate" title="<?= htmlspecialchars((string) $v) ?>"><?= htmlspecialchars((string) $v) ?></dd>
+                </div>
+              <?php endforeach; ?>
+            </dl>
+          </div>
+          <?php endif; ?>
+        </div>
+      </div>
     </aside>
   </div>
 </div>

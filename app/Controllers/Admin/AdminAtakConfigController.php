@@ -40,19 +40,19 @@ class AdminAtakConfigController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        if ($request->method() !== 'POST' || !Csrf::validate($request->post('_csrf_token'))) {
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
             return Response::redirect(url('admin/atak-config'));
         }
 
         $this->atakConfigRepository->createOrUpdate((int) $tenantId, [
-            'node_url' => trim((string) $request->post('node_url', '')),
-            'jwt_secret' => trim((string) $request->post('jwt_secret', '')),
-            'arma_server_host' => trim((string) $request->post('arma_server_host', '')),
-            'arma_server_port' => $request->post('arma_server_port') !== '' ? (int) $request->post('arma_server_port') : null,
-            'arma_mod_credentials' => trim((string) $request->post('arma_mod_credentials', '')),
-            'instructions' => trim((string) $request->post('instructions', '')),
-            'default_map_slug' => trim((string) $request->post('default_map_slug', 'altis')) ?: 'altis',
+            'node_url' => trim((string) $request->input('node_url', '')),
+            'jwt_secret' => trim((string) $request->input('jwt_secret', '')),
+            'arma_server_host' => trim((string) $request->input('arma_server_host', '')),
+            'arma_server_port' => $request->input('arma_server_port') !== '' ? (int) $request->input('arma_server_port') : null,
+            'arma_mod_credentials' => trim((string) $request->input('arma_mod_credentials', '')),
+            'instructions' => trim((string) $request->input('instructions', '')),
+            'default_map_slug' => trim((string) $request->input('default_map_slug', 'altis')) ?: 'altis',
         ]);
 
         Session::flash('success', 'Configuration ATAK / Arma enregistrée.');

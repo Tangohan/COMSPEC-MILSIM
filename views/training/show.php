@@ -92,6 +92,22 @@ $image = 'https://media.defense.gov/2019/Sep/12/2002181666/2000/2000/0/190905-F-
                         <p class="text-sm text-slate-500 italic">Contenu interactif et évaluations à venir (intégration Phase 6).</p>
                     </div>
 
+                    <?php
+                    $linkedDocuments = $linkedDocuments ?? [];
+                    if (!empty($linkedDocuments)):
+                    ?>
+                    <div class="mt-10 pt-8 border-t border-slate-200">
+                        <h4 class="text-xs font-black uppercase tracking-widest text-slate-900 underline decoration-emerald-500 underline-offset-4 mb-4">Documents associés</h4>
+                        <ul class="space-y-2">
+                            <?php foreach ($linkedDocuments as $doc): ?>
+                            <li>
+                                <a href="<?= url('documents/' . htmlspecialchars($doc['slug'])) ?>" class="text-sm font-medium text-emerald-600 hover:text-emerald-800 underline"><?= htmlspecialchars($doc['title']) ?></a>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <?php endif; ?>
+
                     <div class="mt-12 flex flex-wrap gap-4">
                         <a href="<?= url('formations') ?>" class="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-emerald-600 transition-all">
                             Retour au catalogue

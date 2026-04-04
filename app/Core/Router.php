@@ -26,6 +26,24 @@ class Router
         return $this;
     }
 
+    public function put(string $path, callable|array $handler, array $middleware = []): self
+    {
+        $this->addRoute('PUT', $path, $handler, $middleware);
+        return $this;
+    }
+
+    public function patch(string $path, callable|array $handler, array $middleware = []): self
+    {
+        $this->addRoute('PATCH', $path, $handler, $middleware);
+        return $this;
+    }
+
+    public function delete(string $path, callable|array $handler, array $middleware = []): self
+    {
+        $this->addRoute('DELETE', $path, $handler, $middleware);
+        return $this;
+    }
+
     private function addRoute(string $method, string $path, callable|array $handler, array $middleware): void
     {
         $pattern = $this->pathToRegex($path);

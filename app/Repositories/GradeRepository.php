@@ -7,6 +7,10 @@ namespace App\Repositories;
 use App\Core\Database;
 use PDO;
 
+/**
+ * Référentiel grades multi-doctrine (table grades après bascule, ou grades_referentiel avant).
+ * Pas de tenant_id : référentiel global.
+ */
 class GradeRepository
 {
     private PDO $pdo;
@@ -16,39 +20,212 @@ class GradeRepository
         $this->pdo = Database::getPdo();
     }
 
-    /** @return list<array{id: int, name: string, short_name: string, nato_code: ?string, rank_order: int}> */
-    public function listForTenant(int $tenantId): array
+    private function tableName(): string
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT id, name, short_name, nato_code, rank_order FROM grades WHERE tenant_id = ? ORDER BY rank_order ASC, id ASC'
-        );
-        $stmt->execute([$tenantId]);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        return array_map(function ($r) {
-            $r['id'] = (int) $r['id'];
-            $r['rank_order'] = (int) ($r['rank_order'] ?? 0);
-            return $r;
-        }, $rows);
+        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME = 'grade_system_id' LIMIT 1");
+        return ($stmt && $stmt->fetch()) ? 'grades' : 'grades_referentiel';
     }
 
+    private function selectColumns(): string
+    {
+        return 'g.id, g.grade_system_id, g.grade_category_id, g.code, g.label_short, g.label_long, g.label_otan, g.sort_order, g.is_commissioned, g.is_active,
+            gs.code AS system_code, gs.country_code, gs.format_type AS system_format_type,
+            gc.code AS category_code, gc.label AS category_label';
+    }
+
+    private function fromClause(): string
+    {
+        return $this->tableName() . ' g
+            INNER JOIN grade_systems gs ON g.grade_system_id = gs.id
+            INNER JOIN grade_categories gc ON g.grade_category_id = gc.id';
+    }
+
+    /**
+     * Liste tous les grades actifs (tous systèmes), pour compatibilité avec listForTenant.
+     * @return list<array<string, mixed>>
+     */
+    public function listActive(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT ' . $this->selectColumns() . ' FROM ' . $this->fromClause() . ' WHERE g.is_active = 1 ORDER BY gs.country_code ASC, g.sort_order ASC, g.id ASC'
+        );
+        if ($stmt === false) {
+            return [];
+        }
+        return $this->normalizeRows($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * Liste les grades d'un système par code (ex. FR_CLASSIC, US_CLASSIC).
+     * @return list<array<string, mixed>>
+     */
+    public function listBySystemCode(string $systemCode): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT ' . $this->selectColumns() . ' FROM ' . $this->fromClause() . ' WHERE g.is_active = 1 AND gs.code = ? ORDER BY g.sort_order ASC, g.id ASC'
+        );
+        $stmt->execute([$systemCode]);
+        return $this->normalizeRows($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * Liste les grades d'un système par id.
+     * @return list<array<string, mixed>>
+     */
+    public function listBySystemId(int $systemId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT ' . $this->selectColumns() . ' FROM ' . $this->fromClause() . ' WHERE g.is_active = 1 AND g.grade_system_id = ? ORDER BY g.sort_order ASC, g.id ASC'
+        );
+        $stmt->execute([$systemId]);
+        return $this->normalizeRows($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * Pour compatibilité avec l'ancienne API : retourne tous les grades actifs (ignorant le tenant).
+     * @return list<array<string, mixed>>
+     */
+    public function listForTenant(int $tenantId): array
+    {
+        return $this->listActive();
+    }
+
+    /**
+     * Récupère un grade avec système et catégorie (référentiel).
+     * Si non trouvé et que l'ancienne table grades existe, tente findByIdLegacy (transition).
+     */
     public function findById(int $id, ?int $tenantId = null): ?array
     {
-        $sql = 'SELECT * FROM grades WHERE id = ?';
-        $params = [$id];
+        $stmt = $this->pdo->prepare(
+            'SELECT ' . $this->selectColumns() . ' FROM ' . $this->fromClause() . ' WHERE g.id = ? LIMIT 1'
+        );
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row !== false) {
+            return $this->normalizeRow($row);
+        }
         if ($tenantId !== null) {
+            return $this->findByIdLegacy($id, $tenantId);
+        }
+        return null;
+    }
+
+    /**
+     * Vérifie si la table référentiel existe (pour bascule migration).
+     */
+    public function isReferentielTablePresent(): bool
+    {
+        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades_referentiel' LIMIT 1");
+        if ($stmt && $stmt->fetch()) {
+            return true;
+        }
+        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME = 'grade_system_id' LIMIT 1");
+        return $stmt && (bool) $stmt->fetch();
+    }
+
+    /**
+     * Rétrocompat : si l'app utilise encore l'ancienne table grades (tenant), la lire.
+     * À utiliser uniquement avant la bascule complète.
+     */
+    public function findByIdLegacy(int $id, ?int $tenantId = null): ?array
+    {
+        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades_legacy' LIMIT 1");
+        $table = ($stmt && $stmt->fetch()) ? 'grades_legacy' : null;
+        if ($table === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME = 'tenant_id' LIMIT 1");
+            if ($stmt && $stmt->fetch()) {
+                $table = 'grades';
+            }
+        }
+        if ($table === null) {
+            return null;
+        }
+        $sql = 'SELECT id, name AS label_long, short_name AS label_short, nato_code AS label_otan, rank_order AS sort_order FROM ' . $table . ' WHERE id = ?';
+        $params = [$id];
+        if ($tenantId !== null && $table === 'grades') {
             $sql .= ' AND tenant_id = ?';
             $params[] = $tenantId;
         }
         $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        if (!$row) {
+            return null;
+        }
+        $row['country_code'] = 'FR';
+        $row['category_code'] = 'OFFICIER';
+        $row['system_code'] = 'FR_CLASSIC';
+        $row['category_label'] = 'Officier';
+        return $row;
     }
 
-    public function updateNatoCode(int $id, int $tenantId, ?string $natoCode): bool
+    private function normalizeRow(array $r): array
     {
-        $stmt = $this->pdo->prepare('UPDATE grades SET nato_code = ? WHERE id = ? AND tenant_id = ?');
-        $stmt->execute([$natoCode ?: null, $id, $tenantId]);
+        $r['id'] = (int) $r['id'];
+        $r['grade_system_id'] = (int) $r['grade_system_id'];
+        $r['grade_category_id'] = (int) $r['grade_category_id'];
+        $r['sort_order'] = (int) ($r['sort_order'] ?? 0);
+        $r['is_commissioned'] = (int) ($r['is_commissioned'] ?? 0);
+        $r['is_active'] = (int) ($r['is_active'] ?? 1);
+        return $r;
+    }
+
+    /** @param list<array<string, mixed>> $rows */
+    private function normalizeRows(array $rows): array
+    {
+        return array_map([$this, 'normalizeRow'], $rows);
+    }
+
+    public function create(array $data): int
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO ' . $this->tableName() . ' (grade_system_id, grade_category_id, code, label_short, label_long, label_otan, sort_order, is_commissioned, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+        );
+        $stmt->execute([
+            (int) $data['grade_system_id'],
+            (int) $data['grade_category_id'],
+            $data['code'],
+            $data['label_short'],
+            $data['label_long'],
+            $data['label_otan'] ?? null,
+            (int) ($data['sort_order'] ?? 0),
+            !empty($data['is_commissioned']) ? 1 : 0,
+            isset($data['is_active']) ? (int) $data['is_active'] : 1,
+        ]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    public function update(int $id, array $data): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE ' . $this->tableName() . ' SET grade_system_id = ?, grade_category_id = ?, code = ?, label_short = ?, label_long = ?, label_otan = ?, sort_order = ?, is_commissioned = ?, is_active = ?, updated_at = NOW() WHERE id = ?'
+        );
+        $stmt->execute([
+            (int) $data['grade_system_id'],
+            (int) $data['grade_category_id'],
+            $data['code'],
+            $data['label_short'],
+            $data['label_long'],
+            $data['label_otan'] ?? null,
+            (int) ($data['sort_order'] ?? 0),
+            !empty($data['is_commissioned']) ? 1 : 0,
+            isset($data['is_active']) ? (int) $data['is_active'] : 1,
+            $id,
+        ]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function setActive(int $id, bool $active): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE ' . $this->tableName() . ' SET is_active = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$active ? 1 : 0, $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function updateSortOrder(int $id, int $sortOrder): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE ' . $this->tableName() . ' SET sort_order = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$sortOrder, $id]);
         return $stmt->rowCount() > 0;
     }
 }

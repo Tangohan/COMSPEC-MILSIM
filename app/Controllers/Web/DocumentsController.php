@@ -4,15 +4,26 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\DocumentCategoryRepository;
+use App\Repositories\DocumentLinkRepository;
 use App\Repositories\DocumentRepository;
+use App\Services\Audit\AuditService;
+use App\Services\Documents\DocumentAccessService;
 
 class DocumentsController
 {
+    private const STORAGE_BASE = 'storage/documents/';
+
     public function __construct(
-        private DocumentRepository $documentRepository
+        private DocumentRepository $documentRepository,
+        private DocumentCategoryRepository $categoryRepository,
+        private DocumentLinkRepository $linkRepository,
+        private DocumentAccessService $documentAccessService,
+        private AuditService $auditService
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -21,33 +32,139 @@ class DocumentsController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $docs = $this->documentRepository->listForTenant((int) $tenantId);
+        if (Gate::getInstance()->deny('documents.view')) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
+        }
+        $tenantId = (int) $tenantId;
+        $categoryId = $request->input('category') ? (int) $request->input('category') : null;
+        $search = $request->input('q') ? trim((string) $request->input('q')) : null;
+        $entityType = $request->input('entity_type') ? trim((string) $request->input('entity_type')) : null;
+        $entityId = $request->input('entity_id') ? (int) $request->input('entity_id') : null;
+        $docs = $this->documentRepository->listForTenant($tenantId, $categoryId, 'published', $search, $entityType, $entityId);
+        $userId = (int) Session::get('user_id');
+        $docs = array_filter($docs, fn ($d) => $this->documentAccessService->canRead($d, $userId, $tenantId));
+        $categoriesList = $this->categoryRepository->listForTenant($tenantId);
         return Response::view('layout.main', [
             'content' => 'documents.index',
             'title' => 'Documents',
             'documents' => $docs,
+            'categories' => $categoriesList,
+            'currentCategoryId' => $categoryId,
+            'search' => $search,
         ]);
     }
 
-    public function download(Request $request, array $params = []): Response
+    public function show(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if (Gate::getInstance()->deny('documents.view')) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
+        }
+        $slug = $params['slug'] ?? '';
+        $doc = $this->documentRepository->findBySlug($slug, (int) $tenantId);
+        if (!$doc) {
+            return (new Response())->setStatusCode(404)->setBody('Document non trouvé.');
+        }
+        if (!$this->documentAccessService->canRead($doc, (int) Session::get('user_id'), (int) $tenantId)) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé à ce document.');
+        }
+        if (($doc['status'] ?? '') !== 'published') {
+            return (new Response())->setStatusCode(404)->setBody('Document non disponible.');
+        }
+        if (empty($doc['file_path']) || empty($doc['mime_type'])) {
+            return (new Response())->setStatusCode(404)->setBody('Aucune version de fichier.');
+        }
+        $viewType = 'pdf';
+        if (str_starts_with($doc['mime_type'], 'image/')) {
+            $viewType = 'image';
+        }
+        return Response::view('layout.main', [
+            'content' => 'documents.show',
+            'title' => $doc['title'],
+            'document' => $doc,
+            'viewType' => $viewType,
+        ]);
+    }
+
+    /** Stream du fichier pour affichage inline (lecteur PDF / image). */
+    public function file(Request $request, array $params = []): Response
     {
         $tenantId = Session::get('tenant_id');
         if (!$tenantId) {
             return (new Response())->setStatusCode(403)->setBody('Non autorisé');
+        }
+        if (Gate::getInstance()->deny('documents.view')) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
         }
         $id = (int) ($params['id'] ?? 0);
         $doc = $this->documentRepository->findById($id, (int) $tenantId);
         if (!$doc || empty($doc['file_path'])) {
             return (new Response())->setStatusCode(404)->setBody('Document non trouvé');
         }
-        $fullPath = base_path('storage/uploads/' . $doc['file_path']);
+        if (!$this->documentAccessService->canRead($doc, (int) Session::get('user_id'), (int) $tenantId)) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé');
+        }
+        if (($doc['status'] ?? '') !== 'published') {
+            return (new Response())->setStatusCode(404)->setBody('Document non disponible');
+        }
+        $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
         if (!is_file($fullPath)) {
             return (new Response())->setStatusCode(404)->setBody('Fichier absent');
         }
         $response = new Response();
         $response->header('Content-Type', $doc['mime_type'] ?: 'application/octet-stream');
+        $response->header('Content-Disposition', 'inline; filename="' . basename($doc['file_path']) . '"');
+        $response->header('Content-Length', (string) filesize($fullPath));
+        $response->setBodyStream(static function () use ($fullPath): void {
+            $h = fopen($fullPath, 'rb');
+            if ($h) {
+                fpassthru($h);
+                fclose($h);
+            }
+        });
+        return $response;
+    }
+
+    public function download(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId) {
+            return (new Response())->setStatusCode(403)->setBody('Non autorisé');
+        }
+        if (Gate::getInstance()->deny('documents.view')) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $doc = $this->documentRepository->findById($id, (int) $tenantId);
+        if (!$doc || empty($doc['file_path'])) {
+            return (new Response())->setStatusCode(404)->setBody('Document non trouvé');
+        }
+        if (!$this->documentAccessService->canRead($doc, (int) Session::get('user_id'), (int) $tenantId)) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé');
+        }
+        if (($doc['status'] ?? '') !== 'published') {
+            return (new Response())->setStatusCode(404)->setBody('Document non disponible');
+        }
+        $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
+        if (!is_file($fullPath)) {
+            return (new Response())->setStatusCode(404)->setBody('Fichier absent');
+        }
+        $this->auditService->logDocumentDownloaded((int) $tenantId, $userId ? (int) $userId : 0, $id);
+        $response = new Response();
+        $response->header('Content-Type', $doc['mime_type'] ?: 'application/octet-stream');
         $response->header('Content-Disposition', 'attachment; filename="' . basename($doc['file_path']) . '"');
-        $response->setBody((string) file_get_contents($fullPath));
+        $response->header('Content-Length', (string) filesize($fullPath));
+        $response->setBodyStream(static function () use ($fullPath): void {
+            $h = fopen($fullPath, 'rb');
+            if ($h) {
+                fpassthru($h);
+                fclose($h);
+            }
+        });
         return $response;
     }
 }

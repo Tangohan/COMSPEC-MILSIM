@@ -104,8 +104,10 @@
 
 .post-role-frame.role-admin::before { background: #ef4444; }
 .post-role-frame.role-modo::before { background: #f59e0b; }
+.post-role-frame.role-veilleur::before { background: #d946ef; }
 .post-role-frame.role-animateur::before { background: #8b5cf6; }
 .post-role-frame.role-first::before { background: #f97316; }
+.post-role-frame.role-bot::before { background: linear-gradient(180deg, #6366f1, #8b5cf6); }
 .post-role-frame.role-default::before { background: #6366f1; }
 
 /* Forum post content */
@@ -142,3 +144,29 @@
 .topic-row.topic-locked { border-left-color: rgba(245, 158, 11, 0.6); }
 .topic-row.topic-admin { border-left-color: rgba(249, 115, 22, 0.6); }
 .topic-row.topic-new { border-left-color: rgba(34, 197, 94, 0.6); }
+.topic-row.topic-archived { border-left-color: rgba(245, 158, 11, 0.6); }
+
+@keyframes cascadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-cascadeIn {
+  animation: cascadeIn 0.35s ease-out forwards;
+}
+
+/* Custom select (csel) */
+.csel-wrapper .csel-chevron {
+  transition: transform 0.2s ease;
+}
+.csel-wrapper button[aria-expanded="true"] {
+  border-color: rgba(99, 102, 241, 0.45);
+}
+.csel-option[aria-selected="true"] {
+  background: rgba(99, 102, 241, 0.15);
+}

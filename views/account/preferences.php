@@ -33,6 +33,22 @@ $baseUrl = url('');
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
+                <label for="steam_id" class="block text-sm font-medium text-slate-700 mb-1">Steam ID (liaison ATAK)</label>
+                <input type="text" name="steam_id" id="steam_id" value="<?= htmlspecialchars($user['steam_id'] ?? '') ?>" placeholder="76561198…" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900" maxlength="20">
+                <?php if (!empty($errors['steam_id'])): foreach ($errors['steam_id'] as $e): ?>
+                <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
+                <?php endforeach; endif; ?>
+            </div>
+            <div>
+                <label for="arma_callsign" class="block text-sm font-medium text-slate-700 mb-1">Indicatif Arma (liaison ATAK)</label>
+                <input type="text" name="arma_callsign" id="arma_callsign" value="<?= htmlspecialchars($profile['arma_callsign'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900" maxlength="100">
+                <?php if (!empty($errors['arma_callsign'])): foreach ($errors['arma_callsign'] as $e): ?>
+                <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
+                <?php endforeach; endif; ?>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
                 <label for="first_name" class="block text-sm font-medium text-slate-700 mb-1">Prénom</label>
                 <input type="text" name="first_name" id="first_name" value="<?= htmlspecialchars($profile['first_name'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900" maxlength="100">
             </div>
@@ -60,5 +76,5 @@ $baseUrl = url('');
         </div>
         <button type="submit" class="py-2.5 px-4 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800">Enregistrer</button>
     </form>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Mon compte</a></p>
+    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Paramètres</a></p>
 </div>

@@ -1,5 +1,6 @@
 # Athena — public/.htaccess
 # Réécriture vers index.php (front controller)
+# Si l’app est servie sous https://athena.ttrd.fr/public/ , définir : RewriteBase /public/
 
 <IfModule mod_rewrite.c>
     RewriteEngine On

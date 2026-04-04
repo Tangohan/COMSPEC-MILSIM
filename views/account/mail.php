@@ -38,5 +38,5 @@ $error = $error ?? null;
         </div>
         <button type="submit" class="py-2.5 px-4 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800">Mettre à jour l'email</button>
     </form>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Mon compte</a></p>
+    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Paramètres</a></p>
 </div>

@@ -42,6 +42,24 @@ class ForumReportRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function listHandled(int $tenantId, int $limit = 20): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT fr.*, u.display_name AS reporter_name,
+                    fp.topic_id AS post_topic_id, ft.title AS topic_title, hu.display_name AS handled_by_name
+             FROM forum_reports fr
+             LEFT JOIN users u ON u.id = fr.reporter_id
+             LEFT JOIN forum_posts fp ON fp.id = fr.post_id
+             LEFT JOIN forum_topics ft ON ft.id = COALESCE(fr.topic_id, fp.topic_id)
+             LEFT JOIN users hu ON hu.id = fr.handled_by
+             WHERE fr.tenant_id = ? AND fr.status = \'handled\'
+             ORDER BY fr.handled_at DESC
+             LIMIT ' . (int) $limit
+        );
+        $stmt->execute([$tenantId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function markHandled(int $id, int $tenantId, int $handledBy): bool
     {
         $stmt = $this->pdo->prepare('UPDATE forum_reports SET status = \'handled\', handled_by = ?, handled_at = NOW() WHERE id = ? AND tenant_id = ?');

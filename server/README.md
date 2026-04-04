@@ -1,6 +1,8 @@
-# COMSPEC ATAK – Backend
+# COMSPEC ATAK – Backend (déprécié / archivé)
 
-Serveur Node.js pour l’interface ATAK : API REST, WebSocket (Socket.io), SQLite, signaling WebRTC.
+**Depuis la migration Full PHP**, le C2 ATAK est assuré par l’API REST PHP (voir `app/Controllers/Api/AtakApiController.php`). Ce serveur Node.js n’est plus nécessaire en production.
+
+Ancien rôle : API REST, WebSocket (Socket.io), SQLite, signaling WebRTC.
 
 ## Démarrage
 

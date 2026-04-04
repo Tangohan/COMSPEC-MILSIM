@@ -2,8 +2,18 @@
 $base = url('');
 $atakToken = $atakToken ?? '';
 $nodeAtakUrl = $nodeAtakUrl ?? '';
+$visitorIp = $visitorIp ?? '';
 $atakConfig = $atakConfig ?? null;
 $atakMapConfig = $atakMapConfig ?? null;
+$atakMapsList = $atakMapsList ?? [];
+$atakMapsConfigs = $atakMapsConfigs ?? [];
+$atakWorkspaces = $atakWorkspaces ?? [];
+$atakDefaultMapId = (int)($atakDefaultMapId ?? 1);
+$atakCallsignToUser = $atakCallsignToUser ?? [];
+$currentUser = $currentUser ?? null;
+$atakUserForJs = $atakUserForJs ?? null;
+$canAccessAdminAtakConfig = $canAccessAdminAtakConfig ?? false;
+$atakModDownloadUrl = $atakModDownloadUrl ?? null;
 $hasGameConfig = $atakConfig && ($atakConfig['arma_server_host'] ?? $atakConfig['arma_mod_credentials'] ?? $atakConfig['instructions'] ?? null);
 $atakMapConfigForJs = null;
 if ($atakMapConfig) {
@@ -18,6 +28,8 @@ if ($atakMapConfig) {
     'tileSize' => (int)($c['tileSize'] ?? 212),
     'attribution' => $c['attribution'] ?? '&copy; Bohemia Interactive',
     'crs' => $c['crs'] ?? ['factorx' => 0.006839, 'factory' => 0.006836, 'tileWidth' => 212],
+    'offsetX' => isset($c['offset_x']) ? (float)$c['offset_x'] : 0,
+    'offsetY' => isset($c['offset_y']) ? (float)$c['offset_y'] : 0,
   ];
 }
 ?>
@@ -32,9 +44,17 @@ if ($atakMapConfig) {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
-    window.NODE_ATAK_URL = <?= json_encode($nodeAtakUrl) ?>;
+    window.ATAK_API_BASE = <?= json_encode($base) ?>;
+    window.NODE_ATAK_URL = '';
     window.ATAK_TEAM_CONFIG = <?= json_encode($atakConfig ?: new stdClass()) ?>;
+    window.ATAK_USER = <?= json_encode($atakUserForJs ?: new stdClass()) ?>;
     <?php if ($atakMapConfigForJs): ?>window.ATAK_MAP_CONFIG = <?= json_encode($atakMapConfigForJs) ?>;<?php endif; ?>
+    window.ATAK_MAPS_LIST = <?= json_encode(array_map(function ($m) { return ['slug' => $m['slug'] ?? '', 'label' => $m['label'] ?? $m['slug'] ?? 'Carte']; }, $atakMapsList)) ?>;
+    window.ATAK_MAPS_CONFIGS = <?= json_encode($atakMapsConfigs) ?>;
+    window.ATAK_WORKSPACES = <?= json_encode($atakWorkspaces) ?>;
+    window.ATAK_DEFAULT_MAP_ID = <?= (int)$atakDefaultMapId ?>;
+    window.ATAK_NODE_URL = <?= json_encode($nodeAtakUrl ?? '') ?>;
+    window.ATAK_CALLSIGN_TO_USER = <?= json_encode($atakCallsignToUser) ?>;
   </script>
 </head>
 <body class="atak-page">
@@ -48,30 +68,83 @@ if ($atakMapConfig) {
       <span class="dot"></span>
       <span>Réseau actif</span>
     </div>
-    <a href="<?= url('dashboard') ?>" style="color: var(--atak-muted); font-size: 0.75rem;">Dashboard</a>
+    <div class="atak-header-links">
+      <?php if (count($atakWorkspaces) > 1): ?>
+      <label class="atak-header-select-wrap">
+        <span class="atak-header-select-label">Serveur</span>
+        <select id="atak-workspace-select" class="atak-header-select" title="Choisir le serveur / mission">
+          <?php foreach ($atakWorkspaces as $w): ?>
+          <option value="<?= (int)($w['mapId'] ?? 1) ?>" <?= ($w['mapId'] ?? 0) == $atakDefaultMapId ? 'selected' : '' ?>><?= htmlspecialchars($w['label'] ?? '') ?></option>
+          <?php endforeach; ?>
+        </select>
+      </label>
+      <?php endif; ?>
+      <?php if (count($atakMapsList) > 1): ?>
+      <label class="atak-header-select-wrap">
+        <span class="atak-header-select-label">Carte</span>
+        <select id="atak-map-select" class="atak-header-select" title="Choisir la carte">
+          <?php foreach ($atakMapsList as $m): ?>
+          <option value="<?= htmlspecialchars($m['slug'] ?? '') ?>" <?= ($atakMapConfig && ($atakMapConfig['slug'] ?? '') === ($m['slug'] ?? '')) ? 'selected' : '' ?>><?= htmlspecialchars($m['label'] ?? $m['slug'] ?? 'Carte') ?></option>
+          <?php endforeach; ?>
+        </select>
+      </label>
+      <?php endif; ?>
+      <a href="<?= url('overwatch') ?>" class="atak-header-link" title="Carte C2 Overwatch">Overwatch</a>
+      <a href="<?= url('dashboard') ?>" class="atak-header-link">Dashboard</a>
+      <button type="button" class="atak-btn-account" id="atak-btn-account" title="Paramètres">Paramètres</button>
+    </div>
   </header>
 
-  <?php if ($hasGameConfig): ?>
-  <div class="atak-game-config" id="atak-game-config" style="background: rgba(0,0,0,0.85); border-bottom: 1px solid var(--atak-border); padding: 0.5rem 1rem; font-size: 0.75rem;">
-    <button type="button" id="atak-game-config-toggle" style="color: var(--atak-muted); cursor: pointer;">▼ Configuration pour le jeu (Arma / mod)</button>
-    <div id="atak-game-config-body" style="display:none; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--atak-border);">
-      <?php if (!empty($atakConfig['arma_server_host'])): ?>
-        <p><strong>Serveur Arma :</strong> <?= htmlspecialchars($atakConfig['arma_server_host']) ?><?= !empty($atakConfig['arma_server_port']) ? ':' . (int)$atakConfig['arma_server_port'] : '' ?></p>
-      <?php endif; ?>
-      <?php if (!empty($atakConfig['arma_mod_credentials'])): ?>
-        <p><strong>Identifiants / config mod :</strong></p>
-        <pre style="white-space: pre-wrap; word-break: break-all; margin: 0.25rem 0; font-size: 0.7rem;"><?= htmlspecialchars($atakConfig['arma_mod_credentials']) ?></pre>
-      <?php endif; ?>
-      <?php if (!empty($atakConfig['instructions'])): ?>
-        <p><strong>Instructions :</strong></p>
-        <p style="white-space: pre-wrap; margin: 0.25rem 0;"><?= nl2br(htmlspecialchars($atakConfig['instructions'])) ?></p>
-      <?php endif; ?>
-      <p style="margin-top: 0.5rem;"><a href="<?= url('atak/tuto') ?>" style="color: var(--atak-muted); text-decoration: underline;">Guide complet — Tuto mod Arma</a></p>
+  <div class="atak-account-overlay" id="atak-account-overlay" aria-hidden="true"></div>
+  <aside class="atak-account-panel" id="atak-account-panel" aria-labelledby="atak-account-title">
+    <div class="atak-account-panel-head">
+      <h2 id="atak-account-title" class="atak-account-panel-title">Données du compte</h2>
+      <button type="button" class="atak-account-panel-close" id="atak-account-panel-close" aria-label="Fermer">×</button>
     </div>
-  </div>
-  <?php endif; ?>
+    <div class="atak-account-panel-body">
+      <?php if ($currentUser): ?>
+      <section class="atak-account-section">
+        <h3 class="atak-account-section-title">Compte</h3>
+        <p><strong>Email :</strong> <?= htmlspecialchars($currentUser['email'] ?? '') ?></p>
+        <p><strong>Nom affiché :</strong> <?= htmlspecialchars($currentUser['display_name'] ?? '') ?></p>
+        <p><strong>Indicatif :</strong> <?= htmlspecialchars($currentUser['callsign'] ?? '—') ?></p>
+        <p><a href="<?= url('account') ?>">Gérer mon compte</a></p>
+      </section>
+      <section class="atak-account-section">
+        <h3 class="atak-account-section-title">Liaison Steam</h3>
+        <p><?= !empty($currentUser['steam_id']) ? htmlspecialchars($currentUser['steam_id']) : 'Non renseignée' ?></p>
+        <p><a href="<?= url('account/preferences') ?>">Modifier (préférences)</a></p>
+      </section>
+      <section class="atak-account-section">
+        <h3 class="atak-account-section-title">Liaison Arma</h3>
+        <p><?= !empty($currentUser['arma_callsign']) ? htmlspecialchars($currentUser['arma_callsign']) : 'Non renseignée' ?></p>
+        <p><a href="<?= url('account/preferences') ?>">Modifier (préférences)</a></p>
+      </section>
+      <section class="atak-account-section">
+        <h3 class="atak-account-section-title">Liaison serveur</h3>
+        <?php if ($atakConfig && ($atakConfig['arma_server_host'] ?? '')): ?>
+        <p><strong>Serveur :</strong> <?= htmlspecialchars($atakConfig['arma_server_host']) ?><?= !empty($atakConfig['arma_server_port']) ? ':' . (int)$atakConfig['arma_server_port'] : '' ?></p>
+        <p><a href="<?= url('atak/tuto') ?>">Guide mod Arma</a></p>
+        <?php if ($canAccessAdminAtakConfig): ?>
+        <p><a href="<?= url('admin/atak-config') ?>">Configurer le mod et le serveur</a></p>
+        <?php endif; ?>
+        <?php else: ?>
+        <p>Aucune config serveur.</p>
+        <?php if ($canAccessAdminAtakConfig): ?>
+        <p><a href="<?= url('admin/atak-config') ?>">Configurer le mod et le serveur</a></p>
+        <?php endif; ?>
+        <?php endif; ?>
+      </section>
+      <?php else: ?>
+      <p>Non connecté.</p>
+      <p><a href="<?= url('login') ?>">Se connecter</a></p>
+      <?php endif; ?>
+    </div>
+  </aside>
 
-  <div class="atak-connection-lost" id="atak-connection-lost">Connexion perdue. Reconnexion…</div>
+  <div class="atak-connection-lost" id="atak-connection-lost" role="alert"><span id="atak-connection-lost-msg">Connexion perdue. Reconnexion…</span></div>
+  <div class="atak-error-toast" id="atak-error-toast" role="alert" aria-live="polite"></div>
+  <div class="atak-notification-toast" id="atak-notification-toast" role="status" aria-live="polite"></div>
 
   <div class="atak-main">
     <aside class="atak-panel-left" id="atak-panel-left">
@@ -84,10 +157,7 @@ if ($atakMapConfig) {
       </div>
       <div class="atak-tabs-content active" id="tab-cams">
         <div class="atak-cams-list" id="atak-cams-list">
-          <p class="atak-muted" style="padding: 0.5rem; font-size: 0.8rem;">Aucun flux. Connectez une helmet cam ou CTAB.</p>
-        </div>
-        <div style="padding: 0.5rem; border-top: 1px solid var(--atak-border);">
-          <label style="font-size: 0.75rem;">Photo CTAB <input type="file" id="atak-intel-upload" accept="image/*" style="display:block;margin-top:4px;font-size:0.8rem;" /></label>
+          <p class="atak-muted" style="padding: 0.5rem; font-size: 0.8rem;">Aucun flux. Les photos CTAB envoyées depuis Arma apparaîtront ici.</p>
         </div>
         <div id="atak-intel-photos"></div>
       </div>
@@ -118,6 +188,9 @@ if ($atakMapConfig) {
           </div>
         </div>
         <div class="atak-jtac-list" id="atak-jtac-list"></div>
+        <div class="atak-laser-codes-wrap" id="atak-laser-codes-wrap">
+          <div id="atak-laser-codes-list"></div>
+        </div>
       </div>
     </aside>
 
@@ -126,6 +199,14 @@ if ($atakMapConfig) {
     </div>
 
     <aside class="atak-panel-right" id="atak-panel-right">
+      <div class="atak-air-assets-header">
+        <div class="atak-air-assets-title">Air Support Assets</div>
+      </div>
+      <div class="atak-air-assets-list" id="atak-air-assets-list">
+        <div class="atak-air-assets-empty" id="atak-air-assets-empty">
+          <span>Aucun aéronef enregistré. Les pilotes déclarent le Flight Manifest depuis le menu Arma.</span>
+        </div>
+      </div>
       <div class="atak-units-header">
         <div class="atak-units-title">All Workspaces</div>
         <div class="atak-filter">
@@ -146,8 +227,108 @@ if ($atakMapConfig) {
     </aside>
   </div>
 
+  <section class="atak-game-config" id="atak-game-config" aria-labelledby="atak-game-config-title">
+    <button type="button" id="atak-game-config-toggle" class="atak-game-config-toggle" aria-expanded="false" aria-controls="atak-game-config-body">
+      <span class="atak-game-config-toggle-icon" aria-hidden="true">▼</span>
+      <span id="atak-game-config-title">Configuration pour le jeu (Arma / mod)</span>
+    </button>
+    <div id="atak-game-config-body" class="atak-game-config-body" hidden>
+      <div class="atak-game-config-inner">
+        <?php if (!empty($nodeAtakUrl)): ?>
+        <div class="atak-game-config-block">
+          <p class="atak-game-config-label">URL du nœud utilisée <span class="atak-game-config-hint">(à saisir dans le mod : Paramètres → Addons → COMSPEC Overwatch)</span></p>
+          <div class="atak-game-config-url-wrap">
+            <pre class="atak-game-config-url" id="atak-node-url-copy"><?= htmlspecialchars($nodeAtakUrl) ?></pre>
+            <button type="button" class="atak-game-config-copy" id="atak-copy-node-url" title="Copier l'URL">Copier</button>
+          </div>
+        </div>
+        <?php else: ?>
+          <p class="atak-game-config-warn" id="atak-no-node-url">Aucune URL nœud configurée. Configurez l'URL du nœud ATAK dans <a href="<?= url('admin/atak-config') ?>">Admin → Configuration ATAK</a> pour activer la liaison.</p>
+        <?php endif; ?>
+        <div class="atak-game-config-block">
+          <p class="atak-game-config-label">Votre IP (visiteur)</p>
+          <p class="atak-game-config-value" id="atak-visitor-ip"><?= htmlspecialchars($visitorIp) ?: '—' ?></p>
+        </div>
+        <?php if (!empty($atakModDownloadUrl)): ?>
+        <div class="atak-game-config-block">
+          <p class="atak-game-config-label">Mod dédié ATAK</p>
+          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download" download>Télécharger le mod COMSPEC Overwatch</a></p>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($atakConfig['arma_server_host'])): ?>
+        <div class="atak-game-config-block">
+          <p class="atak-game-config-label">Serveur Arma</p>
+          <p class="atak-game-config-value"><?= htmlspecialchars($atakConfig['arma_server_host']) ?><?= !empty($atakConfig['arma_server_port']) ? ':' . (int)$atakConfig['arma_server_port'] : '' ?></p>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($atakConfig['arma_mod_credentials'])): ?>
+        <div class="atak-game-config-block">
+          <p class="atak-game-config-label">Identifiants / config mod</p>
+          <pre class="atak-game-config-pre"><?= htmlspecialchars($atakConfig['arma_mod_credentials']) ?></pre>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($atakConfig['instructions'])): ?>
+        <div class="atak-game-config-block">
+          <p class="atak-game-config-label">Instructions</p>
+          <p class="atak-game-config-value atak-game-config-instructions"><?= nl2br(htmlspecialchars($atakConfig['instructions'])) ?></p>
+        </div>
+        <?php endif; ?>
+        <div class="atak-game-config-footer">
+          <a href="<?= url('atak/setup') ?>" class="atak-game-config-link">Assistant Mod Arma (installation, config, vérification)</a>
+          <a href="<?= url('atak/tuto') ?>" class="atak-game-config-link">Guide complet — Tuto mod Arma</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="atak-health-section" id="atak-health-section" aria-labelledby="atak-health-title">
+    <button type="button" id="atak-health-toggle" class="atak-game-config-toggle" aria-expanded="false" aria-controls="atak-health-body">
+      <span class="atak-game-config-toggle-icon" aria-hidden="true">▼</span>
+      <span id="atak-health-title">État de santé</span>
+    </button>
+    <div id="atak-health-body" class="atak-game-config-body atak-health-body" hidden>
+      <div class="atak-game-config-inner">
+        <div class="atak-health-grid">
+          <div class="atak-health-row">
+            <span class="atak-health-label">Noeuds API</span>
+            <span class="atak-health-cell" id="health-node-url">—</span>
+            <span class="atak-health-status" id="health-node-status">—</span>
+          </div>
+          <div class="atak-health-row">
+            <span class="atak-health-label">Connexion</span>
+            <span class="atak-health-cell" id="health-socket-state">—</span>
+            <span class="atak-health-cell atak-health-muted" id="health-socket-url">—</span>
+          </div>
+          <div class="atak-health-row">
+            <span class="atak-health-label">Base de données</span>
+            <span class="atak-health-cell" id="health-db">—</span>
+          </div>
+          <div class="atak-health-row">
+            <span class="atak-health-label">Mod / DLL</span>
+            <span class="atak-health-cell" id="health-arma">—</span>
+          </div>
+          <div class="atak-health-row">
+            <span class="atak-health-label">Liaisons actives</span>
+            <span class="atak-health-cell" id="health-units-count">—</span>
+            <span class="atak-health-cell atak-health-muted" id="health-active-callsigns">—</span>
+          </div>
+          <div class="atak-health-row">
+            <span class="atak-health-label">Erreur tchat</span>
+            <span class="atak-health-cell atak-health-err" id="health-chat-error">—</span>
+          </div>
+          <div class="atak-health-row">
+            <span class="atak-health-label">Erreur pings</span>
+            <span class="atak-health-cell atak-health-err" id="health-pings-error">—</span>
+          </div>
+        </div>
+        <div class="atak-game-config-footer">
+          <button type="button" class="atak-health-refresh" id="atak-health-refresh">Actualiser</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
   <script src="<?= $base ?>/assets/js/atak-map-crs.js"></script>
   <?php if (!$atakMapConfigForJs): ?><script src="<?= $base ?>/assets/js/maps/altis.js"></script><?php endif; ?>
   <script src="<?= $base ?>/assets/js/atak-map.js"></script>
@@ -157,10 +338,62 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-pings.js"></script>
   <script src="<?= $base ?>/assets/js/atak-jtac.js"></script>
   <script src="<?= $base ?>/assets/js/atak-cams.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-air-assets.js"></script>
   <script>
     (function () {
-      var mapId = 1;
+      window.ATAKShowError = function (msg) {
+        var el = document.getElementById('atak-error-toast');
+        if (!el) return;
+        el.textContent = msg || 'Erreur';
+        el.classList.add('show');
+        clearTimeout(el._toastTimer);
+        el._toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
+      };
+      window.ATAKShowNotification = function (msg) {
+        var el = document.getElementById('atak-notification-toast');
+        if (!el) return;
+        el.textContent = msg || '';
+        el.classList.add('show');
+        clearTimeout(el._toastTimer);
+        el._toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
+      };
+
+      var mapId = (window.ATAK_DEFAULT_MAP_ID != null && window.ATAK_DEFAULT_MAP_ID > 0) ? window.ATAK_DEFAULT_MAP_ID : 1;
+      ATAKSocket.setMapId(mapId);
+      var mapSelect = document.getElementById('atak-map-select');
+      var workspaceSelect = document.getElementById('atak-workspace-select');
+      if (workspaceSelect && window.ATAK_WORKSPACES && window.ATAK_WORKSPACES.length > 0) {
+        workspaceSelect.addEventListener('change', function () {
+          var mid = parseInt(this.value, 10);
+          if (isNaN(mid)) return;
+          ATAKSocket.setMapId(mid);
+          if (window.ATAKUnits) ATAKUnits.fetchUnits();
+          if (window.ATAKChat) ATAKChat.fetchMessages();
+          if (window.ATAKPings) ATAKPings.fetchPings();
+          if (window.ATAKJTAC && window.ATAKJTAC.fetchCas) window.ATAKJTAC.fetchCas();
+          else if (window.ATAKJTAC && window.ATAKJTAC.fetchNineLines) window.ATAKJTAC.fetchNineLines();
+          if (window.ATAKMap && window.ATAKMap.pollMarkers) window.ATAKMap.pollMarkers();
+        });
+      }
+      if (window.ATAK_MAPS_CONFIGS && window.ATAK_MAPS_LIST && window.ATAK_MAPS_LIST.length > 0) {
+        try {
+          var savedSlug = localStorage.getItem('atak_map_slug');
+          if (savedSlug && window.ATAK_MAPS_CONFIGS[savedSlug]) {
+            window.ATAK_MAP_CONFIG = window.ATAK_MAPS_CONFIGS[savedSlug];
+            if (mapSelect) mapSelect.value = savedSlug;
+          }
+        } catch (e) {}
+      }
       ATAKMap.init(mapId);
+      if (mapSelect && window.ATAK_MAPS_CONFIGS) {
+        mapSelect.addEventListener('change', function () {
+          var slug = this.value;
+          if (!slug || !window.ATAK_MAPS_CONFIGS[slug]) return;
+          window.ATAK_MAP_CONFIG = window.ATAK_MAPS_CONFIGS[slug];
+          try { localStorage.setItem('atak_map_slug', slug); } catch (e) {}
+          ATAKMap.init(mapId);
+        });
+      }
 
       function updateZulu() {
         var d = new Date();
@@ -172,18 +405,34 @@ if ($atakMapConfig) {
       updateZulu();
       setInterval(updateZulu, 1000);
 
+      var statusEl = document.getElementById('atak-status');
+      var connectionLostEl = document.getElementById('atak-connection-lost');
       ATAKSocket.connect({
         mapId: mapId,
-        serverUrl: window.ATAKSocket.getApiBase(),
         onConnect: function () {
-          document.getElementById('atak-status').classList.remove('offline');
-          document.getElementById('atak-connection-lost').classList.remove('show');
-        },
-        onConnectionLost: function () {
-          document.getElementById('atak-status').classList.add('offline');
-          document.getElementById('atak-connection-lost').classList.add('show');
+          if (statusEl) statusEl.classList.remove('offline');
+          if (statusEl) { var sp = statusEl.querySelector('span:last-child'); if (sp) sp.textContent = 'Réseau actif'; }
+          if (connectionLostEl) connectionLostEl.classList.remove('show');
         }
       });
+
+      function atakPoll() {
+        if (window.ATAKUnits) ATAKUnits.fetchUnits();
+        if (window.ATAKChat) ATAKChat.fetchMessages();
+        if (window.ATAKPings) ATAKPings.fetchPings();
+        if (window.ATAKJTAC && window.ATAKJTAC.fetchCas) ATAKJTAC.fetchCas();
+        else if (window.ATAKJTAC) ATAKJTAC.fetchNineLines();
+        if (window.ATAKCams) {
+          if (window.ATAKCams.fetchReconImages) ATAKCams.fetchReconImages();
+          else ATAKCams.fetchIntelPhotos();
+        }
+        if (window.ATAKAirAssets) ATAKAirAssets.fetchAirAssets();
+        if (window.ATAKMapShapes) ATAKMapShapes.fetchShapes();
+        if (window.ATAKLaserCodes) ATAKLaserCodes.fetchLaserCodes();
+        if (window.ATAKMap && window.ATAKMap.pollMarkers) window.ATAKMap.pollMarkers();
+      }
+      atakPoll();
+      setInterval(atakPoll, 3000);
 
       document.querySelectorAll('.atak-tab').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -205,21 +454,115 @@ if ($atakMapConfig) {
         this.textContent = document.getElementById('atak-panel-right').classList.contains('collapsed') ? '◀' : '▶';
       });
 
-      if (window.ATAKUnits) ATAKUnits.fetchUnits();
-      if (window.ATAKChat) ATAKChat.fetchMessages();
-      if (window.ATAKPings) ATAKPings.fetchPings();
-      if (window.ATAKJTAC) ATAKJTAC.fetchNineLines();
-      if (window.ATAKCams) ATAKCams.fetchIntelPhotos();
-
       var configToggle = document.getElementById('atak-game-config-toggle');
       var configBody = document.getElementById('atak-game-config-body');
+      var configTitle = configToggle ? configToggle.querySelector('#atak-game-config-title') : null;
+      var toggleIcon = configToggle ? configToggle.querySelector('.atak-game-config-toggle-icon') : null;
       if (configToggle && configBody) {
         configToggle.addEventListener('click', function () {
-          var open = configBody.style.display !== 'none';
-          configBody.style.display = open ? 'none' : 'block';
-          configToggle.textContent = (open ? '▼' : '▲') + ' Configuration pour le jeu (Arma / mod)';
+          var open = !configBody.hidden;
+          configBody.hidden = open;
+          configToggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+          if (toggleIcon) toggleIcon.textContent = open ? '▼' : '▲';
         });
       }
+      var copyBtn = document.getElementById('atak-copy-node-url');
+      var urlPre = document.getElementById('atak-node-url-copy');
+      if (copyBtn && urlPre) {
+        copyBtn.addEventListener('click', function () {
+          var url = urlPre.textContent;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(function () { copyBtn.textContent = 'Copié !'; setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1500); });
+          } else {
+            var ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+            copyBtn.textContent = 'Copié !'; setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1500);
+          }
+        });
+      }
+
+      var accountBtn = document.getElementById('atak-btn-account');
+      var accountPanel = document.getElementById('atak-account-panel');
+      var accountOverlay = document.getElementById('atak-account-overlay');
+      var accountClose = document.getElementById('atak-account-panel-close');
+      function openAccountPanel() {
+        if (accountPanel) accountPanel.classList.add('open');
+        if (accountOverlay) accountOverlay.classList.add('show');
+      }
+      function closeAccountPanel() {
+        if (accountPanel) accountPanel.classList.remove('open');
+        if (accountOverlay) accountOverlay.classList.remove('show');
+      }
+      if (accountBtn) accountBtn.addEventListener('click', openAccountPanel);
+      if (accountClose) accountClose.addEventListener('click', closeAccountPanel);
+      if (accountOverlay) accountOverlay.addEventListener('click', closeAccountPanel);
+
+      window.ATAKLastChatError = function (msg) {
+        var el = document.getElementById('health-chat-error');
+        if (el) el.textContent = msg || '—';
+      };
+      window.ATAKLastPingsError = function (msg) {
+        var el = document.getElementById('health-pings-error');
+        if (el) el.textContent = msg || '—';
+      };
+      function refreshHealth() {
+        var nodeUrlEl = document.getElementById('health-node-url');
+        var nodeStatusEl = document.getElementById('health-node-status');
+        var socketStateEl = document.getElementById('health-socket-state');
+        var socketUrlEl = document.getElementById('health-socket-url');
+        var dbEl = document.getElementById('health-db');
+        var armaEl = document.getElementById('health-arma');
+        var unitsCountEl = document.getElementById('health-units-count');
+        var activeCallsignsEl = document.getElementById('health-active-callsigns');
+        var nodeUrl = (typeof window.ATAK_NODE_URL === 'string' && window.ATAK_NODE_URL) ? window.ATAK_NODE_URL : 'Même origine (API PHP)';
+        if (nodeUrlEl) nodeUrlEl.textContent = nodeUrl;
+        if (nodeStatusEl) nodeStatusEl.textContent = 'Vérification…';
+        var pingController = new AbortController();
+        var pingTimeout = setTimeout(function () { pingController.abort(); }, 5000);
+        fetch('<?= url("api/atak/ping") ?>', { credentials: 'include', signal: pingController.signal }).then(function (r) { return r.json(); }).then(function (d) {
+          clearTimeout(pingTimeout);
+          if (nodeStatusEl) { nodeStatusEl.textContent = (d.ok ? 'OK' : 'Erreur'); nodeStatusEl.className = 'atak-health-status ' + (d.ok ? 'ok' : 'err'); }
+        }).catch(function (e) {
+          clearTimeout(pingTimeout);
+          if (nodeStatusEl) { nodeStatusEl.textContent = (e.name === 'AbortError' ? 'Timeout' : 'Erreur'); nodeStatusEl.className = 'atak-health-status err'; }
+        });
+        if (socketStateEl) { socketStateEl.textContent = 'Connecté'; socketStateEl.className = 'atak-health-cell atak-health-status ok'; }
+        if (socketUrlEl) socketUrlEl.textContent = 'API PHP (polling)';
+        var mapId = (window.ATAKSocket && window.ATAKSocket.getMapId) ? window.ATAKSocket.getMapId() : 1;
+        fetch('<?= url("api/atak/stats") ?>?mapId=' + mapId, { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (d) {
+          if (armaEl) armaEl.textContent = d.lastArmaActivityAgo != null ? 'Dernière activité Arma il y a ' + d.lastArmaActivityAgo + ' s' : 'Jamais';
+          if (unitsCountEl) unitsCountEl.textContent = (d.unitsCount != null ? d.unitsCount : 0) + ' unité(s)';
+          var calls = (d.activeCallSigns && d.activeCallSigns.length) ? d.activeCallSigns.map(function (u) { return u.call_sign || ''; }).filter(Boolean).slice(0, 10).join(', ') : '—';
+          if (activeCallsignsEl) activeCallsignsEl.textContent = calls;
+        }).catch(function () {
+          if (armaEl) armaEl.textContent = '—';
+          if (unitsCountEl) unitsCountEl.textContent = '—';
+          if (activeCallsignsEl) activeCallsignsEl.textContent = '—';
+        });
+        fetch('<?= url("api/health") ?>', { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (d) {
+          if (dbEl) { dbEl.textContent = d.db === 'ok' ? 'OK' : (d.message || 'Erreur'); dbEl.className = 'atak-health-cell ' + (d.db === 'ok' ? 'atak-health-status ok' : 'atak-health-status err'); }
+        }).catch(function () { if (dbEl) { dbEl.textContent = 'Erreur'; dbEl.className = 'atak-health-cell atak-health-status err'; } });
+      }
+      var healthToggle = document.getElementById('atak-health-toggle');
+      var healthBody = document.getElementById('atak-health-body');
+      var healthRefresh = document.getElementById('atak-health-refresh');
+      var healthRefreshInterval = null;
+      if (healthToggle && healthBody) {
+        healthToggle.addEventListener('click', function () {
+          var open = healthBody.hidden;
+          healthBody.hidden = !open;
+          healthToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+          var icon = healthToggle.querySelector('.atak-game-config-toggle-icon');
+          if (icon) icon.textContent = open ? '▲' : '▼';
+          if (open) {
+            refreshHealth();
+            healthRefreshInterval = setInterval(refreshHealth, 15000);
+          } else {
+            if (healthRefreshInterval) clearInterval(healthRefreshInterval);
+            healthRefreshInterval = null;
+          }
+        });
+      }
+      if (healthRefresh) healthRefresh.addEventListener('click', refreshHealth);
     })();
   </script>
 </body>

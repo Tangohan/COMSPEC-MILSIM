@@ -8,6 +8,8 @@ $baseUrl = url('');
     <nav class="mb-8 pb-4 border-b border-slate-200">
         <a href="<?= $baseUrl ?>/atak" class="text-slate-600 hover:text-slate-900 text-sm font-medium">← Retour à l’overlay ATAK</a>
         <span class="mx-2 text-slate-400">·</span>
+        <a href="<?= $baseUrl ?>/atak/setup" class="text-slate-600 hover:text-slate-900 text-sm font-medium">Assistant Mod Arma</a>
+        <span class="mx-2 text-slate-400">·</span>
         <a href="<?= $baseUrl ?>/admin/atak-config" class="text-slate-600 hover:text-slate-900 text-sm font-medium">Configuration ATAK (admin)</a>
     </nav>
 

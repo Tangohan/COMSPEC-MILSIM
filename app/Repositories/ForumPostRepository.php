@@ -11,22 +11,124 @@ class ForumPostRepository
 {
     private PDO $pdo;
 
+    /** @var array{select: string, join: string}|null */
+    private ?array $gradesConfig = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
     }
 
+    /**
+     * Détecte la structure de la table grades (colonnes name vs label_long, présence de tenant_id)
+     * et retourne le fragment SELECT et la condition de JOIN pour les grades.
+     */
+    private function getGradesConfig(): array
+    {
+        if ($this->gradesConfig !== null) {
+            return $this->gradesConfig;
+        }
+        $stmt = $this->pdo->query(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME IN ('name', 'label_long', 'tenant_id')"
+        );
+        $columns = $stmt ? array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'COLUMN_NAME') : [];
+        $hasLabelLong = in_array('label_long', $columns, true);
+        $hasTenantId = in_array('tenant_id', $columns, true);
+        $select = $hasLabelLong
+            ? 'g.label_long AS author_grade_name, g.label_short AS author_grade_short, g.label_otan AS author_grade_nato'
+            : 'g.name AS author_grade_name, g.short_name AS author_grade_short, g.nato_code AS author_grade_nato';
+        $join = $hasTenantId
+            ? 'LEFT JOIN grades g ON g.id = u.grade_id AND g.tenant_id = u.tenant_id'
+            : 'LEFT JOIN grades g ON g.id = u.grade_id';
+        $this->gradesConfig = ['select' => $select, 'join' => $join];
+        return $this->gradesConfig;
+    }
+
     public function listByTopic(int $topicId): array
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT fp.*, u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id, u.avatar_url AS author_avatar_url
+        return $this->listByTopicPaginated($topicId, 1, 9999, true);
+    }
+
+    /**
+     * Liste des messages d'un sujet avec pagination.
+     * Si $includeHiddenForModo est false, les messages is_hidden sont exclus.
+     * Compatible table grades (name/short_name/nato_code) ou référentiel (label_long/label_short/label_otan).
+     */
+    public function listByTopicPaginated(int $topicId, int $page = 1, int $perPage = 20, bool $includeHiddenForModo = false): array
+    {
+        $offset = ($page - 1) * $perPage;
+        $hiddenCond = $includeHiddenForModo ? '1' : 'COALESCE(fp.is_hidden, 0) = 0';
+        $grades = $this->getGradesConfig();
+        $gradeCols = $grades['select'];
+        $gradeJoin = $grades['join'];
+        $fullSql = "SELECT fp.*,
+                    u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id, u.avatar_url AS author_avatar_url, u.created_at AS author_created_at,
+                    r.name AS author_role_name,
+                    up.bio AS author_bio,
+                    $gradeCols,
+                    pp.matricule_internal AS author_matricule, pp.primary_role AS author_primary_role,
+                    un.name AS author_unit_name, un.code AS author_unit_code,
+                    (SELECT GROUP_CONCAT(psh.title ORDER BY psh.event_date DESC, psh.id DESC SEPARATOR ' · ')
+                     FROM personnel_service_history psh
+                     WHERE psh.user_id = u.id AND psh.event_type = 'award') AS author_awards,
+                    (SELECT COUNT(*) FROM forum_posts fpc WHERE fpc.user_id = u.id) AS author_post_count
              FROM forum_posts fp
              LEFT JOIN users u ON u.id = fp.user_id
-             WHERE fp.topic_id = ?
-             ORDER BY fp.created_at ASC'
-        );
+             LEFT JOIN roles r ON r.id = u.role_id
+             LEFT JOIN user_profiles up ON up.user_id = u.id
+             $gradeJoin
+             LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+             LEFT JOIN units un ON un.id = pp.primary_unit_id
+             WHERE fp.topic_id = ? AND ($hiddenCond)
+             ORDER BY fp.created_at ASC
+             LIMIT $perPage OFFSET $offset";
+        $fallbackSql = "SELECT fp.*,
+                    u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id, u.avatar_url AS author_avatar_url, u.created_at AS author_created_at,
+                    r.name AS author_role_name,
+                    up.bio AS author_bio,
+                    $gradeCols,
+                    NULL AS author_matricule, NULL AS author_primary_role,
+                    NULL AS author_unit_name, NULL AS author_unit_code,
+                    (SELECT GROUP_CONCAT(psh.title ORDER BY psh.event_date DESC, psh.id DESC SEPARATOR ' · ')
+                     FROM personnel_service_history psh
+                     WHERE psh.user_id = u.id AND psh.event_type = 'award') AS author_awards,
+                    (SELECT COUNT(*) FROM forum_posts fpc WHERE fpc.user_id = u.id) AS author_post_count
+             FROM forum_posts fp
+             LEFT JOIN users u ON u.id = fp.user_id
+             LEFT JOIN roles r ON r.id = u.role_id
+             LEFT JOIN user_profiles up ON up.user_id = u.id
+             $gradeJoin
+             WHERE fp.topic_id = ? AND ($hiddenCond)
+             ORDER BY fp.created_at ASC
+             LIMIT $perPage OFFSET $offset";
+
+        try {
+            $stmt = $this->pdo->prepare($fullSql);
+            $stmt->execute([$topicId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            $msg = $e->getMessage();
+            if ((string) $e->getCode() === '42S22' || strpos($msg, 'Unknown column') !== false || strpos($msg, "doesn't exist") !== false) {
+                $stmt = $this->pdo->prepare($fallbackSql);
+                $stmt->execute([$topicId]);
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+            throw $e;
+        }
+    }
+
+    public function countByTopic(int $topicId, bool $includeHiddenForModo = false): int
+    {
+        $hiddenCond = $includeHiddenForModo ? '1' : 'COALESCE(is_hidden, 0) = 0';
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM forum_posts WHERE topic_id = ? AND ($hiddenCond)");
         $stmt->execute([$topicId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function setHidden(int $id, int $tenantId, bool $hidden): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE forum_posts SET is_hidden = ? WHERE id = ? AND tenant_id = ?');
+        return $stmt->execute([$hidden ? 1 : 0, $id, $tenantId]);
     }
 
     public function findById(int $id, int $tenantId): ?array
@@ -56,13 +158,6 @@ class ForumPostRepository
     {
         $stmt = $this->pdo->prepare('DELETE FROM forum_posts WHERE id = ? AND tenant_id = ?');
         return $stmt->execute([$id, $tenantId]);
-    }
-
-    public function countByTopic(int $topicId): int
-    {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM forum_posts WHERE topic_id = ?');
-        $stmt->execute([$topicId]);
-        return (int) $stmt->fetchColumn();
     }
 
     public function getFirstPostOfTopic(int $topicId): ?array

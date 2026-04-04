@@ -35,15 +35,31 @@ class ForumNewTopicController
             return Response::redirect(url('forum'));
         }
 
-        $categories = $this->categoryRepository->listForTenant($tenantId);
-        $preselectedSlug = (string) $request->query('category', '');
+        if (function_exists('forum_is_enabled') && !forum_is_enabled()) {
+            $isModo = function_exists('can') && can('forum.moderate');
+            if (!$isModo) {
+                return Response::redirect(url('forum'));
+            }
+        }
+
+        $categoriesWithChildren = $this->categoryRepository->listForTenantWithChildren($tenantId);
+        $preselectedCategoryId = 0;
+        $categoryIdFromQuery = (int) $request->query('category_id', 0);
+        if ($categoryIdFromQuery > 0) {
+            $cat = $this->categoryRepository->findById($categoryIdFromQuery, $tenantId);
+            if ($cat && (!function_exists('forum_can_read') || forum_can_read($userId, $cat))) {
+                $preselectedCategoryId = $categoryIdFromQuery;
+            }
+        }
+        $maxLen = (int) (function_exists('forum_get_setting') ? forum_get_setting('forum_max_post_length', '10000') : 10000);
 
         return Response::view('layout.forum', [
             'content' => 'forum.new-topic',
             'title' => 'Nouveau sujet',
             'forumConfig' => config('forum') ?? [],
-            'categories' => $categories,
-            'preselectedSlug' => $preselectedSlug,
+            'categoriesWithChildren' => $categoriesWithChildren,
+            'preselectedCategoryId' => $preselectedCategoryId,
+            'maxLen' => $maxLen,
         ]);
     }
 
@@ -65,14 +81,14 @@ class ForumNewTopicController
             return Response::redirect(url('forum/new-topic'));
         }
 
-        if (!Csrf::validate($request->post('_csrf_token'))) {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Jeton de sécurité invalide.');
             return Response::redirect(url('forum/new-topic'));
         }
 
-        $categoryId = (int) $request->post('category_id', 0);
-        $title = trim((string) $request->post('title', ''));
-        $body = trim((string) $request->post('body', ''));
+        $categoryId = (int) $request->input('category_id', 0);
+        $title = trim((string) $request->input('title', ''));
+        $body = trim((string) $request->input('body', ''));
 
         $validator = new Validator(
             ['title' => $title, 'body' => $body, 'category_id' => $categoryId],
@@ -87,6 +103,16 @@ class ForumNewTopicController
         $category = $this->categoryRepository->findById($categoryId, $tenantId);
         if (!$category) {
             Session::flash('error', 'Catégorie invalide.');
+            return Response::redirect(url('forum/new-topic'));
+        }
+
+        if (strlen($title) < 3 || strlen($title) > 255) {
+            Session::flash('error', 'Le titre doit faire entre 3 et 255 caractères.');
+            return Response::redirect(url('forum/new-topic'));
+        }
+        $maxLen = (int) (function_exists('forum_get_setting') ? forum_get_setting('forum_max_post_length', '10000') : 10000);
+        if (strlen($body) < 5 || strlen($body) > $maxLen) {
+            Session::flash('error', 'Le contenu doit faire entre 5 et ' . $maxLen . ' caractères.');
             return Response::redirect(url('forum/new-topic'));
         }
 

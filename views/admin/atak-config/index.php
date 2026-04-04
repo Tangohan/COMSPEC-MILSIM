@@ -33,11 +33,18 @@ $error = \App\Core\Session::getFlash('error');
         </div>
 
         <div class="border border-slate-200 rounded-lg p-4 bg-slate-50/50">
-            <h2 class="text-sm font-bold text-slate-800 mb-3">Nœud ATAK (site → overlay)</h2>
+            <h2 class="text-sm font-bold text-slate-800 mb-3">API ATAK (site → overlay)</h2>
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">URL du nœud ATAK</label>
-                <input type="url" name="node_url" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="https://votre-serveur:3001" value="<?= htmlspecialchars($config['node_url'] ?? '') ?>" />
-                <p class="text-xs text-slate-500 mt-1">URL de base du serveur Node (WebSocket + API). Si vide, valeur par défaut ou .env NODE_ATAK_URL.</p>
+                <label class="block text-sm font-medium text-slate-700 mb-1">URL de base API ATAK (optionnel)</label>
+                <input type="url" name="node_url" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="" value="<?= htmlspecialchars($config['node_url'] ?? '') ?>" />
+                <p class="text-xs text-slate-500 mt-1">L’API C2 est fournie par le site PHP (même origine). Laisser vide pour utiliser l’origine courante. Renseigner une URL uniquement pour un domaine dédié (ex. pour la DLL Arma).</p>
+                <div class="mt-3 p-3 bg-white border border-slate-200 rounded text-xs text-slate-700">
+                    <p class="font-semibold text-slate-800 mb-1">Configuration</p>
+                    <ul class="list-disc list-inside space-y-0.5">
+                        <li>Le C2 ATAK est géré par l’<strong>API PHP</strong> du site (<code class="bg-slate-100 px-0.5">/api/atak/*</code>, polling).</li>
+                        <li>Pour le mod Arma (DLL), configurez l’URL du site (ex. <code class="bg-slate-100 px-0.5">https://<?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'votre-domaine.fr') ?></code>) dans le paramètre « URL Athena » du mod.</li>
+                    </ul>
+                </div>
             </div>
             <div class="mt-3">
                 <label class="block text-sm font-medium text-slate-700 mb-1">Secret JWT (optionnel)</label>
@@ -79,6 +86,7 @@ $error = \App\Core\Session::getFlash('error');
 
         <div class="flex flex-wrap gap-3">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Enregistrer</button>
+            <a href="<?= $baseUrl ?>/admin/atak-mod" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Mod ATAK (upload)</a>
             <a href="<?= $baseUrl ?>/admin" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Retour admin</a>
             <a href="<?= $baseUrl ?>/atak" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Ouvrir ATAK</a>
             <a href="<?= $baseUrl ?>/atak/tuto" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Tuto mod Arma</a>

@@ -220,8 +220,8 @@ $categories = ['all' => 'Tous les modules', 'tactique' => 'tactique', 'technique
                 </button>
                 <template x-if="selectedItem">
                     <div class="flex-1 flex flex-col md:flex-row min-h-0">
-                        <div class="w-full md:w-1/2 h-64 md:min-h-[400px] relative bg-slate-900 flex-shrink-0">
-                            <img :src="selectedItem.image" class="w-full h-full object-cover opacity-60" :alt="selectedItem.title">
+                        <div class="w-full md:w-1/2 md:min-h-[400px] relative bg-slate-900 flex-shrink-0">
+                            <img :src="selectedItem.image" class="w-full h-full object-cover object-left opacity-60" :alt="selectedItem.title">
                             <div class="absolute inset-0 flex items-center justify-center">
                                 <div class="text-center">
                                     <span class="text-[10px] font-black text-emerald-400 uppercase tracking-[1em] block mb-4 italic">Détail module</span>

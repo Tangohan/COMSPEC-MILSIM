@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace App\Services\Personnel;
 
 use App\Repositories\PersonnelExtrasRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\TenantMatriculeConfigRepository;
 
 class MatriculeService
 {
     public function __construct(
         private TenantMatriculeConfigRepository $configRepo,
-        private PersonnelExtrasRepository $personnelExtrasRepo
+        private PersonnelExtrasRepository $personnelExtrasRepo,
+        private PersonnelProfileRepository $personnelProfileRepo
     ) {}
 
     /**
@@ -50,6 +52,7 @@ class MatriculeService
         }
         $matricule = $this->generateNext($tenantId);
         $this->personnelExtrasRepo->updateServiceNumber($userId, $matricule);
+        $this->personnelProfileRepo->updateMatricule($userId, $matricule);
         return $matricule;
     }
 }

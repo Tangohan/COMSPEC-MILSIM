@@ -40,7 +40,7 @@
             <a href="<?= url('modpacks') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">MODPACKS</a>
             <a href="<?= url('formations') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">FORMATIONS</a>
             <a href="<?= url('equipement') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">ÉQUIPEMENT</a>
-            <a href="<?= url('account') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">MON COMPTE</a>
+            <a href="<?= url('account') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">PARAMÈTRES</a>
             <?php if (\App\Core\Gate::getInstance()->allows('admin.access')): ?>
             <a href="<?= url('admin') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-500">ADMIN</a>
             <?php endif; ?>
@@ -307,6 +307,38 @@
                             <?php endif; ?>
                         </div>
                     </aside>
+
+                    <!-- Mod COMSPEC ATAK -->
+                    <?php $atakModDownloadUrl = $atakModDownloadUrl ?? null; if ($atakModDownloadUrl): ?>
+                    <aside class="bg-slate-900 text-white p-6 md:p-7 border border-slate-800 shadow-2xl relative overflow-hidden group">
+                        <div class="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+                        <div class="relative z-10">
+                            <div class="flex items-center justify-between gap-4">
+                                <div>
+                                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-500">Tactique</p>
+                                    <h2 class="mt-2 text-xl font-black uppercase italic tracking-tight text-white">Mod COMSPEC ATAK</h2>
+                                </div>
+                                <div class="w-10 h-10 border border-white/10 flex items-center justify-center bg-white/5">
+                                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="mt-4 text-sm text-white/70">Téléchargez le mod ATAK COMSPEC Overwatch pour la carte tactique et la synchronisation avec le serveur.</p>
+                            <div class="mt-6">
+                                <a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="flex items-center justify-center gap-3 w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white transition-all duration-300 shadow-lg shadow-emerald-900/20 group/btn">
+                                    <span class="text-[11px] font-black uppercase tracking-[0.3em]">Télécharger le mod ATAK</span>
+                                    <svg class="w-4 h-4 transition-transform duration-500 group-hover/btn:translate-y-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                                    </svg>
+                                </a>
+                                <p class="mt-3 text-center">
+                                    <a href="<?= url('atak') ?>" class="text-[8px] font-bold text-white/40 hover:text-white/70 uppercase tracking-[0.2em]">Page ATAK / Tacmap</a>
+                                </p>
+                            </div>
+                        </div>
+                    </aside>
+                    <?php endif; ?>
                 </div>
             </div>
         </section>
@@ -547,7 +579,7 @@
                     $idLine = $matricule ? 'Matricule: ' . $matricule : ($cu ? 'ID: ' . (int)$cu['id'] : '—');
                     $statut = $cu ? ($cu['status'] ?? '—') : '—';
                     $statutLabel = ($statut === 'active') ? 'Opérationnel' : $statut;
-                    $gradeName = $gr ? ($gr['short_name'] ?? $gr['name']) : '—';
+                    $gradeName = $gr ? ($gr['label_short'] ?? $gr['short_name'] ?? $gr['label_long'] ?? $gr['name'] ?? '—') : '—';
                     $clearance = $pe ? ($pe['clearance_level'] ?? '—') : '—';
                     $squadron = $pe ? ($pe['squadron'] ?? '—') : '—';
                     ?>
@@ -671,7 +703,7 @@
                                 <p class="mt-1 text-xs text-white/50 uppercase">Séquences</p>
                             </a>
                             <a href="<?= url('account') ?>" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
-                                <p class="text-sm font-black uppercase">Mon compte</p>
+                                <p class="text-sm font-black uppercase">Paramètres</p>
                                 <p class="mt-1 text-xs text-white/50 uppercase">Profil et paramètres</p>
                             </a>
                         </div>

@@ -1,0 +1,153 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Repositories;
+
+use App\Core\Database;
+use PDO;
+
+class TrainingCourseRepository
+{
+    private PDO $pdo;
+
+    public function __construct()
+    {
+        $this->pdo = Database::getPdo();
+    }
+
+    public function listForTenant(
+        int $tenantId,
+        ?string $visibility = 'published',
+        ?string $category = null,
+        ?string $search = null
+    ): array {
+        $sql = 'SELECT * FROM training_courses WHERE tenant_id = ?';
+        $params = [$tenantId];
+        if ($visibility !== null) {
+            $sql .= ' AND visibility = ?';
+            $params[] = $visibility;
+        }
+        if ($category !== null && $category !== '') {
+            $sql .= ' AND category = ?';
+            $params[] = $category;
+        }
+        if ($search !== null && $search !== '') {
+            $sql .= ' AND (title LIKE ? OR short_description LIKE ?)';
+            $term = '%' . $search . '%';
+            $params[] = $term;
+            $params[] = $term;
+        }
+        $sql .= ' ORDER BY title ASC';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findById(int $id, ?int $tenantId = null): ?array
+    {
+        $sql = 'SELECT * FROM training_courses WHERE id = ?';
+        $params = [$id];
+        if ($tenantId !== null) {
+            $sql .= ' AND tenant_id = ?';
+            $params[] = $tenantId;
+        }
+        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function findBySlug(string $slug, int $tenantId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM training_courses WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $stmt->execute([$tenantId, $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function findByUuid(string $uuid, ?int $tenantId = null): ?array
+    {
+        $sql = 'SELECT * FROM training_courses WHERE uuid = ?';
+        $params = [$uuid];
+        if ($tenantId !== null) {
+            $sql .= ' AND tenant_id = ?';
+            $params[] = $tenantId;
+        }
+        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function slugExists(int $tenantId, string $slug, ?int $excludeId = null): bool
+    {
+        $sql = 'SELECT 1 FROM training_courses WHERE tenant_id = ? AND slug = ?';
+        $params = [$tenantId, $slug];
+        if ($excludeId !== null) {
+            $sql .= ' AND id != ?';
+            $params[] = $excludeId;
+        }
+        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute($params);
+        return (bool) $stmt->fetch();
+    }
+
+    public function create(int $tenantId, array $data): int
+    {
+        $uuid = $data['uuid'] ?? $this->generateUuid();
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO training_courses (tenant_id, uuid, title, slug, short_description, description, thumbnail_path, banner_path, category, level, language_code, estimated_minutes, passing_score, is_mandatory, is_certifying, validity_days, visibility, created_by, updated_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            $tenantId,
+            $uuid,
+            $data['title'],
+            $data['slug'],
+            $data['short_description'] ?? null,
+            $data['description'] ?? null,
+            $data['thumbnail_path'] ?? null,
+            $data['banner_path'] ?? null,
+            $data['category'] ?? null,
+            $data['level'] ?? 'initiation',
+            $data['language_code'] ?? 'fr',
+            (int) ($data['estimated_minutes'] ?? 0),
+            (float) ($data['passing_score'] ?? 80),
+            (int) ($data['is_mandatory'] ?? 0),
+            (int) ($data['is_certifying'] ?? 0),
+            isset($data['validity_days']) ? (int) $data['validity_days'] : null,
+            $data['visibility'] ?? 'draft',
+            $data['created_by'],
+            $data['updated_by'] ?? null,
+        ]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    public function update(int $id, array $data): void
+    {
+        $fields = [];
+        $params = [];
+        $allowed = ['title', 'slug', 'short_description', 'description', 'thumbnail_path', 'banner_path', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by'];
+        foreach ($allowed as $k) {
+            if (array_key_exists($k, $data)) {
+                $fields[] = "`$k` = ?";
+                $params[] = $data[$k];
+            }
+        }
+        if ($fields === []) {
+            return;
+        }
+        $params[] = $id;
+        $stmt = $this->pdo->prepare('UPDATE training_courses SET ' . implode(', ', $fields) . ' WHERE id = ?');
+        $stmt->execute($params);
+    }
+
+    private function generateUuid(): string
+    {
+        $data = random_bytes(16);
+        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+    }
+}

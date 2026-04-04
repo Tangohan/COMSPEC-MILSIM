@@ -16,35 +16,123 @@ class ForumTopicRepository
         $this->pdo = Database::getPdo();
     }
 
-    public function listByCategory(int $categoryId, int $tenantId, int $page = 1, int $perPage = 20, string $sort = 'activity'): array
-    {
+    public function listByCategory(
+        int $categoryId,
+        int $tenantId,
+        int $page = 1,
+        int $perPage = 20,
+        string $sort = 'activity',
+        ?string $filter = null,
+        ?int $userId = null,
+        bool $includeHiddenForUser = false
+    ): array {
         $offset = ($page - 1) * $perPage;
         $orderBy = match ($sort) {
             'newest' => 'ft.created_at DESC',
+            'oldest' => 'ft.created_at ASC',
             'replies' => 'post_count DESC, ft.updated_at DESC',
+            'popular_7d' => 'posts_7d DESC, ft.updated_at DESC',
             default => 'ft.is_pinned DESC, ft.updated_at DESC',
         };
 
+        $hiddenCond = $includeHiddenForUser ? '1' : 'ft.is_hidden = 0';
+        $filterJoin = '';
+        $filterWhere = '';
+        $params = [$categoryId, $tenantId];
+        if ($userId !== null && $filter !== null && $filter !== '') {
+            switch ($filter) {
+                case 'unread':
+                    $filterJoin = 'LEFT JOIN forum_read fr ON fr.topic_id = ft.id AND fr.user_id = ?';
+                    $filterWhere = ' AND fr.read_at IS NULL';
+                    $params[] = $userId;
+                    break;
+                case 'unanswered':
+                    $filterWhere = ' AND (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id) <= 1';
+                    break;
+                case 'my_subscriptions':
+                    $filterJoin = 'INNER JOIN forum_topic_subscriptions fts ON fts.topic_id = ft.id AND fts.user_id = ?';
+                    $params[] = $userId;
+                    break;
+                case 'my_topics':
+                    $filterWhere = ' AND ft.user_id = ?';
+                    $params[] = $userId;
+                    break;
+            }
+        }
+
+        $selectExtra = $sort === 'popular_7d'
+            ? ', (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id AND fp.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS posts_7d'
+            : '';
+
+        $sql = "SELECT ft.*, u.display_name AS author_name, u.callsign AS author_callsign,
+                    (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id) AS post_count,
+                    (SELECT fp.created_at FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_at,
+                    (SELECT u2.display_name FROM forum_posts fp JOIN users u2 ON u2.id = fp.user_id WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_author_name
+                    $selectExtra
+             FROM forum_topics ft
+             $filterJoin
+             LEFT JOIN users u ON u.id = ft.user_id
+             WHERE ft.category_id = ? AND ft.tenant_id = ? AND ($hiddenCond)
+             $filterWhere
+             ORDER BY $orderBy
+             LIMIT $perPage OFFSET $offset";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function countByCategory(int $categoryId, int $tenantId, ?string $filter = null, ?int $userId = null, bool $includeHiddenForUser = false): int
+    {
+        $hiddenCond = $includeHiddenForUser ? '1' : 'ft.is_hidden = 0';
+        $filterJoin = '';
+        $filterWhere = '';
+        $params = [$categoryId, $tenantId];
+        if ($userId !== null && $filter !== null && $filter !== '') {
+            switch ($filter) {
+                case 'unread':
+                    $filterJoin = 'LEFT JOIN forum_read fr ON fr.topic_id = ft.id AND fr.user_id = ?';
+                    $filterWhere = ' AND fr.read_at IS NULL';
+                    $params[] = $userId;
+                    break;
+                case 'unanswered':
+                    $filterWhere = ' AND (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id) <= 1';
+                    break;
+                case 'my_subscriptions':
+                    $filterJoin = 'INNER JOIN forum_topic_subscriptions fts ON fts.topic_id = ft.id AND fts.user_id = ?';
+                    $params[] = $userId;
+                    break;
+                case 'my_topics':
+                    $filterWhere = ' AND ft.user_id = ?';
+                    $params[] = $userId;
+                    break;
+            }
+        }
         $stmt = $this->pdo->prepare(
-            "SELECT ft.*, u.display_name AS author_name, u.callsign AS author_callsign,
+            "SELECT COUNT(*) FROM forum_topics ft $filterJoin WHERE ft.category_id = ? AND ft.tenant_id = ? AND ($hiddenCond) $filterWhere"
+        );
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function searchByCategory(int $categoryId, string $query, int $tenantId, bool $includeHiddenForUser = false, int $limit = 50): array
+    {
+        $term = '%' . trim($query) . '%';
+        $hiddenCond = $includeHiddenForUser ? '1' : 'ft.is_hidden = 0';
+        $stmt = $this->pdo->prepare(
+            "SELECT ft.*, u.display_name AS author_name,
                     (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id) AS post_count,
                     (SELECT fp.created_at FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_at,
                     (SELECT u2.display_name FROM forum_posts fp JOIN users u2 ON u2.id = fp.user_id WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_author_name
              FROM forum_topics ft
              LEFT JOIN users u ON u.id = ft.user_id
-             WHERE ft.category_id = ? AND ft.tenant_id = ? AND ft.is_hidden = 0
-             ORDER BY $orderBy
-             LIMIT $perPage OFFSET $offset"
+             WHERE ft.category_id = ? AND ft.tenant_id = ? AND ($hiddenCond) AND (ft.title LIKE ? OR EXISTS (
+                 SELECT 1 FROM forum_posts fp WHERE fp.topic_id = ft.id AND fp.body LIKE ?
+             ))
+             ORDER BY ft.updated_at DESC
+             LIMIT ?"
         );
-        $stmt->execute([$categoryId, $tenantId]);
+        $stmt->execute([$categoryId, $tenantId, $term, $term, $limit]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function countByCategory(int $categoryId, int $tenantId): int
-    {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM forum_topics WHERE category_id = ? AND tenant_id = ? AND is_hidden = 0');
-        $stmt->execute([$categoryId, $tenantId]);
-        return (int) $stmt->fetchColumn();
     }
 
     public function findById(int $id, int $tenantId): ?array

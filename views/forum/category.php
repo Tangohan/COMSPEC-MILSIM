@@ -1,95 +1,159 @@
 <?php
 $labels = $forumConfig['labels'] ?? [];
 $baseUrl = url('');
+$categorySlug = $category['slug'] ?? '';
+$categoryId = (int) ($category['id'] ?? 0);
+$buildUrl = $buildCategoryUrl ?? function ($o = []) use ($baseUrl, $categorySlug) {
+  return $baseUrl . '/forum/category/' . $categorySlug . (empty($o) ? '' : '?' . http_build_query(array_filter($o)));
+};
+$hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activity' || ($q ?? '') !== '';
 ?>
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-  <!-- Breadcrumb -->
-  <nav class="text-[9px] font-black uppercase tracking-[0.25em] text-neutral-500 mb-6">
-    <a href="<?= $baseUrl ?>/forum" class="hover:text-orange-500">Forum</a>
-    <span class="mx-2">›</span>
-    <span class="text-white"><?= htmlspecialchars($category['name'] ?? '') ?></span>
+<main class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <!-- Fil d'Ariane -->
+  <nav class="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.25em] text-neutral-800 mb-10 header-anim" style="animation-delay:0ms">
+    <a href="<?= $baseUrl ?>/forum" class="hover:text-neutral-500 transition-colors">Forum</a>
+    <span>›</span>
+    <span class="text-neutral-500"><?= htmlspecialchars($category['name'] ?? '') ?></span>
   </nav>
 
-  <!-- Header -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-    <div class="flex items-start gap-4">
-      <span class="w-14 h-14 bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-2xl">📁</span>
+  <!-- En-tête catégorie -->
+  <div class="flex items-start justify-between gap-6 mb-10 header-anim" style="animation-delay:40ms">
+    <div class="flex items-start gap-5">
+      <div class="shrink-0 w-14 h-14 flex items-center justify-center text-3xl bg-white/[0.03] border border-white/[0.08]">
+        <?= !empty($category['icon']) ? htmlspecialchars($category['icon']) : '⚠️' ?>
+      </div>
       <div>
-        <p class="text-[8px] font-black uppercase tracking-[0.5em] text-orange-500/60">Catégorie</p>
-        <h1 class="text-3xl md:text-4xl font-black italic uppercase tracking-tighter text-white"><?= htmlspecialchars($category['name']) ?></h1>
+        <div class="flex items-center gap-3 mb-2">
+          <span class="h-px w-6 bg-orange-500/50"></span>
+          <span class="text-[8px] font-black uppercase tracking-[0.5em] text-orange-500/60">Catégorie</span>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-black italic uppercase tracking-tighter text-white leading-none mb-2">
+          <?= htmlspecialchars($category['name']) ?>
+        </h1>
         <?php if (!empty($category['description'])): ?>
-          <p class="text-sm text-neutral-500 mt-1"><?= htmlspecialchars($category['description']) ?></p>
+          <p class="text-[11px] text-neutral-600 font-medium max-w-lg leading-relaxed"><?= htmlspecialchars($category['description']) ?></p>
         <?php endif; ?>
-        <p class="text-xs text-neutral-600 mt-2"><?= (int) $totalTopics ?> sujets · Page <?= (int) $page ?>/<?= (int) $totalPages ?></p>
+        <div class="flex items-center gap-4 mt-3 text-[9px] font-black uppercase tracking-widest text-neutral-700">
+          <span><?= (int) $totalTopics ?> sujets</span>
+          <?php if ($totalPages > 1): ?><span>Page <?= (int) $page ?> / <?= (int) $totalPages ?></span><?php endif; ?>
+        </div>
       </div>
     </div>
-    <div class="flex flex-wrap gap-3">
-      <a href="<?= $baseUrl ?>/forum/new-topic?category=<?= htmlspecialchars($category['slug']) ?>" class="bg-orange-500 hover:bg-orange-400 text-black px-6 py-3 text-[10px] font-black uppercase tracking-wider transition">Nouveau sujet</a>
+    <div class="flex items-center gap-2 shrink-0">
+      <button type="button" id="sub-btn" data-category-id="<?= $categoryId ?>" data-subscribed="<?= !empty($isSubscribed) ? '1' : '0' ?>" class="flex items-center gap-2 px-4 py-3 text-[9px] font-black uppercase tracking-[0.2em] border transition-colors bg-white/[0.03] border-white/10 text-neutral-500 hover:border-indigo-500/30 hover:text-indigo-400 <?= !empty($isSubscribed) ? 'border-indigo-500/35 text-indigo-400 bg-indigo-500/10' : '' ?>">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+        </svg>
+        <span id="sub-label"><?= !empty($isSubscribed) ? 'Abonné' : 'Suivre' ?></span>
+      </button>
+      <?php if (!empty($canCreate)): ?>
+        <a href="<?= $baseUrl ?>/forum/new-topic?category_id=<?= $categoryId ?>" class="flex items-center gap-2.5 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-black text-[9px] font-black uppercase tracking-[0.25em] transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+          Nouveau sujet
+        </a>
+      <?php endif; ?>
     </div>
   </div>
 
-  <!-- Filters / Sort -->
-  <div class="flex flex-wrap items-center gap-3 mb-4">
-    <span class="text-[8px] font-black text-neutral-600 uppercase">Tri :</span>
-    <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($category['slug']) ?>?sort=activity" class="text-[10px] font-bold px-3 py-1.5 border <?= ($sort ?? '') === 'activity' ? 'border-indigo-500 text-indigo-300' : 'border-white/10 text-neutral-500 hover:text-white' ?> transition">Activité récente</a>
-    <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($category['slug']) ?>?sort=newest" class="text-[10px] font-bold px-3 py-1.5 border <?= ($sort ?? '') === 'newest' ? 'border-indigo-500 text-indigo-300' : 'border-white/10 text-neutral-500 hover:text-white' ?> transition">Nouveaux d'abord</a>
-    <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($category['slug']) ?>?sort=replies" class="text-[10px] font-bold px-3 py-1.5 border <?= ($sort ?? '') === 'replies' ? 'border-indigo-500 text-indigo-300' : 'border-white/10 text-neutral-500 hover:text-white' ?> transition">Plus de réponses</a>
+  <!-- Recherche + Filtres -->
+  <div class="mb-4 border border-white/10 bg-white/[0.02] p-3 md:p-4 header-anim" style="animation-delay:50ms">
+    <form method="get" action="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($categorySlug) ?>" class="flex flex-col lg:flex-row gap-2 lg:items-center">
+      <input type="hidden" name="category" value="<?= htmlspecialchars($categorySlug) ?>">
+      <input type="text" name="q" value="<?= htmlspecialchars($q ?? '') ?>" placeholder="Rechercher dans cette catégorie" class="flex-1 bg-black/40 border border-white/10 px-3 py-2 text-xs tracking-wide">
+      <button type="submit" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-black text-[10px] font-black uppercase tracking-[0.2em]">Rechercher</button>
+    </form>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <a href="<?= $buildUrl(['filter' => '']) ?>" class="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] border <?= ($filter ?? '') === '' ? 'border-indigo-500 text-indigo-300' : 'border-white/10 text-neutral-500 hover:border-white/20' ?>">Tous</a>
+      <a href="<?= $buildUrl(['filter' => 'unread']) ?>" class="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] border border-white/10 text-neutral-500 hover:border-white/20">Non lus</a>
+      <a href="<?= $buildUrl(['filter' => 'unanswered']) ?>" class="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] border border-white/10 text-neutral-500 hover:border-white/20">Sans réponse</a>
+      <a href="<?= $buildUrl(['filter' => 'my_subscriptions']) ?>" class="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] border border-white/10 text-neutral-500 hover:border-white/20">Mes abonnements</a>
+      <a href="<?= $buildUrl(['filter' => 'my_topics']) ?>" class="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] border border-white/10 text-neutral-500 hover:border-white/20">Mes sujets</a>
+    </div>
+    <div class="mt-2 flex flex-wrap gap-2">
+      <a href="<?= $buildUrl(['sort' => 'activity']) ?>" class="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] border <?= ($sort ?? 'activity') === 'activity' ? 'border-orange-500 text-orange-300' : 'border-white/10 text-neutral-500 hover:border-white/20' ?>">Activité récente</a>
+      <a href="<?= $buildUrl(['sort' => 'newest']) ?>" class="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] border border-white/10 text-neutral-500 hover:border-white/20">Nouveaux d'abord</a>
+      <a href="<?= $buildUrl(['sort' => 'oldest']) ?>" class="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] border border-white/10 text-neutral-500 hover:border-white/20">Anciens d'abord</a>
+      <a href="<?= $buildUrl(['sort' => 'popular_7d']) ?>" class="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] border border-white/10 text-neutral-500 hover:border-white/20">Plus actifs (7j)</a>
+    </div>
+    <?php if ($hasActiveFilters): ?>
+      <p class="text-[10px] text-neutral-500 mt-2">
+        <?php if (($q ?? '') !== ''): ?>Recherche : « <?= htmlspecialchars($q) ?> » · <?php endif; ?>
+        <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($categorySlug) ?>" class="text-rose-400 hover:text-rose-300">Réinitialiser</a>
+      </p>
+    <?php endif; ?>
   </div>
 
-  <!-- Table header (desktop) -->
-  <div class="hidden md:grid md:grid-cols-[1fr_80px_80px_130px] gap-4 py-2 border-b border-white/5 text-[8px] font-black uppercase tracking-[0.28em] text-neutral-700 mb-0">
-    <span>Sujet</span>
-    <span><?= $labels['replies'] ?? 'Réponses' ?></span>
-    <span><?= $labels['views'] ?? 'Lectures' ?></span>
-    <span><?= $labels['last_activity'] ?? 'Dernier signal' ?></span>
+  <!-- Header colonnes (desktop) -->
+  <div class="hidden md:grid grid-cols-[1fr_80px_80px_130px] gap-x-4 px-4 mb-2 pb-2 border-b border-white/[0.04] header-anim" style="animation-delay:60ms">
+    <span class="text-[8px] font-black uppercase tracking-[0.28em] text-neutral-700">Sujet</span>
+    <span class="text-[8px] font-black uppercase tracking-[0.28em] text-neutral-700 text-center"><?= $labels['replies'] ?? 'Réponses' ?></span>
+    <span class="text-[8px] font-black uppercase tracking-[0.28em] text-neutral-700 text-center"><?= $labels['views'] ?? 'Lectures' ?></span>
+    <span class="text-[8px] font-black uppercase tracking-[0.28em] text-neutral-700 text-right"><?= $labels['last_activity'] ?? 'Dernier signal' ?></span>
   </div>
 
-  <!-- Topic list -->
-  <div class="divide-y divide-white/5">
-    <?php foreach ($topics ?? [] as $t): ?>
-      <?php
-      $rowClass = 'topic-row border-l-2 border-transparent hover:border-indigo-500/40';
-      if (!empty($t['is_locked'])) $rowClass .= ' topic-locked';
-      if (!empty($t['is_pinned'])) $rowClass .= ' topic-pinned';
-      ?>
-      <a href="<?= $baseUrl ?>/forum/topic/<?= (int) $t['id'] ?>" class="<?= $rowClass ?> block py-4 px-2 -mx-2 hover:bg-white/[0.02] transition">
-        <div class="md:grid md:grid-cols-[1fr_80px_80px_130px] md:gap-4 md:items-center">
-          <div>
-            <div class="flex flex-wrap items-center gap-2 mb-1">
-              <?php if (!empty($t['is_pinned'])): ?><span class="text-[7px] font-black uppercase text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5">Épinglé</span><?php endif; ?>
-              <?php if (!empty($t['is_locked'])): ?><span class="text-[7px] font-black uppercase text-amber-400 border border-amber-500/30 px-1.5 py-0.5">Verrouillé</span><?php endif; ?>
+  <!-- Liste des sujets -->
+  <div class="divide-y divide-white/[0.03] bg-[#050505] border border-white/5">
+    <?php if (empty($topics)): ?>
+      <p class="py-12 text-center text-neutral-500">Aucun signal détecté dans cette zone.<?php if (!empty($canCreate)): ?> <a href="<?= $baseUrl ?>/forum/new-topic?category_id=<?= $categoryId ?>" class="text-orange-400 hover:text-orange-300">Émettre le premier signal</a><?php endif; ?></p>
+    <?php else: ?>
+      <?php foreach ($topics as $index => $t): ?>
+        <?php
+        $isHidden = !empty($t['is_hidden']);
+        $rowClass = 'topic-row group grid grid-cols-1 md:grid-cols-[1fr_80px_80px_130px] gap-x-4 items-center px-4 py-5 no-underline transition-all hover:bg-white/[0.02] border-l-2 border-transparent hover:border-orange-500';
+        if ($isHidden && !empty($isModo)) $rowClass .= ' opacity-40';
+        if (!empty($t['is_locked'])) $rowClass .= ' topic-locked';
+        if (!empty($t['is_pinned'])) $rowClass .= ' topic-pinned';
+        if (!empty($t['is_archived'])) $rowClass .= ' topic-archived';
+        $viewCount = (int) ($t['view_count'] ?? 0);
+        $viewStr = $viewCount >= 1000 ? round($viewCount / 1000, 1) . 'k' : (string) $viewCount;
+        $timeAgo = function_exists('forum_time_ago') ? forum_time_ago($t['created_at'] ?? '') : ($t['created_at'] ? date('d/m/Y', strtotime($t['created_at'])) : '');
+        ?>
+        <a href="<?= $baseUrl ?>/forum/topic/<?= (int) $t['id'] ?>" class="<?= $rowClass ?>" style="animation-delay: <?= 80 + $index * 38 ?>ms">
+          <div class="flex items-start gap-4 min-w-0">
+            <div class="relative shrink-0 mt-1 w-9 h-9 flex items-center justify-center border border-orange-500/30 bg-orange-500/5 text-orange-500 group-hover:bg-orange-500 group-hover:text-black transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
             </div>
-            <h2 class="text-sm font-black italic uppercase text-white hover:text-orange-400 transition"><?= htmlspecialchars($t['title']) ?></h2>
-            <p class="text-[9px] text-neutral-600 mt-0.5">ID #<?= (int) $t['id'] ?> · Par <?= htmlspecialchars($t['author_name'] ?? '') ?> · <?= $t['created_at'] ? date('d/m H:i', strtotime($t['created_at'])) : '' ?></p>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                <?php if (!empty($t['is_pinned'])): ?><span class="text-[7px] font-black px-1.5 py-0.5 uppercase tracking-tighter bg-orange-500 text-black">Épinglé</span><?php endif; ?>
+                <?php if (!empty($t['is_locked'])): ?><span class="text-[7px] font-black px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-tighter">Verrouillé</span><?php endif; ?>
+                <?php if (empty($t['is_locked'])): ?><span class="text-[7px] font-black px-1.5 py-0.5 bg-green-500/10 text-green-500 border border-green-500/20 uppercase tracking-tighter">Ouvert</span><?php endif; ?>
+                <h3 class="w-full md:w-auto font-black italic uppercase tracking-tight text-neutral-300 group-hover:text-orange-400 transition-colors text-sm leading-tight mt-1 md:mt-0">
+                  <?= htmlspecialchars($t['title']) ?>
+                </h3>
+              </div>
+              <div class="flex items-center gap-2 text-[9px] text-neutral-600 font-bold">
+                <span class="uppercase tracking-widest">ID : <span class="text-neutral-500">#<?= str_pad((string)(int)$t['id'], 3, '0', STR_PAD_LEFT) ?></span></span>
+                <span class="text-neutral-800">/</span>
+                <span class="uppercase tracking-widest">Par <span class="text-orange-500 group-hover:underline"><?= htmlspecialchars($t['author_name'] ?? '') ?></span></span>
+                <span class="text-neutral-800">·</span>
+                <span class="italic text-neutral-500"><?= $timeAgo ?></span>
+              </div>
+            </div>
           </div>
-          <div class="mt-2 md:mt-0">
-            <span class="text-sm font-black text-white"><?= (int) ($t['post_count'] ?? 0) ?></span>
-            <span class="text-[9px] text-neutral-600"> <?= $labels['replies'] ?? 'réponses' ?></span>
+          <div class="hidden md:flex flex-col items-center justify-center border-x border-white/[0.02]">
+            <span class="text-sm font-black tabular-nums text-neutral-500"><?= (int) ($t['post_count'] ?? 0) ?></span>
+            <span class="text-[7px] text-neutral-700 font-black uppercase tracking-widest"><?= $labels['replies'] ?? 'réponses' ?></span>
           </div>
-          <div class="mt-1 md:mt-0">
-            <span class="text-sm font-black text-white"><?= (int) ($t['view_count'] ?? 0) ?></span>
-            <span class="text-[9px] text-neutral-600"> <?= $labels['views'] ?? 'lectures' ?></span>
+          <div class="hidden md:flex flex-col items-center justify-center">
+            <span class="text-sm font-black text-neutral-400 tabular-nums"><?= $viewStr ?></span>
+            <span class="text-[7px] text-neutral-700 font-black uppercase tracking-widest"><?= $labels['views'] ?? 'lectures' ?></span>
           </div>
-          <div class="mt-1 md:mt-0 text-[10px] text-neutral-500">
-            <?= $t['last_post_at'] ? date('H:i d/m', strtotime($t['last_post_at'])) : '—' ?>
-            <?php if (!empty($t['last_post_author_name'])): ?>
-              <br><span class="text-neutral-600">→ <?= htmlspecialchars($t['last_post_author_name']) ?></span>
-            <?php endif; ?>
+          <div class="hidden md:block text-right pr-2">
+            <div class="text-[9px] font-bold text-neutral-400 tabular-nums"><?= $t['last_post_at'] ? date('H:i', strtotime($t['last_post_at'])) : '—' ?> <span class="text-neutral-700">|</span> <?= $t['last_post_at'] ? date('d.m', strtotime($t['last_post_at'])) : '—' ?></div>
+            <div class="text-[8px] font-black text-orange-500 uppercase tracking-widest mt-0.5 group-hover:-translate-x-1 transition-transform">→ <?= htmlspecialchars($t['last_post_author_name'] ?? '—') ?></div>
           </div>
-        </div>
-      </a>
-    <?php endforeach; ?>
+        </a>
+      <?php endforeach; ?>
+    <?php endif; ?>
   </div>
-
-  <?php if (empty($topics)): ?>
-    <p class="py-12 text-center text-neutral-500">Aucun sujet dans cette catégorie. <a href="<?= $baseUrl ?>/forum/new-topic?category=<?= htmlspecialchars($category['slug']) ?>" class="text-orange-400 hover:text-orange-300">Créer le premier</a>.</p>
-  <?php endif; ?>
 
   <!-- Pagination -->
   <?php if ($totalPages > 1): ?>
-    <div class="flex flex-wrap justify-center gap-2 mt-8">
+    <div class="flex flex-wrap items-center justify-center gap-2 mt-8">
+      <span class="text-[10px] text-neutral-500">Page <?= (int) $page ?> / <?= (int) $totalPages ?></span>
       <?php for ($i = 1; $i <= min($totalPages, 10); $i++): ?>
-        <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($category['slug']) ?>?page=<?= $i ?>&sort=<?= htmlspecialchars($sort ?? 'activity') ?>" class="min-w-[2.5rem] py-2 text-center border text-[10px] font-bold <?= $i === $page ? 'bg-orange-500 border-orange-500 text-black' : 'border-white/[0.08] text-neutral-600 hover:text-white' ?> transition"><?= $i ?></a>
+        <a href="<?= $buildUrl(['page' => $i, 'sort' => $sort ?? 'activity', 'filter' => $filter ?? '', 'q' => $q ?? '']) ?>" class="min-w-[2.5rem] py-2 text-center border text-[10px] font-bold <?= $i === $page ? 'bg-orange-500 border-orange-500 text-black' : 'border-white/[0.08] text-neutral-600 hover:text-white' ?> transition"><?= $i ?></a>
       <?php endfor; ?>
     </div>
   <?php endif; ?>
@@ -97,21 +161,54 @@ $baseUrl = url('');
   <!-- Subcategories -->
   <?php if (!empty($subcategories)): ?>
     <section class="mt-12">
-      <h2 class="text-[8px] font-black uppercase tracking-[0.4em] text-neutral-600 mb-4">Sous-catégories</h2>
+      <div class="flex items-center gap-2 mb-4">
+        <span class="h-px w-6 bg-indigo-500/50"></span>
+        <h2 class="text-[8px] font-black uppercase tracking-[0.4em] text-indigo-500/80">Sous-catégories</h2>
+      </div>
       <div class="grid gap-4 md:grid-cols-2">
         <?php foreach ($subcategories as $sub): ?>
-          <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($sub['slug']) ?>" class="border border-white/10 bg-[#0a0a0c] p-4 hover:border-orange-500/30 transition flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <span class="w-10 h-10 bg-white/5 flex items-center justify-center text-lg">📁</span>
-              <div>
-                <p class="text-sm font-black italic uppercase text-white"><?= htmlspecialchars($sub['name']) ?></p>
-                <p class="text-[9px] text-neutral-500"><?= (int) ($sub['topic_count'] ?? 0) ?> sujets</p>
+          <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($sub['slug']) ?>" class="border border-white/10 bg-[#0a0a0c] p-4 hover:border-orange-500/30 transition flex items-center justify-between group">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-10 h-10 bg-white/5 flex items-center justify-center text-lg flex-shrink-0"><?= !empty($sub['icon']) ? htmlspecialchars($sub['icon']) : '📁' ?></span>
+              <div class="min-w-0">
+                <p class="text-sm font-black italic uppercase text-white truncate"><?= htmlspecialchars($sub['name']) ?></p>
+                <?php if (!empty($sub['description'])): ?>
+                  <p class="text-[9px] text-neutral-500 line-clamp-2 mt-0.5"><?= htmlspecialchars($sub['description']) ?></p>
+                <?php endif; ?>
+                <p class="text-[9px] text-neutral-600 mt-1"><?= (int) ($sub['topic_count'] ?? 0) ?> sujets</p>
               </div>
             </div>
-            <span class="text-neutral-500">→</span>
+            <span class="text-neutral-500 group-hover:text-orange-400 transition flex-shrink-0">→</span>
           </a>
         <?php endforeach; ?>
       </div>
     </section>
   <?php endif; ?>
-</div>
+</main>
+<script>
+(function() {
+  var btn = document.getElementById('sub-btn');
+  if (!btn) return;
+  var categoryId = btn.getAttribute('data-category-id');
+  var subscribed = btn.getAttribute('data-subscribed') === '1';
+  var baseUrl = '<?= $baseUrl ?>';
+  var csrf = '<?= \App\Core\Csrf::token() ?>';
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    var action = subscribed ? 'unsubscribe' : 'subscribe';
+    fetch(baseUrl + '/api/forum', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      body: JSON.stringify({ action: action, type: 'category', target_id: parseInt(categoryId, 10), csrf_token: csrf })
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.success) {
+        subscribed = !subscribed;
+        btn.setAttribute('data-subscribed', subscribed ? '1' : '0');
+        var label = document.getElementById('sub-label');
+        if (label) label.textContent = subscribed ? 'Abonné' : 'Suivre';
+        btn.className = 'flex items-center gap-2 px-4 py-3 text-[9px] font-black uppercase tracking-[0.2em] border transition-colors ' + (subscribed ? 'border-indigo-500/35 text-indigo-400 bg-indigo-500/10' : 'bg-white/[0.03] border-white/10 text-neutral-500 hover:border-indigo-500/30 hover:text-indigo-400');
+      }
+    });
+  });
+})();
+</script>

@@ -37,5 +37,5 @@ $error = $error ?? null;
         </div>
         <button type="submit" class="py-2.5 px-4 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800">Changer le mot de passe</button>
     </form>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Mon compte</a> · <a href="<?= url('forgot-password') ?>" class="underline">Mot de passe oublié ?</a></p>
+    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Paramètres</a> · <a href="<?= url('forgot-password') ?>" class="underline">Mot de passe oublié ?</a></p>
 </div>

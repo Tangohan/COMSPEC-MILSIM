@@ -25,9 +25,10 @@ class Request
         if ($this->path !== '/') {
             $this->path = rtrim($this->path, '/') ?: '/';
         }
-        // Si l'app est servie depuis un sous-dossier (ex. /public/), retirer ce préfixe pour le routage
-        if (str_starts_with($this->path, '/public')) {
-            $this->path = substr($this->path, 7) ?: '/';
+        // Retirer le base path pour le routage (sous-dossier type /public ou APP_BASE_PATH)
+        $prefix = $this->getBasePathPrefix();
+        if ($prefix !== '' && str_starts_with($this->path, $prefix)) {
+            $this->path = substr($this->path, strlen($prefix)) ?: '/';
         }
     }
 
@@ -79,5 +80,17 @@ class Request
     public function userAgent(): string
     {
         return $this->server['HTTP_USER_AGENT'] ?? '';
+    }
+
+    /**
+     * Préfixe du base path (ex. /public ou /comspec), aligné avec la fonction url().
+     */
+    private function getBasePathPrefix(): string
+    {
+        $prefix = rtrim((string) (function_exists('env') ? env('APP_BASE_PATH', '') : (getenv('APP_BASE_PATH') ?: '')), '/');
+        if ($prefix === '' && isset($this->server['SCRIPT_NAME']) && str_contains((string) $this->server['SCRIPT_NAME'], '/public/')) {
+            $prefix = '/public';
+        }
+        return $prefix;
     }
 }

@@ -11,6 +11,10 @@ app/Config/database.local.php
 !/storage/sessions/.gitkeep
 /storage/uploads/*
 !/storage/uploads/.gitkeep
+/storage/atak-mod/*
+!/storage/atak-mod/.gitkeep
+/storage/intel/*
+!/storage/intel/.gitkeep
 composer.lock
 .idea/
 .vscode/
