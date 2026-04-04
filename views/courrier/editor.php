@@ -11,10 +11,26 @@ $previewHtml = $c['preview_html'] ?? '';
 $versions = $c['versions'] ?? [];
 $baseUrl = url('');
 $isEdit = $doc !== null;
+$classificationLabels = $c['classification_labels'] ?? [];
+if ($classificationLabels === []) {
+    $classificationLabels = \App\Services\Courrier\CourrierClassification::labels();
+}
+$currentClassification = $doc['classification_level'] ?? 'interne';
+$isLocked = $doc && (!empty($doc['signed_at']) || ($doc['status'] ?? '') === 'signed');
+$statusLabels = [
+    'draft' => ['Brouillon', 'bg-slate-100 text-slate-700'],
+    'pending_validation' => ['En validation', 'bg-amber-100 text-amber-900'],
+    'validated' => ['Validé', 'bg-sky-100 text-sky-900'],
+    'signed' => ['Signé', 'bg-emerald-100 text-emerald-900'],
+    'sent' => ['Envoyé', 'bg-blue-100 text-blue-900'],
+    'archived' => ['Archivé', 'bg-slate-200 text-slate-600'],
+    'rejected' => ['Refusé', 'bg-rose-100 text-rose-800'],
+];
 $bodyText = $doc['body_rendered'] ?? '';
 $wordCount = $bodyText ? count(preg_split('/\s+/u', trim(strip_tags($bodyText)), -1, PREG_SPLIT_NO_EMPTY)) : 0;
 $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($bodyText)), -1, PREG_SPLIT_NO_EMPTY)) : 0;
 ?>
+<link rel="stylesheet" href="<?= htmlspecialchars($baseUrl) ?>/assets/css/courrier-document.css" />
 <div class="max-w-[1800px] mx-auto px-4 py-4">
     <?php if (\App\Core\Session::get('success')): ?>
     <p class="mb-2 text-sm text-emerald-600"><?= htmlspecialchars((string)\App\Core\Session::get('success')) ?></p>
@@ -29,7 +45,11 @@ $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($body
             <span class="text-slate-400">|</span>
             <span class="text-sm font-medium text-slate-700"><?= $isEdit ? 'Édition' : 'Nouveau document' ?></span>
             <?php if ($doc): ?>
-            <span class="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-600"><?= htmlspecialchars($doc['status'] ?? 'draft') ?></span>
+            <?php $st = $doc['status'] ?? 'draft'; $stInfo = $statusLabels[$st] ?? [$st, 'bg-slate-100 text-slate-600']; ?>
+            <span class="px-2 py-0.5 text-xs font-medium rounded <?= htmlspecialchars($stInfo[1]) ?>"><?= htmlspecialchars($stInfo[0]) ?></span>
+            <?php if ($isLocked): ?>
+            <span class="px-2 py-0.5 text-xs font-semibold rounded bg-neutral-800 text-white">Verrouillé</span>
+            <?php endif; ?>
             <?php if (!empty($doc['updated_at'])): ?>
             <span class="text-xs text-slate-400">Modifié : <?= htmlspecialchars(date('d/m/Y H:i', strtotime($doc['updated_at']))) ?></span>
             <?php endif; ?>
@@ -39,10 +59,14 @@ $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($body
             <span class="text-xs text-slate-500">Conformité</span>
             <span class="w-16 h-2 bg-slate-200 rounded overflow-hidden"><span class="block h-full bg-emerald-500 rounded" style="width:<?= $completenessScore ?>%"></span></span>
             <span class="text-xs font-medium text-slate-700"><?= $completenessScore ?>%</span>
+            <?php if (!$isLocked): ?>
             <button type="submit" form="courrier-form" class="px-3 py-1.5 bg-slate-700 text-white text-sm rounded hover:bg-slate-600">Enregistrer brouillon</button>
+            <?php endif; ?>
             <?php if ($doc): ?>
             <a href="<?= $baseUrl ?>/courrier/read/<?= (int)$doc['id'] ?>" class="px-3 py-1.5 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Voir en lecture</a>
             <a href="<?= $baseUrl ?>/courrier/documents/<?= (int)$doc['id'] ?>/print" target="_blank" class="px-3 py-1.5 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Imprimer</a>
+            <a href="<?= $baseUrl ?>/courrier/documents/<?= (int)$doc['id'] ?>/pdf" class="px-3 py-1.5 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50" title="PDF interne (Dompdf)">PDF</a>
+            <a href="<?= $baseUrl ?>/courrier/documents/<?= (int)$doc['id'] ?>/pdf-external" class="px-3 py-1.5 border border-amber-200 text-amber-900 text-sm rounded hover:bg-amber-50" title="PDF avec caviardage [[REDACT]]">PDF externe</a>
             <?php if (!empty($doc['signed_at'])): ?>
             <a href="<?= $baseUrl ?>/courrier/documents/<?= (int)$doc['id'] ?>/verify" class="px-3 py-1.5 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Vérifier authenticité</a>
             <?php endif; ?>
@@ -63,9 +87,15 @@ $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($body
     </div>
     <?php endif; ?>
 
+    <?php if ($isLocked): ?>
+    <div class="mb-4 p-3 rounded-lg border border-neutral-300 bg-neutral-50 text-sm text-neutral-800">
+        <strong>Document signé et verrouillé.</strong> Le contenu ne peut plus être modifié ; l’empreinte et le code de vérification garantissent l’intégrité.
+    </div>
+    <?php endif; ?>
+
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <!-- Colonne gauche : configuration -->
-        <div class="lg:col-span-4 space-y-4">
+        <div class="lg:col-span-3 space-y-4">
             <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
                 <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Configuration</h3>
                 <form method="post" action="<?= $baseUrl ?>/courrier/editor/save" id="courrier-form">
@@ -75,7 +105,7 @@ $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($body
                     <div class="space-y-3">
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Type / Modèle</label>
-                            <select name="template_id" class="w-full border border-slate-200 rounded px-3 py-2 text-sm">
+                            <select name="template_id" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" <?= $isLocked ? 'disabled' : '' ?>>
                                 <option value="">— Choisir un modèle —</option>
                                 <?php foreach ($templates as $t): ?>
                                 <option value="<?= (int)$t['id'] ?>" <?= ($doc && (int)$doc['template_id'] === (int)$t['id']) || (!$doc && empty($defaults)) ? 'selected' : '' ?>><?= htmlspecialchars($t['name'] ?? '') ?></option>
@@ -84,7 +114,7 @@ $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($body
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Format (preset)</label>
-                            <select name="preset_id" class="w-full border border-slate-200 rounded px-3 py-2 text-sm">
+                            <select name="preset_id" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" <?= $isLocked ? 'disabled' : '' ?>>
                                 <option value="">— Choisir un format —</option>
                                 <?php
                                 $presetsPaper = array_filter($presets, fn($p) => in_array($p['code'] ?? '', ['a4_portrait', 'a4_landscape'], true));
@@ -103,29 +133,38 @@ $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($body
                             </select>
                         </div>
                         <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Classification</label>
+                            <select name="classification_level" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" <?= $isLocked ? 'disabled' : '' ?>>
+                                <?php foreach ($classificationLabels as $code => $label): ?>
+                                <option value="<?= htmlspecialchars($code) ?>" <?= $currentClassification === $code ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Référence</label>
-                            <input type="text" name="reference_number" value="<?= htmlspecialchars($doc['reference_number'] ?? ($defaults['reference_number'] ?? '')) ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="CR-2025-0001">
+                            <input type="text" name="reference_number" value="<?= htmlspecialchars($doc['reference_number'] ?? ($defaults['reference_number'] ?? '')) ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="CR-2025-0001" <?= $isLocked ? 'readonly' : '' ?>>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Objet</label>
-                            <input type="text" name="subject" value="<?= htmlspecialchars($doc['subject'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="Objet du courrier">
+                            <input type="text" name="subject" value="<?= htmlspecialchars($doc['subject'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="Objet du courrier" <?= $isLocked ? 'readonly' : '' ?>>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Signataire (émetteur)</label>
-                            <input type="text" name="issuer_label" value="<?= htmlspecialchars($doc['issuer_label'] ?? ($defaults['issuer_label'] ?? '')) ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm">
+                            <input type="text" name="issuer_label" value="<?= htmlspecialchars($doc['issuer_label'] ?? ($defaults['issuer_label'] ?? '')) ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" <?= $isLocked ? 'readonly' : '' ?>>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Destinataire</label>
-                            <input type="text" name="destination_label" value="<?= htmlspecialchars($doc['destination_label'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm">
+                            <input type="text" name="destination_label" value="<?= htmlspecialchars($doc['destination_label'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" <?= $isLocked ? 'readonly' : '' ?>>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Titre (interne)</label>
-                            <input type="text" name="title" value="<?= htmlspecialchars($doc['title'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm">
+                            <input type="text" name="title" value="<?= htmlspecialchars($doc['title'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" <?= $isLocked ? 'readonly' : '' ?>>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Corps du document</label>
-                            <textarea id="body-rendered" name="body_rendered" form="courrier-form" rows="8" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-serif"><?= htmlspecialchars($doc['body_rendered'] ?? '') ?></textarea>
+                            <textarea id="body-rendered" name="body_rendered" form="courrier-form" rows="10" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-sans text-[#0b1220]" <?= $isLocked ? 'readonly' : '' ?>><?= htmlspecialchars($doc['body_rendered'] ?? '') ?></textarea>
                             <p class="mt-1 text-xs text-slate-500"><span id="stat-words"><?= $wordCount ?></span> mot(s) · <span id="stat-sentences"><?= $sentenceCount ?></span> phrase(s)</p>
+                            <p class="mt-2 text-xs text-slate-400">Caviardage : entourez le texte sensible par <code class="bg-slate-100 px-1 rounded">[[REDACT]]…[[/REDACT]]</code> — surlignage en aperçu ; le PDF « externe » supprime le texte sous les marqueurs.</p>
                         </div>
                     </div>
                 </form>
@@ -133,10 +172,10 @@ $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($body
         </div>
 
         <!-- Colonne centrale : aperçu -->
-        <div class="lg:col-span-5">
+        <div class="lg:col-span-6">
             <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm sticky top-20">
                 <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Aperçu</h3>
-                <div class="bg-slate-50 rounded border border-slate-200 min-h-[400px] overflow-auto p-6 courrier-preview-container">
+                <div class="courrier-page-chrome bg-slate-50 rounded border border-slate-200 min-h-[400px] overflow-auto p-6 courrier-preview-container">
                     <?php if ($previewHtml): ?>
                     <?= $previewHtml ?>
                     <?php elseif ($doc): ?>
@@ -166,16 +205,11 @@ $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($body
                 </ul>
             </div>
             <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
-                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Blocs prédéfinis</h3>
-                <ul class="space-y-2 text-xs">
-                    <li><span class="font-medium text-slate-600">Formule d'appel</span> — Madame, Monsieur / À l'attention de…</li>
-                    <li><span class="font-medium text-slate-600">Objet / Référence</span> — Objet : … / Réf. : {{document.reference_number}}</li>
-                    <li><span class="font-medium text-slate-600">Paragraphes réglementaires</span> — À insérer selon le type de document</li>
-                    <li><span class="font-medium text-slate-600">Formule de clôture</span> — Veuillez agréer… / Dans l'attente de…</li>
-                    <li><span class="font-medium text-slate-600">Mention signature</span> — Pour copie et usage conforme</li>
-                    <li><span class="font-medium text-slate-600">Mention diffusion</span> — Diffusion : …</li>
-                </ul>
-                <p class="mt-2 text-slate-400 text-xs">Saisie manuelle dans le corps du document ou insertion à brancher en JS.</p>
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-2">Assistant rédactionnel</h3>
+                <p class="text-xs text-slate-500 mb-3">Cliquez pour insérer à la position du curseur (corps du document).</p>
+                <div id="courrier-snippets-root" class="space-y-3 text-xs" data-locked="<?= $isLocked ? '1' : '0' ?>" data-doc-id="<?= $doc ? (int)$doc['id'] : '' ?>">
+                    <p class="text-slate-400">Chargement des formules…</p>
+                </div>
             </div>
             <?php if ($doc && !empty($versions)): ?>
             <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
@@ -287,25 +321,8 @@ $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($body
     ta.addEventListener('change', update);
 })();
 </script>
-<style>
-.courrier-preview { font-family: "Source Serif 4", Georgia, serif; font-size: 11pt; color: #1e293b; }
-.courrier-preview.a4-portrait { max-width: 210mm; }
-.courrier-envelope { margin-bottom: 1.25rem; }
-.courrier-envelope-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
-.courrier-header { flex: 1; }
-.courrier-header-line { font-weight: 700; font-size: 10pt; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.35; color: #0f172a; }
-.courrier-header-ref { font-size: 10pt; margin-top: 0.25rem; color: #475569; }
-.courrier-date { font-size: 10pt; color: #475569; white-space: nowrap; }
-.courrier-address-block { text-align: right; margin-bottom: 1.25rem; }
-.courrier-issuer { font-size: 10pt; line-height: 1.4; margin-bottom: 0.25rem; }
-.courrier-to-label { font-size: 10pt; font-style: italic; margin: 0.35rem 0 0.2rem; }
-.courrier-destination { font-size: 10pt; line-height: 1.4; }
-.courrier-meta { margin-bottom: 1rem; }
-.courrier-meta-line { font-size: 10pt; line-height: 1.5; margin-bottom: 0.25rem; }
-.courrier-body { white-space: pre-wrap; text-align: justify; line-height: 1.6; margin-top: 0.5rem; }
-.courrier-body p { margin-bottom: 0.75rem; }
-.courrier-signature-placeholder { margin-top: 2rem; text-align: right; }
-.courrier-signature-title { font-weight: 700; font-size: 10pt; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-.courrier-signature-box { display: inline-block; border: 2px dashed #94a3b8; padding: 0.6rem 1.2rem; font-size: 10pt; color: #64748b; min-width: 120px; text-align: center; }
-.courrier-signature-name { font-size: 10pt; margin-top: 0.35rem; }
-</style>
+<script src="<?= htmlspecialchars($baseUrl) ?>/assets/js/courrier-editor.js" defer></script>
+<script>
+window.COURRIER_SNIPPETS_API = <?= json_encode($baseUrl . '/courrier/api/snippets', JSON_UNESCAPED_SLASHES) ?>;
+window.COURRIER_DOC_ID = <?= $doc ? (int)$doc['id'] : 'null' ?>;
+</script>

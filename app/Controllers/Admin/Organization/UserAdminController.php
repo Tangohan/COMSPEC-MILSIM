@@ -37,32 +37,77 @@ class UserAdminController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $search = $request->input('search');
-        $status = $request->input('status');
-        $roleId = $request->input('role_id') ? (int) $request->input('role_id') : null;
-        $filterIncomplete = $request->input('filter_incomplete') === '1' || $request->input('filter_incomplete') === 'true';
-        $users = $this->userRepository->listForTenant($tenantId, $search, $status !== '' ? $status : null, $roleId);
-        $roles = $this->roleRepository->allForTenant($tenantId);
-        $completenessByUser = [];
-        foreach ($users as $u) {
-            $up = $this->userProfileRepository->getByUserId((int) $u['id']);
-            $pp = $this->profileCompletenessService->getCompleteness((int) $u['id'], $u, $up, null);
-            $completenessByUser[(int) $u['id']] = $pp;
-        }
+        $search = $this->queryString($request->query('search'));
+        $status = $this->queryString($request->query('status'));
+        $roleId = $this->positiveIntOrNull($request->query('role_id'));
+        $filterIncomplete = $request->query('filter_incomplete') === '1' || $request->query('filter_incomplete') === 'true';
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = 25;
+        $statusFilter = ($status !== null && $status !== '') ? $status : null;
+
+        $roles = $this->roleRepository->forTenantOrganization($tenantId);
+
         if ($filterIncomplete) {
-            $users = array_filter($users, function ($u) use ($completenessByUser) {
+            $allUsers = $this->userRepository->listForTenant($tenantId, $search, $statusFilter, $roleId);
+            $completenessByUser = [];
+            foreach ($allUsers as $u) {
+                $up = $this->userProfileRepository->getByUserId((int) $u['id']);
+                $pp = $this->profileCompletenessService->getCompleteness((int) $u['id'], $u, $up, null);
+                $completenessByUser[(int) $u['id']] = $pp;
+            }
+            $filtered = array_values(array_filter($allUsers, function ($u) use ($completenessByUser) {
                 $comp = $completenessByUser[(int) $u['id']] ?? ['score' => 100, 'sections_critiques' => []];
+
                 return $comp['score'] < 100 || !empty($comp['sections_critiques']);
-            });
+            }));
+            $total = count($filtered);
+            $users = array_slice($filtered, ($page - 1) * $perPage, $perPage);
+            $completenessByUser = array_intersect_key($completenessByUser, array_flip(array_map(static fn ($u) => (int) $u['id'], $users)));
+        } else {
+            $total = $this->userRepository->countListForTenant($tenantId, $search, $statusFilter, $roleId);
+            $users = $this->userRepository->listForTenant($tenantId, $search, $statusFilter, $roleId, $perPage, ($page - 1) * $perPage);
+            $completenessByUser = [];
+            foreach ($users as $u) {
+                $up = $this->userProfileRepository->getByUserId((int) $u['id']);
+                $completenessByUser[(int) $u['id']] = $this->profileCompletenessService->getCompleteness((int) $u['id'], $u, $up, null);
+            }
         }
+
+        $totalPages = max(1, (int) ceil($total / $perPage));
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.index',
             'title' => 'Utilisateurs',
             'users' => $users,
             'roles' => $roles,
             'completenessByUser' => $completenessByUser,
-            'filters' => ['search' => $search, 'status' => $status, 'role_id' => $roleId, 'filter_incomplete' => $filterIncomplete],
+            'filters' => [
+                'search' => $search,
+                'status' => $status ?? '',
+                'role_id' => $roleId,
+                'filter_incomplete' => $filterIncomplete,
+            ],
+            'usersTotal' => $total,
+            'usersPage' => $page,
+            'usersPerPage' => $perPage,
+            'usersTotalPages' => $totalPages,
         ]);
+    }
+
+    private function queryString(mixed $v): ?string
+    {
+        if ($v === null || $v === '') {
+            return null;
+        }
+
+        return trim((string) $v);
+    }
+
+    private function positiveIntOrNull(mixed $v): ?int
+    {
+        $n = (int) $v;
+
+        return $n > 0 ? $n : null;
     }
 
     public function show(Request $request, array $params = []): Response
@@ -80,7 +125,7 @@ class UserAdminController
         $userProfile = $this->userProfileRepository->getByUserId($id);
         $personnelProfile = $this->personnelProfileRepository->getByUserId($id);
         $completeness = $this->profileCompletenessService->getCompleteness($id, $user, $userProfile, $personnelProfile);
-        $roles = $this->roleRepository->allForTenant($tenantId);
+        $roles = $this->roleRepository->forTenantOrganization($tenantId);
         $grades = $this->gradeRepository->listForTenant($tenantId);
         $gradeCategories = $this->gradeCategoryRepository->listActive();
         return Response::view('layout.main', [
@@ -101,7 +146,7 @@ class UserAdminController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $roles = $this->roleRepository->allForTenant($tenantId);
+        $roles = $this->roleRepository->forTenantOrganization($tenantId);
         $grades = $this->gradeRepository->listForTenant($tenantId);
         $gradeCategories = $this->gradeCategoryRepository->listActive();
         return Response::view('layout.main', [
@@ -148,6 +193,11 @@ class UserAdminController
             Session::flash('error', 'Limite de membres du plan atteinte.');
             return Response::redirect(url('admin/organization/users/create'));
         }
+        if ($roleId !== null && !$this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
+            Session::flash('error', 'Ce rôle ne peut pas être attribué depuis l’administration communauté.');
+
+            return Response::redirect(url('admin/organization/users/create'));
+        }
 
         $passwordHash = password_hash($password, PASSWORD_ARGON2ID);
         $userId = $this->userRepository->create($tenantId, [
@@ -181,7 +231,7 @@ class UserAdminController
             return Response::redirect(url('admin/organization/users'));
         }
         $userProfile = $this->userProfileRepository->getByUserId($id);
-        $roles = $this->roleRepository->allForTenant($tenantId);
+        $roles = $this->roleRepository->forTenantOrganization($tenantId);
         $grades = $this->gradeRepository->listForTenant($tenantId);
         $gradeCategories = $this->gradeCategoryRepository->listActive();
         $gradeValidationIssues = $this->gradeValidationService->validateUserProfile($user);
@@ -229,13 +279,18 @@ class UserAdminController
         if ($request->input('role_id') !== null) {
             $newRoleId = $request->input('role_id') ? (int) $request->input('role_id') : null;
             $oldRoleId = $user['role_id'] !== null ? (int) $user['role_id'] : null;
-            $superAdminRoleId = $this->roleRepository->getIdBySlug($tenantId, 'super_admin');
-            if ($superAdminRoleId !== null && $oldRoleId === $superAdminRoleId && $newRoleId !== $superAdminRoleId) {
-                $count = $this->userRepository->countUsersWithRole($superAdminRoleId);
+            $ownerRoleId = $this->roleRepository->getIdBySlug($tenantId, 'community_owner');
+            if ($ownerRoleId !== null && $oldRoleId === $ownerRoleId && $newRoleId !== $ownerRoleId) {
+                $count = $this->userRepository->countUsersWithRole($ownerRoleId);
                 if ($count <= 1) {
-                    Session::flash('error', 'Impossible de retirer le rôle super-administrateur au dernier super-admin.');
+                    Session::flash('error', 'Impossible de retirer le rôle propriétaire communauté au dernier titulaire.');
                     return Response::redirect(url('admin/organization/users/' . $id . '/edit'));
                 }
+            }
+            if ($newRoleId !== null && !$this->roleRepository->canAssignInTenantAdminContext($newRoleId, $tenantId)) {
+                Session::flash('error', 'Ce rôle ne peut pas être attribué depuis l’administration communauté.');
+
+                return Response::redirect(url('admin/organization/users/' . $id . '/edit'));
             }
             $data['role_id'] = $newRoleId;
             $this->adminAuditService->logRoleAssigned($tenantId, $actorUserId, $id, $oldRoleId !== null ? (string) $oldRoleId : null, $newRoleId !== null ? (string) $newRoleId : null);
@@ -298,11 +353,12 @@ class UserAdminController
             Session::flash('error', 'Utilisateur introuvable.');
             return Response::redirect(url('admin/organization/users'));
         }
-        $superAdminRoleId = $this->roleRepository->getIdBySlug($tenantId, 'super_admin');
-        if ($superAdminRoleId !== null && (int) ($user['role_id'] ?? 0) === $superAdminRoleId) {
-            $count = $this->userRepository->countUsersWithRole($superAdminRoleId);
+        $ownerRoleId = $this->roleRepository->getIdBySlug($tenantId, 'community_owner');
+        if ($ownerRoleId !== null && (int) ($user['role_id'] ?? 0) === $ownerRoleId) {
+            $count = $this->userRepository->countUsersWithRole($ownerRoleId);
             if ($count <= 1) {
-                Session::flash('error', 'Impossible de désactiver le dernier super-administrateur.');
+                Session::flash('error', 'Impossible de désactiver le dernier propriétaire communauté.');
+
                 return Response::redirect(url('admin/organization/users/' . $id));
             }
         }

@@ -31,6 +31,16 @@ class ForumController
         }
 
         $categories = $this->categoryRepository->listForTenant($tenantId);
+        $forumGeneralCategories = [];
+        $forumOrganizationCategories = [];
+        foreach ($categories as $c) {
+            $scope = $c['scope'] ?? 'general';
+            if ($scope === 'organization') {
+                $forumOrganizationCategories[] = $c;
+            } else {
+                $forumGeneralCategories[] = $c;
+            }
+        }
         $topicCount = $this->topicRepository->getTotalTopicCount($tenantId);
         $postCount = $this->postRepository->getTotalPostCount($tenantId);
         $postsThisWeek = $this->postRepository->getPostsThisWeekCount($tenantId);
@@ -47,7 +57,7 @@ class ForumController
 
         $pinnedAnnouncements = [];
         $announcementsCategory = null;
-        foreach ($categories as $cat) {
+        foreach ($forumGeneralCategories as $cat) {
             if ($cat['slug'] === 'annonces') {
                 $announcementsCategory = $cat;
                 break;
@@ -61,7 +71,8 @@ class ForumController
             'content' => 'forum.index',
             'title' => config('forum.name') ?? 'Forum',
             'forumConfig' => config('forum') ?? [],
-            'categories' => $categories,
+            'categories' => $forumGeneralCategories,
+            'forumOrganizationCategories' => $forumOrganizationCategories,
             'topicCount' => $topicCount,
             'postCount' => $postCount,
             'postsThisWeek' => $postsThisWeek,

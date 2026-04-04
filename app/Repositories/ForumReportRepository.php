@@ -16,12 +16,21 @@ class ForumReportRepository
         $this->pdo = Database::getPdo();
     }
 
-    public function create(int $tenantId, int $reporterId, ?int $postId, ?int $topicId, string $reason): int
+    public function create(int $tenantId, int $reporterId, ?int $postId, ?int $topicId, string $reason, string $reportType = 'other', ?string $comment = null): int
     {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO forum_reports (tenant_id, reporter_id, post_id, topic_id, reason, status, created_at) VALUES (?, ?, ?, ?, ?, \'pending\', NOW())'
-        );
-        $stmt->execute([$tenantId, $reporterId, $postId, $topicId, $reason]);
+        $chk = $this->pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_reports' AND COLUMN_NAME = 'report_type' LIMIT 1");
+        if ($chk && $chk->fetchColumn()) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO forum_reports (tenant_id, reporter_id, post_id, topic_id, reason, report_type, comment, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, \'pending\', NOW())'
+            );
+            $stmt->execute([$tenantId, $reporterId, $postId, $topicId, $reason, $reportType, $comment]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO forum_reports (tenant_id, reporter_id, post_id, topic_id, reason, status, created_at) VALUES (?, ?, ?, ?, ?, \'pending\', NOW())'
+            );
+            $stmt->execute([$tenantId, $reporterId, $postId, $topicId, $reason]);
+        }
+
         return (int) $this->pdo->lastInsertId();
     }
 
@@ -30,11 +39,13 @@ class ForumReportRepository
         $stmt = $this->pdo->prepare(
             'SELECT fr.*, u.display_name AS reporter_name,
                     fp.body AS post_excerpt, fp.topic_id AS post_topic_id,
-                    ft.title AS topic_title
+                    ft.title AS topic_title,
+                    COALESCE(fc.scope, \'general\') AS category_scope
              FROM forum_reports fr
              LEFT JOIN users u ON u.id = fr.reporter_id
              LEFT JOIN forum_posts fp ON fp.id = fr.post_id
              LEFT JOIN forum_topics ft ON ft.id = COALESCE(fr.topic_id, fp.topic_id)
+             LEFT JOIN forum_categories fc ON fc.id = ft.category_id
              WHERE fr.tenant_id = ? AND fr.status = \'pending\'
              ORDER BY fr.created_at DESC'
         );

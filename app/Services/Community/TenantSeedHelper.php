@@ -28,6 +28,7 @@ final class TenantSeedHelper
             ['forum.edit_own', 'Modifier son message', 'forum'],
             ['forum.delete_own', 'Supprimer son message', 'forum'],
             ['forum.moderate', 'Modérer le forum', 'forum'],
+            ['forum.moderate_organization', 'Modérer la section forum de l\'organisation', 'forum'],
             ['forum.manage_categories', 'Gérer les catégories', 'forum'],
         ];
 
@@ -41,10 +42,19 @@ final class TenantSeedHelper
         $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
         $adminRole->execute([$tenantId, 'tenant_admin']);
         $adminRoleId = (int) ($adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
+        $coRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $coRole->execute([$tenantId, 'community_owner']);
+        $communityOwnerId = (int) ($coRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
         if ($adminRoleId) {
             $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
             foreach ($permIds as $pid) {
                 $link->execute([$adminRoleId, $pid]);
+            }
+        }
+        if ($communityOwnerId) {
+            $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+            foreach ($permIds as $pid) {
+                $link->execute([$communityOwnerId, $pid]);
             }
         }
 
@@ -52,8 +62,9 @@ final class TenantSeedHelper
             $st = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
             $st->execute([$tenantId, $slug]);
             if (!$st->fetch()) {
-                $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, created_at) VALUES (?, ?, ?, ?, 1, NOW())')
-                    ->execute([$tenantId, $roleName, $slug, '']);
+                $layer = 'intra';
+                $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, role_layer, created_at) VALUES (?, ?, ?, ?, 1, ?, NOW())')
+                    ->execute([$tenantId, $roleName, $slug, '', $layer]);
             }
         }
 
@@ -62,7 +73,7 @@ final class TenantSeedHelper
         $modRoleId = (int) ($modRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
         if ($modRoleId) {
             $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-            foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.moderate'] as $slug) {
+            foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.moderate', 'forum.moderate_organization'] as $slug) {
                 if (isset($permIds[$slug])) {
                     $link->execute([$modRoleId, $permIds[$slug]]);
                 }
@@ -98,6 +109,36 @@ final class TenantSeedHelper
         foreach ($categories as $c) {
             $insCat->execute([$tenantId, $c[0], $c[1], $c[2], $c[3], $c[4]]);
         }
+    }
+
+    /**
+     * Catégorie forum « organisation » (section dédiée) — idempotent.
+     */
+    public static function ensureOrganizationForumSection(PDO $pdo, int $tenantId): void
+    {
+        $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_categories' AND COLUMN_NAME = 'scope' LIMIT 1");
+        if (!$stmt || !$stmt->fetchColumn()) {
+            return;
+        }
+        $chk = $pdo->prepare("SELECT 1 FROM forum_categories WHERE tenant_id = ? AND scope = 'organization' LIMIT 1");
+        $chk->execute([$tenantId]);
+        if ($chk->fetch()) {
+            return;
+        }
+        $st = $pdo->prepare('SELECT name, slug FROM tenants WHERE id = ? LIMIT 1');
+        $st->execute([$tenantId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return;
+        }
+        $slug = 'org-' . preg_replace('/[^a-z0-9-]+/', '-', strtolower((string) $row['slug']));
+        $slug = trim($slug, '-');
+        if ($slug === 'org') {
+            $slug = 'org-' . $tenantId;
+        }
+        $name = trim((string) $row['name']) . ' — Espace dédié';
+        $ins = $pdo->prepare('INSERT INTO forum_categories (tenant_id, scope, owner_tenant_id, parent_id, name, slug, description, color_theme, display_order, is_locked, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, 0, NOW(), NOW())');
+        $ins->execute([$tenantId, 'organization', $tenantId, $name, $slug, 'Section forum de votre organisation.', 'slate', 15]);
     }
 
     public static function seedDocumentsEquipment(PDO $pdo, int $tenantId): void
@@ -179,27 +220,22 @@ final class TenantSeedHelper
     public static function ensureSystemAdminPermissions(PDO $pdo, int $tenantId): void
     {
         $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
-        $stmt->execute([$tenantId, 'admin.system']);
-        if (!$stmt->fetch()) {
-            $pdo->prepare('INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, ?, ?, ?, NOW())')->execute([$tenantId, 'Administration système', 'admin.system', 'admin']);
-        }
-        $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
         $stmt->execute([$tenantId, 'admin.organization']);
         if (!$stmt->fetch()) {
             $pdo->prepare('INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, ?, ?, ?, NOW())')->execute([$tenantId, 'Administration organisationnelle', 'admin.organization', 'admin']);
         }
 
         $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
-        $stmt->execute([$tenantId, 'super_admin']);
+        $stmt->execute([$tenantId, 'community_owner']);
         if (!$stmt->fetch()) {
-            $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, created_at) VALUES (?, ?, ?, ?, 1, 1, NOW())')->execute([$tenantId, 'Super Administrator', 'super_admin', '']);
-            $superAdminRoleId = (int) $pdo->lastInsertId();
-            foreach (['admin.system', 'admin.organization', 'admin.access'] as $permSlug) {
+            $pdo->prepare("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, 1, 1, 'community', NOW())")->execute([$tenantId, 'Propriétaire communauté', 'community_owner', '']);
+            $coId = (int) $pdo->lastInsertId();
+            foreach (['admin.organization', 'admin.access'] as $permSlug) {
                 $p = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
                 $p->execute([$tenantId, $permSlug]);
                 $permId = $p->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
                 if ($permId) {
-                    $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)')->execute([$superAdminRoleId, $permId]);
+                    $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)')->execute([$coId, $permId]);
                 }
             }
         }
@@ -214,20 +250,29 @@ final class TenantSeedHelper
             $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)')->execute([$tenantAdminRoleId, $permOrgId]);
         }
 
+        $coR = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $coR->execute([$tenantId, 'community_owner']);
+        $coRid = $coR->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
+        if ($coRid && $permOrgId) {
+            $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)')->execute([(int) $coRid, $permOrgId]);
+        }
+
         $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
         $stmt->execute([$tenantId, 'training.view']);
         if (!$stmt->fetch()) {
             foreach ([['training.view', 'Voir les formations', 'training'], ['training.manage', 'Gérer les formations', 'training'], ['training.assign', 'Assigner des formations', 'training']] as $p) {
                 $pdo->prepare('INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, ?, ?, ?, NOW())')->execute([$tenantId, $p[1], $p[0], $p[2]]);
             }
-            $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
-            $adminRole->execute([$tenantId, 'tenant_admin']);
-            $adminRoleId = $adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
-            if ($adminRoleId) {
-                $trainPerms = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug IN (\'training.view\',\'training.manage\',\'training.assign\')');
-                $trainPerms->execute([$tenantId]);
-                while ($row = $trainPerms->fetch(PDO::FETCH_ASSOC)) {
-                    $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)')->execute([$adminRoleId, $row['id']]);
+            foreach (['tenant_admin', 'community_owner'] as $roleSlug) {
+                $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+                $adminRole->execute([$tenantId, $roleSlug]);
+                $adminRoleId = $adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
+                if ($adminRoleId) {
+                    $trainPerms = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug IN (\'training.view\',\'training.manage\',\'training.assign\')');
+                    $trainPerms->execute([$tenantId]);
+                    while ($row = $trainPerms->fetch(PDO::FETCH_ASSOC)) {
+                        $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)')->execute([(int) $adminRoleId, $row['id']]);
+                    }
                 }
             }
         }

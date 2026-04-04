@@ -4,8 +4,8 @@ $gradesFr = $gradesFr ?? [];
 $gradesUs = $gradesUs ?? [];
 $categories = $categories ?? [];
 $gradeDisplayService = $gradeDisplayService ?? null;
-$flashSuccess = \App\Core\Session::flash('success');
-$flashError = \App\Core\Session::flash('error');
+$flashSuccess = \App\Core\Session::getFlash('success');
+$flashError = \App\Core\Session::getFlash('error');
 ?>
 <div class="max-w-5xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">

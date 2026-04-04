@@ -32,6 +32,7 @@ class ForumTopicRepository
             'oldest' => 'ft.created_at ASC',
             'replies' => 'post_count DESC, ft.updated_at DESC',
             'popular_7d' => 'posts_7d DESC, ft.updated_at DESC',
+            'solved' => 'ft.is_solved DESC, ft.updated_at DESC',
             default => 'ft.is_pinned DESC, ft.updated_at DESC',
         };
 
@@ -264,5 +265,16 @@ class ForumTopicRepository
         $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM forum_topics WHERE tenant_id = ? AND is_hidden = 0');
         $stmt->execute([$tenantId]);
         return (int) $stmt->fetchColumn();
+    }
+
+    public function setBestAnswer(int $topicId, int $tenantId, ?int $postId): bool
+    {
+        $chk = $this->pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_topics' AND COLUMN_NAME = 'best_answer_post_id' LIMIT 1");
+        if (!$chk || !$chk->fetchColumn()) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare('UPDATE forum_topics SET best_answer_post_id = ?, is_solved = ? WHERE id = ? AND tenant_id = ?');
+
+        return $stmt->execute([$postId, $postId ? 1 : 0, $topicId, $tenantId]);
     }
 }

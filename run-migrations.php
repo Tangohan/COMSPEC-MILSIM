@@ -2,10 +2,12 @@
 declare(strict_types=1);
 
 /**
- * Exécute le schéma SQL et le seed par défaut (tenant, rôles, forum, panneaux).
- * Regroupe : schéma + ALTERs conditionnels + seed tenant/admin + seed forum.
- * CLI : php run-migrations.php
- * Web : public/run-migrations.php
+ * Pipeline complet schéma + migrations + seed (appelé par setup-database.php).
+ *
+ * Point d’entrée utilisateur recommandé : **php setup-database.php** (un seul script documenté).
+ * Ce fichier reste le moteur procédural ; ne pas le confondre avec les seuls bootstrap PHP isolés.
+ *
+ * Web : public/setup-database.php ou public/run-migrations.php (alias).
  */
 
 $root = dirname(__FILE__);
@@ -44,13 +46,13 @@ if ($checks['.env']) {
 
 // Connexion DB
 $host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: '127.0.0.1';
-$name = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: 'u416380327_BDD_PROD';
-$user = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'u416380327_ADMIN_PROD';
-$pass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: 'Tt05032001_TETARD_05032001';
+$name = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: '';
+$user = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: '';
+$pass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: '';
 $charset = $_ENV['DB_CHARSET'] ?? getenv('DB_CHARSET') ?: 'utf8mb4';
 
-if ($user === 'root' && $pass === '' && !$checks['.env']) {
-    echo "Erreur : aucun fichier .env trouvé. Créez .env avec DB_HOST, DB_NAME, DB_USER, DB_PASSWORD.\n";
+if ($name === '' || $user === '') {
+    echo "Erreur : DB_NAME et DB_USER sont requis. Créez un fichier .env (voir .env.example) ou définissez les variables d'environnement.\n";
     exit(1);
 }
 
@@ -68,6 +70,8 @@ echo "[OK] Connexion base : $name\n";
 
 require_once $root . '/bootstrap/community_platform_migration.php';
 require_once $root . '/bootstrap/platform_unit_commander_migration.php';
+require_once $root . '/bootstrap/prod_import_gaps.php';
+require_once $root . '/bootstrap/rbac_three_layer_migration.php';
 
 // ----- Schéma (exécution statement par statement : PDO::exec ne gère qu'une requête) -----
 set_time_limit(300);
@@ -114,6 +118,18 @@ if (!empty($errors)) {
     foreach (array_slice($errors, 0, 5) as $err) echo "  - $err\n";
 }
 echo "Schéma OK. ({$done} instructions exécutées)\n";
+@flush();
+@ob_flush();
+
+// Plans Stripe, colonnes tenants, invitations, modération, événements, usage, codes communauté, parrainage — idempotent.
+echo "Migrations bootstrap plateforme (community_platform + unit_commander + rbac_three_layer)...\n";
+@flush();
+@ob_flush();
+run_community_platform_migration($pdo);
+run_platform_unit_commander_migration($pdo);
+run_production_import_gap_migrations($pdo, $root);
+run_rbac_three_layer_migration($pdo);
+echo "Bootstrap plateforme OK (subscription_plans, tenants.*, RBAC 3 couches, community_invitations, moderation_*, security_*, community_code, referral_*…).\n";
 @flush();
 @ob_flush();
 
@@ -1091,6 +1107,9 @@ if ($stmt && !$stmt->fetch()) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 }
 
+$forumV2Migrate = require $root . '/bootstrap/forum_v2_migration.php';
+$forumV2Migrate($pdo);
+
 // ----- Seed forum (permissions, rôles, catégories) — idempotent -----
 $run_forum_seed = function (PDO $pdo, int $tenantId): void {
     $stmt = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'forum.view' LIMIT 1");
@@ -1110,6 +1129,7 @@ $run_forum_seed = function (PDO $pdo, int $tenantId): void {
         ['forum.edit_own', 'Modifier son message', 'forum'],
         ['forum.delete_own', 'Supprimer son message', 'forum'],
         ['forum.moderate', 'Modérer le forum', 'forum'],
+        ['forum.moderate_organization', 'Modérer la section forum de l\'organisation', 'forum'],
         ['forum.manage_categories', 'Gérer les catégories', 'forum'],
     ];
 
@@ -1144,7 +1164,7 @@ $run_forum_seed = function (PDO $pdo, int $tenantId): void {
     $modRoleId = (int) ($modRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
     if ($modRoleId) {
         $link = $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)");
-        foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.moderate'] as $slug) {
+        foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.moderate', 'forum.moderate_organization'] as $slug) {
             if (isset($permIds[$slug])) {
                 $link->execute([$modRoleId, $permIds[$slug]]);
             }
@@ -1306,31 +1326,44 @@ if ($stmt && $stmt->fetch()) {
         echo "Permission admin.access ajoutée et liée au rôle Administrator.\n";
     }
 
-    // Permissions admin.system et admin.organization + rôle super_admin (centre admin refonte)
-    $stmt = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'admin.system' LIMIT 1");
-    $stmt->execute([$tenantId]);
-    if (!$stmt->fetch()) {
-        $pdo->prepare("INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, 'Administration système', 'admin.system', 'admin', NOW())")->execute([$tenantId]);
-    }
+    // Permissions organisation (admin.system est réservé aux rôles site globaux)
     $stmt = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'admin.organization' LIMIT 1");
     $stmt->execute([$tenantId]);
     if (!$stmt->fetch()) {
-        $pdo->prepare("INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, 'Administration organisationnelle', 'admin.organization', 'admin', NOW())")->execute([$tenantId]);
+        $pdo->prepare("INSERT INTO permissions (tenant_id, name, slug, module, scope, created_at) VALUES (?, 'Administration organisationnelle', 'admin.organization', 'admin', 'community', NOW())")->execute([$tenantId]);
     }
-    $stmt = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'super_admin' LIMIT 1");
+    $stmt = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'community_owner' LIMIT 1");
     $stmt->execute([$tenantId]);
     if (!$stmt->fetch()) {
-        $pdo->prepare("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, created_at) VALUES (?, 'Super Administrator', 'super_admin', 'Accès administration système et organisation', 1, 1, NOW())")->execute([$tenantId]);
-        $superAdminRoleId = (int) $pdo->lastInsertId();
-        foreach (['admin.system', 'admin.organization', 'admin.access'] as $permSlug) {
+        $pdo->prepare("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, 'Propriétaire communauté', 'community_owner', 'Gouvernance complète de la communauté (sans administration plateforme)', 1, 1, 'community', NOW())")->execute([$tenantId]);
+        $coId = (int) $pdo->lastInsertId();
+        $ta = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'tenant_admin' LIMIT 1");
+        $ta->execute([$tenantId]);
+        $taId = $ta->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
+        if ($taId) {
+            $rp = $pdo->prepare('SELECT permission_id FROM role_permissions WHERE role_id = ?');
+            $rp->execute([(int) $taId]);
+            $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+            while ($row = $rp->fetch(PDO::FETCH_ASSOC)) {
+                $pid = (int) $row['permission_id'];
+                $chk = $pdo->prepare('SELECT slug FROM permissions WHERE id = ? LIMIT 1');
+                $chk->execute([$pid]);
+                $s = $chk->fetch(PDO::FETCH_ASSOC);
+                if ($s && ($s['slug'] ?? '') === 'admin.system') {
+                    continue;
+                }
+                $link->execute([$coId, $pid]);
+            }
+        }
+        foreach (['admin.organization', 'admin.access'] as $permSlug) {
             $p = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1");
             $p->execute([$tenantId, $permSlug]);
             $permId = $p->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
             if ($permId) {
-                $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)")->execute([$superAdminRoleId, $permId]);
+                $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)")->execute([$coId, $permId]);
             }
         }
-        echo "Rôle super_admin et permissions admin.system / admin.organization créés.\n";
+        echo "Rôle community_owner créé (permissions communauté, sans admin.system tenant).\n";
     }
     $tenantAdminRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'tenant_admin' LIMIT 1");
     $tenantAdminRole->execute([$tenantId]);
@@ -1395,9 +1428,6 @@ if ($stmt && $stmt->fetch()) {
         echo "Permissions courrier.* ajoutées.\n";
     }
 
-    run_community_platform_migration($pdo);
-    run_platform_unit_commander_migration($pdo);
-
     echo "Migrations terminées.\n";
     exit(0);
 }
@@ -1406,11 +1436,11 @@ echo "Insertion du tenant et admin par défaut...\n";
 $pdo->exec("INSERT INTO tenants (name, slug, created_at, updated_at) VALUES ('Default Organisation', 'default', NOW(), NOW())");
 $tenantId = (int) $pdo->lastInsertId();
 
-$pdo->exec("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, created_at) VALUES ($tenantId, 'Super Administrator', 'super_admin', 'Accès administration système et organisation', 1, 1, NOW())");
-$superAdminRoleId = (int) $pdo->lastInsertId();
-$pdo->exec("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, created_at) VALUES ($tenantId, 'Administrator', 'tenant_admin', 'Full access', 1, 0, NOW())");
+$pdo->exec("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES ($tenantId, 'Propriétaire communauté', 'community_owner', 'Gouvernance complète de la communauté', 1, 1, 'community', NOW())");
+$communityOwnerRoleId = (int) $pdo->lastInsertId();
+$pdo->exec("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES ($tenantId, 'Administrator', 'tenant_admin', 'Accès administration organisation', 1, 0, 'community', NOW())");
 $tenantAdminRoleId = (int) $pdo->lastInsertId();
-$roleId = $superAdminRoleId; // premier utilisateur = super_admin
+$roleId = $communityOwnerRoleId;
 
 $pdo->exec("INSERT INTO grades (tenant_id, name, short_name, nato_code, rank_order, created_at) VALUES ($tenantId, 'Officer', 'OFR', 'OF-1', 10, NOW())");
 $gradeId = (int) $pdo->lastInsertId();
@@ -1418,6 +1448,12 @@ $gradeId = (int) $pdo->lastInsertId();
 $hash = password_hash('admin', PASSWORD_ARGON2ID);
 $pdo->prepare("INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at) VALUES (?, 'admin@athena.local', ?, 'Admin', 'ADMIN', ?, ?, 'active', NOW(), NOW())")
     ->execute([$tenantId, $hash, $roleId, $gradeId]);
+
+$siteGlobalId = $pdo->query("SELECT id FROM roles WHERE tenant_id IS NULL AND slug = 'site_super_admin' LIMIT 1")->fetchColumn();
+if ($siteGlobalId) {
+    $pdo->prepare('INSERT IGNORE INTO site_role_assignments (email_normalized, role_id, created_at) VALUES (?, ?, NOW())')
+        ->execute(['admin@athena.local', (int) $siteGlobalId]);
+}
 
 $panels = [
     ['État civil', 'etat-civil', 'Identité et état civil', 10],
@@ -1435,9 +1471,6 @@ $pdo->exec("INSERT INTO tenant_matricule_config (tenant_id, prefix, format_patte
 
 $run_forum_seed($pdo, $tenantId);
 $run_documents_seed($pdo, $tenantId);
-
-run_community_platform_migration($pdo);
-run_platform_unit_commander_migration($pdo);
 
 echo "Seed OK. Compte : admin@athena.local / admin\n";
 echo "Migrations terminées.\n";

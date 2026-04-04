@@ -63,10 +63,12 @@ class ForumUploadController
             if ($size > self::MAX_SIZE) {
                 return Response::json(['success' => false, 'error' => 'Un fichier dépasse 5 Mo'], 400);
             }
-            if (!in_array($type, self::ALLOWED_TYPES, true)) {
-                return Response::json(['success' => false, 'error' => 'Type non autorisé (JPEG, PNG, GIF, WebP uniquement)'], 400);
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $detected = $finfo->file($tmp);
+            if (!is_string($detected) || !in_array($detected, self::ALLOWED_TYPES, true)) {
+                return Response::json(['success' => false, 'error' => 'Type MIME non autorisé (JPEG, PNG, GIF, WebP uniquement)'], 400);
             }
-            $ext = match ($type) {
+            $ext = match ($detected) {
                 'image/jpeg' => 'jpg',
                 'image/png' => 'png',
                 'image/gif' => 'gif',

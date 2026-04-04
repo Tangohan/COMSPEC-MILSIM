@@ -11,58 +11,67 @@ use PDO;
 
 final class TenantBootstrapService
 {
-    private const RESERVED_SLUGS = ['default', 'admin', 'api', 'www', 'c', 'login', 'dashboard', 'hub', 'forum', 'system'];
+    /** Codes communauté interdits (routes / confusion). */
+    private const RESERVED_COMMUNITY_CODES = [
+        'JOIN', 'LOGIN', 'REGISTER', 'API', 'ADMIN', 'C', 'DASHBOARD', 'HUB', 'FORUM', 'SYSTEM',
+        'DEFAULT', 'WWW', 'ENLISTMENT', 'COMMUNITIES', 'INVITATIONS', 'LOGOUT', 'ACCOUNT', 'ATAK',
+    ];
 
     public function __construct(
         private TenantRepository $tenantRepository,
-        private UserRepository $userRepository
+        private UserRepository $userRepository,
+        private \App\Repositories\ReferralRepository $referralRepository
     ) {}
 
     /**
-     * Crée une communauté (tenant), seeds forum/documents, duplique le créateur comme super-admin.
+     * Crée une communauté (tenant), seeds forum/documents, duplique le créateur comme propriétaire communauté (rôle site séparé).
      *
      * @return array{tenant_id: int, user_id: int}
      */
     public function createCommunity(int $creatorUserId, string $name, string $slug, array $options = []): array
     {
         $slug = strtolower(trim($slug));
-        if (!preg_match('/^[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$/', $slug)) {
-            throw new \InvalidArgumentException('Le slug ne peut contenir que des lettres minuscules, chiffres et tirets.');
-        }
-        if (in_array($slug, self::RESERVED_SLUGS, true)) {
-            throw new \InvalidArgumentException('Ce slug est réservé.');
-        }
-        if ($this->tenantRepository->slugExists($slug)) {
-            throw new \RuntimeException('Une communauté avec ce slug existe déjà.');
+        if ($slug === '') {
+            $base = TenantSlugService::normalizeFromName($name);
+            $slug = TenantSlugService::ensureUnique($base, fn (string $s) => $this->tenantRepository->slugExists($s));
+        } else {
+            if (!TenantSlugService::isValidFormat($slug)) {
+                throw new \InvalidArgumentException('Le slug ne peut contenir que des lettres minuscules, chiffres et tirets (max. 50 caractères).');
+            }
+            if (TenantSlugService::isReserved($slug)) {
+                throw new \InvalidArgumentException('Ce slug est réservé.');
+            }
+            if ($this->tenantRepository->slugExists($slug)) {
+                throw new \RuntimeException('Une communauté avec ce slug existe déjà.');
+            }
         }
 
         $pdo = Database::getPdo();
         $pdo->beginTransaction();
         try {
-            $planSlug = in_array(($options['plan_slug'] ?? 'free'), ['free', 'premium'], true) ? (string) $options['plan_slug'] : 'free';
+            $planSlug = $this->normalizePlanSlug((string) ($options['plan_slug'] ?? 'free'));
             $tenantId = $this->tenantRepository->create($name, $slug, $planSlug);
 
-            $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, created_at) VALUES (?, ?, ?, ?, 1, 1, NOW())')
-                ->execute([$tenantId, 'Super Administrator', 'super_admin', '']);
-            $superAdminRoleId = (int) $pdo->lastInsertId();
+            $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, 1, 1, \'community\', NOW())')
+                ->execute([$tenantId, 'Propriétaire communauté', 'community_owner', '']);
+            $communityOwnerRoleId = (int) $pdo->lastInsertId();
 
-            $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, created_at) VALUES (?, ?, ?, ?, 1, 0, NOW())')
+            $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, 1, 0, \'community\', NOW())')
                 ->execute([$tenantId, 'Administrator', 'tenant_admin', '']);
             $tenantAdminRoleId = (int) $pdo->lastInsertId();
 
-            $pdo->prepare('INSERT INTO grades (tenant_id, name, short_name, rank_order, created_at) VALUES (?, ?, ?, 10, NOW())')
-                ->execute([$tenantId, 'Officer', 'OFR']);
-            $gradeId = (int) $pdo->lastInsertId();
+            $gradeId = $this->resolveDefaultGradeIdForNewCommunity($pdo, $tenantId);
 
             TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
+            TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
             TenantSeedHelper::seedDocumentsEquipment($pdo, $tenantId);
             TenantSeedHelper::ensureSystemAdminPermissions($pdo, $tenantId);
             TenantSeedHelper::ensurePersonnelPanelsAndMatricule($pdo, $tenantId);
 
             $st = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) SELECT ?, permission_id FROM role_permissions WHERE role_id = ?');
-            $st->execute([$superAdminRoleId, $tenantAdminRoleId]);
+            $st->execute([$communityOwnerRoleId, $tenantAdminRoleId]);
 
-            $newUserId = $this->userRepository->cloneUserToTenant($creatorUserId, $tenantId, $superAdminRoleId, $gradeId);
+            $newUserId = $this->userRepository->cloneUserToTenant($creatorUserId, $tenantId, $communityOwnerRoleId, $gradeId);
 
             $this->tenantRepository->setOwner($tenantId, $newUserId);
             $this->tenantRepository->updateSettings($tenantId, [
@@ -73,13 +82,106 @@ final class TenantBootstrapService
                     'welcome_text' => trim((string) ($options['welcome_text'] ?? '')),
                 ],
             ]);
+            $this->tenantRepository->mergeSettings($tenantId, [
+                'founder_trial_ends_at' => date('c', strtotime('+30 days')),
+            ]);
+
+            $communityCode = $this->generateUniqueCommunityCode($slug);
+            $this->tenantRepository->updateCommunityCode($tenantId, $communityCode);
 
             $pdo->commit();
+
+            $referrerId = isset($options['referrer_user_id']) ? (int) $options['referrer_user_id'] : 0;
+            if ($referrerId > 0 && $referrerId !== $creatorUserId) {
+                $this->referralRepository->recordAttribution($referrerId, $tenantId, 'community_created');
+            }
 
             return ['tenant_id' => $tenantId, 'user_id' => $newUserId];
         } catch (\Throwable $e) {
             $pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * Ancien schéma : une ligne `grades` par tenant. Référentiel : `grades` globale (FK grade_systems).
+     */
+    private function resolveDefaultGradeIdForNewCommunity(PDO $pdo, int $tenantId): int
+    {
+        $stmt = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME = 'tenant_id' LIMIT 1");
+        if ($stmt && $stmt->fetchColumn()) {
+            $pdo->prepare('INSERT INTO grades (tenant_id, name, short_name, rank_order, created_at) VALUES (?, ?, ?, 10, NOW())')
+                ->execute([$tenantId, 'Officer', 'OFR']);
+
+            return (int) $pdo->lastInsertId();
+        }
+
+        $pick = $pdo->query(
+            "SELECT g.id FROM grades g
+             INNER JOIN grade_systems gs ON gs.id = g.grade_system_id
+             WHERE gs.code = 'FR_CLASSIC' AND g.code = 'CNE' AND g.is_active = 1 LIMIT 1"
+        );
+        $id = $pick ? $pick->fetchColumn() : false;
+        if ($id !== false) {
+            return (int) $id;
+        }
+
+        $pick = $pdo->query(
+            "SELECT g.id FROM grades g
+             INNER JOIN grade_systems gs ON gs.id = g.grade_system_id
+             WHERE gs.code = 'FR_CLASSIC' AND g.is_active = 1
+             ORDER BY g.sort_order ASC LIMIT 1"
+        );
+        $id = $pick ? $pick->fetchColumn() : false;
+        if ($id !== false) {
+            return (int) $id;
+        }
+
+        $pick = $pdo->query('SELECT id FROM grades WHERE is_active = 1 ORDER BY id ASC LIMIT 1');
+        $id = $pick ? $pick->fetchColumn() : false;
+        if ($id !== false) {
+            return (int) $id;
+        }
+
+        throw new \RuntimeException(
+            'Aucun grade référentiel en base. Exécutez les migrations (seed grades FR/US) puis réessayez.'
+        );
+    }
+
+    private function normalizePlanSlug(string $raw): string
+    {
+        $raw = strtolower(trim($raw));
+        if ($raw === 'premium') {
+            return 'standard';
+        }
+        if (in_array($raw, ['free', 'standard', 'pro'], true)) {
+            return $raw;
+        }
+
+        return 'free';
+    }
+
+    private function generateUniqueCommunityCode(string $slug): string
+    {
+        $base = TenantRepository::normalizeCommunityCode($slug);
+        if ($base === '' || strlen($base) < 3) {
+            $base = 'UNIT';
+        }
+        $candidate = $base;
+        $n = 0;
+        while (
+            $this->tenantRepository->isCommunityCodeTaken($candidate)
+            || $this->isReservedCommunityCode($candidate)
+        ) {
+            $n++;
+            $candidate = $base . '-' . $n;
+        }
+
+        return $candidate;
+    }
+
+    private function isReservedCommunityCode(string $normalized): bool
+    {
+        return in_array($normalized, self::RESERVED_COMMUNITY_CODES, true);
     }
 }

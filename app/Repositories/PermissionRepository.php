@@ -20,9 +20,21 @@ class PermissionRepository
     public function allForTenant(int $tenantId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, name, slug, module FROM permissions WHERE tenant_id = ? ORDER BY module ASC, slug ASC'
+            'SELECT id, name, slug, module, scope FROM permissions WHERE tenant_id = ? ORDER BY module ASC, slug ASC'
         );
         $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Permissions globales (rôles site). */
+    /** @return list<array<string, mixed>> */
+    public function allGlobalSite(): array
+    {
+        $stmt = $this->pdo->query(
+            "SELECT id, name, slug, module, scope FROM permissions WHERE tenant_id IS NULL ORDER BY module ASC, slug ASC"
+        );
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

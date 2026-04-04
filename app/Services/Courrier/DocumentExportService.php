@@ -7,74 +7,115 @@ namespace App\Services\Courrier;
 use App\Repositories\Courrier\DocumentPresetRepository;
 
 /**
- * Export HTML propre pour impression et génération PDF (wrapper pour lib PDF à venir).
+ * Export HTML / PDF : styles alignés sur {@see CourrierPrintStyles}, QR optionnel (Endroid), caviardage export externe.
  */
 class DocumentExportService
 {
     public function __construct(
         private DocumentBuilderService $builderService,
-        private DocumentPresetRepository $presetRepository
+        private DocumentPresetRepository $presetRepository,
+        private DocumentRedactionService $redactionService = new DocumentRedactionService(),
+        private CourrierQrService $qrService = new CourrierQrService()
     ) {
     }
 
     /**
-     * Génère le HTML final pour impression (une page, styles print).
+     * @param array<string, mixed> $options export_mode: internal|external (caviardage irréversible si external)
      */
-    public function buildPrintHtml(array $document, array $context = []): string
+    public function buildPrintHtml(array $document, array $context = [], array $options = []): string
     {
-        $html = $this->builderService->buildPreviewHtml($document, $context);
+        $doc = $document;
+        $mode = $options['export_mode'] ?? 'internal';
+        if ($mode === 'external' && !empty($doc['body_rendered'])) {
+            $doc['body_rendered'] = $this->redactionService->applyIrreversibleForExport((string) $doc['body_rendered']);
+        }
+
+        $html = $this->builderService->buildPreviewHtml($doc, $context);
+        $html = $this->embedVerificationQr($html, $doc);
+
+        $css = CourrierPrintStyles::inlineCss();
+        $fontLink = htmlspecialchars(CourrierPrintStyles::interFontLink(), ENT_QUOTES, 'UTF-8');
+
         return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Document</title>
+<link rel="stylesheet" href="' . $fontLink . '" />
 <style>
-body { font-family: "Source Serif 4", Georgia, serif; margin: 0; padding: 0; font-size: 11pt; color: #1e293b; }
-.courrier-preview { max-width: 21cm; margin: 0 auto; min-height: 29.7cm; padding: 2.5rem; box-sizing: border-box; border: 1px solid #e5e7eb; background: #fff; }
-.courrier-preview .text-\\[10px\\] { font-size: 10px; }
-.courrier-preview .text-\\[11px\\] { font-size: 11px; }
-.courrier-preview .text-xs { font-size: 0.75rem; line-height: 1.5; text-align: justify; }
-.courrier-preview .mb-12 { margin-bottom: 3rem; }
-.courrier-preview .mb-10 { margin-bottom: 2.5rem; }
-.courrier-preview .mb-8 { margin-bottom: 2rem; }
-.courrier-preview .mb-2 { margin-bottom: 0.5rem; }
-.courrier-preview .mt-4 { margin-top: 1rem; }
-.courrier-preview .mt-24 { margin-top: 6rem; }
-.courrier-preview .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-.courrier-preview .space-y-1 > * + * { margin-top: 0.25rem; }
-.courrier-preview .space-y-2 > * + * { margin-top: 0.5rem; }
-.courrier-preview .space-y-4 > * + * { margin-top: 1rem; }
-.courrier-preview .text-right { text-align: right; }
-.courrier-preview .ml-auto { margin-left: auto; }
-.courrier-preview .w-1\\/2 { width: 50%; }
-.courrier-preview .w-1\\/3 { width: 33.333333%; }
-.courrier-preview .text-center { text-align: center; }
-.courrier-preview .font-bold { font-weight: 700; }
-.courrier-preview .uppercase { text-transform: uppercase; }
-.courrier-preview .underline { text-decoration: underline; }
-.courrier-preview .italic { font-style: italic; }
-.courrier-preview .leading-tight { line-height: 1.25; }
-.courrier-preview .border-b-2 { border-bottom-width: 2px; }
-.courrier-preview .border-black { border-color: #000; }
-.courrier-preview .w-fit { width: fit-content; }
-.courrier-preview .mb-1 { margin-bottom: 0.25rem; }
-.courrier-preview .text-blue-600 { color: #2563eb; }
-.courrier-preview .h-12 { height: 3rem; }
-.courrier-preview .border-dashed { border-style: dashed; }
-.courrier-preview .border-gray-300 { border-color: #d1d5db; }
-.courrier-preview .flex { display: flex; }
-.courrier-preview .items-center { align-items: center; }
-.courrier-preview .justify-center { justify-content: center; }
-.courrier-preview .text-gray-400 { color: #9ca3af; }
-.courrier-body p { margin-bottom: 0.75rem; }
-@media print { .no-print { display: none !important; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+body { font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 1rem; font-size: 14px; color: #0b1220; background: #e8edf3; }
+' . $css . '
+@media print { body { background: #fff; padding: 0; } .no-print { display: none !important; } }
 </style></head><body class="no-print">' . $html . '</body></html>';
     }
 
     /**
-     * Génération PDF : retourne le chemin du fichier généré ou null (à implémenter avec Dompdf/Snappy).
+     * Remplace le marqueur QR par une image data-URI ou un lien texte si lib indisponible.
+     * @param array<string, mixed> $document
      */
-    public function generatePdf(array $document, array $context = [], ?string $outputPath = null): ?string
+    private function embedVerificationQr(string $html, array $document): string
     {
-        $html = $this->buildPrintHtml($document, $context);
-        // TODO: intégrer Dompdf ou Snappy pour HTML -> PDF
-        // $dompdf = new Dompdf(); $dompdf->loadHtml($html); $dompdf->render(); file_put_contents($outputPath, $dompdf->output());
-        return null;
+        if (!str_contains($html, '<!--COURRIER_QR-->')) {
+            return $html;
+        }
+        $uuid = (string) ($document['uuid'] ?? '');
+        if ($uuid === '' || empty($document['signed_at'])) {
+            return str_replace('<!--COURRIER_QR-->', '', $html);
+        }
+        $verifyUrl = url('courrier/verify?uuid=' . rawurlencode($uuid));
+        $dataUri = $this->qrService->dataUriForText($verifyUrl, 110);
+        if ($dataUri === null) {
+            $fallback = '<p class="text-[10px]" style="margin-top:4px;max-width:200px;word-break:break-all;">Vérification : '
+                . htmlspecialchars($verifyUrl, ENT_QUOTES, 'UTF-8') . '</p>';
+
+            return str_replace('<!--COURRIER_QR-->', $fallback, $html);
+        }
+        $img = '<img src="' . htmlspecialchars($dataUri, ENT_QUOTES, 'UTF-8') . '" alt="QR vérification" width="110" height="110" style="display:block;margin-top:4px;" />';
+
+        return str_replace('<!--COURRIER_QR-->', $img, $html);
+    }
+
+    /**
+     * Génération PDF (Dompdf). Retourne le chemin du fichier ou null si lib absente / erreur.
+     * @param array<string, mixed> $options export_mode passé à buildPrintHtml
+     */
+    public function generatePdf(array $document, array $context = [], ?string $outputPath = null, array $options = []): ?string
+    {
+        if (!class_exists(\Dompdf\Dompdf::class)) {
+            return null;
+        }
+        $html = $this->buildPrintHtml($document, $context, $options);
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $binary = $dompdf->output();
+        if ($outputPath !== null) {
+            if (file_put_contents($outputPath, $binary) === false) {
+                return null;
+            }
+
+            return $outputPath;
+        }
+        $tmp = sys_get_temp_dir() . '/courrier-' . uniqid('', true) . '.pdf';
+        if (file_put_contents($tmp, $binary) === false) {
+            return null;
+        }
+
+        return $tmp;
+    }
+
+    /**
+     * Flux PDF brut pour réponse HTTP.
+     * @param array<string, mixed> $options
+     */
+    public function renderPdfBinary(array $document, array $context = [], array $options = []): ?string
+    {
+        if (!class_exists(\Dompdf\Dompdf::class)) {
+            return null;
+        }
+        $html = $this->buildPrintHtml($document, $context, $options);
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->output();
     }
 }

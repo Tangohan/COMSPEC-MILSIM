@@ -3,6 +3,21 @@ $users = $users ?? [];
 $roles = $roles ?? [];
 $completenessByUser = $completenessByUser ?? [];
 $filters = $filters ?? [];
+$usersTotal = $usersTotal ?? null;
+$usersPage = $usersPage ?? 1;
+$usersTotalPages = $usersTotalPages ?? 1;
+$usersQuery = static function (int $page) use ($filters): string {
+    $q = [
+        'search' => $filters['search'] ?? null,
+        'status' => !empty($filters['status']) ? $filters['status'] : null,
+        'role_id' => !empty($filters['role_id']) ? (int) $filters['role_id'] : null,
+        'filter_incomplete' => !empty($filters['filter_incomplete']) ? '1' : null,
+        'page' => $page > 1 ? $page : null,
+    ];
+    $q = array_filter($q, static fn ($v) => $v !== null && $v !== '');
+
+    return url('admin/organization/users') . ($q ? '?' . http_build_query($q) : '');
+};
 ?>
 <div class="max-w-6xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
@@ -31,6 +46,10 @@ $filters = $filters ?? [];
         <button type="submit" class="px-4 py-2 bg-slate-700 text-white text-sm rounded hover:bg-slate-600">Filtrer</button>
         <a href="<?= url('admin/organization/users') ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Réinitialiser</a>
     </form>
+
+    <?php if ($usersTotal !== null): ?>
+    <p class="text-sm text-slate-600 mb-3"><?= (int) $usersTotal ?> utilisateur(s) — page <?= (int) $usersPage ?> / <?= (int) $usersTotalPages ?></p>
+    <?php endif; ?>
 
     <?php if (empty($users)): ?>
     <p class="text-slate-500">Aucun utilisateur.</p>
@@ -76,6 +95,16 @@ $filters = $filters ?? [];
             <?php endforeach; ?>
         </tbody>
     </table>
+    <?php if ($usersTotal !== null && (int) $usersTotalPages > 1): ?>
+    <div class="flex items-center justify-between mt-4 text-sm">
+        <?php if ($usersPage > 1): ?>
+        <a class="text-slate-700 hover:underline" href="<?= htmlspecialchars($usersQuery($usersPage - 1), ENT_QUOTES, 'UTF-8') ?>">← Précédent</a>
+        <?php else: ?><span></span><?php endif; ?>
+        <?php if ($usersPage < $usersTotalPages): ?>
+        <a class="text-slate-700 hover:underline" href="<?= htmlspecialchars($usersQuery($usersPage + 1), ENT_QUOTES, 'UTF-8') ?>">Suivant →</a>
+        <?php else: ?><span></span><?php endif; ?>
+    </div>
+    <?php endif; ?>
     <?php endif; ?>
     <p class="mt-6 text-sm text-slate-500"><a href="<?= url('admin/organization') ?>" class="underline">Retour administration organisationnelle</a></p>
 </div>

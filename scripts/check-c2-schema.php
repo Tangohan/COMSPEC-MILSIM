@@ -160,6 +160,6 @@ if (!empty($missingCols)) {
         echo "  - $t : " . implode(', ', $cols) . "\n";
     }
 }
-echo "\nExécutez les migrations : php run-migrations.php\n";
+echo "\nExécutez les migrations : php setup-database.php\n";
 echo "Et si besoin : mysql ... < migrations/c2_pillars.sql\n";
 exit(1);

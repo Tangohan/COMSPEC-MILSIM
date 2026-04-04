@@ -23,7 +23,7 @@ final class CommunityEventsAdminController
     public function index(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
-        if (!$this->featureGate->allows($tenantId, 'events')) {
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
             return Response::view('layout.main', [
                 'title' => 'Événements',
                 'content' => 'platform.upgrade',
@@ -31,12 +31,21 @@ final class CommunityEventsAdminController
                 'planName' => 'pro',
             ]);
         }
+        $user = $this->authService->user();
+        $this->featureGate->maybeRecordQuotaSoftBlock(
+            $tenantId,
+            $user ? (int) $user['id'] : null,
+            'events'
+        );
         $rows = $this->events->upcomingForTenant($tenantId, 100);
+        $quota = $this->featureGate->quotaStatusForFeature($tenantId, 'events');
 
         return Response::view('layout.main', [
             'title' => 'Gérer les événements',
             'content' => 'admin.organization.events',
             'events' => $rows,
+            'eventsQuota' => $quota,
+            'canCreateEvent' => $this->featureGate->allows($tenantId, 'events'),
         ]);
     }
 
@@ -48,12 +57,18 @@ final class CommunityEventsAdminController
             return Response::redirect(url('admin/organization/events'));
         }
         $tenantId = (int) Session::get('tenant_id');
-        if (!$this->featureGate->allows($tenantId, 'events')) {
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
             return Response::redirect(url('admin/organization/events'));
         }
         $user = $this->authService->user();
         if (!$user) {
             return Response::redirect(url('login'));
+        }
+        if (!$this->featureGate->allows($tenantId, 'events')) {
+            $this->featureGate->recordQuotaLimitReached($tenantId, (int) $user['id'], 'events');
+            Session::flash('error', 'Quota mensuel de créations d’événements atteint. Passez à un plan supérieur pour en ajouter davantage.');
+
+            return Response::redirect(url('admin/organization/events'));
         }
         $title = trim((string) $request->input('title'));
         $starts = trim((string) $request->input('starts_at'));
@@ -72,6 +87,7 @@ final class CommunityEventsAdminController
             trim((string) $request->input('ends_at')) ?: null,
             trim((string) $request->input('campaign_tag')) ?: null
         );
+        $this->featureGate->recordQuotaUse($tenantId, 'events', (int) $user['id']);
         Session::flash('success', 'Événement créé.');
 
         return Response::redirect(url('admin/organization/events'));

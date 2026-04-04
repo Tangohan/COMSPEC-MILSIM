@@ -186,7 +186,23 @@
                         </form>
                     <?php endif; ?>
                 <?php endforeach; ?>
+                <a href="<?= url('platform/invite-unit') ?>" class="text-slate-600 hover:text-emerald-700 font-semibold text-[11px]">Inviter une unité</a>
                 <a href="<?= url('communities/create') ?>" class="ml-auto font-black uppercase tracking-wider text-emerald-700 hover:text-slate-900">+ Nouvelle communauté</a>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <?php
+        $showFounderTrialBanner = $show_founder_trial_banner ?? false;
+        $founderTrialEndsAt = $founder_trial_ends_at ?? null;
+        ?>
+        <?php if ($showFounderTrialBanner && is_string($founderTrialEndsAt) && $founderTrialEndsAt !== ''): ?>
+        <section class="border-b border-amber-200 bg-amber-50">
+            <div class="max-w-5xl mx-auto px-8 py-3 text-sm text-amber-950">
+                <strong class="font-black uppercase tracking-wide">Fondateur</strong>
+                — essai Pro (ATAK, événements, analytics) jusqu’au
+                <?= htmlspecialchars(date('d/m/Y', strtotime($founderTrialEndsAt))) ?>.
+                <a href="<?= url('platform/upgrade') ?>" class="underline font-semibold ml-2">Voir les offres</a>
             </div>
         </section>
         <?php endif; ?>

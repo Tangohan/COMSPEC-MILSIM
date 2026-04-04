@@ -21,12 +21,34 @@
             <input type="text" id="callsign" name="callsign" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
         </div>
         <div>
-            <label for="role_id" class="block text-sm font-medium text-slate-700">Rôle</label>
+            <label for="role_id" class="block text-sm font-medium text-slate-700">Rôle (communauté ou opérationnel)</label>
+            <p class="text-xs text-slate-500 mt-0.5 mb-1">Les rôles site/plateforme ne sont pas attribuables ici.</p>
             <select id="role_id" name="role_id" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
                 <option value="">—</option>
-                <?php foreach ($roles as $r): ?>
-                <option value="<?= (int) $r['id'] ?>"><?= htmlspecialchars($r['name']) ?></option>
-                <?php endforeach; ?>
+                <?php
+                $byLayer = ['community' => [], 'intra' => []];
+                foreach ($roles as $r) {
+                    $ly = (string) ($r['role_layer'] ?? 'community');
+                    if (!isset($byLayer[$ly])) {
+                        $byLayer[$ly] = [];
+                    }
+                    $byLayer[$ly][] = $r;
+                }
+                ?>
+                <?php if (!empty($byLayer['community'])): ?>
+                <optgroup label="Gouvernance communauté">
+                    <?php foreach ($byLayer['community'] as $r): ?>
+                    <option value="<?= (int) $r['id'] ?>"><?= htmlspecialchars($r['name']) ?></option>
+                    <?php endforeach; ?>
+                </optgroup>
+                <?php endif; ?>
+                <?php if (!empty($byLayer['intra'])): ?>
+                <optgroup label="Rôles opérationnels">
+                    <?php foreach ($byLayer['intra'] as $r): ?>
+                    <option value="<?= (int) $r['id'] ?>"><?= htmlspecialchars($r['name']) ?></option>
+                    <?php endforeach; ?>
+                </optgroup>
+                <?php endif; ?>
             </select>
         </div>
         <div>

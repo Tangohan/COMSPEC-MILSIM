@@ -14,6 +14,8 @@ class ModerationRepository
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+        require_once dirname(__DIR__, 2) . '/bootstrap/platform_unit_commander_migration.php';
+        ensure_platform_unit_commander_schema($this->pdo);
     }
 
     public function hasActiveAccessBlock(int $tenantId, int $userId): bool

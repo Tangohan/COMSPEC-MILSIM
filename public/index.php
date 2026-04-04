@@ -23,26 +23,36 @@ register_shutdown_function(function () {
 
 require $root . '/bootstrap/app.php';
 
-// Mode maintenance : si activé et IP non autorisée, afficher 503 et arrêter
-$maintenance = $GLOBALS['__app_config']['maintenance'] ?? [];
-if (!empty($maintenance['enabled'])) {
-    $clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_CLIENT_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-    if (is_string($clientIp) && str_contains($clientIp, ',')) {
-        $clientIp = trim(explode(',', $clientIp)[0]);
-    }
-    $allowedIps = $maintenance['allowed_ips'] ?? [];
-    if (!is_array($allowedIps) || !in_array($clientIp, $allowedIps, true)) {
-        $message = $maintenance['message'] ?? 'Maintenance en cours. Merci de réessayer dans quelques minutes.';
-        $viewPath = $root . '/views/errors/503.php';
-        header('HTTP/1.1 503 Service Unavailable');
-        header('Retry-After: 300');
-        header('Content-Type: text/html; charset=utf-8');
-        if (is_file($viewPath)) {
-            require $viewPath;
-        } else {
-            echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Maintenance</title></head><body><h1>Maintenance</h1><p>' . htmlspecialchars($message) . '</p></body></html>';
+$requestPath = \App\Core\Request::normalizePathFromServer();
+$maintenanceSafelist = [
+    '/api/stripe/webhook',
+    '/api/health',
+];
+if (!in_array($requestPath, $maintenanceSafelist, true)) {
+    try {
+        $pdo = \App\Core\Database::getPdo();
+        $maintenanceRepo = new \App\Repositories\MaintenanceRepository($pdo);
+        if ($maintenanceRepo->tableExists()) {
+            \App\Core\Session::start();
+            $userContext = null;
+            if (\App\Core\Session::get('user_id')) {
+                $rbac = \App\Core\Container::get(\App\Services\Rbac\RbacService::class);
+                $roleId = \App\Core\Session::get('role_id');
+                $email = \App\Core\Session::get('email');
+                $rbac->setPermissionsForGate(
+                    $roleId ? (int) $roleId : null,
+                    $email !== null && $email !== '' ? (string) $email : null
+                );
+                $userRepo = \App\Core\Container::get(\App\Repositories\UserRepository::class);
+                $slug = $userRepo->getRoleSlugForUser((int) \App\Core\Session::get('user_id'));
+                $userContext = ['role_slug' => $slug];
+            }
+            $module = detect_current_module($requestPath);
+            $guard = new \App\Support\MaintenanceGuard(new \App\Support\MaintenanceService($pdo));
+            $guard->enforce($requestPath, $module, $userContext);
         }
-        exit;
+    } catch (\Throwable) {
+        // BDD indisponible ou erreur transitoire : ne pas verrouiller tout le site
     }
 }
 

@@ -20,6 +20,25 @@ class RolePermissionService
         return $this->roleRepository->allForTenant($tenantId);
     }
 
+    /** Communauté + intra uniquement (admin organisation). */
+    /** @return list<array<string, mixed>> */
+    public function listOrganizationRoles(int $tenantId): array
+    {
+        return $this->roleRepository->forTenantOrganization($tenantId);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listSiteRoles(): array
+    {
+        return $this->roleRepository->allSiteRoles();
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listOrganizationRolesByLayer(int $tenantId, string $layer): array
+    {
+        return $this->roleRepository->forTenantByLayer($tenantId, $layer);
+    }
+
     /** @return list<int> IDs des permissions du rôle. */
     public function getPermissionIdsForRole(int $roleId): array
     {

@@ -15,6 +15,7 @@ use App\Services\Courrier\DocumentAutoFillService;
 use App\Services\Courrier\DocumentBuilderService;
 use App\Services\Courrier\DocumentValidationService;
 use App\Services\Courrier\DocumentWorkflowService;
+use App\Services\Courrier\CourrierClassification;
 use App\Services\Courrier\TemplateVariableService;
 
 class CourrierEditorController
@@ -59,6 +60,7 @@ class CourrierEditorController
                 'alerts' => [],
                 'completeness_score' => 0,
                 'preview_html' => '',
+                'classification_labels' => CourrierClassification::labels(),
             ],
         ]);
     }
@@ -104,6 +106,7 @@ class CourrierEditorController
                 'alerts' => $alerts,
                 'completeness_score' => $completenessScore,
                 'versions' => $versions,
+                'classification_labels' => CourrierClassification::labels(),
             ],
         ]);
     }
@@ -125,12 +128,20 @@ class CourrierEditorController
         $destinationLabel = $request->input('destination_label') ? trim((string) $request->input('destination_label')) : null;
         $issuerLabel = $request->input('issuer_label') ? trim((string) $request->input('issuer_label')) : null;
         $bodyRendered = $request->input('body_rendered') ?? '';
+        $classificationRaw = trim((string) ($request->input('classification_level') ?? ''));
+        $classificationLevel = in_array($classificationRaw, CourrierClassification::codes(), true)
+            ? $classificationRaw
+            : 'interne';
 
         if ($id > 0) {
             $document = $this->documentRepository->findById($id, $tenantId);
             if (!$document) {
                 Session::flash('error', 'Document introuvable.');
                 return Response::redirect(url('courrier'));
+            }
+            if (!empty($document['signed_at']) || ($document['status'] ?? '') === 'signed') {
+                Session::flash('error', 'Document signé : modification impossible. Utilisez une nouvelle version ou contactez un administrateur.');
+                return Response::redirect(url('courrier/editor/' . $id));
             }
             $snapshot = [
                 'title' => $document['title'] ?? null,
@@ -151,6 +162,7 @@ class CourrierEditorController
                 'destination_label' => $destinationLabel,
                 'issuer_label' => $issuerLabel,
                 'body_rendered' => $bodyRendered,
+                'classification_level' => $classificationLevel,
             ]);
             Session::flash('success', 'Brouillon enregistré.');
             return Response::redirect(url('courrier/editor/' . $id));
@@ -177,6 +189,7 @@ class CourrierEditorController
             'issuer_label' => $issuerLabel,
             'body_rendered' => $bodyRendered,
             'created_by' => $userId,
+            'classification_level' => $classificationLevel,
         ]);
         Session::flash('success', 'Brouillon créé.');
         return Response::redirect(url('courrier/editor/' . $newId));

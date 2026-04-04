@@ -31,6 +31,14 @@ $baseUrl = url('');
             <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
             <?php endforeach; endif; ?>
         </div>
+        <div>
+            <label for="profile_slug" class="block text-sm font-medium text-slate-700 mb-1">Identifiant URL fiche personnel (optionnel)</label>
+            <input type="text" name="profile_slug" id="profile_slug" value="<?= htmlspecialchars($user['profile_slug'] ?? '') ?>" pattern="[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?" class="w-full px-3 py-2 border border-slate-300 rounded font-mono lowercase focus:ring-2 focus:ring-slate-900 focus:border-slate-900" maxlength="40" placeholder="ex. jean-dupont">
+            <p class="mt-1 text-xs text-slate-500">Lien : <?= htmlspecialchars(rtrim($baseUrl, '/')) ?>/personnel/<em>identifiant</em>. Vide = uniquement l’URL par numéro.</p>
+            <?php if (!empty($errors['profile_slug'])): foreach ($errors['profile_slug'] as $e): ?>
+            <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
+            <?php endforeach; endif; ?>
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label for="steam_id" class="block text-sm font-medium text-slate-700 mb-1">Steam ID (liaison ATAK)</label>

@@ -1,13 +1,26 @@
-<?php ?>
-<div class="max-w-4xl mx-auto px-6 py-12">
+<?php
+$kpis = $adminKpis ?? [];
+$blockError = $adminKpiBlockError ?? null;
+?>
+<div class="max-w-6xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Administration organisationnelle</h1>
         <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Retour au centre</a>
     </div>
-    <p class="text-slate-600 mb-8">Gestion des utilisateurs, groupes, équipes et rôles métier.</p>
+    <p class="text-slate-600 mb-6">Gestion des utilisateurs, groupes, équipes et rôles métier.</p>
+
+    <?php
+    require base_path('views/admin/partials/kpi_row.php');
+    require base_path('views/admin/partials/recent_activity.php');
+    require base_path('views/admin/partials/quick_actions_org.php');
+    require base_path('views/admin/partials/work_queues_org.php');
+    ?>
+
     <ul class="space-y-2">
+        <li><a href="<?= url('admin/organization/community') ?>" class="text-slate-700 hover:underline font-medium">Code communauté</a></li>
         <li><a href="<?= url('admin/organization/users') ?>" class="text-slate-700 hover:underline font-medium">Utilisateurs</a></li>
         <li><a href="<?= url('admin/organization/invitations') ?>" class="text-slate-700 hover:underline font-medium">Invitations</a></li>
+        <li><a href="<?= url('admin/organization/audit') ?>" class="text-slate-700 hover:underline font-medium">Journal d'activité</a></li>
         <li><a href="<?= url('admin/organization/moderation') ?>" class="text-slate-700 hover:underline font-medium">Modération &amp; sanctions</a></li>
         <li><a href="<?= url('admin/organization/analytics') ?>" class="text-slate-700 hover:underline font-medium">Analytics</a></li>
         <li><a href="<?= url('admin/organization/events') ?>" class="text-slate-700 hover:underline font-medium">Événements</a></li>

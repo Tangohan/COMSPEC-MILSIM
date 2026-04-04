@@ -32,6 +32,51 @@ class TenantRepository
         return $row ?: null;
     }
 
+    public static function normalizeCommunityCode(string $raw): string
+    {
+        $s = strtoupper(trim($raw));
+        $s = preg_replace('/\s+/', '-', $s);
+        $s = preg_replace('/[^A-Z0-9\-]/', '', $s);
+
+        return $s;
+    }
+
+    public function findByCommunityCode(string $code): ?array
+    {
+        $norm = self::normalizeCommunityCode($code);
+        if ($norm === '' || strlen($norm) < 3) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM tenants WHERE community_code = ? LIMIT 1');
+        $stmt->execute([$norm]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function isCommunityCodeTaken(string $normalizedCode, ?int $exceptTenantId = null): bool
+    {
+        if ($normalizedCode === '') {
+            return false;
+        }
+        if ($exceptTenantId !== null) {
+            $stmt = $this->pdo->prepare('SELECT 1 FROM tenants WHERE community_code = ? AND id != ? LIMIT 1');
+            $stmt->execute([$normalizedCode, $exceptTenantId]);
+        } else {
+            $stmt = $this->pdo->prepare('SELECT 1 FROM tenants WHERE community_code = ? LIMIT 1');
+            $stmt->execute([$normalizedCode]);
+        }
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /** @param string|null $normalized null pour retirer le code */
+    public function updateCommunityCode(int $tenantId, ?string $normalized): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE tenants SET community_code = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$normalized === '' ? null : $normalized, $tenantId]);
+    }
+
     public function getDefaultTenant(): ?array
     {
         $stmt = $this->pdo->query('SELECT * FROM tenants ORDER BY id ASC LIMIT 1');
@@ -44,6 +89,26 @@ class TenantRepository
         $stmt = $this->pdo->prepare('SELECT 1 FROM tenants WHERE slug = ? LIMIT 1');
         $stmt->execute([$slug]);
         return (bool) $stmt->fetchColumn();
+    }
+
+    public function isSlugTakenByOther(int $tenantId, string $slug): bool
+    {
+        $stmt = $this->pdo->prepare('SELECT 1 FROM tenants WHERE slug = ? AND id != ? LIMIT 1');
+        $stmt->execute([$slug, $tenantId]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public function updateSlug(int $tenantId, string $slug): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE tenants SET slug = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$slug, $tenantId]);
+    }
+
+    public function updateName(int $tenantId, string $name): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE tenants SET name = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$name, $tenantId]);
     }
 
     /** @return int id du tenant créé */

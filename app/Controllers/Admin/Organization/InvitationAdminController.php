@@ -31,15 +31,17 @@ final class InvitationAdminController
     {
         $tenantId = (int) Session::get('tenant_id');
         $this->invitations->expireStale();
-        $rows = $this->invitations->listForTenant($tenantId);
-        $roles = $this->roleRepository->allForTenant($tenantId);
+        $statusFilter = trim((string) $request->query('status', ''));
+        $rows = $this->invitations->listForTenant($tenantId, $statusFilter !== '' ? $statusFilter : null);
+        $rolesCommunity = $this->roleRepository->forTenantByLayer($tenantId, 'community');
 
         return Response::view('layout.main', [
             'title' => 'Invitations',
             'content' => 'admin.organization.invitations',
             'invitations' => $rows,
-            'roles' => $roles,
+            'rolesCommunity' => $rolesCommunity,
             'canAdd' => $this->featureGate->canAddMember($tenantId),
+            'inviteFilterStatus' => $statusFilter,
         ]);
     }
 
@@ -68,7 +70,14 @@ final class InvitationAdminController
             return Response::redirect(url('admin/organization/invitations'));
         }
         $roleRow = $this->roleRepository->findById($roleId, $tenantId);
-        $roleIdFinal = $roleRow ? $roleId : null;
+        $roleIdFinal = null;
+        if ($roleRow && ($roleRow['role_layer'] ?? '') === 'community' && $this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
+            $roleIdFinal = $roleId;
+        } elseif ($roleId > 0) {
+            Session::flash('error', 'Seul un rôle de gouvernance communauté peut être choisi à l’invitation.');
+
+            return Response::redirect(url('admin/organization/invitations'));
+        }
 
         $token = bin2hex(random_bytes(32));
         $hash = hash('sha256', $token);

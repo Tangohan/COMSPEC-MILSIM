@@ -1,7 +1,7 @@
 <?php $roles = $roles ?? []; $permissionCounts = $permissionCounts ?? []; ?>
 <div class="max-w-4xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-black text-slate-900">Rôles système</h1>
+        <h1 class="text-2xl font-black text-slate-900">Rôles site (plateforme)</h1>
         <a href="<?= url('admin/system') ?>" class="text-sm font-medium text-slate-600 hover:underline">Retour administration système</a>
     </div>
     <?php if (empty($roles)): ?>

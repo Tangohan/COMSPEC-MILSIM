@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Exécute les migrations (schéma + seed) — sans Composer/Phinx.
+ * Alias historique — même pipeline que setup-database.php (schéma + seed complet).
  * CLI : php migrate.php
  * Web : public/migrate.php
  */
@@ -15,9 +15,9 @@ if ($isWeb) {
     ob_start();
 }
 
-echo "=== Migrations Athena ===\n\n";
+echo "=== Migrations Athena (setup-database) ===\n\n";
 
-require $root . DIRECTORY_SEPARATOR . 'run-migrations.php';
+require $root . DIRECTORY_SEPARATOR . 'setup-database.php';
 
 if ($isWeb) {
     $out = ob_get_clean();

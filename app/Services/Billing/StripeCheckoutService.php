@@ -1,0 +1,86 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Billing;
+
+/**
+ * Création de sessions Stripe Checkout (sans SDK, HTTP POST).
+ */
+final class StripeCheckoutService
+{
+    /**
+     * @param array<string, string> $metadata
+     * @return array{url: string, id: string}
+     */
+    public function createSubscriptionCheckoutSession(
+        string $priceId,
+        string $successUrl,
+        string $cancelUrl,
+        ?string $customerEmail,
+        array $metadata
+    ): array {
+        $secret = getenv('STRIPE_SECRET_KEY') ?: '';
+        if ($secret === '') {
+            throw new \RuntimeException('Paiement indisponible : STRIPE_SECRET_KEY n’est pas configuré.');
+        }
+
+        $params = [
+            'mode' => 'subscription',
+            'line_items[0][price]' => $priceId,
+            'line_items[0][quantity]' => 1,
+            'success_url' => $successUrl,
+            'cancel_url' => $cancelUrl,
+        ];
+        if ($customerEmail !== null && $customerEmail !== '') {
+            $params['customer_email'] = $customerEmail;
+        }
+        foreach ($metadata as $k => $v) {
+            $params['metadata[' . $k . ']'] = $v;
+        }
+
+        $data = $this->post('checkout/sessions', $params);
+
+        $url = $data['url'] ?? null;
+        $id = $data['id'] ?? null;
+        if (!is_string($url) || $url === '' || !is_string($id) || $id === '') {
+            throw new \RuntimeException('Réponse Stripe invalide (session Checkout).');
+        }
+
+        return ['url' => $url, 'id' => $id];
+    }
+
+    /**
+     * @param array<string, string|int> $params
+     * @return array<string, mixed>
+     */
+    private function post(string $path, array $params): array
+    {
+        $secret = getenv('STRIPE_SECRET_KEY') ?: '';
+        $ch = curl_init('https://api.stripe.com/v1/' . ltrim($path, '/'));
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query($params),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_USERPWD => $secret . ':',
+            CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
+            CURLOPT_TIMEOUT => 45,
+        ]);
+        $body = curl_exec($ch);
+        $errno = curl_errno($ch);
+        curl_close($ch);
+        if ($errno !== 0 || !is_string($body)) {
+            throw new \RuntimeException('Impossible de joindre Stripe.');
+        }
+        $data = json_decode($body, true);
+        if (!is_array($data)) {
+            throw new \RuntimeException('Réponse Stripe illisible.');
+        }
+        if (isset($data['error']) && is_array($data['error'])) {
+            $msg = (string) ($data['error']['message'] ?? 'Erreur Stripe');
+            throw new \RuntimeException($msg);
+        }
+
+        return $data;
+    }
+}

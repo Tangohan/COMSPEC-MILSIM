@@ -46,17 +46,26 @@ final class RateLimitMiddleware
         }
         $routes = [
             '/login' => [30, 300],
+            '/login/select-community' => [40, 300],
             '/forgot-password' => [10, 3600],
             '/reset-password' => [20, 3600],
             '/enlistment' => [40, 600],
             '/register' => [10, 3600],
             '/communities/create' => [15, 3600],
             '/invitations/accept' => [30, 600],
+            '/community/resolve-code' => [20, 600],
+            '/api/forum' => [120, 300],
+            '/api/forum-moderation' => [90, 300],
+            '/api/forum-upload' => [40, 300],
+            '/forum/new-topic' => [25, 600],
         ];
         foreach ($routes as $prefix => $rule) {
             if ($path === $prefix) {
                 return $rule;
             }
+        }
+        if (str_starts_with($path, '/forum/topic/') && str_ends_with($path, '/reply')) {
+            return [50, 300];
         }
 
         return null;

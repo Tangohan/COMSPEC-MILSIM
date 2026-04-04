@@ -21,6 +21,9 @@ class AuthController
 {
     private const RESET_TOKEN_EXPIRE_HOURS = 1;
 
+    /** Sélection de communauté après mot de passe (multi-tenant). */
+    private const PENDING_COMMUNITY_TTL_SEC = 600;
+
     public function __construct(
         private AuthService $authService,
         private RbacService $rbacService,
@@ -35,9 +38,16 @@ class AuthController
         if ($this->authService->check()) {
             return Response::redirect(url('dashboard'));
         }
+        $pending = Session::get('pending_community_selection');
+        if (
+            is_array($pending)
+            && !empty($pending['candidates'])
+            && (int) ($pending['expires_at'] ?? 0) >= time()
+        ) {
+            return Response::redirect(url('login/select-community'));
+        }
         return Response::view('auth.login', [
             'title' => 'Connexion',
-            'tenant_slug_prefill' => trim((string) $request->query('tenant_slug', '')),
         ]);
     }
 
@@ -50,59 +60,166 @@ class AuthController
             Session::flash('error', 'Session expirée. Réessayez.');
             return Response::redirect(url('login'));
         }
-        $email = trim((string) $request->input('email'));
-        $password = $request->input('password');
+        Session::forget('pending_community_selection');
+
+        $email = strtolower(trim((string) $request->input('email')));
+        $password = (string) $request->input('password');
         if ($email === '' || $password === '') {
             Session::flash('error', 'Email et mot de passe requis.');
             return Response::redirect(url('login'));
         }
 
-        $tenantSlug = trim((string) $request->input('tenant_slug', ''));
-        $tenant = null;
-        if ($tenantSlug !== '') {
-            $tenant = $this->tenantRepository->findBySlug($tenantSlug);
-            if (!$tenant) {
-                Session::flash('error', 'Communauté inconnue (slug).');
-                return Response::redirect(url('login'));
+        $candidates = $this->userRepository->listActiveUsersWithTenantForEmail($email);
+        $matches = [];
+        foreach ($candidates as $row) {
+            if (!password_verify($password, (string) ($row['password_hash'] ?? ''))) {
+                continue;
             }
+            $matches[] = $row;
         }
-        if ($tenant === null) {
-            $tenant = $this->tenantRepository->getDefaultTenant();
-        }
-        if (!$tenant) {
-            Session::flash('error', 'Aucune organisation configurée. Exécutez les migrations et le seed.');
+
+        if ($matches === []) {
+            $auditTenantId = null;
+            if ($candidates !== []) {
+                $auditTenantId = (int) $candidates[0]['tenant_id'];
+            } else {
+                $def = $this->tenantRepository->getDefaultTenant();
+                $auditTenantId = $def ? (int) $def['id'] : null;
+            }
+            $this->auditService->log(
+                AuditAction::AUTH_LOGIN_FAILURE,
+                $auditTenantId,
+                null,
+                'auth',
+                null,
+                null,
+                substr($email, 0, 120)
+            );
+            Session::flash('error', 'Identifiants incorrects ou compte inactif.');
             return Response::redirect(url('login'));
         }
 
-        if ($this->authService->attempt((int) $tenant['id'], $email, $password)) {
-            $user = $this->authService->user();
-            if ($user && !empty($user['role_id'])) {
-                $this->rbacService->setPermissionsForGate((int) $user['role_id']);
+        if (count($matches) === 1) {
+            $row = $matches[0];
+            $user = $this->userRepository->findById((int) $row['id'], (int) $row['tenant_id']);
+            if (!$user) {
+                Session::flash('error', 'Compte introuvable.');
+                return Response::redirect(url('login'));
             }
-            if ($user) {
-                $this->auditService->log(
-                    AuditAction::AUTH_LOGIN_SUCCESS,
-                    (int) $tenant['id'],
-                    (int) $user['id'],
-                    'auth',
-                    (int) $user['id']
-                );
-            }
+            $this->authService->loginUser($user);
+            $this->rbacService->setPermissionsForGate(
+                !empty($user['role_id']) ? (int) $user['role_id'] : null,
+                (string) ($user['email'] ?? '')
+            );
+            $this->auditService->log(
+                AuditAction::AUTH_LOGIN_SUCCESS,
+                (int) $user['tenant_id'],
+                (int) $user['id'],
+                'auth',
+                (int) $user['id']
+            );
 
             return Response::redirect(url('dashboard'));
         }
 
-        $this->auditService->log(
-            AuditAction::AUTH_LOGIN_FAILURE,
-            (int) $tenant['id'],
-            null,
-            'auth',
-            null,
-            null,
-            substr($email, 0, 120)
+        $pick = [];
+        foreach ($matches as $row) {
+            $pick[] = [
+                'tenant_id' => (int) $row['tenant_id'],
+                'user_id' => (int) $row['id'],
+                'tenant_name' => (string) ($row['tenant_name'] ?? ''),
+                'tenant_slug' => (string) ($row['tenant_slug'] ?? ''),
+            ];
+        }
+        Session::set('pending_community_selection', [
+            'email' => $email,
+            'candidates' => $pick,
+            'expires_at' => time() + self::PENDING_COMMUNITY_TTL_SEC,
+        ]);
+
+        return Response::redirect(url('login/select-community'));
+    }
+
+    public function showSelectCommunity(Request $request, array $params = []): Response
+    {
+        if ($this->authService->check()) {
+            return Response::redirect(url('dashboard'));
+        }
+        $pending = Session::get('pending_community_selection');
+        if (!is_array($pending) || empty($pending['candidates'])) {
+            Session::flash('error', 'Reconnectez-vous pour choisir une communauté.');
+            return Response::redirect(url('login'));
+        }
+        if ((int) ($pending['expires_at'] ?? 0) < time()) {
+            Session::forget('pending_community_selection');
+            Session::flash('error', 'Délai dépassé. Reconnectez-vous.');
+            return Response::redirect(url('login'));
+        }
+
+        return Response::view('auth.select-community', [
+            'title' => 'Choisir une communauté',
+            'email' => (string) ($pending['email'] ?? ''),
+            'candidates' => $pending['candidates'],
+        ]);
+    }
+
+    public function selectCommunity(Request $request, array $params = []): Response
+    {
+        if (!$request->isPost()) {
+            return Response::redirect(url('login/select-community'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect(url('login/select-community'));
+        }
+        if ($this->authService->check()) {
+            return Response::redirect(url('dashboard'));
+        }
+        $pending = Session::get('pending_community_selection');
+        if (!is_array($pending) || empty($pending['candidates'])) {
+            Session::flash('error', 'Reconnectez-vous.');
+            return Response::redirect(url('login'));
+        }
+        if ((int) ($pending['expires_at'] ?? 0) < time()) {
+            Session::forget('pending_community_selection');
+            Session::flash('error', 'Délai dépassé. Reconnectez-vous.');
+            return Response::redirect(url('login'));
+        }
+
+        $tenantId = (int) $request->input('tenant_id');
+        $chosen = null;
+        foreach ($pending['candidates'] as $c) {
+            if ((int) ($c['tenant_id'] ?? 0) === $tenantId) {
+                $chosen = $c;
+                break;
+            }
+        }
+        if ($chosen === null) {
+            Session::flash('error', 'Choix invalide.');
+            return Response::redirect(url('login/select-community'));
+        }
+        $user = $this->userRepository->findById((int) $chosen['user_id'], $tenantId);
+        if (!$user || ($user['status'] ?? '') !== 'active') {
+            Session::forget('pending_community_selection');
+            Session::flash('error', 'Compte indisponible.');
+            return Response::redirect(url('login'));
+        }
+
+        Session::forget('pending_community_selection');
+        $this->authService->loginUser($user);
+        $this->rbacService->setPermissionsForGate(
+            !empty($user['role_id']) ? (int) $user['role_id'] : null,
+            (string) ($user['email'] ?? '')
         );
-        Session::flash('error', 'Identifiants incorrects ou compte inactif.');
-        return Response::redirect(url('login'));
+        $this->auditService->log(
+            AuditAction::AUTH_LOGIN_SUCCESS,
+            (int) $user['tenant_id'],
+            (int) $user['id'],
+            'auth',
+            (int) $user['id']
+        );
+
+        return Response::redirect(url('dashboard'));
     }
 
     public function logout(Request $request, array $params = []): Response

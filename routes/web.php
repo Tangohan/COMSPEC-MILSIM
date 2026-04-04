@@ -17,9 +17,12 @@ use App\Controllers\Web\ForumCategoryController;
 use App\Controllers\Web\ForumTopicController;
 use App\Controllers\Web\ForumNewTopicController;
 use App\Controllers\Web\ForumModerationController;
+use App\Controllers\Web\ExternalLeaveController;
+use App\Controllers\Web\ForumModerationDashboardController;
 use App\Controllers\Api\ForumApiController;
 use App\Controllers\Api\ForumModerationApiController;
 use App\Controllers\Api\ForumUploadController;
+use App\Controllers\Api\ForumRestController;
 use App\Controllers\Api\AtakIntelController;
 use App\Controllers\Api\AtakApiController;
 use App\Controllers\Api\FireSupportController;
@@ -48,12 +51,16 @@ use App\Controllers\Courrier\CourrierTemplateController;
 use App\Controllers\Courrier\CourrierPresetController;
 use App\Controllers\Courrier\CourrierWorkflowController;
 use App\Controllers\Courrier\CourrierPdfController;
+use App\Controllers\Courrier\CourrierSnippetController;
 use App\Controllers\Courrier\CourrierSignatureController;
 use App\Controllers\Admin\System\SystemDashboardController;
 use App\Controllers\Admin\System\SystemRoleController;
 use App\Controllers\Admin\System\SystemSettingsController;
 use App\Controllers\Admin\System\SystemAuditController;
+use App\Controllers\Admin\System\SystemSiteRoleAssignmentController;
+use App\Controllers\Admin\System\SystemMaintenanceController;
 use App\Controllers\Admin\Organization\OrganizationDashboardController;
+use App\Controllers\Admin\Organization\OrganizationAuditController;
 use App\Controllers\Admin\Organization\OrganizationPlaceholderController;
 use App\Controllers\Admin\Organization\UserAdminController;
 use App\Controllers\Admin\Organization\RoleAdminController;
@@ -63,11 +70,14 @@ use App\Controllers\Admin\Organization\GroupAdminController;
 use App\Controllers\Admin\Organization\TeamAdminController;
 use App\Controllers\Auth\AuthController;
 use App\Controllers\Web\RegisterController;
+use App\Controllers\Web\JoinController;
+use App\Controllers\Web\ReferralInviteController;
 use App\Controllers\Web\InvitationAcceptController;
 use App\Controllers\Web\CommunityEventsController;
 use App\Controllers\Admin\Organization\InvitationAdminController;
 use App\Controllers\Admin\Organization\ModerationOrganizationController;
 use App\Controllers\Admin\Organization\OrganizationAnalyticsController;
+use App\Controllers\Admin\Organization\OrganizationCommunityController;
 use App\Controllers\Admin\Organization\CommunityEventsAdminController;
 use App\Controllers\Api\TrainingApiController;
 use App\Core\Router;
@@ -76,6 +86,7 @@ use App\Middleware\GuestMiddleware;
 use App\Middleware\ForumModerateMiddleware;
 use App\Middleware\SystemAdminMiddleware;
 use App\Middleware\OrganizationAdminMiddleware;
+use App\Middleware\ForumModerationConsoleMiddleware;
 
 return function (Router $router) {
     $router->get('/', [HomeController::class, 'index']);
@@ -86,14 +97,22 @@ return function (Router $router) {
     $router->post('/c/{slug}/setup', [CommunityController::class, 'setupStore'], [AuthMiddleware::class]);
     $router->get('/communities/create', [CommunityController::class, 'createForm'], [AuthMiddleware::class]);
     $router->post('/communities/create', [CommunityController::class, 'create'], [AuthMiddleware::class]);
+    $router->get('/communities/create/pay', [CommunityController::class, 'pay'], [AuthMiddleware::class]);
+    $router->get('/communities/create/complete', [CommunityController::class, 'createComplete'], [AuthMiddleware::class]);
     $router->post('/community/switch', [CommunityController::class, 'switchTenant'], [AuthMiddleware::class]);
     $router->post('/api/stripe/webhook', [StripeWebhookController::class, 'handle']);
     $router->get('/register', [RegisterController::class, 'show'], [GuestMiddleware::class]);
     $router->post('/register', [RegisterController::class, 'store'], [GuestMiddleware::class]);
+    $router->get('/join', [JoinController::class, 'show']);
+    $router->post('/community/resolve-code', [JoinController::class, 'resolve']);
+    $router->get('/platform/upgrade', [HomeController::class, 'platformUpgrade'], [AuthMiddleware::class]);
+    $router->get('/platform/invite-unit', [ReferralInviteController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/invitations/accept', [InvitationAcceptController::class, 'show']);
     $router->post('/invitations/accept', [InvitationAcceptController::class, 'accept']);
     $router->get('/login', [AuthController::class, 'showLogin'], [GuestMiddleware::class]);
     $router->post('/login', [AuthController::class, 'login'], [GuestMiddleware::class]);
+    $router->get('/login/select-community', [AuthController::class, 'showSelectCommunity'], [GuestMiddleware::class]);
+    $router->post('/login/select-community', [AuthController::class, 'selectCommunity'], [GuestMiddleware::class]);
     $router->post('/logout', [AuthController::class, 'logout']);
     $router->get('/forgot-password', [AuthController::class, 'showForgotPassword'], [GuestMiddleware::class]);
     $router->post('/forgot-password', [AuthController::class, 'sendResetLink'], [GuestMiddleware::class]);
@@ -174,8 +193,21 @@ return function (Router $router) {
     $router->post('/admin/system/roles/{id}/update', [SystemRoleController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/settings', [SystemSettingsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/audit', [SystemAuditController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/maintenance/create', [SystemMaintenanceController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/maintenance', [SystemMaintenanceController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/maintenance/{id}/audit', [SystemMaintenanceController::class, 'audit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/maintenance/{id}/edit', [SystemMaintenanceController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/maintenance/{id}/update', [SystemMaintenanceController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/maintenance/{id}/delete', [SystemMaintenanceController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/maintenance/{id}/toggle', [SystemMaintenanceController::class, 'toggle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/site-roles', [SystemSiteRoleAssignmentController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/site-roles/assign', [SystemSiteRoleAssignmentController::class, 'assign'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Administration organisationnelle
     $router->get('/admin/organization', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/admin/organization/community', [OrganizationCommunityController::class, 'settings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/admin/organization/community', [OrganizationCommunityController::class, 'settingsUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/admin/organization/users', [UserAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/admin/organization/users/create', [UserAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/admin/organization/users/store', [UserAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -187,6 +219,7 @@ return function (Router $router) {
     $router->post('/admin/organization/invitations', [InvitationAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/admin/organization/invitations/revoke', [InvitationAdminController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/admin/organization/moderation', [ModerationOrganizationController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/admin/organization/audit', [OrganizationAuditController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/admin/organization/moderation/apply', [ModerationOrganizationController::class, 'apply'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/admin/organization/moderation/revoke', [ModerationOrganizationController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/admin/organization/analytics', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -239,8 +272,8 @@ return function (Router $router) {
     $router->get('/admin/atak-mod', [AdminAtakModController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/admin/atak-mod/upload', [AdminAtakModController::class, 'upload'], [AuthMiddleware::class]);
     $router->post('/admin/atak-mod/delete', [AdminAtakModController::class, 'delete'], [AuthMiddleware::class]);
-    $router->get('/admin/configuration', [AdminConfigurationController::class, 'index'], [AuthMiddleware::class]);
-    $router->get('/admin/recruitments', [AdminRecruitmentsController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/admin/configuration', [AdminConfigurationController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/admin/recruitments', [AdminRecruitmentsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/admin/training', [AdminTrainingController::class, 'dashboard'], [AuthMiddleware::class]);
     $router->get('/admin/training/courses', [AdminTrainingController::class, 'courses'], [AuthMiddleware::class]);
     $router->get('/admin/training/enrollments', [AdminTrainingController::class, 'enrollments'], [AuthMiddleware::class]);
@@ -270,8 +303,14 @@ return function (Router $router) {
     $router->get('/courrier/my-signatures', [CourrierSignatureController::class, 'mySignatures'], [AuthMiddleware::class]);
     $router->get('/courrier/signatures/{id}/image', [CourrierSignatureController::class, 'signatureImage'], [AuthMiddleware::class]);
     $router->get('/courrier/documents/{id}/print', [CourrierPdfController::class, 'print'], [AuthMiddleware::class]);
+    $router->get('/courrier/documents/{id}/pdf', [CourrierPdfController::class, 'pdf'], [AuthMiddleware::class]);
+    $router->get('/courrier/documents/{id}/pdf-external', [CourrierPdfController::class, 'pdfExternal'], [AuthMiddleware::class]);
+    $router->get('/courrier/api/snippets', [CourrierSnippetController::class, 'list'], [AuthMiddleware::class]);
     $router->get('/courrier/history', [CourrierDashboardController::class, 'history'], [AuthMiddleware::class]);
     $router->get('/courrier/archives', [CourrierDashboardController::class, 'archives'], [AuthMiddleware::class]);
+
+    // Sortie vers lien externe (interstitiel sécurité)
+    $router->get('/leave', [ExternalLeaveController::class, 'show'], [AuthMiddleware::class]);
 
     // Forum
     $router->get('/forum', [ForumController::class, 'index'], [AuthMiddleware::class]);
@@ -282,6 +321,7 @@ return function (Router $router) {
     $router->post('/forum/topic/{id}/unsubscribe', [ForumTopicController::class, 'unsubscribe'], [AuthMiddleware::class]);
     $router->get('/forum/new-topic', [ForumNewTopicController::class, 'form'], [AuthMiddleware::class]);
     $router->post('/forum/new-topic', [ForumNewTopicController::class, 'store'], [AuthMiddleware::class]);
+    $router->get('/admin/forum-moderation', [ForumModerationDashboardController::class, 'index'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->get('/forum/moderation', [ForumModerationController::class, 'index'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/report/{id}/handle', [ForumModerationController::class, 'handleReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/topic/{id}/lock', [ForumModerationController::class, 'lockTopic'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
@@ -391,7 +431,15 @@ return function (Router $router) {
     // API ATAK Intel (legacy — redirige vers atak_intel, gardé pour compat)
     $router->post('/api/atak/intel', [AtakIntelController::class, 'storeIntel']);
 
-    // API Forum (JSON)
+    // API Forum — REST structurée (prioritaire sur le handler legacy)
+    $router->get('/api/forum/topics', [ForumRestController::class, 'listTopics'], [AuthMiddleware::class]);
+    $router->get('/api/forum/topics/{id}', [ForumRestController::class, 'showTopic'], [AuthMiddleware::class]);
+    $router->get('/api/forum/topics/{topicId}/posts', [ForumRestController::class, 'listPosts'], [AuthMiddleware::class]);
+    $router->post('/api/forum/posts/{postId}/vote', [ForumRestController::class, 'votePost'], [AuthMiddleware::class]);
+    $router->post('/api/forum/report', [ForumRestController::class, 'report'], [AuthMiddleware::class]);
+    $router->get('/api/forum/search', [ForumRestController::class, 'search'], [AuthMiddleware::class]);
+
+    // API Forum (JSON, actions legacy)
     $router->get('/api/forum', [ForumApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/forum', [ForumApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/forum-moderation', [ForumModerationApiController::class, 'handle'], [AuthMiddleware::class, ForumModerateMiddleware::class]);

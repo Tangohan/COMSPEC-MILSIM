@@ -30,10 +30,18 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),
                 self::get(UserRepository::class),
+                self::get(\App\Repositories\TenantUsageCounterRepository::class),
+                self::get(\App\Repositories\PlatformUsageRepository::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
             ),
+            \App\Repositories\TenantUsageCounterRepository::class => new \App\Repositories\TenantUsageCounterRepository(),
+            \App\Repositories\ReferralRepository::class => new \App\Repositories\ReferralRepository(),
+            \App\Repositories\PendingCommunityCreateRepository::class => new \App\Repositories\PendingCommunityCreateRepository(),
+            \App\Services\Billing\StripeCheckoutService::class => new \App\Services\Billing\StripeCheckoutService(),
             \App\Services\Community\TenantBootstrapService::class => new \App\Services\Community\TenantBootstrapService(
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
+                self::get(\App\Repositories\ReferralRepository::class),
             ),
             \App\Controllers\Web\CommunityController::class => new \App\Controllers\Web\CommunityController(
                 self::get(TenantRepository::class),
@@ -41,9 +49,27 @@ class Container
                 self::get(AuthService::class),
                 self::get(\App\Services\Community\TenantBootstrapService::class),
                 self::get(RbacService::class),
+                self::get(\App\Repositories\ReferralRepository::class),
+                self::get(\App\Repositories\PendingCommunityCreateRepository::class),
+                self::get(\App\Services\Billing\StripeCheckoutService::class),
+                self::get(\App\Repositories\SubscriptionPlanRepository::class),
+            ),
+            \App\Controllers\Web\JoinController::class => new \App\Controllers\Web\JoinController(
+                self::get(TenantRepository::class),
+                self::get(AuthService::class),
+            ),
+            \App\Controllers\Web\ReferralInviteController::class => new \App\Controllers\Web\ReferralInviteController(
+                self::get(\App\Repositories\ReferralRepository::class),
+            ),
+            \App\Controllers\Admin\Organization\OrganizationCommunityController::class => new \App\Controllers\Admin\Organization\OrganizationCommunityController(
+                self::get(AuthService::class),
+                self::get(TenantRepository::class),
             ),
             \App\Controllers\Api\StripeWebhookController::class => new \App\Controllers\Api\StripeWebhookController(
                 self::get(TenantRepository::class),
+                self::get(\App\Repositories\ReferralRepository::class),
+                self::get(\App\Repositories\PendingCommunityCreateRepository::class),
+                self::get(\App\Services\Community\TenantBootstrapService::class),
             ),
             UserRepository::class => new UserRepository(),
             AuthService::class => new AuthService(
@@ -189,7 +215,14 @@ class Container
             ),
             \App\Controllers\Admin\System\SystemRoleController::class => new \App\Controllers\Admin\System\SystemRoleController(
                 self::get(\App\Services\Admin\RolePermissionService::class),
-                self::get(\App\Repositories\PermissionRepository::class)
+                self::get(\App\Repositories\PermissionRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Services\Audit\AuditService::class)
+            ),
+            \App\Repositories\SiteRoleAssignmentRepository::class => new \App\Repositories\SiteRoleAssignmentRepository(),
+            \App\Controllers\Admin\System\SystemSiteRoleAssignmentController::class => new \App\Controllers\Admin\System\SystemSiteRoleAssignmentController(
+                self::get(\App\Repositories\SiteRoleAssignmentRepository::class),
+                self::get(\App\Services\Audit\AuditService::class)
             ),
             \App\Controllers\Admin\Organization\RoleAdminController::class => new \App\Controllers\Admin\Organization\RoleAdminController(
                 self::get(\App\Services\Admin\RolePermissionService::class),
@@ -376,7 +409,8 @@ class Container
                 self::get(\App\Services\Training\TrainingAssignmentService::class),
                 self::get(\App\Repositories\TrainingEnrollmentRepository::class),
                 self::get(\App\Repositories\TrainingQuizRepository::class),
-                self::get(\App\Repositories\TrainingCourseRepository::class)
+                self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
             ),
             \App\Controllers\Admin\AdminDocumentsController::class => new \App\Controllers\Admin\AdminDocumentsController(
                 self::get(\App\Repositories\DocumentRepository::class),
@@ -425,12 +459,31 @@ class Container
                 self::get(\App\Repositories\ForumTopicRepository::class),
                 self::get(\App\Repositories\ForumReportRepository::class)
             ),
+            \App\Controllers\Web\ForumModerationDashboardController::class => new \App\Controllers\Web\ForumModerationDashboardController(
+                self::get(\App\Repositories\ForumReportRepository::class)
+            ),
+            \App\Repositories\ForumVoteRepository::class => new \App\Repositories\ForumVoteRepository(),
+            \App\Repositories\ForumNotificationRepository::class => new \App\Repositories\ForumNotificationRepository(),
+            \App\Services\Forum\ForumModerationEngine::class => new \App\Services\Forum\ForumModerationEngine(
+                self::get(\App\Repositories\ForumBannedWordRepository::class),
+                self::get(\App\Repositories\ForumBlacklistedDomainRepository::class)
+            ),
             \App\Controllers\Api\ForumApiController::class => new \App\Controllers\Api\ForumApiController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
                 self::get(\App\Repositories\ForumTopicRepository::class),
                 self::get(\App\Repositories\ForumPostRepository::class),
                 self::get(\App\Repositories\ForumReportRepository::class),
-                self::get(UserRepository::class)
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\ForumVoteRepository::class),
+                self::get(\App\Services\Forum\ForumModerationEngine::class),
+                self::get(\App\Repositories\ForumNotificationRepository::class)
+            ),
+            \App\Controllers\Api\ForumRestController::class => new \App\Controllers\Api\ForumRestController(
+                self::get(\App\Repositories\ForumCategoryRepository::class),
+                self::get(\App\Repositories\ForumTopicRepository::class),
+                self::get(\App\Repositories\ForumPostRepository::class),
+                self::get(\App\Repositories\ForumReportRepository::class),
+                self::get(\App\Repositories\ForumVoteRepository::class)
             ),
             \App\Controllers\Api\ForumModerationApiController::class => new \App\Controllers\Api\ForumModerationApiController(
                 self::get(\App\Repositories\ForumTopicRepository::class),
@@ -438,6 +491,10 @@ class Container
                 self::get(\App\Services\Audit\AuditService::class)
             ),
             \App\Controllers\Api\ForumUploadController::class => new \App\Controllers\Api\ForumUploadController(),
+            \App\Services\Forum\ExternalLeaveService::class => new \App\Services\Forum\ExternalLeaveService(),
+            \App\Controllers\Web\ExternalLeaveController::class => new \App\Controllers\Web\ExternalLeaveController(
+                self::get(\App\Services\Forum\ExternalLeaveService::class)
+            ),
             \App\Repositories\AtakIntelRepository::class => new \App\Repositories\AtakIntelRepository(),
             \App\Controllers\Api\AtakIntelController::class => new \App\Controllers\Api\AtakIntelController(
                 self::get(\App\Repositories\AtakIntelRepository::class)
@@ -550,8 +607,13 @@ class Container
                 self::get(\App\Services\Courrier\DocumentNumberingService::class)
             ),
             \App\Services\Courrier\DocumentExportService::class => new \App\Services\Courrier\DocumentExportService(
-                self::get(\App\Services\Courrier\DocumentBuilderService::class),
-                self::get(\App\Repositories\Courrier\DocumentPresetRepository::class)
+                self::get(\App\Services\Courrier\DocumentBuilderService::class)
+            ),
+            \App\Services\Courrier\CourrierSnippetService::class => new \App\Services\Courrier\CourrierSnippetService(),
+            \App\Controllers\Courrier\CourrierSnippetController::class => new \App\Controllers\Courrier\CourrierSnippetController(
+                self::get(\App\Services\Courrier\CourrierSnippetService::class),
+                self::get(\App\Services\Courrier\TemplateRenderService::class),
+                self::get(\App\Repositories\Courrier\CourrierDocumentRepository::class)
             ),
             \App\Services\Courrier\DocumentSignatureService::class => new \App\Services\Courrier\DocumentSignatureService(
                 self::get(\App\Repositories\Courrier\CourrierDocumentRepository::class),

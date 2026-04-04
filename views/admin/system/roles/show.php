@@ -23,6 +23,7 @@ $rid = (int) $role['id'];
         <div><dt class="text-slate-500 text-sm">Description</dt><dd><?= htmlspecialchars($role['description'] ?? '—') ?></dd></div>
         <div><dt class="text-slate-500 text-sm">Système</dt><dd><?= !empty($role['is_system']) ? 'Oui' : 'Non' ?></dd></div>
         <div><dt class="text-slate-500 text-sm">Verrouillé</dt><dd><?= $isLocked ? 'Oui' : 'Non' ?></dd></div>
+        <div><dt class="text-slate-500 text-sm">Couche</dt><dd><?= htmlspecialchars((string) ($role['role_layer'] ?? 'site')) ?> (site / plateforme)</dd></div>
     </dl>
     <h2 class="text-lg font-bold text-slate-900 mb-3">Permissions associées</h2>
     <?php if (empty($rolePermissions)): ?>

@@ -35,4 +35,10 @@ return [
 
     'forum_max_post_length' => 10000,
     'enabled' => true,
+
+    /** Hôtes considérés comme internes (en plus du host APP_URL), sans protocole. */
+    'internal_link_hosts' => [],
+
+    /** Délai (secondes) avant activation du bouton « Continuer » sur la page de sortie. */
+    'leave_countdown_seconds' => 5,
 ];

@@ -139,12 +139,21 @@ class ForumPostRepository
         return $row ?: null;
     }
 
-    public function create(int $tenantId, int $topicId, int $userId, string $body): int
+    public function create(int $tenantId, int $topicId, int $userId, string $body, ?int $parentPostId = null): int
     {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO forum_posts (tenant_id, topic_id, user_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())'
-        );
-        $stmt->execute([$tenantId, $topicId, $userId, $body]);
+        $chk = $this->pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_posts' AND COLUMN_NAME = 'parent_post_id' LIMIT 1");
+        if ($chk && $chk->fetchColumn()) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO forum_posts (tenant_id, topic_id, parent_post_id, user_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())'
+            );
+            $stmt->execute([$tenantId, $topicId, $parentPostId, $userId, $body]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO forum_posts (tenant_id, topic_id, user_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())'
+            );
+            $stmt->execute([$tenantId, $topicId, $userId, $body]);
+        }
+
         return (int) $this->pdo->lastInsertId();
     }
 

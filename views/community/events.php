@@ -1,9 +1,18 @@
 <?php
 /** @var list<array<string, mixed>> $events */
 /** @var int|null $currentUserId */
+/** @var array<string, mixed>|null $eventsQuota */
+$eventsQuota = $eventsQuota ?? null;
 ?>
 <div class="max-w-3xl mx-auto px-4 py-10">
     <h1 class="text-2xl font-black text-white mb-6">Événements</h1>
+    <?php
+    $quotaBanner = $eventsQuota ?? null;
+    $quotaCanProceed = true;
+    $variant = 'dark';
+    $quotaFromKey = 'events';
+    require __DIR__ . '/../partials/quota_limited_banner.php';
+    ?>
     <?php $s = \App\Core\Session::getFlash('success'); $e = \App\Core\Session::getFlash('error'); ?>
     <?php if ($s): ?><p class="text-emerald-400 text-sm mb-4"><?= htmlspecialchars($s) ?></p><?php endif; ?>
     <?php if ($e): ?><p class="text-red-400 text-sm mb-4"><?= htmlspecialchars($e) ?></p><?php endif; ?>

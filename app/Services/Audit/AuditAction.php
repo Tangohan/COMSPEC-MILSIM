@@ -28,4 +28,12 @@ final class AuditAction
     public const FORUM_MODERATION = 'forum.moderation_action';
 
     public const SECURITY_EVENT = 'security.event';
+
+    public const ROLE_PERMISSIONS_UPDATED = 'role.permissions_updated';
+
+    public const SITE_ROLE_ASSIGNED = 'site_role.assigned';
+    public const SITE_ROLE_REVOKED = 'site_role.revoked';
+
+    /** Journalisation convention slugs site.* / community.* / intra.* (migration progressive). */
+    public const PERMISSION_SCOPE_MIGRATION = 'permission.scope_migration';
 }

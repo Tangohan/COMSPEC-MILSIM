@@ -21,6 +21,36 @@ function run_community_platform_migration(PDO $pdo): void
         UNIQUE KEY slug (slug)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    $limCol = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'subscription_plans' AND COLUMN_NAME = 'limits_json'");
+    if ($limCol && !$limCol->fetch()) {
+        echo "Ajout subscription_plans.limits_json...\n";
+        $pdo->exec("ALTER TABLE subscription_plans ADD COLUMN limits_json text DEFAULT NULL COMMENT 'Quotas gratuit limité (JSON)' AFTER features_json");
+    }
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS tenant_usage_counters (
+        tenant_id int unsigned NOT NULL,
+        metric_key varchar(64) NOT NULL,
+        period_start date NOT NULL,
+        amount int unsigned NOT NULL DEFAULT 0,
+        updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (tenant_id, metric_key, period_start),
+        KEY tenant_metric (tenant_id, metric_key),
+        CONSTRAINT fk_tuc_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $freeLimitsDefault = json_encode([
+        'quotas' => [
+            'events' => [
+                'limit' => 3,
+                'reset_period' => 'monthly',
+                'soft_block_threshold' => 0.8,
+                'soft_block_message' => 'Vous approchez de la limite de créations d’événements ce mois-ci.',
+                'upgrade_cta' => 'platform/upgrade',
+                'binds_feature' => 'events',
+            ],
+        ],
+    ], JSON_THROW_ON_ERROR);
+
     $stmt = $pdo->query("SELECT COUNT(*) FROM subscription_plans");
     if ($stmt && (int) $stmt->fetchColumn() === 0) {
         $free = json_encode([
@@ -36,6 +66,7 @@ function run_community_platform_migration(PDO $pdo): void
             'documents' => true,
             'training' => true,
             'atak' => true,
+            'events' => true,
             'max_members' => 200,
             'community_create' => true,
         ], JSON_THROW_ON_ERROR);
@@ -49,11 +80,27 @@ function run_community_platform_migration(PDO $pdo): void
             'max_members' => 2000,
             'community_create' => true,
         ], JSON_THROW_ON_ERROR);
-        $ins = $pdo->prepare('INSERT INTO subscription_plans (slug, name, sort_order, features_json, created_at) VALUES (?, ?, ?, ?, NOW())');
-        $ins->execute(['free', 'Gratuit', 10, $free]);
-        $ins->execute(['standard', 'Standard', 20, $std]);
-        $ins->execute(['pro', 'Pro', 30, $pro]);
+        $ins = $pdo->prepare('INSERT INTO subscription_plans (slug, name, sort_order, features_json, limits_json, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
+        $ins->execute(['free', 'Gratuit', 10, $free, $freeLimitsDefault]);
+        $ins->execute(['standard', 'Standard', 20, $std, null]);
+        $ins->execute(['pro', 'Pro', 30, $pro, null]);
         echo "Plans subscription_plans insérés (free, standard, pro).\n";
+    } else {
+        $up = $pdo->prepare("UPDATE subscription_plans SET limits_json = ? WHERE slug = 'free' AND (limits_json IS NULL OR limits_json = '')");
+        $up->execute([$freeLimitsDefault]);
+        $stdRow = $pdo->query("SELECT features_json FROM subscription_plans WHERE slug = 'standard' LIMIT 1");
+        $stdFeat = $stdRow ? $stdRow->fetch(PDO::FETCH_ASSOC) : false;
+        if (is_array($stdFeat)) {
+            $fj = json_decode((string) ($stdFeat['features_json'] ?? '{}'), true);
+            if (is_array($fj) && empty($fj['events'])) {
+                $fj['events'] = true;
+                $pdo->prepare('UPDATE subscription_plans SET features_json = ? WHERE slug = ?')->execute([
+                    json_encode($fj, JSON_THROW_ON_ERROR),
+                    'standard',
+                ]);
+                echo "Plan standard : événements activés (alignement payant).\n";
+            }
+        }
     }
 
     $cols = [
@@ -91,4 +138,35 @@ function run_community_platform_migration(PDO $pdo): void
     }
 
     $pdo->exec("UPDATE tenants SET plan_slug = 'free' WHERE plan_slug = '' OR plan_slug IS NULL");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS pending_community_creates (
+        id int unsigned NOT NULL AUTO_INCREMENT,
+        token char(64) NOT NULL,
+        user_id int unsigned NOT NULL,
+        payload_json text NOT NULL,
+        plan_slug varchar(50) NOT NULL,
+        stripe_price_id varchar(100) NOT NULL,
+        stripe_checkout_session_id varchar(255) DEFAULT NULL,
+        tenant_id int unsigned DEFAULT NULL,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY pcc_token (token),
+        KEY pcc_user (user_id),
+        KEY pcc_stripe_sess (stripe_checkout_session_id),
+        KEY pcc_tenant (tenant_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $profSlug = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'profile_slug'");
+    if ($profSlug && !$profSlug->fetch()) {
+        echo "Ajout users.profile_slug...\n";
+        $pdo->exec("ALTER TABLE users ADD COLUMN profile_slug varchar(40) DEFAULT NULL COMMENT 'Identifiant URL fiche personnel (tenant)' AFTER callsign");
+        $idx = $pdo->query("SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND INDEX_NAME = 'users_tenant_profile_slug'");
+        if ($idx && !$idx->fetch()) {
+            try {
+                $pdo->exec('ALTER TABLE users ADD UNIQUE KEY users_tenant_profile_slug (tenant_id, profile_slug)');
+            } catch (PDOException $e) {
+                echo '  [ATTENTION] Index profile_slug : ' . $e->getMessage() . "\n";
+            }
+        }
+    }
 }

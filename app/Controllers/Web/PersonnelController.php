@@ -25,6 +25,28 @@ use App\Services\Personnel\PersonnelCompletenessService;
 
 class PersonnelController
 {
+    /** Résout /personnel/{id} (numérique) ou /personnel/{slug} (profile_slug). */
+    private function resolvePersonnelTarget(string $raw, int $tenantId, ?int $fallbackUserId = null): ?array
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return $fallbackUserId !== null ? $this->userRepository->findById($fallbackUserId, $tenantId) : null;
+        }
+        if (ctype_digit($raw)) {
+            return $this->userRepository->findById((int) $raw, $tenantId);
+        }
+
+        return $this->userRepository->findByProfileSlug($tenantId, $raw);
+    }
+
+    /** Segment d’URL pour les redirections (slug préféré). */
+    private function personPathSegment(array $userRow): string
+    {
+        $slug = trim((string) ($userRow['profile_slug'] ?? ''));
+
+        return $slug !== '' ? $slug : (string) ($userRow['id'] ?? '');
+    }
+
     public function __construct(
         private AuthService $authService,
         private UserRepository $userRepository,
@@ -58,8 +80,8 @@ class PersonnelController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $id = (int) ($params['id'] ?? 0);
-        $target = $this->userRepository->findById($id, (int) $tenantId);
+        $raw = (string) ($params['id'] ?? '');
+        $target = $this->resolvePersonnelTarget($raw, (int) $tenantId);
         if (!$target) {
             return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
         }
@@ -133,8 +155,8 @@ class PersonnelController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $id = (int) ($params['id'] ?? 0);
-        $target = $this->userRepository->findById($id, $tenantId);
+        $raw = (string) ($params['id'] ?? '');
+        $target = $this->resolvePersonnelTarget($raw, $tenantId);
         if (!$target) {
             return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
         }
@@ -145,7 +167,7 @@ class PersonnelController
             return (new Response())->setStatusCode(403)->setBody('Non autorisé.');
         }
         $this->matriculeService->assignNextForUser((int) $target['id'], $tenantId);
-        $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $id);
+        $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
         return Response::redirect($redirect);
     }
 
@@ -155,8 +177,8 @@ class PersonnelController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $id = (int) ($params['id'] ?? 0);
-        $target = $this->userRepository->findById($id, $tenantId);
+        $raw = (string) ($params['id'] ?? '');
+        $target = $this->resolvePersonnelTarget($raw, $tenantId);
         if (!$target) {
             return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
         }
@@ -169,7 +191,7 @@ class PersonnelController
         $notes = trim((string) ($request->input('admin_notes') ?? ''));
         $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
         $this->personnelProfileRepository->updateCommandNotes((int) $target['id'], $notes);
-        $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $id);
+        $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
         return Response::redirect($redirect);
     }
 
@@ -194,11 +216,8 @@ class PersonnelController
         if (!$tenantId || !$currentUser) {
             return Response::redirect(url('login'));
         }
-        $id = (int) ($params['id'] ?? 0);
-        if ($id === 0) {
-            $id = (int) $currentUser['id'];
-        }
-        $target = $this->userRepository->findById($id, $tenantId);
+        $raw = (string) ($params['id'] ?? '');
+        $target = $this->resolvePersonnelTarget($raw, $tenantId, (int) $currentUser['id']);
         if (!$target) {
             return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
         }
@@ -230,11 +249,8 @@ class PersonnelController
             Session::flash('error', 'Session expirée.');
             return Response::redirect(url('personnel/me'));
         }
-        $id = (int) ($params['id'] ?? 0);
-        if ($id === 0) {
-            $id = (int) $currentUser['id'];
-        }
-        $target = $this->userRepository->findById($id, $tenantId);
+        $raw = (string) ($params['id'] ?? '');
+        $target = $this->resolvePersonnelTarget($raw, $tenantId, (int) $currentUser['id']);
         if (!$target) {
             return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
         }
@@ -266,7 +282,7 @@ class PersonnelController
         }
         $this->personnelProfileRepository->update((int) $target['id'], $data);
         Session::flash('success', 'Dossier mis à jour.');
-        $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $id);
+        $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
         return Response::redirect($redirect);
     }
 }

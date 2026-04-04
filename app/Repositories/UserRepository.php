@@ -5,15 +5,62 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\User\UserProfileSlugService;
 use PDO;
 
 class UserRepository
 {
     private PDO $pdo;
 
+    private static ?bool $hasProfileSlugColumn = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    private function hasProfileSlugColumn(): bool
+    {
+        if (self::$hasProfileSlugColumn === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'profile_slug' LIMIT 1");
+            self::$hasProfileSlugColumn = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasProfileSlugColumn;
+    }
+
+    public function findByProfileSlug(int $tenantId, string $slug): ?array
+    {
+        if (!$this->hasProfileSlugColumn()) {
+            return null;
+        }
+        $slug = strtolower(trim($slug));
+        if ($slug === '' || !UserProfileSlugService::isValidFormat($slug)) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE tenant_id = ? AND LOWER(profile_slug) = ? LIMIT 1');
+        $stmt->execute([$tenantId, $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function isProfileSlugTaken(int $tenantId, string $slug, ?int $exceptUserId = null): bool
+    {
+        if (!$this->hasProfileSlugColumn()) {
+            return false;
+        }
+        $slug = strtolower(trim($slug));
+        $sql = 'SELECT 1 FROM users WHERE tenant_id = ? AND LOWER(profile_slug) = ?';
+        $params = [$tenantId, $slug];
+        if ($exceptUserId !== null) {
+            $sql .= ' AND id != ?';
+            $params[] = $exceptUserId;
+        }
+        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute($params);
+
+        return (bool) $stmt->fetchColumn();
     }
 
     public function findByEmail(int $tenantId, string $email): ?array
@@ -43,39 +90,91 @@ class UserRepository
         $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'preferred_grade_format' LIMIT 1");
         $hasGradeColumns = $stmt && $stmt->fetch();
 
+        $profileSlug = null;
+        if ($this->hasProfileSlugColumn()) {
+            if (isset($data['profile_slug']) && $data['profile_slug'] !== null && trim((string) $data['profile_slug']) !== '') {
+                $profileSlug = strtolower(trim((string) $data['profile_slug']));
+            } else {
+                $profileSlug = UserProfileSlugService::generateForNewUser(
+                    isset($data['display_name']) ? (string) $data['display_name'] : null,
+                    (string) ($data['email'] ?? ''),
+                    fn (string $s) => $this->isProfileSlugTaken($tenantId, $s)
+                );
+            }
+        }
+
         if ($hasGradeColumns) {
-            $stmt = $this->pdo->prepare(
-                'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
-            );
-            $stmt->execute([
-                $tenantId,
-                $data['email'],
-                $data['password_hash'],
-                $data['display_name'] ?? null,
-                $data['callsign'] ?? null,
-                $data['role_id'] ?? null,
-                $data['grade_id'] ?? null,
-                $data['status'] ?? 'pending',
-                $data['nationality_code'] ?? null,
-                $data['preferred_grade_format'] ?? 'classic',
-                $data['professional_category_code'] ?? null,
-            ]);
+            if ($this->hasProfileSlugColumn()) {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([
+                    $tenantId,
+                    $data['email'],
+                    $data['password_hash'],
+                    $data['display_name'] ?? null,
+                    $data['callsign'] ?? null,
+                    $profileSlug,
+                    $data['role_id'] ?? null,
+                    $data['grade_id'] ?? null,
+                    $data['status'] ?? 'pending',
+                    $data['nationality_code'] ?? null,
+                    $data['preferred_grade_format'] ?? 'classic',
+                    $data['professional_category_code'] ?? null,
+                ]);
+            } else {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([
+                    $tenantId,
+                    $data['email'],
+                    $data['password_hash'],
+                    $data['display_name'] ?? null,
+                    $data['callsign'] ?? null,
+                    $data['role_id'] ?? null,
+                    $data['grade_id'] ?? null,
+                    $data['status'] ?? 'pending',
+                    $data['nationality_code'] ?? null,
+                    $data['preferred_grade_format'] ?? 'classic',
+                    $data['professional_category_code'] ?? null,
+                ]);
+            }
         } else {
-            $stmt = $this->pdo->prepare(
-                'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
-            );
-            $stmt->execute([
-                $tenantId,
-                $data['email'],
-                $data['password_hash'],
-                $data['display_name'] ?? null,
-                $data['callsign'] ?? null,
-                $data['role_id'] ?? null,
-                $data['grade_id'] ?? null,
-                $data['status'] ?? 'pending',
-            ]);
+            if ($this->hasProfileSlugColumn()) {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, role_id, grade_id, status, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([
+                    $tenantId,
+                    $data['email'],
+                    $data['password_hash'],
+                    $data['display_name'] ?? null,
+                    $data['callsign'] ?? null,
+                    $profileSlug,
+                    $data['role_id'] ?? null,
+                    $data['grade_id'] ?? null,
+                    $data['status'] ?? 'pending',
+                ]);
+            } else {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([
+                    $tenantId,
+                    $data['email'],
+                    $data['password_hash'],
+                    $data['display_name'] ?? null,
+                    $data['callsign'] ?? null,
+                    $data['role_id'] ?? null,
+                    $data['grade_id'] ?? null,
+                    $data['status'] ?? 'pending',
+                ]);
+            }
         }
         return (int) $this->pdo->lastInsertId();
     }
@@ -96,34 +195,72 @@ class UserRepository
     }
 
     /** Liste avec filtres optionnels (recherche, statut, rôle). */
-    public function listForTenant(int $tenantId, ?string $search = null, ?string $status = null, ?int $roleId = null): array
+    public function listForTenant(int $tenantId, ?string $search = null, ?string $status = null, ?int $roleId = null, ?int $limit = null, ?int $offset = null): array
     {
-        $sql = 'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE u.tenant_id = ?';
+        [$sql, $params] = $this->buildUserListQuery($tenantId, $search, $status, $roleId);
+        $sql .= ' ORDER BY u.email ASC';
+        if ($limit !== null) {
+            $sql .= ' LIMIT ' . max(1, min(200, (int) $limit)) . ' OFFSET ' . max(0, (int) ($offset ?? 0));
+        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function countListForTenant(int $tenantId, ?string $search = null, ?string $status = null, ?int $roleId = null): int
+    {
+        [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId);
+        $sql = 'SELECT COUNT(*) FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE ' . $whereSql;
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * @return array{0: string, 1: array<int, mixed>}
+     */
+    private function buildUserListWhere(int $tenantId, ?string $search, ?string $status, ?int $roleId): array
+    {
+        $parts = ['u.tenant_id = ?'];
         $params = [$tenantId];
         if ($search !== null && $search !== '') {
             $term = '%' . trim($search) . '%';
-            $sql .= ' AND (u.email LIKE ? OR u.display_name LIKE ? OR u.callsign LIKE ?)';
+            $parts[] = '(u.email LIKE ? OR u.display_name LIKE ? OR u.callsign LIKE ?)';
             $params[] = $term;
             $params[] = $term;
             $params[] = $term;
         }
         if ($status !== null && $status !== '') {
-            $sql .= ' AND u.status = ?';
+            $parts[] = 'u.status = ?';
             $params[] = $status;
         }
         if ($roleId !== null && $roleId > 0) {
-            $sql .= ' AND u.role_id = ?';
+            $parts[] = 'u.role_id = ?';
             $params[] = $roleId;
         }
-        $sql .= ' ORDER BY u.email ASC';
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [implode(' AND ', $parts), $params];
+    }
+
+    /**
+     * @return array{0: string, 1: array<int, mixed>}
+     */
+    private function buildUserListQuery(int $tenantId, ?string $search, ?string $status, ?int $roleId): array
+    {
+        [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId);
+        $sql = 'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE ' . $whereSql;
+
+        return [$sql, $params];
     }
 
     public function update(int $userId, int $tenantId, array $data): bool
     {
         $allowed = ['email', 'password_hash', 'display_name', 'callsign', 'avatar_url', 'steam_id', 'role_id', 'grade_id', 'status', 'nationality_code', 'preferred_grade_format', 'professional_category_code'];
+        if ($this->hasProfileSlugColumn()) {
+            $allowed[] = 'profile_slug';
+        }
         $set = [];
         $params = [];
         foreach ($allowed as $key) {
@@ -232,6 +369,26 @@ class UserRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Comptes actifs pour un email avec détail tenant (connexion sans slug).
+     *
+     * @return list<array<string,mixed>> lignes users.* + tenant_name, tenant_slug
+     */
+    public function listActiveUsersWithTenantForEmail(string $email): array
+    {
+        $email = strtolower(trim($email));
+        $stmt = $this->pdo->prepare(
+            'SELECT u.*, t.name AS tenant_name, t.slug AS tenant_slug
+             FROM users u
+             INNER JOIN tenants t ON t.id = u.tenant_id
+             WHERE LOWER(TRIM(u.email)) = ? AND u.status = ?
+             ORDER BY t.name ASC'
+        );
+        $stmt->execute([$email, 'active']);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function findIdByTenantAndEmail(int $tenantId, string $email): ?int
     {
         $stmt = $this->pdo->prepare('SELECT id FROM users WHERE tenant_id = ? AND email = ? LIMIT 1');
@@ -264,7 +421,7 @@ class UserRepository
         if ($this->emailExistsInTenant($newTenantId, (string) $u['email'])) {
             throw new \RuntimeException('Cet email est déjà inscrit dans cette communauté.');
         }
-        return $this->create($newTenantId, [
+        $cloneData = [
             'email' => $u['email'],
             'password_hash' => $u['password_hash'],
             'display_name' => $u['display_name'] ?? null,
@@ -272,6 +429,15 @@ class UserRepository
             'role_id' => $roleId,
             'grade_id' => $gradeId,
             'status' => 'active',
-        ]);
+        ];
+        if ($this->hasProfileSlugColumn()) {
+            $cloneData['profile_slug'] = UserProfileSlugService::generateForNewUser(
+                $u['display_name'] ?? null,
+                (string) $u['email'],
+                fn (string $s) => $this->isProfileSlugTaken($newTenantId, $s)
+            );
+        }
+
+        return $this->create($newTenantId, $cloneData);
     }
 }

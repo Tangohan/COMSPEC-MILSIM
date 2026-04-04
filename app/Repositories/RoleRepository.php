@@ -20,9 +20,44 @@ class RoleRepository
     public function allForTenant(int $tenantId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, name, slug, description, is_system, is_locked FROM roles WHERE tenant_id = ? ORDER BY name ASC'
+            'SELECT id, tenant_id, name, slug, description, is_system, is_locked, role_layer FROM roles WHERE tenant_id = ? ORDER BY name ASC'
         );
         $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Rôles communauté + intra (exclut toute logique site). */
+    /** @return list<array<string, mixed>> */
+    public function forTenantOrganization(int $tenantId): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT id, tenant_id, name, slug, description, is_system, is_locked, role_layer FROM roles WHERE tenant_id = ? AND role_layer IN ('community','intra') ORDER BY role_layer DESC, name ASC"
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function forTenantByLayer(int $tenantId, string $layer): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, tenant_id, name, slug, description, is_system, is_locked, role_layer FROM roles WHERE tenant_id = ? AND role_layer = ? ORDER BY name ASC'
+        );
+        $stmt->execute([$tenantId, $layer]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Rôles site globaux (tenant_id NULL). */
+    /** @return list<array<string, mixed>> */
+    public function allSiteRoles(): array
+    {
+        $stmt = $this->pdo->query(
+            "SELECT id, tenant_id, name, slug, description, is_system, is_locked, role_layer FROM roles WHERE tenant_id IS NULL AND role_layer = 'site' ORDER BY name ASC"
+        );
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -37,6 +72,7 @@ class RoleRepository
         $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
         return $row ?: null;
     }
 
@@ -46,6 +82,19 @@ class RoleRepository
         $stmt = $this->pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_COLUMN);
+
         return $row !== false ? (int) $row : null;
+    }
+
+    /** Attribution depuis l’admin communauté : pas de rôle site / global. */
+    public function canAssignInTenantAdminContext(int $roleId, int $tenantId): bool
+    {
+        $r = $this->findById($roleId, $tenantId);
+        if (!$r) {
+            return false;
+        }
+        $layer = (string) ($r['role_layer'] ?? 'community');
+
+        return $layer === 'community' || $layer === 'intra';
     }
 }

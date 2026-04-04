@@ -24,10 +24,12 @@ CREATE TABLE IF NOT EXISTS `roles` (
   `description` varchar(500) DEFAULT NULL,
   `is_system` tinyint(1) DEFAULT 0,
   `is_locked` tinyint(1) DEFAULT 0,
+  `role_layer` enum('site','community','intra') NOT NULL DEFAULT 'community',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
   KEY `tenant_id` (`tenant_id`),
+  KEY `roles_tenant_layer` (`tenant_id`,`role_layer`),
   CONSTRAINT `roles_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -37,6 +39,7 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   `name` varchar(100) NOT NULL,
   `slug` varchar(100) NOT NULL,
   `module` varchar(50) DEFAULT NULL,
+  `scope` enum('site','community','intra') NOT NULL DEFAULT 'community',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
@@ -51,6 +54,20 @@ CREATE TABLE IF NOT EXISTS `role_permissions` (
   KEY `permission_id` (`permission_id`),
   CONSTRAINT `role_permissions_role_id_fk` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `role_permissions_permission_id_fk` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `site_role_assignments` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `email_normalized` varchar(255) NOT NULL,
+  `role_id` int unsigned NOT NULL,
+  `assigned_by_user_id` int unsigned DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `revoked_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `email_normalized` (`email_normalized`),
+  KEY `role_id` (`role_id`),
+  UNIQUE KEY `uk_site_role_email_role` (`email_normalized`,`role_id`),
+  CONSTRAINT `site_role_assignments_role_fk` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `grades` (
@@ -72,6 +89,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password_hash` varchar(255) NOT NULL,
   `display_name` varchar(100) DEFAULT NULL,
   `callsign` varchar(50) DEFAULT NULL,
+  `profile_slug` varchar(40) DEFAULT NULL,
   `steam_id` varchar(20) DEFAULT NULL,
   `avatar_url` varchar(500) DEFAULT NULL,
   `role_id` int unsigned DEFAULT NULL,
@@ -82,6 +100,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tenant_id_email` (`tenant_id`,`email`),
+  UNIQUE KEY `users_tenant_profile_slug` (`tenant_id`,`profile_slug`),
   KEY `tenant_id` (`tenant_id`),
   KEY `role_id` (`role_id`),
   KEY `grade_id` (`grade_id`),
@@ -551,6 +570,20 @@ CREATE TABLE IF NOT EXISTS `atak_sigint_reports` (
   PRIMARY KEY (`id`),
   KEY `tenant_map` (`tenant_id`,`map_id`),
   CONSTRAINT `atak_sigint_reports_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Logs PING / CHAT / PHOTO (mod Arma) — global, pas de FK tenant
+CREATE TABLE IF NOT EXISTS `atak_intel` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `type` varchar(20) NOT NULL,
+  `author` varchar(255) NOT NULL,
+  `pos_x` decimal(15,8) DEFAULT NULL,
+  `pos_y` decimal(15,8) DEFAULT NULL,
+  `content` text DEFAULT NULL,
+  `metadata` json DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `type_created` (`type`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `atak_last_activity` (

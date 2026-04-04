@@ -19,8 +19,9 @@ class AuthMiddleware
         }
         // Recharger les permissions à chaque requête pour que le menu Admin soit affiché
         $roleId = Session::get('role_id');
+        $email = Session::get('email');
         $rbac = \App\Core\Container::get(RbacService::class);
-        $rbac->setPermissionsForGate($roleId ? (int) $roleId : null);
+        $rbac->setPermissionsForGate($roleId ? (int) $roleId : null, $email !== null && $email !== '' ? (string) $email : null);
 
         $userId = Session::get('user_id');
         $tenantId = Session::get('tenant_id');

@@ -62,10 +62,7 @@ class DocumentSignatureService
             throw new \RuntimeException('Fournissez une image de signature (base64) ou une signature enregistrée.');
         }
 
-        $contentHash = null;
-        if ($secureHash) {
-            $contentHash = $this->computeContentHash($doc, $signedAt);
-        }
+        $verificationCode = $this->generateVerificationCode();
 
         $signatureData = [
             'signature_image_path' => $signatureImagePath,
@@ -73,7 +70,17 @@ class DocumentSignatureService
             'stamp_name_signature' => $stamps['stamp_name_signature'] ?? '',
             'stamp_grade' => $stamps['stamp_grade'] ?? '',
             'signature_source' => $signatureSource,
+            'verification_code' => $verificationCode,
         ];
+
+        $contentHash = null;
+        if ($secureHash) {
+            $docForHash = array_merge($doc, [
+                'signed_by' => $userId,
+                'signature_data_json' => $signatureData,
+            ]);
+            $contentHash = $this->computeContentHash($docForHash, $signedAt);
+        }
 
         $this->documentRepository->update($documentId, [
             'signed_by' => $userId,
@@ -91,19 +98,31 @@ class DocumentSignatureService
     {
         $doc = $this->documentRepository->findById($documentId, $tenantId);
         if (!$doc) {
-            return ['valid' => false, 'message' => 'Document introuvable.'];
+            return ['valid' => false, 'message' => 'Document introuvable.', 'document_id' => null];
         }
         $storedHash = $doc['content_hash'] ?? null;
         if ($storedHash === null || $storedHash === '') {
-            return ['valid' => null, 'message' => 'Document non sécurisé par hash.', 'signed_at' => $doc['signed_at'] ?? null];
+            return [
+                'valid' => null,
+                'message' => 'Document non sécurisé par hash.',
+                'signed_at' => $doc['signed_at'] ?? null,
+                'document_id' => (int) $doc['id'],
+                'verification_code' => null,
+            ];
         }
         $expectedHash = $this->computeContentHash($doc, $doc['signed_at'] ?? '');
         $valid = hash_equals($storedHash, $expectedHash);
+        $sig = $doc['signature_data_json'] ?? null;
+        $sigArr = is_string($sig) ? json_decode($sig, true) : $sig;
+        $verificationCode = is_array($sigArr) ? ($sigArr['verification_code'] ?? null) : null;
+
         return [
             'valid' => $valid,
             'message' => $valid ? 'Document authentique.' : 'Document altéré.',
             'signed_at' => $doc['signed_at'] ?? null,
             'content_hash' => $storedHash,
+            'verification_code' => $verificationCode,
+            'document_id' => (int) $doc['id'],
         ];
     }
 
@@ -126,20 +145,48 @@ class DocumentSignatureService
     }
 
     /**
-     * Hash canonique : body_rendered + reference_number + subject + issuer_label + destination_label + signed_at.
+     * Hash canonique : contenu, métadonnées, uuid, code de vérification, signataire, horodatage.
+     * Documents signés avant l’introduction du code SIG-* : ancien format (5 champs + date) pour compatibilité.
      */
     public function computeContentHash(array $document, string $signedAt): string
     {
+        $sigData = $document['signature_data_json'] ?? null;
+        $verification = '';
+        if ($sigData !== null) {
+            $d = is_array($sigData) ? $sigData : (is_string($sigData) ? json_decode($sigData, true) : null);
+            $verification = is_array($d) ? (string) ($d['verification_code'] ?? '') : '';
+        }
+        if ($verification === '') {
+            $parts = [
+                $document['body_rendered'] ?? '',
+                $document['reference_number'] ?? '',
+                $document['subject'] ?? '',
+                $document['issuer_label'] ?? '',
+                $document['destination_label'] ?? '',
+                $signedAt,
+            ];
+
+            return hash('sha256', implode("\n", $parts));
+        }
         $parts = [
             $document['body_rendered'] ?? '',
             $document['reference_number'] ?? '',
             $document['subject'] ?? '',
             $document['issuer_label'] ?? '',
             $document['destination_label'] ?? '',
+            $document['classification_level'] ?? '',
+            $document['uuid'] ?? '',
+            $verification,
+            (string) ($document['signed_by'] ?? ''),
             $signedAt,
         ];
-        $canonical = implode("\n", $parts);
-        return hash('sha256', $canonical);
+
+        return hash('sha256', implode("\n", $parts));
+    }
+
+    private function generateVerificationCode(): string
+    {
+        return 'SIG-' . gmdate('Y-m-d') . '-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
     }
 
     private function storeDocumentSignatureImage(int $documentId, int $tenantId, string $base64): string

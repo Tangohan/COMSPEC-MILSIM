@@ -8,6 +8,7 @@ $valid = $verify['valid'] ?? null;
 $message = $verify['message'] ?? '';
 $signedAt = $verify['signed_at'] ?? null;
 $contentHash = $verify['content_hash'] ?? null;
+$verificationCode = $verify['verification_code'] ?? null;
 ?>
 <div class="max-w-2xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 mb-6">Vérification d'authenticité</h1>
@@ -32,8 +33,11 @@ $contentHash = $verify['content_hash'] ?? null;
         <?php if ($signedAt): ?>
         <p class="mt-4 text-sm text-slate-500">Signé le : <?= htmlspecialchars($signedAt) ?></p>
         <?php endif; ?>
+        <?php if ($verificationCode): ?>
+        <p class="mt-3 text-sm text-slate-700"><span class="font-semibold">Identifiant de vérification :</span> <code class="bg-slate-100 px-2 py-0.5 rounded"><?= htmlspecialchars($verificationCode) ?></code></p>
+        <?php endif; ?>
         <?php if ($contentHash): ?>
-        <p class="mt-2 text-xs font-mono text-slate-400 break-all">Hash : <?= htmlspecialchars($contentHash) ?></p>
+        <p class="mt-2 text-xs font-mono text-slate-400 break-all">Empreinte SHA-256 : <?= htmlspecialchars($contentHash) ?></p>
         <?php endif; ?>
     </div>
 

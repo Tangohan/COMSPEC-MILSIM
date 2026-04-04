@@ -56,14 +56,6 @@ $title = $title ?? 'Connexion';
 
             <form method="post" action="<?= url('login') ?>" class="space-y-6">
                 <?= \App\Core\Csrf::field() ?>
-                <?php $tenantSlugPrefill = $tenant_slug_prefill ?? ''; ?>
-                <div class="space-y-2">
-                    <label for="tenant_slug" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Communauté (slug)</label>
-                    <input type="text" name="tenant_slug" id="tenant_slug" value="<?= htmlspecialchars($tenantSlugPrefill) ?>" autocomplete="organization"
-                           placeholder="ex. default — laisser vide pour l’organisation par défaut"
-                           class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs font-bold tracking-widest focus:outline-none focus:border-emerald-500 transition-colors">
-                </div>
-
                 <div class="space-y-2">
                     <label for="email" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Identifiant_ID</label>
                     <input type="email" name="email" id="email" required autocomplete="email" placeholder="NOM.P_00"
@@ -117,6 +109,11 @@ $title = $title ?? 'Connexion';
 
         <p class="mt-8 text-center text-sm text-slate-600">
             Pas encore de compte ? <a href="<?= url('register') ?>" class="font-semibold text-emerald-700 hover:underline">Créer un compte</a>
+        </p>
+        <p class="mt-3 text-center text-[11px] text-slate-500 leading-relaxed max-w-sm mx-auto">
+            Pas encore dans une communauté ?
+            <a href="<?= url('join') ?>" class="font-semibold text-emerald-700 hover:underline">Rejoindre avec un code</a>
+            · après connexion, <a href="<?= url('communities/create') ?>" class="font-semibold text-slate-700 hover:underline">créer une communauté</a>
         </p>
 
         <div class="mt-12 flex justify-between items-center opacity-30 px-4">

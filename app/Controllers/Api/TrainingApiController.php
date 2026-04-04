@@ -16,6 +16,7 @@ use App\Services\Training\TrainingAssignmentService;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingQuizRepository;
 use App\Repositories\TrainingCourseRepository;
+use App\Services\Platform\FeatureGateService;
 
 class TrainingApiController
 {
@@ -27,7 +28,8 @@ class TrainingApiController
         private TrainingAssignmentService $assignmentService,
         private TrainingEnrollmentRepository $enrollmentRepository,
         private TrainingQuizRepository $quizRepository,
-        private TrainingCourseRepository $courseRepository
+        private TrainingCourseRepository $courseRepository,
+        private FeatureGateService $featureGate
     ) {}
 
     private function tenantId(): int
@@ -68,8 +70,27 @@ class TrainingApiController
         }
     }
 
+    /** Alignement avec le web : pas d’accès API aux formations si le plan ne l’autorise pas. */
+    private function assertTrainingAllowed(): ?Response
+    {
+        try {
+            $tenantId = $this->tenantId();
+        } catch (\RuntimeException) {
+            return Response::json(['error' => 'Non autorisé.'], 401);
+        }
+        if (! $this->featureGate->allows($tenantId, 'training')) {
+            return Response::json(['error' => 'Cette fonctionnalité n’est pas disponible sur votre plan.'], 403);
+        }
+
+        return null;
+    }
+
     public function catalogue(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $tenantId = $this->tenantId();
         $userId = Session::get('user_id') ? (int) Session::get('user_id') : null;
         $category = $request->query('category');
@@ -80,6 +101,10 @@ class TrainingApiController
 
     public function courseDetail(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $tenantId = $this->tenantId();
         $userId = $this->userId();
         $id = $params['id'] ?? '';
@@ -107,6 +132,10 @@ class TrainingApiController
 
     public function enroll(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $this->validateCsrf($request);
         $tenantId = $this->tenantId();
         $userId = $this->userId();
@@ -127,6 +156,10 @@ class TrainingApiController
 
     public function progress(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $userId = $this->userId();
         $enrollmentId = (int) ($params['id'] ?? 0);
         $enrollment = $this->enrollmentRepository->findById($enrollmentId, $this->tenantId());
@@ -139,6 +172,10 @@ class TrainingApiController
 
     public function progressLesson(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $this->validateCsrf($request);
         $tenantId = $this->tenantId();
         $userId = $this->userId();
@@ -165,6 +202,10 @@ class TrainingApiController
 
     public function quizStart(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $this->validateCsrf($request);
         $tenantId = $this->tenantId();
         $userId = $this->userId();
@@ -196,6 +237,10 @@ class TrainingApiController
 
     public function quizAttempt(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $userId = $this->userId();
         $attemptId = (int) ($params['id'] ?? 0);
         $attempt = $this->quizService->getAttempt($attemptId, $this->tenantId(), $userId);
@@ -207,6 +252,10 @@ class TrainingApiController
 
     public function quizSubmit(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $this->validateCsrf($request);
         $tenantId = $this->tenantId();
         $userId = $this->userId();
@@ -226,6 +275,10 @@ class TrainingApiController
 
     public function certificateByEnrollment(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $userId = $this->userId();
         $enrollmentId = (int) ($params['id'] ?? 0);
         $enrollment = $this->enrollmentRepository->findById($enrollmentId, $this->tenantId());
@@ -241,6 +294,10 @@ class TrainingApiController
 
     public function certificateDownload(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $userId = $this->userId();
         $id = (int) ($params['id'] ?? 0);
         $cert = $this->certificateService->getById($id, $this->tenantId());
@@ -269,6 +326,10 @@ class TrainingApiController
     // ---------- Admin API ----------
     public function adminCourses(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $this->requireTrainingAccess();
         $tenantId = $this->tenantId();
         $courses = $this->courseRepository->listForTenant($tenantId, null);
@@ -277,6 +338,10 @@ class TrainingApiController
 
     public function adminCourseSave(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $this->validateCsrf($request);
         $this->requireTrainingAccess();
         $tenantId = $this->tenantId();
@@ -315,6 +380,10 @@ class TrainingApiController
 
     public function adminAssign(Request $request, array $params = []): Response
     {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $this->validateCsrf($request);
         $this->requireTrainingAssignOrManage();
         $tenantId = $this->tenantId();

@@ -91,9 +91,8 @@ final class InvitationAcceptController
         $email = (string) $inv['email'];
         if ($this->users->emailExistsInTenant($tenantId, $email)) {
             Session::flash('error', 'Vous avez déjà un compte dans cette communauté.');
-            $slug = (string) ($this->tenantRepository->findById($tenantId)['slug'] ?? '');
 
-            return Response::redirect(url('login') . ($slug !== '' ? '?tenant_slug=' . rawurlencode($slug) : ''));
+            return Response::redirect(url('login'));
         }
 
         $pdo = Database::getPdo();
@@ -142,9 +141,10 @@ final class InvitationAcceptController
         $u = $this->users->findById($newId, $tenantId);
         if ($u) {
             $this->authService->loginUser($u);
-            if (!empty($u['role_id'])) {
-                $this->rbacService->setPermissionsForGate((int) $u['role_id']);
-            }
+            $this->rbacService->setPermissionsForGate(
+                !empty($u['role_id']) ? (int) $u['role_id'] : null,
+                (string) ($u['email'] ?? '')
+            );
         }
         Session::flash('success', 'Bienvenue dans la communauté.');
 

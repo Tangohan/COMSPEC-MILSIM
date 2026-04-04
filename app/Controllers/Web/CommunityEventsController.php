@@ -23,7 +23,7 @@ final class CommunityEventsController
     public function index(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
-        if (!$this->featureGate->allows($tenantId, 'events')) {
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
             return Response::view('layout.main', [
                 'title' => 'Événements',
                 'content' => 'platform.upgrade',
@@ -31,14 +31,20 @@ final class CommunityEventsController
                 'planName' => 'pro',
             ]);
         }
-        $rows = $this->events->upcomingForTenant($tenantId);
         $user = $this->authService->user();
+        $this->featureGate->maybeRecordQuotaSoftBlock(
+            $tenantId,
+            $user ? (int) $user['id'] : null,
+            'events'
+        );
+        $rows = $this->events->upcomingForTenant($tenantId);
 
         return Response::view('layout.main', [
             'title' => 'Événements & opérations',
             'content' => 'community.events',
             'events' => $rows,
             'currentUserId' => $user ? (int) $user['id'] : null,
+            'eventsQuota' => $this->featureGate->quotaStatusForFeature($tenantId, 'events'),
         ]);
     }
 
@@ -50,7 +56,7 @@ final class CommunityEventsController
             return Response::redirect(url('evenements'));
         }
         $tenantId = (int) Session::get('tenant_id');
-        if (!$this->featureGate->allows($tenantId, 'events')) {
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
             return Response::redirect(url('evenements'));
         }
         $user = $this->authService->user();

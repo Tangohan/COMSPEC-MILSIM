@@ -33,9 +33,15 @@ final class RegisterController
         if ($this->authService->check()) {
             return Response::redirect(url('dashboard'));
         }
+        $ref = trim((string) $request->query('ref'));
+        if ($ref !== '') {
+            Session::set('pending_referrer_code', $ref);
+        }
 
         return Response::view('auth.register', [
             'title' => 'Créer un compte',
+            'prefill_community_code' => trim((string) $request->query('community_code')),
+            'prefill_tenant_slug' => trim((string) $request->query('tenant_slug')),
         ]);
     }
 
@@ -63,7 +69,17 @@ final class RegisterController
             return Response::redirect(url('register'));
         }
 
+        $communityCodeInput = trim((string) $request->input('community_code'));
         $tenant = $this->tenantRepository->getDefaultTenant();
+        if ($communityCodeInput !== '') {
+            $resolved = $this->tenantRepository->findByCommunityCode($communityCodeInput);
+            if (!$resolved) {
+                Session::flash('error', 'Code communauté invalide.');
+
+                return Response::redirect(url('register'));
+            }
+            $tenant = $resolved;
+        }
         if (!$tenant) {
             Session::flash('error', 'Aucune organisation de base configurée.');
 
@@ -88,9 +104,10 @@ final class RegisterController
         $user = $this->userRepository->findById($userId, $tenantId);
         if ($user) {
             $this->authService->loginUser($user);
-            if (!empty($user['role_id'])) {
-                $this->rbacService->setPermissionsForGate((int) $user['role_id']);
-            }
+            $this->rbacService->setPermissionsForGate(
+                !empty($user['role_id']) ? (int) $user['role_id'] : null,
+                (string) ($user['email'] ?? '')
+            );
         }
         $this->auditService->log(AuditAction::AUTH_REGISTER, $tenantId, $userId, 'user', $userId, null, $email);
 

@@ -15,7 +15,8 @@ class DocumentBuilderService
     public function __construct(
         private TemplateRenderService $renderService,
         private DocumentPresetRepository $presetRepository,
-        private DocumentTemplateRepository $templateRepository
+        private DocumentTemplateRepository $templateRepository,
+        private DocumentRedactionService $redactionService = new DocumentRedactionService()
     ) {
     }
 
@@ -27,6 +28,7 @@ class DocumentBuilderService
     public function buildPreviewHtml(array $document, array $context = []): string
     {
         $body = $document['body_rendered'] ?? '';
+        $body = $this->redactionService->applyVisualMarkers($body);
         $body = $this->injectSignatureBlock($body, $document, $context);
         if (trim(strip_tags($body)) === '') {
             $body = '<p class="text-slate-400 text-sm">Le corps du document est vide. Saisissez le contenu dans la zone « Corps du document ».</p>';
@@ -62,11 +64,26 @@ class DocumentBuilderService
             }
         }
 
+        $hasFont = false;
+        foreach ($styles as $s) {
+            if (str_contains((string) $s, 'font-family')) {
+                $hasFont = true;
+                break;
+            }
+        }
+        if (!$hasFont) {
+            $styles[] = 'font-family: Inter, \"Segoe UI\", Roboto, Arial, sans-serif;';
+            $styles[] = 'font-size: 14px;';
+            $styles[] = 'line-height: 1.55;';
+            $styles[] = 'color: #0b1220;';
+        }
+
         $orientation = $preset !== null ? ($preset['orientation'] ?? 'portrait') : 'portrait';
         $paperClass = $orientation === 'landscape' ? 'a4-landscape' : 'a4-portrait';
         $styleAttr = !empty($styles) ? ' style="' . implode(' ', $styles) . '"' : '';
 
         $html = '<div class="courrier-preview ' . $paperClass . ' max-w-[21cm] mx-auto min-h-[29.7cm] p-10 border border-gray-200 bg-white" data-paper="a4" data-orientation="' . htmlspecialchars($orientation) . '"' . $styleAttr . '>';
+        $html .= $this->buildClassificationOverlay($document);
         $html .= $this->buildEnvelopeHtml($document, $preset);
         $html .= '<div class="courrier-body text-xs leading-relaxed text-justify space-y-4">' . $body . '</div>';
         $html .= '</div>';
@@ -145,6 +162,21 @@ class DocumentBuilderService
     }
 
     /**
+     * Bandeau + filigrane selon classification.
+     * @param array<string, mixed> $document
+     */
+    private function buildClassificationOverlay(array $document): string
+    {
+        $level = (string) ($document['classification_level'] ?? 'interne');
+        $label = CourrierClassification::label($level);
+        $wmClass = CourrierClassification::watermarkClass($level);
+        $out = '<div class="courrier-classification-banner">Classification — ' . htmlspecialchars($label) . '</div>';
+        $out .= '<div class="courrier-watermark ' . htmlspecialchars($wmClass) . '">' . htmlspecialchars(mb_strtoupper($label, 'UTF-8')) . '</div>';
+
+        return $out;
+    }
+
+    /**
      * Assemble le body à partir du template + contexte (pour nouveau document ou régénération).
      */
     public function buildBodyFromTemplate(int $templateId, array $context, array $variablesOverrides = []): string
@@ -195,6 +227,10 @@ class DocumentBuilderService
         if ($stampGrade !== '') {
             $block .= '<p>' . $stampGrade . '</p>';
         }
+        if (is_array($data) && !empty($data['verification_code'])) {
+            $block .= '<p class="font-semibold">' . htmlspecialchars('Signé numériquement — ' . (string) $data['verification_code']) . '</p>';
+        }
+        $block .= '<!--COURRIER_QR-->';
         $block .= '</div>';
 
         return str_replace('{{signature_block}}', $block, $body);

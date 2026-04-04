@@ -15,6 +15,32 @@ class HomeController
         return Response::view('home.index', ['title' => 'Athena — Commandement Aérien MILSIM']);
     }
 
+    /** Page d’information sur les offres (fondateurs, essai Pro, Stripe). */
+    public function platformUpgrade(Request $request, array $params = []): Response
+    {
+        $from = trim((string) $request->query('from', ''));
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId > 0 && $from !== '') {
+            try {
+                \App\Core\Container::get(\App\Repositories\PlatformUsageRepository::class)->record(
+                    $tenantId,
+                    Session::get('user_id') ? (int) Session::get('user_id') : null,
+                    'upgrade_view',
+                    $from
+                );
+            } catch (\Throwable) {
+            }
+        }
+
+        return Response::view('layout.main', [
+            'title' => 'Offres',
+            'content' => 'platform.upgrade',
+            'feature' => 'offre',
+            'planName' => 'Standard ou Pro',
+            'upgradeFrom' => $from,
+        ]);
+    }
+
     public function dashboard(Request $request, array $params = []): Response
     {
         $modpack = null;
@@ -24,6 +50,8 @@ class HomeController
         $tenantId = Session::get('tenant_id');
         $atakModDownloadUrl = null;
         $communityMemberships = [];
+        $founderTrialEndsAt = null;
+        $showFounderTrialBanner = false;
         $email = Session::get('email');
         if ($email) {
             $communityMemberships = \App\Core\Container::get(\App\Repositories\UserRepository::class)
@@ -47,6 +75,28 @@ class HomeController
                 if (!empty($currentUser['grade_id'])) {
                     $grade = $gradeRepo->findById((int) $currentUser['grade_id'], (int) $tenantId);
                 }
+                $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById((int) $tenantId);
+                if ($tenantRow) {
+                    $status = (string) ($tenantRow['subscription_status'] ?? 'none');
+                    $paid = in_array($status, ['active', 'trialing'], true);
+                    $owner = (int) ($tenantRow['owner_user_id'] ?? 0) === (int) $currentUser['id'];
+                    $rawS = $tenantRow['settings'] ?? null;
+                    $decoded = [];
+                    if (is_string($rawS) && trim($rawS) !== '') {
+                        $decoded = json_decode($rawS, true);
+                        if (!is_array($decoded)) {
+                            $decoded = [];
+                        }
+                    }
+                    $end = $decoded['founder_trial_ends_at'] ?? null;
+                    if ($owner && ! $paid && is_string($end) && $end !== '') {
+                        $ts = strtotime($end);
+                        if ($ts !== false && $ts > time()) {
+                            $founderTrialEndsAt = $end;
+                            $showFounderTrialBanner = true;
+                        }
+                    }
+                }
             }
             $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
             if (is_file($modPath) && is_readable($modPath)) {
@@ -61,6 +111,8 @@ class HomeController
             'grade' => $grade,
             'atakModDownloadUrl' => $atakModDownloadUrl,
             'communityMemberships' => $communityMemberships,
+            'founder_trial_ends_at' => $founderTrialEndsAt,
+            'show_founder_trial_banner' => $showFounderTrialBanner,
         ]);
     }
 

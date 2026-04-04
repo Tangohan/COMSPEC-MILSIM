@@ -11,10 +11,22 @@ class SystemSettingsController
 {
     public function index(Request $request, array $params = []): Response
     {
+        $appConfig = [
+            'name' => config('app.name'),
+            'env' => config('app.env'),
+            'debug' => config('app.debug'),
+            'url' => config('app.url') ?: '—',
+            'timezone' => config('app.timezone'),
+            'locale' => config('app.locale'),
+            'maintenance' => 'Tables app_maintenance — /admin/system/maintenance (plus de simple booléen .env)',
+            'log_channel' => config('app.log.channel'),
+            'log_level' => config('app.log.level'),
+        ];
+
         return Response::view('layout.main', [
-            'content' => 'admin.system.placeholder',
+            'content' => 'admin.system.settings',
             'title' => 'Paramètres applicatifs',
-            'label' => 'Les paramètres applicatifs',
+            'appConfig' => $appConfig,
         ]);
     }
 }

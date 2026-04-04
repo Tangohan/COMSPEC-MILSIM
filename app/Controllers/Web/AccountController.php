@@ -14,6 +14,7 @@ use App\Services\Auth\AuthService;
 use App\Repositories\UserRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\PersonnelProfileRepository;
+use App\Services\User\UserProfileSlugService;
 use PDO;
 
 class AccountController
@@ -131,13 +132,36 @@ class AccountController
                 'arma_callsign' => 'max:100',
                 'timezone' => 'max:50',
                 'language' => 'max:10',
+                'profile_slug' => 'max:40',
             ]);
             if ($v->validate()) {
-                $this->userRepository->update((int) $user['id'], (int) $user['tenant_id'], [
+                $tenantId = (int) $user['tenant_id'];
+                $uid = (int) $user['id'];
+                $updateUser = [
                     'display_name' => trim((string) $request->input('display_name')),
                     'callsign' => trim((string) $request->input('callsign')),
                     'steam_id' => trim((string) $request->input('steam_id')) ?: null,
-                ]);
+                ];
+                $rawSlug = trim((string) $request->input('profile_slug'));
+                if ($rawSlug === '') {
+                    $updateUser['profile_slug'] = null;
+                } else {
+                    $ps = strtolower($rawSlug);
+                    if (!UserProfileSlugService::isValidFormat($ps)) {
+                        Session::flash('error', 'L’identifiant profil (slug) est invalide : lettres minuscules, chiffres, tirets, max. 40 caractères.');
+                        return Response::redirect(url('account/preferences'));
+                    }
+                    if (UserProfileSlugService::isReserved($ps)) {
+                        Session::flash('error', 'Cet identifiant profil est réservé.');
+                        return Response::redirect(url('account/preferences'));
+                    }
+                    if ($this->userRepository->isProfileSlugTaken($tenantId, $ps, $uid)) {
+                        Session::flash('error', 'Cet identifiant profil est déjà utilisé dans votre communauté.');
+                        return Response::redirect(url('account/preferences'));
+                    }
+                    $updateUser['profile_slug'] = $ps;
+                }
+                $this->userRepository->update($uid, $tenantId, $updateUser);
                 $this->userProfileRepository->upsert((int) $user['id'], [
                     'timezone' => trim((string) $request->input('timezone')),
                     'language' => trim((string) $request->input('language')),

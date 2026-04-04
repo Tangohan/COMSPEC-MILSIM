@@ -12,7 +12,7 @@ npm install
 npm start
 ```
 
-Le serveur écoute sur `http://localhost:3001` par défaut. La page `atak.html` doit être ouverte depuis un serveur HTTP (ou le même origin) et pointe vers ce port pour l’API et le WebSocket.
+Le serveur écoute sur `http://localhost:3001` par défaut. La page `ressources/html/atak.html` doit être ouverte depuis un serveur HTTP (ou le même origin) et pointe vers ce port pour l’API et le WebSocket.
 
 ## Endpoints
 

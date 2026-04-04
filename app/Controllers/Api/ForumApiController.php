@@ -13,6 +13,9 @@ use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumPostRepository;
 use App\Repositories\ForumReportRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\ForumVoteRepository;
+use App\Repositories\ForumNotificationRepository;
+use App\Services\Forum\ForumModerationEngine;
 
 class ForumApiController
 {
@@ -21,7 +24,10 @@ class ForumApiController
         private ForumTopicRepository $topicRepository,
         private ForumPostRepository $postRepository,
         private ForumReportRepository $reportRepository,
-        private UserRepository $userRepository
+        private UserRepository $userRepository,
+        private ForumVoteRepository $voteRepository,
+        private ForumModerationEngine $moderationEngine,
+        private ForumNotificationRepository $notificationRepository
     ) {}
 
     public function handle(Request $request, array $params = []): Response
@@ -57,6 +63,8 @@ class ForumApiController
             'react' => $this->react($input, $userId),
             'report' => $this->report($input, $userId, $tenantId),
             'save_profile_settings' => $this->saveProfileSettings($input, $userId),
+            'mark_best_answer' => $this->markBestAnswer($input, $userId, $tenantId),
+            'save_draft' => $this->saveDraft($input, $userId, $tenantId),
             default => Response::json(['success' => false, 'error' => 'Action inconnue'], 400),
         };
     }
@@ -139,8 +147,10 @@ class ForumApiController
         $slug = $this->slugify($title) ?: 'sujet-' . time();
         $slug = $slug . '-' . substr(uniqid('', true), -6);
         $topicId = $this->topicRepository->create($tenantId, $categoryId, $userId, $title, $slug);
-        $this->postRepository->create($tenantId, $topicId, $userId, $content);
+        $firstPostId = $this->postRepository->create($tenantId, $topicId, $userId, $content);
         $this->topicRepository->touchUpdatedAt($topicId);
+        $this->moderationEngine->analyze($tenantId, $userId, $firstPostId, $content);
+
         return Response::json(['success' => true, 'topic_id' => $topicId]);
     }
 
@@ -162,9 +172,50 @@ class ForumApiController
         if (strlen($content) < 1 || strlen($content) > $maxLen) {
             return Response::json(['success' => false, 'error' => 'Contenu invalide'], 400);
         }
-        $postId = $this->postRepository->create($tenantId, $topicId, $userId, $content);
+        $parentPostId = isset($input['parent_post_id']) ? (int) $input['parent_post_id'] : null;
+        if ($parentPostId !== null && $parentPostId <= 0) {
+            $parentPostId = null;
+        }
+        $postId = $this->postRepository->create($tenantId, $topicId, $userId, $content, $parentPostId);
         $this->topicRepository->touchUpdatedAt($topicId);
+        $this->moderationEngine->analyze($tenantId, $userId, $postId, $content);
+        if ((int) ($topic['user_id'] ?? 0) !== $userId) {
+            $this->notificationRepository->create($tenantId, (int) $topic['user_id'], 'forum.reply', [
+                'topic_id' => $topicId,
+                'post_id' => $postId,
+            ]);
+        }
+
         return Response::json(['success' => true, 'post_id' => $postId]);
+    }
+
+    private function markBestAnswer(array $input, int $userId, int $tenantId): Response
+    {
+        $topicId = (int) ($input['topic_id'] ?? 0);
+        $postId = (int) ($input['post_id'] ?? 0);
+        $topic = $this->topicRepository->findById($topicId, $tenantId);
+        if (!$topic) {
+            return Response::json(['success' => false, 'error' => 'Sujet introuvable'], 404);
+        }
+        $isAuthor = (int) $topic['user_id'] === $userId;
+        $isMod = (function_exists('can') && can('forum.moderate'))
+            || (function_exists('can') && can('forum.moderate_organization'));
+        if (!$isAuthor && !$isMod) {
+            return Response::json(['success' => false, 'error' => 'Non autorisé'], 403);
+        }
+        $post = $this->postRepository->findById($postId, $tenantId);
+        if (!$post || (int) $post['topic_id'] !== $topicId) {
+            return Response::json(['success' => false, 'error' => 'Message invalide'], 400);
+        }
+        $this->topicRepository->setBestAnswer($topicId, $tenantId, $postId);
+
+        return Response::json(['success' => true]);
+    }
+
+    private function saveDraft(array $input, int $userId, int $tenantId): Response
+    {
+        // Brouillon principal côté client (localStorage) ; endpoint pour sync futur.
+        return Response::json(['success' => true, 'server' => false]);
     }
 
     private function editPost(array $input, int $userId, int $tenantId): Response
@@ -207,8 +258,24 @@ class ForumApiController
 
     private function react(array $input, int $userId): Response
     {
-        // Réactions : table forum_post_reactions non créée dans la migration minimale ; on renvoie success pour ne pas casser le front.
-        return Response::json(['success' => true]);
+        $tenantId = (int) Session::get('tenant_id');
+        $postId = (int) ($input['post_id'] ?? 0);
+        $value = (int) ($input['value'] ?? 0);
+        if ($postId <= 0) {
+            return Response::json(['success' => false, 'error' => 'Message invalide'], 400);
+        }
+        $post = $this->postRepository->findById($postId, $tenantId);
+        if (!$post) {
+            return Response::json(['success' => false, 'error' => 'Message introuvable'], 404);
+        }
+        if ($value === 0) {
+            $this->voteRepository->removeVote($postId, $userId);
+        } else {
+            $this->voteRepository->setVote($tenantId, $postId, $userId, $value);
+        }
+        $sum = $this->voteRepository->sumForPost($postId);
+
+        return Response::json(['success' => true, 'score' => $sum]);
     }
 
     private function report(array $input, int $userId, int $tenantId): Response
@@ -217,6 +284,8 @@ class ForumApiController
         $targetId = (int) ($input['target_id'] ?? 0);
         $reason = trim((string) ($input['reason'] ?? ''));
         $details = trim((string) ($input['details'] ?? ''));
+        $reportType = preg_match('/^(spam|abuse|illegal|other)$/', (string) ($input['report_type'] ?? 'other')) ? (string) $input['report_type'] : 'other';
+        $comment = trim((string) ($input['comment'] ?? ''));
         if ($reason !== '') {
             $reason = $details !== '' ? $reason . "\n" . $details : $reason;
         }
@@ -237,7 +306,7 @@ class ForumApiController
         if ($postId === null && $topicId === null) {
             return Response::json(['success' => false, 'error' => 'Cible invalide'], 400);
         }
-        $this->reportRepository->create($tenantId, $userId, $postId, $topicId, $reason ?: 'Signalement');
+        $this->reportRepository->create($tenantId, $userId, $postId, $topicId, $reason ?: 'Signalement', $reportType, $comment !== '' ? $comment : null);
         return Response::json(['success' => true]);
     }
 

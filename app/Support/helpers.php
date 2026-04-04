@@ -59,4 +59,49 @@ if (!function_exists('can')) {
     }
 }
 
+if (!function_exists('detect_current_module')) {
+    /**
+     * Module métier pour les scopes `module:` (aligné sur routes/web.php).
+     */
+    function detect_current_module(string $path): ?string
+    {
+        if (preg_match('#^/c/[^/]+/forum#', $path) === 1) {
+            return 'forum';
+        }
+        if (str_starts_with($path, '/forum') || str_starts_with($path, '/api/forum')) {
+            return 'forum';
+        }
+
+        $atakPrefixes = [
+            '/atak', '/api/atak', '/api/markers', '/api/units', '/api/chat', '/api/pings',
+            '/api/nine-line', '/api/cas', '/api/recon', '/api/map-shapes', '/api/flight-manifest',
+            '/api/intel', '/api/fire-support', '/api/danger-zones', '/api/logistics', '/api/replay', '/api/iff',
+        ];
+        foreach ($atakPrefixes as $pre) {
+            if ($path === $pre || str_starts_with($path, $pre . '/')) {
+                return 'atak';
+            }
+        }
+
+        if (str_starts_with($path, '/documents')) {
+            return 'documents';
+        }
+        if (str_starts_with($path, '/courrier')) {
+            return 'courrier';
+        }
+        if (
+            str_starts_with($path, '/formations')
+            || str_starts_with($path, '/api/training')
+            || str_starts_with($path, '/admin/training')
+        ) {
+            return 'training';
+        }
+        if (str_starts_with($path, '/admin')) {
+            return 'admin';
+        }
+
+        return null;
+    }
+}
+
 require __DIR__ . '/forum_helpers.php';

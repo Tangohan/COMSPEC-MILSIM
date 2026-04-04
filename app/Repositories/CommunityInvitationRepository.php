@@ -70,14 +70,19 @@ class CommunityInvitationRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function listForTenant(int $tenantId): array
+    public function listForTenant(int $tenantId, ?string $status = null): array
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT ci.*, u.email AS inviter_email FROM community_invitations ci
+        $sql = 'SELECT ci.*, u.email AS inviter_email FROM community_invitations ci
              INNER JOIN users u ON u.id = ci.invited_by_user_id
-             WHERE ci.tenant_id = ? ORDER BY ci.created_at DESC LIMIT 200'
-        );
-        $stmt->execute([$tenantId]);
+             WHERE ci.tenant_id = ?';
+        $params = [$tenantId];
+        if ($status !== null && $status !== '') {
+            $sql .= ' AND ci.status = ?';
+            $params[] = $status;
+        }
+        $sql .= ' ORDER BY ci.created_at DESC LIMIT 200';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

@@ -97,7 +97,28 @@ if (!function_exists('forum_markdown_to_html')) {
         $content = preg_replace('/\*([^*]+)\*/', '<em>$1</em>', $content);
         $content = preg_replace('/_([^_]+)_/', '<em>$1</em>', $content);
         $content = preg_replace('/~~([^~]+)~~/', '<del>$1</del>', $content);
-        $content = preg_replace('/\[([^\]]+)\]\(([^)]+)\)/', '<a href="$2" rel="noopener noreferrer" class="text-orange-400 hover:text-orange-300 underline">$1</a>', $content);
+        $content = preg_replace_callback('/\[([^\]]+)\]\(([^)]+)\)/', static function (array $m): string {
+            $label = $m[1];
+            $rawUrl = html_entity_decode($m[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $svc = new \App\Services\Forum\ExternalLeaveService();
+            $sanitized = $svc->sanitizeHttpUrl($rawUrl);
+            if ($sanitized === null) {
+                return $label;
+            }
+            $extra = forum_get_setting('internal_link_hosts', []);
+            $extraHosts = is_array($extra) ? $extra : [];
+            $href = $sanitized;
+            $class = 'text-orange-400 hover:text-orange-300 underline';
+            if (!$svc->isInternalUrl($sanitized, $extraHosts)) {
+                $leave = $svc->buildSignedLeaveUrl($sanitized);
+                if ($leave !== null) {
+                    $href = $leave;
+                }
+            }
+            $safeHref = htmlspecialchars($href, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+            return '<a href="' . $safeHref . '" rel="noopener noreferrer" class="' . $class . '">' . $label . '</a>';
+        }, $content);
         return nl2br($content);
     }
 }

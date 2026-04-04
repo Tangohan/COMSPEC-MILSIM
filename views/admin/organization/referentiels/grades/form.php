@@ -3,7 +3,7 @@ $grade = $grade ?? null;
 $systems = $systems ?? [];
 $categories = $categories ?? [];
 $isEdit = $grade !== null;
-$flashError = \App\Core\Session::flash('error');
+$flashError = \App\Core\Session::getFlash('error');
 ?>
 <div class="max-w-2xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 mb-6"><?= $isEdit ? 'Modifier le grade' : 'Nouveau grade' ?></h1>

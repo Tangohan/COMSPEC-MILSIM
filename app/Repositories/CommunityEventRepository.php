@@ -71,4 +71,15 @@ class CommunityEventRepository
 
         return (bool) $stmt->fetchColumn();
     }
+
+    /** Compte les créations sur [ $startInclusive, $endExclusive [ (created_at). */
+    public function countCreatedInPeriod(int $tenantId, string $startInclusive, string $endExclusive): int
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM community_events WHERE tenant_id = ? AND created_at >= ? AND created_at < ?'
+        );
+        $stmt->execute([$tenantId, $startInclusive, $endExclusive]);
+
+        return (int) $stmt->fetchColumn();
+    }
 }

@@ -12,8 +12,21 @@
         <?php $err = \App\Core\Session::getFlash('error'); $ok = \App\Core\Session::getFlash('success'); ?>
         <?php if ($err): ?><p class="text-red-400 text-sm mb-4"><?= htmlspecialchars($err) ?></p><?php endif; ?>
         <?php if ($ok): ?><p class="text-emerald-400 text-sm mb-4"><?= htmlspecialchars($ok) ?></p><?php endif; ?>
+        <?php
+        $prefillCc = $prefill_community_code ?? '';
+        $prefillSlug = $prefill_tenant_slug ?? '';
+        ?>
         <form method="post" action="<?= url('register') ?>" class="space-y-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+            <div>
+                <label class="block text-xs text-slate-400 mb-1">Code communauté (optionnel)</label>
+                <input type="text" name="community_code" value="<?= htmlspecialchars((string) $prefillCc) ?>" maxlength="64" class="w-full rounded bg-slate-900 border border-slate-700 px-3 py-2 text-sm uppercase font-mono" placeholder="Ex. UNIT-ALPHA">
+                <?php if ($prefillSlug !== ''): ?>
+                    <p class="text-[10px] text-slate-500 mt-1">Communauté ciblée : <?= htmlspecialchars($prefillSlug) ?></p>
+                <?php else: ?>
+                    <p class="text-[10px] text-slate-500 mt-1">Sans code, compte sur l’organisation par défaut.</p>
+                <?php endif; ?>
+            </div>
             <div>
                 <label class="block text-xs text-slate-400 mb-1">Email</label>
                 <input type="email" name="email" required class="w-full rounded bg-slate-900 border border-slate-700 px-3 py-2 text-sm">

@@ -24,6 +24,10 @@ if ($isWeb) {
 /**
  * Script d'installation Athena — SaaS RH MILSIM Arma 3
  * Utilisation : en CLI « php install.php [--no-composer] [--no-migrate] [--no-seed] » ou par URL (navigateur).
+ *
+ * Assistant BDD dédié (formulaire hôte / utilisateur / mot de passe, puis migrations) :
+ *   https://votre-site/public/install-database-wizard.php
+ * (désactivé après création de storage/install.lock)
  */
 
 const PHP_MIN_VERSION = '8.0';
@@ -107,18 +111,18 @@ if (!is_file($env)) {
     ok(".env existe déjà.");
 }
 
-// 4. Migrations + seed (sans Composer/Phinx : run-migrations.php)
+// 4. Migrations + seed (point d’entrée unique : setup-database.php)
 if (empty($options['no-migrate']) || empty($options['no-seed'])) {
-    $runMigrate = $root . DIRECTORY_SEPARATOR . 'run-migrations.php';
-    if (is_file($runMigrate)) {
-        echo "Lancement : run-migrations.php (schéma + seed) ...\n";
-        if (run('php ' . escapeshellarg($runMigrate), $root)) {
+    $setupDb = $root . DIRECTORY_SEPARATOR . 'setup-database.php';
+    if (is_file($setupDb)) {
+        echo "Lancement : setup-database.php (schéma + migrations + seed) ...\n";
+        if (run('php ' . escapeshellarg($setupDb), $root)) {
             ok("Migrations et seed exécutés (admin@athena.local / admin).");
         } else {
-            warn("run-migrations.php a échoué. Vérifiez .env (DB_*) ou exécutez depuis le navigateur : public/run-migrations.php");
+            warn("setup-database.php a échoué. Vérifiez .env (DB_*) ou ouvrez public/setup-database.php dans le navigateur.");
         }
     } else {
-        warn("run-migrations.php introuvable.");
+        warn("setup-database.php introuvable.");
     }
 } else {
     ok("Migrations/seed ignorés.");
@@ -126,9 +130,10 @@ if (empty($options['no-migrate']) || empty($options['no-seed'])) {
 
 echo "\n=== Installation terminée ===\n";
 echo "À faire :\n";
-echo "  1. Éditer .env (DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, APP_URL, JWT_SECRET).\n";
-echo "  2. Pointer le document root du serveur web sur le dossier public/.\n";
-echo "  3. Compte admin par défaut (si seed exécuté) : admin@athena.local / admin\n\n";
+echo "  1. Configurer la BDD : éditer .env (DB_*) ou ouvrir public/install-database-wizard.php dans le navigateur.\n";
+echo "  2. Éditer .env (APP_URL, JWT_SECRET, etc.).\n";
+echo "  3. Pointer le document root du serveur web sur le dossier public/.\n";
+echo "  4. Compte admin par défaut (si seed exécuté) : admin@athena.local / admin\n\n";
 
 } catch (Throwable $e) {
     echo "\n[ERREUR] " . $e->getMessage() . "\n\n" . $e->getTraceAsString();

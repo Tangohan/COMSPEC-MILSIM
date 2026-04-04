@@ -8,7 +8,7 @@
    - `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
    - `APP_URL` (URL publique du site)
    - `JWT_SECRET` (clé secrète pour tokens)
-4. **Migrations** : l’install lance `run-migrations.php` (schéma SQL + seed). Compte admin par défaut : `admin@athena.local` / `admin`.
+4. **Base de données** : exécuter **`php setup-database.php`** à la racine (schéma + toutes les migrations bootstrap + seed). Équivalent : `php migrate.php` ou `public/setup-database.php` en web. Compte admin par défaut : `admin@athena.local` / `admin`.
 
 ## Fichiers de configuration
 

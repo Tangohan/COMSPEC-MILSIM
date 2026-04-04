@@ -12,7 +12,12 @@ class ForumModerateMiddleware
 {
     public function __invoke(Request $request, callable $next): Response
     {
-        if (!function_exists('can') || !can('forum.moderate')) {
+        $gate = \App\Core\Gate::getInstance();
+        $ok = (function_exists('can') && can('forum.moderate'))
+            || (function_exists('can') && can('forum.moderate_organization'))
+            || $gate->allows('admin.organization')
+            || $gate->allows('admin.access');
+        if (!$ok) {
             Session::flash('error', 'Vous n\'avez pas les droits de modération du forum.');
             return Response::redirect(url('forum'));
         }

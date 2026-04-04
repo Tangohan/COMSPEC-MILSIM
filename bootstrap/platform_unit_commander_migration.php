@@ -127,6 +127,16 @@ function run_platform_unit_commander_migration(PDO $pdo): void
         CONSTRAINT fk_ce_creator FOREIGN KEY (created_by_user_id) REFERENCES users (id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    $idxCeCreated = $pdo->query("SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_events' AND INDEX_NAME = 'ce_tenant_created'");
+    if ($idxCeCreated && !$idxCeCreated->fetch()) {
+        try {
+            $pdo->exec('ALTER TABLE community_events ADD KEY ce_tenant_created (tenant_id, created_at)');
+            echo "Index community_events.ce_tenant_created (tenant_id, created_at).\n";
+        } catch (\PDOException $e) {
+            echo '  [ATTENTION] Index ce_tenant_created : ' . $e->getMessage() . "\n";
+        }
+    }
+
     $pdo->exec("CREATE TABLE IF NOT EXISTS community_event_rsvps (
         id int unsigned NOT NULL AUTO_INCREMENT,
         event_id int unsigned NOT NULL,
@@ -151,4 +161,80 @@ function run_platform_unit_commander_migration(PDO $pdo): void
         KEY tenant_day (tenant_id, created_at),
         KEY feature (feature_key)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $cc = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND COLUMN_NAME = 'community_code'");
+    if ($cc && !$cc->fetch()) {
+        $pdo->exec("ALTER TABLE tenants ADD COLUMN community_code varchar(64) DEFAULT NULL COMMENT 'Code court unique (MAJUSCULES/tirets) pour rejoindre la communauté' AFTER slug");
+        try {
+            $pdo->exec('ALTER TABLE tenants ADD UNIQUE KEY tenants_community_code (community_code)');
+        } catch (\PDOException) {
+            // colonne ajoutée ailleurs
+        }
+    }
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS referral_codes (
+        id int unsigned NOT NULL AUTO_INCREMENT,
+        user_id int unsigned NOT NULL,
+        code varchar(32) NOT NULL,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_referral_codes_user (user_id),
+        UNIQUE KEY uq_referral_codes_code (code),
+        CONSTRAINT fk_referral_codes_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS referral_attributions (
+        id bigint unsigned NOT NULL AUTO_INCREMENT,
+        referrer_user_id int unsigned NOT NULL,
+        referred_tenant_id int unsigned DEFAULT NULL,
+        event_type varchar(32) NOT NULL,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_referral_attr (referrer_user_id, referred_tenant_id, event_type),
+        KEY idx_referrer (referrer_user_id),
+        KEY idx_tenant (referred_tenant_id),
+        CONSTRAINT fk_referral_attr_referrer FOREIGN KEY (referrer_user_id) REFERENCES users (id) ON DELETE CASCADE,
+        CONSTRAINT fk_referral_attr_tenant FOREIGN KEY (referred_tenant_id) REFERENCES tenants (id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+
+/**
+ * Vérifie la présence des tables clés ; si une manque (migrations jamais passées en prod), exécute la migration idempotente.
+ * À appeler depuis les dépôts (modération, parrainage, etc.) pour éviter les 1146 sans passage obligatoire par la CLI.
+ */
+function ensure_platform_unit_commander_schema(PDO $pdo): void
+{
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $required = [
+        'community_invitations',
+        'moderation_cases',
+        'moderation_actions',
+        'referral_codes',
+        'referral_attributions',
+    ];
+    $missing = false;
+    try {
+        foreach ($required as $table) {
+            $q = $pdo->quote($table);
+            $st = $pdo->query(
+                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = {$q} LIMIT 1"
+            );
+            if (!$st || !$st->fetchColumn()) {
+                $missing = true;
+                break;
+            }
+        }
+    } catch (\Throwable) {
+        $missing = true;
+    }
+    if (!$missing) {
+        $done = true;
+
+        return;
+    }
+    run_platform_unit_commander_migration($pdo);
+    $done = true;
 }

@@ -20,16 +20,40 @@ class Request
         $this->server = $_SERVER;
         $this->method = strtoupper($this->server['REQUEST_METHOD'] ?? 'GET');
         $this->uri = $this->server['REQUEST_URI'] ?? '/';
-        $this->path = parse_url($this->uri, PHP_URL_PATH) ?: '/';
-        $this->path = '/' . trim($this->path, '/');
-        if ($this->path !== '/') {
-            $this->path = rtrim($this->path, '/') ?: '/';
+        $this->path = self::normalizePathFromServer($this->server);
+    }
+
+    /**
+     * Chemin HTTP canonique (après retrait du base path), identique au routage.
+     */
+    public static function normalizePathFromServer(?array $server = null): string
+    {
+        $server = $server ?? $_SERVER;
+        $uri = $server['REQUEST_URI'] ?? '/';
+        $path = parse_url((string) $uri, PHP_URL_PATH) ?: '/';
+        $path = '/' . trim((string) $path, '/');
+        if ($path !== '/') {
+            $path = rtrim($path, '/') ?: '/';
         }
-        // Retirer le base path pour le routage (sous-dossier type /public ou APP_BASE_PATH)
-        $prefix = $this->getBasePathPrefix();
-        if ($prefix !== '' && str_starts_with($this->path, $prefix)) {
-            $this->path = substr($this->path, strlen($prefix)) ?: '/';
+        $prefix = self::basePathPrefixFromServer($server);
+        if ($prefix !== '' && str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix)) ?: '/';
         }
+
+        return $path;
+    }
+
+    /**
+     * Préfixe du base path (ex. /public ou APP_BASE_PATH), aligné avec url().
+     */
+    public static function basePathPrefixFromServer(array $server): string
+    {
+        $prefix = rtrim((string) (function_exists('env') ? env('APP_BASE_PATH', '') : (getenv('APP_BASE_PATH') ?: '')), '/');
+        if ($prefix === '' && isset($server['SCRIPT_NAME']) && str_contains((string) $server['SCRIPT_NAME'], '/public/')) {
+            $prefix = '/public';
+        }
+
+        return $prefix;
     }
 
     public function method(): string
@@ -82,15 +106,4 @@ class Request
         return $this->server['HTTP_USER_AGENT'] ?? '';
     }
 
-    /**
-     * Préfixe du base path (ex. /public ou /comspec), aligné avec la fonction url().
-     */
-    private function getBasePathPrefix(): string
-    {
-        $prefix = rtrim((string) (function_exists('env') ? env('APP_BASE_PATH', '') : (getenv('APP_BASE_PATH') ?: '')), '/');
-        if ($prefix === '' && isset($this->server['SCRIPT_NAME']) && str_contains((string) $this->server['SCRIPT_NAME'], '/public/')) {
-            $prefix = '/public';
-        }
-        return $prefix;
-    }
 }

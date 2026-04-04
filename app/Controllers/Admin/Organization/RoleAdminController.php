@@ -23,16 +23,23 @@ class RoleAdminController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $roles = $this->rolePermissionService->listRoles($tenantId);
+        $layer = trim((string) $request->query('layer', ''));
+        $roles = match ($layer) {
+            'community' => $this->rolePermissionService->listOrganizationRolesByLayer($tenantId, 'community'),
+            'intra' => $this->rolePermissionService->listOrganizationRolesByLayer($tenantId, 'intra'),
+            default => $this->rolePermissionService->listOrganizationRoles($tenantId),
+        };
         $permissionCounts = [];
         foreach ($roles as $r) {
             $permissionCounts[(int) $r['id']] = count($this->rolePermissionService->getPermissionIdsForRole((int) $r['id']));
         }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.roles.index',
-            'title' => 'Rôles',
+            'title' => 'Rôles communauté',
             'roles' => $roles,
             'permissionCounts' => $permissionCounts,
+            'roleLayerFilter' => $layer,
         ]);
     }
 
@@ -43,7 +50,7 @@ class RoleAdminController
         if (!$tenantId || !$id) {
             return Response::redirect(url('admin/organization/roles'));
         }
-        $roles = $this->rolePermissionService->listRoles($tenantId);
+        $roles = $this->rolePermissionService->listOrganizationRoles($tenantId);
         $role = null;
         foreach ($roles as $r) {
             if ((int) $r['id'] === $id) {
