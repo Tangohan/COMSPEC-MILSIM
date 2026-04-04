@@ -60,6 +60,30 @@ class TenantRepository
         $stmt->execute([$ownerUserId, $tenantId]);
     }
 
+    /** @return array<string,mixed> */
+    public function getSettings(int $tenantId): array
+    {
+        $tenant = $this->findById($tenantId);
+        if (!$tenant) {
+            return [];
+        }
+        $raw = $tenant['settings'] ?? null;
+        if (!is_string($raw) || trim($raw) === '') {
+            return [];
+        }
+        $decoded = json_decode($raw, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /** @param array<string,mixed> $settings */
+    public function updateSettings(int $tenantId, array $settings): void
+    {
+        $current = $this->getSettings($tenantId);
+        $merged = array_replace_recursive($current, $settings);
+        $stmt = $this->pdo->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([json_encode($merged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $tenantId]);
+    }
+
     public function updateSubscriptionFromStripe(
         int $tenantId,
         ?string $stripeCustomerId,

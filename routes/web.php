@@ -124,6 +124,8 @@ return function (Router $router) {
     $router->get('/orbat', [PersonnelController::class, 'orbat'], [AuthMiddleware::class]);
     $router->get('/enlistment', [EnlistmentController::class, 'show']);
     $router->post('/enlistment', [EnlistmentController::class, 'store']);
+    $router->get('/c/{slug}/enlistment', [EnlistmentController::class, 'show']);
+    $router->post('/c/{slug}/enlistment', [EnlistmentController::class, 'store']);
     $router->get('/enlistment/success', [EnlistmentController::class, 'success']);
     $router->get('/enlistment/error', [EnlistmentController::class, 'error']);
     $router->get('/recrutement', [HomeController::class, 'recrutement']);
