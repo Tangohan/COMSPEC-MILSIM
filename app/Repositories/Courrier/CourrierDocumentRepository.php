@@ -186,7 +186,7 @@ class CourrierDocumentRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getNextReferenceNumber(int $tenantId, string $prefix = 'CR', string $year = null): string
+    public function getNextReferenceNumber(int $tenantId, string $prefix = 'CR', ?string $year = null): string
     {
         $year = $year ?? date('Y');
         $stmt = $this->pdo->prepare('SELECT reference_number FROM courrier_documents WHERE tenant_id = ? AND reference_number LIKE ? ORDER BY id DESC LIMIT 1');

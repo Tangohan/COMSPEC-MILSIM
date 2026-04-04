@@ -23,26 +23,26 @@ foreach ($categoriesWithChildren as $root) {
 $agoraTitle = $labels['agora_title'] ?? 'Agora Athena';
 $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
 ?>
-<main class="w-full px-4 sm:px-6 lg:px-8 py-10 bg-[#080809]">
+<main class="w-full px-4 sm:px-6 lg:px-8 py-10 bg-[#f8fafc]">
   <div class="max-w-6xl mx-auto">
-  <nav class="text-[9px] font-black uppercase tracking-[0.25em] text-neutral-500 mb-6">
-    <a href="<?= $baseUrl ?>/forum" class="hover:text-orange-500">Forum</a>
-    <span class="mx-2">›</span>
+  <nav class="text-[9px] font-black uppercase tracking-[0.25em] text-slate-600 mb-6">
+    <a href="<?= $baseUrl ?>/forum" class="hover:text-emerald-700">Forum</a>
+    <span class="mx-2 text-slate-400">›</span>
     <?php if ($preselectedCategoryId && $preselectedName): ?>
-      <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($preselectedSlug ?: $preselectedName) ?>" class="hover:text-orange-500"><?= htmlspecialchars($preselectedName) ?></a>
-      <span class="mx-2">›</span>
+      <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($preselectedSlug ?: $preselectedName) ?>" class="hover:text-emerald-700"><?= htmlspecialchars($preselectedName) ?></a>
+      <span class="mx-2 text-slate-400">›</span>
     <?php endif; ?>
-    <span class="text-white">Nouveau sujet</span>
+    <span class="text-slate-900">Nouveau sujet</span>
   </nav>
 
-  <div class="bg-[#0a0a0c] border border-white/10 shadow-[20px_20px_60px_rgba(0,0,0,0.9)] relative overflow-hidden">
-    <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-bl-full"></div>
-    <div class="h-1 w-full bg-gradient-to-r from-indigo-500/60 to-transparent"></div>
-    <div class="relative flex items-center gap-4 p-6 border-b border-white/5">
-      <span class="w-1 h-10 bg-indigo-500 rounded-full" style="box-shadow: 0 0 12px rgba(99,102,241,0.5);"></span>
+  <div class="bg-white border border-slate-200 shadow-lg relative overflow-hidden rounded-xl">
+    <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-100/80 rounded-bl-full"></div>
+    <div class="h-1 w-full bg-gradient-to-r from-emerald-500/70 to-transparent"></div>
+    <div class="relative flex items-center gap-4 p-6 border-b border-slate-100">
+      <span class="w-1 h-10 bg-emerald-600 rounded-full" style="box-shadow: 0 0 12px rgba(5,150,105,0.35);"></span>
       <div>
-        <p class="text-[10px] font-black uppercase tracking-widest text-indigo-400"><?= htmlspecialchars($agoraTitle) ?></p>
-        <h1 class="text-2xl sm:text-3xl font-black italic uppercase text-white"><?= htmlspecialchars($agoraSubtitle) ?></h1>
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800"><?= htmlspecialchars($agoraTitle) ?></p>
+        <h1 class="text-2xl sm:text-3xl font-black italic uppercase text-slate-900"><?= htmlspecialchars($agoraSubtitle) ?></h1>
       </div>
     </div>
 
@@ -59,18 +59,18 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
         <div>
           <label class="block text-[10px] font-black uppercase tracking-wider text-neutral-500 mb-2">Secteur de diffusion *</label>
           <div class="csel-wrapper relative">
-            <button type="button" id="csel-trigger" class="w-full bg-black/50 border border-white/10 text-left px-4 py-3 text-white flex items-center justify-between focus:outline-none focus:border-indigo-500/50 transition" aria-haspopup="listbox" aria-expanded="false">
+            <button type="button" id="csel-trigger" class="w-full bg-slate-50 border border-slate-200 text-left px-4 py-3 text-slate-900 flex items-center justify-between focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition rounded-md" aria-haspopup="listbox" aria-expanded="false">
               <span id="csel-label"><?= $preselectedCategoryId && $preselectedName ? htmlspecialchars($preselectedName) : '— Choisir un secteur —' ?></span>
               <span class="csel-chevron transition-transform">▼</span>
             </button>
             <input type="hidden" name="category_id" id="category_id" value="<?= $preselectedCategoryId ?>" required>
-            <div id="csel-dropdown" class="absolute top-full left-0 right-0 mt-1 bg-[#0d0d0f] border border-white/10 shadow-lg z-10 hidden max-h-60 overflow-auto">
-              <div role="option" class="csel-option px-4 py-2 text-neutral-400 hover:bg-white/5 cursor-pointer" data-value="">Choisir un secteur</div>
+            <div id="csel-dropdown" class="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 shadow-lg z-10 hidden max-h-60 overflow-auto rounded-md">
+              <div role="option" class="csel-option px-4 py-2 text-slate-500 hover:bg-slate-50 cursor-pointer" data-value="">Choisir un secteur</div>
               <?php foreach ($categoriesWithChildren as $root): ?>
-                <div class="px-3 py-1.5 text-[9px] font-black uppercase text-indigo-500/80"><?= !empty($root['icon']) ? $root['icon'] . ' ' : '' ?><?= htmlspecialchars($root['name']) ?></div>
-                <div role="option" class="csel-option px-4 py-2 pl-6 text-white hover:bg-white/5 cursor-pointer" data-value="<?= (int) $root['id'] ?>"><?= htmlspecialchars($root['name']) ?></div>
+                <div class="px-3 py-1.5 text-[9px] font-black uppercase text-emerald-800"><?= !empty($root['icon']) ? $root['icon'] . ' ' : '' ?><?= htmlspecialchars($root['name']) ?></div>
+                <div role="option" class="csel-option px-4 py-2 pl-6 text-slate-900 hover:bg-slate-50 cursor-pointer" data-value="<?= (int) $root['id'] ?>"><?= htmlspecialchars($root['name']) ?></div>
                 <?php foreach ($root['children'] ?? [] as $child): ?>
-                  <div role="option" class="csel-option px-4 py-2 pl-8 text-neutral-300 hover:bg-white/5 cursor-pointer" data-value="<?= (int) $child['id'] ?>">↳ <?= htmlspecialchars($child['name']) ?></div>
+                  <div role="option" class="csel-option px-4 py-2 pl-8 text-slate-700 hover:bg-slate-50 cursor-pointer" data-value="<?= (int) $child['id'] ?>">↳ <?= htmlspecialchars($child['name']) ?></div>
                 <?php endforeach; ?>
               <?php endforeach; ?>
             </div>
@@ -79,7 +79,7 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
 
         <div>
           <label for="topic-title" class="block text-[10px] font-black uppercase tracking-wider text-neutral-500 mb-2">En-tête du message *</label>
-          <input type="text" name="title" id="topic-title" maxlength="255" required class="w-full bg-black/50 border border-white/10 text-white px-4 py-3 placeholder-neutral-500 focus:outline-none focus:border-orange-500/50" placeholder="Sujet de l'émission…">
+          <input type="text" name="title" id="topic-title" maxlength="255" required class="w-full bg-slate-50 border border-slate-200 text-slate-900 px-4 py-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 rounded-md" placeholder="Sujet de l'émission…">
           <p class="text-[9px] text-neutral-500 mt-1"><span id="title-count">0</span> / 255</p>
         </div>
 
@@ -89,38 +89,38 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
             <span class="text-[8px] text-neutral-600 lg:hidden">Aperçu en direct à droite (desktop)</span>
           </div>
           <!-- Barre d'outils Markdown -->
-          <div id="toolbar" class="flex flex-wrap gap-1 p-2 bg-black/20 border border-white/[0.06] border-b-0 rounded-t">
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-white/10 text-[10px] hover:bg-white/5 transition" data-wrap="**" data-wrap-end="**" title="Gras (Ctrl+B)"><strong>G</strong></button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-white/10 text-[10px] hover:bg-white/5 italic transition" data-wrap="_" data-wrap-end="_" title="Italique (Ctrl+I)">I</button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-white/10 text-[10px] hover:bg-white/5 transition" data-wrap="~~" data-wrap-end="~~" title="Barré"><del>S</del></button>
-            <span class="w-px h-5 bg-white/10 mx-1 self-center"></span>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-white/10 text-[10px] hover:bg-white/5 transition" data-wrap="> " data-wrap-end="" title="Citation">Citation</button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-white/10 text-[10px] hover:bg-white/5 transition" data-wrap="\n- " data-wrap-end="" title="Liste à puces">Liste</button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-white/10 text-[10px] hover:bg-white/5 transition" data-wrap="\n1. " data-wrap-end="" title="Liste numérotée">1.</button>
-            <span class="w-px h-5 bg-white/10 mx-1 self-center"></span>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-white/10 text-[10px] hover:bg-white/5 font-mono transition" data-wrap="`" data-wrap-end="`" title="Code inline">`</button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-white/10 text-[10px] hover:bg-white/5 font-mono transition" data-wrap="\n```\n" data-wrap-end="\n```" title="Bloc code">```</button>
-            <span class="w-px h-5 bg-white/10 mx-1 self-center"></span>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-white/10 text-[10px] hover:bg-white/5 transition" id="toolbar-link" title="Lien (Ctrl+K)">Lien</button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-white/10 text-[10px] hover:bg-white/5 text-orange-500/80 transition" data-wrap="@" data-wrap-end=" " title="Mention">@</button>
+          <div id="toolbar" class="flex flex-wrap gap-1 p-2 bg-slate-100 border border-slate-200 border-b-0 rounded-t-md">
+            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition rounded" data-wrap="**" data-wrap-end="**" title="Gras (Ctrl+B)"><strong>G</strong></button>
+            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 italic transition" data-wrap="_" data-wrap-end="_" title="Italique (Ctrl+I)">I</button>
+            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" data-wrap="~~" data-wrap-end="~~" title="Barré"><del>S</del></button>
+            <span class="w-px h-5 bg-slate-300 mx-1 self-center"></span>
+            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" data-wrap="> " data-wrap-end="" title="Citation">Citation</button>
+            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" data-wrap="\n- " data-wrap-end="" title="Liste à puces">Liste</button>
+            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" data-wrap="\n1. " data-wrap-end="" title="Liste numérotée">1.</button>
+            <span class="w-px h-5 bg-slate-300 mx-1 self-center"></span>
+            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 font-mono transition" data-wrap="`" data-wrap-end="`" title="Code inline">`</button>
+            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 font-mono transition" data-wrap="\n```\n" data-wrap-end="\n```" title="Bloc code">```</button>
+            <span class="w-px h-5 bg-slate-300 mx-1 self-center"></span>
+            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" id="toolbar-link" title="Lien (Ctrl+K)">Lien</button>
+            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-emerald-700 text-[10px] hover:bg-emerald-50 transition" data-wrap="@" data-wrap-end=" " title="Mention">@</button>
           </div>
-          <textarea name="body" id="topic-content" rows="14" maxlength="<?= $maxLen ?>" required class="w-full bg-black/50 border border-white/10 text-white px-4 py-3 placeholder-neutral-500 focus:outline-none focus:border-orange-500/50 resize-y rounded-b font-mono text-sm leading-relaxed" placeholder="Votre message… Markdown : **gras**, *italique*, `code`, > citation, - liste"></textarea>
+          <textarea name="body" id="topic-content" rows="14" maxlength="<?= $maxLen ?>" required class="w-full bg-slate-50 border border-slate-200 text-slate-900 px-4 py-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 resize-y rounded-b-md font-mono text-sm leading-relaxed" placeholder="Votre message… Markdown : **gras**, *italique*, `code`, > citation, - liste"></textarea>
           <p class="text-[9px] text-neutral-500 mt-1"><span id="content-count">0</span> / <?= $maxLen ?></p>
           <p class="text-[9px] text-neutral-600 mt-1">Raccourcis : Ctrl+B (gras), Ctrl+I (italique), Ctrl+K (lien), Ctrl+Shift+X (barré).</p>
         </div>
 
         <div>
           <label class="block text-[10px] font-black uppercase tracking-wider text-neutral-500 mb-2">Tags — max 5, optionnel</label>
-          <div class="flex flex-wrap gap-2 items-center p-2 bg-black/30 border border-white/10">
-            <input type="text" id="tag-input" class="flex-1 min-w-[120px] bg-transparent border-0 text-white placeholder-neutral-500 focus:outline-none text-sm" placeholder="Ajouter un tag (Entrée ou virgule)" maxlength="30">
+          <div class="flex flex-wrap gap-2 items-center p-2 bg-slate-50 border border-slate-200 rounded-md">
+            <input type="text" id="tag-input" class="flex-1 min-w-[120px] bg-transparent border-0 text-slate-900 placeholder-slate-400 focus:outline-none text-sm" placeholder="Ajouter un tag (Entrée ou virgule)" maxlength="30">
             <span id="tag-count" class="text-[9px] text-neutral-500">0 / 5</span>
           </div>
           <input type="hidden" name="tags" id="tags-hidden" value="">
           <div id="tag-pills" class="flex flex-wrap gap-2 mt-2"></div>
         </div>
 
-        <div class="border-l-4 border-orange-500/50 pl-4 py-2 text-[11px] text-neutral-400">
-          <p class="font-black text-neutral-300 mb-1">Protocole de conduite</p>
+        <div class="border-l-4 border-emerald-500/60 pl-4 py-2 text-[11px] text-slate-600 bg-emerald-50/50 rounded-r-md">
+          <p class="font-black text-slate-800 mb-1">Protocole de conduite</p>
           <ul class="list-disc list-inside space-y-0.5">
             <li>Respect des autres participants</li>
             <li>Pas de spam ni de contenu hors-sujet</li>
@@ -130,22 +130,22 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
         </div>
 
         <div class="flex flex-wrap gap-3 pt-4">
-          <button type="submit" id="submit-topic-btn" class="bg-orange-500 hover:bg-orange-400 text-black px-8 py-4 font-black uppercase text-[10px] tracking-[0.25em] transition flex items-center gap-2">
+          <button type="submit" id="submit-topic-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 font-black uppercase text-[10px] tracking-[0.25em] transition flex items-center gap-2 rounded-md shadow-sm">
             <span aria-hidden="true">✈</span> Diffuser le sujet
           </button>
-          <a href="<?= $baseUrl ?>/forum" class="border border-white/10 px-6 py-3 text-xs font-bold uppercase text-neutral-400 hover:text-white transition">✕ Abandonner</a>
+          <a href="<?= $baseUrl ?>/forum" class="border border-slate-300 bg-white px-6 py-3 text-xs font-bold uppercase text-slate-600 hover:text-slate-900 hover:border-slate-400 transition rounded-md">✕ Abandonner</a>
         </div>
       </form>
 
       <!-- Colonne aperçu en temps réel -->
       <div class="hidden lg:block lg:w-[380px] xl:w-[420px] flex-shrink-0">
-        <div class="sticky top-4 border border-white/10 bg-[#0d0d0f] rounded-lg overflow-hidden">
-          <div class="px-4 py-2.5 border-b border-white/5 bg-black/30">
-            <p class="text-[9px] font-black uppercase tracking-widest text-orange-500/80">Aperçu en direct</p>
-            <p class="text-[8px] text-neutral-600 mt-0.5">Rendu Markdown</p>
+        <div class="sticky top-4 border border-slate-200 bg-white rounded-lg overflow-hidden shadow-sm">
+          <div class="px-4 py-2.5 border-b border-slate-100 bg-slate-50">
+            <p class="text-[9px] font-black uppercase tracking-widest text-emerald-800">Aperçu en direct</p>
+            <p class="text-[8px] text-slate-500 mt-0.5">Rendu Markdown</p>
           </div>
-          <div id="live-preview" class="p-4 min-h-[200px] max-h-[70vh] overflow-y-auto text-sm text-neutral-300 prose prose-invert max-w-none post-content">
-            <p class="text-neutral-600 italic">Le rendu s'affichera ici au fur et à mesure.</p>
+          <div id="live-preview" class="p-4 min-h-[200px] max-h-[70vh] overflow-y-auto text-sm text-slate-800 prose prose-slate max-w-none post-content">
+            <p class="text-slate-500 italic">Le rendu s'affichera ici au fur et à mesure.</p>
           </div>
         </div>
       </div>
@@ -154,7 +154,7 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
   </div>
 </main>
 
-<div id="forum-toast-nt" class="fixed bottom-4 right-4 z-50 hidden px-4 py-3 rounded border border-white/10 bg-[#0a0a0c] text-sm text-white shadow-lg"></div>
+<div id="forum-toast-nt" class="fixed bottom-4 right-4 z-50 hidden px-4 py-3 rounded-lg border border-slate-200 bg-slate-900 text-sm text-white shadow-lg"></div>
 
 <script>
 (function() {
@@ -172,14 +172,14 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
 
   // Rendu Markdown côté client (aligné avec le PHP)
   function markdownToHtml(text) {
-    if (!text || !text.trim()) return '<p class="text-neutral-600 italic">Le rendu s\'affichera ici au fur et à mesure.</p>';
+    if (!text || !text.trim()) return '<p class="text-slate-500 italic">Le rendu s\'affichera ici au fur et à mesure.</p>';
     var s = escapeHtml(text);
     // Code blocks
     s = s.replace(/```(\w*)\s*([\s\S]*?)```/g, function(_, lang, code) {
-      return '<pre class="my-2 p-3 bg-black/30 border border-white/10 rounded text-sm overflow-x-auto"><code>' + code + '</code></pre>';
+      return '<pre class="my-2 p-3 bg-slate-100 border border-slate-200 rounded text-sm overflow-x-auto text-slate-900"><code>' + code + '</code></pre>';
     });
     // Inline code
-    s = s.replace(/`([^`\n]+)`/g, '<code class="px-1 py-0.5 bg-white/10 rounded text-xs">$1</code>');
+    s = s.replace(/`([^`\n]+)`/g, '<code class="px-1 py-0.5 bg-slate-100 border border-slate-200 rounded text-xs text-slate-900">$1</code>');
     // Bold
     s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     s = s.replace(/__([^_]+)__/g, '<strong>$1</strong>');
@@ -189,15 +189,15 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
     // Strikethrough
     s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
     // Links
-    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" rel="noopener noreferrer" class="text-orange-400 hover:text-orange-300 underline">$1</a>');
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" rel="noopener noreferrer" class="text-emerald-700 hover:text-emerald-600 underline">$1</a>');
     // Blockquote
-    s = s.replace(/^&gt;\s?(.*)$/gm, '<blockquote class="border-l-2 border-orange-500/40 pl-4 my-1.5 text-neutral-400">$1</blockquote>');
+    s = s.replace(/^&gt;\s?(.*)$/gm, '<blockquote class="border-l-2 border-emerald-400 pl-4 my-1.5 text-slate-600">$1</blockquote>');
     // Unordered list
     s = s.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
-    s = s.replace(/(<li>.*?<\/li>\n?)+/gs, function(m) { return '<ul class="list-disc list-inside space-y-0.5 my-2 text-neutral-300 pl-2">' + m + '</ul>'; });
+    s = s.replace(/(<li>.*?<\/li>\n?)+/gs, function(m) { return '<ul class="list-disc list-inside space-y-0.5 my-2 text-slate-700 pl-2">' + m + '</ul>'; });
     // Ordered list
     s = s.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
-    s = s.replace(/(<li>.*?<\/li>\n?)+/gs, function(m) { return '<ol class="list-decimal list-inside space-y-0.5 my-2 text-neutral-300 pl-2">' + m + '</ol>'; });
+    s = s.replace(/(<li>.*?<\/li>\n?)+/gs, function(m) { return '<ol class="list-decimal list-inside space-y-0.5 my-2 text-slate-700 pl-2">' + m + '</ol>'; });
     return s.replace(/\n/g, '<br>');
   }
 
@@ -223,7 +223,7 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
     cselTrigger.addEventListener('click', function() {
       var open = cselDropdown.classList.toggle('hidden');
       cselTrigger.setAttribute('aria-expanded', open ? 'false' : 'true');
-      cselTrigger.classList.toggle('border-indigo-500/45', !open);
+      cselTrigger.classList.toggle('border-emerald-500', !open);
       var chevron = cselTrigger.querySelector('.csel-chevron');
       if (chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
     });
@@ -234,7 +234,7 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
         cselLabel.textContent = val ? opt.textContent.trim() : '— Choisir un secteur —';
         cselDropdown.classList.add('hidden');
         cselTrigger.setAttribute('aria-expanded', 'false');
-        cselTrigger.classList.remove('border-indigo-500/45');
+        cselTrigger.classList.remove('border-emerald-500');
         var chevron = cselTrigger.querySelector('.csel-chevron');
         if (chevron) chevron.style.transform = '';
       });
