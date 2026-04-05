@@ -60,8 +60,11 @@ if ($registryCount === 0) {
                         <a href="<?= htmlspecialchars(url('join')) ?>" class="inline-flex items-center rounded-2xl bg-slate-950 px-5 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-white transition hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
                             Rejoindre par code
                         </a>
+                        <a href="<?= htmlspecialchars(url('pointage')) ?>" class="inline-flex items-center rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-emerald-900 transition hover:border-emerald-400 hover:bg-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
+                            Pointage
+                        </a>
                         <a href="<?= htmlspecialchars(url('dashboard')) ?>" class="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2">
-                            Retour dashboard
+                            Dashboard
                         </a>
                     </div>
                 </div>
@@ -98,8 +101,14 @@ if ($registryCount === 0) {
                     <span class="mr-2 h-2 w-2 rounded-full <?= $registryCount > 0 ? 'bg-emerald-500' : 'bg-amber-400' ?>" aria-hidden="true"></span>
                     <?= htmlspecialchars($countLabel) ?>
                 </div>
+                <a href="<?= htmlspecialchars(url('pointage')) ?>" class="inline-flex items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 transition hover:border-emerald-400 hover:bg-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
+                    Pointage
+                </a>
                 <a href="<?= htmlspecialchars(url('join')) ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2">
                     Saisir un code
+                </a>
+                <a href="<?= htmlspecialchars(url('hub')) ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2">
+                    Hub
                 </a>
             </div>
         </section>

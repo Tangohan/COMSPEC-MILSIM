@@ -38,7 +38,7 @@ class AccountController
         }
         return Response::view('layout.main', [
             'content' => 'account.index',
-            'title' => 'Paramètres',
+            'title' => 'Mon compte',
             'systemHealth' => $this->getSystemHealth((int) $user['tenant_id']),
         ]);
     }

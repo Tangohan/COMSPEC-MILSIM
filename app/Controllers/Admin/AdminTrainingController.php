@@ -9,6 +9,7 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\TenantRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingCertificateRepository;
@@ -22,7 +23,8 @@ class AdminTrainingController
         private TrainingEnrollmentRepository $enrollmentRepository,
         private TrainingCertificateRepository $certificateRepository,
         private TrainingAssignmentService $assignmentService,
-        private TrainingAuditService $auditService
+        private TrainingAuditService $auditService,
+        private TenantRepository $tenantRepository
     ) {}
 
     public function dashboard(Request $request, array $params = []): Response
@@ -125,6 +127,69 @@ class AdminTrainingController
             'content' => 'admin.training.audit',
             'title' => 'Audit Formations',
             'logs' => $logs,
+        ]);
+    }
+
+    /** Personnalisation vitrine (dashboard public / cartes). */
+    public function courseShowcase(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        $course = $this->courseRepository->findById($id, $tenantId);
+        if (!$course) {
+            Session::flash('error', 'Formation introuvable.');
+
+            return Response::redirect(url('admin/training/courses'));
+        }
+
+        if ($request->method() === 'POST') {
+            if (!Csrf::validate($request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée, réessayez.');
+
+                return Response::redirect(url('admin/training/courses/' . $id . '/showcase'));
+            }
+
+            $badge = (string) $request->input('showcase_badge', 'open');
+            if (!in_array($badge, ['open', 'full', 'coming_soon', 'closed'], true)) {
+                $badge = 'open';
+            }
+            $cardStyle = (string) $request->input('showcase_card_style', 'default');
+            if (!in_array($cardStyle, ['default', 'grayscale'], true)) {
+                $cardStyle = 'default';
+            }
+
+            $cycleRaw = trim((string) $request->input('showcase_cycle_date', ''));
+            $showcaseCycleDate = $cycleRaw === '' ? null : $cycleRaw;
+
+            $sortRaw = trim((string) $request->input('showcase_sort_order', ''));
+            $sortOrder = $sortRaw === '' ? null : max(0, (int) $sortRaw);
+
+            $this->courseRepository->update($id, [
+                'thumbnail_path' => trim((string) $request->input('thumbnail_path', '')) ?: null,
+                'banner_path' => trim((string) $request->input('banner_path', '')) ?: null,
+                'short_description' => trim((string) $request->input('short_description', '')) ?: null,
+                'description' => trim((string) $request->input('description', '')) ?: null,
+                'showcase_cycle_date' => $showcaseCycleDate,
+                'showcase_location' => trim((string) $request->input('showcase_location', '')) ?: null,
+                'showcase_badge' => $badge,
+                'showcase_card_style' => $cardStyle,
+                'showcase_sort_order' => $sortOrder,
+                'updated_by' => (int) Session::get('user_id'),
+            ]);
+
+            Session::flash('success', 'Vitrine et médias enregistrés.');
+
+            return Response::redirect(url('admin/training/courses/' . $id . '/showcase'));
+        }
+
+        $tenant = $this->tenantRepository->findById($tenantId);
+
+        return Response::view('layout.main', [
+            'content' => 'admin.training.course_showcase',
+            'title' => 'Vitrine — ' . (string) $course['title'],
+            'course' => $course,
+            'tenant' => $tenant,
         ]);
     }
 

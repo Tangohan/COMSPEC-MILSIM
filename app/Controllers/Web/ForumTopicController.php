@@ -63,6 +63,7 @@ class ForumTopicController
         }
 
         $category = $this->categoryRepository->findById((int) $topic['category_id'], $tenantId);
+        $categoryScope = (string) ($topic['category_scope'] ?? $category['scope'] ?? 'general');
         if ($category && function_exists('forum_can_read') && !forum_can_read($userId, $category)) {
             $resp = new Response();
             $resp->setStatusCode(403)->header('Content-Type', 'text/html; charset=utf-8');
@@ -77,6 +78,9 @@ class ForumTopicController
         $totalPages = max(1, (int) ceil($postCount / $perPage));
         $posts = $this->postRepository->listByTopicPaginated($id, $page, $perPage, $isModo);
         foreach ($posts as $i => $p) {
+            if ($categoryScope === 'platform' && !$isModo) {
+                $p = $this->profilePublicIdentityService->filterAuthorCardForPlatformForum($p);
+            }
             $p = $this->profilePublicIdentityService->filterAuthorFieldsForForumViewer($p, $isModo);
             $enriched = $this->profilePublicIdentityService->enrichFromForumPostRow($p);
             $p['author_display_resolved'] = $enriched['public_display_name'];
@@ -103,6 +107,7 @@ class ForumTopicController
             'content' => 'forum.topic',
             'title' => $topic['title'],
             'forumConfig' => $forumCfg,
+            'categoryScope' => $categoryScope,
             'topic' => $topic,
             'posts' => $posts,
             'page' => $page,

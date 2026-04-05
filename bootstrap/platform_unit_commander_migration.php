@@ -116,16 +116,33 @@ function run_platform_unit_commander_migration(PDO $pdo): void
         description text,
         location varchar(255) DEFAULT NULL,
         campaign_tag varchar(100) DEFAULT NULL,
+        event_type varchar(32) NOT NULL DEFAULT 'evenement',
         starts_at datetime NOT NULL,
         ends_at datetime DEFAULT NULL,
         created_by_user_id int unsigned NOT NULL,
         created_at datetime DEFAULT CURRENT_TIMESTAMP,
         updated_at datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+        cancelled_at datetime DEFAULT NULL,
+        cancelled_reason varchar(500) DEFAULT NULL,
         PRIMARY KEY (id),
         KEY tenant_starts (tenant_id, starts_at),
         CONSTRAINT fk_ce_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE,
         CONSTRAINT fk_ce_creator FOREIGN KEY (created_by_user_id) REFERENCES users (id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $ceCancelled = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_events' AND COLUMN_NAME = 'cancelled_at'");
+    if ($ceCancelled && !$ceCancelled->fetch()) {
+        try {
+            $pdo->exec("ALTER TABLE community_events ADD COLUMN event_type varchar(32) NOT NULL DEFAULT 'evenement' AFTER campaign_tag");
+        } catch (\PDOException) {
+        }
+        try {
+            $pdo->exec("ALTER TABLE community_events ADD COLUMN cancelled_at datetime DEFAULT NULL AFTER updated_at");
+            $pdo->exec("ALTER TABLE community_events ADD COLUMN cancelled_reason varchar(500) DEFAULT NULL AFTER cancelled_at");
+        } catch (\PDOException $e) {
+            echo '  [ATTENTION] community_events annulation : ' . $e->getMessage() . "\n";
+        }
+    }
 
     $idxCeCreated = $pdo->query("SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_events' AND INDEX_NAME = 'ce_tenant_created'");
     if ($idxCeCreated && !$idxCeCreated->fetch()) {
@@ -142,13 +159,27 @@ function run_platform_unit_commander_migration(PDO $pdo): void
         event_id int unsigned NOT NULL,
         user_id int unsigned NOT NULL,
         status varchar(16) NOT NULL DEFAULT 'yes',
+        checked_in_at datetime DEFAULT NULL,
+        reminder_sent_at datetime DEFAULT NULL,
         created_at datetime DEFAULT CURRENT_TIMESTAMP,
         updated_at datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         UNIQUE KEY event_user (event_id, user_id),
+        KEY idx_rsvp_reminder (event_id, reminder_sent_at),
         CONSTRAINT fk_rsvp_event FOREIGN KEY (event_id) REFERENCES community_events (id) ON DELETE CASCADE,
         CONSTRAINT fk_rsvp_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $rsvpCi = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_event_rsvps' AND COLUMN_NAME = 'checked_in_at'");
+    if ($rsvpCi && !$rsvpCi->fetch()) {
+        try {
+            $pdo->exec("ALTER TABLE community_event_rsvps ADD COLUMN checked_in_at datetime DEFAULT NULL AFTER status");
+            $pdo->exec("ALTER TABLE community_event_rsvps ADD COLUMN reminder_sent_at datetime DEFAULT NULL AFTER checked_in_at");
+            $pdo->exec('ALTER TABLE community_event_rsvps ADD KEY idx_rsvp_reminder (event_id, reminder_sent_at)');
+        } catch (\PDOException $e) {
+            echo '  [ATTENTION] community_event_rsvps pointage : ' . $e->getMessage() . "\n";
+        }
+    }
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS platform_usage_events (
         id bigint unsigned NOT NULL AUTO_INCREMENT,

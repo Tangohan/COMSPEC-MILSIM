@@ -1,0 +1,95 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Audit;
+
+/**
+ * Libellés français pour les slugs d’audit_logs (journal opérationnel, exports).
+ */
+final class AuditActionLabel
+{
+    /** @var array<string, string> */
+    private const MAP = [
+        // Auth
+        'auth.login_success' => 'Connexion réussie',
+        'auth.login_failure' => 'Échec de connexion',
+        'auth.logout' => 'Déconnexion',
+        'auth.password_reset_requested' => 'Demande de réinitialisation du mot de passe',
+        'auth.password_reset_completed' => 'Mot de passe réinitialisé',
+        'auth.register' => 'Inscription',
+        // Tenant / communauté
+        'tenant.created' => 'Organisation créée',
+        'tenant.setup_completed' => 'Configuration de l’organisation terminée',
+        // Invitations
+        'invitation.sent' => 'Invitation envoyée',
+        'invitation.accepted' => 'Invitation acceptée',
+        'invitation.revoked' => 'Invitation révoquée',
+        // Modération
+        'moderation.action_applied' => 'Action de modération appliquée',
+        'moderation.action_revoked' => 'Action de modération révoquée',
+        'forum.moderation_action' => 'Modération forum',
+        // Sécurité
+        'security.event' => 'Événement de sécurité',
+        // Rôles & permissions
+        'role.permissions_updated' => 'Permissions du rôle mises à jour',
+        'permission.scope_migration' => 'Migration des périmètres de permissions',
+        'site_role.assigned' => 'Rôle site attribué',
+        'site_role.revoked' => 'Rôle site révoqué',
+        // Utilisateurs (back-office org)
+        'user_created' => 'Utilisateur créé',
+        'user_updated' => 'Utilisateur modifié',
+        'user_deactivated' => 'Utilisateur désactivé',
+        'role_assigned' => 'Rôle attribué',
+        'group_member_added' => 'Membre ajouté au groupe',
+        'group_member_removed' => 'Membre retiré du groupe',
+        // Documents (audit global)
+        'document_uploaded' => 'Document téléversé',
+        'document_downloaded' => 'Document téléchargé',
+        'document_updated' => 'Document modifié',
+        'document_archived' => 'Document archivé',
+        // Formations LMS
+        'course_created' => 'Formation créée',
+        'course_updated' => 'Formation modifiée',
+        'course_published' => 'Formation publiée',
+        'enrollment_assigned' => 'Inscription attribuée',
+        'lesson_completed' => 'Leçon terminée',
+        'quiz_attempt_submitted' => 'Quiz soumis',
+        'certificate_issued' => 'Certificat délivré',
+        'certificate_revoked' => 'Certificat révoqué',
+    ];
+
+    public static function toFrench(string $action): string
+    {
+        $action = trim($action);
+        if ($action === '') {
+            return '—';
+        }
+        if (isset(self::MAP[$action])) {
+            return self::MAP[$action];
+        }
+
+        return self::humanizeSlug($action);
+    }
+
+    /** Fallback : forum.post_hidden → « Forum · post hidden » */
+    private static function humanizeSlug(string $action): string
+    {
+        $parts = explode('.', $action, 2);
+        if (count($parts) === 2) {
+            $domain = str_replace(['_', '-'], ' ', $parts[0]);
+            $verb = str_replace(['_', '-'], ' ', $parts[1]);
+            $title = static function (string $s): string {
+                if (function_exists('mb_convert_case')) {
+                    return mb_convert_case($s, MB_CASE_TITLE, 'UTF-8');
+                }
+
+                return ucwords($s);
+            };
+
+            return $title($domain) . ' · ' . $title($verb);
+        }
+
+        return str_replace(['_', '-'], ' ', $action);
+    }
+}

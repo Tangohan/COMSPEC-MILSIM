@@ -11,6 +11,49 @@ use App\Core\Request;
  */
 final class TenantCommunityProfileService
 {
+    /** Modèle de page publique : classique (carte) ou vitrine (pleine page). */
+    public static function resolvePublicPageLayout(mixed $raw): string
+    {
+        $s = strtolower(trim((string) ($raw ?? '')));
+        if ($s === 'legacy' || $s === 'classic' || $s === 'card') {
+            return 'legacy';
+        }
+        if ($raw === true || $raw === 1 || $raw === '1') {
+            return 'showcase';
+        }
+        if (in_array($s, ['showcase', 'vitrine', 'full', 'wide'], true)) {
+            return 'showcase';
+        }
+        // Par défaut : vitrine dynamique (fiches /c/{slug})
+        return 'showcase';
+    }
+
+    /**
+     * Unité de jeu (défaut) vs portail plateforme (moins d’emphase recrutement).
+     * Si `public_audience` est absent en base, on peut dériver via PLATFORM_PUBLIC_TENANT_SLUGS (.env).
+     */
+    public static function resolvePublicAudience(array $community, ?string $tenantSlug = null): string
+    {
+        if (array_key_exists('public_audience', $community)) {
+            return (($community['public_audience'] ?? '') === 'platform') ? 'platform' : 'unit';
+        }
+        $slug = strtolower(trim((string) ($tenantSlug ?? '')));
+        if ($slug === '') {
+            return 'unit';
+        }
+        $list = trim((string) env('PLATFORM_PUBLIC_TENANT_SLUGS', ''));
+        if ($list === '') {
+            return 'unit';
+        }
+        foreach (array_map('trim', explode(',', $list)) as $s) {
+            if ($s !== '' && strtolower($s) === $slug) {
+                return 'platform';
+            }
+        }
+
+        return 'unit';
+    }
+
     public const BADGE_MILSIM = 'milsim';
     public const BADGE_SEMI_MILSIM = 'semi_milsim';
     public const BADGE_CASUAL = 'casual';
@@ -54,7 +97,7 @@ final class TenantCommunityProfileService
      * @param array<string, mixed> $community bloc settings.community
      * @return array<string, mixed>
      */
-    public static function getPublicViewModel(array $community): array
+    public static function getPublicViewModel(array $community, ?string $tenantSlug = null): array
     {
         $labels = self::badgeLabels();
         $styleBadgeLabels = [];
@@ -72,6 +115,7 @@ final class TenantCommunityProfileService
         $militarySections = is_array($community['military_sections'] ?? null) ? $community['military_sections'] : [];
         $welcomeText = trim((string) ($community['welcome_text'] ?? ''));
         $isSimpleReg = ($community['registration_mode'] ?? 'milsim') === 'simple';
+        $publicAudience = self::resolvePublicAudience($community, $tenantSlug);
 
         $contactEmail = trim((string) ($community['contact_email'] ?? ''));
 
@@ -91,6 +135,7 @@ final class TenantCommunityProfileService
             'contactEmail' => $contactEmail,
             'contactIntro' => trim((string) ($community['contact_intro'] ?? '')),
             'contactFormEnabled' => !empty($community['contact_form_enabled']) && $contactEmail !== '',
+            'publicAudience' => $publicAudience,
         ];
     }
 
@@ -179,6 +224,8 @@ final class TenantCommunityProfileService
 
         $layout = (string) $request->input('public_page_layout', 'legacy');
         $c['public_page_layout'] = $layout === 'showcase' ? 'showcase' : 'legacy';
+        $aud = (string) $request->input('public_audience', 'unit');
+        $c['public_audience'] = $aud === 'platform' ? 'platform' : 'unit';
         $c['public_hero_subtitle'] = $this->clip((string) $request->input('public_hero_subtitle', ''), 600);
         $c['public_doctrine'] = $this->clip((string) $request->input('public_doctrine', ''), 200);
         $c['public_access_label'] = $this->clip((string) $request->input('public_access_label', ''), 120);
@@ -276,7 +323,7 @@ final class TenantCommunityProfileService
         ];
 
         return [
-            'publicPageLayout' => ($community['public_page_layout'] ?? 'legacy') === 'showcase' ? 'showcase' : 'legacy',
+            'publicPageLayout' => self::resolvePublicPageLayout($community['public_page_layout'] ?? null),
             'heroSubtitle' => trim((string) ($community['public_hero_subtitle'] ?? '')),
             'publicDoctrine' => trim((string) ($community['public_doctrine'] ?? '')),
             'publicAccessLabel' => trim((string) ($community['public_access_label'] ?? '')),

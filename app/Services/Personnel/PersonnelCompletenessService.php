@@ -74,4 +74,37 @@ class PersonnelCompletenessService
             'details' => $checks,
         ];
     }
+
+    /**
+     * Même calcul que getScore, avec libellés des champs encore manquants (pour admin / fiche personnage).
+     *
+     * @return array{score: int, sections_critiques: list<string>, details: array<string, bool>, missing_labels: list<string>}
+     */
+    public function getScoreWithMissingLabels(int $userId, array $user, ?array $userProfile, ?array $personnelExtras): array
+    {
+        $base = $this->getScore($userId, $user, $userProfile, $personnelExtras);
+        $labels = [
+            'identity_name' => 'Nom opérateur / RP',
+            'identity_callsign' => 'Indicatif',
+            'identity_matricule' => 'Matricule',
+            'identity_role' => 'Rôle principal (dossier)',
+            'identity_unit' => 'Affectation / unité',
+            'identity_enlistment' => 'Date d’incorporation',
+            'assignment_role' => 'Rôle d’affectation',
+            'security_clearance' => 'Niveau de clearance',
+            'security_review' => 'Clearance revue',
+            'qualifications' => 'Qualification enregistrée',
+            'readiness' => 'Indicateur de disponibilité',
+            'contact_email' => 'Email de contact',
+        ];
+        $missingLabels = [];
+        foreach ($base['details'] as $key => $ok) {
+            if (empty($ok) && isset($labels[$key])) {
+                $missingLabels[] = $labels[$key];
+            }
+        }
+        $base['missing_labels'] = $missingLabels;
+
+        return $base;
+    }
 }

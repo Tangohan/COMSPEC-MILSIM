@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\CommunityEventRepository;
+use App\Services\Attendance\CommunityEventAttendanceService;
 use App\Services\Auth\AuthService;
 use App\Services\Platform\FeatureGateService;
 
@@ -17,7 +18,8 @@ final class CommunityEventsController
     public function __construct(
         private CommunityEventRepository $events,
         private AuthService $authService,
-        private FeatureGateService $featureGate
+        private FeatureGateService $featureGate,
+        private CommunityEventAttendanceService $attendance
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -38,13 +40,24 @@ final class CommunityEventsController
             'events'
         );
         $rows = $this->events->upcomingForTenant($tenantId);
+        $userId = $user ? (int) $user['id'] : null;
+        $checkInFlags = [];
+        if ($userId) {
+            foreach ($rows as $row) {
+                $eid = (int) ($row['id'] ?? 0);
+                if ($eid > 0) {
+                    $checkInFlags[$eid] = $this->attendance->canUserCheckInNow($row, $userId);
+                }
+            }
+        }
 
         return Response::view('layout.main', [
             'title' => 'Événements & opérations',
             'content' => 'community.events',
             'events' => $rows,
-            'currentUserId' => $user ? (int) $user['id'] : null,
+            'currentUserId' => $userId,
             'eventsQuota' => $this->featureGate->quotaStatusForFeature($tenantId, 'events'),
+            'eventsCheckInFlags' => $checkInFlags,
         ]);
     }
 
@@ -73,7 +86,17 @@ final class CommunityEventsController
 
             return Response::redirect(url('evenements'));
         }
-        $this->events->setRsvp($eventId, (int) $user['id'], $status);
+        $result = $this->attendance->setRsvpWithNotifications(
+            $eventId,
+            (int) $user['id'],
+            $tenantId,
+            $status
+        );
+        if (!($result['ok'] ?? false)) {
+            Session::flash('error', $result['error'] ?? 'Impossible d’enregistrer.');
+
+            return Response::redirect(url('evenements'));
+        }
         Session::flash('success', 'Participation enregistrée.');
 
         return Response::redirect(url('evenements'));

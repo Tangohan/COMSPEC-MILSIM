@@ -9,9 +9,11 @@ if (!$user) {
     return;
 }
 $uid = (int) $user['id'];
+$isServiceAccount = !empty($isServiceAccount);
 ?>
 <div class="max-w-2xl mx-auto px-6 py-12">
-    <h1 class="text-2xl font-black text-slate-900 mb-6">Modifier l'utilisateur</h1>
+    <h1 class="text-2xl font-black text-slate-900 mb-6">Modifier le compte administratif</h1>
+    <p class="text-sm text-slate-600 mb-4">Connexion, rôle, identité civile liée au compte. L’identité opérationnelle (personnage, affectation, clearance) se gère dans la <a href="<?= url('personnel/' . $uid . '/edit') ?>" class="text-blue-700 font-medium underline">fiche personnelle</a>.</p>
     <?php
     $gradeValidationIssues = $gradeValidationIssues ?? [];
     foreach ($gradeValidationIssues as $i):
@@ -110,6 +112,14 @@ $uid = (int) $user['id'];
                 <option value="inactive" <?= ($user['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>Inactif</option>
             </select>
         </div>
+        <?php if (!$isServiceAccount): ?>
+        <div class="rounded-lg border border-blue-200 bg-blue-50/80 p-4 text-sm text-slate-700">
+            <p class="font-semibold text-slate-900 mb-1">Personnage & dossier opérationnel</p>
+            <p class="mb-2">Indicatif RP, unité, clearance, forum — distinct du compte ci-dessus.</p>
+            <a href="<?= url('personnel/' . $uid . '/edit') ?>" class="inline-flex text-blue-800 font-semibold hover:underline">Ouvrir la fiche personnelle →</a>
+        </div>
+        <?php endif; ?>
+
         <div class="flex gap-3 pt-4">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Enregistrer</button>
             <a href="<?= url('back-office/users/' . $uid) ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>

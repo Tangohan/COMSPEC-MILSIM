@@ -14,7 +14,7 @@ return [
     'brand' => [
         'name' => 'Athena',
         'subtitle' => 'Système de conduite communautaire',
-        'tagline' => 'Portail opérationnel',
+        'tagline' => '',
         'path' => '',
     ],
 
@@ -38,6 +38,12 @@ return [
             'label' => 'Dashboard',
             'type' => 'link',
             'path' => 'dashboard',
+            'auth_only' => true,
+        ],
+        [
+            'label' => 'Pointage',
+            'type' => 'link',
+            'path' => 'pointage',
             'auth_only' => true,
         ],
         [
@@ -65,6 +71,7 @@ return [
                     'slot' => 'primary',
                     'links' => [
                         ['label' => 'Hub', 'path' => 'hub'],
+                        ['label' => 'Pointage', 'path' => 'pointage'],
                         ['label' => 'Briefing', 'path' => 'forum'],
                         ['label' => 'ORBAT', 'path' => 'orbat'],
                         ['label' => 'ATAK', 'path' => 'atak'],

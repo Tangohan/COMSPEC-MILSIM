@@ -91,6 +91,35 @@ final class EmailService
         );
     }
 
+    /**
+     * Rappel membre : compléter la fiche personnelle (personnage / dossier opérationnel).
+     *
+     * @param array<string, mixed>|null $payloadSummary
+     */
+    public function sendProfileIncompleteReminder(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $personnelEditUrl,
+        int $tenantId,
+        ?array $payloadSummary = null
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::PROFILE_INCOMPLETE_REMINDER,
+            'profile_incomplete_reminder',
+            $to,
+            'Complétez votre fiche personnelle — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'editUrl' => $personnelEditUrl,
+            ],
+            $tenantId,
+            null,
+            $payloadSummary ?? ['purpose' => 'profile_incomplete_reminder']
+        );
+    }
+
     public function sendPasswordReset(string $to, string $resetUrl, int $hoursValid, ?int $tenantId = null): bool
     {
         return $this->sendTemplated(
@@ -262,6 +291,122 @@ final class EmailService
             $tenantId,
             $fromEmail,
             ['purpose' => 'public_contact']
+        );
+    }
+
+    public function sendAttendanceRsvpConfirmation(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $eventTitle,
+        string $startsAt,
+        string $status,
+        int $eventId,
+        int $tenantId
+    ): bool {
+        $labels = ['yes' => 'Présent', 'maybe' => 'Peut-être', 'no' => 'Absent'];
+        $label = $labels[$status] ?? $status;
+
+        return $this->sendTemplated(
+            EmailEvents::ATTENDANCE_RSVP_CONFIRM,
+            'attendance_rsvp_confirmation',
+            $to,
+            'Participation — ' . $eventTitle,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'eventTitle' => $eventTitle,
+                'startsAt' => $startsAt,
+                'status' => $status,
+                'statusLabel' => $label,
+                'pointageUrl' => \url('pointage'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'attendance_rsvp', 'event_id' => $eventId]
+        );
+    }
+
+    public function sendAttendanceEventCancelled(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $eventTitle,
+        string $startsAt,
+        string $reason,
+        int $eventId,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::ATTENDANCE_EVENT_CANCELLED,
+            'attendance_event_cancelled',
+            $to,
+            'Événement annulé — ' . $eventTitle,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'eventTitle' => $eventTitle,
+                'startsAt' => $startsAt,
+                'reason' => $reason,
+                'pointageUrl' => \url('pointage'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'attendance_cancel', 'event_id' => $eventId]
+        );
+    }
+
+    public function sendAttendanceReminder(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $eventTitle,
+        string $startsAt,
+        int $eventId,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::ATTENDANCE_REMINDER,
+            'attendance_reminder',
+            $to,
+            'Rappel : ' . $eventTitle,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'eventTitle' => $eventTitle,
+                'startsAt' => $startsAt,
+                'pointageUrl' => \url('pointage'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'attendance_reminder', 'event_id' => $eventId]
+        );
+    }
+
+    public function sendAttendanceCheckInConfirm(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $eventTitle,
+        string $startsAt,
+        int $eventId,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::ATTENDANCE_CHECKIN_CONFIRM,
+            'attendance_checkin_confirm',
+            $to,
+            'Présence enregistrée — ' . $eventTitle,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'eventTitle' => $eventTitle,
+                'startsAt' => $startsAt,
+                'pointageUrl' => \url('pointage'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'attendance_checkin', 'event_id' => $eventId]
         );
     }
 }

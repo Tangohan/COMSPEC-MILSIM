@@ -173,7 +173,7 @@ $center = $slots['center'];
 $secondary = $slots['secondary'];
 
 ?>
-<div class="nav-mega-surface mt-2 overflow-hidden rounded-[1.75rem] border border-slate-200/90">
+<div class="nav-mega-surface overflow-hidden rounded-[1.75rem] border border-slate-200/90">
     <div class="<?= htmlspecialchars($layoutClass) ?>">
         <div class="nav-mega-col nav-mega-col--muted border-b border-slate-200/80 lg:border-b-0 lg:border-r">
             <?php $renderSectionColumn($primary, ''); ?>

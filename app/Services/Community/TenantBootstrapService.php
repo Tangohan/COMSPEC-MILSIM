@@ -96,10 +96,6 @@ final class TenantBootstrapService
                 'require_ai_ack' => array_key_exists('require_ai_ack', $options) ? (bool) $options['require_ai_ack'] : true,
                 'welcome_text' => trim((string) ($options['welcome_text'] ?? '')),
             ];
-            $ppl = (string) ($options['public_page_layout'] ?? '');
-            if ($ppl === 'showcase' || $ppl === 'legacy') {
-                $communitySettings['public_page_layout'] = $ppl === 'showcase' ? 'showcase' : 'legacy';
-            }
             $phs = trim((string) ($options['public_hero_subtitle'] ?? ''));
             if ($phs !== '') {
                 $communitySettings['public_hero_subtitle'] = mb_substr($phs, 0, 600);
@@ -135,6 +131,10 @@ final class TenantBootstrapService
                         $communitySettings[$k] = $v;
                     }
                 }
+            }
+            $ppl = (string) ($options['public_page_layout'] ?? '');
+            if ($ppl === 'showcase' || $ppl === 'legacy') {
+                $communitySettings['public_page_layout'] = $ppl === 'showcase' ? 'showcase' : 'legacy';
             }
             $this->tenantRepository->updateSettings($tenantId, [
                 'community' => $communitySettings,

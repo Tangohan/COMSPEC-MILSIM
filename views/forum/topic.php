@@ -6,6 +6,7 @@ $topicId = (int) ($topic['id'] ?? 0);
 $firstPostId = $firstPostId ?? null;
 $postCount = (int) ($postCount ?? 0);
 $viewCount = (int) ($topic['view_count'] ?? 0);
+$categoryScope = $categoryScope ?? ($topic['category_scope'] ?? 'general');
 ?>
 <main class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 bg-[#f8fafc] min-h-[60vh]">
   <!-- Fil d'Ariane -->
@@ -16,6 +17,16 @@ $viewCount = (int) ($topic['view_count'] ?? 0);
     <span class="text-slate-400">›</span>
     <span class="text-slate-800 truncate max-w-[200px] normal-case tracking-normal font-bold"><?= htmlspecialchars($topic['title']) ?></span>
   </nav>
+
+  <?php if ($categoryScope === 'platform'): ?>
+  <div class="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-3 text-[11px] text-slate-600 leading-relaxed">
+    <span class="font-black uppercase tracking-wider text-slate-800">Forum global</span>
+    — Les cartes auteur sont limitées au rôle sur cette communauté (sans détail ORBAT). Paramétrez le pseudo / visibilité forum dans votre
+    <a href="<?= htmlspecialchars(url('personnel/' . (int) $userId . '/edit')) ?>#forum-community-settings" class="font-bold text-emerald-700 underline-offset-2 hover:underline">dossier communauté</a>
+    et le compte général dans
+    <a href="<?= htmlspecialchars(url('account/preferences')) ?>" class="font-bold text-emerald-700 underline-offset-2 hover:underline">préférences</a>.
+  </div>
+  <?php endif; ?>
 
   <!-- En-tête sujet -->
   <div class="mb-10 anim-up" style="animation-delay:40ms">
@@ -103,8 +114,11 @@ $viewCount = (int) ($topic['view_count'] ?? 0);
             $avatarUrl = $baseUrl . '/' . ltrim($avatarUrl, '/');
         }
         $roleNameRaw = isset($post['author_role_name']) && trim((string) $post['author_role_name']) !== '' ? trim($post['author_role_name']) : null;
-        $roleName = $roleNameRaw !== null && strtolower($roleNameRaw) === 'administrator' ? 'Administrateur' : $roleNameRaw;
-        $postCount = isset($post['author_post_count']) ? (int) $post['author_post_count'] : 0;
+        $roleSlug = isset($post['author_role_slug']) && trim((string) $post['author_role_slug']) !== '' ? trim((string) $post['author_role_slug']) : null;
+        $roleName = function_exists('forum_forum_role_display')
+            ? forum_forum_role_display($roleNameRaw, $roleSlug)
+            : ($roleNameRaw !== null && strtolower($roleNameRaw) === 'administrator' ? 'Administrateur' : $roleNameRaw);
+        $authorPostCount = isset($post['author_post_count']) ? (int) $post['author_post_count'] : 0;
         $authorCreatedAt = isset($post['author_created_at']) && $post['author_created_at'] ? $post['author_created_at'] : null;
         $authorBio = isset($post['author_bio']) && trim((string) $post['author_bio']) !== '' ? trim($post['author_bio']) : null;
         $authorMatricule = isset($post['author_matricule']) && trim((string) $post['author_matricule']) !== '' ? trim($post['author_matricule']) : null;
@@ -116,14 +130,14 @@ $viewCount = (int) ($topic['view_count'] ?? 0);
         $authorUnitDepth = isset($post['author_unit_depth']) && $post['author_unit_depth'] !== '' && $post['author_unit_depth'] !== null ? (int) $post['author_unit_depth'] : null;
         $authorAwards = isset($post['author_awards']) && trim((string) $post['author_awards']) !== '' ? trim($post['author_awards']) : null;
         $accentIsOrange = $firstPostId && (int) $post['id'] === $firstPostId;
-        $level = $postCount > 0 ? min(99, 1 + (int) floor($postCount / 5)) : 1;
+        $level = $authorPostCount > 0 ? min(99, 1 + (int) floor($authorPostCount / 5)) : 1;
         ?>
         <div id="post-<?= (int) $post['id'] ?>" class="group post-card <?= $roleClass ?>" data-post-id="<?= (int) $post['id'] ?>">
           <div class="flex flex-col md:flex-row">
             <div class="author-card shrink-0 md:w-44 bg-slate-100 border-b md:border-b-0 md:border-r border-slate-200 p-5 flex md:flex-col items-center md:items-start gap-5 relative overflow-hidden">
               <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:100%_4px] pointer-events-none opacity-20"></div>
               <?php if ($isOwnPost): ?>
-              <button type="button" onclick="typeof openForumSettings === 'function' ? openForumSettings() : null" title="Paramètres du profil forum" class="absolute top-2 right-2 z-20 w-5 h-5 flex items-center justify-center text-neutral-700 hover:text-neutral-300 transition-colors">
+              <button type="button" data-open-forum-settings title="Compte, forum et communauté" class="absolute top-2 right-2 z-20 w-5 h-5 flex items-center justify-center text-slate-600 hover:text-emerald-700 transition-colors">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               </button>
               <?php endif; ?>
@@ -203,7 +217,7 @@ $viewCount = (int) ($topic['view_count'] ?? 0);
                   </div>
                   <div class="flex items-center justify-between gap-2">
                     <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest">Contrib.</span>
-                    <span class="text-[8px] font-black text-slate-900 tabular-nums"><?= str_pad((string) $postCount, 3, '0', STR_PAD_LEFT) ?></span>
+                    <span class="text-[8px] font-black text-slate-900 tabular-nums"><?= str_pad((string) $authorPostCount, 3, '0', STR_PAD_LEFT) ?></span>
                   </div>
                   <?php if ($authorCreatedAt): ?>
                   <div class="flex items-center justify-between gap-2" title="Membre depuis le <?= date('d/m/Y', strtotime($authorCreatedAt)) ?>">
@@ -331,6 +345,26 @@ $viewCount = (int) ($topic['view_count'] ?? 0);
 </div>
 <?php endif; ?>
 
+<div id="forum-settings-modal" class="hidden fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm items-center justify-center p-4" style="display:none;">
+  <div class="bg-white border border-slate-200 max-w-md w-full rounded-2xl shadow-xl p-6">
+    <h2 class="text-sm font-black uppercase tracking-widest text-slate-900 mb-1">Compte et affichage forum</h2>
+    <p class="text-xs text-slate-600 mb-5">Séparez le réglage <strong class="text-slate-800">plateforme</strong> (toutes communautés) du réglage <strong class="text-slate-800">de cette communauté</strong> (pseudo forum, ORBAT, visibilité).</p>
+    <div class="space-y-3">
+      <a href="<?= htmlspecialchars(url('account/preferences')) ?>" class="block rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 hover:border-slate-300 hover:bg-white transition">
+        <span class="text-[10px] font-black uppercase tracking-wider text-slate-500">Plateforme</span>
+        <span class="block text-sm font-bold text-slate-900">Préférences du compte</span>
+        <span class="text-[11px] text-slate-600">Nom affiché, indicatif, langue, identifiant URL fiche…</span>
+      </a>
+      <a href="<?= htmlspecialchars(url('personnel/' . (int) $userId . '/edit')) ?>#forum-community-settings" class="block rounded-xl border border-emerald-200 bg-emerald-50/40 px-4 py-3 hover:border-emerald-400 hover:bg-emerald-50/80 transition">
+        <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800">Cette communauté</span>
+        <span class="block text-sm font-bold text-slate-900">Dossier personnel &amp; forum</span>
+        <span class="text-[11px] text-slate-600">Pseudo forum, mode d’étiquette, cases « afficher sur la carte », ORBAT…</span>
+      </a>
+    </div>
+    <button type="button" class="mt-5 w-full py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50" data-close-modal="forum-settings-modal">Fermer</button>
+  </div>
+</div>
+
 <div id="report-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
   <div class="bg-white border border-slate-200 p-6 max-w-md w-full rounded-xl shadow-xl">
     <div class="flex items-center gap-3 mb-5 pb-4 border-b border-slate-100">
@@ -381,6 +415,27 @@ $viewCount = (int) ($topic['view_count'] ?? 0);
   var topicId = <?= $topicId ?>;
   var csrf = '<?= \App\Core\Csrf::token() ?>';
   window.__forumPostBodies = <?= json_encode($postBodiesForJs ?? []) ?>;
+
+  window.openForumSettings = function () {
+    var m = document.getElementById('forum-settings-modal');
+    if (m) {
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      m.style.display = 'flex';
+    }
+  };
+
+  document.querySelectorAll('[data-open-forum-settings]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      openForumSettings();
+    });
+  });
+
+  var forumSettingsModal = document.getElementById('forum-settings-modal');
+  if (forumSettingsModal) {
+    forumSettingsModal.classList.add('flex');
+  }
 
   function toast(msg) {
     var el = document.getElementById('forum-toast');

@@ -12,7 +12,7 @@
 /** @var bool $showForumCta */
 $slug = $tenant['slug'] ?? '';
 $name = $tenant['name'] ?? '';
-$cp = $communityProfile ?? \App\Services\Community\TenantCommunityProfileService::getPublicViewModel($communityConfig ?? []);
+$cp = $communityProfile ?? \App\Services\Community\TenantCommunityProfileService::getPublicViewModel($communityConfig ?? [], (string) ($tenant['slug'] ?? ''));
 $sv = is_array($showcaseVm ?? null) ? $showcaseVm : [];
 $publicUnits = is_array($publicUnits ?? null) ? $publicUnits : [];
 $publicRosterRows = is_array($publicRosterRows ?? null) ? $publicRosterRows : [];
@@ -26,6 +26,10 @@ $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
 $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
 $isLocked = !empty($cp['isLocked']);
+$publicAudience = ($cp['publicAudience'] ?? 'unit') === 'platform' ? 'platform' : 'unit';
+$eyebrowSub = $publicAudience === 'platform'
+    ? 'Portail plateforme'
+    : 'Fiche publique de communauté';
 $styleBadgeLabels = is_array($cp['styleBadgeLabels'] ?? null) ? $cp['styleBadgeLabels'] : [];
 $stats = is_array($sv['stats'] ?? null) ? $sv['stats'] : [];
 $regionBadges = is_array($sv['regionBadges'] ?? null) ? $sv['regionBadges'] : [];
@@ -79,17 +83,30 @@ $rosterStatusLabel = static function (string $st): string {
         default => $st,
     };
 };
+$heroSubtitle = trim((string) ($sv['heroSubtitle'] ?? ''));
+if ($heroSubtitle === '') {
+    $heroSubtitle = trim((string) ($cp['simpleBody'] ?? ''));
+}
+if ($heroSubtitle === '') {
+    $heroSubtitle = trim((string) ($cp['welcomeText'] ?? ''));
+}
+if ($heroSubtitle === '') {
+    $heroSubtitle = trim((string) ($cp['gameLabel'] ?? ''));
+}
+if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !empty($cp['militarySections'][0]) && is_array($cp['militarySections'][0])) {
+    $heroSubtitle = trim((string) ($cp['militarySections'][0]['body'] ?? ''));
+}
 ?>
-<div class="min-h-screen bg-slate-100 font-sans text-slate-900 -mx-4 sm:-mx-6 lg:-mx-8">
+<div class="community-public-vitrine min-h-screen bg-slate-100 font-sans text-slate-900 -mx-4 sm:-mx-6 lg:-mx-8">
   <div class="relative isolate overflow-hidden bg-slate-950 text-white">
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.22),transparent_25%),radial-gradient(circle_at_80%_20%,rgba(14,165,233,0.16),transparent_22%),linear-gradient(to_bottom,rgba(2,6,23,0.78),rgba(2,6,23,0.94))]"></div>
-    <div class="pointer-events-none absolute inset-0 opacity-[0.04] bg-[radial-gradient(circle_at_20%_20%,#000_0.5px,transparent_0.6px),radial-gradient(circle_at_80%_70%,#000_0.5px,transparent_0.6px)] bg-[length:18px_18px]" aria-hidden="true"></div>
+    <div class="community-showcase-grain pointer-events-none absolute inset-0" aria-hidden="true"></div>
 
     <header class="relative border-b border-white/10">
       <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         <div>
           <p class="text-[11px] font-black uppercase tracking-[0.35em] text-emerald-300">ATHENA</p>
-          <p class="mt-1 text-xs uppercase tracking-[0.22em] text-slate-400">Fiche publique de communauté</p>
+          <p class="mt-1 text-xs uppercase tracking-[0.22em] text-slate-400"><?= htmlspecialchars($eyebrowSub) ?></p>
         </div>
         <nav class="hidden items-center gap-3 md:flex" aria-label="Sections">
           <a href="#overview" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10">Vue générale</a>
@@ -106,10 +123,14 @@ $rosterStatusLabel = static function (string $st): string {
       <div class="grid gap-8 xl:grid-cols-[1.15fr_0.85fr] xl:items-end">
         <div>
           <div class="flex flex-wrap items-center gap-2">
-            <?php if (!empty($sv['recruitmentBadgeOpen']) && !$isLocked): ?>
+            <?php if ($publicAudience !== 'platform' && !empty($sv['recruitmentBadgeOpen']) && !$isLocked): ?>
             <span class="inline-flex items-center rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-950">Recrutement ouvert</span>
-            <?php elseif ($isLocked): ?>
+            <?php elseif ($publicAudience !== 'platform' && $isLocked): ?>
             <span class="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">Recrutement fermé</span>
+            <?php elseif ($publicAudience === 'platform' && !$isLocked): ?>
+            <span class="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">Portail actif</span>
+            <?php elseif ($publicAudience === 'platform' && $isLocked): ?>
+            <span class="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">Accès restreint</span>
             <?php endif; ?>
             <?php foreach ($styleBadgeLabels as $bl): ?>
               <?php if (is_string($bl) && $bl !== ''): ?>
@@ -124,14 +145,15 @@ $rosterStatusLabel = static function (string $st): string {
           </div>
 
           <h1 class="mt-5 text-4xl font-black uppercase tracking-tight text-white sm:text-5xl lg:text-6xl"><?= htmlspecialchars($name) ?></h1>
-          <?php $sub = trim((string) ($sv['heroSubtitle'] ?? '')); ?>
-          <?php if ($sub !== ''): ?>
-          <p class="mt-5 max-w-3xl text-base leading-7 text-slate-300 lg:text-lg"><?= nl2br(htmlspecialchars($sub)) ?></p>
+          <?php if ($heroSubtitle !== ''): ?>
+          <p class="mt-5 max-w-3xl text-base leading-7 text-slate-300 lg:text-lg"><?= nl2br(htmlspecialchars($heroSubtitle)) ?></p>
           <?php endif; ?>
 
           <div class="mt-8 flex flex-wrap gap-3">
-            <?php if (!$isLocked): ?>
+            <?php if (!$isLocked && $publicAudience !== 'platform'): ?>
             <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-slate-950 transition hover:bg-emerald-400">Rejoindre la communauté</a>
+            <?php elseif (!$isLocked && $publicAudience === 'platform'): ?>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Candidature</a>
             <?php endif; ?>
             <?php if (!empty($sv['publicRosterEnabled'])): ?>
             <a href="#roster" class="inline-flex items-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Consulter le roster</a>
@@ -208,7 +230,7 @@ $rosterStatusLabel = static function (string $st): string {
   <main class="mx-auto max-w-7xl space-y-8 px-6 py-8 lg:px-8 lg:py-10">
 
     <section id="overview" class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-      <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-30px_rgba(15,23,42,0.25)] lg:p-8">
+      <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Vue d'ensemble</p>
@@ -241,7 +263,12 @@ $rosterStatusLabel = static function (string $st): string {
         </div>
 
         <div class="mt-6 grid gap-5 lg:grid-cols-2">
-          <?php $mission = trim((string) ($sv['publicMission'] ?? '')); ?>
+          <?php
+          $mission = trim((string) ($sv['publicMission'] ?? ''));
+          if ($mission === '') {
+              $mission = trim((string) ($cp['expectations'] ?? ''));
+          }
+          ?>
           <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Mission publique</p>
             <p class="mt-3 text-sm leading-7 text-slate-700"><?= $mission !== '' ? nl2br(htmlspecialchars($mission)) : '—' ?></p>
@@ -264,7 +291,7 @@ $rosterStatusLabel = static function (string $st): string {
       </div>
 
       <aside class="space-y-6">
-        <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-30px_rgba(15,23,42,0.25)]">
+        <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft">
           <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Chaîne de commandement publique</p>
           <div class="mt-5 space-y-3">
             <?php if ($commandChain !== []): ?>
@@ -285,10 +312,10 @@ $rosterStatusLabel = static function (string $st): string {
           </div>
         </div>
 
-        <div id="join" class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 shadow-[0_20px_70px_-30px_rgba(15,23,42,0.25)]">
+        <div id="join" class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 shadow-soft">
           <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-700">Accès</p>
-          <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">Rejoindre la communauté</h3>
-          <p class="mt-3 text-sm leading-6 text-slate-700">Utilisez le code ou la candidature selon la configuration de l'unité.</p>
+          <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950"><?= $publicAudience === 'platform' ? 'Accès &amp; participation' : 'Rejoindre la communauté' ?></h3>
+          <p class="mt-3 text-sm leading-6 text-slate-700"><?= $publicAudience === 'platform' ? 'Code d\'organisation ou candidature selon les règles de la plateforme.' : 'Utilisez le code ou la candidature selon la configuration de l\'unité.' ?></p>
           <?php if ($communityCode !== ''): ?>
           <div class="mt-4 rounded-2xl border border-emerald-200 bg-white px-4 py-4">
             <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Code communauté</p>
@@ -296,7 +323,7 @@ $rosterStatusLabel = static function (string $st): string {
           </div>
           <div class="mt-4 flex flex-wrap gap-3">
             <?php if (!$isLocked): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center rounded-2xl bg-slate-950 px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-slate-800">Postuler</a>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center rounded-2xl <?= $publicAudience === 'platform' ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50' : 'bg-slate-950 text-white hover:bg-slate-800' ?> px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition"><?= $publicAudience === 'platform' ? 'Candidature' : 'Postuler' ?></a>
             <?php endif; ?>
             <button type="button" class="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition hover:bg-slate-50" data-copy-code="<?= htmlspecialchars($communityCode, ENT_QUOTES, 'UTF-8') ?>">Copier le code</button>
           </div>
@@ -307,7 +334,7 @@ $rosterStatusLabel = static function (string $st): string {
       </aside>
     </section>
 
-    <section id="structure" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-30px_rgba(15,23,42,0.25)] lg:p-8">
+    <section id="structure" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Structure</p>
@@ -315,7 +342,10 @@ $rosterStatusLabel = static function (string $st): string {
           <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-600">Unités ORBAT visibles sur la fiche (configurables par unité).</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"><?= count($publicUnits) ?> unité(s)</span>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"><?= count($publicUnits) ?> unité(s) visible<?= count($publicUnits) > 1 ? 's' : '' ?></span>
+          <?php if (!empty($sv['publicRosterEnabled'])): ?>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Roster synchronisé</span>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -357,7 +387,7 @@ $rosterStatusLabel = static function (string $st): string {
     </section>
 
     <?php if (!empty($sv['publicRosterEnabled'])): ?>
-    <section id="roster" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-30px_rgba(15,23,42,0.25)] lg:p-8">
+    <section id="roster" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Roster</p>
@@ -374,7 +404,7 @@ $rosterStatusLabel = static function (string $st): string {
         <p class="mt-8 text-sm text-slate-600">Aucun membre listé pour l’instant.</p>
       <?php else: ?>
       <div class="mt-8 overflow-hidden rounded-[1.5rem] border border-slate-200">
-        <div class="max-h-[520px] overflow-auto">
+        <div class="max-h-[520px] overflow-auto scrollbar-thin">
           <table class="min-w-full divide-y divide-slate-200 text-sm roster-table">
             <thead class="sticky top-0 bg-slate-50">
               <tr>
@@ -408,7 +438,7 @@ $rosterStatusLabel = static function (string $st): string {
     </section>
     <?php endif; ?>
 
-    <section id="units" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-30px_rgba(15,23,42,0.25)] lg:p-8">
+    <section id="units" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Unités</p>
@@ -467,7 +497,7 @@ $rosterStatusLabel = static function (string $st): string {
       <?php endif; ?>
     </section>
 
-    <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-30px_rgba(15,23,42,0.25)]">
+    <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft">
       <h2 class="text-sm font-black uppercase tracking-widest text-slate-900 mb-4">Actions & contact</h2>
       <div class="flex flex-wrap gap-3">
         <?php if ($showForumCta): ?>

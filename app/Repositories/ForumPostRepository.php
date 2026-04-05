@@ -103,7 +103,7 @@ class ForumPostRepository
         $fullSql = "SELECT fp.*,
                     u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id, u.avatar_url AS author_avatar_url, u.created_at AS author_created_at,
                     $identityCols
-                    r.name AS author_role_name,
+                    r.name AS author_role_name, r.slug AS author_role_slug,
                     up.bio AS author_bio,
                     $gradeCols,
                     pp.matricule_internal AS author_matricule, pp.primary_role AS author_primary_role,
@@ -136,7 +136,7 @@ class ForumPostRepository
                     1 AS author_show_grade_forum,
                     1 AS author_show_unit_forum,
                     1 AS author_show_bio_forum,
-                    r.name AS author_role_name,
+                    r.name AS author_role_name, r.slug AS author_role_slug,
                     up.bio AS author_bio,
                     $gradeCols,
                     NULL AS author_matricule, NULL AS author_primary_role,

@@ -239,6 +239,45 @@ if (!function_exists('forum_render_content')) {
     }
 }
 
+if (!function_exists('forum_forum_role_display')) {
+    /**
+     * Libellé carte auteur forum à partir du rôle communauté (nom + slug).
+     */
+    function forum_forum_role_display(?string $name, ?string $slug): string
+    {
+        $slugNorm = $slug !== null && trim((string) $slug) !== '' ? strtolower(trim((string) $slug)) : '';
+        $bySlug = [
+            'member' => 'Membre',
+            'forum_moderator' => 'Modérateur forum',
+            'tenant_admin' => 'Admin organisation',
+            'community_owner' => 'Fondateur',
+            'officer' => 'Instructeur',
+            'administrator' => 'Administrateur',
+            'site_admin' => 'Admin plateforme',
+            'recruiter' => 'Recruteur',
+            'guest' => 'Invité',
+            'hr' => 'RH',
+            'instructor' => 'Instructeur',
+        ];
+        if ($slugNorm !== '' && isset($bySlug[$slugNorm])) {
+            return $bySlug[$slugNorm];
+        }
+        $n = trim((string) $name);
+        if ($n === '') {
+            return '';
+        }
+        $lower = strtolower($n);
+        if ($lower === 'administrator') {
+            return 'Administrateur';
+        }
+        if ($lower === 'member') {
+            return 'Membre';
+        }
+
+        return $n;
+    }
+}
+
 if (!function_exists('forum_time_ago')) {
     function forum_time_ago(string $datetime): string
     {

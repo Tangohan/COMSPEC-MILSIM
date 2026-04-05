@@ -4,18 +4,23 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin\Organization;
 
+use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\PersonnelProfileRepository;
+use App\Repositories\PersonnelExtrasRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\GradeCategoryRepository;
 use App\Repositories\GradeRepository;
 use App\Services\Admin\ProfileCompletenessService;
 use App\Services\Admin\AdminAuditService;
+use App\Services\EmailService;
 use App\Services\GradeValidationService;
+use App\Services\Personnel\PersonnelCompletenessService;
 
 class UserAdminController
 {
@@ -23,12 +28,16 @@ class UserAdminController
         private UserRepository $userRepository,
         private UserProfileRepository $userProfileRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
+        private PersonnelExtrasRepository $personnelExtrasRepository,
         private RoleRepository $roleRepository,
         private GradeRepository $gradeRepository,
         private GradeCategoryRepository $gradeCategoryRepository,
         private ProfileCompletenessService $profileCompletenessService,
+        private PersonnelCompletenessService $personnelCompletenessService,
         private AdminAuditService $adminAuditService,
-        private GradeValidationService $gradeValidationService
+        private GradeValidationService $gradeValidationService,
+        private EmailService $emailService,
+        private TenantRepository $tenantRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -41,6 +50,10 @@ class UserAdminController
         $status = $this->queryString($request->query('status'));
         $roleId = $this->positiveIntOrNull($request->query('role_id'));
         $filterIncomplete = $request->query('filter_incomplete') === '1' || $request->query('filter_incomplete') === 'true';
+        $filterNoUnit = $request->query('filter_no_unit') === '1' || $request->query('filter_no_unit') === 'true';
+        $filterNoRole = $request->query('filter_no_role') === '1' || $request->query('filter_no_role') === 'true';
+        $showTechnicalAccounts = $request->query('show_technical') === '1' || $request->query('show_technical') === 'true';
+        $excludeServiceAccounts = ! $showTechnicalAccounts;
         $page = max(1, (int) $request->query('page', 1));
         $perPage = 25;
         $statusFilter = ($status !== null && $status !== '') ? $status : null;
@@ -48,28 +61,41 @@ class UserAdminController
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
 
         if ($filterIncomplete) {
-            $allUsers = $this->userRepository->listForTenant($tenantId, $search, $statusFilter, $roleId);
+            $allUsers = $this->userRepository->listForTenant($tenantId, $search, $statusFilter, $roleId, null, null, $excludeServiceAccounts);
             $completenessByUser = [];
+            $personnelCompletenessByUser = [];
             foreach ($allUsers as $u) {
-                $up = $this->userProfileRepository->getByUserId((int) $u['id']);
-                $pp = $this->profileCompletenessService->getCompleteness((int) $u['id'], $u, $up, null);
-                $completenessByUser[(int) $u['id']] = $pp;
+                $uid = (int) $u['id'];
+                $up = $this->userProfileRepository->getByUserId($uid);
+                $pp = $this->profileCompletenessService->getCompleteness($uid, $u, $up, null);
+                $completenessByUser[$uid] = $pp;
+                $personnelCompletenessByUser[$uid] = $this->buildPersonnelCompletenessForList($uid, $u);
             }
-            $filtered = array_values(array_filter($allUsers, function ($u) use ($completenessByUser) {
-                $comp = $completenessByUser[(int) $u['id']] ?? ['score' => 100, 'sections_critiques' => []];
+            $filtered = array_values(array_filter($allUsers, function ($u) use ($completenessByUser, $personnelCompletenessByUser) {
+                $uid = (int) $u['id'];
+                $comp = $completenessByUser[$uid] ?? ['score' => 100, 'sections_critiques' => []];
+                $pComp = $personnelCompletenessByUser[$uid] ?? ['score' => 100, 'sections_critiques' => []];
 
-                return $comp['score'] < 100 || !empty($comp['sections_critiques']);
+                return $comp['score'] < 100 || !empty($comp['sections_critiques'])
+                    || $pComp['score'] < 100 || !empty($pComp['sections_critiques']);
             }));
             $total = count($filtered);
             $users = array_slice($filtered, ($page - 1) * $perPage, $perPage);
-            $completenessByUser = array_intersect_key($completenessByUser, array_flip(array_map(static fn ($u) => (int) $u['id'], $users)));
+            $ids = array_map(static fn ($u) => (int) $u['id'], $users);
+            $completenessByUser = array_intersect_key($completenessByUser, array_flip($ids));
+            $personnelCompletenessByUser = array_intersect_key($personnelCompletenessByUser, array_flip($ids));
         } else {
-            $total = $this->userRepository->countListForTenant($tenantId, $search, $statusFilter, $roleId);
-            $users = $this->userRepository->listForTenant($tenantId, $search, $statusFilter, $roleId, $perPage, ($page - 1) * $perPage);
+            $onlyNoUnit = $filterNoUnit ? true : null;
+            $onlyNoRole = $filterNoRole ? true : null;
+            $total = $this->userRepository->countListForTenant($tenantId, $search, $statusFilter, $roleId, $excludeServiceAccounts, $onlyNoUnit, $onlyNoRole);
+            $users = $this->userRepository->listForTenant($tenantId, $search, $statusFilter, $roleId, $perPage, ($page - 1) * $perPage, $excludeServiceAccounts, $onlyNoUnit, $onlyNoRole);
             $completenessByUser = [];
+            $personnelCompletenessByUser = [];
             foreach ($users as $u) {
-                $up = $this->userProfileRepository->getByUserId((int) $u['id']);
-                $completenessByUser[(int) $u['id']] = $this->profileCompletenessService->getCompleteness((int) $u['id'], $u, $up, null);
+                $uid = (int) $u['id'];
+                $up = $this->userProfileRepository->getByUserId($uid);
+                $completenessByUser[$uid] = $this->profileCompletenessService->getCompleteness($uid, $u, $up, null);
+                $personnelCompletenessByUser[$uid] = $this->buildPersonnelCompletenessForList($uid, $u);
             }
         }
 
@@ -81,11 +107,15 @@ class UserAdminController
             'users' => $users,
             'roles' => $roles,
             'completenessByUser' => $completenessByUser,
+            'personnelCompletenessByUser' => $personnelCompletenessByUser,
             'filters' => [
                 'search' => $search,
                 'status' => $status ?? '',
                 'role_id' => $roleId,
                 'filter_incomplete' => $filterIncomplete,
+                'filter_no_unit' => $filterNoUnit,
+                'filter_no_role' => $filterNoRole,
+                'show_technical' => $showTechnicalAccounts,
             ],
             'usersTotal' => $total,
             'usersPage' => $page,
@@ -124,7 +154,13 @@ class UserAdminController
         }
         $userProfile = $this->userProfileRepository->getByUserId($id);
         $personnelProfile = $this->personnelProfileRepository->getByUserId($id);
-        $completeness = $this->profileCompletenessService->getCompleteness($id, $user, $userProfile, $personnelProfile);
+        $completenessAccount = $this->profileCompletenessService->getCompleteness($id, $user, $userProfile, $personnelProfile);
+        $isService = $this->userRepository->isServiceAccount($id);
+        $extras = $this->personnelExtrasRepository->getByUserId($id);
+        $civilProfile = $this->personnelExtrasRepository->getProfileByUserId($id);
+        $completenessPersonnel = $isService
+            ? null
+            : $this->personnelCompletenessService->getScoreWithMissingLabels($id, $user, $civilProfile, $extras);
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
         $grades = $this->gradeRepository->listForTenant($tenantId);
         $gradeCategories = $this->gradeCategoryRepository->listActive();
@@ -133,11 +169,83 @@ class UserAdminController
             'title' => 'Fiche utilisateur',
             'user' => $user,
             'userProfile' => $userProfile,
-            'completeness' => $completeness,
+            'personnelProfile' => $personnelProfile,
+            'completeness' => $completenessAccount,
+            'completenessAccount' => $completenessAccount,
+            'completenessPersonnel' => $completenessPersonnel,
+            'isServiceAccount' => $isService,
             'roles' => $roles,
             'grades' => $grades,
             'gradeCategories' => $gradeCategories,
         ]);
+    }
+
+    /**
+     * @return array{score: int, sections_critiques: list<string>, missing_labels?: list<string>}
+     */
+    private function buildPersonnelCompletenessForList(int $userId, array $userRow): array
+    {
+        if ($this->userRepository->isServiceAccount($userId)) {
+            return ['score' => 100, 'sections_critiques' => [], 'missing_labels' => []];
+        }
+        $extras = $this->personnelExtrasRepository->getByUserId($userId);
+        $civil = $this->personnelExtrasRepository->getProfileByUserId($userId);
+
+        return $this->personnelCompletenessService->getScoreWithMissingLabels($userId, $userRow, $civil, $extras);
+    }
+
+    public function notifyProfileIncomplete(Request $request, array $params = []): Response
+    {
+        if (!$request->isPost()) {
+            return Response::redirect(url('back-office/users'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/users'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        if (!$tenantId || !$id) {
+            return Response::redirect(url('back-office/users'));
+        }
+        $user = $this->userRepository->findById($id, $tenantId);
+        if (!$user) {
+            Session::flash('error', 'Utilisateur introuvable.');
+
+            return Response::redirect(url('back-office/users'));
+        }
+        if ($this->userRepository->isServiceAccount($id)) {
+            Session::flash('error', 'Les comptes techniques ne reçoivent pas de courriel de rappel.');
+
+            return Response::redirect(url('back-office/users/' . $id));
+        }
+        $status = (string) ($user['status'] ?? '');
+        if ($status !== 'active' && $status !== 'pending_verification') {
+            Session::flash('error', 'Seuls les comptes actifs ou en attente peuvent recevoir ce rappel.');
+
+            return Response::redirect(url('back-office/users/' . $id));
+        }
+        $tenantRow = $this->tenantRepository->findById($tenantId);
+        $tenantName = $tenantRow ? (string) ($tenantRow['name'] ?? 'Athena') : 'Athena';
+        $displayName = trim((string) ($user['display_name'] ?? ''));
+        if ($displayName === '') {
+            $displayName = (string) ($user['email'] ?? 'membre');
+        }
+        $editUrl = url('personnel/' . $id . '/edit');
+        $ok = $this->emailService->sendProfileIncompleteReminder(
+            (string) $user['email'],
+            $displayName,
+            $tenantName,
+            $editUrl,
+            $tenantId,
+            ['target_user_id' => $id]
+        );
+        Session::flash($ok ? 'success' : 'error', $ok
+            ? 'Courriel de rappel envoyé.'
+            : 'Envoi impossible (vérifiez la configuration e-mail ou l’adresse du destinataire).');
+
+        return Response::redirect(url('back-office/users/' . $id));
     }
 
     public function create(Request $request, array $params = []): Response
@@ -241,6 +349,7 @@ class UserAdminController
             'title' => 'Modifier l\'utilisateur',
             'user' => $user,
             'userProfile' => $userProfile,
+            'isServiceAccount' => $this->userRepository->isServiceAccount($id),
             'roles' => $roles,
             'grades' => $grades,
             'gradeCategories' => $gradeCategories,

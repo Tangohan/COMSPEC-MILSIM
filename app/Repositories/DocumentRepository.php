@@ -124,16 +124,20 @@ class DocumentRepository
         if ($uuid === null || $uuid === '') {
             $uuid = $this->pdo->query('SELECT LOWER(UUID()) as u')->fetch(PDO::FETCH_ASSOC)['u'] ?? null;
         }
+        // Ordre des colonnes aligné sur la table `documents` (migration documentaire) ; created_at/updated_at via DEFAULT.
         $stmt = $this->pdo->prepare(
             'INSERT INTO documents (
-                tenant_id, uuid, title, slug, short_description, description, document_type, document_category_id,
-                classification_level, visibility_scope, status, owner_user_id, author_user_id, parent_document_id,
+                tenant_id, uuid, title, slug, short_description, document_type, description, document_category_id,
+                classification_level, visibility_scope, owner_user_id, author_user_id, parent_document_id,
                 relation_type, version_label, sort_order, current_file_id, formation_id, equipment_class_id, unit_id,
                 operator_id, mission_id, effective_at, review_due_at, expires_at, download_allowed, print_allowed,
-                locked, tags, inherit_parent_security, created_by, created_at, updated_at
+                locked, tags, inherit_parent_security, status, created_by
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
+                ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?
             )'
         );
         $stmt->execute([
@@ -142,12 +146,11 @@ class DocumentRepository
             $data['title'] ?? '',
             $data['slug'] ?? '',
             $data['short_description'] ?? null,
-            $data['description'] ?? null,
             $data['document_type'] ?? null,
+            $data['description'] ?? null,
             isset($data['document_category_id']) && $data['document_category_id'] !== '' ? (int) $data['document_category_id'] : null,
             $data['classification_level'] ?? 'interne',
             $data['visibility_scope'] ?? 'private',
-            $data['status'] ?? 'draft',
             isset($data['owner_user_id']) && $data['owner_user_id'] !== '' ? (int) $data['owner_user_id'] : null,
             isset($data['author_user_id']) && $data['author_user_id'] !== '' ? (int) $data['author_user_id'] : null,
             isset($data['parent_document_id']) && $data['parent_document_id'] !== '' ? (int) $data['parent_document_id'] : null,
@@ -168,6 +171,7 @@ class DocumentRepository
             isset($data['locked']) ? (int) (bool) $data['locked'] : 0,
             isset($data['tags']) ? (is_string($data['tags']) ? $data['tags'] : json_encode($data['tags'])) : null,
             isset($data['inherit_parent_security']) ? (int) (bool) $data['inherit_parent_security'] : 0,
+            $data['status'] ?? 'draft',
             isset($data['created_by']) ? (int) $data['created_by'] : null,
         ]);
         return (int) $this->pdo->lastInsertId();
@@ -310,5 +314,25 @@ class DocumentRepository
         $stmt->execute([$id, $tenantId]);
 
         return $stmt->rowCount() > 0;
+    }
+
+    public function countPublishedForTenant(int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM documents WHERE tenant_id = ? AND status = ?');
+        $stmt->execute([$tenantId, 'published']);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /** Dernière activité sur le registre (création ou mise à jour). */
+    public function latestActivityAtForTenant(int $tenantId): ?string
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT MAX(COALESCE(updated_at, created_at)) AS m FROM documents WHERE tenant_id = ?'
+        );
+        $stmt->execute([$tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return !empty($row['m']) ? (string) $row['m'] : null;
     }
 }

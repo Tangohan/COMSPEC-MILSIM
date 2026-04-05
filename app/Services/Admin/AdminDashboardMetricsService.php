@@ -58,7 +58,7 @@ final class AdminDashboardMetricsService
             return ['kpis' => [], 'blockError' => 'Tenant invalide.'];
         }
 
-        return $this->cached('org_metrics_' . $tenantId, function () use ($tenantId): array {
+        return $this->cached('org_metrics_v2_' . $tenantId, function () use ($tenantId): array {
             $kpis = [];
             $kpis[] = $this->kpi('members_active', 'Membres actifs', fn () => $this->scalarInt(
                 "SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'",
@@ -77,6 +77,8 @@ final class AdminDashboardMetricsService
                 [$tenantId]
             ));
             $kpis[] = $this->kpi('profiles_incomplete', 'Profils à compléter', fn () => $this->countIncompleteProfiles($tenantId));
+            $kpis[] = $this->kpi('members_no_unit', 'Sans unité (affectation)', fn () => $this->countActiveUsersWithoutUnit($tenantId));
+            $kpis[] = $this->kpi('members_no_role', 'Sans rôle communautaire', fn () => $this->countActiveUsersWithoutRole($tenantId));
             $kpis[] = $this->kpi('active_30d', 'Actifs approx. (30 j.)', fn () => $this->scalarInt(
                 'SELECT COUNT(DISTINCT user_id) FROM audit_logs WHERE tenant_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND user_id IS NOT NULL',
                 [$tenantId]
@@ -196,8 +198,7 @@ final class AdminDashboardMetricsService
 
     private function countIncompleteProfiles(int $tenantId): int
     {
-        return $this->scalarInt(
-            "SELECT COUNT(*) FROM users u
+        $sql = "SELECT COUNT(*) FROM users u
              LEFT JOIN user_profiles up ON up.user_id = u.id
              WHERE u.tenant_id = ? AND u.status = 'active'
              AND (
@@ -205,9 +206,57 @@ final class AdminDashboardMetricsService
                OR NULLIF(TRIM(up.first_name), '') IS NULL
                OR NULLIF(TRIM(up.last_name), '') IS NULL
                OR u.role_id IS NULL
-             )",
-            [$tenantId]
-        );
+             )" . $this->sqlExcludeServiceAccounts('u');
+
+        return $this->scalarInt($sql, [$tenantId]);
+    }
+
+    private function countActiveUsersWithoutUnit(int $tenantId): int
+    {
+        if (!$this->schemaHasUserUnitsTable()) {
+            return 0;
+        }
+        $sql = "SELECT COUNT(*) FROM users u
+             WHERE u.tenant_id = ? AND u.status = 'active'
+             AND NOT EXISTS (
+               SELECT 1 FROM user_units uu WHERE uu.user_id = u.id AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+             )" . $this->sqlExcludeServiceAccounts('u');
+
+        return $this->scalarInt($sql, [$tenantId]);
+    }
+
+    private function countActiveUsersWithoutRole(int $tenantId): int
+    {
+        $sql = "SELECT COUNT(*) FROM users u
+             WHERE u.tenant_id = ? AND u.status = 'active' AND u.role_id IS NULL"
+             . $this->sqlExcludeServiceAccounts('u');
+
+        return $this->scalarInt($sql, [$tenantId]);
+    }
+
+    /** Fragment SQL : exclure les comptes techniques si la colonne existe. */
+    private function sqlExcludeServiceAccounts(string $alias = 'u'): string
+    {
+        try {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_service_account' LIMIT 1");
+            if ($stmt && $stmt->fetchColumn()) {
+                return " AND ({$alias}.is_service_account IS NULL OR {$alias}.is_service_account = 0)";
+            }
+        } catch (\Throwable) {
+        }
+
+        return '';
+    }
+
+    private function schemaHasUserUnitsTable(): bool
+    {
+        try {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_units' LIMIT 1");
+
+            return (bool) ($stmt && $stmt->fetchColumn());
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private function countTrainingExpiring(int $tenantId): int
@@ -251,8 +300,14 @@ final class AdminDashboardMetricsService
      * @return array{
      *   expired_invitations: list<array<string, mixed>>,
      *   training_expiring: list<array<string, mixed>>,
+     *   incomplete_profiles: list<array{id: int, email: string, display_name: string}>,
+     *   users_without_unit: list<array{id: int, email: string, display_name: string}>,
+     *   users_without_role: list<array{id: int, email: string, display_name: string}>,
      *   error_invitations: string|null,
-     *   error_training: string|null
+     *   error_training: string|null,
+     *   error_incomplete: string|null,
+     *   error_no_unit: string|null,
+     *   error_no_role: string|null
      * }
      */
     public function getOrganizationWorkQueue(int $tenantId): array
@@ -261,12 +316,18 @@ final class AdminDashboardMetricsService
             return [
                 'expired_invitations' => [],
                 'training_expiring' => [],
+                'incomplete_profiles' => [],
+                'users_without_unit' => [],
+                'users_without_role' => [],
                 'error_invitations' => null,
                 'error_training' => null,
+                'error_incomplete' => null,
+                'error_no_unit' => null,
+                'error_no_role' => null,
             ];
         }
 
-        return $this->cached('org_work_' . $tenantId, function () use ($tenantId): array {
+        return $this->cached('org_work_v2_' . $tenantId, function () use ($tenantId): array {
             $expired = [];
             $errInv = null;
             try {
@@ -301,11 +362,72 @@ final class AdminDashboardMetricsService
                 $errTr = 'Indisponible';
             }
 
+            $incomplete = [];
+            $errInc = null;
+            try {
+                $sql = "SELECT u.id, u.email, COALESCE(NULLIF(TRIM(u.display_name), ''), u.email) AS display_name
+                    FROM users u
+                    LEFT JOIN user_profiles up ON up.user_id = u.id
+                    WHERE u.tenant_id = ? AND u.status = 'active'
+                    AND (
+                      up.user_id IS NULL
+                      OR NULLIF(TRIM(up.first_name), '') IS NULL
+                      OR NULLIF(TRIM(up.last_name), '') IS NULL
+                      OR u.role_id IS NULL
+                    )" . $this->sqlExcludeServiceAccounts('u') . '
+                    ORDER BY u.email ASC LIMIT 8';
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$tenantId]);
+                $incomplete = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (\Throwable) {
+                $errInc = 'Indisponible';
+            }
+
+            $noUnit = [];
+            $errNu = null;
+            try {
+                if ($this->schemaHasUserUnitsTable()) {
+                    $sql = "SELECT u.id, u.email, COALESCE(NULLIF(TRIM(u.display_name), ''), u.email) AS display_name
+                        FROM users u
+                        WHERE u.tenant_id = ? AND u.status = 'active'
+                        AND NOT EXISTS (
+                          SELECT 1 FROM user_units uu WHERE uu.user_id = u.id AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+                        )" . $this->sqlExcludeServiceAccounts('u') . '
+                        ORDER BY u.email ASC LIMIT 8';
+                    $stmt = $this->pdo->prepare($sql);
+                    $stmt->execute([$tenantId]);
+                    $noUnit = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                }
+            } catch (\Throwable) {
+                $errNu = 'Indisponible';
+            }
+
+            $noRole = [];
+            $errNr = null;
+            try {
+                $sql = "SELECT u.id, u.email, COALESCE(NULLIF(TRIM(u.display_name), ''), u.email) AS display_name
+                    FROM users u
+                    WHERE u.tenant_id = ? AND u.status = 'active' AND u.role_id IS NULL"
+                    . $this->sqlExcludeServiceAccounts('u') . '
+                    ORDER BY u.email ASC LIMIT 8';
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$tenantId]);
+                $noRole = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (\Throwable) {
+                $errNr = 'Indisponible';
+            }
+
             return [
                 'expired_invitations' => $expired,
                 'training_expiring' => $train,
+                'incomplete_profiles' => $incomplete,
+                'users_without_unit' => $noUnit,
+                'users_without_role' => $noRole,
                 'error_invitations' => $errInv,
                 'error_training' => $errTr,
+                'error_incomplete' => $errInc,
+                'error_no_unit' => $errNu,
+                'error_no_role' => $errNr,
             ];
         });
     }

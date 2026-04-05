@@ -8,7 +8,7 @@
 $slug = $tenant['slug'] ?? '';
 $name = $tenant['name'] ?? '';
 $communityConfig = $communityConfig ?? [];
-$cp = $communityProfile ?? \App\Services\Community\TenantCommunityProfileService::getPublicViewModel($communityConfig);
+$cp = $communityProfile ?? \App\Services\Community\TenantCommunityProfileService::getPublicViewModel($communityConfig, (string) ($tenant['slug'] ?? ''));
 $hasMembershipInTenant = $hasMembershipInTenant ?? false;
 $showForumCta = $showForumCta ?? true;
 
@@ -27,6 +27,7 @@ $discordUrl = (string) ($cp['discordUrl'] ?? '');
 $contactEmail = (string) ($cp['contactEmail'] ?? '');
 $contactIntro = (string) ($cp['contactIntro'] ?? '');
 $contactFormEnabled = !empty($cp['contactFormEnabled']);
+$publicAudience = ($cp['publicAudience'] ?? 'unit') === 'platform' ? 'platform' : 'unit';
 
 $communityCode = trim((string) ($tenant['community_code'] ?? ''));
 $flashSuccess = \App\Core\Session::getFlash('success');
@@ -52,7 +53,7 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
     </div>
 
     <h1 class="text-3xl font-black uppercase tracking-tight text-slate-900 mb-2"><?= htmlspecialchars($name) ?></h1>
-    <p class="text-sm text-slate-500 mb-6">Page publique · <code class="bg-slate-100 px-2 py-0.5 rounded text-xs"><?= htmlspecialchars($slug) ?></code></p>
+    <p class="text-sm text-slate-500 mb-6"><?= $publicAudience === 'platform' ? 'Portail public' : 'Page publique' ?> · <code class="bg-slate-100 px-2 py-0.5 rounded text-xs"><?= htmlspecialchars($slug) ?></code></p>
 
     <?php if ($gameLabel !== '' || $mainMods !== '' || $modpackSize !== null): ?>
         <div class="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-sm p-5 mb-8 space-y-2 text-sm shadow-sm">
@@ -99,8 +100,12 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
         </div>
     <?php endif; ?>
 
+    <?php if ($publicAudience === 'platform'): ?>
+    <p class="text-xs text-slate-500 mb-8">Portail plateforme · accès public : <strong><?= $isLocked ? 'Restreint' : 'Actif' ?></strong></p>
+    <?php else: ?>
     <p class="text-xs text-slate-500 mb-8">Recrutement : <strong><?= htmlspecialchars($registrationMode) ?></strong>
         · Statut : <strong><?= $isLocked ? 'Verrouillé' : 'Ouvert' ?></strong></p>
+    <?php endif; ?>
 
     <div class="flex flex-wrap gap-3 mb-10">
         <?php if ($showForumCta): ?>
@@ -110,9 +115,9 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
         <?php endif; ?>
 
         <?php if (!$isLocked): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50">Inscription</a>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center px-4 py-2.5 <?= $publicAudience === 'platform' ? 'border border-dashed border-slate-300 text-slate-600' : 'border border-slate-300' ?> text-xs font-bold uppercase rounded-xl hover:bg-slate-50"><?= $publicAudience === 'platform' ? 'Candidature' : 'Inscription' ?></a>
         <?php else: ?>
-            <span class="inline-flex items-center px-4 py-2.5 border border-slate-200 text-slate-400 text-xs font-bold uppercase rounded-xl">Inscription fermée</span>
+            <span class="inline-flex items-center px-4 py-2.5 border border-slate-200 text-slate-400 text-xs font-bold uppercase rounded-xl"><?= $publicAudience === 'platform' ? 'Candidatures fermées' : 'Inscription fermée' ?></span>
         <?php endif; ?>
 
         <?php if (!\App\Core\Session::get('user_id')): ?>

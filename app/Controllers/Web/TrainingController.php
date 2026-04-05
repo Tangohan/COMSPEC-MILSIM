@@ -75,9 +75,54 @@ class TrainingController
             $e['progress_percent'] = $this->trainingService->getGlobalProgress((int) $e['id']);
             $withProgress[] = $e;
         }
-        return Response::view('training.my-training', [
+        usort($withProgress, static function (array $a, array $b): int {
+            $rank = static function (array $x): int {
+                return match ($x['status'] ?? '') {
+                    'in_progress' => 0,
+                    'assigned' => 1,
+                    'completed' => 2,
+                    'revoked' => 3,
+                    default => 9,
+                };
+            };
+            $ra = $rank($a);
+            $rb = $rank($b);
+            if ($ra !== $rb) {
+                return $ra <=> $rb;
+            }
+
+            return strcmp((string) ($b['assigned_at'] ?? ''), (string) ($a['assigned_at'] ?? ''));
+        });
+
+        $stats = [
+            'total' => count($withProgress),
+            'in_progress' => count(array_filter($withProgress, static fn (array $x): bool => ($x['status'] ?? '') === 'in_progress')),
+            'assigned' => count(array_filter($withProgress, static fn (array $x): bool => ($x['status'] ?? '') === 'assigned')),
+            'completed' => count(array_filter($withProgress, static fn (array $x): bool => ($x['status'] ?? '') === 'completed')),
+            'expiring_soon' => count(array_filter($withProgress, static function (array $x): bool {
+                if (empty($x['expires_at']) || in_array($x['status'] ?? '', ['completed', 'revoked'], true)) {
+                    return false;
+                }
+                $t = strtotime((string) $x['expires_at']);
+
+                return $t !== false && $t <= strtotime('+30 days');
+            })),
+        ];
+
+        $filter = (string) $request->query('filter', 'all');
+        $displayed = $withProgress;
+        if ($filter === 'active') {
+            $displayed = array_values(array_filter($withProgress, static fn (array $x): bool => in_array($x['status'] ?? '', ['assigned', 'in_progress'], true)));
+        } elseif ($filter === 'done') {
+            $displayed = array_values(array_filter($withProgress, static fn (array $x): bool => ($x['status'] ?? '') === 'completed'));
+        }
+
+        return Response::view('layout.main', [
             'title' => 'Mes formations',
-            'enrollments' => $withProgress,
+            'content' => 'training.my-training',
+            'enrollments' => $displayed,
+            'trainingStats' => $stats,
+            'trainingFilter' => $filter,
         ]);
     }
 

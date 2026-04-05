@@ -76,7 +76,10 @@ $buildLink = static function (int $page) use ($auditFilters, $basePath): string 
                                 <td class="px-3 py-2 text-slate-700"><?= htmlspecialchars((string) ($row['tenant_name'] ?? ($row['tenant_id'] ?? '—')), ENT_QUOTES, 'UTF-8') ?></td>
                             <?php endif; ?>
                             <td class="px-3 py-2 text-slate-700"><?= htmlspecialchars((string) ($row['actor_email'] ?? ($row['user_id'] ?? '—')), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td class="px-3 py-2 font-mono text-xs text-slate-800"><?= htmlspecialchars((string) ($row['action'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="px-3 py-2 text-slate-800">
+                                <?php $act = (string) ($row['action'] ?? ''); ?>
+                                <span class="text-sm font-medium" title="<?= htmlspecialchars($act !== '' ? 'ID : ' . $act : '', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(audit_action_label_fr($act), ENT_QUOTES, 'UTF-8') ?></span>
+                            </td>
                             <td class="px-3 py-2 text-xs text-slate-600"><?= htmlspecialchars(trim(($row['entity_type'] ?? '') . ' #' . (string) ($row['entity_id'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
                         </tr>
                     <?php endforeach; ?>

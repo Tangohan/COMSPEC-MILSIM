@@ -1,4 +1,8 @@
-<?php $base = url(''); $title = $title ?? 'Athena — Commandement Aérien MILSIM'; ?>
+<?php
+$base = url('');
+$title = $title ?? 'Athena — Commandement Aérien MILSIM';
+$loggedIn = (bool) \App\Core\Session::get('user_id');
+?>
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
 <head>
@@ -23,17 +27,38 @@
             </button>
         </div>
         
-        <nav class="flex flex-col gap-6">
+        <nav class="flex flex-col gap-5">
             <a href="<?= $base ?>/" class="text-xs font-bold tracking-[0.2em] uppercase">ACCUEIL</a>
+            <?php if ($loggedIn): ?>
+            <a href="<?= url('dashboard') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">DASHBOARD</a>
+            <a href="<?= url('hub') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">HUB</a>
+            <a href="<?= url('pointage') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-emerald-800">POINTAGE</a>
+            <a href="<?= url('communities') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">COMMUNAUTÉS</a>
+            <a href="<?= url('forum') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">FORUM</a>
+            <a href="<?= url('orbat') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">ORBAT</a>
+            <a href="<?= url('atak') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">ATAK</a>
             <a href="<?= url('documents') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">DOCUMENTS</a>
             <a href="<?= url('formations') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">FORMATIONS</a>
-            <a href="<?= url('enlistment') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">RECRUTEMENT</a>
+            <a href="<?= url('modpacks') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">MODPACKS</a>
+            <a href="<?= url('account') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">COMPTE</a>
+            <?php else: ?>
+            <a href="<?= url('login') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">CONNEXION</a>
+            <a href="<?= url('register') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">INSCRIPTION</a>
+            <a href="<?= url('join') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-500">REJOINDRE PAR CODE</a>
+            <?php endif; ?>
         </nav>
 
         <div class="mt-auto pt-10 border-t border-slate-100">
             <div class="flex flex-col gap-4 mb-8">
+                <?php if (!$loggedIn): ?>
                 <a href="<?= url('login') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">Connexion</a>
-                <a href="<?= url('enlistment') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-400">Créer un compte</a>
+                <a href="<?= url('register') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-400">Créer un compte</a>
+                <?php else: ?>
+                <form method="post" action="<?= url('logout') ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <button type="submit" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-400 hover:text-slate-900">Déconnexion</button>
+                </form>
+                <?php endif; ?>
             </div>
             <div class="flex gap-4">
                 <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
@@ -59,12 +84,12 @@
             </div>
 
             <div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <a href="<?= $base ?>/" class="text-[11px] font-black tracking-[0.7em] -mr-[0.7em]">
-                    FORWARD
+                <a href="<?= $base ?>/" class="text-[11px] font-black tracking-[0.35em] -mr-[0.35em]">
+                    ATHENA
                 </a>
                 <div class="flex items-center gap-2 mt-1">
                     <span class="h-[1px] w-4 bg-slate-200"></span>
-                    <span class="text-[6px] font-black tracking-[0.4em] text-slate-400">OBS. GROUP</span>
+                    <span class="text-[6px] font-black tracking-[0.35em] text-slate-400">PORTAIL MILSIM</span>
                     <span class="h-[1px] w-4 bg-slate-200"></span>
                 </div>
             </div>
@@ -189,43 +214,69 @@
         </script>
 
         <nav class="w-full bg-[#050810] py-8 px-6 border-t border-white/5">
-            <div class="max-w-5xl mx-auto">
-                <div class="flex flex-wrap justify-center items-center gap-x-10 gap-y-6">
-                    
-                    <a href="<?= url('dashboard') ?>" class="group flex flex-col items-center gap-1">
-                        <span class="text-[7px] font-black tracking-[0.3em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">01. Ops en direct</span>
-                        <span class="text-white text-[10px] font-bold tracking-[0.2em] uppercase transition-all group-hover:tracking-[0.4em]">TABLEAU DE BORD</span>
+            <div class="max-w-6xl mx-auto">
+                <p class="text-center text-[8px] font-black uppercase tracking-[0.35em] text-slate-500 mb-6">Accès portail Athena</p>
+                <div class="flex flex-wrap justify-center items-center gap-x-8 gap-y-8">
+                    <?php if ($loggedIn): ?>
+                    <a href="<?= url('dashboard') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Vue</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">DASHBOARD</span>
+                    </a>
+                    <a href="<?= url('hub') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Ops</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">HUB</span>
+                    </a>
+                    <a href="<?= url('pointage') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-emerald-600 uppercase">Présence</span>
+                        <span class="text-emerald-300 text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-200">POINTAGE</span>
+                    </a>
+                    <a href="<?= url('communities') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Unités</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">COMMUNAUTÉS</span>
+                    </a>
+                    <?php else: ?>
+                    <a href="<?= url('login') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-emerald-500 uppercase">Accès</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">CONNEXION</span>
+                    </a>
+                    <a href="<?= url('register') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Compte</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">INSCRIPTION</span>
+                    </a>
+                    <a href="<?= url('join') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Code</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">REJOINDRE</span>
+                    </a>
+                    <?php endif; ?>
+
+                    <a href="<?= url('forum') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Info</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">FORUM</span>
                     </a>
 
-                    <a href="<?= url('orbat') ?>" class="group flex flex-col items-center gap-1">
-                        <span class="text-[7px] font-black tracking-[0.3em] text-slate-500 uppercase">02. Personnel</span>
-                        <span class="text-white text-[10px] font-bold tracking-[0.2em] uppercase transition-all group-hover:tracking-[0.4em]">LISTE D’UNITÉ</span>
+                    <a href="<?= url('orbat') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Structure</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">ORBAT</span>
                     </a>
 
-                    <a href="<?= url('atak') ?>" class="group flex flex-col items-center gap-1">
-                        <span class="text-[7px] font-black tracking-[0.3em] text-slate-500 uppercase">Tactique</span>
-                        <span class="text-white text-[10px] font-bold tracking-[0.2em] uppercase transition-all group-hover:tracking-[0.4em]">TACMAP / ATAK</span>
+                    <a href="<?= url('atak') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">C2</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">ATAK</span>
                     </a>
 
-                    <a href="<?= url('documents') ?>" class="group flex flex-col items-center gap-1">
-                        <span class="text-[7px] font-black tracking-[0.3em] text-slate-500 uppercase">03. Logistique</span>
-                        <span class="text-white text-[10px] font-bold tracking-[0.2em] uppercase transition-all group-hover:tracking-[0.4em]">ARMURERIE</span>
+                    <a href="<?= url('documents') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Docs</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">DOCUMENTS</span>
                     </a>
 
-                    <a href="<?= url('enlistment') ?>" class="group flex flex-col items-center gap-1 relative px-4">
-                        <span class="text-[7px] font-black tracking-[0.3em] text-emerald-500 uppercase animate-pulse">04. Incorporation</span>
-                        <span class="text-white text-[10px] font-bold tracking-[0.2em] uppercase transition-all group-hover:tracking-[0.4em]">RECRUTEMENT</span>
-                        <div class="absolute -inset-1 border border-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <a href="<?= url('formations') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">LMS</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">FORMATIONS</span>
                     </a>
 
-                    <a href="<?= url('documents') ?>" class="group flex flex-col items-center gap-1">
-                        <span class="text-[7px] font-black tracking-[0.3em] text-slate-500 uppercase">05. Renseignement</span>
-                        <span class="text-white text-[10px] font-bold tracking-[0.2em] uppercase transition-all group-hover:tracking-[0.4em]">FLUX RENSEIGNEMENT</span>
-                    </a>
-
-                    <a href="<?= url('formations') ?>" class="group flex flex-col items-center gap-1">
-                        <span class="text-[7px] font-black tracking-[0.3em] text-slate-500 uppercase">06. Préparation</span>
-                        <span class="text-white text-[10px] font-bold tracking-[0.2em] uppercase transition-all group-hover:tracking-[0.4em]">CERTIFICATIONS</span>
+                    <a href="<?= url('enlistment') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center relative px-2">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-emerald-500 uppercase">RH</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">RECRUTEMENT</span>
                     </a>
                 </div>
 

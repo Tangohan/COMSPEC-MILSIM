@@ -172,6 +172,7 @@ CREATE TABLE IF NOT EXISTS forum_moderation_logs (
   created_at datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY tenant_id (tenant_id),
+  KEY idx_fml_tenant_created (tenant_id, created_at),
   KEY post_id (post_id),
   CONSTRAINT forum_moderation_logs_tenant_fk FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE,
   CONSTRAINT forum_moderation_logs_user_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL,

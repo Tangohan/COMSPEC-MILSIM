@@ -241,6 +241,60 @@ $hasHeroBg = $heroImageUrl !== '';
         </div>
       </div>
 
+      <?php if (function_exists('forum_user_can_moderate') && forum_user_can_moderate()): ?>
+      <?php
+      $reportPending = count($pendingReports ?? []);
+      $queueArtifacts = (int) ($contentModerationQueueCount ?? 0);
+      $artifactsReady = !empty($moderationArtifactsTableAvailable);
+      ?>
+      <div>
+        <div class="flex items-center gap-2 mb-3">
+          <span class="h-px w-6 bg-violet-500/60"></span>
+          <span class="text-[10px] font-black uppercase tracking-[0.28em] text-violet-900"><?= htmlspecialchars($labels['moderation_automation'] ?? 'Modération & automatisation') ?></span>
+        </div>
+        <div class="overflow-hidden rounded-xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 shadow-sm">
+          <div class="border-b border-slate-100 px-4 py-3">
+            <p class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Signalements utilisateurs</p>
+            <div class="mt-2 flex items-start justify-between gap-3">
+              <div>
+                <?php if ($reportPending > 0): ?>
+                  <p class="text-lg font-black tabular-nums text-rose-700"><?= $reportPending ?></p>
+                  <p class="text-[10px] text-slate-600">en attente de traitement</p>
+                <?php else: ?>
+                  <p class="text-sm font-bold text-emerald-800">Aucun signalement</p>
+                  <p class="text-[10px] text-slate-500">File vide</p>
+                <?php endif; ?>
+              </div>
+              <a href="<?= $baseUrl ?>/back-office/forum-moderation" class="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-800 shadow-sm transition hover:border-violet-300 hover:text-violet-900">Console</a>
+            </div>
+          </div>
+          <?php if ($artifactsReady): ?>
+          <div class="px-4 py-3">
+            <p class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Fichiers &amp; quarantaine</p>
+            <p class="mt-0.5 text-[10px] leading-snug text-slate-500">Résultats du scan automatique (pièces jointes, uploads) avant validation.</p>
+            <div class="mt-2 flex items-start justify-between gap-3">
+              <div>
+                <?php if ($queueArtifacts > 0): ?>
+                  <p class="text-lg font-black tabular-nums text-amber-800"><?= $queueArtifacts ?></p>
+                  <p class="text-[10px] text-slate-600">élément(s) en file</p>
+                <?php else: ?>
+                  <p class="text-sm font-bold text-emerald-800">File vide</p>
+                  <p class="text-[10px] text-slate-500">Aucune quarantaine active</p>
+                <?php endif; ?>
+              </div>
+              <a href="<?= $baseUrl ?>/back-office/content-moderation" class="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-800 shadow-sm transition hover:border-amber-300 hover:text-amber-900">Traiter</a>
+            </div>
+          </div>
+          <?php else: ?>
+          <div class="border-t border-slate-100 px-4 py-3">
+            <p class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Scan &amp; quarantaine</p>
+            <p class="mt-1 text-[10px] text-slate-500">Module de modération fichiers non déployé sur cette instance.</p>
+          </div>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php endif; ?>
+
       <div>
         <div class="flex items-center gap-2 mb-3">
           <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full" style="box-shadow: 0 0 8px rgba(16,185,129,0.45);"></span>
@@ -282,76 +336,6 @@ $hasHeroBg = $heroImageUrl !== '';
         </div>
       </div>
 
-      <?php if (function_exists('can') && (can('forum.moderate') || can('forum.moderate_organization'))): ?>
-        <div>
-          <div class="flex items-center gap-2 mb-3">
-            <span class="w-1.5 h-1.5 bg-rose-600 rounded-full animate-pulse"></span>
-            <span class="text-[10px] font-black uppercase tracking-[0.3em] text-rose-500"><?= $labels['moderation_panel'] ?? 'Terminal de Contrôle' ?></span>
-          </div>
-          <?php if (!empty($pendingReports)): ?>
-            <div class="bg-rose-50 border border-rose-200 p-4 rounded-lg">
-              <span class="text-[8px] font-black uppercase text-rose-400">Urgent</span>
-              <p class="text-xs text-slate-700 mt-1"><?= count($pendingReports) ?> signalement(s) en attente.</p>
-              <a href="<?= $baseUrl ?>/back-office/forum-moderation" class="inline-block mt-2 text-xs font-bold text-rose-400 hover:text-rose-300">Traiter →</a>
-            </div>
-          <?php else: ?>
-            <div class="bg-emerald-50 border border-emerald-200 p-4 text-xs text-slate-600 rounded-lg">Aucun signalement en attente.</div>
-          <?php endif; ?>
-        </div>
-      <?php endif; ?>
-
-      <!-- Configuration complète du forum -->
-      <div>
-        <div class="flex items-center gap-2 mb-3">
-          <span class="h-px w-6 bg-emerald-500/50"></span>
-          <span class="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-800">Configuration du forum</span>
-        </div>
-        <div class="bg-white border border-slate-200 p-4 space-y-3 text-[10px] rounded-lg shadow-sm">
-          <div>
-            <p class="text-[8px] font-black uppercase text-slate-500 tracking-wider">Nom</p>
-            <p class="text-slate-900 font-bold"><?= htmlspecialchars($forumConfig['name'] ?? '—') ?></p>
-          </div>
-          <div>
-            <p class="text-[8px] font-black uppercase text-slate-500 tracking-wider">Sous-titre</p>
-            <p class="text-slate-600"><?= htmlspecialchars($forumConfig['subtitle'] ?? '—') ?></p>
-          </div>
-          <div>
-            <p class="text-[8px] font-black uppercase text-slate-500 tracking-wider">Contexte</p>
-            <p class="text-slate-600"><?= htmlspecialchars($forumConfig['context'] ?? '—') ?></p>
-          </div>
-          <div>
-            <p class="text-[8px] font-black uppercase text-slate-500 tracking-wider">Tagline</p>
-            <p class="text-slate-600 italic"><?= htmlspecialchars($forumConfig['tagline'] ?? '—') ?></p>
-          </div>
-          <div>
-            <p class="text-[8px] font-black uppercase text-slate-500 tracking-wider">État</p>
-            <p class="<?= !empty($forumConfig['enabled']) ? 'text-emerald-700' : 'text-amber-600' ?>"><?= !empty($forumConfig['enabled']) ? 'Activé' : 'Désactivé' ?></p>
-          </div>
-          <div>
-            <p class="text-[8px] font-black uppercase text-slate-500 tracking-wider">Longueur max. message</p>
-            <p class="text-slate-600"><?= (int) ($forumConfig['forum_max_post_length'] ?? 0) ?> caractères</p>
-          </div>
-          <?php if (!empty($forumConfig['category_colors'])): ?>
-          <div>
-            <p class="text-[8px] font-black uppercase text-slate-500 tracking-wider">Thèmes de couleurs</p>
-            <p class="text-slate-600"><?= htmlspecialchars(implode(', ', (array) $forumConfig['category_colors'])) ?></p>
-          </div>
-          <?php endif; ?>
-          <?php if (!empty($forumConfig['labels']) && is_array($forumConfig['labels'])): ?>
-          <div>
-            <p class="text-[8px] font-black uppercase text-slate-500 tracking-wider mb-2">Libellés</p>
-            <dl class="space-y-1.5 border-t border-slate-100 pt-2">
-              <?php foreach ($forumConfig['labels'] as $k => $v): ?>
-                <div class="flex justify-between gap-2">
-                  <dt class="text-slate-500 shrink-0"><?= htmlspecialchars($k) ?></dt>
-                  <dd class="text-slate-600 text-right truncate" title="<?= htmlspecialchars((string) $v) ?>"><?= htmlspecialchars((string) $v) ?></dd>
-                </div>
-              <?php endforeach; ?>
-            </dl>
-          </div>
-          <?php endif; ?>
-        </div>
-      </div>
     </aside>
   </div>
 </div>

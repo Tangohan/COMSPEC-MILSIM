@@ -1,0 +1,10 @@
+{
+  "name": "comspec-milsim-assets",
+  "private": true,
+  "scripts": {
+    "build:tailwind": "tailwindcss -c tailwind.config.js -i ./public/assets/css/tailwind.input.css -o ./public/assets/css/tailwind.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

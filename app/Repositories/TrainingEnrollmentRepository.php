@@ -19,7 +19,9 @@ class TrainingEnrollmentRepository
     /** @return list<array<string, mixed>> */
     public function listByUserId(int $userId, ?int $tenantId = null): array
     {
-        $sql = 'SELECT e.*, c.title AS course_title, c.slug AS course_slug, c.estimated_minutes, c.banner_path
+        $sql = 'SELECT e.*, c.title AS course_title, c.slug AS course_slug, c.estimated_minutes, c.banner_path,
+                       c.short_description, c.category, c.level, c.is_certifying, c.is_mandatory, c.thumbnail_path,
+                       (SELECT id FROM training_certificates WHERE enrollment_id = e.id AND status = \'valid\' ORDER BY id DESC LIMIT 1) AS certificate_id
                 FROM training_enrollments e
                 JOIN training_courses c ON c.id = e.course_id
                 WHERE e.user_id = ?';

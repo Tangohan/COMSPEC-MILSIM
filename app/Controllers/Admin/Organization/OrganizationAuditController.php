@@ -27,6 +27,7 @@ final class OrganizationAuditController
             'date_to' => $this->optionalString($request->query('date_to')),
             'action' => $this->optionalString($request->query('action')),
             'user_id' => $this->optionalPositiveInt($request->query('user_id')),
+            'organization_journal' => true,
         ];
         $result = $this->auditLogs->listForTenant($tenantId, $filters, $page, $perPage);
         $totalPages = max(1, (int) ceil($result['total'] / $perPage));

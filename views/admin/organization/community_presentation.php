@@ -33,6 +33,7 @@ while (count($cmdChain) < 3) {
 $pm = is_array($c['public_modules'] ?? null) ? $c['public_modules'] : [];
 $sm = is_array($c['public_stats_manual'] ?? null) ? $c['public_stats_manual'] : [];
 $publicLayoutSel = ($c['public_page_layout'] ?? 'legacy') === 'showcase' ? 'showcase' : 'legacy';
+$publicAudienceSel = ($c['public_audience'] ?? 'unit') === 'platform' ? 'platform' : 'unit';
 $regionBadgesLines = implode("\n", is_array($c['public_region_badges'] ?? null) ? $c['public_region_badges'] : []);
 $specialtiesLines = implode("\n", is_array($c['public_specialties'] ?? null) ? $c['public_specialties'] : []);
 $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed' : 'manual';
@@ -71,6 +72,14 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                     <option value="legacy" <?= $publicLayoutSel === 'legacy' ? 'selected' : '' ?>>Classique (carte compacte)</option>
                     <option value="showcase" <?= $publicLayoutSel === 'showcase' ? 'selected' : '' ?>>Vitrine (pleine page)</option>
                 </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Type de fiche</label>
+                <select name="public_audience" class="w-full max-w-md rounded border border-slate-300 px-3 py-2 text-sm">
+                    <option value="unit" <?= $publicAudienceSel === 'unit' ? 'selected' : '' ?>>Unité / communauté de jeu (recrutement, code, forum)</option>
+                    <option value="platform" <?= $publicAudienceSel === 'platform' ? 'selected' : '' ?>>Plateforme / outil (portail, emphase recrutement réduite)</option>
+                </select>
+                <p class="mt-1 text-[11px] text-slate-500">Pour les portails système, choisissez « Plateforme » et préférez le modèle <strong>Vitrine</strong> pour la bonne mise en page.</p>
             </div>
             <label class="flex items-start gap-3 cursor-pointer">
                 <input type="hidden" name="public_recruitment_badge_open" value="0">

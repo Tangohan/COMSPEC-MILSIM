@@ -11,6 +11,7 @@ use App\Repositories\ForumCategoryRepository;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumPostRepository;
 use App\Repositories\ForumReportRepository;
+use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\ForumAuthorIdentityRepository;
 use App\Services\Profile\ProfilePublicIdentityService;
 
@@ -21,6 +22,7 @@ class ForumController
         private ForumTopicRepository $topicRepository,
         private ForumPostRepository $postRepository,
         private ForumReportRepository $reportRepository,
+        private ModerationArtifactRepository $moderationArtifactRepository,
         private ForumAuthorIdentityRepository $forumAuthorIdentityRepository,
         private ProfilePublicIdentityService $profilePublicIdentityService
     ) {}
@@ -68,6 +70,15 @@ class ForumController
         );
         $pendingReports = $this->reportRepository->listPending($tenantId);
 
+        $moderationArtifactsTableAvailable = false;
+        $contentModerationQueueCount = 0;
+        if (function_exists('forum_user_can_moderate') && forum_user_can_moderate()) {
+            $moderationArtifactsTableAvailable = $this->moderationArtifactRepository->tableExists();
+            if ($moderationArtifactsTableAvailable) {
+                $contentModerationQueueCount = $this->moderationArtifactRepository->countQueue((int) $tenantId, null);
+            }
+        }
+
         $searchQuery = trim((string) $request->query('q', ''));
         $searchResults = [];
         if ($searchQuery !== '') {
@@ -111,6 +122,8 @@ class ForumController
             'recentTopics' => $recentTopics,
             'topContributors' => $topContributors,
             'pendingReports' => $pendingReports,
+            'moderationArtifactsTableAvailable' => $moderationArtifactsTableAvailable,
+            'contentModerationQueueCount' => $contentModerationQueueCount,
             'searchQuery' => $searchQuery,
             'searchResults' => $searchResults,
             'pinnedAnnouncements' => $pinnedAnnouncements,

@@ -1,0 +1,228 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Attendance;
+
+use App\Repositories\CommunityEventRepository;
+use App\Repositories\TenantRepository;
+use App\Repositories\UserRepository;
+use App\Services\EmailService;
+
+/**
+ * Fenêtre de pointage : 30 min avant le début jusqu’à fin d’événement + 2 h (ou début + 4 h si pas de fin).
+ */
+final class CommunityEventAttendanceService
+{
+    public const CHECK_IN_OPEN_BEFORE_MIN = 30;
+
+    public const CHECK_IN_AFTER_END_GRACE_HOURS = 2;
+
+    public const DEFAULT_DURATION_IF_NO_END_HOURS = 4;
+
+    public function __construct(
+        private CommunityEventRepository $events,
+        private EmailService $emailService,
+        private TenantRepository $tenants,
+        private UserRepository $users
+    ) {}
+
+    /**
+     * @return array{ok: bool, error?: string}
+     */
+    public function checkIn(int $eventId, int $userId, int $tenantId): array
+    {
+        $event = $this->events->findByIdForTenant($eventId, $tenantId);
+        if (!$event || !empty($event['cancelled_at'])) {
+            return ['ok' => false, 'error' => 'Événement introuvable ou annulé.'];
+        }
+        $rsvp = $this->events->getRsvp($eventId, $userId);
+        if (!$rsvp || !in_array((string) ($rsvp['status'] ?? ''), ['yes', 'maybe'], true)) {
+            return ['ok' => false, 'error' => 'Pointage réservé aux participants (présent ou peut-être).'];
+        }
+        if (!empty($rsvp['checked_in_at'])) {
+            return ['ok' => false, 'error' => 'Présence déjà enregistrée.'];
+        }
+        $now = new \DateTimeImmutable('now');
+        if (!$this->isWithinCheckInWindow($event, $now)) {
+            return ['ok' => false, 'error' => 'La fenêtre de pointage n’est pas ouverte.'];
+        }
+        $this->events->setCheckIn($eventId, $userId, $now->format('Y-m-d H:i:s'));
+
+        $tenant = $this->tenants->findById($tenantId);
+        $tenantName = (string) ($tenant['name'] ?? 'Communauté');
+        $u = $this->users->findById($userId, $tenantId);
+        $email = (string) ($u['email'] ?? '');
+        $displayName = (string) ($u['display_name'] ?? 'Membre');
+        if ($email !== '') {
+            $this->emailService->sendAttendanceCheckInConfirm(
+                $email,
+                $displayName,
+                $tenantName,
+                (string) ($event['title'] ?? ''),
+                (string) ($event['starts_at'] ?? ''),
+                $eventId,
+                $tenantId
+            );
+        }
+
+        return ['ok' => true];
+    }
+
+    /**
+     * Pointage autorisé : RSVP oui/maybe, pas encore pointé, fenêtre ouverte.
+     *
+     * @param array<string, mixed> $event Ligne community_events (+ champs joint optionnels)
+     */
+    public function canUserCheckInNow(array $event, int $userId): bool
+    {
+        if (!empty($event['cancelled_at'])) {
+            return false;
+        }
+        $eventId = (int) ($event['id'] ?? 0);
+        if ($eventId < 1) {
+            return false;
+        }
+        $rsvp = $this->events->getRsvp($eventId, $userId);
+        if (!$rsvp || !in_array((string) ($rsvp['status'] ?? ''), ['yes', 'maybe'], true)) {
+            return false;
+        }
+        if (!empty($rsvp['checked_in_at'])) {
+            return false;
+        }
+
+        return $this->isWithinCheckInWindow($event, new \DateTimeImmutable('now'));
+    }
+
+    /**
+     * @param array<string, mixed> $event
+     */
+    public function isWithinCheckInWindow(array $event, \DateTimeImmutable $now): bool
+    {
+        $starts = $this->parseDateTime((string) ($event['starts_at'] ?? ''));
+        if ($starts === null) {
+            return false;
+        }
+        $open = $starts->modify('-' . self::CHECK_IN_OPEN_BEFORE_MIN . ' minutes');
+        $end = $this->resolveEventEnd($event);
+        $close = $end->modify('+' . self::CHECK_IN_AFTER_END_GRACE_HOURS . ' hours');
+
+        return $now >= $open && $now <= $close;
+    }
+
+    /**
+     * @param array<string, mixed> $event
+     */
+    private function resolveEventEnd(array $event): \DateTimeImmutable
+    {
+        $endsRaw = $event['ends_at'] ?? null;
+        if ($endsRaw !== null && trim((string) $endsRaw) !== '') {
+            $e = $this->parseDateTime((string) $endsRaw);
+            if ($e !== null) {
+                return $e;
+            }
+        }
+        $starts = $this->parseDateTime((string) ($event['starts_at'] ?? ''));
+
+        return $starts?->modify('+' . self::DEFAULT_DURATION_IF_NO_END_HOURS . ' hours')
+            ?? new \DateTimeImmutable();
+    }
+
+    private function parseDateTime(string $iso): ?\DateTimeImmutable
+    {
+        $iso = trim($iso);
+        if ($iso === '') {
+            return null;
+        }
+        try {
+            return new \DateTimeImmutable($iso);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @return array{ok: bool, previous: ?string, error?: string}
+     */
+    public function setRsvpWithNotifications(
+        int $eventId,
+        int $userId,
+        int $tenantId,
+        string $status
+    ): array {
+        if (!in_array($status, ['yes', 'no', 'maybe'], true)) {
+            $status = 'yes';
+        }
+        $event = $this->events->findByIdForTenant($eventId, $tenantId);
+        if (!$event || !empty($event['cancelled_at'])) {
+            return ['ok' => false, 'previous' => null, 'error' => 'Événement introuvable ou annulé.'];
+        }
+        $prev = $this->events->getRsvp($eventId, $userId);
+        $previousStatus = $prev ? (string) ($prev['status'] ?? '') : null;
+
+        $this->events->setRsvp($eventId, $userId, $status);
+
+        if ($previousStatus === $status) {
+            return ['ok' => true, 'previous' => $previousStatus];
+        }
+
+        $tenant = $this->tenants->findById($tenantId);
+        $tenantName = (string) ($tenant['name'] ?? 'Communauté');
+        $u = $this->users->findById($userId, $tenantId);
+        $email = $u ? (string) ($u['email'] ?? '') : '';
+        $displayName = $u ? (string) ($u['display_name'] ?? 'Membre') : 'Membre';
+        if ($email !== null && $email !== '') {
+            $this->emailService->sendAttendanceRsvpConfirmation(
+                $email,
+                $displayName,
+                $tenantName,
+                (string) ($event['title'] ?? ''),
+                (string) ($event['starts_at'] ?? ''),
+                $status,
+                $eventId,
+                $tenantId
+            );
+        }
+
+        return ['ok' => true, 'previous' => $previousStatus];
+    }
+
+    /**
+     * @return array{ok: bool, notified: int, error?: string}
+     */
+    public function cancelEventByOrg(int $eventId, int $tenantId, ?string $reason): array
+    {
+        $event = $this->events->findByIdForTenant($eventId, $tenantId);
+        if (!$event || !empty($event['cancelled_at'])) {
+            return ['ok' => false, 'notified' => 0, 'error' => 'Événement introuvable ou déjà annulé.'];
+        }
+        $recipients = $this->events->listUsersForEventByStatuses($eventId, ['yes', 'maybe']);
+        $ok = $this->events->cancelEvent($eventId, $tenantId, $reason);
+        if (!$ok) {
+            return ['ok' => false, 'notified' => 0, 'error' => 'Annulation impossible.'];
+        }
+        $tenant = $this->tenants->findById($tenantId);
+        $tenantName = (string) ($tenant['name'] ?? 'Communauté');
+        $notified = 0;
+        foreach ($recipients as $row) {
+            $to = (string) ($row['email'] ?? '');
+            if ($to === '') {
+                continue;
+            }
+            if ($this->emailService->sendAttendanceEventCancelled(
+                $to,
+                (string) ($row['display_name'] ?? 'Membre'),
+                $tenantName,
+                (string) ($event['title'] ?? ''),
+                (string) ($event['starts_at'] ?? ''),
+                $reason ?? '',
+                $eventId,
+                $tenantId
+            )) {
+                $notified++;
+            }
+        }
+
+        return ['ok' => true, 'notified' => $notified];
+    }
+}

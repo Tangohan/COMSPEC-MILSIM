@@ -11,7 +11,10 @@ $requireAiAck = array_key_exists('require_ai_ack', $communityConfig) ? (bool) $c
 $milsimPack = $milsimPack ?? \App\Services\Community\EnlistmentMilsimPackService::defaultPack();
 $p = $milsimPack;
 $fld = static function (string $k) use ($p): array {
-    return is_array($p['fields'][$k] ?? null) ? $p['fields'][$k] : ['label' => $k, 'placeholder' => ''];
+    if (is_array($p['fields'][$k] ?? null)) {
+        return $p['fields'][$k];
+    }
+    return ['label' => $k, 'placeholder' => '', 'widget' => 'text', 'options' => []];
 };
 $enlistSlug = trim((string) ($tenant['slug'] ?? 'default'));
 $enlistmentContext = $enlistmentContext ?? [];

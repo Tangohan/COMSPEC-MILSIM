@@ -21,10 +21,8 @@ $ctx = $loggedIn ? portal_header_context() : [
 
 $brandTagline = trim((string) ($nav['brand']['tagline'] ?? ''));
 $alertsSeverity = (string) ($ctx['alerts_severity'] ?? 'info');
-$alertsChipClass = 'portal-nav__status-chip';
-if ($ctx['alerts_count'] > 0) {
-    $alertsChipClass .= $alertsSeverity === 'urgent' ? ' portal-nav__status-chip--alert-urgent' : ' portal-nav__status-chip--alert-warn';
-}
+$brandName = trim((string) ($nav['brand']['name'] ?? 'Athena'));
+$brandMonogram = mb_strtoupper(mb_substr($brandName !== '' ? $brandName : 'A', 0, 1));
 
 $defaultAccent = 'slate';
 ?>
@@ -33,27 +31,32 @@ $defaultAccent = 'slate';
         data-portal-nav>
     <div class="portal-nav__shell">
         <div class="mx-auto max-w-[1800px] px-4 sm:px-6">
-            <div class="flex flex-col gap-2 py-2 lg:flex-row lg:items-center lg:gap-4 lg:py-3 xl:grid xl:min-h-[4.5rem] xl:grid-cols-[minmax(0,17rem)_minmax(0,1fr)_auto] xl:items-center xl:gap-5 xl:py-3">
-                <div class="flex min-w-0 max-w-[17rem] shrink-0 items-start gap-3 overflow-hidden" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
-                    <span class="portal-nav__brand-mark mt-0.5 hidden h-14 w-1 shrink-0 sm:block" aria-hidden="true"></span>
+            <div class="flex flex-col gap-2 py-2 lg:flex-row lg:items-center lg:gap-4 lg:py-3 xl:grid xl:min-h-[4.5rem] xl:grid-cols-[minmax(0,19.5rem)_minmax(0,1fr)_auto] xl:items-center xl:gap-5 xl:py-3">
+                <div class="flex min-w-0 max-w-[19rem] shrink-0 items-center overflow-hidden" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
                     <a href="<?= htmlspecialchars($nav['brand']['href']) ?>"
-                       class="group flex min-w-0 flex-col leading-none">
-                        <span class="text-[13px] font-black uppercase italic tracking-[0.38em] text-slate-950 transition-colors group-hover:text-slate-800">
-                            <?= htmlspecialchars($nav['brand']['name']) ?>
-                        </span>
-                        <span class="mt-1 line-clamp-2 text-[11px] font-semibold leading-snug text-slate-600">
-                            <?= htmlspecialchars($nav['brand']['subtitle']) ?>
-                        </span>
-                        <?php if ($brandTagline !== ''): ?>
-                            <span class="mt-0.5 line-clamp-1 text-[10px] font-mono uppercase tracking-[0.12em] text-slate-400">
-                                <?= htmlspecialchars($brandTagline) ?>
+                       class="portal-nav__brand-link group flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50/95 px-2.5 py-2 shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-200 hover:border-emerald-300/60 hover:from-white hover:to-emerald-50/30 hover:shadow-md hover:ring-emerald-600/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">
+                        <span class="portal-nav__brand-monogram flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[15px] font-black tabular-nums tracking-tight text-white"
+                              aria-hidden="true"><?= htmlspecialchars($brandMonogram) ?></span>
+                        <span class="min-w-0 flex flex-col text-left leading-tight">
+                            <span class="text-[0.8125rem] font-black uppercase tracking-[0.14em] text-slate-900 transition-colors group-hover:text-emerald-950">
+                                <?= htmlspecialchars($brandName) ?>
                             </span>
-                        <?php endif; ?>
+                            <?php if (trim((string) ($nav['brand']['subtitle'] ?? '')) !== ''): ?>
+                                <span class="mt-0.5 line-clamp-2 text-[11px] font-medium leading-snug text-slate-500 group-hover:text-slate-600">
+                                    <?= htmlspecialchars((string) $nav['brand']['subtitle']) ?>
+                                </span>
+                            <?php endif; ?>
+                            <?php if ($brandTagline !== ''): ?>
+                                <span class="mt-1 line-clamp-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-700/80">
+                                    <?= htmlspecialchars($brandTagline) ?>
+                                </span>
+                            <?php endif; ?>
+                        </span>
                     </a>
                 </div>
 
                 <nav class="relative z-[1] hidden min-w-0 justify-center justify-self-center xl:flex xl:w-full" aria-label="Navigation principale" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
-                    <ul class="flex h-full items-stretch gap-0.5">
+                    <ul class="flex h-full items-center gap-1">
                         <?php foreach ($nav['menu'] as $item): ?>
                             <?php
                             $active = nav_item_is_active($item, $currentPath);
@@ -64,9 +67,9 @@ $defaultAccent = 'slate';
                             }
                             ?>
                             <?php if (($item['type'] ?? '') === 'link'): ?>
-                                <li data-accent="<?= htmlspecialchars($accent) ?>">
+                                <li class="flex items-center" data-accent="<?= htmlspecialchars($accent) ?>">
                                     <a href="<?= htmlspecialchars((string) $item['href']) ?>"
-                                       class="portal-nav__link--simple inline-flex h-14 items-center border-b-[3px] border-transparent px-3 text-[13px] font-semibold text-slate-600 transition hover:text-slate-950"
+                                       class="portal-nav__link--simple inline-flex min-h-[2.75rem] items-center rounded-lg px-3 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:text-slate-950"
                                        data-active="<?= $active ? '1' : '0' ?>">
                                         <?= htmlspecialchars((string) $item['label']) ?>
                                     </a>
@@ -77,19 +80,19 @@ $defaultAccent = 'slate';
                                 $triggerId = $mid . '-trigger';
                                 $iconName = (string) ($item['icon'] ?? '');
                                 ?>
-                                <li class="group/nav relative flex items-stretch focus-within:relative"
+                                <li class="group/nav relative flex items-center focus-within:relative"
                                     data-nav-item
                                     data-nav-type="mega"
                                     data-accent="<?= htmlspecialchars($accent) ?>">
                                     <button type="button"
                                             id="<?= $triggerId ?>"
-                                            class="portal-nav__link--mega inline-flex h-14 items-center gap-1.5 border-b-[3px] border-transparent px-2 text-[13px] font-semibold text-slate-600 transition hover:text-slate-950"
+                                            class="portal-nav__link--mega inline-flex items-center gap-0 rounded-lg border-0 bg-transparent p-0 text-[13px] font-semibold text-slate-600 transition-colors hover:text-slate-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
                                             aria-expanded="false"
                                             aria-haspopup="true"
                                             aria-controls="<?= $panelId ?>"
                                             data-nav-trigger
                                             data-active="<?= $active ? '1' : '0' ?>">
-                                        <span class="portal-nav__trigger-inner flex items-center gap-1.5 border-b-[3px] border-transparent px-1 pb-0.5">
+                                        <span class="portal-nav__trigger-inner relative flex items-center gap-1.5 rounded-lg px-2.5 py-2">
                                             <?php if ($iconName !== ''): ?>
                                                 <span class="text-slate-500 [&>svg]:opacity-90" style="color: var(--nav-accent, #64748b);"><?= nav_icon_svg($iconName, 'h-4 w-4') ?></span>
                                             <?php endif; ?>
@@ -100,7 +103,7 @@ $defaultAccent = 'slate';
                                         </span>
                                     </button>
                                     <div id="<?= $panelId ?>"
-                                         class="nav-mega-panel pointer-events-none invisible absolute left-0 top-full z-50 mt-0 w-[min(1080px,calc(100vw-1.5rem))] max-w-[1080px] translate-y-2 opacity-0 transition-all duration-200 ease-out group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:translate-y-0 group-hover/nav:opacity-100 group-focus-within/nav:pointer-events-auto group-focus-within/nav:visible group-focus-within/nav:translate-y-0 group-focus-within/nav:opacity-100 group-[.nav-mega-is-open]/nav:pointer-events-auto group-[.nav-mega-is-open]/nav:visible group-[.nav-mega-is-open]/nav:translate-y-0 group-[.nav-mega-is-open]/nav:opacity-100"
+                                         class="nav-mega-panel pointer-events-none invisible absolute left-0 top-full z-50 mt-1.5 w-[min(1080px,calc(100vw-1.5rem))] max-w-[1080px] translate-y-1 opacity-0 transition-all duration-200 ease-out group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:translate-y-0 group-hover/nav:opacity-100 group-focus-within/nav:pointer-events-auto group-focus-within/nav:visible group-focus-within/nav:translate-y-0 group-focus-within/nav:opacity-100 group-[.nav-mega-is-open]/nav:pointer-events-auto group-[.nav-mega-is-open]/nav:visible group-[.nav-mega-is-open]/nav:translate-y-0 group-[.nav-mega-is-open]/nav:opacity-100"
                                          data-nav-panel
                                          data-accent="<?= htmlspecialchars($accent) ?>"
                                          role="region"
@@ -232,30 +235,6 @@ $defaultAccent = 'slate';
                     </button>
                 </div>
             </div>
-
-            <?php if ($loggedIn): ?>
-                <div class="portal-nav__status relative z-[2] flex flex-wrap items-center gap-2 border-t border-slate-200 bg-slate-50 px-0 py-2.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-600">
-                    <span class="<?= htmlspecialchars($alertsChipClass) ?> rounded-lg px-2 py-1">
-                        Env · <?= htmlspecialchars($ctx['environment']) ?>
-                    </span>
-                    <span class="portal-nav__status-chip rounded-lg px-2 py-1">
-                        Statut · <?= htmlspecialchars($ctx['system_status']) ?>
-                    </span>
-                    <?php if (($ctx['tenant_label'] ?? '') !== ''): ?>
-                        <span class="portal-nav__status-chip max-w-[min(22rem,42vw)] truncate rounded-lg px-2 py-1" title="<?= htmlspecialchars($ctx['tenant_label']) ?>">
-                            Communauté · <?= htmlspecialchars($ctx['tenant_label']) ?>
-                        </span>
-                    <?php endif; ?>
-                    <span class="<?= htmlspecialchars($alertsChipClass) ?> rounded-lg px-2 py-1">
-                        Alertes · <?= (int) $ctx['alerts_count'] ?>
-                    </span>
-                    <?php if (($ctx['role_label'] ?? '') !== ''): ?>
-                        <span class="portal-nav__status-chip rounded-lg px-2 py-1">
-                            Rôle · <?= htmlspecialchars($ctx['role_label']) ?>
-                        </span>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
         </div>
     </div>
 

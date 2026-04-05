@@ -50,10 +50,10 @@ $downloadUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/download';
         </div>
         <div class="p-4 overflow-auto bg-slate-100 min-h-[70vh] flex justify-center" id="doc-viewer"></div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.mjs" type="module"></script>
     <script type="module">
-      import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.mjs';
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.mjs';
+      /** pdfjs-dist : entrée ESM jsDelivr (+esm) — évite cdnjs / pdf.min.mjs introuvable */
+      import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/+esm';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
       const url = <?= json_encode($fileUrl) ?>;
       const container = document.getElementById('doc-viewer');
       const pageNumEl = document.getElementById('doc-page-num');

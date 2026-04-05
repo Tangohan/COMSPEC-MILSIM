@@ -86,7 +86,7 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                     </div>
                 </div>
 
-                <form method="post" action="<?= url('communities/create') ?>" class="space-y-8 px-6 py-8 sm:px-8" id="community-create-form" novalidate>
+                <form method="post" action="<?= url('communities/create') ?>" enctype="multipart/form-data" class="space-y-8 px-6 py-8 sm:px-8" id="community-create-form" novalidate>
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="wizard_units_json" id="wizard-units-json" value="<?= htmlspecialchars($defaultWizardUnitsJson, ENT_QUOTES, 'UTF-8') ?>">
 
@@ -198,14 +198,36 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                                 <label class="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Attentes / mot d’ordre</label>
                                 <textarea name="wizard_expectations" rows="2" maxlength="8000" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="Disponibilité, esprit d’équipe…"></textarea>
                             </div>
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <label class="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Logo (URL)</label>
-                                    <input type="url" name="wizard_logo_url" maxlength="500" class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm" placeholder="https://…">
+                            <div class="grid gap-6 md:grid-cols-2">
+                                <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                                    <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Logo</p>
+                                    <label class="block">
+                                        <span class="mb-1 block text-xs font-semibold text-slate-700">Envoyer une image</span>
+                                        <input type="file" name="wizard_logo_file" accept="image/jpeg,image/png,image/webp,image/gif" class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white file:uppercase file:tracking-wider hover:file:bg-emerald-600">
+                                    </label>
+                                    <p class="text-[11px] text-slate-500">JPEG, PNG, WebP ou GIF — max 3&nbsp;Mo. Prévisualisation ci-dessous.</p>
+                                    <div class="wizard-img-preview mt-2 hidden overflow-hidden rounded-xl border border-slate-200 bg-white" data-preview-for="wizard_logo_file">
+                                        <img src="" alt="" class="max-h-40 w-full object-contain">
+                                    </div>
+                                    <div class="border-t border-slate-200 pt-3">
+                                        <label class="mb-1 block text-xs font-semibold text-slate-600">Ou lien externe (URL)</label>
+                                        <input type="url" name="wizard_logo_url" maxlength="500" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" placeholder="https://…">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Bannière page publique (URL)</label>
-                                    <input type="url" name="wizard_public_banner_url" maxlength="500" class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm" placeholder="https://…">
+                                <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                                    <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Bannière (page publique)</p>
+                                    <label class="block">
+                                        <span class="mb-1 block text-xs font-semibold text-slate-700">Envoyer une image</span>
+                                        <input type="file" name="wizard_public_banner_file" accept="image/jpeg,image/png,image/webp,image/gif" class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white file:uppercase file:tracking-wider hover:file:bg-emerald-600">
+                                    </label>
+                                    <p class="text-[11px] text-slate-500">Idem — image large recommandée (paysage).</p>
+                                    <div class="wizard-img-preview mt-2 hidden overflow-hidden rounded-xl border border-slate-200 bg-slate-900/5" data-preview-for="wizard_public_banner_file">
+                                        <img src="" alt="" class="max-h-48 w-full object-cover">
+                                    </div>
+                                    <div class="border-t border-slate-200 pt-3">
+                                        <label class="mb-1 block text-xs font-semibold text-slate-600">Ou lien externe (URL)</label>
+                                        <input type="url" name="wizard_public_banner_url" maxlength="500" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" placeholder="https://…">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -551,7 +573,7 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                                             <li><strong class="text-slate-900">Personnalisation</strong> : libellés, préambule, ROE, filigrane — soit via JSON dans cet assistant, soit via l’éditeur visuel après création.</li>
                                         </ul>
                                         <div class="mt-4 flex flex-wrap gap-2">
-                                            <button type="button" id="btn-open-milsim-form-editor" class="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                                            <button type="button" class="btn-open-milsim-form-editor inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
                                                 Ouvrir l’édition du formulaire
                                             </button>
                                             <span class="self-center text-[10px] text-slate-500">JSON optionnel · pack MilSim</span>
@@ -602,25 +624,26 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                                 </label>
                             </div>
 
-                            <details id="wizard-milsim-form-editor" class="group rounded-2xl border border-slate-200 bg-white shadow-sm open:ring-2 open:ring-emerald-100">
-                                <summary class="cursor-pointer list-none rounded-2xl px-5 py-4 text-sm font-bold text-slate-900 marker:hidden [&::-webkit-details-marker]:hidden">
-                                    <span class="flex items-center justify-between gap-3">
-                                        <span class="flex flex-col gap-1 text-left">
-                                            <span class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Édition du formulaire MilSim</span>
-                                            <span>JSON avancé (libellés, sections, préambule…)</span>
-                                        </span>
-                                        <span class="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 group-open:bg-emerald-50 group-open:text-emerald-800">Déplier</span>
-                                    </span>
-                                </summary>
-                                <div class="border-t border-slate-100 px-5 pb-5 pt-2">
-                                    <p class="mb-3 text-xs leading-relaxed text-slate-600">Surcharge partielle de <code class="rounded bg-slate-100 px-1 text-[11px]">settings.community.enlistment_milsim</code>. Laissez vide pour les valeurs Athena par défaut. Pour un éditeur champ par champ, utilisez la fiche registre après création.</p>
-                                    <textarea name="wizard_enlistment_milsim_json" id="wizard_enlistment_milsim_json" rows="8" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs text-slate-900" placeholder='{"portal_title": "…", "fields": { "full_name": { "label": "…", "placeholder": "…" } } }'></textarea>
-                                    <p class="mt-3 text-xs text-slate-500">
-                                        Référence : <code class="text-[11px]">App\Services\Community\EnlistmentMilsimPackService</code>.
-                                        <a href="<?= htmlspecialchars($presentationPackUrl, ENT_QUOTES, 'UTF-8') ?>" class="ml-1 font-semibold text-emerald-700 underline">Ouvrir l’éditeur visuel (après création)</a>
-                                    </p>
+                            <div class="rounded-2xl border border-emerald-200/80 bg-white p-5 shadow-sm ring-1 ring-emerald-100/50">
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-900">Édition du formulaire MilSim</p>
+                                        <p class="mt-1 text-sm font-semibold text-slate-900">Atelier visuel + aperçu en direct</p>
+                                        <p class="mt-2 max-w-xl text-xs leading-relaxed text-slate-600">Ouvrez une fenêtre pleine page : préambule, ROE, champs (texte, liste, oui/non) et rendu dans un cadre à droite. Plus besoin de JSON pour l’essentiel.</p>
+                                    </div>
+                                    <button type="button" class="btn-open-milsim-form-editor inline-flex shrink-0 items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                                        Ouvrir l’atelier
+                                    </button>
                                 </div>
-                            </details>
+                                <details class="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/80 p-3">
+                                    <summary class="cursor-pointer text-xs font-bold text-slate-600">JSON expert (optionnel)</summary>
+                                    <p class="mt-2 text-xs text-slate-500">Surcharge de <code class="rounded bg-white px-1 text-[11px]">enlistment_milsim</code> si vous importez une config complète.</p>
+                                    <textarea name="wizard_enlistment_milsim_json" id="wizard_enlistment_milsim_json" rows="5" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-900" placeholder='{"portal_title": "…"}'></textarea>
+                                    <p class="mt-2 text-xs text-slate-500">
+                                        <a href="<?= htmlspecialchars($presentationPackUrl, ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 underline">Fiche registre (après création)</a>
+                                    </p>
+                                </details>
+                            </div>
                         </section>
 
                         <div id="paid-hint" class="mt-6 hidden rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-900">
@@ -649,6 +672,7 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                             <button type="submit" id="submit-btn" class="hidden rounded-2xl bg-slate-950 px-6 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-100">Créer la communauté</button>
                         </div>
                     </div>
+                <?php include base_path('views/community/partials/milsim_wizard_modal.php'); ?>
                 </form>
             </section>
 
@@ -690,10 +714,9 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
     var regModeSel = document.getElementById('registration_mode');
     var detailMilsim = document.getElementById('registration-mode-detail-milsim');
     var detailSimple = document.getElementById('registration-mode-detail-simple');
-    var milsimDetailsEl = document.getElementById('wizard-milsim-form-editor');
+    var milsimModal = document.getElementById('milsim-wizard-modal');
     var milsimJsonTa = document.getElementById('wizard_enlistment_milsim_json');
     var welcomeTa = document.getElementById('wizard-welcome-text');
-    var btnMilsimEditor = document.getElementById('btn-open-milsim-form-editor');
     var btnWelcome = document.getElementById('btn-open-welcome-editor');
 
     function syncRegistrationModeUi() {
@@ -707,18 +730,26 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
         syncRegistrationModeUi();
     }
 
+    function closeMilsimModal() {
+        if (milsimModal) milsimModal.classList.add('hidden');
+    }
     function openMilsimFormEditor() {
-        if (milsimDetailsEl) {
-            milsimDetailsEl.open = true;
-            milsimDetailsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        if (milsimJsonTa) {
-            setTimeout(function () { milsimJsonTa.focus(); }, 250);
+        if (milsimModal) {
+            milsimModal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
         }
     }
-    if (btnMilsimEditor) {
-        btnMilsimEditor.addEventListener('click', openMilsimFormEditor);
+    if (milsimModal) {
+        milsimModal.querySelectorAll('[data-milsim-modal-close], [data-milsim-modal-backdrop]').forEach(function (el) {
+            el.addEventListener('click', function () {
+                closeMilsimModal();
+                document.body.classList.remove('overflow-hidden');
+            });
+        });
     }
+    document.querySelectorAll('.btn-open-milsim-form-editor').forEach(function (btn) {
+        btn.addEventListener('click', openMilsimFormEditor);
+    });
     if (btnWelcome) {
         btnWelcome.addEventListener('click', function () {
             if (welcomeTa) {
@@ -951,6 +982,17 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
         customRolesContainer.appendChild(frag);
     }
     if (btnAddCustomRole) btnAddCustomRole.addEventListener('click', appendCustomRoleRow);
+
+    form.querySelectorAll('input[type="file"][name="wizard_logo_file"], input[type="file"][name="wizard_public_banner_file"]').forEach(function (input) {
+        input.addEventListener('change', function () {
+            var wrap = form.querySelector('.wizard-img-preview[data-preview-for="' + input.name + '"]');
+            if (!wrap || !input.files || !input.files[0]) return;
+            var url = URL.createObjectURL(input.files[0]);
+            var img = wrap.querySelector('img');
+            if (img) img.src = url;
+            wrap.classList.remove('hidden');
+        });
+    });
 
     showStep(1);
 })();

@@ -40,6 +40,14 @@ class HubController
         ];
 
         $entries[] = [
+            'label' => 'Pointage',
+            'url' => url('pointage'),
+            'description' => 'Présence, accès rapides et activité du jour.',
+            'badge' => null,
+            'letter' => 'P',
+        ];
+
+        $entries[] = [
             'label' => 'ORBAT',
             'url' => url('orbat'),
             'description' => 'Organisation et structure des unités.',

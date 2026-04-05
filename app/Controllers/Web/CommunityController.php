@@ -20,6 +20,7 @@ use App\Repositories\ReferralRepository;
 use App\Repositories\SubscriptionPlanRepository;
 use App\Services\Billing\StripeCheckoutService;
 use App\Services\Community\CommunityOnboardingValidationService;
+use App\Services\Community\CommunityWizardUploadService;
 use App\Services\Community\TenantBootstrapService;
 use App\Services\Community\TenantCommunityProfileService;
 use App\Services\EmailService;
@@ -38,7 +39,8 @@ class CommunityController
         private PendingCommunityCreateRepository $pendingCommunityRepository,
         private StripeCheckoutService $stripeCheckoutService,
         private SubscriptionPlanRepository $subscriptionPlanRepository,
-        private EmailService $emailService
+        private EmailService $emailService,
+        private CommunityWizardUploadService $communityWizardUploadService
     ) {}
 
     /** Registre des unités / communautés (hors tenant placeholder). */
@@ -87,9 +89,9 @@ class CommunityController
         }
         $forumMembersOnly = !empty($communityConfig['forum_members_only']);
         $showForumCta = !$forumMembersOnly || ($this->authService->check() && $hasMembershipInTenant);
-        $communityProfile = TenantCommunityProfileService::getPublicViewModel($communityConfig);
+        $communityProfile = TenantCommunityProfileService::getPublicViewModel($communityConfig, (string) ($tenant['slug'] ?? ''));
 
-        $publicLayout = ($communityConfig['public_page_layout'] ?? 'legacy') === 'showcase' ? 'showcase' : 'legacy';
+        $publicLayout = TenantCommunityProfileService::resolvePublicPageLayout($communityConfig['public_page_layout'] ?? null);
         $showcaseVm = null;
         $publicUnits = [];
         $publicRosterRows = [];
@@ -131,7 +133,7 @@ class CommunityController
         }
 
         return Response::view('layout.main', [
-            'title' => $tenant['name'],
+            'title' => trim((string) ($tenant['name'] ?? 'Communauté')) . ' — Fiche publique',
             'content' => 'community.show',
             'tenant' => $tenant,
             'memberships' => $memberships,
@@ -146,6 +148,7 @@ class CommunityController
             'publicRosterRows' => $publicRosterRows,
             'unitMemberCounts' => $unitMemberCounts,
             'commanderNames' => $commanderNames,
+            'communityShowcasePage' => $publicLayout === 'showcase',
         ]);
     }
 
@@ -297,6 +300,11 @@ class CommunityController
             }
             $data = $request->all();
             unset($data['_csrf_token']);
+            $user = $this->authService->user();
+            $uid = $user ? (int) ($user['id'] ?? 0) : 0;
+            foreach ($this->communityWizardUploadService->processUploads($uid) as $k => $v) {
+                $data[$k] = $v;
+            }
             Session::set('community_create_preview', $data);
 
             return Response::redirect(url('communities/create/preview'));
@@ -845,6 +853,16 @@ class CommunityController
             if ($k === 'wizard_custom_roles') {
                 continue;
             }
+            $wizard[$k] = $v;
+        }
+        $wm = $request->input('wizard_milsim');
+        if (is_array($wm)) {
+            $wizard['wizard_milsim'] = $wm;
+        }
+
+        $user = $this->authService->user();
+        $uid = $user ? (int) ($user['id'] ?? 0) : 0;
+        foreach ($this->communityWizardUploadService->processUploads($uid) as $k => $v) {
             $wizard[$k] = $v;
         }
 

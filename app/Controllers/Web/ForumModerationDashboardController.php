@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\ForumReportRepository;
+use App\Repositories\ForumModerationLogRepository;
 
 /**
  * Console centralisée /back-office/forum-moderation (modérateurs + admins).
@@ -15,7 +16,8 @@ use App\Repositories\ForumReportRepository;
 final class ForumModerationDashboardController
 {
     public function __construct(
-        private ForumReportRepository $reportRepository
+        private ForumReportRepository $reportRepository,
+        private ForumModerationLogRepository $moderationLogRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -41,6 +43,11 @@ final class ForumModerationDashboardController
 
         $handledReports = $this->reportRepository->listHandled($tenantId, 15);
 
+        $forumModerationLogsAvailable = $this->moderationLogRepository->tableExists();
+        $forumModerationLogs = $forumModerationLogsAvailable
+            ? $this->moderationLogRepository->listRecentForTenant($tenantId, 40)
+            : [];
+
         return Response::view('layout.forum', [
             'content' => 'admin.forum_moderation',
             'title' => 'Modération forum',
@@ -48,6 +55,8 @@ final class ForumModerationDashboardController
             'pendingReports' => $pendingReports,
             'handledReports' => $handledReports,
             'modScopeFilter' => $scopeFilter,
+            'forumModerationLogs' => $forumModerationLogs,
+            'forumModerationLogsAvailable' => $forumModerationLogsAvailable,
         ]);
     }
 }

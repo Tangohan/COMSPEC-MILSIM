@@ -16,6 +16,8 @@ class UserRepository
 
     private static ?bool $hasServiceAccountColumn = null;
 
+    private static ?bool $hasUserUnitsTable = null;
+
     /** Email réservé au compte technique par tenant (modération auto, cron, futurs tickets / webhooks). */
     public const SYSTEM_MODERATOR_EMAIL = 'system.moderation@internal.local';
 
@@ -42,6 +44,20 @@ class UserRepository
         }
 
         return self::$hasServiceAccountColumn;
+    }
+
+    private function hasUserUnitsTable(): bool
+    {
+        if (self::$hasUserUnitsTable === null) {
+            try {
+                $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_units' LIMIT 1");
+                self::$hasUserUnitsTable = $stmt && (bool) $stmt->fetchColumn();
+            } catch (\Throwable) {
+                self::$hasUserUnitsTable = false;
+            }
+        }
+
+        return self::$hasUserUnitsTable;
     }
 
     /**
@@ -248,9 +264,9 @@ class UserRepository
     }
 
     /** Liste avec filtres optionnels (recherche, statut, rôle). */
-    public function listForTenant(int $tenantId, ?string $search = null, ?string $status = null, ?int $roleId = null, ?int $limit = null, ?int $offset = null): array
+    public function listForTenant(int $tenantId, ?string $search = null, ?string $status = null, ?int $roleId = null, ?int $limit = null, ?int $offset = null, bool $excludeServiceAccounts = true, ?bool $onlyWithoutUnit = null, ?bool $onlyWithoutRole = null): array
     {
-        [$sql, $params] = $this->buildUserListQuery($tenantId, $search, $status, $roleId);
+        [$sql, $params] = $this->buildUserListQuery($tenantId, $search, $status, $roleId, $excludeServiceAccounts, $onlyWithoutUnit, $onlyWithoutRole);
         $sql .= ' ORDER BY u.email ASC';
         if ($limit !== null) {
             $sql .= ' LIMIT ' . max(1, min(200, (int) $limit)) . ' OFFSET ' . max(0, (int) ($offset ?? 0));
@@ -261,9 +277,9 @@ class UserRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function countListForTenant(int $tenantId, ?string $search = null, ?string $status = null, ?int $roleId = null): int
+    public function countListForTenant(int $tenantId, ?string $search = null, ?string $status = null, ?int $roleId = null, bool $excludeServiceAccounts = true, ?bool $onlyWithoutUnit = null, ?bool $onlyWithoutRole = null): int
     {
-        [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId);
+        [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId, $excludeServiceAccounts, $onlyWithoutUnit, $onlyWithoutRole);
         $sql = 'SELECT COUNT(*) FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE ' . $whereSql;
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
@@ -274,7 +290,7 @@ class UserRepository
     /**
      * @return array{0: string, 1: array<int, mixed>}
      */
-    private function buildUserListWhere(int $tenantId, ?string $search, ?string $status, ?int $roleId): array
+    private function buildUserListWhere(int $tenantId, ?string $search, ?string $status, ?int $roleId, bool $excludeServiceAccounts = true, ?bool $onlyWithoutUnit = null, ?bool $onlyWithoutRole = null): array
     {
         $parts = ['u.tenant_id = ?'];
         $params = [$tenantId];
@@ -293,6 +309,19 @@ class UserRepository
             $parts[] = 'u.role_id = ?';
             $params[] = $roleId;
         }
+        if ($excludeServiceAccounts && $this->hasServiceAccountColumn()) {
+            $parts[] = '(u.is_service_account IS NULL OR u.is_service_account = 0)';
+        }
+        if ($onlyWithoutRole === true) {
+            $parts[] = 'u.role_id IS NULL';
+        }
+        if ($onlyWithoutUnit === true) {
+            if ($this->hasUserUnitsTable()) {
+                $parts[] = 'NOT EXISTS (SELECT 1 FROM user_units uu WHERE uu.user_id = u.id AND (uu.ended_at IS NULL OR uu.ended_at > NOW()))';
+            } else {
+                $parts[] = '1=0';
+            }
+        }
 
         return [implode(' AND ', $parts), $params];
     }
@@ -300,9 +329,9 @@ class UserRepository
     /**
      * @return array{0: string, 1: array<int, mixed>}
      */
-    private function buildUserListQuery(int $tenantId, ?string $search, ?string $status, ?int $roleId): array
+    private function buildUserListQuery(int $tenantId, ?string $search, ?string $status, ?int $roleId, bool $excludeServiceAccounts = true, ?bool $onlyWithoutUnit = null, ?bool $onlyWithoutRole = null): array
     {
-        [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId);
+        [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId, $excludeServiceAccounts, $onlyWithoutUnit, $onlyWithoutRole);
         $sql = 'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE ' . $whereSql;
 
         return [$sql, $params];

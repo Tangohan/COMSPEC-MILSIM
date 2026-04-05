@@ -75,6 +75,50 @@ if (!function_exists('can')) {
     }
 }
 
+if (!function_exists('training_media_url')) {
+    /**
+     * URL absolue pour miniature / bannière formation (chemin relatif public ou URL externe).
+     */
+    function training_media_url(?string $path): string
+    {
+        static $placeholder = 'https://images.unsplash.com/photo-1509027572446-af2f376aa18f?w=1200&q=80';
+        if ($path === null || trim($path) === '') {
+            return $placeholder;
+        }
+        $path = trim($path);
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        return rtrim(url(''), '/') . '/' . ltrim(str_replace('\\', '/', $path), '/');
+    }
+}
+
+if (!function_exists('audit_action_label_fr')) {
+    /**
+     * Libellé français pour une action du journal audit_logs.
+     */
+    function audit_action_label_fr(string $action): string
+    {
+        return \App\Services\Audit\AuditActionLabel::toFrench($action);
+    }
+}
+
+if (!function_exists('training_showcase_badge_meta')) {
+    /**
+     * @return array{label: string, classes: string}
+     */
+    function training_showcase_badge_meta(?string $badge): array
+    {
+        return match ($badge ?? 'open') {
+            'full' => ['label' => 'Complet', 'classes' => 'bg-slate-600'],
+            'coming_soon' => ['label' => 'Bientôt', 'classes' => 'bg-amber-500'],
+            'closed' => ['label' => 'Fermé', 'classes' => 'bg-red-600'],
+            default => ['label' => 'Ouvert', 'classes' => 'bg-emerald-500'],
+        };
+    }
+}
+
 if (!function_exists('detect_current_module')) {
     /**
      * Module métier pour les scopes `module:` (aligné sur routes/web.php).

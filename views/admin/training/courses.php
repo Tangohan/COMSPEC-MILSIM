@@ -27,6 +27,7 @@ $courses = $courses ?? [];
                 <td class="p-3"><?= htmlspecialchars($c['category'] ?? '—') ?></td>
                 <td class="p-3">
                     <a href="<?= url('formations/' . htmlspecialchars($c['slug'])) ?>" class="text-slate-600 hover:text-slate-900 text-sm underline">Voir</a>
+                    <a href="<?= url('admin/training/courses/' . (int) $c['id'] . '/showcase') ?>" class="text-slate-600 hover:text-slate-900 text-sm underline ml-2">Vitrine</a>
                     <a href="<?= url('admin/training/enrollments?course_id=' . (int)$c['id']) ?>" class="text-slate-600 hover:text-slate-900 text-sm underline ml-2">Assignations</a>
                 </td>
             </tr>

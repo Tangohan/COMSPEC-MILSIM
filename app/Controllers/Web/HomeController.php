@@ -104,6 +104,23 @@ class HomeController
                 $atakModDownloadUrl = url('atak/mod/download');
             }
         }
+
+        $dashboardTenantLabel = null;
+        $showcaseTrainingFeature = false;
+        $showcaseItems = [];
+        if ($tenantId) {
+            $tid = (int) $tenantId;
+            $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
+            if ($tenantRow) {
+                $dashboardTenantLabel = community_display_name($tenantRow);
+            }
+            $showcaseTrainingFeature = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tid, 'training');
+            if ($showcaseTrainingFeature) {
+                $rows = \App\Core\Container::get(\App\Repositories\TrainingCourseRepository::class)->listPublishedForDashboard($tid, 20);
+                $showcaseItems = self::buildTrainingShowcasePayload($rows);
+            }
+        }
+
         return Response::view('dashboard', [
             'title' => 'Dashboard — Athena',
             'modpack' => $modpack,
@@ -114,7 +131,65 @@ class HomeController
             'communityMemberships' => $communityMemberships,
             'founder_trial_ends_at' => $founderTrialEndsAt,
             'show_founder_trial_banner' => $showFounderTrialBanner,
+            'dashboard_tenant_label' => $dashboardTenantLabel,
+            'showcase_training_feature' => $showcaseTrainingFeature,
+            'showcase_items' => $showcaseItems,
         ]);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private static function buildTrainingShowcasePayload(array $rows): array
+    {
+        $monthsFr = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+        $out = [];
+        foreach ($rows as $c) {
+            $cardLine = '';
+            $cycleDisplay = '—';
+            $rawDate = $c['showcase_cycle_date'] ?? null;
+            if (is_string($rawDate) && $rawDate !== '') {
+                $ts = strtotime($rawDate);
+                if ($ts !== false) {
+                    $cardLine = (int) date('j', $ts) . ' ' . $monthsFr[(int) date('n', $ts) - 1] . ' ' . date('Y', $ts);
+                    $cycleDisplay = date('d.m.Y', $ts);
+                }
+            }
+            $loc = trim((string) ($c['showcase_location'] ?? ''));
+            if ($cardLine !== '' && $loc !== '') {
+                $cardLine .= ' • ' . $loc;
+            } elseif ($cardLine === '' && $loc !== '') {
+                $cardLine = $loc;
+            }
+            $badge = (string) ($c['showcase_badge'] ?? 'open');
+            $meta = training_showcase_badge_meta($badge);
+            $desc = strip_tags((string) ($c['description'] ?? $c['short_description'] ?? ''));
+            $desc = preg_replace('/\s+/u', ' ', $desc) ?? '';
+            if (function_exists('mb_strlen') && mb_strlen($desc) > 600) {
+                $desc = mb_substr($desc, 0, 597) . '…';
+            } elseif (strlen($desc) > 600) {
+                $desc = substr($desc, 0, 597) . '…';
+            }
+            $slug = (string) ($c['slug'] ?? '');
+            $out[] = [
+                'id' => (int) $c['id'],
+                'title' => (string) ($c['title'] ?? ''),
+                'slug' => $slug,
+                'thumb' => training_media_url($c['thumbnail_path'] ?? null),
+                'banner' => training_media_url(!empty($c['banner_path']) ? $c['banner_path'] : ($c['thumbnail_path'] ?? null)),
+                'card_line' => $cardLine !== '' ? $cardLine : 'Date à confirmer',
+                'badge_label' => $meta['label'],
+                'badge_classes' => $meta['classes'],
+                'card_style' => (string) ($c['showcase_card_style'] ?? 'default'),
+                'cycle_display' => $cycleDisplay,
+                'location_display' => $loc !== '' ? $loc : '—',
+                'description' => $desc,
+                'course_url' => url('formations/' . $slug),
+            ];
+        }
+
+        return $out;
     }
 
     public function enlistment(Request $request, array $params = []): Response

@@ -79,6 +79,7 @@ use App\Controllers\Web\JoinController;
 use App\Controllers\Web\ReferralInviteController;
 use App\Controllers\Web\InvitationAcceptController;
 use App\Controllers\Web\CommunityEventsController;
+use App\Controllers\Web\PointageController;
 use App\Controllers\Web\PortalSearchController;
 use App\Controllers\Web\TenantMessagesController;
 use App\Controllers\Admin\Organization\InvitationAdminController;
@@ -147,6 +148,9 @@ return function (Router $router) {
     $router->post('/messages/{id}/reply', [TenantMessagesController::class, 'reply'], [AuthMiddleware::class]);
     $router->get('/search', [PortalSearchController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/hub', [HubController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/pointage', [PointageController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/pointage/rsvp', [PointageController::class, 'rsvp'], [AuthMiddleware::class]);
+    $router->post('/pointage/check-in', [PointageController::class, 'checkIn'], [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account/preferences', [AccountController::class, 'preferences'], [AuthMiddleware::class]);
     $router->post('/account/preferences', [AccountController::class, 'preferences'], [AuthMiddleware::class]);
@@ -251,6 +255,7 @@ return function (Router $router) {
     $router->get('/back-office/users/create', [UserAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/store', [UserAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/users/{id}', [UserAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/users/{id}/notify-profile', [UserAdminController::class, 'notifyProfileIncomplete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/users/{id}/edit', [UserAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/update', [UserAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/deactivate', [UserAdminController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -264,6 +269,8 @@ return function (Router $router) {
     $router->get('/back-office/analytics', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events', [CommunityEventsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events', [CommunityEventsAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/events/{id}', [CommunityEventsAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/cancel', [CommunityEventsAdminController::class, 'cancel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles', [RoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/{id}', [RoleAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/categories', [CategoryAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -327,6 +334,8 @@ return function (Router $router) {
     $router->post('/admin/atak-mod/delete', [AdminAtakModController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/training', [AdminTrainingController::class, 'dashboard'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
     $router->get('/admin/training/courses', [AdminTrainingController::class, 'courses'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
+    $router->get('/admin/training/courses/{id}/showcase', [AdminTrainingController::class, 'courseShowcase'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
+    $router->post('/admin/training/courses/{id}/showcase', [AdminTrainingController::class, 'courseShowcase'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
     $router->get('/admin/training/enrollments', [AdminTrainingController::class, 'enrollments'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
     $router->get('/admin/training/reports', [AdminTrainingController::class, 'reports'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
     $router->get('/admin/training/certificates', [AdminTrainingController::class, 'certificates'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);

@@ -142,7 +142,7 @@ class ForumTopicRepository
     {
         $stmt = $this->pdo->prepare(
             'SELECT ft.*, u.id AS topic_author_user_id, u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id,
-                    fc.name AS category_name, fc.slug AS category_slug
+                    fc.name AS category_name, fc.slug AS category_slug, COALESCE(fc.scope, \'general\') AS category_scope
              FROM forum_topics ft
              LEFT JOIN users u ON u.id = ft.user_id
              LEFT JOIN forum_categories fc ON fc.id = ft.category_id

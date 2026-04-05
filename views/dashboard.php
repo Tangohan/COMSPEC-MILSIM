@@ -1,13 +1,41 @@
-<?php $base = url(''); $title = $title ?? 'Dashboard — Athena'; ?>
+<?php
+$base = url('');
+$title = $title ?? 'Dashboard — Athena';
+$showcase_training_feature = $showcase_training_feature ?? false;
+$showcase_items = $showcase_items ?? [];
+$dashboard_tenant_label = $dashboard_tenant_label ?? null;
+$showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
+?>
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <?php $tailwindBaseUrl = $base; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
+    <?php if ($showcase_training_feature && !empty($showcase_items)): ?>
+    <script>
+        window.__dashboardShowcaseCourses = <?= $showcase_json ?>;
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('trainingShowcase', () => ({
+                openModal: null,
+                courses: window.__dashboardShowcaseCourses || [],
+                active() {
+                    return this.courses.find(c => c.id === this.openModal);
+                },
+                scrollTrack(dx) {
+                    const el = this.$refs.track;
+                    if (el) {
+                        el.scrollBy({ left: dx, behavior: 'smooth' });
+                    }
+                },
+            }));
+        });
+    </script>
+    <script defer src="https://unpkg.com/alpinejs@3/dist/cdn.min.js"></script>
+    <?php endif; ?>
 </head>
 <body class="bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
     <script>
@@ -275,7 +303,11 @@
     
                         <div class="max-w-4xl">
                             <p class="text-[11px] font-black uppercase tracking-[0.35em] text-slate-400 mb-3">
-                                Centre de commandement
+                                <?php if ($dashboard_tenant_label !== null && $dashboard_tenant_label !== ''): ?>
+                                    <?= htmlspecialchars('Communauté · ' . $dashboard_tenant_label) ?>
+                                <?php else: ?>
+                                    Centre de commandement
+                                <?php endif; ?>
                             </p>
     
                             <h1 class="text-4xl md:text-6xl font-black uppercase italic tracking-[-0.04em] text-[#001529] leading-none">
@@ -430,99 +462,95 @@
         <div class="py-12 flex justify-center">
             <div class="w-1 h-1 bg-slate-300 rounded-full"></div>
         </div>
-        <section class="py-12 bg-slate-50 overflow-hidden" x-data="{ openModal: null }">
-            <div class="max-w-7xl mx-auto px-6 mb-8 flex justify-between items-end">
+        <?php if ($showcase_training_feature): ?>
+        <section class="py-12 bg-slate-50 overflow-hidden" <?php if (!empty($showcase_items)): ?>x-data="trainingShowcase"<?php endif; ?>>
+            <div class="max-w-7xl mx-auto px-6 mb-8 flex justify-between items-end gap-4 flex-wrap">
                 <div>
                     <p class="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 mb-2">Catalogue</p>
-                    <h2 class="text-3xl font-black uppercase tracking-tighter text-slate-900 italic">Nos Formations</h2>
+                    <h2 class="text-3xl font-black uppercase tracking-tighter text-slate-900 italic">Nos formations</h2>
+                    <?php if ($dashboard_tenant_label !== null && $dashboard_tenant_label !== ''): ?>
+                    <p class="mt-2 text-xs font-bold text-slate-500 uppercase tracking-wider"><?= htmlspecialchars($dashboard_tenant_label) ?></p>
+                    <?php endif; ?>
                 </div>
+                <?php if (!empty($showcase_items)): ?>
                 <div class="flex gap-2">
-                    <button class="p-3 border border-slate-200 rounded-full hover:bg-white transition-colors">
+                    <button type="button" @click="scrollTrack(-360)" class="p-3 border border-slate-200 rounded-full hover:bg-white transition-colors" aria-label="Défiler vers la gauche">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     </button>
-                    <button class="p-3 border border-slate-200 rounded-full hover:bg-white transition-colors">
+                    <button type="button" @click="scrollTrack(360)" class="p-3 border border-slate-200 rounded-full hover:bg-white transition-colors" aria-label="Défiler vers la droite">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     </button>
                 </div>
+                <?php endif; ?>
             </div>
-        
-            <div class="flex gap-4 overflow-x-auto pb-12 px-[max(1.5rem,calc((100vw-80rem)/2))] no-scrollbar snap-x">
-                
-                <div @click="openModal = 1" class="flex-none w-72 h-[450px] relative group cursor-pointer snap-start overflow-hidden rounded-3xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20">
-                    <img src="https://media.defense.gov/2019/Sep/12/2002181666/2000/2000/0/190905-F-BT441-0001.JPG" 
-                         class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="JTAC">
-                    
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent"></div>
-        
+
+            <?php if (empty($showcase_items)): ?>
+            <div class="max-w-7xl mx-auto px-6 pb-12">
+                <p class="text-slate-600 text-sm mb-4">Aucune formation publiée pour cette communauté pour le moment.</p>
+                <div class="flex flex-wrap gap-3">
+                    <a href="<?= url('formations') ?>" class="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-blue-700 transition-colors">Ouvrir le catalogue</a>
+                    <?php if (function_exists('can') && (can('training.update') || can('training.publish') || can('admin.access') || can('training.manage'))): ?>
+                    <a href="<?= url('admin/training/courses') ?>" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-800 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white">Admin formations</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php else: ?>
+            <div x-ref="track" class="flex gap-4 overflow-x-auto pb-12 px-[max(1.5rem,calc((100vw-80rem)/2))] no-scrollbar snap-x">
+                <?php foreach ($showcase_items as $sc): ?>
+                <div
+                    @click="openModal = <?= (int) $sc['id'] ?>"
+                    class="flex-none w-72 h-[450px] relative group cursor-pointer snap-start overflow-hidden rounded-3xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl <?= ($sc['card_style'] ?? '') === 'grayscale' ? '' : 'hover:shadow-blue-900/20' ?>"
+                >
+                    <img src="<?= htmlspecialchars($sc['thumb']) ?>" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 <?= ($sc['card_style'] ?? '') === 'grayscale' ? 'grayscale group-hover:grayscale-0' : '' ?>" alt="<?= htmlspecialchars($sc['title']) ?>">
+                    <div class="absolute inset-0 bg-gradient-to-t <?= ($sc['card_style'] ?? '') === 'grayscale' ? 'from-slate-900 via-slate-900/40' : 'from-slate-900 via-slate-900/20' ?> to-transparent"></div>
                     <div class="absolute bottom-0 left-0 p-6 w-full">
                         <div class="flex items-center gap-2 mb-3">
-                            <span class="px-2 py-0.5 bg-emerald-500 text-[8px] font-black text-white uppercase tracking-widest rounded">Ouvert</span>
+                            <span class="px-2 py-0.5 <?= htmlspecialchars($sc['badge_classes']) ?> text-[8px] font-black text-white uppercase tracking-widest rounded"><?= htmlspecialchars($sc['badge_label']) ?></span>
                         </div>
-                        <h3 class="text-xl font-black text-white uppercase italic leading-none tracking-tighter mb-1">Opérateur JTAC</h3>
-                        <p class="text-[10px] text-slate-300 font-bold uppercase tracking-[0.2em]">12 Mars 2026 • Paris / Remote</p>
+                        <h3 class="text-xl font-black text-white uppercase italic leading-none tracking-tighter mb-1"><?= htmlspecialchars($sc['title']) ?></h3>
+                        <p class="text-[10px] text-slate-300 font-bold uppercase tracking-[0.2em]"><?= htmlspecialchars($sc['card_line']) ?></p>
                     </div>
                 </div>
-        
-                <div @click="openModal = 2" class="flex-none w-72 h-[450px] relative group cursor-pointer snap-start overflow-hidden rounded-3xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
-                    <img src="https://media.defense.gov/2023/Sep/08/2003296716/2000/2000/0/230905-Z-VT419-1491.JPG" 
-                         class="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt="Formation UI/UX">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
-                    <div class="absolute bottom-0 left-0 p-6 w-full">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="px-2 py-0.5 bg-slate-600 text-[8px] font-black text-white uppercase tracking-widest rounded">Complet</span>
-                        </div>
-                        <h3 class="text-xl font-black text-white uppercase italic leading-none tracking-tighter mb-1">Basic Pistol</h3>
-                        <p class="text-[10px] text-slate-300 font-bold uppercase tracking-[0.2em]">25 Avril 2026 • Lyon</p>
-                    </div>
-                </div>
-        
-                </div>
-        
-            <template x-if="openModal">
+                <?php endforeach; ?>
+            </div>
+
+            <template x-if="openModal !== null">
                 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
                     <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm" @click="openModal = null"></div>
-                    
-                    <div class="relative bg-white w-full max-w-4xl h-[80vh] overflow-hidden rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row"
+                    <div class="relative bg-white w-full max-w-4xl max-h-[85vh] overflow-hidden rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row"
                          x-transition:enter="transition ease-out duration-300"
                          x-transition:enter-start="opacity-0 scale-95"
                          x-transition:enter-end="opacity-100 scale-100">
-                        
-                        <button @click="openModal = null" class="absolute top-6 right-6 z-10 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
+                        <button type="button" @click="openModal = null" class="absolute top-6 right-6 z-10 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors" aria-label="Fermer">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
-        
-                        <div class="w-full md:w-1/2 h-64 md:h-auto bg-slate-900">
-                            <img src="https://www.riotgames.com/darkroom/1000/93903a320a7bb5838f1aa5a2893dee2a:8fa0894a97f915c7a3925b1affec0182/final-16x9-lor-7-3-devvideothumbbanner-stripped-optimized-1.jpg" 
-                                 class="w-full h-full object-cover opacity-80" alt="">
+                        <div class="w-full md:w-1/2 h-64 md:h-auto min-h-[16rem] bg-slate-900 shrink-0" x-show="active()">
+                            <img :src="active() ? active().banner : ''" :alt="active() ? active().title : ''" class="w-full h-full object-cover opacity-90">
                         </div>
-        
-                        <div class="flex-1 p-8 md:p-12 overflow-y-auto bg-white">
-                            <p class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 mb-4 italic">Détails Formation</p>
-                            <h2 class="text-4xl font-black uppercase tracking-tighter text-slate-900 mb-6 italic leading-none">Architecture & Design Patterns</h2>
-                            
+                        <div class="flex-1 p-8 md:p-12 overflow-y-auto bg-white min-h-0" x-show="active()">
+                            <p class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 mb-4 italic">Détails formation</p>
+                            <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tighter text-slate-900 mb-6 italic leading-none" x-text="active().title"></h2>
                             <div class="grid grid-cols-2 gap-6 mb-10 border-y border-slate-100 py-8">
                                 <div>
                                     <span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Date du cycle</span>
-                                    <span class="text-sm font-bold text-slate-900 uppercase">12.03.2026</span>
+                                    <span class="text-sm font-bold text-slate-900 uppercase" x-text="active().cycle_display"></span>
                                 </div>
                                 <div>
                                     <span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Lieu d'affectation</span>
-                                    <span class="text-sm font-bold text-slate-900 uppercase">Campus Paris / Visio</span>
+                                    <span class="text-sm font-bold text-slate-900 uppercase" x-text="active().location_display"></span>
                                 </div>
                             </div>
-        
-                            <p class="text-slate-600 leading-relaxed mb-10">
-                                Plongez dans les entrailles des architectures modernes. Ce module avancé couvre les principes SOLID, le Domain Driven Design (DDD) et l'optimisation des performances backend sous haute charge.
-                            </p>
-        
-                            <button class="w-full py-5 bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-blue-600 transition-all hover:translate-y-[-2px]">
-                                S'inscrire au programme
-                            </button>
+                            <p class="text-slate-600 leading-relaxed mb-10 whitespace-pre-wrap" x-text="active().description"></p>
+                            <a :href="active().course_url" class="block w-full text-center py-5 bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-blue-600 transition-all hover:translate-y-[-2px]">
+                                Ouvrir la formation
+                            </a>
                         </div>
                     </div>
                 </div>
             </template>
+            <?php endif; ?>
         </section>
+        <?php endif; ?>
         
         <style>
             /* Pour cacher la scrollbar mais garder le défilement */

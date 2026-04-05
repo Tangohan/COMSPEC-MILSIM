@@ -358,6 +358,13 @@ class TrainingApiController
                 'slug' => $data['slug'] ?? $course['slug'],
                 'short_description' => $data['short_description'] ?? $course['short_description'],
                 'description' => $data['description'] ?? $course['description'],
+                'thumbnail_path' => array_key_exists('thumbnail_path', $data) ? $data['thumbnail_path'] : $course['thumbnail_path'],
+                'banner_path' => array_key_exists('banner_path', $data) ? $data['banner_path'] : $course['banner_path'],
+                'showcase_cycle_date' => array_key_exists('showcase_cycle_date', $data) ? $data['showcase_cycle_date'] : ($course['showcase_cycle_date'] ?? null),
+                'showcase_location' => array_key_exists('showcase_location', $data) ? $data['showcase_location'] : ($course['showcase_location'] ?? null),
+                'showcase_badge' => $data['showcase_badge'] ?? ($course['showcase_badge'] ?? 'open'),
+                'showcase_card_style' => $data['showcase_card_style'] ?? ($course['showcase_card_style'] ?? 'default'),
+                'showcase_sort_order' => array_key_exists('showcase_sort_order', $data) ? $data['showcase_sort_order'] : ($course['showcase_sort_order'] ?? null),
                 'visibility' => $data['visibility'] ?? $course['visibility'],
                 'updated_by' => $userId,
             ]);
@@ -372,9 +379,21 @@ class TrainingApiController
             'slug' => $slug,
             'short_description' => $data['short_description'] ?? null,
             'description' => $data['description'] ?? null,
+            'thumbnail_path' => $data['thumbnail_path'] ?? null,
+            'banner_path' => $data['banner_path'] ?? null,
             'visibility' => $data['visibility'] ?? 'draft',
             'created_by' => $userId,
         ]);
+        $showcasePatch = [];
+        foreach (['showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order'] as $sk) {
+            if (array_key_exists($sk, $data)) {
+                $showcasePatch[$sk] = $data[$sk];
+            }
+        }
+        if ($showcasePatch !== []) {
+            $showcasePatch['updated_by'] = $userId;
+            $this->courseRepository->update($newId, $showcasePatch);
+        }
         return Response::json(['id' => $newId]);
     }
 

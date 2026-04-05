@@ -22,6 +22,7 @@ use App\Repositories\DocumentPermissionRepository;
 use App\Repositories\DocumentRelationRepository;
 use App\Repositories\DocumentRepository;
 use App\Repositories\EquipmentClassRepository;
+use App\Repositories\RoleRepository;
 use App\Repositories\TrainingRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
@@ -47,7 +48,8 @@ class AdminDocumentsController
         private UnitRepository $unitRepository,
         private UserRepository $userRepository,
         private DocumentUploadService $uploadService,
-        private AuditService $auditService
+        private AuditService $auditService,
+        private RoleRepository $roleRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -79,12 +81,19 @@ class AdminDocumentsController
                 $users[$uid] = $u['display_name'] ?? $u['email'] ?? '#' . $uid;
             }
         }
+        $categories = $this->categoryRepository->listForTenant($tenantId);
+
         return Response::view('layout.main', [
             'content' => 'admin.documents.index',
-            'title' => 'Documents',
+            'title' => 'Centre documentaire',
             'documents' => $documents,
             'users' => $users,
-            'categories' => $this->categoryRepository->listForTenant($tenantId),
+            'categories' => $categories,
+            'documentStats' => [
+                'published_count' => $this->documentRepository->countPublishedForTenant($tenantId),
+                'categories_count' => count($categories),
+                'latest_activity_at' => $this->documentRepository->latestActivityAtForTenant($tenantId),
+            ],
             'filters' => [
                 'category' => $categoryId,
                 'status' => $status ?? '',
@@ -118,6 +127,8 @@ class AdminDocumentsController
             'users' => $this->userRepository->allForTenant($tenantId),
             'allDocuments' => $allDocuments,
             'currentUserId' => $userId,
+            'tenantRoles' => $this->roleRepository->forTenantOrganization($tenantId),
+            'permissionAccessLevels' => DocumentPermissionRepository::getAccessLevels(),
         ]);
     }
 
@@ -147,6 +158,18 @@ class AdminDocumentsController
         $effectiveSlug = $slug !== '' ? $slug : $this->documentRepository->slugify($title);
         if ($this->documentRepository->slugExists($tenantId, $effectiveSlug)) {
             Session::set('error', 'Ce slug existe déjà.');
+            return Response::redirect(url('documents/gestion/ajout'));
+        }
+        $visibilityScope = trim((string) $request->input('visibility_scope')) ?: 'private';
+        if ($visibilityScope === 'role') {
+            $roleSlugs = $request->input('visibility_role_slugs');
+            if (!is_array($roleSlugs) || !array_filter(array_map('trim', array_map('strval', $roleSlugs)))) {
+                Session::set('error', 'Pour la visibilité « Rôle autorisé », cochez au moins un rôle.');
+                return Response::redirect(url('documents/gestion/ajout'));
+            }
+        }
+        if ($visibilityScope === 'unit' && !$request->input('link_unit')) {
+            Session::set('error', 'Pour la visibilité « Unité », sélectionnez l\'unité dans la section « Liaisons métier ».');
             return Response::redirect(url('documents/gestion/ajout'));
         }
         $file = $_FILES['file'] ?? null;
@@ -199,7 +222,7 @@ class AdminDocumentsController
 
         $this->saveLinksFromRequest($documentId, $tenantId, $request);
         $this->saveCollaboratorsFromRequest($documentId, $request, $userId);
-        $this->savePermissionsFromRequest($documentId, $request);
+        $this->savePermissionsFromRequest($documentId, $request, $visibilityScope);
         $parentId = $request->input('parent_document_id') ? (int) $request->input('parent_document_id') : null;
         $relationType = trim((string) $request->input('relation_type')) ?: 'document_lie';
         if ($parentId && $parentId !== $documentId) {
@@ -299,6 +322,8 @@ class AdminDocumentsController
             'equipmentClasses' => $this->equipmentRepository->listForTenant($tenantId),
             'units' => $this->unitRepository->allForTenant($tenantId),
             'users' => $this->userRepository->allForTenant($tenantId),
+            'tenantRoles' => $this->roleRepository->forTenantOrganization($tenantId),
+            'permissionAccessLevels' => DocumentPermissionRepository::getAccessLevels(),
         ]);
     }
 
@@ -332,6 +357,19 @@ class AdminDocumentsController
             return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
         }
 
+        $visibilityScope = trim((string) $request->input('visibility_scope')) ?: 'private';
+        if ($visibilityScope === 'role') {
+            $roleSlugs = $request->input('visibility_role_slugs');
+            if (!is_array($roleSlugs) || !array_filter(array_map(static fn ($s) => trim((string) $s), $roleSlugs))) {
+                Session::set('error', 'Pour la visibilité « Rôle autorisé », cochez au moins un rôle.');
+                return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+            }
+        }
+        if ($visibilityScope === 'unit' && !$request->input('link_unit')) {
+            Session::set('error', 'Pour la visibilité « Unité », sélectionnez l\'unité dans les liaisons métier.');
+            return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+        }
+
         $updateData = $this->documentDataFromRequest($request, (int) $tenantId, (int) $userId);
         $updateData['title'] = trim((string) $request->input('title'));
         $updateData['slug'] = $effectiveSlug;
@@ -348,7 +386,8 @@ class AdminDocumentsController
         $this->documentRepository->update($id, (int) $tenantId, $updateData);
         $this->saveLinksFromRequest($id, (int) $tenantId, $request);
         $this->saveCollaboratorsFromRequest($id, $request, (int) $userId);
-        $this->savePermissionsFromRequest($id, $request);
+        $visScope = trim((string) $request->input('visibility_scope')) ?: 'private';
+        $this->savePermissionsFromRequest($id, $request, $visScope);
 
         $parentId = $request->input('parent_document_id') ? (int) $request->input('parent_document_id') : null;
         $relationType = trim((string) $request->input('relation_type')) ?: 'document_lie';
@@ -638,20 +677,77 @@ class AdminDocumentsController
         $this->collaboratorRepository->setForDocument($documentId, $collaborators, $grantedBy);
     }
 
-    private function savePermissionsFromRequest(int $documentId, Request $request): void
+    private function savePermissionsFromRequest(int $documentId, Request $request, string $visibilityScope = ''): void
+    {
+        if ($visibilityScope === '') {
+            $visibilityScope = trim((string) $request->input('visibility_scope')) ?: 'private';
+        }
+        $permissions = $this->collectPermissionsFromRequest($request, $visibilityScope);
+        $this->permissionRepository->setForDocument($documentId, $permissions);
+    }
+
+    /**
+     * Permissions explicites (formulaire) + règles selon visibility_scope (rôles, unité).
+     *
+     * @return list<array{permission_type: string, permission_value: string, access_level: string}>
+     */
+    private function collectPermissionsFromRequest(Request $request, string $visibilityScope): array
     {
         $permissions = [];
+        $levels = DocumentPermissionRepository::getAccessLevels();
         $raw = $request->input('permissions');
         if (is_array($raw)) {
             foreach ($raw as $item) {
-                $type = $item['permission_type'] ?? '';
-                $value = (string) ($item['permission_value'] ?? '');
-                $level = $item['access_level'] ?? 'read';
-                if ($type !== '' && $value !== '') {
-                    $permissions[] = ['permission_type' => $type, 'permission_value' => $value, 'access_level' => $level];
+                $type = trim((string) ($item['permission_type'] ?? ''));
+                $value = trim((string) ($item['permission_value'] ?? ''));
+                $level = trim((string) ($item['access_level'] ?? 'read'));
+                if ($type === '' || $value === '') {
+                    continue;
+                }
+                if (!in_array($level, $levels, true)) {
+                    $level = 'read';
+                }
+                if (!in_array($type, DocumentPermissionRepository::getTypes(), true)) {
+                    continue;
+                }
+                $permissions[] = ['permission_type' => $type, 'permission_value' => $value, 'access_level' => $level];
+            }
+        }
+
+        if ($visibilityScope === 'role') {
+            $slugs = $request->input('visibility_role_slugs');
+            $level = trim((string) $request->input('visibility_role_access_level')) ?: 'read';
+            if (!in_array($level, $levels, true)) {
+                $level = 'read';
+            }
+            if (is_array($slugs)) {
+                foreach ($slugs as $slug) {
+                    $slug = trim((string) $slug);
+                    if ($slug !== '') {
+                        $permissions[] = ['permission_type' => 'role', 'permission_value' => $slug, 'access_level' => $level];
+                    }
                 }
             }
         }
-        $this->permissionRepository->setForDocument($documentId, $permissions);
+
+        if ($visibilityScope === 'unit') {
+            $unitId = $request->input('link_unit') ? (int) $request->input('link_unit') : 0;
+            if ($unitId > 0) {
+                $permissions[] = ['permission_type' => 'unit', 'permission_value' => (string) $unitId, 'access_level' => 'read'];
+            }
+        }
+
+        $seen = [];
+        $deduped = [];
+        foreach ($permissions as $p) {
+            $k = $p['permission_type'] . "\0" . $p['permission_value'] . "\0" . $p['access_level'];
+            if (isset($seen[$k])) {
+                continue;
+            }
+            $seen[$k] = true;
+            $deduped[] = $p;
+        }
+
+        return $deduped;
     }
 }

@@ -254,6 +254,27 @@ final class ProfilePublicIdentityService
         return $postRow;
     }
 
+    /**
+     * Forum « plateforme » (catégorie scope=platform) : carte auteur allégée — rôle communauté uniquement, sans ORBAT / dossier militaire.
+     *
+     * @param array<string, mixed> $postRow
+     * @return array<string, mixed>
+     */
+    public function filterAuthorCardForPlatformForum(array $postRow): array
+    {
+        $postRow['author_matricule'] = null;
+        $postRow['author_grade_name'] = null;
+        $postRow['author_grade_short'] = null;
+        $postRow['author_grade_nato'] = null;
+        $postRow['author_primary_role'] = null;
+        $postRow['author_unit_name'] = null;
+        $postRow['author_unit_code'] = null;
+        $postRow['author_unit_depth'] = null;
+        $postRow['author_awards'] = null;
+
+        return $postRow;
+    }
+
     private function emailLocalPart(string $email): string
     {
         if ($email === '') {

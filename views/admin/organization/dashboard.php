@@ -51,6 +51,10 @@ $kpiCardClass = static function (array $k): string {
             return $base . 'border-slate-200 border-l-[3px] ' . (($n !== null && $n > 0) ? 'border-l-amber-400' : 'border-l-slate-200');
         case 'profiles_incomplete':
             return $base . 'border-slate-200 border-l-[3px] ' . (($n !== null && $n > 0) ? 'border-l-amber-400' : 'border-l-slate-200');
+        case 'members_no_unit':
+            return $base . 'border-slate-200 border-l-[3px] ' . (($n !== null && $n > 0) ? 'border-l-violet-400' : 'border-l-slate-200');
+        case 'members_no_role':
+            return $base . 'border-slate-200 border-l-[3px] ' . (($n !== null && $n > 0) ? 'border-l-orange-400' : 'border-l-slate-200');
         case 'training_expiring':
             return $base . 'border-slate-200 border-l-[3px] border-l-sky-500';
         case 'moderation_open':
@@ -73,7 +77,18 @@ $rows = $adminRecentActivity ?? [];
 $activityError = $adminRecentActivityError ?? null;
 $moreUrl = $adminRecentActivityMoreUrl ?? url('back-office/audit');
 
-$wq = $orgWorkQueue ?? ['expired_invitations' => [], 'training_expiring' => [], 'error_invitations' => null, 'error_training' => null];
+$wq = $orgWorkQueue ?? [
+    'expired_invitations' => [],
+    'training_expiring' => [],
+    'incomplete_profiles' => [],
+    'users_without_unit' => [],
+    'users_without_role' => [],
+    'error_invitations' => null,
+    'error_training' => null,
+    'error_incomplete' => null,
+    'error_no_unit' => null,
+    'error_no_role' => null,
+];
 $mod = $orgModerationRecent ?? [];
 $modErr = $orgModerationError ?? null;
 
@@ -195,6 +210,79 @@ if ($showPlatformEnv) {
             <?php endif; ?>
         </section>
 
+        <section aria-labelledby="org-personnel-alerts-heading" class="space-y-4">
+            <div>
+                <h2 id="org-personnel-alerts-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Alertes effectifs</h2>
+                <p class="mt-1 text-sm text-slate-600">Membres actifs à traiter : profil incomplet, affectation d’unité, ou rôle communautaire manquant (hors comptes techniques).</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
+                <?php
+                $alertCard = static function (string $title, string $badgeOk, string $badgeWarn, array $rows, ?string $err, string $moreUrl, string $borderAccent): void {
+                    $n = is_array($rows) ? count($rows) : 0;
+                    ?>
+                <div class="rounded-2xl border <?= htmlspecialchars($borderAccent, ENT_QUOTES, 'UTF-8') ?> bg-white p-5 shadow-sm flex flex-col min-h-[200px]">
+                    <div class="flex items-start justify-between gap-2 mb-3">
+                        <h3 class="text-sm font-bold text-slate-900"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h3>
+                        <?php if ($err): ?>
+                            <span class="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">Erreur</span>
+                        <?php elseif ($n > 0): ?>
+                            <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md"><?= (int) $n ?> affiché(s)</span>
+                        <?php else: ?>
+                            <span class="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md"><?= htmlspecialchars($badgeOk, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($err): ?>
+                        <p class="text-sm text-rose-600 flex-1"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php elseif (empty($rows)): ?>
+                        <p class="text-sm text-slate-600 flex-1"><?= htmlspecialchars($badgeWarn, ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php else: ?>
+                        <ul class="text-sm space-y-2 flex-1 min-h-0">
+                            <?php foreach ($rows as $row): ?>
+                                <li class="border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                                    <a href="<?= url('back-office/users/' . (int) ($row['id'] ?? 0)) ?>" class="font-medium text-blue-800 hover:text-blue-950 hover:underline">
+                                        <?= htmlspecialchars((string) ($row['display_name'] ?? $row['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                    </a>
+                                    <span class="block text-xs text-slate-500 truncate"><?= htmlspecialchars((string) ($row['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                    <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-slate-800 hover:text-slate-950">Voir la liste filtrée →</a>
+                </div>
+                <?php
+                };
+
+                $alertCard(
+                    'Profils incomplets',
+                    'OK',
+                    'Aucun profil actif ne correspond aux critères (identité ou rôle manquant).',
+                    $wq['incomplete_profiles'] ?? [],
+                    $wq['error_incomplete'] ?? null,
+                    url('back-office/users') . '?filter_incomplete=1',
+                    'border-amber-200/80'
+                );
+                $alertCard(
+                    'Sans unité',
+                    'OK',
+                    'Tous les membres actifs ont une affectation en cours (ou table d’affectations absente).',
+                    $wq['users_without_unit'] ?? [],
+                    $wq['error_no_unit'] ?? null,
+                    url('back-office/users') . '?filter_no_unit=1',
+                    'border-violet-200/80'
+                );
+                $alertCard(
+                    'Sans rôle communautaire',
+                    'OK',
+                    'Chaque membre actif a un rôle assigné.',
+                    $wq['users_without_role'] ?? [],
+                    $wq['error_no_role'] ?? null,
+                    url('back-office/users') . '?filter_no_role=1',
+                    'border-orange-200/80'
+                );
+                ?>
+            </div>
+        </section>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
             <section class="lg:col-span-7 xl:col-span-8" aria-labelledby="org-journal-heading">
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -228,7 +316,8 @@ if ($showPlatformEnv) {
                                         <?= htmlspecialchars($orgFormatDt(isset($row['created_at']) ? (string) $row['created_at'] : null), ENT_QUOTES, 'UTF-8') ?>
                                     </div>
                                     <div class="min-w-0 flex-1">
-                                        <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-mono font-medium text-slate-800 mb-1"><?= htmlspecialchars((string) ($row['action'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php $actionSlug = (string) ($row['action'] ?? ''); ?>
+                                        <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-800 mb-1" title="<?= htmlspecialchars($actionSlug, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(audit_action_label_fr($actionSlug), ENT_QUOTES, 'UTF-8') ?></span>
                                         <p class="text-sm text-slate-700">
                                             <span class="text-slate-500">Acteur ·</span>
                                             <?= htmlspecialchars((string) ($row['actor_email'] ?? ('#' . (string) ($row['user_id'] ?? ''))), ENT_QUOTES, 'UTF-8') ?>

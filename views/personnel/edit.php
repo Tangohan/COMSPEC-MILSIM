@@ -73,8 +73,8 @@ $currentClearance = trim((string)($p['clearance_level'] ?? ''));
             </div>
         </section>
 
-        <section class="bg-white border border-slate-200 rounded-2xl p-6">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-900 mb-4">Forum & visibilité</h2>
+        <section id="forum-community-settings" class="bg-white border border-slate-200 rounded-2xl p-6 scroll-mt-24">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-900 mb-4">Forum & visibilité (communauté)</h2>
             <p class="text-xs text-slate-600 mb-4">Pseudo affiché sur le forum et contrôle de ce que les autres membres voient sur votre fiche.</p>
             <div class="grid md:grid-cols-2 gap-4">
                 <div>

@@ -56,6 +56,26 @@ final class AuditLogRepository
             $params[] = (int) $filters['tenant_id'];
         }
 
+        if (!empty($filters['organization_journal'])) {
+            $excludedActions = [
+                'site_role.assigned',
+                'site_role.revoked',
+                'permission.scope_migration',
+            ];
+            $placeholders = implode(',', array_fill(0, count($excludedActions), '?'));
+            $where[] = "a.action NOT IN ({$placeholders})";
+            foreach ($excludedActions as $ea) {
+                $params[] = $ea;
+            }
+            $where[] = '(a.user_id IS NULL OR NOT EXISTS (
+                SELECT 1 FROM users u_pf
+                INNER JOIN site_role_assignments sra
+                    ON sra.email_normalized = LOWER(TRIM(u_pf.email))
+                    AND sra.revoked_at IS NULL
+                WHERE u_pf.id = a.user_id
+            ))';
+        }
+
         $whereSql = implode(' AND ', $where);
         $countStmt = $this->pdo->prepare("SELECT COUNT(*) FROM audit_logs a WHERE {$whereSql}");
         $countStmt->execute($params);
@@ -108,19 +128,47 @@ final class AuditLogRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    /** @return list<array<string, mixed>> */
-    public function recentForTenant(int $tenantId, int $limit): array
+    /**
+     * Dernières entrées pour un tenant. Pour le back-office organisation : exclure les actions
+     * réservées à la plateforme et les acteurs ayant un rôle site (staff).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function recentForTenant(int $tenantId, int $limit, bool $organizationJournal = true): array
     {
         $limit = max(1, min(50, $limit));
-        $stmt = $this->pdo->prepare(
-            'SELECT a.*, u.email AS actor_email
+        if (!$organizationJournal) {
+            $stmt = $this->pdo->prepare(
+                'SELECT a.*, u.email AS actor_email
+                 FROM audit_logs a
+                 LEFT JOIN users u ON u.id = a.user_id
+                 WHERE a.tenant_id = ?
+                 ORDER BY a.id DESC
+                 LIMIT ' . (int) $limit
+            );
+            $stmt->execute([$tenantId]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+
+        $excludedActions = ['site_role.assigned', 'site_role.revoked', 'permission.scope_migration'];
+        $placeholders = implode(',', array_fill(0, count($excludedActions), '?'));
+        $sql = "SELECT a.*, u.email AS actor_email
              FROM audit_logs a
              LEFT JOIN users u ON u.id = a.user_id
              WHERE a.tenant_id = ?
+             AND a.action NOT IN ({$placeholders})
+             AND (a.user_id IS NULL OR NOT EXISTS (
+                SELECT 1 FROM users u_pf
+                INNER JOIN site_role_assignments sra
+                    ON sra.email_normalized = LOWER(TRIM(u_pf.email))
+                    AND sra.revoked_at IS NULL
+                WHERE u_pf.id = a.user_id
+             ))
              ORDER BY a.id DESC
-             LIMIT ' . (int) $limit
-        );
-        $stmt->execute([$tenantId]);
+             LIMIT " . (int) $limit;
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId], $excludedActions));
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }

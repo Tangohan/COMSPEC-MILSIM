@@ -63,6 +63,7 @@ class Container
                 self::get(\App\Services\Billing\StripeCheckoutService::class),
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),
                 self::get(\App\Services\EmailService::class),
+                new \App\Services\Community\CommunityWizardUploadService(),
             ),
             \App\Controllers\Web\JoinController::class => new \App\Controllers\Web\JoinController(
                 self::get(TenantRepository::class),
@@ -190,15 +191,29 @@ class Container
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Repositories\PlatformUsageRepository::class)
             ),
+            \App\Services\Attendance\CommunityEventAttendanceService::class => new \App\Services\Attendance\CommunityEventAttendanceService(
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(TenantRepository::class),
+                self::get(UserRepository::class)
+            ),
             \App\Controllers\Admin\Organization\CommunityEventsAdminController::class => new \App\Controllers\Admin\Organization\CommunityEventsAdminController(
                 self::get(\App\Repositories\CommunityEventRepository::class),
                 self::get(AuthService::class),
-                self::get(\App\Services\Platform\FeatureGateService::class)
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Services\Attendance\CommunityEventAttendanceService::class)
             ),
             \App\Controllers\Web\CommunityEventsController::class => new \App\Controllers\Web\CommunityEventsController(
                 self::get(\App\Repositories\CommunityEventRepository::class),
                 self::get(AuthService::class),
-                self::get(\App\Services\Platform\FeatureGateService::class)
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Services\Attendance\CommunityEventAttendanceService::class)
+            ),
+            \App\Controllers\Web\PointageController::class => new \App\Controllers\Web\PointageController(
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(AuthService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Services\Attendance\CommunityEventAttendanceService::class)
             ),
             \App\Services\Profile\RecruitmentPresetPayloadService::class => new \App\Services\Profile\RecruitmentPresetPayloadService(),
             \App\Controllers\Web\AccountController::class => new \App\Controllers\Web\AccountController(
@@ -350,12 +365,16 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PersonnelExtrasRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
                 self::get(\App\Repositories\GradeRepository::class),
                 self::get(\App\Repositories\GradeCategoryRepository::class),
                 self::get(\App\Services\Admin\ProfileCompletenessService::class),
+                self::get(\App\Services\Personnel\PersonnelCompletenessService::class),
                 self::get(\App\Services\Admin\AdminAuditService::class),
-                self::get(\App\Services\GradeValidationService::class)
+                self::get(\App\Services\GradeValidationService::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(TenantRepository::class)
             ),
             \App\Controllers\Web\DocumentsController::class => new \App\Controllers\Web\DocumentsController(
                 self::get(\App\Repositories\DocumentRepository::class),
@@ -487,7 +506,8 @@ class Container
                 self::get(\App\Repositories\TrainingEnrollmentRepository::class),
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
                 self::get(\App\Services\Training\TrainingAssignmentService::class),
-                self::get(\App\Services\Training\TrainingAuditService::class)
+                self::get(\App\Services\Training\TrainingAuditService::class),
+                self::get(TenantRepository::class)
             ),
             \App\Controllers\Api\TrainingApiController::class => new \App\Controllers\Api\TrainingApiController(
                 self::get(\App\Services\Training\TrainingService::class),
@@ -514,7 +534,8 @@ class Container
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Services\Documents\DocumentUploadService::class),
-                self::get(\App\Services\Audit\AuditService::class)
+                self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Repositories\RoleRepository::class)
             ),
             \App\Repositories\ForumCategoryRepository::class => new \App\Repositories\ForumCategoryRepository(),
             \App\Repositories\ForumAuthorIdentityRepository::class => new \App\Repositories\ForumAuthorIdentityRepository(),
@@ -554,11 +575,13 @@ class Container
             \App\Repositories\ForumTopicRepository::class => new \App\Repositories\ForumTopicRepository(),
             \App\Repositories\ForumPostRepository::class => new \App\Repositories\ForumPostRepository(),
             \App\Repositories\ForumReportRepository::class => new \App\Repositories\ForumReportRepository(),
+            \App\Repositories\ForumModerationLogRepository::class => new \App\Repositories\ForumModerationLogRepository(),
             \App\Controllers\Web\ForumController::class => new \App\Controllers\Web\ForumController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
                 self::get(\App\Repositories\ForumTopicRepository::class),
                 self::get(\App\Repositories\ForumPostRepository::class),
                 self::get(\App\Repositories\ForumReportRepository::class),
+                self::get(\App\Repositories\ModerationArtifactRepository::class),
                 self::get(\App\Repositories\ForumAuthorIdentityRepository::class),
                 self::get(\App\Services\Profile\ProfilePublicIdentityService::class)
             ),
@@ -590,7 +613,13 @@ class Container
                 self::get(\App\Repositories\ForumReportRepository::class)
             ),
             \App\Controllers\Web\ForumModerationDashboardController::class => new \App\Controllers\Web\ForumModerationDashboardController(
-                self::get(\App\Repositories\ForumReportRepository::class)
+                self::get(\App\Repositories\ForumReportRepository::class),
+                self::get(\App\Repositories\ForumModerationLogRepository::class)
+            ),
+            \App\Controllers\Web\ContentModerationController::class => new \App\Controllers\Web\ContentModerationController(
+                self::get(\App\Repositories\ModerationArtifactRepository::class),
+                self::get(\App\Repositories\ModerationDecisionRepository::class),
+                self::get(\App\Services\Documents\DocumentUploadService::class)
             ),
             \App\Repositories\ForumVoteRepository::class => new \App\Repositories\ForumVoteRepository(),
             \App\Repositories\ForumAttachmentRepository::class => new \App\Repositories\ForumAttachmentRepository(),

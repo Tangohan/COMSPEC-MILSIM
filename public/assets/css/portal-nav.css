@@ -69,43 +69,52 @@
   background: linear-gradient(180deg, var(--nav-accent, #0ea5e9) 0%, rgb(15 23 42) 100%);
 }
 
-.portal-nav__status {
-  font-variant-numeric: tabular-nums;
+/* Bloc marque (carte + monogramme) */
+.portal-nav__brand-monogram {
+  background: linear-gradient(
+    145deg,
+    rgb(15 23 42) 0%,
+    rgb(51 65 85) 42%,
+    color-mix(in srgb, var(--nav-accent, #059669) 88%, rgb(15 23 42)) 100%
+  );
+  box-shadow:
+    0 4px 14px -4px rgba(15, 23, 42, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
-.portal-nav__status-chip {
-  letter-spacing: 0.06em;
-  border: 1px solid rgb(226 232 240);
-  background: rgb(241 245 249);
+@supports not (color: color-mix(in srgb, white, black)) {
+  .portal-nav__brand-monogram {
+    background: linear-gradient(145deg, rgb(15 23 42) 0%, rgb(51 65 85) 45%, var(--nav-accent, #059669) 100%);
+  }
 }
 
-.portal-nav__status-chip--alert-urgent {
-  border-color: rgb(251 113 133 / 0.6);
-  background: rgb(255 241 242 / 0.95);
-  color: rgb(136 19 55);
-}
-
-.portal-nav__status-chip--alert-warn {
-  border-color: rgb(251 191 36 / 0.55);
-  background: rgb(255 251 235 / 0.95);
-  color: rgb(120 53 15);
-}
-
-/* Triggers navigation : état actif / survol */
-.portal-nav__link--mega[data-active="1"] .portal-nav__trigger-inner,
-.portal-nav__link--simple[data-active="1"] {
-  border-bottom-color: var(--nav-accent, #0284c7);
-  color: rgb(15 23 42);
-  box-shadow: inset 0 -3px 0 0 var(--nav-accent, #0284c7);
-}
-
-.portal-nav__link--simple[data-active="1"] {
-  border-bottom-style: solid;
+/* Triggers navigation : survol / actif (zones arrondies + pastille sous l’onglet actif) */
+.portal-nav__link--simple {
+  position: relative;
 }
 
 .portal-nav__link--mega:hover .portal-nav__trigger-inner,
 .portal-nav__link--simple:hover {
-  background: var(--nav-accent-soft, rgba(14, 165, 233, 0.08));
+  background: var(--nav-accent-soft, rgba(71, 85, 105, 0.12));
+}
+
+.portal-nav__link--mega[data-active="1"] .portal-nav__trigger-inner,
+.portal-nav__link--simple[data-active="1"] {
+  color: rgb(15 23 42);
+  background: var(--nav-accent-soft, rgba(71, 85, 105, 0.14));
+}
+
+.portal-nav__link--mega[data-active="1"] .portal-nav__trigger-inner::after,
+.portal-nav__link--simple[data-active="1"]::after {
+  content: '';
+  position: absolute;
+  bottom: 0.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1.5rem;
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--nav-accent, #64748b);
 }
 
 /* Méga panneau */

@@ -2,6 +2,7 @@
 $title = $title ?? 'Athena';
 $content = $content ?? 'home';
 $baseUrl = url('');
+$communityShowcasePage = !empty($communityShowcasePage);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -10,32 +11,31 @@ $baseUrl = url('');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?> — Athena</title>
 <?php
-    /** Fichier compilé prioritaire : évite le CDN en prod (avertissement console + perf). Sinon CDN pour le dev sans build. */
-    $tailwindBuilt = is_file(base_path('public/assets/css/tailwind.css'));
-    if ($tailwindBuilt): ?>
-    <link href="<?= $baseUrl ?>/assets/css/tailwind.css" rel="stylesheet">
-<?php else: ?>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'system-ui', 'sans-serif'],
-              serif: ['"Source Serif 4"', 'Georgia', 'serif'],
-            },
-            letterSpacing: {
-              architect: '0.3em',
-              blueprint: '0.5em',
-            },
-          },
-        },
-      };
-    </script>
-<?php endif; ?>
+    $tailwindBaseUrl = $baseUrl;
+    require base_path('views/partials/tailwind_cdn_or_build.php');
+?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+    <?php if ($communityShowcasePage): ?>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      .community-showcase-grain::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: .04;
+        background-image: radial-gradient(circle at 20% 20%, #000 0.5px, transparent 0.6px), radial-gradient(circle at 80% 70%, #000 0.5px, transparent 0.6px);
+        background-size: 18px 18px;
+      }
+      .shadow-soft { box-shadow: 0 20px 70px -30px rgba(15,23,42,0.25); }
+      .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+      .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+      .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+      .community-public-vitrine .font-mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    </style>
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
     <link href="<?= $baseUrl ?>/assets/css/styles.css" rel="stylesheet">
     <?php endif; ?>

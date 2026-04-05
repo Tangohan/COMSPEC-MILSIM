@@ -44,6 +44,23 @@ class TrainingCourseRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Formations publiées pour le carrousel dashboard (ordre vitrine, puis date de cycle, puis titre).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listPublishedForDashboard(int $tenantId, int $limit = 20): array
+    {
+        $limit = max(1, min(50, $limit));
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM training_courses WHERE tenant_id = ? AND visibility = ? '
+            . 'ORDER BY (showcase_sort_order IS NULL) ASC, showcase_sort_order ASC, (showcase_cycle_date IS NULL) ASC, showcase_cycle_date ASC, title ASC '
+            . 'LIMIT ' . $limit
+        );
+        $stmt->execute([$tenantId, 'published']);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function findById(int $id, ?int $tenantId = null): ?array
     {
         $sql = 'SELECT * FROM training_courses WHERE id = ?';
@@ -128,7 +145,7 @@ class TrainingCourseRepository
     {
         $fields = [];
         $params = [];
-        $allowed = ['title', 'slug', 'short_description', 'description', 'thumbnail_path', 'banner_path', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by'];
+        $allowed = ['title', 'slug', 'short_description', 'description', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by'];
         foreach ($allowed as $k) {
             if (array_key_exists($k, $data)) {
                 $fields[] = "`$k` = ?";

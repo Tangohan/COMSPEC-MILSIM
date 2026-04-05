@@ -2,7 +2,8 @@
  *  Palette: fond slate-50, texte slate-900, accents emerald-600
  *  Titres: Sans-Serif (Inter), gras, italique, tracking élevé
  *  Corps: Serif (Source Serif 4), text-slate-600, leading-relaxed
- *  Ce fichier sert de référence ; le layout utilise la config CDN (script dans main.php).
+ *  Build : npm install && npm run build:tailwind → public/assets/css/tailwind.css
+ *  (voir views/partials/tailwind_cdn_or_build.php — CDN uniquement si le fichier compilé est absent).
  */
 module.exports = {
   content: ['views/**/*.php', 'public/**/*.js'],

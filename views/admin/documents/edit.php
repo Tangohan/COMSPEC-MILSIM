@@ -31,6 +31,30 @@ $visibilityScopes = ['private' => 'Privé', 'collaborators' => 'Collaborateurs',
 $statuses = ['draft' => 'Brouillon', 'review' => 'En relecture', 'approval' => 'À valider', 'published' => 'Publié', 'suspended' => 'Suspendu', 'archived' => 'Archivé', 'obsolete' => 'Obsolète'];
 $relationTypes = ['annexe' => 'Annexe', 'piece_jointe' => 'Pièce jointe', 'reference' => 'Référence', 'support_formation' => 'Support formation', 'procedure_associee' => 'Procédure associée', 'document_lie' => 'Document lié'];
 $allDocuments = $allDocuments ?? [];
+$tenantRoles = $tenantRoles ?? [];
+$permissionAccessLevels = $permissionAccessLevels ?? ['read', 'comment', 'edit', 'approve', 'manage'];
+$roleSlugsGranted = [];
+$firstRoleAccess = 'read';
+foreach ($permissions as $p) {
+    if (($p['permission_type'] ?? '') === 'role' && ($p['permission_value'] ?? '') !== '') {
+        $roleSlugsGranted[] = (string) $p['permission_value'];
+        $firstRoleAccess = (string) ($p['access_level'] ?? 'read');
+    }
+}
+$roleSlugsGranted = array_values(array_unique($roleSlugsGranted));
+$accessLevelLabels = ['read' => 'Lecture', 'comment' => 'Commenter', 'edit' => 'Modifier', 'approve' => 'Valider', 'manage' => 'Gérer'];
+$permTypeLabels = ['role' => 'Rôle (slug)', 'unit' => 'Unité (ID)', 'user' => 'Utilisateur (ID)', 'group' => 'Groupe'];
+$visibilityHelp = [
+    'private' => 'Seuls le propriétaire et les collaborateurs une fois publié.',
+    'collaborators' => 'Réservé aux collaborateurs désignés.',
+    'unit' => 'Choisissez l’unité dans les liaisons métier.',
+    'role' => 'Cochez les rôles autorisés.',
+    'organization' => 'Tout le tenant.',
+    'controlled' => 'Règles fines dans le tableau.',
+];
+$controlledRows = array_values(array_filter($permissions, static function ($p): bool {
+    return ($p['permission_type'] ?? '') !== 'role';
+}));
 $docTags = $document['tags'] ?? null;
 if (is_string($docTags)) {
     $docTags = json_decode($docTags, true);
@@ -95,31 +119,99 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                 </section>
             </div>
             <div class="space-y-6">
-                <section class="bg-white border border-slate-200 rounded-lg p-4">
-                    <h2 class="text-sm font-bold text-slate-800 mb-3">Classification & sécurité</h2>
-                    <div class="space-y-3">
+                <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-white px-4 py-3">
+                        <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Classification &amp; visibilité</h2>
+                    </div>
+                    <div class="space-y-4 p-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Niveau de classification</label>
-                            <select name="classification_level" class="w-full border border-slate-200 rounded px-3 py-2">
+                            <label class="mb-1 block text-xs font-bold text-slate-600">Niveau de classification</label>
+                            <select name="classification_level" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
                                 <?php foreach ($classificationLevels as $k => $v): ?>
                                 <option value="<?= htmlspecialchars($k) ?>" <?= ($document['classification_level'] ?? 'interne') === $k ? 'selected' : '' ?>><?= htmlspecialchars($v) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Visibilité</label>
-                            <select name="visibility_scope" class="w-full border border-slate-200 rounded px-3 py-2">
+                            <label class="mb-1 block text-xs font-bold text-slate-600" for="edit-visibility-scope">Visibilité</label>
+                            <select name="visibility_scope" id="edit-visibility-scope" class="w-full rounded-xl border-2 border-slate-300 px-3 py-2 text-sm">
                                 <?php foreach ($visibilityScopes as $k => $v): ?>
                                 <option value="<?= htmlspecialchars($k) ?>" <?= ($document['visibility_scope'] ?? 'private') === $k ? 'selected' : '' ?>><?= htmlspecialchars($v) ?></option>
                                 <?php endforeach; ?>
                             </select>
+                            <p id="edit-visibility-help" class="mt-2 rounded-lg bg-slate-50 px-2 py-1.5 text-[11px] text-slate-600"></p>
                         </div>
+
+                        <div id="edit-panel-role" class="hidden rounded-xl border border-violet-200 bg-violet-50/50 p-3">
+                            <p class="text-xs font-bold text-violet-900">Rôles autorisés</p>
+                            <div class="mt-2 max-h-40 space-y-1 overflow-y-auto rounded border border-violet-100 bg-white p-2">
+                                <?php foreach ($tenantRoles as $role): ?>
+                                <?php $slug = (string) ($role['slug'] ?? ''); ?>
+                                <label class="flex cursor-pointer items-center gap-2 text-sm">
+                                    <input type="checkbox" name="visibility_role_slugs[]" value="<?= htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') ?>" <?= in_array($slug, $roleSlugsGranted, true) ? 'checked' : '' ?> class="rounded border-slate-300 text-violet-600" />
+                                    <?= htmlspecialchars((string) ($role['name'] ?? '')) ?> <span class="font-mono text-[11px] text-slate-500"><?= htmlspecialchars($slug) ?></span>
+                                </label>
+                                <?php endforeach; ?>
+                            </div>
+                            <label class="mt-2 block text-[11px] font-bold text-slate-600">Niveau d’accès</label>
+                            <select name="visibility_role_access_level" class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm">
+                                <?php foreach ($permissionAccessLevels as $lvl): ?>
+                                <option value="<?= htmlspecialchars($lvl) ?>" <?= $lvl === $firstRoleAccess ? 'selected' : '' ?>><?= htmlspecialchars($accessLevelLabels[$lvl] ?? $lvl) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div id="edit-panel-unit" class="hidden rounded-xl border border-sky-200 bg-sky-50/60 p-3 text-[11px] text-sky-900">
+                            Indiquez l’unité dans <strong>Liaisons métier</strong> ci-dessous (liste Unité).
+                        </div>
+
+                        <div id="edit-panel-controlled" class="hidden overflow-x-auto rounded-xl border border-amber-200 bg-amber-50/50 p-2">
+                            <table class="min-w-full text-left text-[11px]">
+                                <thead><tr class="text-[10px] font-black uppercase text-amber-900"><th class="px-1 py-1">Type</th><th class="px-1 py-1">Valeur</th><th class="px-1 py-1">Accès</th></tr></thead>
+                                <tbody>
+                                <?php for ($pi = 0; $pi < 6; $pi++): ?>
+                                <?php $row = $controlledRows[$pi] ?? null; ?>
+                                <tr>
+                                    <td class="p-1">
+                                        <select name="permissions[<?= $pi ?>][permission_type]" class="w-full rounded border border-slate-200 px-1 py-1">
+                                            <option value="">—</option>
+                                            <?php foreach ($permTypeLabels as $pk => $pl): ?>
+                                            <option value="<?= htmlspecialchars($pk) ?>" <?= $row && ($row['permission_type'] ?? '') === $pk ? 'selected' : '' ?>><?= htmlspecialchars($pl) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                    <td class="p-1"><input type="text" name="permissions[<?= $pi ?>][permission_value]" value="<?= $row ? htmlspecialchars((string) ($row['permission_value'] ?? '')) : '' ?>" class="w-full rounded border border-slate-200 px-1 py-1 font-mono" /></td>
+                                    <td class="p-1">
+                                        <select name="permissions[<?= $pi ?>][access_level]" class="w-full rounded border border-slate-200 px-1 py-1">
+                                            <?php foreach ($permissionAccessLevels as $lvl): ?>
+                                            <option value="<?= htmlspecialchars($lvl) ?>" <?= $row && ($row['access_level'] ?? 'read') === $lvl ? 'selected' : '' ?>><?= htmlspecialchars($accessLevelLabels[$lvl] ?? $lvl) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <?php endfor; ?>
+                                </tbody>
+                            </table>
+                        </div>
+
                         <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="download_allowed" value="1" <?= !empty($document['download_allowed']) ? 'checked' : '' ?> /> Téléchargement autorisé</label>
                         <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="print_allowed" value="1" <?= !empty($document['print_allowed']) ? 'checked' : '' ?> /> Impression autorisée</label>
                         <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="locked" value="1" <?= !empty($document['locked']) ? 'checked' : '' ?> /> Document verrouillé</label>
-                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="inherit_parent_security" value="1" <?= !empty($document['inherit_parent_security']) ? 'checked' : '' ?> /> Hériter des restrictions du document parent</label>
+                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="inherit_parent_security" value="1" <?= !empty($document['inherit_parent_security']) ? 'checked' : '' ?> /> Hériter du parent</label>
                     </div>
                 </section>
+                <script>
+                (function(){
+                  var help = <?= json_encode($visibilityHelp, JSON_UNESCAPED_UNICODE) ?>;
+                  var sel = document.getElementById('edit-visibility-scope');
+                  var h = document.getElementById('edit-visibility-help');
+                  var pr = document.getElementById('edit-panel-role');
+                  var pu = document.getElementById('edit-panel-unit');
+                  var pc = document.getElementById('edit-panel-controlled');
+                  function r(){ var v = sel.value; if (h && help[v]) h.textContent = help[v]; pr.classList.toggle('hidden', v !== 'role'); pu.classList.toggle('hidden', v !== 'unit'); pc.classList.toggle('hidden', v !== 'controlled'); }
+                  sel.addEventListener('change', r); r();
+                })();
+                </script>
                 <section class="bg-white border border-slate-200 rounded-lg p-4">
                     <h2 class="text-sm font-bold text-slate-800 mb-3">Hiérarchie documentaire</h2>
                     <div class="space-y-3">
