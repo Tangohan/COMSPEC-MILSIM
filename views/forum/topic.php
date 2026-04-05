@@ -30,7 +30,7 @@ $viewCount = (int) ($topic['view_count'] ?? 0);
         </h1>
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-[9px] text-slate-600 font-bold">
-            Par <span class="text-slate-800"><?= htmlspecialchars($topic['author_name'] ?? '') ?></span>
+            Par <span class="text-slate-800"><?= htmlspecialchars($topic['topic_author_display'] ?? $topic['author_name'] ?? '') ?></span>
             · <?= function_exists('forum_time_ago') ? forum_time_ago($topic['created_at'] ?? '') : date('d/m/Y', strtotime($topic['created_at'] ?? 'now')) ?>
             · <?= $viewCount ?> vue<?= $viewCount !== 1 ? 's' : '' ?>
             · <?= $postCount ?> msg
@@ -96,8 +96,8 @@ $viewCount = (int) ($topic['view_count'] ?? 0);
         $postIsHidden = !empty($post['is_hidden']);
         $showEdit = ($userId && (int) $post['user_id'] === $userId) || !empty($isModo);
         $isOwnPost = $userId && (int) $post['user_id'] === $userId;
-        $initial = mb_strtoupper(mb_substr($post['author_name'] ?? '?', 0, 1));
-        $authorDisplayName = $post['author_name'] ?? $post['author_callsign'] ?? 'Anon';
+        $authorDisplayName = trim((string) ($post['author_display_resolved'] ?? '')) ?: ($post['author_name'] ?? $post['author_callsign'] ?? 'Anon');
+        $initial = mb_strtoupper(mb_substr($authorDisplayName ?: '?', 0, 1));
         $avatarUrl = isset($post['author_avatar_url']) && trim((string) $post['author_avatar_url']) !== '' ? trim($post['author_avatar_url']) : null;
         if ($avatarUrl && strpos($avatarUrl, 'http') !== 0) {
             $avatarUrl = $baseUrl . '/' . ltrim($avatarUrl, '/');
@@ -218,6 +218,15 @@ $viewCount = (int) ($topic['view_count'] ?? 0);
                   <p class="text-[9px] text-neutral-500 italic leading-relaxed break-words line-clamp-3"><?= htmlspecialchars($authorBio) ?></p>
                 </div>
                 <?php endif; ?>
+                <?php if (!empty($isModo) && !empty($post['mod_legal_full_name'])): ?>
+                <div class="mt-2 p-2 bg-rose-100 border border-rose-300 rounded text-[7px] text-rose-950 space-y-1 leading-snug">
+                  <p class="font-black uppercase tracking-wider text-rose-800">Modération — identité réelle</p>
+                  <p><span class="font-bold">ID utilisateur</span> #<?= (int) ($post['mod_author_user_id'] ?? 0) ?></p>
+                  <p><span class="font-bold">Nom légal</span> <?= htmlspecialchars($post['mod_legal_full_name']) ?></p>
+                  <p><span class="font-bold">Email</span> <?= htmlspecialchars($post['mod_author_email'] ?? '') ?></p>
+                  <p class="text-rose-800"><span class="font-bold">Affichage public</span> <?= htmlspecialchars($authorDisplayName) ?> · <?= htmlspecialchars(trim((string) ($post['author_callsign'] ?? ''))) ?></p>
+                </div>
+                <?php endif; ?>
               </div>
               <div class="absolute bottom-2 right-2 opacity-[0.03] pointer-events-none hidden md:block">
                 <svg width="36" height="36" viewBox="0 0 40 40" fill="none"><path d="M0 0H40V40H0V0ZM2 2V38H38V2H2Z" fill="white"></path><path d="M10 10H30V30H10V10Z" fill="white"></path></svg>
@@ -236,11 +245,28 @@ $viewCount = (int) ($topic['view_count'] ?? 0);
                 <div class="post-content text-sm text-slate-800 leading-relaxed rounded-xl border border-slate-200 bg-slate-50/50 p-4 md:p-5 ring-1 ring-emerald-500/15 shadow-sm">
                   <?= function_exists('forum_render_content') ? forum_render_content($post['body'] ?? '') : nl2br(htmlspecialchars($post['body'] ?? '')) ?>
                 </div>
+                <?php if (!empty($post['attachments'])): ?>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <?php foreach ($post['attachments'] as $att): ?>
+                    <?php
+                    $fp = (string) ($att['file_path'] ?? '');
+                    $attUrl = (strpos($fp, 'http') === 0) ? $fp : $baseUrl . '/' . ltrim($fp, '/');
+                    ?>
+                    <a href="<?= htmlspecialchars($attUrl) ?>" target="_blank" rel="noopener" class="text-[9px] font-bold text-emerald-700 hover:underline border border-emerald-200 rounded px-2 py-1 bg-emerald-50"><?= htmlspecialchars(basename($fp)) ?></a>
+                  <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
               </div>
               <div class="border-t border-slate-100 px-5 py-3 flex items-center justify-between gap-4 flex-wrap bg-slate-50/50">
-                <div class="flex items-center gap-1 flex-wrap"></div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <?php if ($userId): ?>
+                  <span class="text-[9px] font-black text-slate-500 tabular-nums forum-vote-score" data-post-id="<?= (int) $post['id'] ?>"><?= (int) ($post['vote_score'] ?? 0) ?></span>
+                  <button type="button" class="forum-vote-btn px-2 py-0.5 text-[10px] font-black border border-slate-200 rounded bg-white hover:bg-emerald-50" data-post-id="<?= (int) $post['id'] ?>" data-value="1" title="+1">+</button>
+                  <button type="button" class="forum-vote-btn px-2 py-0.5 text-[10px] font-black border border-slate-200 rounded bg-white hover:bg-rose-50" data-post-id="<?= (int) $post['id'] ?>" data-value="-1" title="-1">−</button>
+                  <?php endif; ?>
+                </div>
                 <div class="flex items-center gap-4 ml-auto flex-wrap">
-                  <?php if ($userId): ?><button type="button" class="post-quote-btn text-[8px] font-black uppercase tracking-widest text-slate-500 hover:text-emerald-700 transition-colors flex items-center gap-1.5" data-post-id="<?= (int) $post['id'] ?>" data-author="<?= htmlspecialchars($post['author_name'] ?? '') ?>"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Citer</button><?php endif; ?>
+                  <?php if ($userId): ?><button type="button" class="post-quote-btn text-[8px] font-black uppercase tracking-widest text-slate-500 hover:text-emerald-700 transition-colors flex items-center gap-1.5" data-post-id="<?= (int) $post['id'] ?>" data-author="<?= htmlspecialchars($authorDisplayName) ?>"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Citer</button><?php endif; ?>
                   <?php if ($showEdit): ?><button type="button" class="post-edit-btn text-[8px] font-black uppercase tracking-widest text-neutral-600 hover:text-amber-400 transition-colors flex items-center gap-1.5" data-post-id="<?= (int) $post['id'] ?>"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> Modifier</button><?php endif; ?>
                   <?php if ($showEdit): ?><button type="button" class="post-delete-btn text-[8px] font-black uppercase tracking-widest text-neutral-700 hover:text-rose-400 transition-colors flex items-center gap-1.5" data-post-id="<?= (int) $post['id'] ?>"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Suppr.</button><?php endif; ?>
                   <?php if ($userId && (int) $post['user_id'] !== $userId): ?><button type="button" class="post-report-btn text-[8px] font-black uppercase tracking-widest text-neutral-600 hover:text-rose-400 transition-colors" data-post-id="<?= (int) $post['id'] ?>">Signaler</button><?php endif; ?>
@@ -364,6 +390,23 @@ $viewCount = (int) ($topic['view_count'] ?? 0);
     el.style.display = 'block';
     setTimeout(function() { el.classList.add('hidden'); el.style.display = ''; }, 3000);
   }
+
+  document.querySelectorAll('.forum-vote-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var postId = parseInt(btn.getAttribute('data-post-id'), 10);
+      var value = parseInt(btn.getAttribute('data-value'), 10);
+      fetch(baseUrl + '/api/forum/posts/' + postId + '/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: value, csrf_token: csrf })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.success && d.data) {
+          var el = document.querySelector('.forum-vote-score[data-post-id="' + postId + '"]');
+          if (el) el.textContent = d.data.score;
+        } else { toast(d.error || 'Vote impossible'); }
+      });
+    });
+  });
 
   var subBtn = document.getElementById('topic-sub-btn');
   if (subBtn) {

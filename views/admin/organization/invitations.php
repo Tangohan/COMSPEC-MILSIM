@@ -9,7 +9,7 @@ $rolesCommunity = $rolesCommunity ?? [];
 <div class="max-w-4xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Invitations</h1>
-        <a href="<?= url('admin/organization') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
+        <a href="<?= url('back-office') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
     </div>
     <?php if (!$canAdd): ?>
         <p class="text-amber-700 text-sm mb-4">Limite de membres atteinte pour ce plan — passez à une offre supérieure pour inviter davantage.</p>
@@ -23,7 +23,7 @@ $rolesCommunity = $rolesCommunity ?? [];
     <?php endif; ?>
 
     <?php if ($canAdd && !empty($rolesCommunity)): ?>
-    <form method="post" action="<?= url('admin/organization/invitations') ?>" class="mb-10 border border-slate-200 rounded-lg p-4 space-y-4">
+    <form method="post" action="<?= url('back-office/invitations') ?>" class="mb-10 border border-slate-200 rounded-lg p-4 space-y-4">
         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
         <div class="flex flex-wrap gap-2 items-end">
             <div class="flex-1 min-w-[200px]">
@@ -49,7 +49,7 @@ $rolesCommunity = $rolesCommunity ?? [];
     </form>
     <?php endif; ?>
 
-    <form method="get" action="<?= url('admin/organization/invitations') ?>" class="flex flex-wrap items-end gap-2 mb-4">
+    <form method="get" action="<?= url('back-office/invitations') ?>" class="flex flex-wrap items-end gap-2 mb-4">
         <div>
             <label class="block text-xs text-slate-500 mb-1">Statut</label>
             <select name="status" class="border border-slate-300 rounded px-3 py-2 text-sm" onchange="this.form.submit()">
@@ -60,7 +60,7 @@ $rolesCommunity = $rolesCommunity ?? [];
                 <option value="expired" <?= $inviteFilterStatus === 'expired' ? 'selected' : '' ?>>Expirée</option>
             </select>
         </div>
-        <a href="<?= url('admin/organization/invitations') ?>" class="text-sm text-slate-600 hover:underline pb-2">Réinitialiser</a>
+        <a href="<?= url('back-office/invitations') ?>" class="text-sm text-slate-600 hover:underline pb-2">Réinitialiser</a>
     </form>
 
     <ul class="divide-y divide-slate-200 border border-slate-200 rounded-lg">
@@ -71,7 +71,7 @@ $rolesCommunity = $rolesCommunity ?? [];
                     <span class="text-slate-500 ml-2"><?= htmlspecialchars((string) ($i['status'] ?? '')) ?></span>
                 </div>
                 <?php if (($i['status'] ?? '') === 'pending'): ?>
-                <form method="post" action="<?= url('admin/organization/invitations/revoke') ?>" onsubmit="return confirm('Révoquer ?');">
+                <form method="post" action="<?= url('back-office/invitations/revoke') ?>" onsubmit="return confirm('Révoquer ?');">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
                     <input type="hidden" name="id" value="<?= (int) ($i['id'] ?? 0) ?>">
                     <button type="submit" class="text-red-600 text-xs underline">Révoquer</button>

@@ -2,6 +2,61 @@
 
 declare(strict_types=1);
 
+if (!function_exists('forum_notification_unread_count')) {
+    function forum_notification_unread_count(): int
+    {
+        if (!\App\Core\Session::get('user_id')) {
+            return 0;
+        }
+        try {
+            $r = \App\Core\Container::get(\App\Repositories\ForumNotificationRepository::class);
+
+            return $r->unreadCount((int) \App\Core\Session::get('tenant_id'), (int) \App\Core\Session::get('user_id'));
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+}
+
+if (!function_exists('forum_user_can_moderate')) {
+    /**
+     * Droits de modération forum (agrégats historiques + permissions granulaires).
+     */
+    function forum_user_can_moderate(): bool
+    {
+        if (!function_exists('can')) {
+            return false;
+        }
+        $gate = \App\Core\Gate::getInstance();
+        if (can('forum.moderate') || can('forum.moderate_organization')) {
+            return true;
+        }
+        if ($gate->allows('admin.organization') || $gate->allows('admin.access')) {
+            return true;
+        }
+        foreach (\App\Authorization\TenantPermissionCatalog::forumModerateGranularSlugs() as $slug) {
+            if (can($slug)) {
+                return true;
+            }
+        }
+        if (can('forum.categories.manage') || can('forum.manage_categories')) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('forum_viewer_is_moderator')) {
+    /**
+     * Aligné sur ForumModerationConsoleMiddleware : accès outils / identité renforcée modération.
+     */
+    function forum_viewer_is_moderator(): bool
+    {
+        return forum_user_can_moderate();
+    }
+}
+
 if (!function_exists('forum_can_read')) {
     /**
      * Vérifie si l'utilisateur peut lire la catégorie (tenant + min_role_id si défini).
@@ -33,9 +88,60 @@ if (!function_exists('forum_get_setting')) {
     }
 }
 
+if (!function_exists('forum_config_for_tenant')) {
+    /**
+     * Fusionne config/forum.php et les clés site_settings forum_* du tenant.
+     */
+    function forum_config_for_tenant(?int $tenantId): array
+    {
+        $base = config('forum');
+        if (!is_array($base)) {
+            $base = [];
+        }
+        if ($tenantId === null || $tenantId <= 0) {
+            return $base;
+        }
+        try {
+            $repo = new \App\Repositories\SiteSettingsRepository();
+            $site = $repo->getForumSettings($tenantId);
+        } catch (\Throwable) {
+            return $base;
+        }
+        $merged = array_merge($base, $site);
+        if (array_key_exists('forum_enabled', $merged)) {
+            $v = strtolower(trim((string) $merged['forum_enabled']));
+            $merged['enabled'] = in_array($v, ['1', 'true', 'yes', 'on'], true);
+        }
+        $shortFromForum = [
+            'name' => 'forum_name',
+            'subtitle' => 'forum_subtitle',
+            'tagline' => 'forum_tagline',
+            'context' => 'forum_context',
+        ];
+        foreach ($shortFromForum as $short => $long) {
+            if (isset($merged[$long]) && trim((string) $merged[$long]) !== '') {
+                $merged[$short] = $merged[$long];
+            }
+        }
+        if (isset($merged['forum_moderation_tutorial_html']) && trim((string) $merged['forum_moderation_tutorial_html']) !== '') {
+            $merged['moderation_tutorial_html'] = $merged['forum_moderation_tutorial_html'];
+        }
+
+        return $merged;
+    }
+}
+
 if (!function_exists('forum_is_enabled')) {
     function forum_is_enabled(): bool
     {
+        $tid = \App\Core\Session::get('tenant_id');
+        if ($tid) {
+            $c = forum_config_for_tenant((int) $tid);
+            if (array_key_exists('enabled', $c)) {
+                return (bool) $c['enabled'];
+            }
+        }
+
         return (bool) forum_get_setting('enabled', true);
     }
 }

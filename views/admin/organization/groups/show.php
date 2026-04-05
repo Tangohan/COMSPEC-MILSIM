@@ -3,8 +3,8 @@
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900"><?= htmlspecialchars($group['name']) ?></h1>
         <div class="flex gap-2">
-            <a href="<?= url('admin/organization/groups/' . $gid . '/edit') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Modifier</a>
-            <form method="post" action="<?= url('admin/organization/groups/' . $gid . '/delete') ?>" class="inline" onsubmit="return confirm('Supprimer ce groupe ?');">
+            <a href="<?= url('back-office/groups/' . $gid . '/edit') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Modifier</a>
+            <form method="post" action="<?= url('back-office/groups/' . $gid . '/delete') ?>" class="inline" onsubmit="return confirm('Supprimer ce groupe ?');">
                 <?= \App\Core\Csrf::field() ?>
                 <button type="submit" class="px-4 py-2 bg-rose-100 text-rose-800 text-sm font-semibold rounded hover:bg-rose-200">Supprimer</button>
             </form>
@@ -21,9 +21,9 @@
     <?php else: ?>
     <ul class="space-y-1">
         <?php foreach ($members as $m): ?>
-        <li><a href="<?= url('admin/organization/users/' . $m['id']) ?>" class="text-slate-700 hover:underline"><?= htmlspecialchars($m['display_name'] ?? $m['email']) ?></a></li>
+        <li><a href="<?= url('back-office/users/' . $m['id']) ?>" class="text-slate-700 hover:underline"><?= htmlspecialchars($m['display_name'] ?? $m['email']) ?></a></li>
         <?php endforeach; ?>
     </ul>
     <?php endif; ?>
-    <p class="mt-8 text-sm text-slate-500"><a href="<?= url('admin/organization/groups') ?>" class="underline">Retour aux groupes</a></p>
+    <p class="mt-8 text-sm text-slate-500"><a href="<?= url('back-office/groups') ?>" class="underline">Retour aux groupes</a></p>
 </div>

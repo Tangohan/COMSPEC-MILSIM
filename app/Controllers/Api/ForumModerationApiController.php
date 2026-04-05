@@ -28,7 +28,7 @@ class ForumModerationApiController
         if (!$tenantId || !$userId) {
             return Response::json(['success' => false, 'error' => 'Non authentifié'], 401);
         }
-        if (!function_exists('can') || !can('forum.moderate')) {
+        if (!function_exists('forum_viewer_is_moderator') || !forum_viewer_is_moderator()) {
             return Response::json(['success' => false, 'error' => 'Non autorisé'], 403);
         }
 

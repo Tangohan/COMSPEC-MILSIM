@@ -125,7 +125,7 @@ $hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activit
               <div class="flex items-center gap-2 text-[9px] text-neutral-600 font-bold">
                 <span class="uppercase tracking-widest">ID : <span class="text-neutral-500">#<?= str_pad((string)(int)$t['id'], 3, '0', STR_PAD_LEFT) ?></span></span>
                 <span class="text-neutral-800">/</span>
-                <span class="uppercase tracking-widest">Par <span class="text-emerald-700 group-hover:underline"><?= htmlspecialchars($t['author_name'] ?? '') ?></span></span>
+                <span class="uppercase tracking-widest">Par <span class="text-emerald-700 group-hover:underline"><?= htmlspecialchars($t['topic_author_display'] ?? $t['author_name'] ?? '') ?></span></span>
                 <span class="text-neutral-800">·</span>
                 <span class="italic text-neutral-500"><?= $timeAgo ?></span>
               </div>

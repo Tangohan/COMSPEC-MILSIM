@@ -16,6 +16,8 @@ use App\Repositories\UserRepository;
 use App\Repositories\PasswordResetRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Services\Auth\LoginSecurityNotificationService;
+use App\Services\EmailService;
 
 class AuthController
 {
@@ -30,7 +32,9 @@ class AuthController
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
         private PasswordResetRepository $passwordResetRepository,
-        private AuditService $auditService
+        private AuditService $auditService,
+        private EmailService $emailService,
+        private LoginSecurityNotificationService $loginSecurityNotifications
     ) {}
 
     public function showLogin(Request $request, array $params = []): Response
@@ -69,7 +73,7 @@ class AuthController
             return Response::redirect(url('login'));
         }
 
-        $candidates = $this->userRepository->listActiveUsersWithTenantForEmail($email);
+        $candidates = $this->userRepository->listUsersForLoginByEmail($email);
         $matches = [];
         foreach ($candidates as $row) {
             if (!password_verify($password, (string) ($row['password_hash'] ?? ''))) {
@@ -95,12 +99,17 @@ class AuthController
                 null,
                 substr($email, 0, 120)
             );
+            $this->loginSecurityNotifications->onFailedLogin($request, $email);
             Session::flash('error', 'Identifiants incorrects ou compte inactif.');
             return Response::redirect(url('login'));
         }
 
         if (count($matches) === 1) {
             $row = $matches[0];
+            if (($row['status'] ?? '') === 'pending_verification') {
+                Session::flash('error', 'Confirmez votre adresse e-mail avant de vous connecter (lien envoyé à l’inscription).');
+                return Response::redirect(url('login'));
+            }
             $user = $this->userRepository->findById((int) $row['id'], (int) $row['tenant_id']);
             if (!$user) {
                 Session::flash('error', 'Compte introuvable.');
@@ -118,6 +127,7 @@ class AuthController
                 'auth',
                 (int) $user['id']
             );
+            $this->loginSecurityNotifications->onSuccessfulLogin($request, $user);
 
             return Response::redirect(url('dashboard'));
         }
@@ -199,9 +209,14 @@ class AuthController
             return Response::redirect(url('login/select-community'));
         }
         $user = $this->userRepository->findById((int) $chosen['user_id'], $tenantId);
-        if (!$user || ($user['status'] ?? '') !== 'active') {
+        if (!$user || !in_array(($user['status'] ?? ''), ['active', 'pending_verification'], true)) {
             Session::forget('pending_community_selection');
             Session::flash('error', 'Compte indisponible.');
+            return Response::redirect(url('login'));
+        }
+        if (($user['status'] ?? '') === 'pending_verification') {
+            Session::forget('pending_community_selection');
+            Session::flash('error', 'Confirmez votre adresse e-mail avant de vous connecter.');
             return Response::redirect(url('login'));
         }
 
@@ -218,6 +233,7 @@ class AuthController
             'auth',
             (int) $user['id']
         );
+        $this->loginSecurityNotifications->onSuccessfulLogin($request, $user);
 
         return Response::redirect(url('dashboard'));
     }
@@ -269,18 +285,14 @@ class AuthController
             return Response::redirect(url('forgot-password'));
         }
         $user = $this->userRepository->findByEmail((int) $tenant['id'], $email);
-        if ($user) {
+        if ($user && empty($user['is_service_account'])) {
             $this->passwordResetRepository->deleteExpired();
             $token = bin2hex(random_bytes(32));
             $hash = hash('sha256', $token);
             $expires = new \DateTimeImmutable('+' . self::RESET_TOKEN_EXPIRE_HOURS . ' hours');
             $this->passwordResetRepository->create((int) $user['id'], $hash, $expires);
             $resetUrl = url('reset-password') . '?token=' . $token;
-            $appUrl = rtrim(env('APP_URL', ''), '/');
-            $subject = 'Réinitialisation de votre mot de passe — Athena';
-            $body = "Bonjour,\n\nCliquez sur le lien suivant pour réinitialiser votre mot de passe (valide " . self::RESET_TOKEN_EXPIRE_HOURS . " h) :\n\n" . $resetUrl . "\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message.";
-            $headers = 'From: ' . (env('MAIL_FROM', 'noreply@athena.local')) . "\r\nReply-To: " . (env('MAIL_FROM', 'noreply@athena.local')) . "\r\nContent-Type: text/plain; charset=utf-8";
-            @mail($email, $subject, $body, $headers);
+            $this->emailService->sendPasswordReset($email, $resetUrl, self::RESET_TOKEN_EXPIRE_HOURS, (int) $tenant['id']);
             $this->auditService->log(
                 AuditAction::AUTH_PASSWORD_RESET_REQUESTED,
                 (int) $tenant['id'],

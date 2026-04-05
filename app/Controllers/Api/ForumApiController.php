@@ -198,8 +198,7 @@ class ForumApiController
             return Response::json(['success' => false, 'error' => 'Sujet introuvable'], 404);
         }
         $isAuthor = (int) $topic['user_id'] === $userId;
-        $isMod = (function_exists('can') && can('forum.moderate'))
-            || (function_exists('can') && can('forum.moderate_organization'));
+        $isMod = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
         if (!$isAuthor && !$isMod) {
             return Response::json(['success' => false, 'error' => 'Non autorisé'], 403);
         }
@@ -226,7 +225,7 @@ class ForumApiController
         if (!$post) {
             return Response::json(['success' => false, 'error' => 'Message introuvable'], 404);
         }
-        $isModo = function_exists('can') && can('forum.moderate');
+        $isModo = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
         if ((int) $post['user_id'] !== $userId && !$isModo) {
             return Response::json(['success' => false, 'error' => 'Non autorisé'], 403);
         }
@@ -246,7 +245,7 @@ class ForumApiController
         if (!$post) {
             return Response::json(['success' => false, 'error' => 'Message introuvable'], 404);
         }
-        $isModo = function_exists('can') && can('forum.moderate');
+        $isModo = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
         if ((int) $post['user_id'] !== $userId && !$isModo) {
             return Response::json(['success' => false, 'error' => 'Non autorisé'], 403);
         }

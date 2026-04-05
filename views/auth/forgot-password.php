@@ -40,10 +40,10 @@ $title = $title ?? 'Mot de passe oublié';
         </div>
 
         <?php if ($error): ?>
-        <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 text-sm rounded-2xl"><?= htmlspecialchars($error) ?></div>
+        <?php $flash_variant = 'error'; $flash_message = $error; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
         <?php if ($success): ?>
-        <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded-2xl"><?= htmlspecialchars($success) ?></div>
+        <?php $flash_variant = 'success'; $flash_message = $success; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
 
         <div x-show="view === 'login'" x-transition.opacity.duration.400ms

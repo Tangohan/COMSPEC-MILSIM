@@ -9,15 +9,20 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantRepository;
+use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Repositories\GradeRepository;
 use App\Repositories\PendingCommunityCreateRepository;
 use App\Repositories\ReferralRepository;
 use App\Repositories\SubscriptionPlanRepository;
 use App\Services\Billing\StripeCheckoutService;
+use App\Services\Community\CommunityOnboardingValidationService;
 use App\Services\Community\TenantBootstrapService;
+use App\Services\Community\TenantCommunityProfileService;
+use App\Services\EmailService;
 use App\Services\Rbac\RbacService;
 
 class CommunityController
@@ -25,14 +30,28 @@ class CommunityController
     public function __construct(
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
+        private UnitRepository $unitRepository,
         private AuthService $authService,
         private TenantBootstrapService $bootstrapService,
         private RbacService $rbacService,
         private ReferralRepository $referralRepository,
         private PendingCommunityCreateRepository $pendingCommunityRepository,
         private StripeCheckoutService $stripeCheckoutService,
-        private SubscriptionPlanRepository $subscriptionPlanRepository
+        private SubscriptionPlanRepository $subscriptionPlanRepository,
+        private EmailService $emailService
     ) {}
+
+    /** Registre des unités / communautés (hors tenant placeholder). */
+    public function registry(Request $request, array $params = []): Response
+    {
+        $tenants = $this->tenantRepository->listForRegistry();
+
+        return Response::view('layout.main', [
+            'title' => 'Unités & communautés',
+            'content' => 'community.registry',
+            'registryTenants' => $tenants,
+        ]);
+    }
 
     /** Page publique d’une communauté (slug). */
     public function show(Request $request, array $params = []): Response
@@ -58,6 +77,58 @@ class CommunityController
                 $memberships = $this->userRepository->listTenantsForEmail((string) $email);
             }
         }
+        $hasMembershipInTenant = false;
+        $tid = (int) ($tenant['id'] ?? 0);
+        foreach ($memberships as $m) {
+            if ((int) ($m['tenant_id'] ?? 0) === $tid) {
+                $hasMembershipInTenant = true;
+                break;
+            }
+        }
+        $forumMembersOnly = !empty($communityConfig['forum_members_only']);
+        $showForumCta = !$forumMembersOnly || ($this->authService->check() && $hasMembershipInTenant);
+        $communityProfile = TenantCommunityProfileService::getPublicViewModel($communityConfig);
+
+        $publicLayout = ($communityConfig['public_page_layout'] ?? 'legacy') === 'showcase' ? 'showcase' : 'legacy';
+        $showcaseVm = null;
+        $publicUnits = [];
+        $publicRosterRows = [];
+        $unitMemberCounts = [];
+        $commanderNames = [];
+
+        if ($publicLayout === 'showcase') {
+            $effectif = $this->userRepository->countActiveMembers($tid);
+            $unitsPublic = $this->unitRepository->countPublicForTenant($tid);
+            $activityPct = $this->userRepository->activityRateLast30DaysPercent($tid);
+            $rosterCount = $this->userRepository->countPublicRosterOptIn($tid);
+            $tz = (string) ($settings['timezone'] ?? 'Europe/Paris');
+            $computed = [
+                'effectif_actifs' => (string) $effectif,
+                'unites_public' => (string) $unitsPublic,
+                'activite_pct' => $activityPct,
+                'theatre_default' => $tz,
+                'roster_public_count' => $rosterCount,
+            ];
+            $showcaseVm = TenantCommunityProfileService::getShowcaseViewModel($communityConfig, $computed, $tenant, $settings);
+            $publicUnits = $this->unitRepository->listPublicForTenant($tid);
+            $unitMemberCounts = $this->unitRepository->countActiveMembersByUnitForTenant($tid);
+            $cmdIds = [];
+            foreach ($publicUnits as $pu) {
+                if (!empty($pu['commander_user_id'])) {
+                    $cmdIds[] = (int) $pu['commander_user_id'];
+                }
+            }
+            $cmdIds = array_unique($cmdIds);
+            foreach ($cmdIds as $cuid) {
+                $cu = $this->userRepository->findById($cuid, $tid);
+                if ($cu) {
+                    $commanderNames[$cuid] = trim((string) ($cu['display_name'] ?? $cu['callsign'] ?? '')) ?: '—';
+                }
+            }
+            if (!empty($communityConfig['public_roster_enabled'])) {
+                $publicRosterRows = $this->userRepository->listPublicRosterForTenant($tid);
+            }
+        }
 
         return Response::view('layout.main', [
             'title' => $tenant['name'],
@@ -65,7 +136,57 @@ class CommunityController
             'tenant' => $tenant,
             'memberships' => $memberships,
             'communityConfig' => $communityConfig,
+            'communityProfile' => $communityProfile,
+            'hasMembershipInTenant' => $hasMembershipInTenant,
+            'showForumCta' => $showForumCta,
+            'tenantSettings' => $settings,
+            'publicLayout' => $publicLayout,
+            'showcaseVm' => $showcaseVm,
+            'publicUnits' => $publicUnits,
+            'publicRosterRows' => $publicRosterRows,
+            'unitMemberCounts' => $unitMemberCounts,
+            'commanderNames' => $commanderNames,
         ]);
+    }
+
+    /** Formulaire public « nous écrire » (e-mail vers contact_email). */
+    public function contactPublic(Request $request, array $params = []): Response
+    {
+        if ($request->method() !== 'POST') {
+            return Response::redirect(url(''));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url(''));
+        }
+        $slug = (string) ($params['slug'] ?? '');
+        $tenant = $this->tenantRepository->findBySlug($slug);
+        if (!$tenant) {
+            Session::flash('error', 'Communauté introuvable.');
+
+            return Response::redirect(url(''));
+        }
+        $settings = $this->tenantRepository->getSettings((int) $tenant['id']);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        if (empty($community['contact_form_enabled']) || trim((string) ($community['contact_email'] ?? '')) === '') {
+            Session::flash('error', 'Formulaire de contact non activé.');
+
+            return Response::redirect(url('c/' . rawurlencode($slug)));
+        }
+        $fromEmail = trim((string) $request->input('from_email', ''));
+        $body = trim((string) $request->input('body', ''));
+        if ($body === '' || !filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+            Session::flash('error', 'Indiquez un e-mail valide et un message.');
+
+            return Response::redirect(url('c/' . rawurlencode($slug)));
+        }
+        $to = trim((string) $community['contact_email']);
+        $tenantName = (string) ($tenant['name'] ?? 'communauté');
+        $this->emailService->sendCommunityContact($to, $tenantName, $fromEmail, $body, (int) $tenant['id']);
+        Session::flash('success', 'Message envoyé. L’équipe vous répondra sur votre boîte mail.');
+
+        return Response::redirect(url('c/' . rawurlencode($slug)));
     }
 
     /**
@@ -97,6 +218,36 @@ class CommunityController
         return Response::redirect(url('forum'));
     }
 
+    /**
+     * Bascule la session sur la communauté cible puis redirige vers le formulaire d’enrôlement (compte Athena).
+     */
+    public function enterEnlistment(Request $request, array $params = []): Response
+    {
+        $slug = (string) ($params['slug'] ?? '');
+        $tenant = $this->tenantRepository->findBySlug($slug);
+        if (!$tenant) {
+            Session::flash('error', 'Communauté introuvable.');
+            return Response::redirect(url(''));
+        }
+        if (!$this->authService->check()) {
+            Session::flash('error', 'Connectez-vous pour utiliser votre compte sur cette candidature.');
+            return Response::redirect(url('login'));
+        }
+        if (!$this->authService->switchToTenant((int) $tenant['id'])) {
+            Session::flash('error', 'Vous n’avez pas de compte dans cette communauté.');
+            return Response::redirect(url('c/' . $slug));
+        }
+        $user = $this->authService->user();
+        if ($user) {
+            $this->rbacService->setPermissionsForGate(
+                !empty($user['role_id']) ? (int) $user['role_id'] : null,
+                (string) ($user['email'] ?? '')
+            );
+        }
+
+        return Response::redirect(url('c/' . $slug . '/enlistment'));
+    }
+
     public function createForm(Request $request, array $params = []): Response
     {
         if (!$this->authService->check()) {
@@ -111,12 +262,136 @@ class CommunityController
         $paidPlans = array_values(array_filter($plans, static fn ($p) => in_array((string) ($p['slug'] ?? ''), ['standard', 'pro'], true)));
         $stripeConfigured = (getenv('STRIPE_SECRET_KEY') ?: '') !== '';
 
+        $grades = new GradeRepository();
+        $gradesFr = $grades->listBySystemCode('FR_CLASSIC');
+        $gradesUs = $grades->listBySystemCode('US_CLASSIC');
+
         return Response::view('layout.main', [
             'title' => 'Créer une communauté',
             'content' => 'community.create',
             'paidPlans' => $paidPlans,
             'stripeConfigured' => $stripeConfigured,
+            'gradesFr' => $gradesFr,
+            'gradesUs' => $gradesUs,
+            'gradesFrGrouped' => $this->groupGradesByCategory($gradesFr),
+            'gradesUsGrouped' => $this->groupGradesByCategory($gradesUs),
+            'badgeLabels' => TenantCommunityProfileService::badgeLabels(),
+            'defaultWizardUnitsJson' => json_encode($this->defaultQuickWizardUnits(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
+            'wizardPermissionGroups' => CommunityOnboardingValidationService::wizardPermissionFieldGroups(),
         ]);
+    }
+
+    /**
+     * Aperçu : POST enregistre le brouillon de formulaire en session, GET affiche.
+     */
+    public function createPreview(Request $request, array $params = []): Response
+    {
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->isPost()) {
+            if (!Csrf::validate($request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+
+                return Response::redirect(url('communities/create'));
+            }
+            $data = $request->all();
+            unset($data['_csrf_token']);
+            Session::set('community_create_preview', $data);
+
+            return Response::redirect(url('communities/create/preview'));
+        }
+        $data = Session::get('community_create_preview');
+        if (!is_array($data) || trim((string) ($data['name'] ?? '')) === '') {
+            Session::flash('error', 'Utilisez « Aperçu » depuis l’assistant (nom de communauté requis).');
+
+            return Response::redirect(url('communities/create'));
+        }
+        $name = trim((string) ($data['name'] ?? ''));
+        $slug = trim((string) ($data['slug'] ?? ''));
+        if ($slug === '') {
+            $slug = 'apercu';
+        }
+        $communityPreview = $this->buildCommunityPreviewFromWizardData($data);
+        $milsimPack = \App\Services\Community\EnlistmentMilsimPackService::forCommunity($communityPreview);
+
+        return Response::view('layout.main', [
+            'title' => 'Aperçu — ' . $name,
+            'content' => 'community.create_preview',
+            'previewName' => $name,
+            'previewSlug' => $slug,
+            'communityPreview' => $communityPreview,
+            'milsimPackPreview' => $milsimPack,
+            'registrationMode' => ((string) ($data['registration_mode'] ?? 'milsim')) === 'simple' ? 'simple' : 'milsim',
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private function buildCommunityPreviewFromWizardData(array $data): array
+    {
+        $badges = $data['wizard_style_badges'] ?? [];
+        if (!is_array($badges)) {
+            $badges = [];
+        }
+        $allowed = array_flip(TenantCommunityProfileService::allowedBadgeSlugs());
+        $styleBadges = array_values(array_filter(array_map(static function ($s) use ($allowed) {
+            $k = is_string($s) ? strtolower(trim($s)) : '';
+
+            return isset($allowed[$k]) ? $k : null;
+        }, $badges)));
+
+        $c = [
+            'registration_mode' => ((string) ($data['registration_mode'] ?? 'milsim')) === 'simple' ? 'simple' : 'milsim',
+            'community_locked' => !empty($data['community_locked']),
+            'require_ai_ack' => !empty($data['require_ai_ack']),
+            'welcome_text' => trim((string) ($data['welcome_text'] ?? '')),
+            'presentation_mode' => ((string) ($data['wizard_presentation_mode'] ?? 'simple')) === 'military' ? 'military' : 'simple',
+            'simple_body' => trim((string) ($data['wizard_simple_body'] ?? '')),
+            'expectations' => trim((string) ($data['wizard_expectations'] ?? '')),
+            'game_label' => trim((string) ($data['wizard_game_label'] ?? '')),
+            'style_badges' => $styleBadges,
+            'public_banner_url' => trim((string) ($data['wizard_public_banner_url'] ?? '')),
+        ];
+        $json = trim((string) ($data['wizard_enlistment_milsim_json'] ?? ''));
+        if ($json !== '') {
+            $d = json_decode($json, true);
+            if (is_array($d)) {
+                $c['enlistment_milsim'] = $d;
+            }
+        }
+
+        return $c;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return array<string, array{label: string, grades: list<array<string, mixed>>}>
+     */
+    private function groupGradesByCategory(array $rows): array
+    {
+        $order = [
+            'OFFICIER' => 'Officiers',
+            'SOUS_OFFICIER' => 'Sous-officiers',
+            'MDR' => 'Militaires du rang',
+            'CIVIL' => 'Civils',
+            'HORS_GRADE' => 'Hors grades',
+        ];
+        $out = [];
+        foreach ($order as $code => $label) {
+            $out[$code] = ['label' => $label, 'grades' => []];
+        }
+        foreach ($rows as $r) {
+            $c = (string) ($r['category_code'] ?? 'OTHER');
+            if (!isset($out[$c])) {
+                $out[$c] = ['label' => (string) ($r['category_label'] ?? $c), 'grades' => []];
+            }
+            $out[$c]['grades'][] = $r;
+        }
+
+        return $out;
     }
 
     public function create(Request $request, array $params = []): Response
@@ -130,6 +405,9 @@ class CommunityController
         }
         $name = trim((string) $request->input('name'));
         $slug = trim((string) $request->input('slug'));
+        if (!$request->input('wizard_custom_community_slug')) {
+            $slug = '';
+        }
         if ($name === '') {
             Session::flash('error', 'Le nom de la communauté est requis.');
             return Response::redirect(url('communities/create'));
@@ -148,7 +426,22 @@ class CommunityController
                 'require_ai_ack' => $request->input('require_ai_ack') ? true : false,
                 'welcome_text' => trim((string) $request->input('welcome_text')),
                 'referrer_user_id' => $referrerUserId,
+                'public_page_layout' => ((string) $request->input('wizard_public_page_layout', 'legacy')) === 'showcase' ? 'showcase' : 'legacy',
+                'public_hero_subtitle' => trim((string) $request->input('wizard_public_hero_subtitle', '')),
+                'public_doctrine' => trim((string) $request->input('wizard_public_doctrine', '')),
             ];
+
+            $wizardRaw = $this->buildWizardFromRequest($request);
+            $validator = new CommunityOnboardingValidationService();
+            $v = $validator->validate($wizardRaw);
+            if (!$v['ok']) {
+                $msg = implode(' ', $v['errors'] ?? ['Configuration invalide.']);
+                Session::flash('error', $msg);
+                Session::flash('onboarding_step', $v['step'] ?? '');
+
+                return Response::redirect(url('communities/create'));
+            }
+            $optionsBase['wizard_normalized'] = $v['normalized'];
 
             if ($paid !== null) {
                 [$planSlug, $interval] = $paid;
@@ -283,10 +576,10 @@ class CommunityController
         );
         $this->pendingCommunityRepository->deleteById((int) $pending['id']);
         Session::forget('pending_referrer_code');
-        Session::flash('success', 'Paiement confirmé. Complétez la configuration de votre communauté.');
+        Session::flash('success', 'Paiement confirmé. Votre communauté est prête.');
         $slug = (string) ($tenant['slug'] ?? '');
 
-        return Response::redirect(url('c/' . rawurlencode($slug) . '/setup'));
+        return Response::redirect(url('dashboard'));
     }
 
     /**
@@ -307,11 +600,11 @@ class CommunityController
         }
         $audit = \App\Core\Container::get(AuditService::class);
         $audit->log(AuditAction::TENANT_CREATED, $tenantId, $newUserId, 'tenant', $tenantId, null, (string) $name);
-        Session::flash('success', 'Communauté créée. Complétez la configuration ci-dessous.');
+        Session::flash('success', 'Communauté créée et configurée.');
         $t = $this->tenantRepository->findById($tenantId);
         $newSlug = $t['slug'] ?? $slugInput;
 
-        return Response::redirect(url('c/' . rawurlencode((string) $newSlug) . '/setup'));
+        return Response::redirect(url('dashboard'));
     }
 
     private function resolveReferrerUserId(int $currentUserId): ?int
@@ -376,6 +669,17 @@ class CommunityController
         $tenantId = (int) $request->input('tenant_id');
         if ($tenantId < 1) {
             Session::flash('error', 'Requête invalide.');
+            return Response::redirect(url('dashboard'));
+        }
+        $targetTenant = $this->tenantRepository->findById($tenantId);
+        if (!$targetTenant) {
+            Session::flash('error', 'Communauté introuvable.');
+            return Response::redirect(url('dashboard'));
+        }
+        $email = (string) Session::get('email');
+        $allMemberships = $this->userRepository->listTenantsForEmail($email);
+        if (($targetTenant['slug'] ?? '') === 'default' && $this->userRepository->firstNonDefaultTenantId($allMemberships) !== null) {
+            Session::flash('error', 'Ce contexte n’est plus disponible tant qu’une autre communauté est active sur votre compte.');
             return Response::redirect(url('dashboard'));
         }
         if (!$this->authService->switchToTenant($tenantId)) {
@@ -464,6 +768,7 @@ class CommunityController
         $this->tenantRepository->mergeSettings((int) $tenant['id'], [
             'timezone' => $tz,
             'onboarding_completed_at' => date('c'),
+            'onboarding_wizard_version' => 1,
         ]);
         $user = $this->authService->user();
         if ($user) {
@@ -481,5 +786,135 @@ class CommunityController
         Session::flash('success', 'Configuration enregistrée.');
 
         return Response::redirect(url('dashboard'));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildWizardFromRequest(Request $request): array
+    {
+        $quick = $request->input('wizard_quick_fill') ? true : false;
+        $units = [];
+        if ($quick) {
+            $units = $this->defaultQuickWizardUnits();
+        } else {
+            $raw = trim((string) $request->input('wizard_units_json', ''));
+            if ($raw !== '') {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $units = $decoded;
+                }
+            }
+        }
+
+        $gs = strtoupper(trim((string) $request->input('wizard_grade_system_code', 'FR_CLASSIC')));
+        if (!in_array($gs, CommunityOnboardingValidationService::GRADE_SYSTEMS, true)) {
+            $gs = 'FR_CLASSIC';
+        }
+
+        $founderGid = (int) $request->input('wizard_founder_grade_id', 0);
+        if ($founderGid < 1) {
+            $grades = new GradeRepository();
+            $list = $grades->listBySystemCode($gs);
+            if ($list !== []) {
+                $founderGid = (int) ($list[0]['id'] ?? 0);
+            }
+        }
+
+        $wizard = [
+            'grade_system_code' => $gs,
+            'timezone' => trim((string) $request->input('wizard_timezone', 'Europe/Paris')),
+            'default_locale' => trim((string) $request->input('wizard_default_locale', 'fr')),
+            'orbat_visibility' => trim((string) $request->input('wizard_orbat_visibility', 'members')),
+            'founder_grade_id' => $founderGid,
+            'roles_template' => trim((string) $request->input('wizard_roles_template', 'quick')),
+            'units' => $units,
+            'grade_overrides' => [],
+            'custom_roles' => $this->parseWizardCustomRolesFromRequest($request),
+        ];
+
+        foreach ($request->all() as $k => $v) {
+            if (!is_string($k) || !str_starts_with($k, 'wizard_')) {
+                continue;
+            }
+            if ($k === 'wizard_custom_roles') {
+                continue;
+            }
+            $wizard[$k] = $v;
+        }
+
+        return $wizard;
+    }
+
+    /**
+     * @return list<array{name: string, slug: string, permission_slugs: list<string>}>
+     */
+    private function parseWizardCustomRolesFromRequest(Request $request): array
+    {
+        $raw = $request->input('wizard_custom_roles');
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $name = trim((string) ($row['name'] ?? ''));
+            $slug = trim((string) ($row['slug'] ?? ''));
+            $perms = $row['perms'] ?? [];
+            if (!is_array($perms)) {
+                $perms = [];
+            }
+            $slugs = [];
+            foreach ($perms as $p) {
+                if (is_string($p) && trim($p) !== '') {
+                    $slugs[] = trim($p);
+                }
+            }
+            if ($name === '' && $slug === '') {
+                continue;
+            }
+            $out[] = [
+                'name' => $name,
+                'slug' => $slug,
+                'permission_slugs' => $slugs,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function defaultQuickWizardUnits(): array
+    {
+        return [
+            [
+                'key' => 'g1',
+                'parent_key' => '',
+                'name' => 'État-major',
+                'slug' => 'etat-major',
+                'type' => 'group',
+                'display_order' => 0,
+            ],
+            [
+                'key' => 's1',
+                'parent_key' => 'g1',
+                'name' => '1re section',
+                'slug' => '1re-section',
+                'type' => 'section',
+                'display_order' => 0,
+            ],
+            [
+                'key' => 't1',
+                'parent_key' => 's1',
+                'name' => '1re équipe',
+                'slug' => '1re-equipe',
+                'type' => 'team',
+                'display_order' => 0,
+            ],
+        ];
     }
 }

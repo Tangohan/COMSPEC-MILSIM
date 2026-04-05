@@ -22,7 +22,7 @@ $title = $title ?? 'Communauté';
             <p class="text-xs text-slate-500 mt-2"><?= htmlspecialchars($email) ?></p>
         </div>
         <?php if ($error): ?>
-            <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 text-sm rounded-2xl"><?= htmlspecialchars($error) ?></div>
+            <?php $flash_variant = 'error'; $flash_message = $error; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
         <form method="post" action="<?= url('login/select-community') ?>" class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm space-y-4">
             <?= \App\Core\Csrf::field() ?>

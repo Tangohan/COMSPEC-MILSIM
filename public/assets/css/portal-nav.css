@@ -1,0 +1,287 @@
+/**
+ * Navigation portail Athena — accents par data-accent, CTA, méga-menus, cloche.
+ * Complète Tailwind (pas de classes dynamiques concaténées).
+ */
+
+[data-accent="sky"] {
+  --nav-accent: #0284c7;
+  --nav-accent-soft: rgba(14, 165, 233, 0.12);
+  --nav-accent-ring: rgba(14, 165, 233, 0.35);
+  --nav-mega-aside-tint: linear-gradient(145deg, rgba(14, 165, 233, 0.14) 0%, rgba(15, 23, 42, 0.06) 55%, rgba(255, 255, 255, 0.9) 100%);
+}
+
+[data-accent="amber"] {
+  --nav-accent: #d97706;
+  --nav-accent-soft: rgba(245, 158, 11, 0.14);
+  --nav-accent-ring: rgba(245, 158, 11, 0.38);
+  --nav-mega-aside-tint: linear-gradient(145deg, rgba(245, 158, 11, 0.16) 0%, rgba(120, 113, 108, 0.08) 50%, rgba(255, 255, 255, 0.95) 100%);
+}
+
+[data-accent="emerald"] {
+  --nav-accent: #059669;
+  --nav-accent-soft: rgba(16, 185, 129, 0.14);
+  --nav-accent-ring: rgba(16, 185, 129, 0.35);
+  --nav-mega-aside-tint: linear-gradient(145deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.05) 55%, rgba(255, 255, 255, 0.92) 100%);
+}
+
+[data-accent="violet"] {
+  --nav-accent: #7c3aed;
+  --nav-accent-soft: rgba(139, 92, 246, 0.14);
+  --nav-accent-ring: rgba(139, 92, 246, 0.38);
+  --nav-mega-aside-tint: linear-gradient(145deg, rgba(139, 92, 246, 0.16) 0%, rgba(30, 27, 75, 0.08) 50%, rgba(255, 255, 255, 0.95) 100%);
+}
+
+[data-accent="rose"] {
+  --nav-accent: #e11d48;
+  --nav-accent-soft: rgba(244, 63, 94, 0.12);
+  --nav-accent-ring: rgba(244, 63, 94, 0.32);
+  --nav-mega-aside-tint: linear-gradient(145deg, rgba(244, 63, 94, 0.12) 0%, rgba(15, 23, 42, 0.08) 55%, rgba(248, 250, 252, 0.98) 100%);
+}
+
+[data-accent="slate"] {
+  --nav-accent: #475569;
+  --nav-accent-soft: rgba(71, 85, 105, 0.12);
+  --nav-accent-ring: rgba(71, 85, 105, 0.35);
+  --nav-mega-aside-tint: linear-gradient(145deg, rgba(71, 85, 105, 0.12) 0%, rgba(15, 23, 42, 0.06) 100%);
+}
+
+.portal-nav {
+  --portal-bar-h: 4rem;
+}
+
+.portal-nav__shell {
+  border-bottom: 1px solid rgb(226 232 240);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+}
+
+@supports (backdrop-filter: blur(10px)) {
+  .portal-nav__shell {
+    background: rgba(255, 255, 255, 0.88);
+  }
+}
+
+.portal-nav__brand-mark {
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--nav-accent, #0ea5e9) 0%, rgb(15 23 42) 100%);
+}
+
+.portal-nav__status {
+  font-variant-numeric: tabular-nums;
+}
+
+.portal-nav__status-chip {
+  letter-spacing: 0.06em;
+  border: 1px solid rgb(226 232 240 / 0.95);
+  background: rgb(248 250 252 / 0.85);
+}
+
+.portal-nav__status-chip--alert-urgent {
+  border-color: rgb(251 113 133 / 0.6);
+  background: rgb(255 241 242 / 0.95);
+  color: rgb(136 19 55);
+}
+
+.portal-nav__status-chip--alert-warn {
+  border-color: rgb(251 191 36 / 0.55);
+  background: rgb(255 251 235 / 0.95);
+  color: rgb(120 53 15);
+}
+
+/* Triggers navigation : état actif / survol */
+.portal-nav__link--mega[data-active="1"] .portal-nav__trigger-inner,
+.portal-nav__link--simple[data-active="1"] {
+  border-bottom-color: var(--nav-accent, #0284c7);
+  color: rgb(15 23 42);
+  box-shadow: inset 0 -3px 0 0 var(--nav-accent, #0284c7);
+}
+
+.portal-nav__link--simple[data-active="1"] {
+  border-bottom-style: solid;
+}
+
+.portal-nav__link--mega:hover .portal-nav__trigger-inner,
+.portal-nav__link--simple:hover {
+  background: var(--nav-accent-soft, rgba(14, 165, 233, 0.08));
+}
+
+/* Méga panneau */
+.nav-mega-surface {
+  background: linear-gradient(165deg, rgb(255 255 255) 0%, rgb(248 250 252) 48%, rgb(255 255 255) 100%);
+  box-shadow:
+    0 32px 100px -32px rgba(15, 23, 42, 0.28),
+    0 0 0 1px rgb(226 232 240 / 0.9);
+}
+
+.nav-mega-col {
+  border-color: rgb(226 232 240 / 0.75);
+}
+
+.nav-mega-col--muted {
+  background: rgb(248 250 252 / 0.65);
+}
+
+.nav-mega-link {
+  border: 1px solid transparent;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.nav-mega-link:hover {
+  border-color: rgb(226 232 240);
+  background: rgb(255 255 255);
+  box-shadow: 0 0 0 1px var(--nav-accent-soft, rgba(14, 165, 233, 0.12));
+}
+
+.nav-mega-link[data-active="1"] {
+  border-color: var(--nav-accent-ring, rgba(14, 165, 233, 0.35));
+  background: var(--nav-accent-soft, rgba(14, 165, 233, 0.1));
+}
+
+.nav-mega-link__chevron {
+  color: rgb(203 213 225);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.nav-mega-link:hover .nav-mega-link__chevron {
+  color: var(--nav-accent, #0284c7);
+  transform: translateX(2px);
+}
+
+/* Layouts méga par domaine */
+.nav-mega-layout {
+  display: grid;
+  gap: 0;
+  min-height: 260px;
+}
+
+@media (min-width: 1024px) {
+  .nav-mega-layout--operations {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(240px, 300px);
+  }
+
+  .nav-mega-layout--resources {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(240px, 280px);
+  }
+
+  .nav-mega-layout--personnel {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(240px, 300px);
+  }
+
+  .nav-mega-layout--training {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(240px, 290px);
+  }
+
+  .nav-mega-layout--admin {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.2fr) minmax(260px, 320px);
+  }
+}
+
+@media (max-width: 1023px) {
+  .nav-mega-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.nav-mega-aside {
+  background: var(--nav-mega-aside-tint);
+  border-color: rgb(226 232 240 / 0.85);
+}
+
+.nav-mega-live {
+  border: 1px dashed rgb(203 213 225 / 0.9);
+  background: rgb(255 255 255 / 0.5);
+}
+
+.nav-mega-live__label {
+  color: rgb(100 116 139);
+}
+
+/* CTA panneau latéral */
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  padding: 0.75rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+  text-align: center;
+}
+
+.nav-cta:focus-visible {
+  outline: 2px solid var(--nav-accent, #0284c7);
+  outline-offset: 2px;
+}
+
+.nav-cta--open {
+  background: var(--nav-accent, #0284c7);
+  color: #fff;
+  box-shadow: 0 8px 24px -12px var(--nav-accent-ring, rgba(14, 165, 233, 0.45));
+}
+
+.nav-cta--open:hover {
+  filter: brightness(1.06);
+}
+
+.nav-cta--access {
+  background: rgb(15 23 42);
+  color: #fff;
+}
+
+.nav-cta--access:hover {
+  background: rgb(30 41 59);
+}
+
+.nav-cta--resume {
+  background: linear-gradient(135deg, var(--nav-accent, #7c3aed) 0%, rgb(91 33 182) 100%);
+  color: #fff;
+}
+
+.nav-cta--administer {
+  border: 1px solid rgb(225 29 72 / 0.45);
+  background: rgb(255 241 242 / 0.95);
+  color: rgb(136 19 55);
+}
+
+.nav-cta--administer:hover {
+  background: rgb(255 228 230);
+}
+
+.nav-cta--monitor {
+  border: 1px solid var(--nav-accent, #0284c7);
+  background: transparent;
+  color: var(--nav-accent, #0284c7);
+}
+
+.nav-cta--view_activity {
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+  color: rgb(51 65 85);
+}
+
+/* Cloche alertes */
+.portal-alerts-panel {
+  min-width: 280px;
+  max-width: min(360px, calc(100vw - 1.5rem));
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+  box-shadow: 0 24px 60px -28px rgba(15, 23, 42, 0.35);
+}
+
+.portal-alerts-panel[hidden] {
+  display: none !important;
+}
+
+.portal-alerts-panel__item + .portal-alerts-panel__item {
+  border-top: 1px solid rgb(241 245 249);
+}

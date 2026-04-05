@@ -20,16 +20,12 @@ class ForumModerationController
 
     public function index(Request $request, array $params = []): Response
     {
-        return Response::redirect(url('admin/forum-moderation'));
+        return Response::redirect(url('back-office/forum-moderation'));
     }
 
     public function handleReport(Request $request, array $params = []): Response
     {
-        $gate = \App\Core\Gate::getInstance();
-        $ok = (function_exists('can') && can('forum.moderate'))
-            || (function_exists('can') && can('forum.moderate_organization'))
-            || $gate->allows('admin.organization')
-            || $gate->allows('admin.access');
+        $ok = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
         if (!$ok) {
             Session::flash('error', 'Accès refusé.');
             return Response::redirect(url('forum'));
@@ -43,19 +39,19 @@ class ForumModerationController
 
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
-            return Response::redirect(url('admin/forum-moderation'));
+            return Response::redirect(url('back-office/forum-moderation'));
         }
 
         $id = (int) ($params['id'] ?? 0);
         $report = $this->reportRepository->findById($id, $tenantId);
         if (!$report) {
             Session::flash('error', 'Signalement introuvable.');
-            return Response::redirect(url('admin/forum-moderation'));
+            return Response::redirect(url('back-office/forum-moderation'));
         }
 
         $this->reportRepository->markHandled($id, $tenantId, $userId);
         Session::flash('success', 'Signalement traité.');
-        return Response::redirect(url('admin/forum-moderation'));
+        return Response::redirect(url('back-office/forum-moderation'));
     }
 
     public function lockTopic(Request $request, array $params = []): Response
@@ -80,7 +76,7 @@ class ForumModerationController
 
     private function setTopicLock(Request $request, array $params, bool $locked): Response
     {
-        if (!function_exists('can') || (!can('forum.moderate') && !can('forum.moderate_organization'))) {
+        if (!function_exists('can') || !can('forum.topic.lock')) {
             Session::flash('error', 'Accès refusé.');
             return Response::redirect(url('forum'));
         }
@@ -103,7 +99,7 @@ class ForumModerationController
 
     private function setTopicPin(Request $request, array $params, bool $pinned): Response
     {
-        if (!function_exists('can') || (!can('forum.moderate') && !can('forum.moderate_organization'))) {
+        if (!function_exists('can') || !can('forum.topic.pin')) {
             Session::flash('error', 'Accès refusé.');
             return Response::redirect(url('forum'));
         }

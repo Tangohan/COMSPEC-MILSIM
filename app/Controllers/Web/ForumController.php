@@ -11,6 +11,8 @@ use App\Repositories\ForumCategoryRepository;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumPostRepository;
 use App\Repositories\ForumReportRepository;
+use App\Repositories\ForumAuthorIdentityRepository;
+use App\Services\Profile\ProfilePublicIdentityService;
 
 class ForumController
 {
@@ -18,7 +20,9 @@ class ForumController
         private ForumCategoryRepository $categoryRepository,
         private ForumTopicRepository $topicRepository,
         private ForumPostRepository $postRepository,
-        private ForumReportRepository $reportRepository
+        private ForumReportRepository $reportRepository,
+        private ForumAuthorIdentityRepository $forumAuthorIdentityRepository,
+        private ProfilePublicIdentityService $profilePublicIdentityService
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -31,6 +35,11 @@ class ForumController
         }
 
         $categories = $this->categoryRepository->listForTenant($tenantId);
+        $categories = $this->profilePublicIdentityService->enrichCategoryRowsWithLastAuthor(
+            $categories,
+            $this->forumAuthorIdentityRepository,
+            (int) $tenantId
+        );
         $forumGeneralCategories = [];
         $forumOrganizationCategories = [];
         foreach ($categories as $c) {
@@ -46,13 +55,28 @@ class ForumController
         $postsThisWeek = $this->postRepository->getPostsThisWeekCount($tenantId);
         $activeMembers24h = $this->postRepository->getActiveMembersCount24h($tenantId);
         $recentTopics = $this->topicRepository->getRecentForIndex($tenantId, 10);
+        $recentTopics = $this->profilePublicIdentityService->enrichRecentTopicRows(
+            $recentTopics,
+            $this->forumAuthorIdentityRepository,
+            (int) $tenantId
+        );
         $topContributors = $this->postRepository->getTopContributors($tenantId, 10);
+        $topContributors = $this->profilePublicIdentityService->enrichContributorRows(
+            $topContributors,
+            $this->forumAuthorIdentityRepository,
+            (int) $tenantId
+        );
         $pendingReports = $this->reportRepository->listPending($tenantId);
 
         $searchQuery = trim((string) $request->query('q', ''));
         $searchResults = [];
         if ($searchQuery !== '') {
             $searchResults = $this->topicRepository->search($tenantId, $searchQuery, 30);
+            $searchResults = $this->profilePublicIdentityService->enrichTopicRowsWithPublicNames(
+                $searchResults,
+                $this->forumAuthorIdentityRepository,
+                (int) $tenantId
+            );
         }
 
         $pinnedAnnouncements = [];
@@ -65,12 +89,19 @@ class ForumController
         }
         if ($announcementsCategory) {
             $pinnedAnnouncements = $this->topicRepository->getPinnedInCategory((int) $announcementsCategory['id'], $tenantId);
+            $pinnedAnnouncements = $this->profilePublicIdentityService->enrichTopicRowsWithPublicNames(
+                $pinnedAnnouncements,
+                $this->forumAuthorIdentityRepository,
+                (int) $tenantId
+            );
         }
+
+        $forumCfg = forum_config_for_tenant((int) $tenantId);
 
         return Response::view('layout.forum', [
             'content' => 'forum.index',
-            'title' => config('forum.name') ?? 'Forum',
-            'forumConfig' => config('forum') ?? [],
+            'title' => $forumCfg['name'] ?? 'Forum',
+            'forumConfig' => $forumCfg,
             'categories' => $forumGeneralCategories,
             'forumOrganizationCategories' => $forumOrganizationCategories,
             'topicCount' => $topicCount,

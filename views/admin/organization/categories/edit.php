@@ -1,7 +1,7 @@
 <?php $category = $category ?? null; if (!$category) { echo '<p>Catégorie introuvable.</p>'; return; } $id = (int) $category['id']; ?>
 <div class="max-w-2xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 mb-6">Modifier la catégorie</h1>
-    <form method="post" action="<?= url('admin/organization/categories/' . $id . '/update') ?>" class="space-y-4">
+    <form method="post" action="<?= url('back-office/categories/' . $id . '/update') ?>" class="space-y-4">
         <?= \App\Core\Csrf::field() ?>
         <div>
             <label for="name" class="block text-sm font-medium text-slate-700">Nom *</label>
@@ -40,7 +40,7 @@
         </div>
         <div class="flex gap-3 pt-4">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Enregistrer</button>
-            <a href="<?= url('admin/organization/categories') ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>
+            <a href="<?= url('back-office/categories') ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>
         </div>
     </form>
 </div>

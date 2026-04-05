@@ -9,6 +9,18 @@
   var docId = window.COURRIER_DOC_ID;
   var locked = root.getAttribute('data-locked') === '1';
 
+  var toolbar = document.getElementById('courrier-insert-toolbar');
+  if (toolbar && !locked) {
+    toolbar.querySelectorAll('.courrier-insert-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var ta = document.getElementById('body-rendered');
+        var kind = btn.getAttribute('data-kind') || 'para';
+        var html = kind === 'alinea' ? '<p class="courrier-alinea"></p>' : '<p></p>';
+        insertAtCursor(ta, html);
+      });
+    });
+  }
+
   function insertAtCursor(textarea, text) {
     if (!textarea || locked) return;
     var start = textarea.selectionStart || 0;

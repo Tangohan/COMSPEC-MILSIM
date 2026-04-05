@@ -10,7 +10,7 @@ $adminPanels = $adminPanels ?? [];
             <h1 class="text-2xl font-black text-slate-900">Configuration</h1>
             <p class="mt-1 text-slate-600">Unités, grades, matricules et panneaux administratifs.</p>
         </div>
-        <a href="<?= url('admin') ?>" class="text-slate-600 hover:text-slate-900 text-sm font-medium">← Administration</a>
+        <a href="<?= url('back-office') ?>" class="text-slate-600 hover:text-slate-900 text-sm font-medium">← Back-office</a>
     </div>
 
     <?php if (\App\Core\Session::get('success')): ?>
@@ -137,7 +137,7 @@ $adminPanels = $adminPanels ?? [];
     </section>
 
     <p class="mt-8 text-sm text-slate-500">
-        <a href="<?= url('admin') ?>" class="underline">Retour administration</a>
+        <a href="<?= url('back-office') ?>" class="underline">Retour back-office</a>
         · <a href="<?= url('admin/units') ?>" class="underline">Gérer les unités</a>
         · <a href="<?= url('admin/users') ?>" class="underline">Utilisateurs</a>
     </p>

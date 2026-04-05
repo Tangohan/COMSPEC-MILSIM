@@ -4,16 +4,28 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
-use App\Core\Csrf;
+use App\Repositories\ModerationArtifactRepository;
+use App\Services\Moderation\ContentModerationConfig;
+use App\Services\Moderation\ContentModerationOrchestrator;
+use App\Services\Moderation\ModerationArtifactState;
+use App\Services\Moderation\ModerationSourceType;
 
 class ForumUploadController
 {
     private const MAX_FILES = 5;
     private const MAX_SIZE = 5 * 1024 * 1024; // 5 Mo
     private const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+    public function __construct(
+        private ContentModerationOrchestrator $moderationOrchestrator,
+        private ModerationArtifactRepository $moderationArtifactRepository,
+        private ContentModerationConfig $moderationConfig
+    ) {
+    }
 
     public function handle(Request $request, array $params = []): Response
     {
@@ -50,10 +62,15 @@ class ForumUploadController
         if (!is_dir($webDir)) {
             @mkdir($webDir, 0755, true);
         }
+        $qDir = base_path('storage/quarantine/' . (int) $tenantId);
+        if (!is_dir($qDir)) {
+            @mkdir($qDir, 0755, true);
+        }
+
         $saved = [];
+        $warnings = [];
         for ($i = 0; $i < $count; $i++) {
             $name = $files['name'][$i] ?? '';
-            $type = $files['type'][$i] ?? '';
             $tmp = $files['tmp_name'][$i] ?? '';
             $error = (int) ($files['error'][$i] ?? 0);
             $size = (int) ($files['size'][$i] ?? 0);
@@ -75,12 +92,96 @@ class ForumUploadController
                 'image/webp' => 'webp',
                 default => 'bin',
             };
-            $id = uniqid('forum_', true) . '.' . $ext;
-            $dest = $webDir . '/' . $id;
-            if (move_uploaded_file($tmp, $dest)) {
-                $saved[] = ['id' => $id, 'url' => url('uploads/forum/' . $id)];
+            $publicId = uniqid('forum_', true) . '.' . $ext;
+            $scanName = 'scan_' . bin2hex(random_bytes(6)) . '.' . $ext;
+            $scanFull = $qDir . DIRECTORY_SEPARATOR . $scanName;
+            if (!@copy($tmp, $scanFull)) {
+                $warnings[] = $name . ': copie échouée';
+
+                continue;
+            }
+
+            $scan = $this->moderationOrchestrator->scanBinaryFile($scanFull, $detected, $name);
+            if ($scan->state === ModerationArtifactState::REJECTED) {
+                @unlink($scanFull);
+                $warnings[] = $name . ': refusé par la modération';
+
+                continue;
+            }
+
+            if ($scan->state === ModerationArtifactState::QUARANTINED) {
+                $quarantineRel = 'quarantine/' . (int) $tenantId . '/' . $publicId;
+                $quarantineFull = base_path('storage/' . $quarantineRel);
+                if (!@rename($scanFull, $quarantineFull)) {
+                    @unlink($scanFull);
+                    $warnings[] = $name . ': erreur quarantaine';
+
+                    continue;
+                }
+                $checksum = is_file($quarantineFull) ? (hash_file('sha256', $quarantineFull) ?: '') : '';
+                $expires = (new \DateTimeImmutable())->modify('+' . $this->moderationConfig->quarantineTtlDays . ' days');
+                if ($this->moderationArtifactRepository->tableExists()) {
+                    $this->moderationArtifactRepository->insert((int) $tenantId, [
+                        'user_id' => (int) $userId,
+                        'source_type' => ModerationSourceType::FORUM_UPLOAD,
+                        'source_id' => 0,
+                        'source_key' => $publicId,
+                        'file_path' => $quarantineRel,
+                        'original_name' => basename((string) $name),
+                        'mime' => $detected,
+                        'sha256' => $checksum,
+                        'state' => ModerationArtifactState::QUARANTINED,
+                        'risk_score' => $scan->riskScore,
+                        'reason_codes' => $scan->reasonCodes,
+                        'scan_log' => $scan->scanLog,
+                        'ruleset_version' => $this->moderationConfig->rulesetVersion,
+                        'expires_at' => $expires->format('Y-m-d H:i:s'),
+                    ]);
+                }
+                $warnings[] = $name . ': en attente de validation modérateur';
+
+                continue;
+            }
+
+            $dest = $webDir . DIRECTORY_SEPARATOR . $publicId;
+            if (!@copy($scanFull, $dest)) {
+                @unlink($scanFull);
+                $warnings[] = $name . ': enregistrement échoué';
+
+                continue;
+            }
+            @unlink($scanFull);
+            $saved[] = ['id' => $publicId, 'url' => url('uploads/forum/' . $publicId)];
+            if ($this->moderationArtifactRepository->tableExists()) {
+                $checksum = hash_file('sha256', $dest) ?: '';
+                $this->moderationArtifactRepository->insert((int) $tenantId, [
+                    'user_id' => (int) $userId,
+                    'source_type' => ModerationSourceType::FORUM_UPLOAD,
+                    'source_id' => 0,
+                    'source_key' => $publicId,
+                    'file_path' => 'public/uploads/forum/' . $publicId,
+                    'original_name' => basename((string) $name),
+                    'mime' => $detected,
+                    'sha256' => $checksum,
+                    'state' => ModerationArtifactState::CLEAN,
+                    'risk_score' => $scan->riskScore,
+                    'reason_codes' => $scan->reasonCodes,
+                    'scan_log' => $scan->scanLog,
+                    'ruleset_version' => $this->moderationConfig->rulesetVersion,
+                    'expires_at' => null,
+                ]);
             }
         }
-        return Response::json(['success' => true, 'files' => $saved]);
+
+        $payload = ['success' => true, 'files' => $saved];
+        if ($warnings !== []) {
+            $payload['warnings'] = $warnings;
+        }
+        if ($saved === [] && $warnings !== []) {
+            $payload['success'] = false;
+            $payload['error'] = 'Aucun fichier accepté. ' . implode(' ', $warnings);
+        }
+
+        return Response::json($payload);
     }
 }

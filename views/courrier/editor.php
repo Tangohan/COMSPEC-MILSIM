@@ -29,6 +29,7 @@ $statusLabels = [
 $bodyText = $doc['body_rendered'] ?? '';
 $wordCount = $bodyText ? count(preg_split('/\s+/u', trim(strip_tags($bodyText)), -1, PREG_SPLIT_NO_EMPTY)) : 0;
 $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($bodyText)), -1, PREG_SPLIT_NO_EMPTY)) : 0;
+$hm = $c['header_meta'] ?? ['header_line1' => '', 'header_unit' => '', 'header_section' => ''];
 ?>
 <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl) ?>/assets/css/courrier-document.css" />
 <div class="max-w-[1800px] mx-auto px-4 py-4">
@@ -140,6 +141,24 @@ $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($body
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <div class="border-t border-slate-100 pt-3 mt-1">
+                            <p class="text-xs font-bold text-slate-700 mb-2">En-tête papier (aperçu / PDF)</p>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-[10px] font-medium text-slate-500 mb-0.5">Ligne 1 (ex. ministère)</label>
+                                    <input type="text" name="header_line1" value="<?= htmlspecialchars($hm['header_line1'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="MINISTÈRE DE LA DÉFENSE" <?= $isLocked ? 'readonly' : '' ?>>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-medium text-slate-500 mb-0.5">Unité</label>
+                                    <input type="text" name="header_unit" value="<?= htmlspecialchars($hm['header_unit'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="92e RI — CERBERE" <?= $isLocked ? 'readonly' : '' ?>>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-medium text-slate-500 mb-0.5">Section</label>
+                                    <input type="text" name="header_section" value="<?= htmlspecialchars($hm['header_section'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="RH / S1" <?= $isLocked ? 'readonly' : '' ?>>
+                                </div>
+                            </div>
+                            <p class="mt-1 text-[10px] text-slate-400">Laisser vide pour utiliser le format du preset ou les valeurs par défaut.</p>
+                        </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Référence</label>
                             <input type="text" name="reference_number" value="<?= htmlspecialchars($doc['reference_number'] ?? ($defaults['reference_number'] ?? '')) ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="CR-2025-0001" <?= $isLocked ? 'readonly' : '' ?>>
@@ -207,6 +226,12 @@ $sentenceCount = $bodyText ? count(preg_split('/[.!?]+/u', trim(strip_tags($body
             <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
                 <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-2">Assistant rédactionnel</h3>
                 <p class="text-xs text-slate-500 mb-3">Cliquez pour insérer à la position du curseur (corps du document).</p>
+                <?php if (!$isLocked): ?>
+                <div class="flex flex-wrap gap-2 mb-3" id="courrier-insert-toolbar">
+                    <button type="button" class="px-2 py-1 text-xs border border-slate-200 rounded hover:bg-slate-50 courrier-insert-btn" data-kind="para">Paragraphe</button>
+                    <button type="button" class="px-2 py-1 text-xs border border-slate-200 rounded hover:bg-slate-50 courrier-insert-btn" data-kind="alinea">Alinéa</button>
+                </div>
+                <?php endif; ?>
                 <div id="courrier-snippets-root" class="space-y-3 text-xs" data-locked="<?= $isLocked ? '1' : '0' ?>" data-doc-id="<?= $doc ? (int)$doc['id'] : '' ?>">
                     <p class="text-slate-400">Chargement des formules…</p>
                 </div>

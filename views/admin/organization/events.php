@@ -8,7 +8,7 @@ $canCreateEvent = $canCreateEvent ?? true;
 <div class="max-w-4xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Événements communauté</h1>
-        <a href="<?= url('admin/organization') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
+        <a href="<?= url('back-office') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
     </div>
     <?php $s = \App\Core\Session::getFlash('success'); $e = \App\Core\Session::getFlash('error'); ?>
     <?php if ($s): ?><p class="text-emerald-700 text-sm mb-4"><?= htmlspecialchars($s) ?></p><?php endif; ?>
@@ -22,7 +22,7 @@ $canCreateEvent = $canCreateEvent ?? true;
     require __DIR__ . '/../../partials/quota_limited_banner.php';
     ?>
 
-    <form method="post" action="<?= url('admin/organization/events') ?>" class="space-y-3 border border-slate-200 rounded-lg p-4 mb-10 <?= !$canCreateEvent ? 'opacity-75' : '' ?>">
+    <form method="post" action="<?= url('back-office/events') ?>" class="space-y-3 border border-slate-200 rounded-lg p-4 mb-10 <?= !$canCreateEvent ? 'opacity-75' : '' ?>">
         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
         <div>
             <label class="block text-xs text-slate-500">Titre</label>

@@ -1,7 +1,23 @@
-<?php $group = $group ?? null; $parents = $parents ?? []; $users = $users ?? []; if (!$group) { echo '<p>Groupe introuvable.</p>'; return; } $gid = (int) $group['id']; ?>
+<?php
+$group = $group ?? null;
+$parents = $parents ?? [];
+$users = $users ?? [];
+if (!$group) {
+    echo '<p>Groupe introuvable.</p>';
+    return;
+}
+$gid = (int) $group['id'];
+$publicTagsLines = '';
+$pt = $group['public_tags'] ?? null;
+if (is_string($pt) && $pt !== '') {
+    $dec = json_decode($pt, true);
+    $publicTagsLines = is_array($dec) ? implode("\n", $dec) : $pt;
+}
+$sop = array_key_exists('show_on_public_page', $group) ? (int) $group['show_on_public_page'] === 1 : true;
+?>
 <div class="max-w-2xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 mb-6">Modifier le groupe</h1>
-    <form method="post" action="<?= url('admin/organization/groups/' . $gid . '/update') ?>" class="space-y-4">
+    <form method="post" action="<?= url('back-office/groups/' . $gid . '/update') ?>" class="space-y-4">
         <?= \App\Core\Csrf::field() ?>
         <div>
             <label for="name" class="block text-sm font-medium text-slate-700">Nom *</label>
@@ -37,9 +53,24 @@
             <label for="display_order" class="block text-sm font-medium text-slate-700">Ordre</label>
             <input type="number" id="display_order" name="display_order" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" value="<?= (int) ($group['display_order'] ?? 0) ?>">
         </div>
+        <div class="border-t border-slate-200 pt-4 space-y-3">
+            <p class="text-xs font-bold text-slate-800">Fiche publique vitrine</p>
+            <label class="flex items-center gap-2 text-sm text-slate-700">
+                <input type="checkbox" name="show_on_public_page" value="1" <?= $sop ? 'checked' : '' ?>>
+                Inclure cette unité sur la page publique (ORBAT / unités)
+            </label>
+            <div>
+                <label for="public_blurb" class="block text-sm font-medium text-slate-700">Description publique</label>
+                <textarea id="public_blurb" name="public_blurb" rows="3" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm"><?= htmlspecialchars((string) ($group['public_blurb'] ?? '')) ?></textarea>
+            </div>
+            <div>
+                <label for="public_tags" class="block text-sm font-medium text-slate-700">Tags (un par ligne)</label>
+                <textarea id="public_tags" name="public_tags" rows="3" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-mono"><?= htmlspecialchars($publicTagsLines) ?></textarea>
+            </div>
+        </div>
         <div class="flex gap-3 pt-4">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Enregistrer</button>
-            <a href="<?= url('admin/organization/groups/' . $gid) ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>
+            <a href="<?= url('back-office/groups/' . $gid) ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>
         </div>
     </form>
 </div>

@@ -17,8 +17,8 @@ $scopeFilter = $modScopeFilter ?? '';
     <span class="w-1.5 h-1.5 bg-rose-600 rounded-full animate-pulse"></span>
     <h1 class="text-2xl md:text-3xl font-black italic uppercase text-white"><?= htmlspecialchars($panelTitle) ?></h1>
     <div class="ml-auto flex gap-2 text-[10px] font-bold uppercase">
-      <a href="<?= $baseUrl ?>/admin/forum-moderation" class="px-3 py-1 rounded border <?= $scopeFilter === '' ? 'border-orange-500 text-orange-400' : 'border-white/10 text-neutral-500' ?>">Tout</a>
-      <a href="<?= $baseUrl ?>/admin/forum-moderation?scope=organization" class="px-3 py-1 rounded border <?= $scopeFilter === 'organization' ? 'border-indigo-500 text-indigo-400' : 'border-white/10 text-neutral-500' ?>">Sections org</a>
+      <a href="<?= $baseUrl ?>/back-office/forum-moderation" class="px-3 py-1 rounded border <?= $scopeFilter === '' ? 'border-orange-500 text-orange-400' : 'border-white/10 text-neutral-500' ?>">Tout</a>
+      <a href="<?= $baseUrl ?>/back-office/forum-moderation?scope=organization" class="px-3 py-1 rounded border <?= $scopeFilter === 'organization' ? 'border-indigo-500 text-indigo-400' : 'border-white/10 text-neutral-500' ?>">Sections org</a>
     </div>
   </div>
 

@@ -1,10 +1,12 @@
 <?php
-$documents = $courrier['documents'] ?? [];
+$c = $courrier ?? [];
+$documents = $c['documents'] ?? [];
 $baseUrl = url('');
 ?>
-<div class="max-w-5xl mx-auto px-6 py-12">
-    <h1 class="text-2xl font-black text-slate-900 mb-6">Archives — Bureau Courrier</h1>
-    <p class="mb-6"><a href="<?= $baseUrl ?>/courrier" class="text-slate-500 hover:text-slate-900 text-sm">← Bureau Courrier</a></p>
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-sky-700 mb-1"><a href="<?= $baseUrl ?>/courrier" class="hover:underline">Bureau Courrier</a></p>
+    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 mb-2">Archives</h1>
+    <p class="mb-8 text-sm text-slate-600">Documents archivés où vous avez participé (rédaction, validation ou signature).</p>
     <?php if (empty($documents)): ?>
     <p class="text-slate-500">Aucun document archivé.</p>
     <?php else: ?>

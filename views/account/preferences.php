@@ -25,8 +25,9 @@ $baseUrl = url('');
             <?php endforeach; endif; ?>
         </div>
         <div>
-            <label for="callsign" class="block text-sm font-medium text-slate-700 mb-1">Indicatif</label>
+            <label for="callsign" class="block text-sm font-medium text-slate-700 mb-1">Indicatif (plateforme, ATAK)</label>
             <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars($user['callsign'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900 focus:border-slate-900" maxlength="50">
+            <p class="mt-1 text-xs text-slate-500">Source unique : enregistré sur le compte (<code class="text-xs">users.callsign</code>). L’ancien champ « indicatif Arma » du profil civil a été fusionné ici.</p>
             <?php if (!empty($errors['callsign'])): foreach ($errors['callsign'] as $e): ?>
             <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
             <?php endforeach; endif; ?>
@@ -39,21 +40,12 @@ $baseUrl = url('');
             <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
             <?php endforeach; endif; ?>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label for="steam_id" class="block text-sm font-medium text-slate-700 mb-1">Steam ID (liaison ATAK)</label>
-                <input type="text" name="steam_id" id="steam_id" value="<?= htmlspecialchars($user['steam_id'] ?? '') ?>" placeholder="76561198…" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900" maxlength="20">
-                <?php if (!empty($errors['steam_id'])): foreach ($errors['steam_id'] as $e): ?>
-                <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
-                <?php endforeach; endif; ?>
-            </div>
-            <div>
-                <label for="arma_callsign" class="block text-sm font-medium text-slate-700 mb-1">Indicatif Arma (liaison ATAK)</label>
-                <input type="text" name="arma_callsign" id="arma_callsign" value="<?= htmlspecialchars($profile['arma_callsign'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900" maxlength="100">
-                <?php if (!empty($errors['arma_callsign'])): foreach ($errors['arma_callsign'] as $e): ?>
-                <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
-                <?php endforeach; endif; ?>
-            </div>
+        <div>
+            <label for="steam_id" class="block text-sm font-medium text-slate-700 mb-1">Steam ID (liaison ATAK)</label>
+            <input type="text" name="steam_id" id="steam_id" value="<?= htmlspecialchars($user['steam_id'] ?? '') ?>" placeholder="76561198…" class="w-full max-w-md px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900" maxlength="20">
+            <?php if (!empty($errors['steam_id'])): foreach ($errors['steam_id'] as $e): ?>
+            <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
+            <?php endforeach; endif; ?>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>

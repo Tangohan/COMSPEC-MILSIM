@@ -19,7 +19,7 @@ $uid = (int) $user['id'];
     ?>
     <p class="mb-2 text-sm px-3 py-2 rounded <?= $class ?>"><?= htmlspecialchars($i['message'] ?? '') ?></p>
     <?php endforeach; ?>
-    <form method="post" action="<?= url('admin/organization/users/' . $uid . '/update') ?>" class="space-y-4">
+    <form method="post" action="<?= url('back-office/users/' . $uid . '/update') ?>" class="space-y-4">
         <?= \App\Core\Csrf::field() ?>
         <div>
             <label for="email" class="block text-sm font-medium text-slate-700">Email *</label>
@@ -112,7 +112,7 @@ $uid = (int) $user['id'];
         </div>
         <div class="flex gap-3 pt-4">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Enregistrer</button>
-            <a href="<?= url('admin/organization/users/' . $uid) ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>
+            <a href="<?= url('back-office/users/' . $uid) ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>
         </div>
     </form>
 </div>

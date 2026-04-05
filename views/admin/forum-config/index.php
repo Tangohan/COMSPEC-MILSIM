@@ -72,6 +72,7 @@ $forumName = $forumConfig['name'] ?? 'Chambre des Murmures';
         <div class="space-y-2">
             <?php
             $paramGroups = [
+                'Apparence' => ['forum_hero_image_url'],
                 'Accès' => ['forum_enabled', 'forum_guest_read'],
                 'Libellés rôles' => ['forum_role_read_label', 'forum_role_write_label'],
                 'Limites & cooldowns' => ['forum_topics_per_page', 'forum_posts_per_page', 'forum_cooldown_seconds'],
@@ -95,6 +96,9 @@ $forumName = $forumConfig['name'] ?? 'Chambre des Murmures';
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1"><?= htmlspecialchars($key) ?></label>
                             <input type="text" class="fc-input w-full border border-slate-200 rounded px-3 py-2 text-sm" name="<?= htmlspecialchars($key) ?>" data-key="<?= htmlspecialchars($key) ?>" value="<?= htmlspecialchars($forumConfig[$key] ?? '') ?>" placeholder="">
+                            <?php if ($key === 'forum_hero_image_url'): ?>
+                            <p class="mt-1.5 text-xs text-slate-500 leading-relaxed">Image d’en-tête du forum : URL HTTPS absolue ou chemin commençant par <code class="text-[11px] bg-slate-100 px-1 rounded">/</code> (ex. assets servis par le site). Recommandé : large bannière (~1600×400&nbsp;px), WebP ou JPEG, fichier léger pour de bonnes performances.</p>
+                            <?php endif; ?>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -298,7 +302,7 @@ function forumConfigPage() {
             body.append('action', 'add_banned_word');
             body.append('word', word);
             try {
-                const r = await fetch(BASE + '/api/admin/forum-moderation', { method: 'POST', body });
+                const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { this.bannedWordInput = ''; location.reload(); return; }
                 alert(j.message || 'Erreur.'); } catch (e) { alert('Erreur réseau.'); }
@@ -310,7 +314,7 @@ function forumConfigPage() {
             body.append('action', 'delete_banned_word');
             body.append('id', id);
             try {
-                const r = await fetch(BASE + '/api/admin/forum-moderation', { method: 'POST', body });
+                const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { location.reload(); return; }
                 alert(j.message || 'Erreur.'); } catch (e) { alert('Erreur réseau.'); }
@@ -323,7 +327,7 @@ function forumConfigPage() {
             body.append('action', 'add_blacklisted_domain');
             body.append('domain', domain);
             try {
-                const r = await fetch(BASE + '/api/admin/forum-moderation', { method: 'POST', body });
+                const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { this.blacklistedDomainInput = ''; location.reload(); return; }
                 alert(j.message || 'Erreur.'); } catch (e) { alert('Erreur réseau.'); }
@@ -335,13 +339,13 @@ function forumConfigPage() {
             body.append('action', 'delete_blacklisted_domain');
             body.append('id', id);
             try {
-                const r = await fetch(BASE + '/api/admin/forum-moderation', { method: 'POST', body });
+                const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { location.reload(); return; }
                 alert(j.message || 'Erreur.'); } catch (e) { alert('Erreur réseau.'); }
         },
-        async botSelfTest() { const b = new FormData(); b.append('_csrf_token', CSRF); b.append('action', 'bot_self_test'); const r = await fetch(BASE + '/api/admin/forum-moderation', { method: 'POST', body: b }); const j = await r.json().catch(() => ({})); alert(j.message || (r.ok ? 'Test envoyé.' : 'Erreur.')); },
-        async botPreview() { const b = new FormData(); b.append('_csrf_token', CSRF); b.append('action', 'bot_preview'); const r = await fetch(BASE + '/api/admin/forum-moderation', { method: 'POST', body: b }); const j = await r.json().catch(() => ({})); alert(j.message || (r.ok ? 'Aperçu.' : 'Erreur.')); }
+        async botSelfTest() { const b = new FormData(); b.append('_csrf_token', CSRF); b.append('action', 'bot_self_test'); const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body: b }); const j = await r.json().catch(() => ({})); alert(j.message || (r.ok ? 'Test envoyé.' : 'Erreur.')); },
+        async botPreview() { const b = new FormData(); b.append('_csrf_token', CSRF); b.append('action', 'bot_preview'); const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body: b }); const j = await r.json().catch(() => ({})); alert(j.message || (r.ok ? 'Aperçu.' : 'Erreur.')); }
     };
 }
 </script>

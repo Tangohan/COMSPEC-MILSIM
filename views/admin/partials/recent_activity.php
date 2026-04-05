@@ -4,7 +4,7 @@
 /** @var string $adminRecentActivityMoreUrl */
 $rows = $adminRecentActivity ?? [];
 $error = $adminRecentActivityError ?? null;
-$moreUrl = $adminRecentActivityMoreUrl ?? url('admin/system/audit');
+$moreUrl = $adminRecentActivityMoreUrl ?? url('admin/audit');
 ?>
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5 mb-8">
     <div class="flex items-center justify-between mb-4">

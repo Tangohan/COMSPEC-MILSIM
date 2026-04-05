@@ -52,12 +52,12 @@ class CategoryAdminController
         $name = trim((string) $request->input('name'));
         if ($name === '') {
             Session::flash('error', 'Le nom est requis.');
-            return Response::redirect(url('admin/organization/categories/create'));
+            return Response::redirect(url('back-office/categories/create'));
         }
         $slug = trim((string) $request->input('slug')) ?: preg_replace('/[^a-z0-9]+/i', '-', strtolower($name));
         if ($this->categoryRepository->slugExists($tenantId, $slug)) {
             Session::flash('error', 'Ce slug existe déjà.');
-            return Response::redirect(url('admin/organization/categories/create'));
+            return Response::redirect(url('back-office/categories/create'));
         }
         $this->categoryRepository->create($tenantId, [
             'name' => $name,
@@ -68,7 +68,7 @@ class CategoryAdminController
             'display_order' => (int) $request->input('display_order'),
         ]);
         Session::flash('success', 'Catégorie créée.');
-        return Response::redirect(url('admin/organization/categories'));
+        return Response::redirect(url('back-office/categories'));
     }
 
     public function edit(Request $request, array $params = []): Response
@@ -76,12 +76,12 @@ class CategoryAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/categories'));
+            return Response::redirect(url('back-office/categories'));
         }
         $category = $this->categoryRepository->findById($id, $tenantId);
         if (!$category) {
             Session::flash('error', 'Catégorie introuvable.');
-            return Response::redirect(url('admin/organization/categories'));
+            return Response::redirect(url('back-office/categories'));
         }
         return Response::view('layout.main', [
             'content' => 'admin.organization.categories.edit',
@@ -95,22 +95,22 @@ class CategoryAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/categories'));
+            return Response::redirect(url('back-office/categories'));
         }
         $category = $this->categoryRepository->findById($id, $tenantId);
         if (!$category) {
             Session::flash('error', 'Catégorie introuvable.');
-            return Response::redirect(url('admin/organization/categories'));
+            return Response::redirect(url('back-office/categories'));
         }
         $name = trim((string) $request->input('name'));
         if ($name === '') {
             Session::flash('error', 'Le nom est requis.');
-            return Response::redirect(url('admin/organization/categories/' . $id . '/edit'));
+            return Response::redirect(url('back-office/categories/' . $id . '/edit'));
         }
         $slug = trim((string) $request->input('slug')) ?: preg_replace('/[^a-z0-9]+/i', '-', strtolower($name));
         if ($this->categoryRepository->slugExists($tenantId, $slug, $id)) {
             Session::flash('error', 'Ce slug existe déjà.');
-            return Response::redirect(url('admin/organization/categories/' . $id . '/edit'));
+            return Response::redirect(url('back-office/categories/' . $id . '/edit'));
         }
         $this->categoryRepository->update($id, $tenantId, [
             'name' => $name,
@@ -122,6 +122,6 @@ class CategoryAdminController
             'is_active' => $request->input('is_active') ? 1 : 0,
         ]);
         Session::flash('success', 'Catégorie mise à jour.');
-        return Response::redirect(url('admin/organization/categories'));
+        return Response::redirect(url('back-office/categories'));
     }
 }

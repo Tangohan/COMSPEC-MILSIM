@@ -12,13 +12,15 @@ use App\Core\Validator;
 use App\Repositories\ForumCategoryRepository;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumPostRepository;
+use App\Repositories\UserForumStatsRepository;
 
 class ForumNewTopicController
 {
     public function __construct(
         private ForumCategoryRepository $categoryRepository,
         private ForumTopicRepository $topicRepository,
-        private ForumPostRepository $postRepository
+        private ForumPostRepository $postRepository,
+        private UserForumStatsRepository $userForumStatsRepository
     ) {}
 
     public function form(Request $request, array $params = []): Response
@@ -36,7 +38,7 @@ class ForumNewTopicController
         }
 
         if (function_exists('forum_is_enabled') && !forum_is_enabled()) {
-            $isModo = function_exists('can') && can('forum.moderate');
+            $isModo = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
             if (!$isModo) {
                 return Response::redirect(url('forum'));
             }
@@ -51,12 +53,13 @@ class ForumNewTopicController
                 $preselectedCategoryId = $categoryIdFromQuery;
             }
         }
-        $maxLen = (int) (function_exists('forum_get_setting') ? forum_get_setting('forum_max_post_length', '10000') : 10000);
+        $fc = forum_config_for_tenant((int) $tenantId);
+        $maxLen = (int) ($fc['forum_max_post_length'] ?? 10000);
 
         return Response::view('layout.forum', [
             'content' => 'forum.new-topic',
             'title' => 'Nouveau sujet',
-            'forumConfig' => config('forum') ?? [],
+            'forumConfig' => $fc,
             'categoriesWithChildren' => $categoriesWithChildren,
             'preselectedCategoryId' => $preselectedCategoryId,
             'maxLen' => $maxLen,
@@ -110,7 +113,8 @@ class ForumNewTopicController
             Session::flash('error', 'Le titre doit faire entre 3 et 255 caractères.');
             return Response::redirect(url('forum/new-topic'));
         }
-        $maxLen = (int) (function_exists('forum_get_setting') ? forum_get_setting('forum_max_post_length', '10000') : 10000);
+        $fc = forum_config_for_tenant((int) $tenantId);
+        $maxLen = (int) ($fc['forum_max_post_length'] ?? 10000);
         if (strlen($body) < 5 || strlen($body) > $maxLen) {
             Session::flash('error', 'Le contenu doit faire entre 5 et ' . $maxLen . ' caractères.');
             return Response::redirect(url('forum/new-topic'));
@@ -125,6 +129,7 @@ class ForumNewTopicController
         $topicId = $this->topicRepository->create($tenantId, $categoryId, $userId, $title, $slug);
         $this->postRepository->create($tenantId, $topicId, $userId, $body);
         $this->topicRepository->touchUpdatedAt($topicId);
+        $this->userForumStatsRepository->incrementPostCount((int) $tenantId, (int) $userId);
 
         Session::flash('success', 'Sujet créé.');
         return Response::redirect(url('forum/topic/' . $topicId));

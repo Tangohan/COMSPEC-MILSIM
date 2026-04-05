@@ -2,7 +2,7 @@
 <div class="max-w-2xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 mb-6">Nouvel utilisateur</h1>
 
-    <form method="post" action="<?= url('admin/organization/users/store') ?>" class="space-y-4">
+    <form method="post" action="<?= url('back-office/users/store') ?>" class="space-y-4">
         <?= \App\Core\Csrf::field() ?>
         <div>
             <label for="email" class="block text-sm font-medium text-slate-700">Email *</label>
@@ -95,7 +95,7 @@
         </div>
         <div class="flex gap-3 pt-4">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Créer</button>
-            <a href="<?= url('admin/organization/users') ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>
+            <a href="<?= url('back-office/users') ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>
         </div>
     </form>
 </div>

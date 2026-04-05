@@ -6,7 +6,7 @@
 /** @var int $auditTotalPages */
 /** @var array<string, mixed> $auditFilters */
 $auditScope = $auditScope ?? 'system';
-$basePath = $auditScope === 'organization' ? 'admin/organization/audit' : 'admin/system/audit';
+$basePath = $auditScope === 'organization' ? 'back-office/audit' : 'admin/audit';
 $showTenantCol = $auditScope === 'system';
 $tableColspan = $showTenantCol ? 5 : 4;
 
@@ -20,7 +20,7 @@ $buildLink = static function (int $page) use ($auditFilters, $basePath): string 
 <div class="max-w-6xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900"><?= $auditScope === 'organization' ? 'Journal d\'activité' : 'Journaux d\'audit' ?></h1>
-        <a href="<?= url($auditScope === 'organization' ? 'admin/organization' : 'admin/system') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Retour</a>
+        <a href="<?= url($auditScope === 'organization' ? 'back-office' : 'admin') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Retour</a>
     </div>
 
     <form method="get" action="<?= url($basePath) ?>" class="flex flex-wrap items-end gap-3 mb-6 p-4 rounded-xl border border-slate-200 bg-slate-50/80">

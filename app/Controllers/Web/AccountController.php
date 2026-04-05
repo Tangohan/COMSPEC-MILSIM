@@ -14,6 +14,8 @@ use App\Services\Auth\AuthService;
 use App\Repositories\UserRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\PersonnelProfileRepository;
+use App\Repositories\RecruitmentPresetRepository;
+use App\Services\Profile\RecruitmentPresetPayloadService;
 use App\Services\User\UserProfileSlugService;
 use PDO;
 
@@ -23,7 +25,9 @@ class AccountController
         private AuthService $authService,
         private UserRepository $userRepository,
         private UserProfileRepository $userProfileRepository,
-        private PersonnelProfileRepository $personnelProfileRepository
+        private PersonnelProfileRepository $personnelProfileRepository,
+        private RecruitmentPresetRepository $recruitmentPresetRepository,
+        private RecruitmentPresetPayloadService $recruitmentPresetPayloadService
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -40,35 +44,20 @@ class AccountController
     }
 
     /**
-     * État de santé : base, tables, API ATAK.
+     * État de santé : connexion base, API ATAK (sans détail des tables).
      */
     private function getSystemHealth(int $tenantId): array
     {
         $health = [
-            'database' => ['ok' => false, 'message' => '', 'tables' => []],
+            'database' => ['ok' => false, 'message' => ''],
             'api' => ['ok' => false, 'message' => '', 'url' => null],
         ];
 
         try {
             $pdo = Database::getPdo();
+            $pdo->query('SELECT 1');
             $health['database']['ok'] = true;
             $health['database']['message'] = 'Connecté';
-
-            $stmt = $pdo->query('SHOW TABLES');
-            $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            $keyTables = ['users', 'tenants', 'sessions', 'forum_categories', 'forum_topics', 'forum_posts', 'tenant_atak_config', 'documents'];
-            foreach ($keyTables as $table) {
-                if (!in_array($table, $tables, true)) {
-                    $health['database']['tables'][$table] = ['exists' => false, 'rows' => null];
-                    continue;
-                }
-                try {
-                    $count = $pdo->query("SELECT COUNT(*) FROM `" . str_replace('`', '``', $table) . "`")->fetchColumn();
-                    $health['database']['tables'][$table] = ['exists' => true, 'rows' => (int) $count];
-                } catch (\Throwable $e) {
-                    $health['database']['tables'][$table] = ['exists' => true, 'rows' => null, 'error' => $e->getMessage()];
-                }
-            }
         } catch (\Throwable $e) {
             $health['database']['ok'] = false;
             $health['database']['message'] = $e->getMessage();
@@ -129,7 +118,6 @@ class AccountController
                 'display_name' => 'max:100',
                 'callsign' => 'max:50',
                 'steam_id' => 'max:20',
-                'arma_callsign' => 'max:100',
                 'timezone' => 'max:50',
                 'language' => 'max:10',
                 'profile_slug' => 'max:40',
@@ -168,7 +156,6 @@ class AccountController
                     'first_name' => trim((string) $request->input('first_name')),
                     'last_name' => trim((string) $request->input('last_name')),
                     'phone' => trim((string) $request->input('phone')),
-                    'arma_callsign' => trim((string) $request->input('arma_callsign')) ?: null,
                 ]);
                 Session::set('display_name', trim((string) $request->input('display_name')));
                 Session::set('callsign', trim((string) $request->input('callsign')));
@@ -413,5 +400,169 @@ class AccountController
             'success' => $success,
             'error' => $error,
         ]);
+    }
+
+    public function recruitmentPresets(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $presets = $this->recruitmentPresetRepository->listForUser((int) $user['id']);
+        $success = Session::getFlash('success');
+        $error = Session::getFlash('error');
+
+        return Response::view('layout.main', [
+            'content' => 'account.recruitment_presets',
+            'title' => 'Profils de candidature',
+            'presets' => $presets,
+            'success' => $success,
+            'error' => $error,
+        ]);
+    }
+
+    public function recruitmentPresetsCreate(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $uid = (int) $user['id'];
+        $errors = [];
+
+        if ($request->isPost()) {
+            if (!Csrf::validate($request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+                return Response::redirect(url('account/recruitment-presets/create'));
+            }
+            $label = trim((string) $request->input('label'));
+            if ($label === '') {
+                $errors['label'] = ['Nom du profil obligatoire.'];
+            }
+            $existing = $this->recruitmentPresetPayloadService->normalizeDecodedPayload([]);
+            $removeImage = (string) $request->input('remove_character_image') === '1';
+            $payload = $this->recruitmentPresetPayloadService->buildPayloadFromRequest($request, $existing, $removeImage);
+            $this->applyRecruitmentPresetImageUpload($uid, $payload, null, $errors);
+            if (empty($errors)) {
+                $this->recruitmentPresetRepository->create($uid, $label, $payload);
+                Session::flash('success', 'Profil enregistré.');
+                return Response::redirect(url('account/recruitment-presets'));
+            }
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'account.recruitment_presets_form',
+            'title' => 'Nouveau profil de candidature',
+            'preset' => null,
+            'formAction' => url('account/recruitment-presets/create'),
+            'errors' => $errors,
+            'payloadDefaults' => $this->recruitmentPresetPayloadService->normalizeDecodedPayload([]),
+        ]);
+    }
+
+    public function recruitmentPresetsEdit(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $uid = (int) $user['id'];
+        $id = (int) ($params['id'] ?? 0);
+        $row = $id > 0 ? $this->recruitmentPresetRepository->findForUser($id, $uid) : null;
+        if (!$row) {
+            Session::flash('error', 'Profil introuvable.');
+            return Response::redirect(url('account/recruitment-presets'));
+        }
+        $errors = [];
+
+        if ($request->isPost()) {
+            if (!Csrf::validate($request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+                return Response::redirect(url('account/recruitment-presets/' . $id . '/edit'));
+            }
+            $label = trim((string) $request->input('label'));
+            if ($label === '') {
+                $errors['label'] = ['Nom du profil obligatoire.'];
+            }
+            $prevPayload = is_array($row['payload'] ?? null) ? $row['payload'] : [];
+            $existing = $this->recruitmentPresetPayloadService->normalizeDecodedPayload($prevPayload);
+            $removeImage = (string) $request->input('remove_character_image') === '1';
+            if ($removeImage) {
+                $prevUrl = is_array($existing['rp'] ?? null) ? trim((string) ($existing['rp']['image_url'] ?? '')) : '';
+                if ($prevUrl !== '') {
+                    $this->recruitmentPresetPayloadService->deleteCharacterImageFile($prevUrl);
+                }
+            }
+            $payload = $this->recruitmentPresetPayloadService->buildPayloadFromRequest($request, $existing, $removeImage);
+            $this->applyRecruitmentPresetImageUpload($uid, $payload, $existing, $errors);
+            if (empty($errors)) {
+                $this->recruitmentPresetRepository->update($id, $uid, $label, $payload);
+                Session::flash('success', 'Profil mis à jour.');
+                return Response::redirect(url('account/recruitment-presets'));
+            }
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'account.recruitment_presets_form',
+            'title' => 'Modifier le profil',
+            'preset' => $row,
+            'formAction' => url('account/recruitment-presets/' . $id . '/edit'),
+            'errors' => $errors,
+            'payloadDefaults' => $this->recruitmentPresetPayloadService->normalizeDecodedPayload(is_array($row['payload'] ?? null) ? $row['payload'] : []),
+        ]);
+    }
+
+    public function recruitmentPresetsDelete(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        if (!$request->isPost()) {
+            return Response::redirect(url('account/recruitment-presets'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+            return Response::redirect(url('account/recruitment-presets'));
+        }
+        $uid = (int) $user['id'];
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1 || !$this->recruitmentPresetRepository->delete($id, $uid)) {
+            Session::flash('error', 'Suppression impossible.');
+        } else {
+            Session::flash('success', 'Profil supprimé.');
+        }
+
+        return Response::redirect(url('account/recruitment-presets'));
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed>|null $previousNormalized
+     * @param array<string, list<string>> $errors
+     */
+    private function applyRecruitmentPresetImageUpload(int $userId, array &$payload, ?array $previousNormalized, array &$errors): void
+    {
+        $file = $_FILES['rp_character_image'] ?? null;
+        if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            return;
+        }
+        $res = $this->recruitmentPresetPayloadService->saveCharacterImage($userId, $file);
+        if (!$res['ok']) {
+            $errors['rp_character_image'] = [$res['error'] ?? 'Upload impossible.'];
+
+            return;
+        }
+        if ($previousNormalized !== null) {
+            $rp = is_array($previousNormalized['rp'] ?? null) ? $previousNormalized['rp'] : [];
+            $old = trim((string) ($rp['image_url'] ?? ''));
+            if ($old !== '') {
+                $this->recruitmentPresetPayloadService->deleteCharacterImageFile($old);
+            }
+        }
+        if (!isset($payload['rp']) || !is_array($payload['rp'])) {
+            $payload['rp'] = [];
+        }
+        $payload['rp']['image_url'] = $res['path'] ?? '';
     }
 }

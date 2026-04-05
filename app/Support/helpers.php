@@ -37,6 +37,22 @@ if (!function_exists('config')) {
     }
 }
 
+if (!function_exists('email_config')) {
+    /**
+     * @return array<string, mixed>
+     */
+    function email_config(): array
+    {
+        static $cfg = null;
+        if ($cfg === null) {
+            $path = base_path('config/email.php');
+            $cfg = is_file($path) ? require $path : [];
+        }
+
+        return $cfg;
+    }
+}
+
 if (!function_exists('url')) {
     function url(string $path = ''): string
     {
@@ -102,6 +118,30 @@ if (!function_exists('detect_current_module')) {
 
         return null;
     }
+}
+
+if (is_file(base_path('app/Support/navigation_menu.php'))) {
+    require_once base_path('app/Support/navigation_menu.php');
+}
+
+if (!function_exists('community_display_name')) {
+    /**
+     * Libellé UI pour le tenant système (slug `default`) : jamais « Default Organisation ».
+     *
+     * @param array{name?: string, slug?: string} $tenantOrMembershipRow
+     */
+    function community_display_name(array $tenantOrMembershipRow): string
+    {
+        if (($tenantOrMembershipRow['slug'] ?? '') === 'default') {
+            return 'Pas d\'organisation';
+        }
+
+        return (string) ($tenantOrMembershipRow['name'] ?? '');
+    }
+}
+
+if (is_file(base_path('app/Support/portal_header.php'))) {
+    require_once base_path('app/Support/portal_header.php');
 }
 
 require __DIR__ . '/forum_helpers.php';

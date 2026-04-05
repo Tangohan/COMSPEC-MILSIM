@@ -1,0 +1,3 @@
+-- Extension référentiel : sous-officiers et militaires du rang (FR_CLASSIC / US_CLASSIC).
+-- L’application réelle du seed idempotent est dans run-migrations.php (bloc « Grades sous-officiers / militaires du rang »).
+-- Ce fichier sert de référence documentaire ; exécuter run-migrations.php pour appliquer.

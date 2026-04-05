@@ -39,11 +39,13 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   `name` varchar(100) NOT NULL,
   `slug` varchar(100) NOT NULL,
   `module` varchar(50) DEFAULT NULL,
+  `action` varchar(32) DEFAULT NULL,
   `scope` enum('site','community','intra') NOT NULL DEFAULT 'community',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
   KEY `tenant_id` (`tenant_id`),
+  KEY `permissions_tenant_module_action` (`tenant_id`,`module`,`action`),
   CONSTRAINT `permissions_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -170,6 +172,9 @@ CREATE TABLE IF NOT EXISTS `units` (
   `code` varchar(20) DEFAULT NULL,
   `commander_user_id` int unsigned DEFAULT NULL,
   `display_order` int DEFAULT 0,
+  `public_blurb` text DEFAULT NULL,
+  `public_tags` json DEFAULT NULL,
+  `show_on_public_page` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -212,6 +217,23 @@ CREATE TABLE IF NOT EXISTS `user_profiles` (
   CONSTRAINT `user_profiles_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `user_profile_display_settings` (
+  `user_id` int unsigned NOT NULL,
+  `forum_alias` varchar(80) DEFAULT NULL,
+  `forum_label_mode` varchar(32) NOT NULL DEFAULT 'display_name',
+  `show_matricule_forum` tinyint(1) NOT NULL DEFAULT 1,
+  `show_grade_forum` tinyint(1) NOT NULL DEFAULT 1,
+  `show_unit_forum` tinyint(1) NOT NULL DEFAULT 1,
+  `show_bio_forum` tinyint(1) NOT NULL DEFAULT 1,
+  `fiche_show_email_to_others` tinyint(1) NOT NULL DEFAULT 0,
+  `fiche_show_matricule_to_others` tinyint(1) NOT NULL DEFAULT 1,
+  `public_roster_opt_in` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `user_profile_display_settings_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `personnel_extras` (
   `user_id` int unsigned NOT NULL,
   `service_number` varchar(50) DEFAULT NULL,
@@ -226,6 +248,19 @@ CREATE TABLE IF NOT EXISTS `personnel_extras` (
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   CONSTRAINT `personnel_extras_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Profils de candidature (préréglages utilisateur, par compte communauté)
+CREATE TABLE IF NOT EXISTS `recruitment_presets` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `label` varchar(120) NOT NULL,
+  `payload` json NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `recruitment_presets_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Enlistments (colonnes de base ; colonnes Olympus ajoutées par ALTER en fin de fichier)
@@ -246,11 +281,20 @@ CREATE TABLE IF NOT EXISTS `enlistments` (
   `reviewed_by` int unsigned DEFAULT NULL,
   `reviewed_at` datetime DEFAULT NULL,
   `reviewer_comment` text,
+  `submitter_user_id` int unsigned DEFAULT NULL,
+  `recruitment_preset_id` int unsigned DEFAULT NULL,
+  `submitted_via` varchar(20) NOT NULL DEFAULT 'guest',
+  `consent_sharing_at` datetime DEFAULT NULL,
+  `shared_fields` json DEFAULT NULL,
+  `recruitment_rp_json` json DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `tenant_id_status` (`tenant_id`,`status`),
-  CONSTRAINT `enlistments_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `submitter_user_id` (`submitter_user_id`),
+  CONSTRAINT `enlistments_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `enlistments_submitter_user_fk` FOREIGN KEY (`submitter_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `enlistments_recruitment_preset_fk` FOREIGN KEY (`recruitment_preset_id`) REFERENCES `recruitment_presets` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Documents
@@ -874,6 +918,55 @@ CREATE TABLE IF NOT EXISTS `modpack_images` (
   KEY `modpack_id` (`modpack_id`),
   CONSTRAINT `modpack_images_modpack_id_fk` FOREIGN KEY (`modpack_id`) REFERENCES `modpacks` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Alertes plateforme / communauté / dismissals
+CREATE TABLE IF NOT EXISTS `platform_alerts` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `kind` enum('discount','novelty','info','urgent') NOT NULL DEFAULT 'info',
+  `title` varchar(255) NOT NULL,
+  `body` text,
+  `cta_label` varchar(120) DEFAULT NULL,
+  `cta_url` varchar(512) DEFAULT NULL,
+  `coupon_code` varchar(64) DEFAULT NULL,
+  `starts_at` datetime DEFAULT NULL,
+  `ends_at` datetime DEFAULT NULL,
+  `sort_order` int NOT NULL DEFAULT 0,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `audience_json` json DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_platform_alerts_active` (`is_active`,`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `tenant_alerts` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `kind` enum('discount','novelty','info','urgent') NOT NULL DEFAULT 'info',
+  `title` varchar(255) NOT NULL,
+  `body` text,
+  `cta_label` varchar(120) DEFAULT NULL,
+  `cta_url` varchar(512) DEFAULT NULL,
+  `coupon_code` varchar(64) DEFAULT NULL,
+  `starts_at` datetime DEFAULT NULL,
+  `ends_at` datetime DEFAULT NULL,
+  `sort_order` int NOT NULL DEFAULT 0,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_alerts_tenant` (`tenant_id`,`is_active`,`sort_order`),
+  CONSTRAINT `tenant_alerts_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_alert_dismissals` (
+  `user_id` int unsigned NOT NULL,
+  `scope` enum('platform','tenant') NOT NULL,
+  `alert_id` int unsigned NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`,`scope`,`alert_id`),
+  CONSTRAINT `user_alert_dismissals_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Paramètres par tenant (clé/valeur, ex. forum_*)
 CREATE TABLE IF NOT EXISTS `site_settings` (

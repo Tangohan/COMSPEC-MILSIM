@@ -27,11 +27,13 @@ final class ExternalLeaveController
         $exp = (string) $request->query('exp', '');
         $sig = (string) $request->query('sig', '');
         $verified = $this->leaveService->verifySignedRequest($u, $exp, $sig);
+        $tid = Session::get('tenant_id');
+        $forumCfg = forum_config_for_tenant($tid ? (int) $tid : null);
         if ($verified === null) {
             return Response::view('layout.forum', [
                 'content' => 'forum.leave_invalid',
                 'title' => 'Lien invalide',
-                'forumConfig' => config('forum') ?? [],
+                'forumConfig' => $forumCfg,
             ])->setStatusCode(400);
         }
         $target = $verified['url'];
@@ -49,7 +51,7 @@ final class ExternalLeaveController
         return Response::view('layout.forum', [
             'content' => 'forum.leave',
             'title' => 'Lien externe',
-            'forumConfig' => config('forum') ?? [],
+            'forumConfig' => $forumCfg,
             'leaveTargetUrl' => $target,
             'leaveDomain' => $domain,
             'leaveIsHttps' => $isHttps,

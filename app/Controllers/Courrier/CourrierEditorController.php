@@ -17,6 +17,12 @@ use App\Services\Courrier\DocumentValidationService;
 use App\Services\Courrier\DocumentWorkflowService;
 use App\Services\Courrier\CourrierClassification;
 use App\Services\Courrier\TemplateVariableService;
+use App\Repositories\ModerationArtifactRepository;
+use App\Services\Moderation\ContentModerationConfig;
+use App\Services\Moderation\ContentModerationOrchestrator;
+use App\Services\Moderation\ModerationArtifactState;
+use App\Services\Moderation\ModerationScanResult;
+use App\Services\Moderation\ModerationSourceType;
 
 class CourrierEditorController
 {
@@ -29,8 +35,47 @@ class CourrierEditorController
         private TemplateVariableService $variableService,
         private DocumentAutoFillService $autoFillService,
         private DocumentWorkflowService $workflowService,
-        private DocumentVariablesCatalogRepository $variablesCatalog
+        private DocumentVariablesCatalogRepository $variablesCatalog,
+        private ContentModerationOrchestrator $moderationOrchestrator,
+        private ModerationArtifactRepository $moderationArtifactRepository,
+        private ContentModerationConfig $moderationConfig
     ) {
+    }
+
+    /**
+     * @return array{header_line1: string, header_unit: string, header_section: string}
+     */
+    private function parseHeaderMetaFromDocument(array $document): array
+    {
+        $raw = $document['metadata_json'] ?? null;
+        $meta = [];
+        if ($raw !== null && $raw !== '') {
+            $meta = is_string($raw) ? (json_decode($raw, true) ?: []) : (is_array($raw) ? $raw : []);
+        }
+
+        return [
+            'header_line1' => trim((string) ($meta['header_line1'] ?? '')),
+            'header_unit' => trim((string) ($meta['header_unit'] ?? '')),
+            'header_section' => trim((string) ($meta['header_section'] ?? '')),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed>|null $existingDoc
+     * @return array<string, mixed>
+     */
+    private function mergeMetadataFromRequest(Request $request, ?array $existingDoc): array
+    {
+        $prev = [];
+        if ($existingDoc !== null && !empty($existingDoc['metadata_json'])) {
+            $raw = $existingDoc['metadata_json'];
+            $prev = is_string($raw) ? (json_decode($raw, true) ?: []) : (is_array($raw) ? $raw : []);
+        }
+        $prev['header_line1'] = trim((string) $request->input('header_line1', ''));
+        $prev['header_unit'] = trim((string) $request->input('header_unit', ''));
+        $prev['header_section'] = trim((string) $request->input('header_section', ''));
+
+        return $prev;
     }
 
     public function index(Request $request, array $params = []): Response
@@ -61,6 +106,7 @@ class CourrierEditorController
                 'completeness_score' => 0,
                 'preview_html' => '',
                 'classification_labels' => CourrierClassification::labels(),
+                'header_meta' => ['header_line1' => '', 'header_unit' => '', 'header_section' => ''],
             ],
         ]);
     }
@@ -91,6 +137,7 @@ class CourrierEditorController
         $defaults = $this->autoFillService->getDefaults(['user_id' => $userId, 'tenant_id' => $tenantId]);
         $versions = $this->documentRepository->getVersions($id);
         $versions = array_slice($versions, 0, 10);
+        $headerMeta = $this->parseHeaderMetaFromDocument($document);
 
         return Response::view('layout.main', [
             'title' => ($document['title'] ?: 'Sans titre') . ' — Bureau Courrier',
@@ -107,6 +154,7 @@ class CourrierEditorController
                 'completeness_score' => $completenessScore,
                 'versions' => $versions,
                 'classification_labels' => CourrierClassification::labels(),
+                'header_meta' => $headerMeta,
             ],
         ]);
     }
@@ -133,6 +181,25 @@ class CourrierEditorController
             ? $classificationRaw
             : 'interne';
 
+        $scan = $this->moderationOrchestrator->scanTextContent((string) $bodyRendered, array_values(array_filter([
+            (string) ($title ?? ''),
+            (string) ($subject ?? ''),
+            (string) ($referenceNumber ?? ''),
+            (string) ($destinationLabel ?? ''),
+            (string) ($issuerLabel ?? ''),
+        ], static fn ($s) => $s !== '')));
+        if ($scan->state === ModerationArtifactState::REJECTED) {
+            Session::flash('error', 'Le contenu est refusé par la modération automatique. Modifiez le texte et réessayez.');
+
+            return $id > 0
+                ? Response::redirect(url('courrier/editor/' . $id))
+                : Response::redirect(url('courrier'));
+        }
+        $moderationState = null;
+        if ($scan->state === ModerationArtifactState::QUARANTINED) {
+            $moderationState = 'pending_review';
+        }
+
         if ($id > 0) {
             $document = $this->documentRepository->findById($id, $tenantId);
             if (!$document) {
@@ -153,6 +220,7 @@ class CourrierEditorController
                 'updated_at' => $document['updated_at'] ?? null,
             ];
             $this->documentRepository->createVersion($id, $snapshot, $userId);
+            $metadataMerged = $this->mergeMetadataFromRequest($request, $document);
             $this->documentRepository->update($id, [
                 'template_id' => $templateId,
                 'preset_id' => $presetId,
@@ -163,8 +231,14 @@ class CourrierEditorController
                 'issuer_label' => $issuerLabel,
                 'body_rendered' => $bodyRendered,
                 'classification_level' => $classificationLevel,
+                'metadata_json' => $metadataMerged,
+                'moderation_state' => $moderationState,
             ]);
+            $this->syncCourrierModerationArtifact($tenantId, $id, $userId, $scan, (string) $bodyRendered);
             Session::flash('success', 'Brouillon enregistré.');
+            if ($moderationState === 'pending_review') {
+                Session::flash('warning', 'Ce brouillon est signalé pour revue modération (contenu sensible détecté).');
+            }
             return Response::redirect(url('courrier/editor/' . $id));
         }
 
@@ -176,6 +250,7 @@ class CourrierEditorController
             $issuerLabel = $defaults['issuer_label'] ?? null;
         }
 
+        $metadataMerged = $this->mergeMetadataFromRequest($request, null);
         $newId = $this->documentRepository->create([
             'tenant_id' => $tenantId,
             'template_id' => $templateId,
@@ -190,8 +265,39 @@ class CourrierEditorController
             'body_rendered' => $bodyRendered,
             'created_by' => $userId,
             'classification_level' => $classificationLevel,
+            'metadata_json' => $metadataMerged,
+            'moderation_state' => $moderationState,
         ]);
+        $this->syncCourrierModerationArtifact($tenantId, $newId, $userId, $scan, (string) $bodyRendered);
         Session::flash('success', 'Brouillon créé.');
+        if ($moderationState === 'pending_review') {
+            Session::flash('warning', 'Ce brouillon est signalé pour revue modération (contenu sensible détecté).');
+        }
         return Response::redirect(url('courrier/editor/' . $newId));
+    }
+
+    private function syncCourrierModerationArtifact(int $tenantId, int $courrierDocId, int $userId, ModerationScanResult $scan, string $bodyRendered): void
+    {
+        if (!$this->moderationArtifactRepository->tableExists()) {
+            return;
+        }
+        $this->moderationArtifactRepository->deleteBySource($tenantId, ModerationSourceType::COURRIER_DOCUMENT, $courrierDocId);
+        $hash = hash('sha256', $bodyRendered);
+        $this->moderationArtifactRepository->insert($tenantId, [
+            'user_id' => $userId,
+            'source_type' => ModerationSourceType::COURRIER_DOCUMENT,
+            'source_id' => $courrierDocId,
+            'source_key' => null,
+            'file_path' => null,
+            'original_name' => null,
+            'mime' => 'text/html',
+            'sha256' => $hash,
+            'state' => $scan->state === ModerationArtifactState::CLEAN ? ModerationArtifactState::CLEAN : ($scan->state === ModerationArtifactState::QUARANTINED ? ModerationArtifactState::QUARANTINED : ModerationArtifactState::CLEAN),
+            'risk_score' => $scan->riskScore,
+            'reason_codes' => $scan->reasonCodes,
+            'scan_log' => $scan->scanLog,
+            'ruleset_version' => $this->moderationConfig->rulesetVersion,
+            'expires_at' => null,
+        ]);
     }
 }

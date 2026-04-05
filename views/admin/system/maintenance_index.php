@@ -11,9 +11,9 @@ $e = \App\Core\Session::getFlash('error');
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 class="text-2xl font-black text-slate-900">Maintenance</h1>
         <div class="flex flex-wrap gap-3">
-            <a href="<?= url('admin/system') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Admin système</a>
+            <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Admin système</a>
             <?php if (!$missing): ?>
-            <a href="<?= url('admin/system/maintenance/create') ?>" class="text-sm font-semibold text-white bg-slate-900 px-4 py-2 rounded-lg hover:bg-slate-800">Nouvelle règle</a>
+            <a href="<?= url('admin/maintenance/create') ?>" class="text-sm font-semibold text-white bg-slate-900 px-4 py-2 rounded-lg hover:bg-slate-800">Nouvelle règle</a>
             <?php endif; ?>
         </div>
     </div>
@@ -67,14 +67,14 @@ $e = \App\Core\Session::getFlash('error');
                                 <?= htmlspecialchars((string) ($r['ends_at'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
                             </td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <a href="<?= url('admin/system/maintenance/' . $id . '/edit') ?>" class="text-emerald-700 hover:underline mr-3">Modifier</a>
-                                <a href="<?= url('admin/system/maintenance/' . $id . '/audit') ?>" class="text-slate-600 hover:underline mr-3">Historique</a>
-                                <form action="<?= url('admin/system/maintenance/' . $id . '/toggle') ?>" method="post" class="inline">
+                                <a href="<?= url('admin/maintenance/' . $id . '/edit') ?>" class="text-emerald-700 hover:underline mr-3">Modifier</a>
+                                <a href="<?= url('admin/maintenance/' . $id . '/audit') ?>" class="text-slate-600 hover:underline mr-3">Historique</a>
+                                <form action="<?= url('admin/maintenance/' . $id . '/toggle') ?>" method="post" class="inline">
                                     <?= \App\Core\Csrf::field() ?>
                                     <input type="hidden" name="enabled" value="<?= $en ? '0' : '1' ?>">
                                     <button type="submit" class="text-slate-700 hover:underline mr-3"><?= $en ? 'Désactiver' : 'Activer' ?></button>
                                 </form>
-                                <form action="<?= url('admin/system/maintenance/' . $id . '/delete') ?>" method="post" class="inline" onsubmit="return confirm('Supprimer cette règle ?');">
+                                <form action="<?= url('admin/maintenance/' . $id . '/delete') ?>" method="post" class="inline" onsubmit="return confirm('Supprimer cette règle ?');">
                                     <?= \App\Core\Csrf::field() ?>
                                     <button type="submit" class="text-red-600 hover:underline">Supprimer</button>
                                 </form>

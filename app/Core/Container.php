@@ -38,14 +38,23 @@ class Container
             \App\Repositories\ReferralRepository::class => new \App\Repositories\ReferralRepository(),
             \App\Repositories\PendingCommunityCreateRepository::class => new \App\Repositories\PendingCommunityCreateRepository(),
             \App\Services\Billing\StripeCheckoutService::class => new \App\Services\Billing\StripeCheckoutService(),
+            \App\Services\Moderation\SystemModeratorAccountService::class => new \App\Services\Moderation\SystemModeratorAccountService(
+                self::get(UserRepository::class)
+            ),
             \App\Services\Community\TenantBootstrapService::class => new \App\Services\Community\TenantBootstrapService(
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\ReferralRepository::class),
+                self::get(\App\Services\Moderation\SystemModeratorAccountService::class)
+            ),
+            \App\Services\Community\DefaultTenantSessionService::class => new \App\Services\Community\DefaultTenantSessionService(
+                self::get(UserRepository::class),
+                self::get(AuthService::class),
             ),
             \App\Controllers\Web\CommunityController::class => new \App\Controllers\Web\CommunityController(
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
                 self::get(AuthService::class),
                 self::get(\App\Services\Community\TenantBootstrapService::class),
                 self::get(RbacService::class),
@@ -53,6 +62,7 @@ class Container
                 self::get(\App\Repositories\PendingCommunityCreateRepository::class),
                 self::get(\App\Services\Billing\StripeCheckoutService::class),
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),
+                self::get(\App\Services\EmailService::class),
             ),
             \App\Controllers\Web\JoinController::class => new \App\Controllers\Web\JoinController(
                 self::get(TenantRepository::class),
@@ -61,9 +71,17 @@ class Container
             \App\Controllers\Web\ReferralInviteController::class => new \App\Controllers\Web\ReferralInviteController(
                 self::get(\App\Repositories\ReferralRepository::class),
             ),
+            \App\Services\Community\TenantCommunityProfileService::class => new \App\Services\Community\TenantCommunityProfileService(),
             \App\Controllers\Admin\Organization\OrganizationCommunityController::class => new \App\Controllers\Admin\Organization\OrganizationCommunityController(
                 self::get(AuthService::class),
                 self::get(TenantRepository::class),
+                self::get(\App\Services\Community\TenantCommunityProfileService::class),
+            ),
+            \App\Repositories\TenantMessageRepository::class => new \App\Repositories\TenantMessageRepository(),
+            \App\Controllers\Web\TenantMessagesController::class => new \App\Controllers\Web\TenantMessagesController(
+                self::get(AuthService::class),
+                self::get(RbacService::class),
+                self::get(\App\Repositories\TenantMessageRepository::class),
             ),
             \App\Controllers\Api\StripeWebhookController::class => new \App\Controllers\Api\StripeWebhookController(
                 self::get(TenantRepository::class),
@@ -79,20 +97,60 @@ class Container
             RbacService::class => new RbacService(),
             \App\Repositories\UserProfileRepository::class => new \App\Repositories\UserProfileRepository(),
             \App\Repositories\PasswordResetRepository::class => new \App\Repositories\PasswordResetRepository(),
+            \App\Repositories\EmailDeliveryRepository::class => new \App\Repositories\EmailDeliveryRepository(),
+            \App\Repositories\EmailTokenRepository::class => new \App\Repositories\EmailTokenRepository(),
+            \App\Repositories\LoginAttemptRepository::class => new \App\Repositories\LoginAttemptRepository(),
+            \App\Repositories\UserLoginDeviceRepository::class => new \App\Repositories\UserLoginDeviceRepository(),
+            \App\Services\EmailTemplateEngine::class => new \App\Services\EmailTemplateEngine(),
+            \App\Services\EmailTransportResolver::class => new \App\Services\EmailTransportResolver(),
+            \App\Services\EmailService::class => new \App\Services\EmailService(
+                self::get(\App\Services\EmailTransportResolver::class),
+                self::get(\App\Services\EmailTemplateEngine::class),
+                self::get(\App\Repositories\EmailDeliveryRepository::class)
+            ),
+            \App\Services\Email\GeoIpLookupService::class => new \App\Services\Email\GeoIpLookupService(),
+            \App\Services\Auth\LoginSecurityNotificationService::class => new \App\Services\Auth\LoginSecurityNotificationService(
+                self::get(\App\Repositories\LoginAttemptRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\EmailDeliveryRepository::class),
+                self::get(\App\Repositories\UserLoginDeviceRepository::class),
+                self::get(\App\Repositories\EmailTokenRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Services\Email\GeoIpLookupService::class)
+            ),
+            \App\Services\Email\SecurityAlertService::class => new \App\Services\Email\SecurityAlertService(
+                self::get(\App\Services\EmailService::class)
+            ),
             \App\Controllers\Auth\AuthController::class => new \App\Controllers\Auth\AuthController(
                 self::get(AuthService::class),
                 self::get(RbacService::class),
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\PasswordResetRepository::class),
-                self::get(\App\Services\Audit\AuditService::class)
+                self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Services\Auth\LoginSecurityNotificationService::class)
             ),
             \App\Controllers\Web\RegisterController::class => new \App\Controllers\Web\RegisterController(
                 self::get(AuthService::class),
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(RbacService::class),
+                self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\EmailTokenRepository::class)
+            ),
+            \App\Controllers\Web\VerifyEmailController::class => new \App\Controllers\Web\VerifyEmailController(
+                self::get(\App\Repositories\EmailTokenRepository::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\EmailService::class)
+            ),
+            \App\Controllers\Web\SecurityDeviceController::class => new \App\Controllers\Web\SecurityDeviceController(
+                self::get(\App\Repositories\EmailTokenRepository::class),
+                self::get(UserRepository::class),
                 self::get(\App\Services\Audit\AuditService::class)
             ),
             \App\Repositories\ModerationRepository::class => new \App\Repositories\ModerationRepository(),
@@ -110,7 +168,8 @@ class Container
                 self::get(AuthService::class),
                 self::get(RbacService::class),
                 self::get(\App\Services\Audit\AuditService::class),
-                self::get(\App\Services\Platform\FeatureGateService::class)
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Services\EmailService::class)
             ),
             \App\Controllers\Admin\Organization\InvitationAdminController::class => new \App\Controllers\Admin\Organization\InvitationAdminController(
                 self::get(AuthService::class),
@@ -118,7 +177,8 @@ class Container
                 self::get(\App\Repositories\CommunityInvitationRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
-                self::get(\App\Services\Audit\AuditService::class)
+                self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Services\EmailService::class)
             ),
             \App\Controllers\Admin\Organization\ModerationOrganizationController::class => new \App\Controllers\Admin\Organization\ModerationOrganizationController(
                 self::get(AuthService::class),
@@ -140,11 +200,14 @@ class Container
                 self::get(AuthService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class)
             ),
+            \App\Services\Profile\RecruitmentPresetPayloadService::class => new \App\Services\Profile\RecruitmentPresetPayloadService(),
             \App\Controllers\Web\AccountController::class => new \App\Controllers\Web\AccountController(
                 self::get(AuthService::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
-                self::get(\App\Repositories\PersonnelProfileRepository::class)
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\RecruitmentPresetRepository::class),
+                new \App\Services\Profile\RecruitmentPresetPayloadService()
             ),
             \App\Controllers\Web\PersonnelController::class => new \App\Controllers\Web\PersonnelController(
                 self::get(AuthService::class),
@@ -160,7 +223,8 @@ class Container
                 self::get(\App\Repositories\PersonnelAdminDataRepository::class),
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
                 self::get(\App\Services\Personnel\MatriculeService::class),
-                self::get(\App\Services\Personnel\PersonnelCompletenessService::class)
+                self::get(\App\Services\Personnel\PersonnelCompletenessService::class),
+                self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class)
             ),
             \App\Repositories\PersonnelExtrasRepository::class => new \App\Repositories\PersonnelExtrasRepository(),
             \App\Repositories\PersonnelProfileRepository::class => new \App\Repositories\PersonnelProfileRepository(),
@@ -184,9 +248,15 @@ class Container
             \App\Repositories\PersonnelAdminDataRepository::class => new \App\Repositories\PersonnelAdminDataRepository(),
             \App\Repositories\UnitRepository::class => new \App\Repositories\UnitRepository(),
             \App\Repositories\EnlistmentRepository::class => new \App\Repositories\EnlistmentRepository(),
+            \App\Repositories\RecruitmentPresetRepository::class => new \App\Repositories\RecruitmentPresetRepository(),
             \App\Controllers\Web\EnlistmentController::class => new \App\Controllers\Web\EnlistmentController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
-                self::get(TenantRepository::class)
+                self::get(TenantRepository::class),
+                self::get(AuthService::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UserProfileRepository::class),
+                self::get(\App\Repositories\RecruitmentPresetRepository::class),
+                self::get(\App\Services\Profile\RecruitmentPresetPayloadService::class),
             ),
             \App\Repositories\DocumentRepository::class => new \App\Repositories\DocumentRepository(),
             \App\Repositories\DocumentVersionRepository::class => new \App\Repositories\DocumentVersionRepository(),
@@ -197,9 +267,27 @@ class Container
             \App\Repositories\DocumentRelationRepository::class => new \App\Repositories\DocumentRelationRepository(),
             \App\Repositories\DocumentAuditRepository::class => new \App\Repositories\DocumentAuditRepository(),
             \App\Repositories\EquipmentClassRepository::class => new \App\Repositories\EquipmentClassRepository(),
+            \App\Services\Moderation\ContentModerationConfig::class => \App\Services\Moderation\ContentModerationConfig::fromEnv(),
+            \App\Services\Moderation\HtmlTextExtractor::class => new \App\Services\Moderation\HtmlTextExtractor(),
+            \App\Services\Moderation\HeuristicTextModerator::class => new \App\Services\Moderation\HeuristicTextModerator(
+                self::get(\App\Services\Moderation\HtmlTextExtractor::class)
+            ),
+            \App\Services\Moderation\ClamAvScanner::class => new \App\Services\Moderation\ClamAvScanner(
+                self::get(\App\Services\Moderation\ContentModerationConfig::class)
+            ),
+            \App\Services\Moderation\ContentModerationOrchestrator::class => new \App\Services\Moderation\ContentModerationOrchestrator(
+                self::get(\App\Services\Moderation\ContentModerationConfig::class),
+                self::get(\App\Services\Moderation\ClamAvScanner::class),
+                self::get(\App\Services\Moderation\HeuristicTextModerator::class)
+            ),
+            \App\Repositories\ModerationArtifactRepository::class => new \App\Repositories\ModerationArtifactRepository(),
+            \App\Repositories\ModerationDecisionRepository::class => new \App\Repositories\ModerationDecisionRepository(),
             \App\Services\Documents\DocumentUploadService::class => new \App\Services\Documents\DocumentUploadService(
                 self::get(\App\Repositories\DocumentRepository::class),
-                self::get(\App\Repositories\DocumentVersionRepository::class)
+                self::get(\App\Repositories\DocumentVersionRepository::class),
+                self::get(\App\Services\Moderation\ContentModerationOrchestrator::class),
+                self::get(\App\Repositories\ModerationArtifactRepository::class),
+                self::get(\App\Services\Moderation\ContentModerationConfig::class)
             ),
             \App\Services\Documents\DocumentAccessService::class => new \App\Services\Documents\DocumentAccessService(
                 self::get(\App\Repositories\DocumentCollaboratorRepository::class),
@@ -274,7 +362,8 @@ class Container
                 self::get(\App\Repositories\DocumentCategoryRepository::class),
                 self::get(\App\Repositories\DocumentLinkRepository::class),
                 self::get(\App\Services\Documents\DocumentAccessService::class),
-                self::get(\App\Services\Audit\AuditService::class)
+                self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Repositories\ModerationArtifactRepository::class)
             ),
             \App\Repositories\ModpackRepository::class => new \App\Repositories\ModpackRepository(),
             \App\Controllers\Web\ModpackController::class => new \App\Controllers\Web\ModpackController(
@@ -371,7 +460,6 @@ class Container
             \App\Controllers\Admin\AdminAtakModController::class => new \App\Controllers\Admin\AdminAtakModController(),
             \App\Controllers\Admin\AdminForumConfigController::class => new \App\Controllers\Admin\AdminForumConfigController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
-                self::get(\App\Repositories\SiteSettingsRepository::class),
                 self::get(\App\Repositories\ForumBannedWordRepository::class),
                 self::get(\App\Repositories\ForumBlacklistedDomainRepository::class)
             ),
@@ -429,7 +517,38 @@ class Container
                 self::get(\App\Services\Audit\AuditService::class)
             ),
             \App\Repositories\ForumCategoryRepository::class => new \App\Repositories\ForumCategoryRepository(),
+            \App\Repositories\ForumAuthorIdentityRepository::class => new \App\Repositories\ForumAuthorIdentityRepository(),
+            \App\Services\Profile\ProfilePublicIdentityService::class => new \App\Services\Profile\ProfilePublicIdentityService(),
+            \App\Repositories\UserProfileDisplaySettingsRepository::class => new \App\Repositories\UserProfileDisplaySettingsRepository(),
+            \App\Repositories\UserUiPreferencesRepository::class => new \App\Repositories\UserUiPreferencesRepository(),
+            \App\Repositories\UserNotificationPreferencesRepository::class => new \App\Repositories\UserNotificationPreferencesRepository(),
+            \App\Repositories\TenantBrandingRepository::class => new \App\Repositories\TenantBrandingRepository(),
+            \App\Services\Profile\UserUiPreferencesValidationService::class => new \App\Services\Profile\UserUiPreferencesValidationService(),
+            \App\Controllers\Api\MePreferencesApiController::class => new \App\Controllers\Api\MePreferencesApiController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\UserUiPreferencesRepository::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Services\Profile\UserUiPreferencesValidationService::class)
+            ),
             \App\Repositories\SiteSettingsRepository::class => new \App\Repositories\SiteSettingsRepository(),
+            \App\Repositories\PlatformAlertRepository::class => new \App\Repositories\PlatformAlertRepository(),
+            \App\Repositories\TenantAlertRepository::class => new \App\Repositories\TenantAlertRepository(),
+            \App\Repositories\UserAlertDismissalRepository::class => new \App\Repositories\UserAlertDismissalRepository(),
+            \App\Services\Alerts\AlertPresentationService::class => new \App\Services\Alerts\AlertPresentationService(
+                self::get(\App\Repositories\PlatformAlertRepository::class),
+                self::get(\App\Repositories\TenantAlertRepository::class),
+                self::get(\App\Repositories\UserAlertDismissalRepository::class),
+                self::get(TenantRepository::class),
+            ),
+            \App\Controllers\Admin\System\SystemPlatformAlertsController::class => new \App\Controllers\Admin\System\SystemPlatformAlertsController(
+                self::get(\App\Repositories\PlatformAlertRepository::class),
+            ),
+            \App\Controllers\Admin\Organization\TenantAlertsController::class => new \App\Controllers\Admin\Organization\TenantAlertsController(
+                self::get(\App\Repositories\TenantAlertRepository::class),
+            ),
+            \App\Controllers\Api\AlertDismissController::class => new \App\Controllers\Api\AlertDismissController(
+                self::get(\App\Repositories\UserAlertDismissalRepository::class),
+            ),
             \App\Repositories\ForumBannedWordRepository::class => new \App\Repositories\ForumBannedWordRepository(),
             \App\Repositories\ForumBlacklistedDomainRepository::class => new \App\Repositories\ForumBlacklistedDomainRepository(),
             \App\Repositories\ForumTopicRepository::class => new \App\Repositories\ForumTopicRepository(),
@@ -439,21 +558,32 @@ class Container
                 self::get(\App\Repositories\ForumCategoryRepository::class),
                 self::get(\App\Repositories\ForumTopicRepository::class),
                 self::get(\App\Repositories\ForumPostRepository::class),
-                self::get(\App\Repositories\ForumReportRepository::class)
+                self::get(\App\Repositories\ForumReportRepository::class),
+                self::get(\App\Repositories\ForumAuthorIdentityRepository::class),
+                self::get(\App\Services\Profile\ProfilePublicIdentityService::class)
             ),
             \App\Controllers\Web\ForumCategoryController::class => new \App\Controllers\Web\ForumCategoryController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
-                self::get(\App\Repositories\ForumTopicRepository::class)
+                self::get(\App\Repositories\ForumTopicRepository::class),
+                self::get(\App\Repositories\ForumAuthorIdentityRepository::class),
+                self::get(\App\Services\Profile\ProfilePublicIdentityService::class)
             ),
             \App\Controllers\Web\ForumTopicController::class => new \App\Controllers\Web\ForumTopicController(
                 self::get(\App\Repositories\ForumTopicRepository::class),
                 self::get(\App\Repositories\ForumPostRepository::class),
-                self::get(\App\Repositories\ForumCategoryRepository::class)
+                self::get(\App\Repositories\ForumCategoryRepository::class),
+                self::get(\App\Services\Profile\ProfilePublicIdentityService::class),
+                self::get(\App\Repositories\ForumAuthorIdentityRepository::class),
+                self::get(\App\Repositories\ForumVoteRepository::class),
+                self::get(\App\Repositories\ForumAttachmentRepository::class),
+                self::get(\App\Repositories\ForumNotificationRepository::class),
+                self::get(\App\Repositories\UserForumStatsRepository::class)
             ),
             \App\Controllers\Web\ForumNewTopicController::class => new \App\Controllers\Web\ForumNewTopicController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
                 self::get(\App\Repositories\ForumTopicRepository::class),
-                self::get(\App\Repositories\ForumPostRepository::class)
+                self::get(\App\Repositories\ForumPostRepository::class),
+                self::get(\App\Repositories\UserForumStatsRepository::class)
             ),
             \App\Controllers\Web\ForumModerationController::class => new \App\Controllers\Web\ForumModerationController(
                 self::get(\App\Repositories\ForumTopicRepository::class),
@@ -463,6 +593,8 @@ class Container
                 self::get(\App\Repositories\ForumReportRepository::class)
             ),
             \App\Repositories\ForumVoteRepository::class => new \App\Repositories\ForumVoteRepository(),
+            \App\Repositories\ForumAttachmentRepository::class => new \App\Repositories\ForumAttachmentRepository(),
+            \App\Repositories\UserForumStatsRepository::class => new \App\Repositories\UserForumStatsRepository(),
             \App\Repositories\ForumNotificationRepository::class => new \App\Repositories\ForumNotificationRepository(),
             \App\Services\Forum\ForumModerationEngine::class => new \App\Services\Forum\ForumModerationEngine(
                 self::get(\App\Repositories\ForumBannedWordRepository::class),
@@ -483,7 +615,8 @@ class Container
                 self::get(\App\Repositories\ForumTopicRepository::class),
                 self::get(\App\Repositories\ForumPostRepository::class),
                 self::get(\App\Repositories\ForumReportRepository::class),
-                self::get(\App\Repositories\ForumVoteRepository::class)
+                self::get(\App\Repositories\ForumVoteRepository::class),
+                self::get(\App\Services\Profile\ProfilePublicIdentityService::class)
             ),
             \App\Controllers\Api\ForumModerationApiController::class => new \App\Controllers\Api\ForumModerationApiController(
                 self::get(\App\Repositories\ForumTopicRepository::class),
@@ -567,6 +700,7 @@ class Container
             \App\Repositories\Courrier\DocumentPresetRepository::class => new \App\Repositories\Courrier\DocumentPresetRepository(),
             \App\Repositories\Courrier\DocumentTemplateRepository::class => new \App\Repositories\Courrier\DocumentTemplateRepository(),
             \App\Repositories\Courrier\CourrierDocumentRepository::class => new \App\Repositories\Courrier\CourrierDocumentRepository(),
+            \App\Repositories\Courrier\CourrierDocumentNotificationRepository::class => new \App\Repositories\Courrier\CourrierDocumentNotificationRepository(),
             \App\Repositories\Courrier\DocumentWorkflowRepository::class => new \App\Repositories\Courrier\DocumentWorkflowRepository(),
             \App\Repositories\Courrier\DocumentVariablesCatalogRepository::class => new \App\Repositories\Courrier\DocumentVariablesCatalogRepository(),
             \App\Repositories\Courrier\UserSignatureRepository::class => new \App\Repositories\Courrier\UserSignatureRepository(),
@@ -625,7 +759,8 @@ class Container
             \App\Controllers\Courrier\CourrierDashboardController::class => new \App\Controllers\Courrier\CourrierDashboardController(
                 self::get(\App\Repositories\Courrier\CourrierDocumentRepository::class),
                 self::get(\App\Repositories\Courrier\DocumentTemplateRepository::class),
-                self::get(\App\Repositories\Courrier\DocumentPresetRepository::class)
+                self::get(\App\Repositories\Courrier\DocumentPresetRepository::class),
+                self::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class)
             ),
             \App\Controllers\Courrier\CourrierEditorController::class => new \App\Controllers\Courrier\CourrierEditorController(
                 self::get(\App\Repositories\Courrier\CourrierDocumentRepository::class),
@@ -636,11 +771,20 @@ class Container
                 self::get(\App\Services\Courrier\TemplateVariableService::class),
                 self::get(\App\Services\Courrier\DocumentAutoFillService::class),
                 self::get(\App\Services\Courrier\DocumentWorkflowService::class),
-                self::get(\App\Repositories\Courrier\DocumentVariablesCatalogRepository::class)
+                self::get(\App\Repositories\Courrier\DocumentVariablesCatalogRepository::class),
+                self::get(\App\Services\Moderation\ContentModerationOrchestrator::class),
+                self::get(\App\Repositories\ModerationArtifactRepository::class),
+                self::get(\App\Services\Moderation\ContentModerationConfig::class)
             ),
             \App\Controllers\Courrier\CourrierReadController::class => new \App\Controllers\Courrier\CourrierReadController(
                 self::get(\App\Repositories\Courrier\CourrierDocumentRepository::class),
-                self::get(\App\Services\Courrier\DocumentBuilderService::class)
+                self::get(\App\Services\Courrier\DocumentBuilderService::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class)
+            ),
+            \App\Controllers\Courrier\CourrierNotificationController::class => new \App\Controllers\Courrier\CourrierNotificationController(
+                self::get(\App\Repositories\Courrier\CourrierDocumentRepository::class),
+                self::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class)
             ),
             \App\Controllers\Courrier\CourrierTemplateController::class => new \App\Controllers\Courrier\CourrierTemplateController(
                 self::get(\App\Repositories\Courrier\DocumentTemplateRepository::class),

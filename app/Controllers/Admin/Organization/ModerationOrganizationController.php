@@ -41,7 +41,7 @@ final class ModerationOrganizationController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('admin/organization/moderation'));
+            return Response::redirect(url('back-office/moderation'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $actor = $this->authService->user();
@@ -55,7 +55,7 @@ final class ModerationOrganizationController
         if ($targetId <= 0 || $targetId === (int) $actor['id']) {
             Session::flash('error', 'Cible invalide.');
 
-            return Response::redirect(url('admin/organization/moderation'));
+            return Response::redirect(url('back-office/moderation'));
         }
         $expires = null;
         if ($days > 0 && in_array($type, ['mute', 'suspend', 'ban'], true)) {
@@ -68,7 +68,7 @@ final class ModerationOrganizationController
             Session::flash('error', $e->getMessage());
         }
 
-        return Response::redirect(url('admin/organization/moderation'));
+        return Response::redirect(url('back-office/moderation'));
     }
 
     public function revoke(Request $request, array $params = []): Response
@@ -76,7 +76,7 @@ final class ModerationOrganizationController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('admin/organization/moderation'));
+            return Response::redirect(url('back-office/moderation'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $actor = $this->authService->user();
@@ -90,6 +90,6 @@ final class ModerationOrganizationController
             Session::flash('error', 'Action introuvable ou déjà levée.');
         }
 
-        return Response::redirect(url('admin/organization/moderation'));
+        return Response::redirect(url('back-office/moderation'));
     }
 }

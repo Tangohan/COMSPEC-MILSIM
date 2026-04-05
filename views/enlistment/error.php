@@ -1,6 +1,7 @@
 <?php
 $base = url('');
 $message = $message ?? 'Une erreur est survenue lors de la soumission de votre candidature.';
+$enlistmentRetryUrl = $enlistmentRetryUrl ?? url('enlistment');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -21,7 +22,7 @@ $message = $message ?? 'Une erreur est survenue lors de la soumission de votre c
             <span class="text-[9px] font-black tracking-[0.3em] text-emerald-400">JNET v2.4.0</span>
             <div class="h-4 w-[1px] bg-white/10"></div>
             <a href="<?= $base ?>/" class="text-[8px] font-mono text-white/40 hover:text-white tracking-widest uppercase">Accueil</a>
-            <a href="<?= $base ?>/enlistment" class="text-[8px] font-mono text-white/40 hover:text-white tracking-widest uppercase">Enrôlement</a>
+            <a href="<?= htmlspecialchars($enlistmentRetryUrl) ?>" class="text-[8px] font-mono text-white/40 hover:text-white tracking-widest uppercase">Enrôlement</a>
         </div>
     </nav>
 
@@ -50,7 +51,7 @@ $message = $message ?? 'Une erreur est survenue lors de la soumission de votre c
                 </div>
             </div>
             <div class="px-8 pb-10 flex flex-col sm:flex-row gap-3 justify-center">
-                <a href="<?= $base ?>/enlistment" class="inline-block px-8 py-4 bg-slate-900 text-white rounded-xl font-black tracking-[0.3em] uppercase hover:bg-slate-800 transition-all text-center">Réessayer le formulaire</a>
+                <a href="<?= htmlspecialchars($enlistmentRetryUrl) ?>" class="inline-block px-8 py-4 bg-slate-900 text-white rounded-xl font-black tracking-[0.3em] uppercase hover:bg-slate-800 transition-all text-center">Réessayer le formulaire</a>
                 <a href="<?= $base ?>/" class="inline-block px-8 py-4 border-2 border-slate-200 text-slate-700 rounded-xl font-black tracking-[0.2em] uppercase hover:bg-slate-50 transition-all text-center">Retour à l'accueil</a>
             </div>
         </div>

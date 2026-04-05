@@ -16,6 +16,7 @@ use App\Repositories\UserRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\AuthService;
+use App\Services\EmailService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Rbac\RbacService;
 
@@ -28,7 +29,8 @@ final class InvitationAcceptController
         private AuthService $authService,
         private RbacService $rbacService,
         private AuditService $auditService,
-        private FeatureGateService $featureGate
+        private FeatureGateService $featureGate,
+        private EmailService $emailService
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -137,6 +139,21 @@ final class InvitationAcceptController
 
         $this->invitations->markAccepted((int) $inv['id'], $newId);
         $this->auditService->log(AuditAction::INVITATION_ACCEPTED, $tenantId, $newId, 'invitation', (int) $inv['id']);
+
+        $tenantRow = $this->tenantRepository->findById($tenantId);
+        $tenantName = (string) ($tenantRow['name'] ?? '');
+        $staffEmails = $this->users->listGovernanceEmailsForTenant($tenantId);
+        $ip = trim($request->ip());
+        foreach ($staffEmails as $adminEmail) {
+            $this->emailService->sendNewCommunityMemberStaff(
+                $adminEmail,
+                $tenantName,
+                $email,
+                $ip !== '' ? $ip : '—',
+                'Invitation acceptée',
+                $tenantId
+            );
+        }
 
         $u = $this->users->findById($newId, $tenantId);
         if ($u) {

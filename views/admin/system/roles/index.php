@@ -2,7 +2,7 @@
 <div class="max-w-4xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Rôles site (plateforme)</h1>
-        <a href="<?= url('admin/system') ?>" class="text-sm font-medium text-slate-600 hover:underline">Retour administration système</a>
+        <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:underline">Retour administration système</a>
     </div>
     <?php if (empty($roles)): ?>
     <p class="text-slate-500">Aucun rôle.</p>
@@ -33,10 +33,10 @@
                 </td>
                 <td class="p-3"><?= $count ?></td>
                 <td class="p-3">
-                    <a href="<?= url('admin/system/roles/' . $rid) ?>" class="text-slate-700 hover:underline text-sm">Voir</a>
+                    <a href="<?= url('admin/roles/' . $rid) ?>" class="text-slate-700 hover:underline text-sm">Voir</a>
                     <?php if (!$isLocked): ?>
                     <span class="mx-1">|</span>
-                    <a href="<?= url('admin/system/roles/' . $rid . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
+                    <a href="<?= url('admin/roles/' . $rid . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
                     <?php endif; ?>
                 </td>
             </tr>

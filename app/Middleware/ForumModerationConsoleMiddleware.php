@@ -7,6 +7,7 @@ namespace App\Middleware;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Support\NonDefaultTenantContextGuard;
 
 /**
  * Console modération forum : modérateurs forum OU admins organisation / plateforme.
@@ -20,15 +21,16 @@ final class ForumModerationConsoleMiddleware
 
             return Response::redirect(url('login'));
         }
-        $gate = \App\Core\Gate::getInstance();
-        $ok = (function_exists('can') && can('forum.moderate'))
-            || (function_exists('can') && can('forum.moderate_organization'))
-            || $gate->allows('admin.organization')
-            || $gate->allows('admin.access');
+        $ok = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
         if (!$ok) {
             Session::flash('error', 'Accès réservé à la modération.');
 
             return Response::redirect(url('forum'));
+        }
+
+        $blocked = NonDefaultTenantContextGuard::redirectIfInvalid();
+        if ($blocked !== null) {
+            return $blocked;
         }
 
         return $next($request);

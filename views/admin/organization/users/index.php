@@ -16,16 +16,16 @@ $usersQuery = static function (int $page) use ($filters): string {
     ];
     $q = array_filter($q, static fn ($v) => $v !== null && $v !== '');
 
-    return url('admin/organization/users') . ($q ? '?' . http_build_query($q) : '');
+    return url('back-office/users') . ($q ? '?' . http_build_query($q) : '');
 };
 ?>
 <div class="max-w-6xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Utilisateurs</h1>
-        <a href="<?= url('admin/organization/users/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouvel utilisateur</a>
+        <a href="<?= url('back-office/users/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouvel utilisateur</a>
     </div>
 
-    <form method="get" action="<?= url('admin/organization/users') ?>" class="flex flex-wrap gap-3 mb-6 p-4 bg-slate-50 rounded-lg">
+    <form method="get" action="<?= url('back-office/users') ?>" class="flex flex-wrap gap-3 mb-6 p-4 bg-slate-50 rounded-lg">
         <input type="text" name="search" value="<?= htmlspecialchars($filters['search'] ?? '') ?>" placeholder="Recherche (email, nom, indicatif)" class="px-3 py-2 border border-slate-200 rounded text-sm w-48">
         <select name="status" class="px-3 py-2 border border-slate-200 rounded text-sm">
             <option value="">Tous les statuts</option>
@@ -44,7 +44,7 @@ $usersQuery = static function (int $page) use ($filters): string {
             À corriger (profils incomplets)
         </label>
         <button type="submit" class="px-4 py-2 bg-slate-700 text-white text-sm rounded hover:bg-slate-600">Filtrer</button>
-        <a href="<?= url('admin/organization/users') ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Réinitialiser</a>
+        <a href="<?= url('back-office/users') ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Réinitialiser</a>
     </form>
 
     <?php if ($usersTotal !== null): ?>
@@ -87,9 +87,9 @@ $usersQuery = static function (int $page) use ($filters): string {
                     <?php endif; ?>
                 </td>
                 <td class="p-3">
-                    <a href="<?= url('admin/organization/users/' . $uid) ?>" class="text-slate-700 hover:underline text-sm">Voir</a>
+                    <a href="<?= url('back-office/users/' . $uid) ?>" class="text-slate-700 hover:underline text-sm">Voir</a>
                     <span class="mx-1">|</span>
-                    <a href="<?= url('admin/organization/users/' . $uid . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
+                    <a href="<?= url('back-office/users/' . $uid . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
                 </td>
             </tr>
             <?php endforeach; ?>
@@ -106,5 +106,5 @@ $usersQuery = static function (int $page) use ($filters): string {
     </div>
     <?php endif; ?>
     <?php endif; ?>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('admin/organization') ?>" class="underline">Retour administration organisationnelle</a></p>
+    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour administration organisationnelle</a></p>
 </div>

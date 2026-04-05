@@ -71,7 +71,7 @@ class GradeReferentielController
         }
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
-            return Response::redirect(url('admin/organization/referentiels/grades/create'));
+            return Response::redirect(url('back-office/referentiels/grades/create'));
         }
         $systemId = (int) $request->input('grade_system_id');
         $categoryId = (int) $request->input('grade_category_id');
@@ -80,7 +80,7 @@ class GradeReferentielController
         $labelLong = trim((string) $request->input('label_long'));
         if ($code === '' || $labelShort === '' || $labelLong === '' || !$systemId || !$categoryId) {
             Session::flash('error', 'Code, libellé court, libellé long, système et catégorie sont requis.');
-            return Response::redirect(url('admin/organization/referentiels/grades/create'));
+            return Response::redirect(url('back-office/referentiels/grades/create'));
         }
         $this->gradeRepository->create([
             'grade_system_id' => $systemId,
@@ -94,7 +94,7 @@ class GradeReferentielController
             'is_active' => 1,
         ]);
         Session::flash('success', 'Grade créé.');
-        return Response::redirect(url('admin/organization/referentiels/grades'));
+        return Response::redirect(url('back-office/referentiels/grades'));
     }
 
     public function edit(Request $request, array $params = []): Response
@@ -106,7 +106,7 @@ class GradeReferentielController
         $grade = $id ? $this->gradeRepository->findById($id) : null;
         if (!$grade) {
             Session::flash('error', 'Grade introuvable.');
-            return Response::redirect(url('admin/organization/referentiels/grades'));
+            return Response::redirect(url('back-office/referentiels/grades'));
         }
         $systems = $this->gradeSystemRepository->listActive();
         $categories = $this->gradeCategoryRepository->listActive();
@@ -126,13 +126,13 @@ class GradeReferentielController
         }
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
-            return Response::redirect(url('admin/organization/referentiels/grades'));
+            return Response::redirect(url('back-office/referentiels/grades'));
         }
         $id = (int) ($params['id'] ?? 0);
         $grade = $id ? $this->gradeRepository->findById($id) : null;
         if (!$grade) {
             Session::flash('error', 'Grade introuvable.');
-            return Response::redirect(url('admin/organization/referentiels/grades'));
+            return Response::redirect(url('back-office/referentiels/grades'));
         }
         $systemId = (int) $request->input('grade_system_id');
         $categoryId = (int) $request->input('grade_category_id');
@@ -141,7 +141,7 @@ class GradeReferentielController
         $labelLong = trim((string) $request->input('label_long'));
         if ($code === '' || $labelShort === '' || $labelLong === '' || !$systemId || !$categoryId) {
             Session::flash('error', 'Code, libellé court, libellé long, système et catégorie sont requis.');
-            return Response::redirect(url('admin/organization/referentiels/grades/' . $id . '/edit'));
+            return Response::redirect(url('back-office/referentiels/grades/' . $id . '/edit'));
         }
         $this->gradeRepository->update($id, [
             'grade_system_id' => $systemId,
@@ -155,7 +155,7 @@ class GradeReferentielController
             'is_active' => $request->input('is_active') ? 1 : 0,
         ]);
         Session::flash('success', 'Grade mis à jour.');
-        return Response::redirect(url('admin/organization/referentiels/grades'));
+        return Response::redirect(url('back-office/referentiels/grades'));
     }
 
     public function deactivate(Request $request, array $params = []): Response
@@ -165,7 +165,7 @@ class GradeReferentielController
         }
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
-            return Response::redirect(url('admin/organization/referentiels/grades'));
+            return Response::redirect(url('back-office/referentiels/grades'));
         }
         $id = (int) ($params['id'] ?? 0);
         if ($id && $this->gradeRepository->setActive($id, false)) {
@@ -173,6 +173,6 @@ class GradeReferentielController
         } else {
             Session::flash('error', 'Impossible de désactiver le grade.');
         }
-        return Response::redirect(url('admin/organization/referentiels/grades'));
+        return Response::redirect(url('back-office/referentiels/grades'));
     }
 }

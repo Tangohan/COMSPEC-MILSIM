@@ -9,7 +9,7 @@ $id = (int) ($rule['id'] ?? 0);
 <div class="max-w-5xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Historique — règle #<?= $id ?></h1>
-        <a href="<?= url('admin/system/maintenance') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
+        <a href="<?= url('admin/maintenance') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
     </div>
     <p class="text-sm text-slate-600 mb-4">Scope : <code class="bg-slate-100 px-1 rounded"><?= htmlspecialchars((string) ($rule['scope'] ?? ''), ENT_QUOTES, 'UTF-8') ?></code></p>
 

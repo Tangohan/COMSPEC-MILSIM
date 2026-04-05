@@ -1,4 +1,8 @@
-<?php $base = url(''); ?>
+<?php
+$base = url('');
+$communitySlug = $communitySlug ?? null;
+$enlistHref = $communitySlug ? $base . '/c/' . rawurlencode((string) $communitySlug) . '/enlistment' : $base . '/enlistment';
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -18,7 +22,7 @@
             <span class="text-[9px] font-black tracking-[0.3em] text-emerald-400">JNET v2.4.0</span>
             <div class="h-4 w-[1px] bg-white/10"></div>
             <a href="<?= $base ?>/" class="text-[8px] font-mono text-white/40 hover:text-white tracking-widest uppercase">Accueil</a>
-            <a href="<?= $base ?>/enlistment" class="text-[8px] font-mono text-white/40 hover:text-white tracking-widest uppercase">Enrôlement</a>
+            <a href="<?= htmlspecialchars($enlistHref) ?>" class="text-[8px] font-mono text-white/40 hover:text-white tracking-widest uppercase">Enrôlement</a>
         </div>
     </nav>
 

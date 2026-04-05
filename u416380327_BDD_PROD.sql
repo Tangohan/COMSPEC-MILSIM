@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le : sam. 04 avr. 2026 à 14:58
+-- Généré le : dim. 05 avr. 2026 à 08:22
 -- Version du serveur : 11.8.6-MariaDB-log
 -- Version de PHP : 7.2.34
 
@@ -387,7 +387,14 @@ CREATE TABLE `audit_logs` (
 --
 
 INSERT INTO `audit_logs` (`id`, `tenant_id`, `user_id`, `action`, `entity_type`, `entity_id`, `old_value`, `new_value`, `ip`, `user_agent`, `created_at`) VALUES
-(1, 1, 1, 'auth.login_success', 'auth', 1, NULL, NULL, '2a01:e0a:8ee:2720:2183:6d5a:c7d5:4be', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-04 14:18:47');
+(1, 1, 1, 'auth.login_success', 'auth', 1, NULL, NULL, '2a01:e0a:8ee:2720:2183:6d5a:c7d5:4be', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-04 14:18:47'),
+(2, 6, 2, 'tenant.created', 'tenant', 6, NULL, 'ATHENA', '2a01:e0a:8ee:2720:2183:6d5a:c7d5:4be', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-04 15:29:43'),
+(3, 6, 2, 'tenant.setup_completed', 'tenant', 6, NULL, 'Europe/Paris', '2a01:e0a:8ee:2720:2183:6d5a:c7d5:4be', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-04 15:33:39'),
+(4, 1, NULL, 'auth.login_failure', 'auth', NULL, NULL, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:2183:6d5a:c7d5:4be', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-04 15:51:10'),
+(5, 1, NULL, 'auth.login_failure', 'auth', NULL, NULL, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:2183:6d5a:c7d5:4be', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-04 16:09:43'),
+(6, 1, NULL, 'auth.login_failure', 'auth', NULL, NULL, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:2183:6d5a:c7d5:4be', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-04 16:09:48'),
+(7, 1, 3, 'auth.login_success', 'auth', 3, NULL, NULL, '2a01:e0a:8ee:2720:2183:6d5a:c7d5:4be', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-04 16:10:11'),
+(8, 1, 3, 'auth.login_success', 'auth', 3, NULL, NULL, '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 08:11:48');
 
 -- --------------------------------------------------------
 
@@ -523,8 +530,25 @@ CREATE TABLE `courrier_documents` (
 --
 
 INSERT INTO `courrier_documents` (`id`, `uuid`, `tenant_id`, `template_id`, `preset_id`, `type`, `status`, `title`, `reference_number`, `subject`, `destination_label`, `issuer_label`, `body_rendered`, `variables_json`, `metadata_json`, `attachments_json`, `classification_level`, `created_by`, `validated_by`, `signed_by`, `signed_at`, `signature_data_json`, `content_hash`, `created_at`, `updated_at`, `sent_at`, `archived_at`) VALUES
-(1, '814a437b-206d-11f1-a9a0-91b7e349c605', 1, 2, 1, NULL, 'signed', 'test', 'CR-2026-0001', 'Test d\'objet', 'Personne', 'Tanguy TETARD', 'Mon Capitaine,\r\n\r\nJ\'ai l\'honneur de vous rendre compte des faits suivants survenus le 08 janvier 2026. Lors de la mise en place de la Section d\'Appui sur le point ALPHA, un incident de tir a été constaté sur l\'arme collective du personnel DUBOIS Arthur (MAT: 4512-01).\r\n\r\nConformément aux directives du TTA 150, les mesures de sécurité immédiates ont été appliquées. L\'intéressé a été retiré de la ligne de feu en attente de l\'expertise de l\'armurier. L\'intégrité physique du personnel n\'est pas engagée.\r\n\r\nJe vous ferai connaître les conclusions de l\'enquête technique dès réception du rapport de l\'armurerie.', NULL, NULL, NULL, 'interne', 1, 1, 1, '2026-03-15 14:49:00', '{\"signature_image_path\":\"1\\/1\\/signature.png\",\"stamp_original_signed\":\"\",\"stamp_name_signature\":\"Tanguy TETARD\",\"stamp_grade\":\"Lieutenant\",\"signature_source\":\"pad\"}', '3bfe2b7291c8c6367cb89b1cd6278f0d5a407d8f9e65a8fcc43bb9eab5e41989', '2026-03-15 12:50:11', '2026-03-15 14:50:19', NULL, NULL),
-(2, 'fecb83d9-2080-11f1-a9a0-91b7e349c605', 1, 2, 11, NULL, 'draft', 'eee', 'CR-2026-0002', 'ee', 'eeee', 'Tanguy TETARD', 'eeeee', NULL, NULL, NULL, 'interne', 1, NULL, NULL, NULL, NULL, NULL, '2026-03-15 15:09:42', '2026-03-15 15:09:42', NULL, NULL);
+(1, '814a437b-206d-11f1-a9a0-91b7e349c605', 1, 2, 1, NULL, 'signed', 'test', 'CR-2026-0001', 'Test d\'objet', 'Personne', 'Tanguy TETARD', 'Mon Capitaine,\r\n\r\nJ\'ai l\'honneur de vous rendre compte des faits suivants survenus le 08 janvier 2026. Lors de la mise en place de la Section d\'Appui sur le point ALPHA, un incident de tir a été constaté sur l\'arme collective du personnel DUBOIS Arthur (MAT: 4512-01).\r\n\r\nConformément aux directives du TTA 150, les mesures de sécurité immédiates ont été appliquées. L\'intéressé a été retiré de la ligne de feu en attente de l\'expertise de l\'armurier. L\'intégrité physique du personnel n\'est pas engagée.\r\n\r\nJe vous ferai connaître les conclusions de l\'enquête technique dès réception du rapport de l\'armurerie.', NULL, NULL, NULL, 'interne', NULL, NULL, NULL, '2026-03-15 14:49:00', '{\"signature_image_path\":\"1\\/1\\/signature.png\",\"stamp_original_signed\":\"\",\"stamp_name_signature\":\"Tanguy TETARD\",\"stamp_grade\":\"Lieutenant\",\"signature_source\":\"pad\"}', '3bfe2b7291c8c6367cb89b1cd6278f0d5a407d8f9e65a8fcc43bb9eab5e41989', '2026-03-15 12:50:11', '2026-03-15 14:50:19', NULL, NULL),
+(2, 'fecb83d9-2080-11f1-a9a0-91b7e349c605', 1, 2, 11, NULL, 'draft', 'eee', 'CR-2026-0002', 'ee', 'eeee', 'Tanguy TETARD', 'eeeee', NULL, NULL, NULL, 'interne', NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-15 15:09:42', '2026-03-15 15:09:42', NULL, NULL),
+(3, '8a524162-3043-11f1-bef7-617c4a00209f', 1, 2, 1, NULL, 'signed', 'NDS', 'CR-2026-0003', 'Mise en place d\'Athena', 'Tous utilisateurs', 'Sous-lieutenant Administrateur', '<p>    Conformément aux directives en vigueur, je vous informe qu\'après une phase de conception, d’architecture et de validation fonctionnelle, le système Athena est officiellement mis en service.</p>\r\n\r\n<b>ATHENA</b> constitue une infrastructure centralisée de commandement, d’analyse et de coordination. Elle agrège les flux opérationnels, structure les données critiques et impose une lecture unifiée de l’environnement tactique. Chaque module répond à un besoin identifié : gestion du personnel, suivi logistique, exploitation du renseignement, administration des ressources et supervision des opérations.\r\n\r\n<p>Je vous prie d\'agréer, Tous utilisateurs, l\'expression de mon profond respect.</p>', NULL, NULL, NULL, 'interne', 3, 3, 3, '2026-04-04 16:35:03', '{\"signature_image_path\":\"1\\/3\\/signature.png\",\"stamp_original_signed\":\"Original sign\\u00e9\",\"stamp_name_signature\":\"Administrateur Athena\",\"stamp_grade\":\"\",\"signature_source\":\"pad\",\"verification_code\":\"SIG-2026-04-04-9BC42B2B\"}', '57699b20a7e337a0d847b837be0f59b391ac3162d72996c3c92dffd14dbf7553', '2026-04-04 16:30:06', '2026-04-04 16:35:03', NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `courrier_document_notifications`
+--
+
+CREATE TABLE `courrier_document_notifications` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `document_id` int(10) UNSIGNED NOT NULL,
+  `recipient_user_id` int(10) UNSIGNED NOT NULL,
+  `created_by_user_id` int(10) UNSIGNED NOT NULL,
+  `read_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -546,11 +570,15 @@ CREATE TABLE `courrier_document_versions` (
 --
 
 INSERT INTO `courrier_document_versions` (`id`, `document_id`, `version_number`, `snapshot_json`, `created_by`, `created_at`) VALUES
-(1, 1, 1, '{\"title\":null,\"subject\":null,\"reference_number\":null,\"body_rendered\":\"\",\"destination_label\":null,\"issuer_label\":null,\"updated_at\":\"2026-03-15 13:54:52\"}', 1, '2026-03-15 14:12:56'),
-(2, 1, 2, '{\"title\":null,\"subject\":null,\"reference_number\":\"CR-2026-0001\",\"body_rendered\":\"\",\"destination_label\":null,\"issuer_label\":\"Tanguy TETARD\",\"updated_at\":\"2026-03-15 14:12:56\"}', 1, '2026-03-15 14:16:48'),
-(3, 1, 3, '{\"title\":\"test\",\"subject\":null,\"reference_number\":\"CR-2026-0001\",\"body_rendered\":\"test\",\"destination_label\":null,\"issuer_label\":\"Tanguy TETARD\",\"updated_at\":\"2026-03-15 14:16:48\"}', 1, '2026-03-15 14:16:53'),
-(4, 1, 4, '{\"title\":\"test\",\"subject\":null,\"reference_number\":\"CR-2026-0001\",\"body_rendered\":\"test\",\"destination_label\":null,\"issuer_label\":\"Tanguy TETARD\",\"updated_at\":\"2026-03-15 14:48:23\"}', 1, '2026-03-15 14:48:34'),
-(5, 1, 5, '{\"title\":\"test\",\"subject\":\"Test d\'objet\",\"reference_number\":\"CR-2026-0001\",\"body_rendered\":\"test\",\"destination_label\":\"Personne\",\"issuer_label\":\"Tanguy TETARD\",\"updated_at\":\"2026-03-15 14:49:00\"}', 1, '2026-03-15 14:50:19');
+(1, 1, 1, '{\"title\":null,\"subject\":null,\"reference_number\":null,\"body_rendered\":\"\",\"destination_label\":null,\"issuer_label\":null,\"updated_at\":\"2026-03-15 13:54:52\"}', NULL, '2026-03-15 14:12:56'),
+(2, 1, 2, '{\"title\":null,\"subject\":null,\"reference_number\":\"CR-2026-0001\",\"body_rendered\":\"\",\"destination_label\":null,\"issuer_label\":\"Tanguy TETARD\",\"updated_at\":\"2026-03-15 14:12:56\"}', NULL, '2026-03-15 14:16:48'),
+(3, 1, 3, '{\"title\":\"test\",\"subject\":null,\"reference_number\":\"CR-2026-0001\",\"body_rendered\":\"test\",\"destination_label\":null,\"issuer_label\":\"Tanguy TETARD\",\"updated_at\":\"2026-03-15 14:16:48\"}', NULL, '2026-03-15 14:16:53'),
+(4, 1, 4, '{\"title\":\"test\",\"subject\":null,\"reference_number\":\"CR-2026-0001\",\"body_rendered\":\"test\",\"destination_label\":null,\"issuer_label\":\"Tanguy TETARD\",\"updated_at\":\"2026-03-15 14:48:23\"}', NULL, '2026-03-15 14:48:34'),
+(5, 1, 5, '{\"title\":\"test\",\"subject\":\"Test d\'objet\",\"reference_number\":\"CR-2026-0001\",\"body_rendered\":\"test\",\"destination_label\":\"Personne\",\"issuer_label\":\"Tanguy TETARD\",\"updated_at\":\"2026-03-15 14:49:00\"}', NULL, '2026-03-15 14:50:19'),
+(6, 3, 1, '{\"title\":\"NDS\",\"subject\":\"Mise en place d\'Athena\",\"reference_number\":\"CR-2026-0003\",\"body_rendered\":\"\",\"destination_label\":\"Tous utilisateurs\",\"issuer_label\":\"Sous-lieutenant Administrateur\",\"updated_at\":\"2026-04-04 16:30:06\"}', 3, '2026-04-04 16:30:43'),
+(7, 3, 2, '{\"title\":\"NDS\",\"subject\":\"Mise en place d\'Athena\",\"reference_number\":\"CR-2026-0003\",\"body_rendered\":\"Apr\\u00e8s phase de conception, d\\u2019architecture et de validation fonctionnelle, le syst\\u00e8me Athena est officiellement mis en service.\\r\\n\\r\\nATHENA constitue une infrastructure centralis\\u00e9e de commandement, d\\u2019analyse et de coordination. Elle agr\\u00e8ge les flux op\\u00e9rationnels, structure les donn\\u00e9es critiques et impose une lecture unifi\\u00e9e de l\\u2019environnement tactique. Chaque module r\\u00e9pond \\u00e0 un besoin identifi\\u00e9 : gestion du personnel, suivi logistique, exploitation du renseignement, administration des ressources et supervision des op\\u00e9rations.\",\"destination_label\":\"Tous utilisateurs\",\"issuer_label\":\"Sous-lieutenant Administrateur\",\"updated_at\":\"2026-04-04 16:31:27\"}', 3, '2026-04-04 16:33:00'),
+(8, 3, 3, '{\"title\":\"NDS\",\"subject\":\"Mise en place d\'Athena\",\"reference_number\":\"CR-2026-0003\",\"body_rendered\":\"<p>Conform\\u00e9ment aux directives en vigueur, je vous informe qu\'<\\/p>apr\\u00e8s une phase de conception, d\\u2019architecture et de validation fonctionnelle, le syst\\u00e8me Athena est officiellement mis en service.\\r\\n\\r\\nATHENA constitue une infrastructure centralis\\u00e9e de commandement, d\\u2019analyse et de coordination. Elle agr\\u00e8ge les flux op\\u00e9rationnels, structure les donn\\u00e9es critiques et impose une lecture unifi\\u00e9e de l\\u2019environnement tactique. Chaque module r\\u00e9pond \\u00e0 un besoin identifi\\u00e9 : gestion du personnel, suivi logistique, exploitation du renseignement, administration des ressources et supervision des op\\u00e9rations.\\r\\n\\r\\n<p>Je vous prie d\'agr\\u00e9er, Tous utilisateurs, l\'expression de mon profond respect.<\\/p>\",\"destination_label\":\"Tous utilisateurs\",\"issuer_label\":\"Sous-lieutenant Administrateur\",\"updated_at\":\"2026-04-04 16:33:00\"}', 3, '2026-04-04 16:33:16'),
+(9, 3, 4, '{\"title\":\"NDS\",\"subject\":\"Mise en place d\'Athena\",\"reference_number\":\"CR-2026-0003\",\"body_rendered\":\"<p>Conform\\u00e9ment aux directives en vigueur, je vous informe qu\'apr\\u00e8s une phase de conception, d\\u2019architecture et de validation fonctionnelle, le syst\\u00e8me Athena est officiellement mis en service.<\\/p>\\r\\n\\r\\n<b>ATHENA<\\/b> constitue une infrastructure centralis\\u00e9e de commandement, d\\u2019analyse et de coordination. Elle agr\\u00e8ge les flux op\\u00e9rationnels, structure les donn\\u00e9es critiques et impose une lecture unifi\\u00e9e de l\\u2019environnement tactique. Chaque module r\\u00e9pond \\u00e0 un besoin identifi\\u00e9 : gestion du personnel, suivi logistique, exploitation du renseignement, administration des ressources et supervision des op\\u00e9rations.\\r\\n\\r\\n<p>Je vous prie d\'agr\\u00e9er, Tous utilisateurs, l\'expression de mon profond respect.<\\/p>\",\"destination_label\":\"Tous utilisateurs\",\"issuer_label\":\"Sous-lieutenant Administrateur\",\"updated_at\":\"2026-04-04 16:33:16\"}', 3, '2026-04-04 16:33:21');
 
 -- --------------------------------------------------------
 
@@ -937,8 +965,10 @@ CREATE TABLE `document_workflows` (
 --
 
 INSERT INTO `document_workflows` (`id`, `document_id`, `status_from`, `status_to`, `action_label`, `comment`, `acted_by`, `acted_at`) VALUES
-(1, 1, 'draft', 'pending_validation', 'Soumis à validation', NULL, 1, '2026-03-15 14:48:23'),
-(2, 1, 'pending_validation', 'validated', 'Validé', NULL, 1, '2026-03-15 14:48:39');
+(1, 1, 'draft', 'pending_validation', 'Soumis à validation', NULL, NULL, '2026-03-15 14:48:23'),
+(2, 1, 'pending_validation', 'validated', 'Validé', NULL, NULL, '2026-03-15 14:48:39'),
+(3, 3, 'draft', 'pending_validation', 'Soumis à validation', NULL, 3, '2026-04-04 16:31:27'),
+(4, 3, 'pending_validation', 'validated', 'Validé', NULL, 3, '2026-04-04 16:34:41');
 
 -- --------------------------------------------------------
 
@@ -975,6 +1005,12 @@ CREATE TABLE `enlistments` (
   `reviewed_by` int(10) UNSIGNED DEFAULT NULL,
   `reviewed_at` datetime DEFAULT NULL,
   `reviewer_comment` text DEFAULT NULL,
+  `submitter_user_id` int(10) UNSIGNED DEFAULT NULL,
+  `recruitment_preset_id` int(10) UNSIGNED DEFAULT NULL,
+  `submitted_via` varchar(20) NOT NULL DEFAULT 'guest',
+  `consent_sharing_at` datetime DEFAULT NULL,
+  `shared_fields` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`shared_fields`)),
+  `recruitment_rp_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`recruitment_rp_json`)),
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
@@ -983,8 +1019,8 @@ CREATE TABLE `enlistments` (
 -- Déchargement des données de la table `enlistments`
 --
 
-INSERT INTO `enlistments` (`id`, `tenant_id`, `first_name`, `last_name`, `email`, `callsign`, `country`, `experience`, `specialty`, `platform`, `availability`, `notes`, `age`, `timezone`, `weekly_availability`, `system_config`, `microphone_quality`, `past_milsim_experience`, `ace_acre_level`, `motivation_why_join`, `motivation_accountability`, `commitment_effort`, `availability_wed_sat`, `no_ai_confirmed`, `status`, `reviewed_by`, `reviewed_at`, `reviewer_comment`, `created_at`, `updated_at`) VALUES
-(1, 1, 'Tanguy', 'TETARD', 'wikzzcoc@gmail.com', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 25, 'Paris', 'Jeudi et vendredi', 'I9', 'Oui', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer interdum at sem ac finibus. Pellentesque pellentesque justo lorem, sit amet placerat augue finibus nec. Proin ac libero eget mi iaculis tempor eget non felis. Phasellus euismod, nibh sit amet tempus imperdiet, massa sem luctus metus, et laoreet velit leo et nibh. Vivamus ac libero sed ex rhoncus cursus at eu turpis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut posuere ante nec ipsum facilisis, quis pulvinar ex maximus. Phasellus a tempus augue. Etiam accumsan lacinia felis, eget eleifend tortor suscipit eget. Etiam at sollicitudin turpis. Pellentesque sed sodales nisl, eu sollicitudin massa. Etiam pulvinar magna nisi, nec aliquam erat consequat et.', 'Basique', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer interdum at sem ac finibus. Pellentesque pellentesque justo lorem, sit amet placerat augue finibus nec. Proin ac libero eget mi iaculis tempor eget non felis. Phasellus euismod, nibh sit amet tempus imperdiet, massa sem luctus metus, et laoreet velit leo et nibh. Vivamus ac libero sed ex rhoncus cursus at eu turpis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut posuere ante nec ipsum facilisis, quis pulvinar ex maximus. Phasellus a tempus augue. Etiam accumsan lacinia felis, eget eleifend tortor suscipit eget. Etiam at sollicitudin turpis. Pellentesque sed sodales nisl, eu sollicitudin massa. Etiam pulvinar magna nisi, nec aliquam erat consequat et.', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer interdum at sem ac finibus. Pellentesque pellentesque justo lorem, sit amet placerat augue finibus nec. Proin ac libero eget mi iaculis tempor eget non felis. Phasellus euismod, nibh sit amet tempus imperdiet, massa sem luctus metus, et laoreet velit leo et nibh. Vivamus ac libero sed ex rhoncus cursus at eu turpis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut posuere ante nec ipsum facilisis, quis pulvinar ex maximus. Phasellus a tempus augue. Etiam accumsan lacinia felis, eget eleifend tortor suscipit eget. Etiam at sollicitudin turpis. Pellentesque sed sodales nisl, eu sollicitudin massa. Etiam pulvinar magna nisi, nec aliquam erat consequat et.', 'Oui', 'Variable', 1, 'submitted', NULL, NULL, NULL, '2026-03-13 19:38:46', '2026-03-13 19:38:46');
+INSERT INTO `enlistments` (`id`, `tenant_id`, `first_name`, `last_name`, `email`, `callsign`, `country`, `experience`, `specialty`, `platform`, `availability`, `notes`, `age`, `timezone`, `weekly_availability`, `system_config`, `microphone_quality`, `past_milsim_experience`, `ace_acre_level`, `motivation_why_join`, `motivation_accountability`, `commitment_effort`, `availability_wed_sat`, `no_ai_confirmed`, `status`, `reviewed_by`, `reviewed_at`, `reviewer_comment`, `submitter_user_id`, `recruitment_preset_id`, `submitted_via`, `consent_sharing_at`, `shared_fields`, `recruitment_rp_json`, `created_at`, `updated_at`) VALUES
+(1, 1, 'Tanguy', 'TETARD', 'wikzzcoc@gmail.com', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 25, 'Paris', 'Jeudi et vendredi', 'I9', 'Oui', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer interdum at sem ac finibus. Pellentesque pellentesque justo lorem, sit amet placerat augue finibus nec. Proin ac libero eget mi iaculis tempor eget non felis. Phasellus euismod, nibh sit amet tempus imperdiet, massa sem luctus metus, et laoreet velit leo et nibh. Vivamus ac libero sed ex rhoncus cursus at eu turpis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut posuere ante nec ipsum facilisis, quis pulvinar ex maximus. Phasellus a tempus augue. Etiam accumsan lacinia felis, eget eleifend tortor suscipit eget. Etiam at sollicitudin turpis. Pellentesque sed sodales nisl, eu sollicitudin massa. Etiam pulvinar magna nisi, nec aliquam erat consequat et.', 'Basique', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer interdum at sem ac finibus. Pellentesque pellentesque justo lorem, sit amet placerat augue finibus nec. Proin ac libero eget mi iaculis tempor eget non felis. Phasellus euismod, nibh sit amet tempus imperdiet, massa sem luctus metus, et laoreet velit leo et nibh. Vivamus ac libero sed ex rhoncus cursus at eu turpis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut posuere ante nec ipsum facilisis, quis pulvinar ex maximus. Phasellus a tempus augue. Etiam accumsan lacinia felis, eget eleifend tortor suscipit eget. Etiam at sollicitudin turpis. Pellentesque sed sodales nisl, eu sollicitudin massa. Etiam pulvinar magna nisi, nec aliquam erat consequat et.', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer interdum at sem ac finibus. Pellentesque pellentesque justo lorem, sit amet placerat augue finibus nec. Proin ac libero eget mi iaculis tempor eget non felis. Phasellus euismod, nibh sit amet tempus imperdiet, massa sem luctus metus, et laoreet velit leo et nibh. Vivamus ac libero sed ex rhoncus cursus at eu turpis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut posuere ante nec ipsum facilisis, quis pulvinar ex maximus. Phasellus a tempus augue. Etiam accumsan lacinia felis, eget eleifend tortor suscipit eget. Etiam at sollicitudin turpis. Pellentesque sed sodales nisl, eu sollicitudin massa. Etiam pulvinar magna nisi, nec aliquam erat consequat et.', 'Oui', 'Variable', 1, 'submitted', NULL, NULL, NULL, NULL, NULL, 'guest', NULL, NULL, NULL, '2026-03-13 19:38:46', '2026-03-13 19:38:46');
 
 -- --------------------------------------------------------
 
@@ -1062,6 +1098,22 @@ CREATE TABLE `fire_units` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `forum_attachments`
+--
+
+CREATE TABLE `forum_attachments` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `post_id` int(10) UNSIGNED NOT NULL,
+  `file_path` varchar(500) NOT NULL,
+  `mime` varchar(120) NOT NULL,
+  `size_bytes` int(10) UNSIGNED NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `forum_banned_words`
 --
 
@@ -1095,6 +1147,8 @@ CREATE TABLE `forum_blacklisted_domains` (
 CREATE TABLE `forum_categories` (
   `id` int(10) UNSIGNED NOT NULL,
   `tenant_id` int(10) UNSIGNED NOT NULL,
+  `scope` varchar(32) NOT NULL DEFAULT 'general',
+  `owner_tenant_id` int(10) UNSIGNED DEFAULT NULL,
   `parent_id` int(10) UNSIGNED DEFAULT NULL,
   `name` varchar(255) NOT NULL,
   `slug` varchar(100) NOT NULL,
@@ -1112,12 +1166,13 @@ CREATE TABLE `forum_categories` (
 -- Déchargement des données de la table `forum_categories`
 --
 
-INSERT INTO `forum_categories` (`id`, `tenant_id`, `parent_id`, `name`, `slug`, `description`, `icon`, `color_theme`, `display_order`, `is_locked`, `min_role_id`, `created_at`, `updated_at`) VALUES
-(1, 1, NULL, 'Communiqués officiels', 'annonces', 'Annonces et communiqués de l\'équipe.', NULL, 'orange', 10, 0, NULL, '2026-03-13 19:23:12', '2026-03-13 19:23:12'),
-(2, 1, NULL, 'Général', 'general', 'Discussions générales et présentation.', NULL, 'indigo', 20, 0, NULL, '2026-03-13 19:23:12', '2026-03-13 19:23:12'),
-(3, 1, NULL, 'Missions & Opérations', 'missions', 'Briefs et retours d\'opérations.', NULL, 'violet', 30, 0, NULL, '2026-03-13 19:23:12', '2026-03-13 19:23:12'),
-(4, 1, NULL, 'Support & Technique', 'support', 'Aide, ATAK, équipement, technique.', NULL, 'rose', 40, 0, NULL, '2026-03-13 19:23:12', '2026-03-13 19:23:12'),
-(5, 1, NULL, 'Hors sujet', 'hors-sujet', 'Échanges informels.', NULL, 'emerald', 50, 0, NULL, '2026-03-13 19:23:12', '2026-03-13 19:23:12');
+INSERT INTO `forum_categories` (`id`, `tenant_id`, `scope`, `owner_tenant_id`, `parent_id`, `name`, `slug`, `description`, `icon`, `color_theme`, `display_order`, `is_locked`, `min_role_id`, `created_at`, `updated_at`) VALUES
+(1, 1, 'general', NULL, NULL, 'Communiqués officiels', 'annonces', 'Annonces et communiqués de l\'équipe.', NULL, 'orange', 10, 0, NULL, '2026-03-13 19:23:12', '2026-03-13 19:23:12'),
+(2, 1, 'general', NULL, NULL, 'Général', 'general', 'Discussions générales et présentation.', NULL, 'indigo', 20, 0, NULL, '2026-03-13 19:23:12', '2026-03-13 19:23:12'),
+(3, 1, 'general', NULL, NULL, 'Missions & Opérations', 'missions', 'Briefs et retours d\'opérations.', NULL, 'violet', 30, 0, NULL, '2026-03-13 19:23:12', '2026-03-13 19:23:12'),
+(4, 1, 'general', NULL, NULL, 'Support & Technique', 'support', 'Aide, ATAK, équipement, technique.', NULL, 'rose', 40, 0, NULL, '2026-03-13 19:23:12', '2026-03-13 19:23:12'),
+(5, 1, 'general', NULL, NULL, 'Hors sujet', 'hors-sujet', 'Échanges informels.', NULL, 'emerald', 50, 0, NULL, '2026-03-13 19:23:12', '2026-03-13 19:23:12'),
+(6, 1, 'organization', 1, NULL, 'Default Organisation — Espace dédié', 'org-default', 'Section forum de votre organisation.', NULL, 'slate', 15, 0, NULL, '2026-04-04 15:13:10', '2026-04-04 15:13:10');
 
 -- --------------------------------------------------------
 
@@ -1134,6 +1189,58 @@ CREATE TABLE `forum_category_subscriptions` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `forum_moderation_logs`
+--
+
+CREATE TABLE `forum_moderation_logs` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED DEFAULT NULL,
+  `post_id` int(10) UNSIGNED DEFAULT NULL,
+  `rule_type` varchar(64) NOT NULL,
+  `score` decimal(10,4) DEFAULT NULL,
+  `action_taken` varchar(64) NOT NULL,
+  `detail_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`detail_json`)),
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `forum_moderation_rules`
+--
+
+CREATE TABLE `forum_moderation_rules` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `rule_type` varchar(64) NOT NULL,
+  `threshold` decimal(10,4) DEFAULT NULL,
+  `action` varchar(32) NOT NULL,
+  `config_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`config_json`)),
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `forum_notifications`
+--
+
+CREATE TABLE `forum_notifications` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `type` varchar(40) NOT NULL,
+  `payload_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`payload_json`)),
+  `read_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `forum_posts`
 --
 
@@ -1141,6 +1248,7 @@ CREATE TABLE `forum_posts` (
   `id` int(10) UNSIGNED NOT NULL,
   `tenant_id` int(10) UNSIGNED NOT NULL,
   `topic_id` int(10) UNSIGNED NOT NULL,
+  `parent_post_id` int(10) UNSIGNED DEFAULT NULL,
   `user_id` int(10) UNSIGNED NOT NULL,
   `body` text NOT NULL,
   `is_hidden` tinyint(1) DEFAULT 0,
@@ -1148,13 +1256,20 @@ CREATE TABLE `forum_posts` (
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+-- --------------------------------------------------------
+
 --
--- Déchargement des données de la table `forum_posts`
+-- Structure de la table `forum_post_votes`
 --
 
-INSERT INTO `forum_posts` (`id`, `tenant_id`, `topic_id`, `user_id`, `body`, `is_hidden`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 1, '# COMSPEC ATAK — Documentation produit\n\n**Version** : 1.0  \n**Public** : Utilisateurs, administrateurs, responsables technique  \n**Style** : Présentation produit, configuration et technique opérationnelle (sans détail d’implémentation)\n\n---\n\n## 1. Présentation du produit\n\n### 1.1 Qu’est-ce que COMSPEC ATAK ?\n\n**COMSPEC ATAK** (ou **ATAK / Tacmap**) est le module de **carte tactique temps réel** et de **liaison terrain–commandement** de la plateforme COMSPEC. Il permet de visualiser sur un navigateur la situation sur le théâtre d’opérations (positions des unités, marqueurs, messages, appuis air, etc.) et de rester synchronisé avec les opérateurs en jeu (Arma 3) grâce au mod **COMSPEC Overwatch**.\n\nEn résumé :\n\n- **Côté navigateur** : une **carte tactique** (Tacmap) affiche unités, marqueurs, tchat, pings, flux photos, demandes CAS (9-Line), désignateurs, rapports SIGINT et assets aériens.\n- **Côté jeu** : le **mod Arma COMSPEC Overwatch** envoie la position des joueurs, les marqueurs, les photos (type CTAB) et d’autres renseignements vers le serveur, qui les redistribue à l’overlay.\n\nL’ensemble forme un **système de commandement et contrôle (C2)** léger : le commandement suit la situation sur l’overlay ; les équipes en mission voient leurs actions reflétées en temps réel sur la carte.\n\n### 1.2 Objectifs opérationnels\n\n- **Situations tactiques partagées** : une seule vue carte pour tous les acteurs autorisés (même théâtre, même mission).\n- **Liaison Arma ↔ site** : les positions et événements issus du jeu remontent automatiquement vers l’overlay après configuration du mod.\n- **Coordination** : tchat, pings, photos intel, 9-Line CAS, codes laser, désignateurs et rapports SIGINT pour coordonner les appuis et le renseignement.\n- **Multi-théâtres** : plusieurs cartes (ex. Altis, Tanoa) et contextes (serveurs / missions) peuvent être proposés selon la configuration de l’équipe.\n\n### 1.3 Utilisateurs types\n\n| Rôle | Usage principal |\n|------|------------------|\n| **Opérateur terrain** | Joue avec le mod Arma ; sa position et ses actions (marqueurs, intel) apparaissent sur la Tacmap. |\n| **Commandement / overwatch** | Consulte la carte ATAK (ou Overwatch) pour suivre les unités, le tchat, les pings et les demandes CAS. |\n| **JTAC / contrôleur aérien** | Crée des 9-Line, gère les codes laser et les cibles désignateur ; les pilotes déclarent leurs assets (Flight Manifest). |\n| **Administrateur d’équipe** | Configure l’adresse du serveur C2, la carte par défaut, les identifiants mod, les instructions et le pack mod à télécharger. |\n\n### 1.4 Fonctionnalités principales (côté overlay)\n\n- **Carte tactique** : fond de carte type théâtre Arma (ex. Altis), avec coordonnées alignées sur le monde jeu. Zoom, pan, changement de carte ou de contexte (serveur / mission) selon configuration.\n- **Unités (contacts)** : liste des contacts connectés avec indicatif ; affichage sur la carte (position en temps réel). Filtres « Live » / « All » et recherche par indicatif.\n- **Cams / Intel photos** : flux des photos envoyées depuis le jeu (ex. captures type CTAB) ; consultation dans l’onglet dédié.\n- **Tchat** : messagerie partagée sur le théâtre actif ; échange entre overwatch et terrain.\n- **Pings** : alertes ou marqueurs rapides partagés (position + message) ; liste dans un onglet dédié.\n- **JTAC** : création et suivi des demandes **9-Line CAS** (type, position, élévation, cible, marqueur, ami/ennemi, retrait, autres, remarques) ; gestion des **codes laser** ; liste des demandes et statut.\n- **Air Support Assets** : liste des aéronefs déclarés par les pilotes (Flight Manifest depuis le menu Arma) ; statut pilote et liaison avec les 9-Line si l’équipe l’utilise.\n- **Marqueurs et formes** : marqueurs tactiques sur la carte ; formes (zones, axes) selon les capacités déployées.\n- **Désignateur** : position des cibles désignées au laser (JTAC) pour visualisation commandement.\n- **SIGINT** : rapports de renseignement d’origine électromagnétique (zones, émissions) ; affichage selon configuration.\n- **Heure Zulu** : affichage de l’heure UTC (Z) dans l’en-tête.\n- **État de santé** : section dépliable pour vérifier la disponibilité des services (connexion, dernière activité Arma, nombre d’unités, erreurs éventuelles).\n\n### 1.5 Mod Arma COMSPEC Overwatch\n\nLe mod fournit la **liaison jeu → serveur** :\n\n- **Connexion** : au chargement de la mission, le mod se connecte au serveur C2 (adresse configurée dans les paramètres CBA → COMSPEC Overwatch).\n- **Position** : envoi périodique de la position du joueur pour affichage sur la Tacmap.\n- **Marqueurs** : synchronisation des marqueurs (création, modification, suppression) entre le jeu et l’overlay.\n- **Intel / photos** : envoi de captures (ex. type CTAB) vers l’overlay pour partage avec le commandement.\n- **Autres** : selon version du mod et configuration (9-Line, désignateur, Flight Manifest, etc.).\n\n**Prérequis** : Arma 3 à jour, **CBA A3** (Community Base Addons). Le mod est fourni en pack téléchargeable (ex. lien sur le tableau de bord ou depuis l’admin) et doit être extrait puis activé dans le launcher.', 0, '2026-03-15 13:17:07', '2026-03-15 14:38:49'),
-(2, 1, 1, 1, '## 2. Configuration\r\n\r\n### 2.1 Vue d’ensemble\r\n\r\nLa configuration ATAK est **par équipe** (tenant). Elle couvre :\r\n\r\n- La **carte par défaut** affichée sur l’overlay ATAK.\r\n- L’**URL de base du serveur C2** (optionnel ; si vide, le site courant est utilisé).\r\n- Le **secret JWT** (optionnel) pour la signature des jetons d’accès.\r\n- Les **informations serveur Arma** (adresse, port) affichées aux utilisateurs.\r\n- Les **identifiants ou paramètres mod** (texte libre) à communiquer aux opérateurs pour configurer le mod dans Arma.\r\n- Les **instructions équipe** (procédures, liens, rappels).\r\n\r\nSeuls les **administrateurs** accèdent à l’écran **Configuration ATAK / Arma**. Les opérateurs voient uniquement les informations que l’admin a choisies (ex. dans la section « Configuration pour le jeu » sur la page ATAK).\r\n\r\n### 2.2 Carte par défaut\r\n\r\n- L’administrateur choisit la **carte de l’overlay** pour l’équipe (ex. Altis, Tanoa).\r\n- Cette carte s’affiche par défaut à l’ouverture de la page ATAK ; l’utilisateur peut en changer si plusieurs cartes sont proposées.\r\n\r\n### 2.3 URL de base et secret JWT\r\n\r\n- **URL de base API ATAK** : en général, le C2 est servi par le même site (même origine). On ne renseigne une URL dédiée que si l’équipe utilise un domaine ou un port spécifique (ex. pour la DLL du mod Arma).\r\n- Pour le mod Arma, on configure en pratique **l’URL du site** (ex. `https://votre-domaine.fr`) dans les paramètres du mod (Paramètres → Addons → COMSPEC Overwatch → Connexion), pas une URL de « nœud » séparée, lorsque tout passe par le site.\r\n- **Secret JWT** : optionnel ; si renseigné, les jetons de cette équipe sont signés avec ce secret (sinon avec le secret global). À utiliser si l’équipe a besoin d’une clé dédiée.\r\n\r\n### 2.4 Serveur Arma 3\r\n\r\n- **Adresse du serveur** : hostname ou IP du serveur de jeu Arma 3 (affichée aux opérateurs pour information).\r\n- **Port** : port du serveur (ex. 2302). Ces informations permettent à l’équipe d’identifier le bon serveur et de vérifier la cohérence avec le mod.\r\n\r\n### 2.5 Identifiants / liaison mod Arma\r\n\r\n- Champ **texte libre** (identifiants, clé, paramètres à coller dans le mod).\r\n- Affiché aux opérateurs sur la page ATAK (section « Configuration pour le jeu ») pour qu’ils saisissent les mêmes valeurs dans Arma (Options → Jeu → Configurer les mods → COMSPEC Overwatch → Connexion).\r\n\r\n### 2.6 Instructions équipe\r\n\r\n- **Instructions** : texte libre pour procédures de connexion, liens utiles, rappels (ex. « Toujours vérifier l’indicatif Arma dans les préférences du compte »).\r\n- Visible sur la page ATAK selon la mise en page (ex. dans la zone « Configuration pour le jeu » ou « Instructions »).\r\n\r\n### 2.7 Mod ATAK (pack téléchargeable)\r\n\r\n- L’administrateur peut **déposer une version du mod** (fichier .zip, ex. COMSPEC Overwatch) depuis **Admin → Mod ATAK (upload)**.\r\n- Une fois le pack en place, un **lien de téléchargement** est proposé aux utilisateurs (tableau de bord, page ATAK ou assistant d’installation), pour qu’ils récupèrent toujours la version validée par l’équipe.\r\n\r\n### 2.8 Préférences utilisateur (liaison compte ↔ jeu)\r\n\r\nPour que l’overlay affiche correctement l’indicatif et le lien avec le compte :\r\n\r\n- **Indicatif** : renseigné dans le profil ou les préférences du compte.\r\n- **Liaison Steam** : optionnel ; identifiant Steam si utilisé pour l’authentification ou la corrélation.\r\n- **Indicatif Arma** : doit correspondre à l’indicatif utilisé en jeu pour que la liste des contacts et la carte associent la bonne identité.\r\n\r\nCes réglages se font dans **Mon compte** / **Préférences**, pas dans la configuration ATAK admin.\r\n\r\n---\r\n\r\n## 3. Utilisation opérationnelle\r\n\r\n### 3.1 Accéder à la carte ATAK\r\n\r\n- Depuis le **tableau de bord** : lien « ATAK / Tacmap ».\r\n- Depuis le menu principal : lien **ATAK**.\r\n- URL directe : `/atak` (après connexion).\r\n\r\nL’utilisateur doit être **connecté** et, le cas échéant, rattaché à une **équipe** pour voir la carte et les données du théâtre correspondant.\r\n\r\n### 3.2 Interface principale\r\n\r\n- **En-tête** : logo COMSPEC Overwatch, heure Zulu, indicateur « Réseau actif » (ou perte de connexion), sélecteur de serveur/mission, sélecteur de carte, liens Overwatch / Dashboard, bouton **Paramètres** (données compte, liaison Steam/Arma, lien vers config jeu).\r\n- **Panneau gauche** (onglets) :\r\n  - **Cams** : flux des photos intel envoyées depuis Arma.\r\n  - **Tchat** : messages partagés ; saisie et envoi de messages.\r\n  - **Pings** : liste des pings avec position et message.\r\n  - **JTAC** : bouton « Nouvelle 9-Line CAS », formulaire 9 lignes, liste des 9-Line, codes laser.\r\n- **Carte** : zone centrale ; affichage des unités, marqueurs, formes, désignateur, etc. Interaction au clic (info, déplacement de vue).\r\n- **Panneau droit** :\r\n  - **Air Support Assets** : liste des aéronefs déclarés (Flight Manifest).\r\n  - **Contacts (All Workspaces)** : liste des unités avec filtre et mode Live / All.', 0, '2026-03-15 13:17:15', '2026-03-15 13:17:15');
+CREATE TABLE `forum_post_votes` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `post_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `value` tinyint(4) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -1181,9 +1296,40 @@ CREATE TABLE `forum_reports` (
   `post_id` int(10) UNSIGNED DEFAULT NULL,
   `topic_id` int(10) UNSIGNED DEFAULT NULL,
   `reason` text DEFAULT NULL,
+  `report_type` varchar(32) NOT NULL DEFAULT 'other',
+  `comment` text DEFAULT NULL,
   `status` varchar(20) DEFAULT 'pending',
   `handled_by` int(10) UNSIGNED DEFAULT NULL,
   `handled_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `forum_report_events`
+--
+
+CREATE TABLE `forum_report_events` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `report_id` int(10) UNSIGNED NOT NULL,
+  `actor_id` int(10) UNSIGNED DEFAULT NULL,
+  `action` varchar(64) NOT NULL,
+  `note` text DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `forum_tags`
+--
+
+CREATE TABLE `forum_tags` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(80) NOT NULL,
+  `slug` varchar(100) NOT NULL,
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
@@ -1203,18 +1349,13 @@ CREATE TABLE `forum_topics` (
   `is_pinned` tinyint(1) DEFAULT 0,
   `is_locked` tinyint(1) DEFAULT 0,
   `is_archived` tinyint(1) DEFAULT 0,
+  `is_solved` tinyint(1) NOT NULL DEFAULT 0,
+  `best_answer_post_id` int(10) UNSIGNED DEFAULT NULL,
   `is_hidden` tinyint(1) DEFAULT 0,
   `view_count` int(10) UNSIGNED DEFAULT 0,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-
---
--- Déchargement des données de la table `forum_topics`
---
-
-INSERT INTO `forum_topics` (`id`, `tenant_id`, `category_id`, `user_id`, `title`, `slug`, `is_pinned`, `is_locked`, `is_archived`, `is_hidden`, `view_count`, `created_at`, `updated_at`) VALUES
-(1, 1, 4, 1, 'ATAK - Mise en place', 'atak-mise-en-place-339664', 0, 0, 0, 0, 76, '2026-03-15 13:17:07', '2026-04-04 14:51:18');
 
 -- --------------------------------------------------------
 
@@ -1226,6 +1367,17 @@ CREATE TABLE `forum_topic_subscriptions` (
   `user_id` int(10) UNSIGNED NOT NULL,
   `topic_id` int(10) UNSIGNED NOT NULL,
   `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `forum_topic_tags`
+--
+
+CREATE TABLE `forum_topic_tags` (
+  `topic_id` int(10) UNSIGNED NOT NULL,
+  `tag_id` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
@@ -1616,6 +1768,24 @@ CREATE TABLE `password_resets` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `pending_community_creates`
+--
+
+CREATE TABLE `pending_community_creates` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `token` char(64) NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `payload_json` text NOT NULL,
+  `plan_slug` varchar(50) NOT NULL,
+  `stripe_price_id` varchar(100) NOT NULL,
+  `stripe_checkout_session_id` varchar(255) DEFAULT NULL,
+  `tenant_id` int(10) UNSIGNED DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `permissions`
 --
 
@@ -1625,6 +1795,7 @@ CREATE TABLE `permissions` (
   `name` varchar(100) NOT NULL,
   `slug` varchar(100) NOT NULL,
   `module` varchar(50) DEFAULT NULL,
+  `scope` enum('site','community','intra') NOT NULL DEFAULT 'community',
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
@@ -1632,29 +1803,33 @@ CREATE TABLE `permissions` (
 -- Déchargement des données de la table `permissions`
 --
 
-INSERT INTO `permissions` (`id`, `tenant_id`, `name`, `slug`, `module`, `created_at`) VALUES
-(1, 1, 'Voir le forum', 'forum.view', 'forum', '2026-03-13 19:23:12'),
-(2, 1, 'Créer un sujet', 'forum.create_topic', 'forum', '2026-03-13 19:23:12'),
-(3, 1, 'Répondre', 'forum.reply', 'forum', '2026-03-13 19:23:12'),
-(4, 1, 'Modifier son message', 'forum.edit_own', 'forum', '2026-03-13 19:23:12'),
-(5, 1, 'Supprimer son message', 'forum.delete_own', 'forum', '2026-03-13 19:23:12'),
-(6, 1, 'Modérer le forum', 'forum.moderate', 'forum', '2026-03-13 19:23:12'),
-(7, 1, 'Gérer les catégories', 'forum.manage_categories', 'forum', '2026-03-13 19:23:12'),
-(8, 1, 'Accès administration', 'admin.access', 'admin', '2026-03-13 22:57:32'),
-(9, 1, 'Voir les documents', 'documents.view', 'documents', '2026-03-14 00:01:46'),
-(10, 1, 'Uploader des documents', 'documents.upload', 'documents', '2026-03-14 00:01:46'),
-(11, 1, 'Modifier les documents', 'documents.update', 'documents', '2026-03-14 00:01:46'),
-(12, 1, 'Archiver les documents', 'documents.archive', 'documents', '2026-03-14 00:01:46'),
-(13, 1, 'Télécharger documents sensibles', 'documents.download_sensitive', 'documents', '2026-03-14 00:01:46'),
-(14, 1, 'Voir les formations', 'training.view', 'training', '2026-03-15 11:51:40'),
-(15, 1, 'Gérer les formations', 'training.manage', 'training', '2026-03-15 11:51:40'),
-(16, 1, 'Assigner des formations', 'training.assign', 'training', '2026-03-15 11:51:40'),
-(17, 1, 'Administration système', 'admin.system', 'admin', '2026-03-15 12:02:28'),
-(18, 1, 'Administration organisationnelle', 'admin.organization', 'admin', '2026-03-15 12:02:28'),
-(19, 1, 'Voir le Bureau Courrier', 'courrier.view', 'courrier', '2026-03-15 12:43:17'),
-(20, 1, 'Créer des documents courrier', 'courrier.create', 'courrier', '2026-03-15 12:43:17'),
-(21, 1, 'Valider des documents', 'courrier.validate', 'courrier', '2026-03-15 12:43:17'),
-(22, 1, 'Archiver des documents', 'courrier.archive', 'courrier', '2026-03-15 12:43:17');
+INSERT INTO `permissions` (`id`, `tenant_id`, `name`, `slug`, `module`, `scope`, `created_at`) VALUES
+(1, 1, 'Voir le forum', 'forum.view', 'forum', 'intra', '2026-03-13 19:23:12'),
+(2, 1, 'Créer un sujet', 'forum.create_topic', 'forum', 'intra', '2026-03-13 19:23:12'),
+(3, 1, 'Répondre', 'forum.reply', 'forum', 'intra', '2026-03-13 19:23:12'),
+(4, 1, 'Modifier son message', 'forum.edit_own', 'forum', 'intra', '2026-03-13 19:23:12'),
+(5, 1, 'Supprimer son message', 'forum.delete_own', 'forum', 'intra', '2026-03-13 19:23:12'),
+(6, 1, 'Modérer le forum', 'forum.moderate', 'forum', 'community', '2026-03-13 19:23:12'),
+(7, 1, 'Gérer les catégories', 'forum.manage_categories', 'forum', 'community', '2026-03-13 19:23:12'),
+(8, 1, 'Accès administration', 'admin.access', 'admin', 'community', '2026-03-13 22:57:32'),
+(9, 1, 'Voir les documents', 'documents.view', 'documents', 'community', '2026-03-14 00:01:46'),
+(10, 1, 'Uploader des documents', 'documents.upload', 'documents', 'community', '2026-03-14 00:01:46'),
+(11, 1, 'Modifier les documents', 'documents.update', 'documents', 'community', '2026-03-14 00:01:46'),
+(12, 1, 'Archiver les documents', 'documents.archive', 'documents', 'community', '2026-03-14 00:01:46'),
+(13, 1, 'Télécharger documents sensibles', 'documents.download_sensitive', 'documents', 'community', '2026-03-14 00:01:46'),
+(14, 1, 'Voir les formations', 'training.view', 'training', 'community', '2026-03-15 11:51:40'),
+(15, 1, 'Gérer les formations', 'training.manage', 'training', 'community', '2026-03-15 11:51:40'),
+(16, 1, 'Assigner des formations', 'training.assign', 'training', 'community', '2026-03-15 11:51:40'),
+(17, 1, 'Administration système', 'admin.system', 'admin', 'community', '2026-03-15 12:02:28'),
+(18, 1, 'Administration organisationnelle', 'admin.organization', 'admin', 'community', '2026-03-15 12:02:28'),
+(19, 1, 'Voir le Bureau Courrier', 'courrier.view', 'courrier', 'community', '2026-03-15 12:43:17'),
+(20, 1, 'Créer des documents courrier', 'courrier.create', 'courrier', 'community', '2026-03-15 12:43:17'),
+(21, 1, 'Valider des documents', 'courrier.validate', 'courrier', 'community', '2026-03-15 12:43:17'),
+(22, 1, 'Archiver des documents', 'courrier.archive', 'courrier', 'community', '2026-03-15 12:43:17'),
+(23, NULL, 'Administration système (plateforme)', 'admin.system', 'admin', 'site', '2026-04-04 15:13:10'),
+(24, NULL, 'Accès back-office plateforme', 'admin.access', 'admin', 'site', '2026-04-04 15:13:10'),
+(25, NULL, 'Gérer les communautés (tenants)', 'site.tenants.manage', 'admin', 'site', '2026-04-04 15:13:10'),
+(26, 1, 'Modérer la section forum de l\'organisation', 'forum.moderate_organization', 'forum', 'community', '2026-04-04 15:13:10');
 
 -- --------------------------------------------------------
 
@@ -1737,13 +1912,6 @@ CREATE TABLE `personnel_extras` (
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
---
--- Déchargement des données de la table `personnel_extras`
---
-
-INSERT INTO `personnel_extras` (`user_id`, `service_number`, `squadron`, `date_of_enlistment`, `clearance_level`, `flight_hours`, `specializations`, `readiness_percent`, `admin_notes`, `created_at`, `updated_at`) VALUES
-(1, 'ATH-00001', NULL, NULL, NULL, NULL, NULL, NULL, '', '2026-03-13 19:23:21', '2026-03-15 11:57:51');
-
 -- --------------------------------------------------------
 
 --
@@ -1795,13 +1963,6 @@ CREATE TABLE `personnel_profiles` (
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
---
--- Déchargement des données de la table `personnel_profiles`
---
-
-INSERT INTO `personnel_profiles` (`id`, `user_id`, `character_name`, `callsign`, `rank_display`, `primary_role`, `secondary_role`, `primary_unit_id`, `clearance_level`, `character_portrait_path`, `character_banner_path`, `blood_type`, `nationality`, `languages`, `enlistment_date`, `motto`, `readiness_score`, `command_notes`, `matricule_internal`, `clearance_reviewed_at`, `equipment_class`, `kit_assigned`, `radio_assigned`, `vehicle_authorized`, `weapon_specialty`, `deployable`, `created_at`, `updated_at`) VALUES
-(1, 1, 'NewPI', 'E-10', NULL, 'Officier de commandement', 'Responsable de formations', 1, '', 'uploads/portraits/1_1773575991.png', NULL, NULL, NULL, NULL, '2026-03-15', NULL, 0, '', 'ATH-00001', NULL, '', '', '', '', '', 1, '2026-03-13 19:23:21', '2026-03-15 11:59:51');
-
 -- --------------------------------------------------------
 
 --
@@ -1841,6 +2002,29 @@ CREATE TABLE `personnel_service_history` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `platform_alerts`
+--
+
+CREATE TABLE `platform_alerts` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `kind` enum('discount','novelty','info','urgent') NOT NULL DEFAULT 'info',
+  `title` varchar(255) NOT NULL,
+  `body` text DEFAULT NULL,
+  `cta_label` varchar(120) DEFAULT NULL,
+  `cta_url` varchar(512) DEFAULT NULL,
+  `coupon_code` varchar(64) DEFAULT NULL,
+  `starts_at` datetime DEFAULT NULL,
+  `ends_at` datetime DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `audience_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`audience_json`)),
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `platform_usage_events`
 --
 
@@ -1858,7 +2042,44 @@ CREATE TABLE `platform_usage_events` (
 --
 
 INSERT INTO `platform_usage_events` (`id`, `tenant_id`, `user_id`, `feature_key`, `action`, `created_at`) VALUES
-(1, 1, 1, 'dashboard_visit', 'view', '2026-04-04 14:53:57');
+(1, 1, 1, 'dashboard_visit', 'view', '2026-04-04 14:53:57'),
+(2, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:27:33'),
+(3, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:27:52'),
+(4, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:33:40'),
+(5, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:34:37'),
+(6, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:34:41'),
+(7, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:34:43'),
+(8, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:34:43'),
+(9, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:34:45'),
+(10, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:34:46'),
+(11, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:34:47'),
+(12, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:39:05'),
+(13, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:40:55'),
+(14, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:40:58'),
+(15, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:41:00'),
+(16, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:42:02'),
+(17, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:42:03'),
+(18, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:42:04'),
+(19, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:42:04'),
+(20, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:42:04'),
+(21, 6, 2, 'dashboard_visit', 'view', '2026-04-04 15:42:05'),
+(22, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:42:07'),
+(23, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:42:09'),
+(24, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:46:31'),
+(25, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:46:32'),
+(26, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:46:33'),
+(27, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:47:05'),
+(28, 1, 1, 'dashboard_visit', 'view', '2026-04-04 15:47:08'),
+(29, 1, 3, 'dashboard_visit', 'view', '2026-04-04 16:10:12'),
+(30, 1, 3, 'dashboard_visit', 'view', '2026-04-04 16:15:37'),
+(31, 1, 3, 'dashboard_visit', 'view', '2026-04-04 16:15:38'),
+(32, 1, 3, 'dashboard_visit', 'view', '2026-04-04 16:16:04'),
+(33, 1, 3, 'dashboard_visit', 'view', '2026-04-04 16:16:04'),
+(34, 1, 3, 'dashboard_visit', 'view', '2026-04-04 16:36:00'),
+(35, 1, 3, 'dashboard_visit', 'view', '2026-04-04 16:41:04'),
+(36, 1, 3, 'dashboard_visit', 'view', '2026-04-05 08:11:49'),
+(37, 1, 3, 'dashboard_visit', 'view', '2026-04-05 08:11:55'),
+(38, 1, 3, 'dashboard_visit', 'view', '2026-04-05 08:13:08');
 
 -- --------------------------------------------------------
 
@@ -1891,6 +2112,28 @@ CREATE TABLE `recon_images` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `recruitment_presets`
+--
+
+CREATE TABLE `recruitment_presets` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `label` varchar(120) NOT NULL,
+  `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`payload`)),
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Déchargement des données de la table `recruitment_presets`
+--
+
+INSERT INTO `recruitment_presets` (`id`, `user_id`, `label`, `payload`, `created_at`, `updated_at`) VALUES
+(1, 3, 'Melvin MESNEL', '{\"callsign\":\"\",\"availability\":\"\",\"motivation_why_join\":\"\"}', '2026-04-04 16:42:22', '2026-04-04 16:42:22');
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `referral_attributions`
 --
 
@@ -1915,13 +2158,6 @@ CREATE TABLE `referral_codes` (
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
---
--- Déchargement des données de la table `referral_codes`
---
-
-INSERT INTO `referral_codes` (`id`, `user_id`, `code`, `created_at`) VALUES
-(1, 1, 'YFTPZZ38JZ', '2026-04-04 14:25:06');
-
 -- --------------------------------------------------------
 
 --
@@ -1936,6 +2172,7 @@ CREATE TABLE `roles` (
   `description` varchar(500) DEFAULT NULL,
   `is_system` tinyint(1) DEFAULT 0,
   `is_locked` tinyint(1) DEFAULT 0,
+  `role_layer` enum('site','community','intra') NOT NULL DEFAULT 'community',
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
@@ -1943,12 +2180,13 @@ CREATE TABLE `roles` (
 -- Déchargement des données de la table `roles`
 --
 
-INSERT INTO `roles` (`id`, `tenant_id`, `name`, `slug`, `description`, `is_system`, `is_locked`, `created_at`) VALUES
-(1, 1, 'Administrator', 'tenant_admin', 'Full access', 1, 0, '2026-03-13 17:47:31'),
-(2, 1, 'Modérateur forum', 'forum_moderator', '', 1, 0, '2026-03-13 19:23:12'),
-(3, 1, 'Membre', 'member', '', 1, 0, '2026-03-13 19:23:12'),
-(4, 1, 'Officier', 'officer', 'Encadrement, organisations, équipes', 1, 0, '2026-03-14 00:01:46'),
-(5, 1, 'Super Administrator', 'super_admin', 'Accès administration système et organisation', 1, 1, '2026-03-15 12:02:28');
+INSERT INTO `roles` (`id`, `tenant_id`, `name`, `slug`, `description`, `is_system`, `is_locked`, `role_layer`, `created_at`) VALUES
+(1, 1, 'Administrator', 'tenant_admin', 'Full access', 1, 0, 'community', '2026-03-13 17:47:31'),
+(2, 1, 'Modérateur forum', 'forum_moderator', '', 1, 0, 'intra', '2026-03-13 19:23:12'),
+(3, 1, 'Membre', 'member', '', 1, 0, 'intra', '2026-03-13 19:23:12'),
+(4, 1, 'Officier', 'officer', 'Encadrement, organisations, équipes', 1, 0, 'intra', '2026-03-14 00:01:46'),
+(14, NULL, 'Super administrateur site', 'site_super_admin', 'Administration plateforme (global)', 1, 1, 'site', '2026-04-04 15:13:10'),
+(15, 1, 'Propriétaire communauté', 'community_owner', 'Gouvernance complète de la communauté (sans administration plateforme)', 1, 1, 'community', '2026-04-04 15:13:10');
 
 -- --------------------------------------------------------
 
@@ -1983,7 +2221,7 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (2, 6),
 (1, 7),
 (1, 8),
-(5, 8),
+(15, 8),
 (1, 9),
 (3, 9),
 (4, 9),
@@ -1996,14 +2234,18 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (1, 14),
 (1, 15),
 (1, 16),
-(5, 17),
 (1, 18),
-(5, 18),
+(15, 18),
 (1, 19),
 (3, 19),
 (1, 20),
 (1, 21),
-(1, 22);
+(1, 22),
+(14, 23),
+(14, 24),
+(14, 25),
+(1, 26),
+(2, 26);
 
 -- --------------------------------------------------------
 
@@ -2039,6 +2281,28 @@ CREATE TABLE `sessions` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `site_role_assignments`
+--
+
+CREATE TABLE `site_role_assignments` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `email_normalized` varchar(255) NOT NULL,
+  `role_id` int(10) UNSIGNED NOT NULL,
+  `assigned_by_user_id` int(10) UNSIGNED DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `revoked_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Déchargement des données de la table `site_role_assignments`
+--
+
+INSERT INTO `site_role_assignments` (`id`, `email_normalized`, `role_id`, `assigned_by_user_id`, `created_at`, `revoked_at`) VALUES
+(1, 'tetard.tanguy@gmail.com', 14, NULL, '2026-04-04 16:09:10', NULL);
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `site_settings`
 --
 
@@ -2063,6 +2327,7 @@ CREATE TABLE `subscription_plans` (
   `name` varchar(100) NOT NULL,
   `sort_order` int(11) NOT NULL DEFAULT 0,
   `features_json` text DEFAULT NULL,
+  `limits_json` text DEFAULT NULL COMMENT 'Quotas gratuit limité (JSON)',
   `stripe_price_id_monthly` varchar(100) DEFAULT NULL,
   `stripe_price_id_yearly` varchar(100) DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp()
@@ -2072,10 +2337,10 @@ CREATE TABLE `subscription_plans` (
 -- Déchargement des données de la table `subscription_plans`
 --
 
-INSERT INTO `subscription_plans` (`id`, `slug`, `name`, `sort_order`, `features_json`, `stripe_price_id_monthly`, `stripe_price_id_yearly`, `created_at`) VALUES
-(1, 'free', 'Gratuit', 10, '{\"forum\":true,\"documents\":true,\"training\":true,\"atak\":false,\"max_members\":50,\"community_create\":true}', NULL, NULL, '2026-04-04 14:27:08'),
-(2, 'standard', 'Standard', 20, '{\"forum\":true,\"documents\":true,\"training\":true,\"atak\":true,\"max_members\":200,\"community_create\":true}', NULL, NULL, '2026-04-04 14:27:08'),
-(3, 'pro', 'Pro', 30, '{\"forum\":true,\"documents\":true,\"training\":true,\"atak\":true,\"analytics\":true,\"events\":true,\"max_members\":2000,\"community_create\":true}', NULL, NULL, '2026-04-04 14:27:08');
+INSERT INTO `subscription_plans` (`id`, `slug`, `name`, `sort_order`, `features_json`, `limits_json`, `stripe_price_id_monthly`, `stripe_price_id_yearly`, `created_at`) VALUES
+(1, 'free', 'Gratuit', 10, '{\"forum\":true,\"documents\":true,\"training\":true,\"atak\":false,\"max_members\":50,\"community_create\":true}', '{\"quotas\":{\"events\":{\"limit\":3,\"reset_period\":\"monthly\",\"soft_block_threshold\":0.8,\"soft_block_message\":\"Vous approchez de la limite de cr\\u00e9ations d\\u2019\\u00e9v\\u00e9nements ce mois-ci.\",\"upgrade_cta\":\"platform\\/upgrade\",\"binds_feature\":\"events\"}}}', NULL, NULL, '2026-04-04 14:27:08'),
+(2, 'standard', 'Standard', 20, '{\"forum\":true,\"documents\":true,\"training\":true,\"atak\":true,\"max_members\":200,\"community_create\":true,\"events\":true}', NULL, NULL, NULL, '2026-04-04 14:27:08'),
+(3, 'pro', 'Pro', 30, '{\"forum\":true,\"documents\":true,\"training\":true,\"atak\":true,\"analytics\":true,\"events\":true,\"max_members\":2000,\"community_create\":true}', NULL, NULL, NULL, '2026-04-04 14:27:08');
 
 -- --------------------------------------------------------
 
@@ -2105,7 +2370,30 @@ CREATE TABLE `tenants` (
 --
 
 INSERT INTO `tenants` (`id`, `name`, `slug`, `community_code`, `logo_url`, `settings`, `owner_user_id`, `plan_slug`, `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `subscription_current_period_end`, `created_at`, `updated_at`) VALUES
-(1, 'Default Organisation', 'default', NULL, NULL, NULL, NULL, 'free', NULL, NULL, 'none', NULL, '2026-03-13 17:47:31', '2026-03-13 17:47:31');
+(1, 'Aucune organisation', 'default', NULL, NULL, NULL, NULL, 'free', NULL, NULL, 'none', NULL, '2026-03-13 17:47:31', '2026-03-13 17:47:31');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tenant_alerts`
+--
+
+CREATE TABLE `tenant_alerts` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `kind` enum('discount','novelty','info','urgent') NOT NULL DEFAULT 'info',
+  `title` varchar(255) NOT NULL,
+  `body` text DEFAULT NULL,
+  `cta_label` varchar(120) DEFAULT NULL,
+  `cta_url` varchar(512) DEFAULT NULL,
+  `coupon_code` varchar(64) DEFAULT NULL,
+  `starts_at` datetime DEFAULT NULL,
+  `ends_at` datetime DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -2136,6 +2424,24 @@ INSERT INTO `tenant_atak_config` (`tenant_id`, `node_url`, `jwt_secret`, `arma_s
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `tenant_grade_overrides`
+--
+
+CREATE TABLE `tenant_grade_overrides` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `grade_id` bigint(20) UNSIGNED NOT NULL,
+  `label_short_override` varchar(100) DEFAULT NULL,
+  `label_long_override` varchar(150) DEFAULT NULL,
+  `sort_order_override` int(11) DEFAULT NULL,
+  `is_enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `tenant_matricule_config`
 --
 
@@ -2153,6 +2459,61 @@ CREATE TABLE `tenant_matricule_config` (
 
 INSERT INTO `tenant_matricule_config` (`tenant_id`, `prefix`, `format_pattern`, `next_number`, `updated_at`) VALUES
 (1, 'ATH', '{prefix}-{seq:5}', 2, '2026-03-13 19:23:21');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tenant_messages`
+--
+
+CREATE TABLE `tenant_messages` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `thread_id` int(10) UNSIGNED NOT NULL,
+  `sender_user_id` int(10) UNSIGNED NOT NULL,
+  `body` text NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tenant_message_threads`
+--
+
+CREATE TABLE `tenant_message_threads` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `subject` varchar(255) NOT NULL DEFAULT '',
+  `created_by_user_id` int(10) UNSIGNED NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tenant_message_thread_users`
+--
+
+CREATE TABLE `tenant_message_thread_users` (
+  `thread_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `last_read_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tenant_usage_counters`
+--
+
+CREATE TABLE `tenant_usage_counters` (
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `metric_key` varchar(64) NOT NULL,
+  `period_start` date NOT NULL,
+  `amount` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -2417,6 +2778,9 @@ CREATE TABLE `units` (
   `code` varchar(20) DEFAULT NULL,
   `commander_user_id` int(10) UNSIGNED DEFAULT NULL,
   `display_order` int(11) DEFAULT 0,
+  `public_blurb` text DEFAULT NULL,
+  `public_tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`public_tags`)),
+  `show_on_public_page` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
@@ -2425,8 +2789,8 @@ CREATE TABLE `units` (
 -- Déchargement des données de la table `units`
 --
 
-INSERT INTO `units` (`id`, `tenant_id`, `parent_id`, `name`, `slug`, `type`, `code`, `commander_user_id`, `display_order`, `created_at`, `updated_at`) VALUES
-(1, 1, NULL, 'Cerbere', 'cerbere', 'organization', NULL, 1, 0, '2026-03-13 19:43:43', '2026-03-13 19:43:43');
+INSERT INTO `units` (`id`, `tenant_id`, `parent_id`, `name`, `slug`, `type`, `code`, `commander_user_id`, `display_order`, `public_blurb`, `public_tags`, `show_on_public_page`, `created_at`, `updated_at`) VALUES
+(1, 1, NULL, 'Cerbere', 'cerbere', 'organization', NULL, 1, 0, NULL, NULL, 1, '2026-03-13 19:43:43', '2026-03-13 19:43:43');
 
 -- --------------------------------------------------------
 
@@ -2443,6 +2807,7 @@ CREATE TABLE `users` (
   `password_hash` varchar(255) NOT NULL,
   `display_name` varchar(100) DEFAULT NULL,
   `callsign` varchar(50) DEFAULT NULL,
+  `profile_slug` varchar(40) DEFAULT NULL COMMENT 'Identifiant URL fiche personnel (tenant)',
   `steam_id` varchar(20) DEFAULT NULL,
   `avatar_url` varchar(500) DEFAULT NULL,
   `role_id` int(10) UNSIGNED DEFAULT NULL,
@@ -2458,8 +2823,36 @@ CREATE TABLE `users` (
 -- Déchargement des données de la table `users`
 --
 
-INSERT INTO `users` (`id`, `tenant_id`, `email`, `nationality_code`, `preferred_grade_format`, `password_hash`, `display_name`, `callsign`, `steam_id`, `avatar_url`, `role_id`, `grade_id`, `professional_category_code`, `status`, `last_login_at`, `created_at`, `updated_at`) VALUES
-(1, 1, 'tetard.tanguy@gmail.com', NULL, 'classic', '$argon2id$v=19$m=65536,t=4,p=1$R1JUM1hSLnlEenRpL3Ayaw$712JHsttH+eD0iS7qfW+jE1zovq+HrXCMEBg8mRDXbQ', 'NewPI', 'ADMIN', '76561198267756457', 'uploads/avatars/1_1773430155.jpg', 1, NULL, NULL, 'active', '2026-04-04 14:18:47', '2026-03-13 17:47:31', '2026-03-14 00:03:18');
+INSERT INTO `users` (`id`, `tenant_id`, `email`, `nationality_code`, `preferred_grade_format`, `password_hash`, `display_name`, `callsign`, `profile_slug`, `steam_id`, `avatar_url`, `role_id`, `grade_id`, `professional_category_code`, `status`, `last_login_at`, `created_at`, `updated_at`) VALUES
+(3, 1, 'tetard.tanguy@gmail.com', NULL, 'classic', '$argon2id$v=19$m=65536,t=4,p=1$R1JUM1hSLnlEenRpL3Ayaw$712JHsttH+eD0iS7qfW+jE1zovq+HrXCMEBg8mRDXbQ', 'NewPI', 'ADMIN', NULL, NULL, 'uploads/avatars/3_1775320910.png', 15, 1, NULL, 'active', '2026-04-05 08:11:48', '2026-04-04 16:09:10', '2026-04-04 16:42:06');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `user_alert_dismissals`
+--
+
+CREATE TABLE `user_alert_dismissals` (
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `scope` enum('platform','tenant') NOT NULL,
+  `alert_id` int(10) UNSIGNED NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `user_forum_stats`
+--
+
+CREATE TABLE `user_forum_stats` (
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `post_count` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `score` int(11) NOT NULL DEFAULT 0,
+  `reputation` int(11) NOT NULL DEFAULT 0,
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -2488,7 +2881,28 @@ CREATE TABLE `user_profiles` (
 --
 
 INSERT INTO `user_profiles` (`user_id`, `first_name`, `last_name`, `birth_date`, `nationality`, `timezone`, `language`, `arma_callsign`, `bio`, `phone`, `emergency_contact`, `created_at`, `updated_at`) VALUES
-(1, 'Tanguy', 'TETARD', NULL, NULL, 'Europe/Paris', 'fr', 'E-10', NULL, '', NULL, '2026-03-13 19:29:32', '2026-03-14 00:03:18');
+(3, 'Tanguy', 'TETARD', NULL, NULL, 'Europe/Paris', 'fr', NULL, NULL, '', NULL, '2026-04-04 16:42:06', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `user_profile_display_settings`
+--
+
+CREATE TABLE `user_profile_display_settings` (
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `forum_alias` varchar(80) DEFAULT NULL,
+  `forum_label_mode` varchar(32) NOT NULL DEFAULT 'display_name',
+  `show_matricule_forum` tinyint(1) NOT NULL DEFAULT 1,
+  `show_grade_forum` tinyint(1) NOT NULL DEFAULT 1,
+  `show_unit_forum` tinyint(1) NOT NULL DEFAULT 1,
+  `show_bio_forum` tinyint(1) NOT NULL DEFAULT 1,
+  `fiche_show_email_to_others` tinyint(1) NOT NULL DEFAULT 0,
+  `fiche_show_matricule_to_others` tinyint(1) NOT NULL DEFAULT 1,
+  `public_roster_opt_in` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -2511,7 +2925,7 @@ CREATE TABLE `user_signatures` (
 --
 
 INSERT INTO `user_signatures` (`id`, `user_id`, `tenant_id`, `name`, `file_path`, `is_default`, `created_at`) VALUES
-(1, 1, 1, 'Signature principale', '1/1_69b6c6dce8f8c7.62450757.png', 1, '2026-03-15 14:49:00');
+(2, 3, 1, 'Signature principale', '1/3_69d13db7893584.81481083.png', 1, '2026-04-04 16:35:03');
 
 -- --------------------------------------------------------
 
@@ -2689,7 +3103,8 @@ ALTER TABLE `categories`
 ALTER TABLE `community_events`
   ADD PRIMARY KEY (`id`),
   ADD KEY `tenant_starts` (`tenant_id`,`starts_at`),
-  ADD KEY `fk_ce_creator` (`created_by_user_id`);
+  ADD KEY `fk_ce_creator` (`created_by_user_id`),
+  ADD KEY `ce_tenant_created` (`tenant_id`,`created_at`);
 
 --
 -- Index pour la table `community_event_rsvps`
@@ -2724,6 +3139,17 @@ ALTER TABLE `courrier_documents`
   ADD KEY `courrier_documents_preset_fk` (`preset_id`),
   ADD KEY `courrier_documents_validated_by_fk` (`validated_by`),
   ADD KEY `courrier_documents_signed_by_fk` (`signed_by`);
+
+--
+-- Index pour la table `courrier_document_notifications`
+--
+ALTER TABLE `courrier_document_notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_doc_recipient` (`document_id`,`recipient_user_id`),
+  ADD KEY `idx_tenant_recipient_unread` (`tenant_id`,`recipient_user_id`,`read_at`),
+  ADD KEY `idx_document` (`document_id`),
+  ADD KEY `cdn_recipient_fk` (`recipient_user_id`),
+  ADD KEY `cdn_creator_fk` (`created_by_user_id`);
 
 --
 -- Index pour la table `courrier_document_versions`
@@ -2872,7 +3298,9 @@ ALTER TABLE `document_workflows`
 --
 ALTER TABLE `enlistments`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `tenant_id_status` (`tenant_id`,`status`);
+  ADD KEY `tenant_id_status` (`tenant_id`,`status`),
+  ADD KEY `submitter_user_id` (`submitter_user_id`),
+  ADD KEY `enlistments_recruitment_preset_fk` (`recruitment_preset_id`);
 
 --
 -- Index pour la table `equipment_classes`
@@ -2898,6 +3326,14 @@ ALTER TABLE `fire_units`
   ADD KEY `mission_callsign` (`mission_id`,`callsign`);
 
 --
+-- Index pour la table `forum_attachments`
+--
+ALTER TABLE `forum_attachments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `tenant_id` (`tenant_id`),
+  ADD KEY `post_id` (`post_id`);
+
+--
 -- Index pour la table `forum_banned_words`
 --
 ALTER TABLE `forum_banned_words`
@@ -2919,7 +3355,9 @@ ALTER TABLE `forum_categories`
   ADD UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
   ADD KEY `tenant_id` (`tenant_id`),
   ADD KEY `parent_id` (`parent_id`),
-  ADD KEY `forum_categories_min_role_id_fk` (`min_role_id`);
+  ADD KEY `forum_categories_min_role_id_fk` (`min_role_id`),
+  ADD KEY `forum_categories_scope` (`scope`),
+  ADD KEY `forum_categories_owner_tenant` (`owner_tenant_id`);
 
 --
 -- Index pour la table `forum_category_subscriptions`
@@ -2929,6 +3367,31 @@ ALTER TABLE `forum_category_subscriptions`
   ADD KEY `forum_category_subscriptions_category_id_fk` (`category_id`);
 
 --
+-- Index pour la table `forum_moderation_logs`
+--
+ALTER TABLE `forum_moderation_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `tenant_id` (`tenant_id`),
+  ADD KEY `post_id` (`post_id`),
+  ADD KEY `forum_moderation_logs_user_fk` (`user_id`);
+
+--
+-- Index pour la table `forum_moderation_rules`
+--
+ALTER TABLE `forum_moderation_rules`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `tenant_id` (`tenant_id`);
+
+--
+-- Index pour la table `forum_notifications`
+--
+ALTER TABLE `forum_notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `tenant_user` (`tenant_id`,`user_id`),
+  ADD KEY `read_at` (`read_at`),
+  ADD KEY `forum_notifications_user_fk` (`user_id`);
+
+--
 -- Index pour la table `forum_posts`
 --
 ALTER TABLE `forum_posts`
@@ -2936,7 +3399,17 @@ ALTER TABLE `forum_posts`
   ADD KEY `tenant_id` (`tenant_id`),
   ADD KEY `topic_id` (`topic_id`),
   ADD KEY `topic_created` (`topic_id`,`created_at`),
-  ADD KEY `forum_posts_user_id_fk` (`user_id`);
+  ADD KEY `forum_posts_user_id_fk` (`user_id`),
+  ADD KEY `forum_posts_parent` (`parent_post_id`);
+
+--
+-- Index pour la table `forum_post_votes`
+--
+ALTER TABLE `forum_post_votes`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `forum_vote_user_post` (`post_id`,`user_id`),
+  ADD KEY `tenant_id` (`tenant_id`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Index pour la table `forum_read`
@@ -2958,6 +3431,21 @@ ALTER TABLE `forum_reports`
   ADD KEY `forum_reports_handled_by_fk` (`handled_by`);
 
 --
+-- Index pour la table `forum_report_events`
+--
+ALTER TABLE `forum_report_events`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `report_id` (`report_id`),
+  ADD KEY `forum_report_events_actor_fk` (`actor_id`);
+
+--
+-- Index pour la table `forum_tags`
+--
+ALTER TABLE `forum_tags`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `tenant_slug` (`tenant_id`,`slug`);
+
+--
 -- Index pour la table `forum_topics`
 --
 ALTER TABLE `forum_topics`
@@ -2965,7 +3453,8 @@ ALTER TABLE `forum_topics`
   ADD KEY `tenant_id` (`tenant_id`),
   ADD KEY `category_id` (`category_id`),
   ADD KEY `category_updated` (`category_id`,`updated_at`),
-  ADD KEY `forum_topics_user_id_fk` (`user_id`);
+  ADD KEY `forum_topics_user_id_fk` (`user_id`),
+  ADD KEY `forum_topics_best_answer` (`best_answer_post_id`);
 
 --
 -- Index pour la table `forum_topic_subscriptions`
@@ -2973,6 +3462,13 @@ ALTER TABLE `forum_topics`
 ALTER TABLE `forum_topic_subscriptions`
   ADD PRIMARY KEY (`user_id`,`topic_id`),
   ADD KEY `forum_topic_subscriptions_topic_id_fk` (`topic_id`);
+
+--
+-- Index pour la table `forum_topic_tags`
+--
+ALTER TABLE `forum_topic_tags`
+  ADD PRIMARY KEY (`topic_id`,`tag_id`),
+  ADD KEY `forum_topic_tags_tag_fk` (`tag_id`);
 
 --
 -- Index pour la table `grades`
@@ -3135,6 +3631,16 @@ ALTER TABLE `password_resets`
   ADD KEY `password_resets_user_id_fk` (`user_id`);
 
 --
+-- Index pour la table `pending_community_creates`
+--
+ALTER TABLE `pending_community_creates`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `pcc_token` (`token`),
+  ADD KEY `pcc_user` (`user_id`),
+  ADD KEY `pcc_stripe_sess` (`stripe_checkout_session_id`),
+  ADD KEY `pcc_tenant` (`tenant_id`);
+
+--
 -- Index pour la table `permissions`
 --
 ALTER TABLE `permissions`
@@ -3203,6 +3709,13 @@ ALTER TABLE `personnel_service_history`
   ADD KEY `personnel_service_history_date` (`event_date`);
 
 --
+-- Index pour la table `platform_alerts`
+--
+ALTER TABLE `platform_alerts`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_platform_alerts_active` (`is_active`,`sort_order`);
+
+--
 -- Index pour la table `platform_usage_events`
 --
 ALTER TABLE `platform_usage_events`
@@ -3218,6 +3731,13 @@ ALTER TABLE `recon_images`
   ADD KEY `tenant_mission` (`tenant_id`,`mission_id`),
   ADD KEY `author_callsign` (`author_callsign`),
   ADD KEY `captured_at` (`captured_at`);
+
+--
+-- Index pour la table `recruitment_presets`
+--
+ALTER TABLE `recruitment_presets`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Index pour la table `referral_attributions`
@@ -3242,7 +3762,8 @@ ALTER TABLE `referral_codes`
 ALTER TABLE `roles`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
-  ADD KEY `tenant_id` (`tenant_id`);
+  ADD KEY `tenant_id` (`tenant_id`),
+  ADD KEY `roles_tenant_layer` (`tenant_id`,`role_layer`);
 
 --
 -- Index pour la table `role_permissions`
@@ -3266,6 +3787,15 @@ ALTER TABLE `sessions`
   ADD PRIMARY KEY (`id`),
   ADD KEY `user_id_tenant_id` (`user_id`,`tenant_id`),
   ADD KEY `sessions_tenant_id_fk` (`tenant_id`);
+
+--
+-- Index pour la table `site_role_assignments`
+--
+ALTER TABLE `site_role_assignments`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_site_role_email_role` (`email_normalized`,`role_id`),
+  ADD KEY `email_normalized` (`email_normalized`),
+  ADD KEY `role_id` (`role_id`);
 
 --
 -- Index pour la table `site_settings`
@@ -3293,16 +3823,62 @@ ALTER TABLE `tenants`
   ADD KEY `tenants_owner_user_id_fk` (`owner_user_id`);
 
 --
+-- Index pour la table `tenant_alerts`
+--
+ALTER TABLE `tenant_alerts`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_tenant_alerts_tenant` (`tenant_id`,`is_active`,`sort_order`);
+
+--
 -- Index pour la table `tenant_atak_config`
 --
 ALTER TABLE `tenant_atak_config`
   ADD PRIMARY KEY (`tenant_id`);
 
 --
+-- Index pour la table `tenant_grade_overrides`
+--
+ALTER TABLE `tenant_grade_overrides`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `tenant_grade` (`tenant_id`,`grade_id`),
+  ADD KEY `tenant_id` (`tenant_id`),
+  ADD KEY `grade_id` (`grade_id`);
+
+--
 -- Index pour la table `tenant_matricule_config`
 --
 ALTER TABLE `tenant_matricule_config`
   ADD PRIMARY KEY (`tenant_id`);
+
+--
+-- Index pour la table `tenant_messages`
+--
+ALTER TABLE `tenant_messages`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `thread_created` (`thread_id`,`created_at`),
+  ADD KEY `tm_sender_fk` (`sender_user_id`);
+
+--
+-- Index pour la table `tenant_message_threads`
+--
+ALTER TABLE `tenant_message_threads`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `tenant_updated` (`tenant_id`,`updated_at`),
+  ADD KEY `tmt_creator_fk` (`created_by_user_id`);
+
+--
+-- Index pour la table `tenant_message_thread_users`
+--
+ALTER TABLE `tenant_message_thread_users`
+  ADD PRIMARY KEY (`thread_id`,`user_id`),
+  ADD KEY `user_tenant_lookup` (`user_id`);
+
+--
+-- Index pour la table `tenant_usage_counters`
+--
+ALTER TABLE `tenant_usage_counters`
+  ADD PRIMARY KEY (`tenant_id`,`metric_key`,`period_start`),
+  ADD KEY `tenant_metric` (`tenant_id`,`metric_key`);
 
 --
 -- Index pour la table `training_audit_log`
@@ -3423,14 +3999,34 @@ ALTER TABLE `units`
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `tenant_id_email` (`tenant_id`,`email`),
+  ADD UNIQUE KEY `users_tenant_profile_slug` (`tenant_id`,`profile_slug`),
   ADD KEY `tenant_id` (`tenant_id`),
   ADD KEY `role_id` (`role_id`),
   ADD KEY `grade_id` (`grade_id`);
 
 --
+-- Index pour la table `user_alert_dismissals`
+--
+ALTER TABLE `user_alert_dismissals`
+  ADD PRIMARY KEY (`user_id`,`scope`,`alert_id`);
+
+--
+-- Index pour la table `user_forum_stats`
+--
+ALTER TABLE `user_forum_stats`
+  ADD PRIMARY KEY (`tenant_id`,`user_id`),
+  ADD KEY `user_forum_stats_user_fk` (`user_id`);
+
+--
 -- Index pour la table `user_profiles`
 --
 ALTER TABLE `user_profiles`
+  ADD PRIMARY KEY (`user_id`);
+
+--
+-- Index pour la table `user_profile_display_settings`
+--
+ALTER TABLE `user_profile_display_settings`
   ADD PRIMARY KEY (`user_id`);
 
 --
@@ -3553,7 +4149,7 @@ ALTER TABLE `atak_units`
 -- AUTO_INCREMENT pour la table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT pour la table `blocked_indicators`
@@ -3589,13 +4185,19 @@ ALTER TABLE `community_invitations`
 -- AUTO_INCREMENT pour la table `courrier_documents`
 --
 ALTER TABLE `courrier_documents`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT pour la table `courrier_document_notifications`
+--
+ALTER TABLE `courrier_document_notifications`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `courrier_document_versions`
 --
 ALTER TABLE `courrier_document_versions`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT pour la table `courrier_snippets`
@@ -3625,7 +4227,7 @@ ALTER TABLE `document_audit_log`
 -- AUTO_INCREMENT pour la table `document_categories`
 --
 ALTER TABLE `document_categories`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT pour la table `document_collaborators`
@@ -3685,7 +4287,7 @@ ALTER TABLE `document_versions`
 -- AUTO_INCREMENT pour la table `document_workflows`
 --
 ALTER TABLE `document_workflows`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT pour la table `enlistments`
@@ -3697,7 +4299,7 @@ ALTER TABLE `enlistments`
 -- AUTO_INCREMENT pour la table `equipment_classes`
 --
 ALTER TABLE `equipment_classes`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT pour la table `fire_tables`
@@ -3709,6 +4311,12 @@ ALTER TABLE `fire_tables`
 -- AUTO_INCREMENT pour la table `fire_units`
 --
 ALTER TABLE `fire_units`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `forum_attachments`
+--
+ALTER TABLE `forum_attachments`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -3727,7 +4335,25 @@ ALTER TABLE `forum_blacklisted_domains`
 -- AUTO_INCREMENT pour la table `forum_categories`
 --
 ALTER TABLE `forum_categories`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
+--
+-- AUTO_INCREMENT pour la table `forum_moderation_logs`
+--
+ALTER TABLE `forum_moderation_logs`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `forum_moderation_rules`
+--
+ALTER TABLE `forum_moderation_rules`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `forum_notifications`
+--
+ALTER TABLE `forum_notifications`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `forum_posts`
@@ -3736,9 +4362,27 @@ ALTER TABLE `forum_posts`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
+-- AUTO_INCREMENT pour la table `forum_post_votes`
+--
+ALTER TABLE `forum_post_votes`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT pour la table `forum_reports`
 --
 ALTER TABLE `forum_reports`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `forum_report_events`
+--
+ALTER TABLE `forum_report_events`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `forum_tags`
+--
+ALTER TABLE `forum_tags`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -3862,10 +4506,16 @@ ALTER TABLE `password_resets`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT pour la table `pending_community_creates`
+--
+ALTER TABLE `pending_community_creates`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT pour la table `permissions`
 --
 ALTER TABLE `permissions`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- AUTO_INCREMENT pour la table `personnel_admin_data`
@@ -3877,7 +4527,7 @@ ALTER TABLE `personnel_admin_data`
 -- AUTO_INCREMENT pour la table `personnel_admin_panels`
 --
 ALTER TABLE `personnel_admin_panels`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT pour la table `personnel_assignments`
@@ -3910,16 +4560,28 @@ ALTER TABLE `personnel_service_history`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT pour la table `platform_alerts`
+--
+ALTER TABLE `platform_alerts`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT pour la table `platform_usage_events`
 --
 ALTER TABLE `platform_usage_events`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT pour la table `recon_images`
 --
 ALTER TABLE `recon_images`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `recruitment_presets`
+--
+ALTER TABLE `recruitment_presets`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pour la table `referral_attributions`
@@ -3937,13 +4599,19 @@ ALTER TABLE `referral_codes`
 -- AUTO_INCREMENT pour la table `roles`
 --
 ALTER TABLE `roles`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT pour la table `security_events`
 --
 ALTER TABLE `security_events`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `site_role_assignments`
+--
+ALTER TABLE `site_role_assignments`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pour la table `site_settings`
@@ -3961,7 +4629,31 @@ ALTER TABLE `subscription_plans`
 -- AUTO_INCREMENT pour la table `tenants`
 --
 ALTER TABLE `tenants`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT pour la table `tenant_alerts`
+--
+ALTER TABLE `tenant_alerts`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `tenant_grade_overrides`
+--
+ALTER TABLE `tenant_grade_overrides`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `tenant_messages`
+--
+ALTER TABLE `tenant_messages`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `tenant_message_threads`
+--
+ALTER TABLE `tenant_message_threads`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `training_audit_log`
@@ -4051,13 +4743,13 @@ ALTER TABLE `units`
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pour la table `user_signatures`
 --
 ALTER TABLE `user_signatures`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pour la table `user_units`
@@ -4187,6 +4879,15 @@ ALTER TABLE `courrier_documents`
   ADD CONSTRAINT `courrier_documents_validated_by_fk` FOREIGN KEY (`validated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
+-- Contraintes pour la table `courrier_document_notifications`
+--
+ALTER TABLE `courrier_document_notifications`
+  ADD CONSTRAINT `cdn_creator_fk` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `cdn_doc_fk` FOREIGN KEY (`document_id`) REFERENCES `courrier_documents` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `cdn_recipient_fk` FOREIGN KEY (`recipient_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `cdn_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
+
+--
 -- Contraintes pour la table `courrier_document_versions`
 --
 ALTER TABLE `courrier_document_versions`
@@ -4294,6 +4995,8 @@ ALTER TABLE `document_workflows`
 -- Contraintes pour la table `enlistments`
 --
 ALTER TABLE `enlistments`
+  ADD CONSTRAINT `enlistments_recruitment_preset_fk` FOREIGN KEY (`recruitment_preset_id`) REFERENCES `recruitment_presets` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `enlistments_submitter_user_fk` FOREIGN KEY (`submitter_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `enlistments_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
@@ -4301,6 +5004,13 @@ ALTER TABLE `enlistments`
 --
 ALTER TABLE `equipment_classes`
   ADD CONSTRAINT `equipment_classes_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `forum_attachments`
+--
+ALTER TABLE `forum_attachments`
+  ADD CONSTRAINT `forum_attachments_post_fk` FOREIGN KEY (`post_id`) REFERENCES `forum_posts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `forum_attachments_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `forum_banned_words`
@@ -4319,6 +5029,7 @@ ALTER TABLE `forum_blacklisted_domains`
 --
 ALTER TABLE `forum_categories`
   ADD CONSTRAINT `forum_categories_min_role_id_fk` FOREIGN KEY (`min_role_id`) REFERENCES `roles` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `forum_categories_owner_tenant_fk` FOREIGN KEY (`owner_tenant_id`) REFERENCES `tenants` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `forum_categories_parent_id_fk` FOREIGN KEY (`parent_id`) REFERENCES `forum_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `forum_categories_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -4330,12 +5041,42 @@ ALTER TABLE `forum_category_subscriptions`
   ADD CONSTRAINT `forum_category_subscriptions_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Contraintes pour la table `forum_moderation_logs`
+--
+ALTER TABLE `forum_moderation_logs`
+  ADD CONSTRAINT `forum_moderation_logs_post_fk` FOREIGN KEY (`post_id`) REFERENCES `forum_posts` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `forum_moderation_logs_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `forum_moderation_logs_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+--
+-- Contraintes pour la table `forum_moderation_rules`
+--
+ALTER TABLE `forum_moderation_rules`
+  ADD CONSTRAINT `forum_moderation_rules_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `forum_notifications`
+--
+ALTER TABLE `forum_notifications`
+  ADD CONSTRAINT `forum_notifications_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `forum_notifications_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
 -- Contraintes pour la table `forum_posts`
 --
 ALTER TABLE `forum_posts`
+  ADD CONSTRAINT `forum_posts_parent_fk` FOREIGN KEY (`parent_post_id`) REFERENCES `forum_posts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `forum_posts_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `forum_posts_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `forum_posts_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `forum_post_votes`
+--
+ALTER TABLE `forum_post_votes`
+  ADD CONSTRAINT `forum_post_votes_post_fk` FOREIGN KEY (`post_id`) REFERENCES `forum_posts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `forum_post_votes_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `forum_post_votes_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `forum_read`
@@ -4355,9 +5096,23 @@ ALTER TABLE `forum_reports`
   ADD CONSTRAINT `forum_reports_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
+-- Contraintes pour la table `forum_report_events`
+--
+ALTER TABLE `forum_report_events`
+  ADD CONSTRAINT `forum_report_events_actor_fk` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `forum_report_events_report_fk` FOREIGN KEY (`report_id`) REFERENCES `forum_reports` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `forum_tags`
+--
+ALTER TABLE `forum_tags`
+  ADD CONSTRAINT `forum_tags_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
+
+--
 -- Contraintes pour la table `forum_topics`
 --
 ALTER TABLE `forum_topics`
+  ADD CONSTRAINT `forum_topics_best_answer_fk` FOREIGN KEY (`best_answer_post_id`) REFERENCES `forum_posts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `forum_topics_category_id_fk` FOREIGN KEY (`category_id`) REFERENCES `forum_categories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `forum_topics_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `forum_topics_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -4368,6 +5123,13 @@ ALTER TABLE `forum_topics`
 ALTER TABLE `forum_topic_subscriptions`
   ADD CONSTRAINT `forum_topic_subscriptions_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `forum_topic_subscriptions_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `forum_topic_tags`
+--
+ALTER TABLE `forum_topic_tags`
+  ADD CONSTRAINT `forum_topic_tags_tag_fk` FOREIGN KEY (`tag_id`) REFERENCES `forum_tags` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `forum_topic_tags_topic_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `grades`
@@ -4524,6 +5286,12 @@ ALTER TABLE `recon_images`
   ADD CONSTRAINT `recon_images_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
 
 --
+-- Contraintes pour la table `recruitment_presets`
+--
+ALTER TABLE `recruitment_presets`
+  ADD CONSTRAINT `recruitment_presets_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Contraintes pour la table `referral_attributions`
 --
 ALTER TABLE `referral_attributions`
@@ -4557,6 +5325,12 @@ ALTER TABLE `sessions`
   ADD CONSTRAINT `sessions_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
+-- Contraintes pour la table `site_role_assignments`
+--
+ALTER TABLE `site_role_assignments`
+  ADD CONSTRAINT `site_role_assignments_role_fk` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
+
+--
 -- Contraintes pour la table `site_settings`
 --
 ALTER TABLE `site_settings`
@@ -4569,16 +5343,55 @@ ALTER TABLE `tenants`
   ADD CONSTRAINT `tenants_owner_user_id_fk` FOREIGN KEY (`owner_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
+-- Contraintes pour la table `tenant_alerts`
+--
+ALTER TABLE `tenant_alerts`
+  ADD CONSTRAINT `tenant_alerts_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Contraintes pour la table `tenant_atak_config`
 --
 ALTER TABLE `tenant_atak_config`
   ADD CONSTRAINT `tenant_atak_config_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Contraintes pour la table `tenant_grade_overrides`
+--
+ALTER TABLE `tenant_grade_overrides`
+  ADD CONSTRAINT `tenant_grade_overrides_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Contraintes pour la table `tenant_matricule_config`
 --
 ALTER TABLE `tenant_matricule_config`
   ADD CONSTRAINT `tenant_matricule_config_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `tenant_messages`
+--
+ALTER TABLE `tenant_messages`
+  ADD CONSTRAINT `tm_sender_fk` FOREIGN KEY (`sender_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `tm_thread_fk` FOREIGN KEY (`thread_id`) REFERENCES `tenant_message_threads` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `tenant_message_threads`
+--
+ALTER TABLE `tenant_message_threads`
+  ADD CONSTRAINT `tmt_creator_fk` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `tmt_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `tenant_message_thread_users`
+--
+ALTER TABLE `tenant_message_thread_users`
+  ADD CONSTRAINT `tmtu_thread_fk` FOREIGN KEY (`thread_id`) REFERENCES `tenant_message_threads` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `tmtu_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `tenant_usage_counters`
+--
+ALTER TABLE `tenant_usage_counters`
+  ADD CONSTRAINT `fk_tuc_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `training_certificates`
@@ -4673,10 +5486,29 @@ ALTER TABLE `users`
   ADD CONSTRAINT `users_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Contraintes pour la table `user_alert_dismissals`
+--
+ALTER TABLE `user_alert_dismissals`
+  ADD CONSTRAINT `user_alert_dismissals_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `user_forum_stats`
+--
+ALTER TABLE `user_forum_stats`
+  ADD CONSTRAINT `user_forum_stats_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `user_forum_stats_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
 -- Contraintes pour la table `user_profiles`
 --
 ALTER TABLE `user_profiles`
   ADD CONSTRAINT `user_profiles_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `user_profile_display_settings`
+--
+ALTER TABLE `user_profile_display_settings`
+  ADD CONSTRAINT `user_profile_display_settings_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Contraintes pour la table `user_signatures`

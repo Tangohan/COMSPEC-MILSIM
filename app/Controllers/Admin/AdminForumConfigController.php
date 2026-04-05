@@ -8,7 +8,6 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\ForumCategoryRepository;
-use App\Repositories\SiteSettingsRepository;
 use App\Repositories\ForumBannedWordRepository;
 use App\Repositories\ForumBlacklistedDomainRepository;
 
@@ -16,7 +15,6 @@ class AdminForumConfigController
 {
     public function __construct(
         private ForumCategoryRepository $forumCategoryRepository,
-        private SiteSettingsRepository $siteSettingsRepository,
         private ForumBannedWordRepository $bannedWordRepository,
         private ForumBlacklistedDomainRepository $blacklistedDomainRepository
     ) {}
@@ -29,14 +27,11 @@ class AdminForumConfigController
         }
         $tenantId = (int) $tenantId;
         $categories = $this->forumCategoryRepository->listForTenantWithChildren($tenantId);
-        $forumConfig = config('forum') ?? [];
-        $siteSettings = $this->siteSettingsRepository->getForumSettings($tenantId);
-
         return Response::view('layout.main', [
             'content' => 'admin.forum-config.index',
             'title' => 'Configuration forum — Chambre des Murmures',
             'categories' => $categories,
-            'forumConfig' => array_merge($forumConfig, $siteSettings),
+            'forumConfig' => forum_config_for_tenant($tenantId),
             'bannedWords' => $this->bannedWordRepository->listForTenant($tenantId),
             'blacklistedDomains' => $this->blacklistedDomainRepository->listForTenant($tenantId),
         ]);

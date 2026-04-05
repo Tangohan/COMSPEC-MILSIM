@@ -72,13 +72,11 @@ class AtakController
                 $userId = (int) ($u['id'] ?? 0);
                 $profile = $this->userProfileRepository->getByUserId($userId);
                 $callsign = trim((string) ($u['callsign'] ?? ''));
-                $armaCallsign = trim((string) ($profile['arma_callsign'] ?? ''));
+                $legacyArma = trim((string) ($profile['arma_callsign'] ?? ''));
                 $personnelUrl = url('personnel/' . $userId);
-                if ($callsign !== '') {
-                    $atakCallsignToUser[strtoupper($callsign)] = ['userId' => $userId, 'url' => $personnelUrl];
-                }
-                if ($armaCallsign !== '' && ! isset($atakCallsignToUser[strtoupper($armaCallsign)])) {
-                    $atakCallsignToUser[strtoupper($armaCallsign)] = ['userId' => $userId, 'url' => $personnelUrl];
+                $effective = $callsign !== '' ? $callsign : $legacyArma;
+                if ($effective !== '') {
+                    $atakCallsignToUser[strtoupper($effective)] = ['userId' => $userId, 'url' => $personnelUrl];
                 }
             }
         }
@@ -109,13 +107,15 @@ class AtakController
         $currentUser = $this->authService->user();
         if ($currentUser) {
             $profile = $this->userProfileRepository->getByUserId((int) $currentUser['id']);
-            $currentUser['arma_callsign'] = $profile['arma_callsign'] ?? null;
+            $uCall = trim((string) ($currentUser['callsign'] ?? ''));
+            $legacy = trim((string) ($profile['arma_callsign'] ?? ''));
+            $currentUser['arma_callsign'] = $uCall !== '' ? $uCall : ($legacy !== '' ? $legacy : null);
         }
         $atakUserForJs = null;
         if ($currentUser) {
             $atakUserForJs = [
                 'displayName' => $currentUser['display_name'] ?? '',
-                'callsign' => $currentUser['callsign'] ?? '',
+                'callsign' => trim((string) ($currentUser['callsign'] ?? '')) ?: (trim((string) (($currentUser['arma_callsign'] ?? ''))) ?: ''),
                 'steamId' => $currentUser['steam_id'] ?? null,
                 'armaCallsign' => $currentUser['arma_callsign'] ?? null,
             ];

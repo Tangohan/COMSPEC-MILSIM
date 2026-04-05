@@ -18,7 +18,7 @@ foreach ($allPermissions as $p) {
     <h1 class="text-2xl font-black text-slate-900 mb-2">Modifier les permissions — <?= htmlspecialchars($role['name']) ?></h1>
     <p class="text-slate-600 text-sm mb-6">Cochez les permissions à attribuer à ce rôle.</p>
 
-    <form method="post" action="<?= url('admin/system/roles/' . $rid . '/update') ?>">
+    <form method="post" action="<?= url('admin/roles/' . $rid . '/update') ?>">
         <?= \App\Core\Csrf::field() ?>
         <div class="space-y-6">
             <?php foreach ($byModule as $module => $perms): ?>
@@ -40,7 +40,7 @@ foreach ($allPermissions as $p) {
         </div>
         <div class="mt-6 flex gap-3">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Enregistrer</button>
-            <a href="<?= url('admin/system/roles/' . $rid) ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>
+            <a href="<?= url('admin/roles/' . $rid) ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>
         </div>
     </form>
 </div>

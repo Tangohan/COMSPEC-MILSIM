@@ -83,13 +83,24 @@ class HubController
             'letter' => 'F',
         ];
 
-        if ($gate->allows('admin.access') || $gate->allows('admin.system') || $gate->allows('admin.organization')) {
+        $canSystem = $gate->allows('admin.system');
+        $canOrg = $gate->allows('admin.organization') || $gate->allows('admin.access');
+        if ($canSystem) {
             $entries[] = [
-                'label' => 'Administration',
+                'label' => 'Admin plateforme',
                 'url' => url('admin'),
-                'description' => 'Centre d\'administration système et organisation.',
-                'badge' => 'Administration',
+                'description' => 'Super-administration : rôles site, paramètres, audit, maintenance.',
+                'badge' => 'Plateforme',
                 'letter' => 'A',
+            ];
+        }
+        if ($canOrg) {
+            $entries[] = [
+                'label' => 'Back-office',
+                'url' => url('back-office'),
+                'description' => 'Gestion de la communauté : membres, invitations, structure.',
+                'badge' => 'Communauté',
+                'letter' => 'B',
             ];
         }
 

@@ -69,19 +69,22 @@ class GroupAdminController
             'parent_id' => $request->input('parent_id') ?: null,
             'commander_user_id' => $request->input('commander_user_id') ?: null,
             'display_order' => (int) ($request->input('display_order') ?? 0),
+            'public_blurb' => trim((string) $request->input('public_blurb', '')) ?: null,
+            'public_tags' => $request->input('public_tags', ''),
+            'show_on_public_page' => $request->input('show_on_public_page') ? 1 : 0,
         ];
         if ($data['name'] === '') {
             Session::flash('error', 'Le nom est requis.');
-            return Response::redirect(url('admin/organization/groups/create'));
+            return Response::redirect(url('back-office/groups/create'));
         }
         if ($this->unitRepository->slugExists($tenantId, $effectiveSlug)) {
             Session::flash('error', 'Ce slug existe déjà.');
-            return Response::redirect(url('admin/organization/groups/create'));
+            return Response::redirect(url('back-office/groups/create'));
         }
         $unit = $this->unitRepository->create($tenantId, $data);
         Session::flash('success', 'Groupe créé.');
         $newId = isset($unit['id']) ? (int) $unit['id'] : 0;
-        return Response::redirect($newId ? url('admin/organization/groups/' . $newId) : url('admin/organization/groups'));
+        return Response::redirect($newId ? url('back-office/groups/' . $newId) : url('back-office/groups'));
     }
 
     public function show(Request $request, array $params = []): Response
@@ -89,12 +92,12 @@ class GroupAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/groups'));
+            return Response::redirect(url('back-office/groups'));
         }
         $unit = $this->unitRepository->findById($id, $tenantId);
         if (!$unit || ($unit['type'] ?? '') !== self::TYPE) {
             Session::flash('error', 'Groupe introuvable.');
-            return Response::redirect(url('admin/organization/groups'));
+            return Response::redirect(url('back-office/groups'));
         }
         $memberIds = $this->userRepository->getIdsByUnit($id);
         $allUsers = $this->userRepository->allForTenant($tenantId);
@@ -115,12 +118,12 @@ class GroupAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/groups'));
+            return Response::redirect(url('back-office/groups'));
         }
         $unit = $this->unitRepository->findById($id, $tenantId);
         if (!$unit || ($unit['type'] ?? '') !== self::TYPE) {
             Session::flash('error', 'Groupe introuvable.');
-            return Response::redirect(url('admin/organization/groups'));
+            return Response::redirect(url('back-office/groups'));
         }
         $parents = array_filter($this->unitRepository->getGroups($tenantId), fn ($u) => (int) $u['id'] !== $id);
         $users = $this->userRepository->allForTenant($tenantId);
@@ -138,17 +141,17 @@ class GroupAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/groups'));
+            return Response::redirect(url('back-office/groups'));
         }
         $unit = $this->unitRepository->findById($id, $tenantId);
         if (!$unit || ($unit['type'] ?? '') !== self::TYPE) {
             Session::flash('error', 'Groupe introuvable.');
-            return Response::redirect(url('admin/organization/groups'));
+            return Response::redirect(url('back-office/groups'));
         }
         $slug = trim((string) $request->input('slug')) ?: $this->slugify(trim((string) $request->input('name')));
         if ($slug && $this->unitRepository->slugExists($tenantId, $slug, $id)) {
             Session::flash('error', 'Ce slug existe déjà.');
-            return Response::redirect(url('admin/organization/groups/' . $id . '/edit'));
+            return Response::redirect(url('back-office/groups/' . $id . '/edit'));
         }
         $this->unitRepository->update($id, $tenantId, [
             'name' => $request->input('name'),
@@ -158,9 +161,12 @@ class GroupAdminController
             'parent_id' => $request->input('parent_id') ?: null,
             'commander_user_id' => $request->input('commander_user_id') ?: null,
             'display_order' => (int) ($request->input('display_order') ?? 0),
+            'public_blurb' => trim((string) $request->input('public_blurb', '')) ?: null,
+            'public_tags' => $request->input('public_tags', ''),
+            'show_on_public_page' => $request->input('show_on_public_page') ? 1 : 0,
         ]);
         Session::flash('success', 'Groupe mis à jour.');
-        return Response::redirect(url('admin/organization/groups/' . $id));
+        return Response::redirect(url('back-office/groups/' . $id));
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -168,16 +174,16 @@ class GroupAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/groups'));
+            return Response::redirect(url('back-office/groups'));
         }
         $unit = $this->unitRepository->findById($id, $tenantId);
         if (!$unit || ($unit['type'] ?? '') !== self::TYPE) {
             Session::flash('error', 'Groupe introuvable.');
-            return Response::redirect(url('admin/organization/groups'));
+            return Response::redirect(url('back-office/groups'));
         }
         $this->unitRepository->delete($id, $tenantId);
         Session::flash('success', 'Groupe supprimé.');
-        return Response::redirect(url('admin/organization/groups'));
+        return Response::redirect(url('back-office/groups'));
     }
 
     private function slugify(string $name): string

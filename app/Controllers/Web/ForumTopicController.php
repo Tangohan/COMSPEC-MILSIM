@@ -12,13 +12,25 @@ use App\Core\Validator;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumPostRepository;
 use App\Repositories\ForumCategoryRepository;
+use App\Repositories\ForumVoteRepository;
+use App\Repositories\ForumAttachmentRepository;
+use App\Repositories\ForumNotificationRepository;
+use App\Repositories\UserForumStatsRepository;
+use App\Repositories\ForumAuthorIdentityRepository;
+use App\Services\Profile\ProfilePublicIdentityService;
 
 class ForumTopicController
 {
     public function __construct(
         private ForumTopicRepository $topicRepository,
         private ForumPostRepository $postRepository,
-        private ForumCategoryRepository $categoryRepository
+        private ForumCategoryRepository $categoryRepository,
+        private ProfilePublicIdentityService $profilePublicIdentityService,
+        private ForumAuthorIdentityRepository $forumAuthorIdentityRepository,
+        private ForumVoteRepository $voteRepository,
+        private ForumAttachmentRepository $forumAttachmentRepository,
+        private ForumNotificationRepository $forumNotificationRepository,
+        private UserForumStatsRepository $userForumStatsRepository
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -38,8 +50,14 @@ class ForumTopicController
         if (!$topic) {
             return (new Response())->setStatusCode(404)->setBody('Sujet non trouvé.');
         }
+        $topicEnriched = $this->profilePublicIdentityService->enrichTopicRowsWithPublicNames(
+            [$topic],
+            $this->forumAuthorIdentityRepository,
+            (int) $tenantId
+        );
+        $topic = $topicEnriched[0];
 
-        $isModo = function_exists('can') && can('forum.moderate');
+        $isModo = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
         if (!empty($topic['is_hidden']) && !$isModo) {
             return (new Response())->setStatusCode(404)->setBody('Sujet non trouvé.');
         }
@@ -58,17 +76,33 @@ class ForumTopicController
         $postCount = $this->postRepository->countByTopic($id, $isModo);
         $totalPages = max(1, (int) ceil($postCount / $perPage));
         $posts = $this->postRepository->listByTopicPaginated($id, $page, $perPage, $isModo);
+        foreach ($posts as $i => $p) {
+            $p = $this->profilePublicIdentityService->filterAuthorFieldsForForumViewer($p, $isModo);
+            $enriched = $this->profilePublicIdentityService->enrichFromForumPostRow($p);
+            $p['author_display_resolved'] = $enriched['public_display_name'];
+            if ($isModo) {
+                $p['mod_legal_full_name'] = $enriched['legal_full_name'];
+                $p['mod_author_email'] = $enriched['author_email'];
+                $p['mod_author_user_id'] = $enriched['author_user_id'];
+            }
+            $p['vote_score'] = $this->voteRepository->sumForPost((int) $p['id']);
+            $p['vote_user_value'] = $this->voteRepository->getUserVote((int) $p['id'], (int) $userId);
+            $p['attachments'] = $this->forumAttachmentRepository->listForPost((int) $p['id'], (int) $tenantId);
+            $posts[$i] = $p;
+        }
         $isSubscribed = $this->topicRepository->isSubscribed($userId, $id);
 
         $canReply = function_exists('can') && can('forum.reply') && empty($topic['is_locked']) && empty($topic['is_archived']);
         $firstPost = $this->postRepository->getFirstPostOfTopic($id);
         $firstPostId = $firstPost ? (int) $firstPost['id'] : null;
-        $moderationTutorialHtml = (string) (config('forum')['moderation_tutorial_html'] ?? '');
+        $forumCfg = forum_config_for_tenant((int) $tenantId);
+        $moderationTutorialHtml = (string) ($forumCfg['moderation_tutorial_html'] ?? '');
+        $csrfToken = \App\Core\Csrf::token();
 
         return Response::view('layout.forum', [
             'content' => 'forum.topic',
             'title' => $topic['title'],
-            'forumConfig' => config('forum') ?? [],
+            'forumConfig' => $forumCfg,
             'topic' => $topic,
             'posts' => $posts,
             'page' => $page,
@@ -79,6 +113,7 @@ class ForumTopicController
             'isModo' => $isModo,
             'firstPostId' => $firstPostId,
             'moderationTutorialHtml' => $moderationTutorialHtml,
+            'csrfToken' => $csrfToken,
         ]);
     }
 
@@ -126,9 +161,44 @@ class ForumTopicController
 
         $this->postRepository->create($tenantId, $id, $userId, $body);
         $this->topicRepository->touchUpdatedAt($id);
+        $this->userForumStatsRepository->incrementPostCount((int) $tenantId, (int) $userId);
+        $this->notifyTopicParticipants((int) $tenantId, $id, (int) $userId, $topic);
 
         Session::flash('success', 'Réponse publiée.');
         return Response::redirect(url('forum/topic/' . $id));
+    }
+
+    private function notifyTopicParticipants(int $tenantId, int $topicId, int $authorUserId, array $topicRow): void
+    {
+        if (!$this->forumNotificationRepository->tableExists()) {
+            return;
+        }
+        try {
+            $pdo = \App\Core\Database::getPdo();
+            $stmt = $pdo->prepare(
+                'SELECT DISTINCT user_id FROM forum_posts WHERE topic_id = ? AND user_id IS NOT NULL AND user_id != ?'
+            );
+            $stmt->execute([$topicId, $authorUserId]);
+            $ids = array_column($stmt->fetchAll(\PDO::FETCH_ASSOC), 'user_id');
+            $subStmt = $pdo->prepare('SELECT user_id FROM forum_topic_subscriptions WHERE topic_id = ? AND user_id != ?');
+            $subStmt->execute([$topicId, $authorUserId]);
+            foreach ($subStmt->fetchAll(\PDO::FETCH_ASSOC) as $r) {
+                $ids[] = (int) $r['user_id'];
+            }
+            $ids = array_unique(array_map('intval', $ids));
+            $title = (string) ($topicRow['title'] ?? 'Sujet');
+            foreach ($ids as $uid) {
+                if ($uid <= 0) {
+                    continue;
+                }
+                $this->forumNotificationRepository->create($tenantId, $uid, 'topic_reply', [
+                    'topic_id' => $topicId,
+                    'title' => $title,
+                ]);
+            }
+        } catch (\Throwable) {
+            // ignore
+        }
     }
 
     public function subscribe(Request $request, array $params = []): Response

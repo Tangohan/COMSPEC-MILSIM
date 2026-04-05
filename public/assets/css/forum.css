@@ -125,3 +125,8 @@ body.forum-mode-day .post-content code {
   border: 1px solid var(--forum-border);
   color: var(--forum-text);
 }
+
+/* Hero forum avec image de fond (overlay lisible) */
+.forum-hero-overlay {
+  pointer-events: none;
+}

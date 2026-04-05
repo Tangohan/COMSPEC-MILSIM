@@ -6,7 +6,7 @@
 <div class="max-w-4xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Analytics (30 jours)</h1>
-        <a href="<?= url('admin/organization') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
+        <a href="<?= url('back-office') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
     </div>
     <p class="text-slate-600 text-sm mb-6">Depuis <?= htmlspecialchars($since) ?> (UTC serveur).</p>
     <dl class="grid sm:grid-cols-2 gap-4">

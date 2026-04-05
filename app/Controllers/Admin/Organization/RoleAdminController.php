@@ -48,7 +48,7 @@ class RoleAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/roles'));
+            return Response::redirect(url('back-office/roles'));
         }
         $roles = $this->rolePermissionService->listOrganizationRoles($tenantId);
         $role = null;
@@ -60,7 +60,7 @@ class RoleAdminController
         }
         if (!$role) {
             Session::flash('error', 'Rôle introuvable.');
-            return Response::redirect(url('admin/organization/roles'));
+            return Response::redirect(url('back-office/roles'));
         }
         $permissionIds = $this->rolePermissionService->getPermissionIdsForRole($id);
         $allPermissions = $this->permissionRepository->allForTenant($tenantId);

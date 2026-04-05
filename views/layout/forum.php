@@ -16,118 +16,18 @@ $forumConfig = $forumConfig ?? config('forum') ?? [];
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
     <link href="<?= $baseUrl ?>/assets/css/styles.css" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/portal-nav.css'))): ?>
+    <link href="<?= $baseUrl ?>/assets/css/portal-nav.css" rel="stylesheet">
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/forum.css'))): ?>
     <link href="<?= $baseUrl ?>/assets/css/forum.css" rel="stylesheet">
     <?php endif; ?>
-    <style>.nav-dropdown.open .nav-dropdown-panel{display:block;}</style>
 </head>
 <body class="forum-mode-day bg-slate-50 text-slate-900 min-h-screen overflow-x-hidden font-sans antialiased" style="font-family: 'Inter', sans-serif;">
-    <header class="sticky top-0 z-50 w-full bg-slate-50/80 backdrop-blur-xl border-b border-slate-200/60">
-        <div class="w-full px-6 lg:px-10 h-14 flex items-center justify-between">
-            <!-- Brand -->
-            <a href="<?= $baseUrl ?>/" class="text-sm font-black tracking-[0.25em] uppercase text-slate-900 hover:text-emerald-700 transition-colors">
-                Athena
-            </a>
-
-            <!-- Navigation -->
-            <nav class="flex items-center gap-8 text-xs font-semibold uppercase">
-                <!-- Principal -->
-                <div class="flex items-center gap-6">
-                    <a href="<?= $baseUrl ?>/" class="text-slate-500 hover:text-slate-900 transition-colors">Accueil</a>
-                    <a href="<?= $baseUrl ?>/dashboard" class="text-slate-500 hover:text-slate-900 transition-colors">Dashboard</a>
-                    <a href="<?= $baseUrl ?>/forum" class="text-emerald-700 hover:text-emerald-600 transition-colors"><?= htmlspecialchars($forumConfig['name'] ?? 'Salle de brief') ?></a>
-                </div>
-
-                <?php if (\App\Core\Session::get('user_id')): ?>
-                <!-- Opérations -->
-                <div class="relative group nav-dropdown">
-                    <button type="button" class="nav-dropdown-trigger text-slate-500 hover:text-slate-900 flex items-center gap-1 transition-colors" aria-expanded="false" aria-haspopup="true">
-                        Opérations
-                        <svg class="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div class="nav-dropdown-panel absolute hidden top-full mt-3 w-44 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50 group-[.open]:block">
-                        <a href="<?= $baseUrl ?>/orbat" class="block px-4 py-2 hover:bg-slate-50 text-slate-700 transition-colors">ORBAT</a>
-                        <a href="<?= $baseUrl ?>/atak" class="block px-4 py-2 hover:bg-slate-50 text-slate-700 transition-colors">ATAK</a>
-                    </div>
-                </div>
-
-                <!-- Ressources -->
-                <div class="relative group nav-dropdown">
-                    <button type="button" class="nav-dropdown-trigger text-slate-500 hover:text-slate-900 flex items-center gap-1 transition-colors" aria-expanded="false" aria-haspopup="true">
-                        Ressources
-                        <svg class="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div class="nav-dropdown-panel absolute hidden top-full mt-3 w-48 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50 group-[.open]:block">
-                        <a href="<?= $baseUrl ?>/formations" class="block px-4 py-2 hover:bg-slate-50 text-slate-700 transition-colors">Formations</a>
-                        <?php if (\App\Core\Gate::getInstance()->allows('documents.view')): ?>
-                        <a href="<?= $baseUrl ?>/documents" class="block px-4 py-2 hover:bg-slate-50 text-slate-700 transition-colors">Documents</a>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <!-- Personnel -->
-                <div class="relative group nav-dropdown">
-                    <button type="button" class="nav-dropdown-trigger text-slate-500 hover:text-slate-900 flex items-center gap-1 transition-colors" aria-expanded="false" aria-haspopup="true">
-                        Personnel
-                        <svg class="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div class="nav-dropdown-panel absolute hidden top-full mt-3 w-44 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50 group-[.open]:block">
-                        <a href="<?= $baseUrl ?>/personnel/me" class="block px-4 py-2 hover:bg-slate-50 text-slate-700 transition-colors">Ma fiche</a>
-                    </div>
-                </div>
-                <?php endif; ?>
-            </nav>
-
-            <!-- Compte / Admin -->
-            <div class="flex items-center gap-6 text-xs font-semibold uppercase">
-                <?php if (\App\Core\Session::get('user_id')): ?>
-                <a href="<?= $baseUrl ?>/account" class="text-slate-500 hover:text-slate-900 transition-colors">
-                    Paramètres
-                </a>
-
-                <?php
-                $canModerate = function_exists('can') && (can('forum.moderate') || can('forum.moderate_organization'));
-                $canAdmin = \App\Core\Gate::getInstance()->allows('admin.access') || \App\Core\Gate::getInstance()->allows('admin.system') || \App\Core\Gate::getInstance()->allows('admin.organization');
-                if ($canModerate || $canAdmin):
-                ?>
-                <div class="relative group nav-dropdown">
-                    <button type="button" class="nav-dropdown-trigger text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors" aria-expanded="false" aria-haspopup="true">
-                        Admin
-                        <svg class="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div class="nav-dropdown-panel absolute right-0 hidden top-full mt-3 w-56 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50 group-[.open]:block">
-                        <?php if ($canModerate): ?>
-                        <a href="<?= $baseUrl ?>/admin/forum-moderation" class="block px-4 py-2 hover:bg-slate-50 text-rose-600 transition-colors">Terminal de contrôle</a>
-                        <?php endif; ?>
-                        <?php if ($canAdmin): ?>
-                        <a href="<?= $baseUrl ?>/admin/forum-config" class="block px-4 py-2 hover:bg-slate-50 text-slate-700 transition-colors">Configuration forum</a>
-                        <a href="<?= $baseUrl ?>/admin" class="block px-4 py-2 hover:bg-slate-50 text-slate-700 transition-colors">Administration</a>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <form method="post" action="<?= $baseUrl ?>/logout" class="inline">
-                    <?= \App\Core\Csrf::field() ?>
-                    <button type="submit" class="text-slate-500 hover:text-slate-900 transition-colors cursor-pointer">
-                        Déconnexion
-                    </button>
-                </form>
-                <?php else: ?>
-                <a href="<?= $baseUrl ?>/login" class="text-slate-500 hover:text-slate-900 transition-colors">Connexion</a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </header>
-    <main class="min-h-[80vh]">
+    <?php require base_path('views/partials/header_portal.php'); ?>
+    <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>
+    <?php require base_path('views/partials/alert_banners.php'); ?>
+    <main class="min-h-[80vh] bg-[#f8fafc]">
         <?php
         $contentPath = str_replace('.', '/', $content);
         $innerPath = base_path('views/' . $contentPath . '.php');
@@ -143,33 +43,6 @@ $forumConfig = $forumConfig ?? config('forum') ?? [];
             <?= htmlspecialchars($forumConfig['name'] ?? 'Forum') ?> — <?= htmlspecialchars($forumConfig['subtitle'] ?? 'Athena') ?>
         </div>
     </footer>
-    <script>
-    (function() {
-        function closeAllDropdowns() {
-            document.querySelectorAll('.nav-dropdown.open').forEach(function(el) { el.classList.remove('open'); });
-            document.querySelectorAll('.nav-dropdown-trigger[aria-expanded="true"]').forEach(function(el) { el.setAttribute('aria-expanded', 'false'); });
-        }
-        document.querySelectorAll('.nav-dropdown-trigger').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var group = btn.closest('.nav-dropdown');
-                var isOpen = group.classList.contains('open');
-                closeAllDropdowns();
-                if (!isOpen) {
-                    group.classList.add('open');
-                    btn.setAttribute('aria-expanded', 'true');
-                }
-            });
-        });
-        document.querySelectorAll('.nav-dropdown-panel a').forEach(function(link) {
-            link.addEventListener('click', function() { closeAllDropdowns(); });
-        });
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.nav-dropdown')) closeAllDropdowns();
-        });
-    })();
-    </script>
     <script src="<?= $baseUrl ?>/assets/js/forum/forum-app.js" defer></script>
 </body>
 </html>

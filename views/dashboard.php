@@ -41,8 +41,13 @@
             <a href="<?= url('formations') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">FORMATIONS</a>
             <a href="<?= url('equipement') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">ÉQUIPEMENT</a>
             <a href="<?= url('account') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">PARAMÈTRES</a>
-            <?php if (\App\Core\Gate::getInstance()->allows('admin.access')): ?>
+            <?php
+            $__g = \App\Core\Gate::getInstance();
+            if ($__g->allows('admin.system')): ?>
             <a href="<?= url('admin') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-500">ADMIN</a>
+            <?php endif; ?>
+            <?php if ($__g->allows('admin.organization') || $__g->allows('admin.access')): ?>
+            <a href="<?= url('back-office') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-500">BACK-OFFICE</a>
             <?php endif; ?>
         </nav>
 
@@ -170,19 +175,60 @@
         <?php
         $communityMemberships = $communityMemberships ?? [];
         $currentTid = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+        $dashFlashSuccess = \App\Core\Session::getFlash('success');
+        $dashFlashError = \App\Core\Session::getFlash('error');
+        $flash_toasts = [];
+        if ($dashFlashSuccess !== null && trim((string) $dashFlashSuccess) !== '') {
+            $flash_toasts[] = ['variant' => 'success', 'message' => (string) $dashFlashSuccess];
+        }
+        if ($dashFlashError !== null && trim((string) $dashFlashError) !== '') {
+            $flash_toasts[] = ['variant' => 'error', 'message' => (string) $dashFlashError];
+        }
+        require base_path('views/partials/flash_toasts.php');
         ?>
+
+        <?php if ($currentTid === 1): ?>
+        <section class="relative overflow-hidden border-b border-emerald-900/20 bg-gradient-to-br from-[#022c22] via-[#064e3b] to-[#0f172a] text-white">
+            <div class="absolute inset-0 opacity-[0.07] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+            <div class="absolute top-0 right-0 w-[min(100%,480px)] h-[min(100%,320px)] bg-emerald-400/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/4"></div>
+            <div class="relative max-w-7xl mx-auto px-6 md:px-10 py-12 md:py-16">
+                <div class="max-w-3xl">
+                    <p class="text-[10px] font-black uppercase tracking-[0.45em] text-emerald-300/90 mb-4">Sans organisation rattachée</p>
+                    <h2 class="text-3xl md:text-5xl font-black uppercase italic tracking-tight leading-[1.05] text-white mb-5">
+                        Rejoignez une unité ou une communauté
+                    </h2>
+                    <p class="text-sm md:text-base text-emerald-100/90 leading-relaxed mb-8">
+                        Vous êtes sur l’espace générique (tenant 1). Parcourez le registre des organisations présentes sur Athena,
+                        ou entrez un code communauté pour être rattaché à une unité.
+                    </p>
+                    <div class="flex flex-col sm:flex-row flex-wrap gap-4">
+                        <a href="<?= url('communities') ?>" class="inline-flex items-center justify-center px-8 py-4 bg-emerald-500 text-[#022c22] text-xs font-black uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 transition-colors shadow-lg shadow-black/20">
+                            Ouvrir le registre des unités
+                        </a>
+                        <a href="<?= url('join') ?>" class="inline-flex items-center justify-center px-8 py-4 border-2 border-white/25 text-white text-xs font-black uppercase tracking-[0.2em] rounded-xl hover:bg-white/10 transition-colors">
+                            Rejoindre avec un code
+                        </a>
+                        <a href="<?= url('communities/create') ?>" class="inline-flex items-center justify-center px-6 py-4 text-emerald-200/90 text-[11px] font-bold uppercase tracking-wider hover:text-white underline decoration-emerald-500/50 underline-offset-4">
+                            Créer une communauté
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
+
         <?php if (count($communityMemberships) > 0): ?>
         <section class="border-b border-slate-200 bg-slate-100/90">
             <div class="max-w-5xl mx-auto px-8 py-3 flex flex-wrap items-center gap-3 text-[11px]">
                 <span class="font-black uppercase tracking-widest text-slate-500">Communauté active</span>
                 <?php foreach ($communityMemberships as $m): ?>
                     <?php if ((int) $m['tenant_id'] === $currentTid): ?>
-                        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-lg font-bold"><?= htmlspecialchars((string) $m['name']) ?></span>
+                        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-lg font-bold"><?= htmlspecialchars(community_display_name($m)) ?></span>
                     <?php else: ?>
-                        <form method="post" action="<?= url('community/switch') ?>" class="inline">
+                        <form method="post" action="<?= url('community/switch') ?>" class="inline" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.setAttribute('aria-busy','true');b.textContent='Chargement…';}">
                             <?= \App\Core\Csrf::field() ?>
                             <input type="hidden" name="tenant_id" value="<?= (int) $m['tenant_id'] ?>">
-                            <button type="submit" class="text-slate-600 hover:text-emerald-700 underline font-semibold"><?= htmlspecialchars((string) $m['name']) ?></button>
+                            <button type="submit" class="text-slate-600 hover:text-emerald-700 underline font-semibold"><?= htmlspecialchars(community_display_name($m)) ?></button>
                         </form>
                     <?php endif; ?>
                 <?php endforeach; ?>

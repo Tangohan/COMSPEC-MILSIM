@@ -47,16 +47,17 @@ class HomeController
         $currentUser = null;
         $personnelExtras = null;
         $grade = null;
-        $tenantId = Session::get('tenant_id');
         $atakModDownloadUrl = null;
         $communityMemberships = [];
         $founderTrialEndsAt = null;
         $showFounderTrialBanner = false;
         $email = Session::get('email');
         if ($email) {
-            $communityMemberships = \App\Core\Container::get(\App\Repositories\UserRepository::class)
-                ->listTenantsForEmail((string) $email);
+            $userRepo = \App\Core\Container::get(\App\Repositories\UserRepository::class);
+            $allMemberships = $userRepo->listTenantsForEmail((string) $email);
+            $communityMemberships = $userRepo->filterSwitchableTenantsForUser($allMemberships);
         }
+        $tenantId = Session::get('tenant_id');
         if ($tenantId) {
             try {
                 $usage = \App\Core\Container::get(\App\Repositories\PlatformUsageRepository::class);

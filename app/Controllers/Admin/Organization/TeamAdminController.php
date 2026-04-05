@@ -69,19 +69,22 @@ class TeamAdminController
             'parent_id' => $request->input('parent_id') ?: null,
             'commander_user_id' => $request->input('commander_user_id') ?: null,
             'display_order' => (int) ($request->input('display_order') ?? 0),
+            'public_blurb' => trim((string) $request->input('public_blurb', '')) ?: null,
+            'public_tags' => $request->input('public_tags', ''),
+            'show_on_public_page' => $request->input('show_on_public_page') ? 1 : 0,
         ];
         if ($data['name'] === '') {
             Session::flash('error', 'Le nom est requis.');
-            return Response::redirect(url('admin/organization/teams/create'));
+            return Response::redirect(url('back-office/teams/create'));
         }
         if ($this->unitRepository->slugExists($tenantId, $effectiveSlug)) {
             Session::flash('error', 'Ce slug existe déjà.');
-            return Response::redirect(url('admin/organization/teams/create'));
+            return Response::redirect(url('back-office/teams/create'));
         }
         $unit = $this->unitRepository->create($tenantId, $data);
         Session::flash('success', 'Équipe créée.');
         $newId = isset($unit['id']) ? (int) $unit['id'] : 0;
-        return Response::redirect($newId ? url('admin/organization/teams/' . $newId) : url('admin/organization/teams'));
+        return Response::redirect($newId ? url('back-office/teams/' . $newId) : url('back-office/teams'));
     }
 
     public function show(Request $request, array $params = []): Response
@@ -89,12 +92,12 @@ class TeamAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/teams'));
+            return Response::redirect(url('back-office/teams'));
         }
         $unit = $this->unitRepository->findById($id, $tenantId);
         if (!$unit || ($unit['type'] ?? '') !== self::TYPE) {
             Session::flash('error', 'Équipe introuvable.');
-            return Response::redirect(url('admin/organization/teams'));
+            return Response::redirect(url('back-office/teams'));
         }
         $memberIds = $this->userRepository->getIdsByUnit($id);
         $allUsers = $this->userRepository->allForTenant($tenantId);
@@ -115,12 +118,12 @@ class TeamAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/teams'));
+            return Response::redirect(url('back-office/teams'));
         }
         $unit = $this->unitRepository->findById($id, $tenantId);
         if (!$unit || ($unit['type'] ?? '') !== self::TYPE) {
             Session::flash('error', 'Équipe introuvable.');
-            return Response::redirect(url('admin/organization/teams'));
+            return Response::redirect(url('back-office/teams'));
         }
         $parents = array_filter($this->unitRepository->getTeams($tenantId), fn ($u) => (int) $u['id'] !== $id);
         $users = $this->userRepository->allForTenant($tenantId);
@@ -138,17 +141,17 @@ class TeamAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/teams'));
+            return Response::redirect(url('back-office/teams'));
         }
         $unit = $this->unitRepository->findById($id, $tenantId);
         if (!$unit || ($unit['type'] ?? '') !== self::TYPE) {
             Session::flash('error', 'Équipe introuvable.');
-            return Response::redirect(url('admin/organization/teams'));
+            return Response::redirect(url('back-office/teams'));
         }
         $slug = trim((string) $request->input('slug')) ?: $this->slugify(trim((string) $request->input('name')));
         if ($slug && $this->unitRepository->slugExists($tenantId, $slug, $id)) {
             Session::flash('error', 'Ce slug existe déjà.');
-            return Response::redirect(url('admin/organization/teams/' . $id . '/edit'));
+            return Response::redirect(url('back-office/teams/' . $id . '/edit'));
         }
         $this->unitRepository->update($id, $tenantId, [
             'name' => $request->input('name'),
@@ -158,9 +161,12 @@ class TeamAdminController
             'parent_id' => $request->input('parent_id') ?: null,
             'commander_user_id' => $request->input('commander_user_id') ?: null,
             'display_order' => (int) ($request->input('display_order') ?? 0),
+            'public_blurb' => trim((string) $request->input('public_blurb', '')) ?: null,
+            'public_tags' => $request->input('public_tags', ''),
+            'show_on_public_page' => $request->input('show_on_public_page') ? 1 : 0,
         ]);
         Session::flash('success', 'Équipe mise à jour.');
-        return Response::redirect(url('admin/organization/teams/' . $id));
+        return Response::redirect(url('back-office/teams/' . $id));
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -168,16 +174,16 @@ class TeamAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/teams'));
+            return Response::redirect(url('back-office/teams'));
         }
         $unit = $this->unitRepository->findById($id, $tenantId);
         if (!$unit || ($unit['type'] ?? '') !== self::TYPE) {
             Session::flash('error', 'Équipe introuvable.');
-            return Response::redirect(url('admin/organization/teams'));
+            return Response::redirect(url('back-office/teams'));
         }
         $this->unitRepository->delete($id, $tenantId);
         Session::flash('success', 'Équipe supprimée.');
-        return Response::redirect(url('admin/organization/teams'));
+        return Response::redirect(url('back-office/teams'));
     }
 
     private function slugify(string $name): string

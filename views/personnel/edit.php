@@ -9,6 +9,7 @@ if (!$targetUser) {
     return;
 }
 $p = $personnelProfile ?? [];
+$d = $displaySettings ?? [];
 $clearanceOptions = ['Non classifié', 'Restreint', 'Confidentiel', 'Secret', 'Très secret'];
 $currentClearance = trim((string)($p['clearance_level'] ?? ''));
 ?>
@@ -70,6 +71,51 @@ $currentClearance = trim((string)($p['clearance_level'] ?? ''));
                     </select>
                 </div>
             </div>
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-2xl p-6">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-900 mb-4">Forum & visibilité</h2>
+            <p class="text-xs text-slate-600 mb-4">Pseudo affiché sur le forum et contrôle de ce que les autres membres voient sur votre fiche.</p>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label for="forum_alias" class="block text-xs font-bold text-slate-600 mb-1">Pseudo forum (optionnel)</label>
+                    <input type="text" name="forum_alias" id="forum_alias" value="<?= htmlspecialchars((string)($d['forum_alias'] ?? '')) ?>" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900" maxlength="80" placeholder="Si vide : selon le mode ci-dessous">
+                </div>
+                <div>
+                    <label for="forum_label_mode" class="block text-xs font-bold text-slate-600 mb-1">Mode d’étiquette forum (si pseudo vide)</label>
+                    <select name="forum_label_mode" id="forum_label_mode" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900">
+                        <?php
+                        $mode = (string) ($d['forum_label_mode'] ?? 'display_name');
+                        $modes = [
+                            'display_name' => 'Nom d’affichage compte',
+                            'callsign' => 'Callsign',
+                            'character_name' => 'Nom opérateur / RP',
+                            'forum_alias' => 'Pseudo forum uniquement (fallback si vide)',
+                        ];
+                        foreach ($modes as $k => $label) {
+                            echo '<option value="' . htmlspecialchars($k) . '"' . ($mode === $k ? ' selected' : '') . '>' . htmlspecialchars($label) . '</option>';
+                        }
+                        ?>
+                    </select>
+                </div>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-3 mb-2 font-semibold">Afficher sur le forum (carte auteur)</p>
+            <div class="grid md:grid-cols-2 gap-3">
+                <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" name="show_matricule_forum" value="1" <?= !empty($d['show_matricule_forum']) ? 'checked' : '' ?>> Matricule</label>
+                <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" name="show_grade_forum" value="1" <?= !empty($d['show_grade_forum']) ? 'checked' : '' ?>> Grade</label>
+                <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" name="show_unit_forum" value="1" <?= !empty($d['show_unit_forum']) ? 'checked' : '' ?>> Unité / rôle</label>
+                <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" name="show_bio_forum" value="1" <?= !empty($d['show_bio_forum']) ? 'checked' : '' ?>> Bio</label>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-4 mb-2 font-semibold">Fiche personnelle (autres membres)</p>
+            <div class="grid md:grid-cols-2 gap-3">
+                <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" name="fiche_show_email_to_others" value="1" <?= !empty($d['fiche_show_email_to_others']) ? 'checked' : '' ?>> Afficher l’e-mail aux autres membres</label>
+                <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" name="fiche_show_matricule_to_others" value="1" <?= !empty($d['fiche_show_matricule_to_others']) ? 'checked' : '' ?>> Afficher le matricule dans l’en-tête aux autres</label>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-4 mb-2 font-semibold">Fiche communauté publique</p>
+            <label class="flex items-start gap-2 text-sm text-slate-700">
+                <input type="checkbox" name="public_roster_opt_in" value="1" class="mt-0.5" <?= !empty($d['public_roster_opt_in']) ? 'checked' : '' ?>>
+                <span>Apparaître sur le roster public de la communauté (page <code class="text-xs">/c/…</code>, si activé par l’organisation)</span>
+            </label>
         </section>
 
         <section class="bg-white border border-slate-200 rounded-2xl p-6">

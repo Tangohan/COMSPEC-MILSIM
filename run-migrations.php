@@ -72,6 +72,7 @@ require_once $root . '/bootstrap/community_platform_migration.php';
 require_once $root . '/bootstrap/platform_unit_commander_migration.php';
 require_once $root . '/bootstrap/prod_import_gaps.php';
 require_once $root . '/bootstrap/rbac_three_layer_migration.php';
+require_once $root . '/bootstrap/permissions_action_migration.php';
 
 // ----- Schéma (exécution statement par statement : PDO::exec ne gère qu'une requête) -----
 set_time_limit(300);
@@ -129,6 +130,7 @@ run_community_platform_migration($pdo);
 run_platform_unit_commander_migration($pdo);
 run_production_import_gap_migrations($pdo, $root);
 run_rbac_three_layer_migration($pdo);
+run_permissions_action_migration($pdo);
 echo "Bootstrap plateforme OK (subscription_plans, tenants.*, RBAC 3 couches, community_invitations, moderation_*, security_*, community_code, referral_*…).\n";
 @flush();
 @ob_flush();
@@ -155,6 +157,44 @@ if ($stmt && !$stmt->fetch()) {
         $pdo->exec($alter);
     }
     echo "Colonnes Olympus OK.\n";
+}
+
+// Profils de candidature + colonnes enrôlement (compte Athena, consentement)
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'recruitment_presets'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Création table recruitment_presets...\n";
+    $pdo->exec("CREATE TABLE `recruitment_presets` (
+      `id` int unsigned NOT NULL AUTO_INCREMENT,
+      `user_id` int unsigned NOT NULL,
+      `label` varchar(120) NOT NULL,
+      `payload` json NOT NULL,
+      `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+      `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      KEY `user_id` (`user_id`),
+      CONSTRAINT `recruitment_presets_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    echo "recruitment_presets OK.\n";
+}
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistments' AND COLUMN_NAME = 'submitted_via'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Ajout colonnes compte / consentement à enlistments...\n";
+    $pdo->exec("ALTER TABLE enlistments ADD COLUMN submitter_user_id int unsigned DEFAULT NULL AFTER reviewer_comment");
+    $pdo->exec("ALTER TABLE enlistments ADD COLUMN recruitment_preset_id int unsigned DEFAULT NULL AFTER submitter_user_id");
+    $pdo->exec("ALTER TABLE enlistments ADD COLUMN submitted_via varchar(20) NOT NULL DEFAULT 'guest' AFTER recruitment_preset_id");
+    $pdo->exec("ALTER TABLE enlistments ADD COLUMN consent_sharing_at datetime DEFAULT NULL AFTER submitted_via");
+    $pdo->exec("ALTER TABLE enlistments ADD COLUMN shared_fields json DEFAULT NULL AFTER consent_sharing_at");
+    $pdo->exec("ALTER TABLE enlistments ADD KEY submitter_user_id (submitter_user_id)");
+    $pdo->exec("ALTER TABLE enlistments ADD CONSTRAINT enlistments_submitter_user_fk FOREIGN KEY (submitter_user_id) REFERENCES users (id) ON DELETE SET NULL ON UPDATE CASCADE");
+    $pdo->exec("ALTER TABLE enlistments ADD CONSTRAINT enlistments_recruitment_preset_fk FOREIGN KEY (recruitment_preset_id) REFERENCES recruitment_presets (id) ON DELETE SET NULL ON UPDATE CASCADE");
+    echo "Colonnes enrôlement compte OK.\n";
+}
+
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistments' AND COLUMN_NAME = 'recruitment_rp_json'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Ajout colonne enlistments.recruitment_rp_json...\n";
+    $pdo->exec("ALTER TABLE enlistments ADD COLUMN recruitment_rp_json JSON DEFAULT NULL AFTER shared_fields");
+    echo "recruitment_rp_json OK.\n";
 }
 
 // Colonne nato_code sur grades (si absente)
@@ -525,6 +565,40 @@ if ($stmt && !$stmt->fetch()) {
     }
 }
 
+// Préférences affichage forum / fiche (pseudo forum, visibilité)
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Création user_profile_display_settings...\n";
+    $udsPath = $root . '/migrations/user_profile_display_settings.sql';
+    if (is_file($udsPath)) {
+        $sql = file_get_contents($udsPath);
+        $sql = preg_replace('/--[^\r\n]*/s', '', $sql);
+        $sql = preg_replace('/SET NAMES utf8mb4;/', '', $sql);
+        $chunks = preg_split('/;\s*[\r\n]+/', trim($sql));
+        foreach ($chunks as $stmtSql) {
+            $stmtSql = trim($stmtSql);
+            if ($stmtSql !== '') {
+                $pdo->exec($stmtSql . (str_ends_with($stmtSql, ';') ? '' : ';'));
+            }
+        }
+        echo "user_profile_display_settings OK.\n";
+    }
+}
+
+// Fiche publique vitrine : roster opt-in + champs unité
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'public_roster_opt_in'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Migration public_roster_opt_in (user_profile_display_settings)...\n";
+    $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN public_roster_opt_in tinyint(1) NOT NULL DEFAULT 0 AFTER fiche_show_matricule_to_others");
+}
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'units' AND COLUMN_NAME = 'public_blurb'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Migration units public_blurb / public_tags / show_on_public_page...\n";
+    $pdo->exec("ALTER TABLE units ADD COLUMN public_blurb text DEFAULT NULL AFTER display_order");
+    $pdo->exec("ALTER TABLE units ADD COLUMN public_tags json DEFAULT NULL AFTER public_blurb");
+    $pdo->exec("ALTER TABLE units ADD COLUMN show_on_public_page tinyint(1) NOT NULL DEFAULT 1 AFTER public_tags");
+}
+
 // Seed atak_maps (Altis) si table vide
 $stmt = $pdo->query("SELECT 1 FROM atak_maps LIMIT 1");
 if ($stmt && !$stmt->fetch()) {
@@ -844,6 +918,29 @@ if ($stmt && !$stmt->fetch()) {
     echo "Seed référentiel grades OK.\n";
 }
 
+// Overrides grades par tenant
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_grade_overrides'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Création table tenant_grade_overrides...\n";
+    $pdo->exec("CREATE TABLE `tenant_grade_overrides` (
+      `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+      `tenant_id` int(10) UNSIGNED NOT NULL,
+      `grade_id` bigint(20) UNSIGNED NOT NULL,
+      `label_short_override` varchar(100) DEFAULT NULL,
+      `label_long_override` varchar(150) DEFAULT NULL,
+      `sort_order_override` int(11) DEFAULT NULL,
+      `is_enabled` tinyint(1) NOT NULL DEFAULT 1,
+      `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+      `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `tenant_grade` (`tenant_id`,`grade_id`),
+      KEY `tenant_id` (`tenant_id`),
+      KEY `grade_id` (`grade_id`),
+      CONSTRAINT `tenant_grade_overrides_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "Table tenant_grade_overrides OK.\n";
+}
+
 // Users : colonnes référentiel grades (nationalité, format préféré, catégorie pro)
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'preferred_grade_format'");
 if ($stmt && !$stmt->fetch()) {
@@ -887,6 +984,65 @@ if ($hasOldGrades && $hasRef && $oldGradesHasTenant) {
     $pdo->exec("RENAME TABLE grades_referentiel TO grades");
     $pdo->exec("ALTER TABLE users ADD CONSTRAINT users_grade_id_fk FOREIGN KEY (grade_id) REFERENCES grades (id) ON DELETE SET NULL ON UPDATE CASCADE");
     echo "Bascule grades OK (grades_referentiel -> grades, ancienne table -> grades_legacy).\n";
+}
+
+// Grades sous-officiers / militaires du rang FR & US (référentiel global, idempotent)
+{
+    $gradeTable = null;
+    foreach (['grades', 'grades_referentiel'] as $t) {
+        $chk = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = " . $pdo->quote($t) . " AND COLUMN_NAME = 'grade_system_id' LIMIT 1");
+        if ($chk && $chk->fetchColumn()) {
+            $gradeTable = $t;
+            break;
+        }
+    }
+    if ($gradeTable !== null) {
+        $cat = [];
+        foreach ($pdo->query('SELECT id, code FROM grade_categories')->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $cat[$r['code']] = (int) $r['id'];
+        }
+        $sys = [];
+        foreach ($pdo->query('SELECT id, code FROM grade_systems')->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $sys[$r['code']] = (int) $r['id'];
+        }
+        if (isset($cat['SOUS_OFFICIER'], $cat['MDR'], $sys['FR_CLASSIC'], $sys['US_CLASSIC'])) {
+            $exists = $pdo->prepare("SELECT 1 FROM `{$gradeTable}` WHERE grade_system_id = ? AND code = ? LIMIT 1");
+            $ins = $pdo->prepare("INSERT INTO `{$gradeTable}` (grade_system_id, grade_category_id, code, label_short, label_long, label_otan, sort_order, is_commissioned, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1, NOW(), NOW())");
+            $rows = [
+                ['FR_CLASSIC', 'SOUS_OFFICIER', 'MAJ', 'Major', 'Major', 'OR-9', 21],
+                ['FR_CLASSIC', 'SOUS_OFFICIER', 'ADC', 'Adc', 'Adjudant-chef', 'OR-8', 22],
+                ['FR_CLASSIC', 'SOUS_OFFICIER', 'ADJ', 'Adj', 'Adjudant', 'OR-7', 23],
+                ['FR_CLASSIC', 'SOUS_OFFICIER', 'SCH', 'Sch', 'Sergent-chef', 'OR-6', 24],
+                ['FR_CLASSIC', 'SOUS_OFFICIER', 'SGT', 'Sgt', 'Sergent', 'OR-5', 25],
+                ['FR_CLASSIC', 'MDR', 'CCH', 'Cch', 'Caporal-chef', 'OR-4', 31],
+                ['FR_CLASSIC', 'MDR', 'CPL', 'Cpl', 'Caporal', 'OR-3', 32],
+                ['FR_CLASSIC', 'MDR', 'SD1', 'Sdt 1', 'Soldat de 1re classe', 'OR-2', 33],
+                ['FR_CLASSIC', 'MDR', 'SD2', 'Sdt 2', 'Soldat de 2e classe', 'OR-1', 34],
+                ['US_CLASSIC', 'SOUS_OFFICIER', 'SGM', 'SGM', 'Sergeant Major', 'E-9', 21],
+                ['US_CLASSIC', 'SOUS_OFFICIER', 'MSG', 'MSG', 'Master Sergeant', 'E-8', 22],
+                ['US_CLASSIC', 'SOUS_OFFICIER', 'SFC', 'SFC', 'Sergeant First Class', 'E-7', 23],
+                ['US_CLASSIC', 'SOUS_OFFICIER', 'SSG', 'SSG', 'Staff Sergeant', 'E-6', 24],
+                ['US_CLASSIC', 'SOUS_OFFICIER', 'SGT', 'SGT', 'Sergeant', 'E-5', 25],
+                ['US_CLASSIC', 'MDR', 'CPL', 'CPL', 'Corporal', 'E-4', 31],
+                ['US_CLASSIC', 'MDR', 'PFC', 'PFC', 'Private First Class', 'E-3', 32],
+                ['US_CLASSIC', 'MDR', 'PV2', 'PV2', 'Private Second Class', 'E-2', 33],
+                ['US_CLASSIC', 'MDR', 'PVT', 'PVT', 'Private', 'E-1', 34],
+            ];
+            $added = 0;
+            foreach ($rows as $row) {
+                [$sc, $cc, $code, $ls, $ll, $lo, $so] = $row;
+                $exists->execute([$sys[$sc], $code]);
+                if ($exists->fetchColumn()) {
+                    continue;
+                }
+                $ins->execute([$sys[$sc], $cat[$cc], $code, $ls, $ll, $lo, $so]);
+                $added++;
+            }
+            if ($added > 0) {
+                echo "Référentiel grades : ajout SO / MdR ({$added} lignes) dans {$gradeTable}.\n";
+            }
+        }
+    }
 }
 
 // Seed presets et variables courrier (si table document_presets vide)
@@ -1042,6 +1198,30 @@ if ($stmt && !$stmt->fetch()) {
     $pdo->exec("ALTER TABLE courrier_documents ADD COLUMN content_hash VARCHAR(64) DEFAULT NULL AFTER signature_data_json");
 }
 
+// Courrier : notifications in-app (document signalé aux membres)
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'courrier_document_notifications'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Création table courrier_document_notifications...\n";
+    $cdnPath = $root . '/migrations/courrier_document_notifications.sql';
+    if (is_file($cdnPath)) {
+        $sql = file_get_contents($cdnPath);
+        $sql = preg_replace('/--[^\r\n]*/s', '', $sql);
+        $sql = preg_replace('/SET NAMES utf8mb4;|SET FOREIGN_KEY_CHECKS = \d+;/', '', $sql);
+        $chunks = preg_split('/;\s*[\r\n]+/', trim($sql));
+        foreach ($chunks as $stmtSql) {
+            $stmtSql = trim($stmtSql);
+            if ($stmtSql !== '') {
+                try {
+                    $pdo->exec($stmtSql . (str_ends_with($stmtSql, ';') ? '' : ';'));
+                } catch (PDOException $e) {
+                    echo "  [ATTENTION] " . $e->getMessage() . "\n";
+                }
+            }
+        }
+        echo "courrier_document_notifications OK.\n";
+    }
+}
+
 // Seed preset et template CERBERE (Compte-rendu officiel 92e RI)
 $stmt = $pdo->query("SELECT id FROM document_presets WHERE code = 'cerbere_officiel' LIMIT 1");
 if ($stmt && !$stmt->fetch()) {
@@ -1109,6 +1289,158 @@ if ($stmt && !$stmt->fetch()) {
 
 $forumV2Migrate = require $root . '/bootstrap/forum_v2_migration.php';
 $forumV2Migrate($pdo);
+
+$alertsMigrate = require $root . '/bootstrap/alerts_migration.php';
+$alertsMigrate($pdo);
+
+$moderationContentMigrate = require $root . '/bootstrap/moderation_content_migration.php';
+$moderationContentMigrate($pdo);
+
+require_once $root . '/bootstrap/transactional_email_migration.php';
+run_transactional_email_migration($pdo);
+
+$systemModeratorMigrate = require $root . '/bootstrap/system_moderator_account_migration.php';
+$systemModeratorMigrate($pdo);
+require_once $root . '/bootstrap/autoload.php';
+try {
+    $userRepoSeed = new \App\Repositories\UserRepository();
+    $tList = $pdo->query('SELECT id FROM tenants');
+    if ($tList) {
+        while ($tRow = $tList->fetch(PDO::FETCH_ASSOC)) {
+            $userRepoSeed->ensureSystemModeratorUser((int) $tRow['id']);
+        }
+    }
+    echo "Comptes techniques modération (par tenant) OK.\n";
+} catch (Throwable $e) {
+    echo '  [ATTENTION] Compte modération système : ' . $e->getMessage() . "\n";
+}
+
+$msgSql = $root . '/migrations/community_messaging.sql';
+if (is_file($msgSql)) {
+    $chk = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_message_threads'");
+    if ($chk && !$chk->fetch()) {
+        echo "Migration community_messaging.sql...\n";
+        $pdo->exec(file_get_contents($msgSql));
+    }
+}
+
+// ----- Schéma V2 : user_ui_preferences, tenant_branding, notifications, modules, quotas -----
+$schemaV2Path = $root . '/migrations/schema_v2_tenant_user_prefs.sql';
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_ui_preferences'");
+if ($stmt && !$stmt->fetch() && is_file($schemaV2Path)) {
+    echo "Migration schema_v2_tenant_user_prefs.sql...\n";
+    $sql = file_get_contents($schemaV2Path);
+    $sql = preg_replace('/--[^\r\n]*/s', '', $sql);
+    $sql = preg_replace('/SET NAMES utf8mb4;|SET FOREIGN_KEY_CHECKS = \d+;/', '', $sql);
+    $chunks = preg_split('/;\s*[\r\n]+/', trim($sql));
+    foreach ($chunks as $stmtSql) {
+        $stmtSql = trim($stmtSql);
+        if ($stmtSql !== '') {
+            $pdo->exec($stmtSql . (str_ends_with($stmtSql, ';') ? '' : ';'));
+        }
+    }
+    echo "Schéma V2 (préférences / tenant typé) OK.\n";
+}
+
+// Colonnes ciblées sur tenants (locale / pays) — idempotent
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND COLUMN_NAME = 'default_timezone'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Migration tenants.default_timezone / default_locale / country_code...\n";
+    $pdo->exec("ALTER TABLE tenants ADD COLUMN default_timezone varchar(64) DEFAULT 'Europe/Paris'");
+    $pdo->exec("ALTER TABLE tenants ADD COLUMN default_locale char(5) DEFAULT 'fr-FR'");
+    $pdo->exec("ALTER TABLE tenants ADD COLUMN country_code char(2) DEFAULT NULL");
+}
+
+// Index activité utilisateurs (stats admin)
+$stmt = $pdo->query("SELECT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND INDEX_NAME = 'idx_users_tenant_status_login'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Index users (tenant_id, status, last_login_at)...\n";
+    $pdo->exec('ALTER TABLE users ADD KEY idx_users_tenant_status_login (tenant_id, status, last_login_at)');
+}
+
+// Grade affiché : override explicite (texte libre déprécié au profit du référentiel)
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = 'rank_display_override'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Migration personnel_profiles.rank_display_override...\n";
+    $pdo->exec('ALTER TABLE personnel_profiles ADD COLUMN rank_display_override varchar(100) DEFAULT NULL COMMENT \'Exception métier; sinon grades + overrides\' AFTER rank_display');
+}
+
+// Synchroniser tenant_branding.logo_url depuis tenants.logo_url (première passe)
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_branding'");
+if ($stmt && $stmt->fetch()) {
+    $chkEmpty = $pdo->query('SELECT COUNT(*) c FROM tenant_branding')->fetch(PDO::FETCH_ASSOC);
+    if ($chkEmpty && (int) ($chkEmpty['c'] ?? 0) === 0) {
+        echo "Seed tenant_branding depuis tenants.logo_url...\n";
+        $pdo->exec(
+            'INSERT INTO tenant_branding (tenant_id, logo_url, updated_at)
+             SELECT id, logo_url, NOW() FROM tenants WHERE logo_url IS NOT NULL AND TRIM(logo_url) <> \'\''
+        );
+    }
+}
+
+// Backfill indicatif plateforme : users.callsign ← personnel_profiles / user_profiles (source unique)
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'callsign'");
+if ($stmt && $stmt->fetch()) {
+    echo "Backfill users.callsign depuis dossier / profil (si vide)...\n";
+    $pdo->exec(
+        'UPDATE users u
+         LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+         LEFT JOIN user_profiles up ON up.user_id = u.id
+         SET u.callsign = COALESCE(
+           NULLIF(TRIM(u.callsign), \'\'),
+           NULLIF(TRIM(pp.callsign), \'\'),
+           NULLIF(TRIM(up.arma_callsign), \'\')
+         )
+         WHERE (u.callsign IS NULL OR TRIM(u.callsign) = \'\')
+           AND (
+             (pp.callsign IS NOT NULL AND TRIM(pp.callsign) <> \'\')
+             OR (up.arma_callsign IS NOT NULL AND TRIM(up.arma_callsign) <> \'\')
+           )'
+    );
+}
+
+// Aligner readiness_score depuis personnel_extras.readiness_percent quand le dossier est à 0
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_extras'");
+if ($stmt && $stmt->fetch()) {
+    echo "Backfill personnel_profiles.readiness_score depuis personnel_extras (si applicable)...\n";
+    $pdo->exec(
+        'UPDATE personnel_profiles pp
+         INNER JOIN personnel_extras pe ON pe.user_id = pp.user_id
+         SET pp.readiness_score = LEAST(100, GREATEST(COALESCE(pp.readiness_score, 0), COALESCE(pe.readiness_percent, 0)))
+         WHERE pe.readiness_percent IS NOT NULL
+           AND pe.readiness_percent > 0
+           AND (pp.readiness_score IS NULL OR pp.readiness_score = 0)'
+    );
+    echo "Backfill personnel_profiles.clearance_level depuis personnel_extras (si dossier vide)...\n";
+    $pdo->exec(
+        'UPDATE personnel_profiles pp
+         INNER JOIN personnel_extras pe ON pe.user_id = pp.user_id
+         SET pp.clearance_level = pe.clearance_level
+         WHERE (pp.clearance_level IS NULL OR TRIM(pp.clearance_level) = \'\')
+           AND pe.clearance_level IS NOT NULL AND TRIM(pe.clearance_level) <> \'\''
+    );
+}
+
+// Affectations : compléter personnel_assignments depuis user_units lorsque la ligne manque (personnel_assignments = source métier riche ; user_units = compat / historique)
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_assignments'");
+if ($stmt && $stmt->fetch()) {
+    echo "Complément personnel_assignments depuis user_units (lignes manquantes)...\n";
+    $pdo->exec(
+        'INSERT INTO personnel_assignments (user_id, unit_id, role_name, is_primary, started_at, ended_at, status, created_at)
+         SELECT uu.user_id, uu.unit_id,
+                COALESCE(NULLIF(TRIM(uu.assignment_type), \'\'), \'Membre\'),
+                COALESCE(uu.is_primary, 0),
+                CASE WHEN uu.assigned_at IS NULL THEN CURDATE() ELSE DATE(uu.assigned_at) END,
+                CASE WHEN uu.ended_at IS NULL THEN NULL ELSE DATE(uu.ended_at) END,
+                CASE WHEN uu.ended_at IS NULL OR uu.ended_at > NOW() THEN \'active\' ELSE \'inactive\' END,
+                NOW()
+         FROM user_units uu
+         WHERE NOT EXISTS (
+           SELECT 1 FROM personnel_assignments pa
+           WHERE pa.user_id = uu.user_id AND pa.unit_id = uu.unit_id
+         )'
+    );
+}
 
 // ----- Seed forum (permissions, rôles, catégories) — idempotent -----
 $run_forum_seed = function (PDO $pdo, int $tenantId): void {
@@ -1428,12 +1760,24 @@ if ($stmt && $stmt->fetch()) {
         echo "Permissions courrier.* ajoutées.\n";
     }
 
+    try {
+        $allTenants = $pdo->query('SELECT id FROM tenants');
+        if ($allTenants) {
+            while ($trow = $allTenants->fetch(PDO::FETCH_ASSOC)) {
+                \App\Services\Community\TenantSeedHelper::ensureTenantPermissionCatalog($pdo, (int) $trow['id']);
+            }
+        }
+        echo "Catalogue permissions tenant synchronisé.\n";
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] Catalogue permissions : ' . $e->getMessage() . "\n";
+    }
+
     echo "Migrations terminées.\n";
     exit(0);
 }
 
 echo "Insertion du tenant et admin par défaut...\n";
-$pdo->exec("INSERT INTO tenants (name, slug, created_at, updated_at) VALUES ('Default Organisation', 'default', NOW(), NOW())");
+$pdo->exec("INSERT INTO tenants (name, slug, created_at, updated_at) VALUES ('Pas d''organisation', 'default', NOW(), NOW())");
 $tenantId = (int) $pdo->lastInsertId();
 
 $pdo->exec("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES ($tenantId, 'Propriétaire communauté', 'community_owner', 'Gouvernance complète de la communauté', 1, 1, 'community', NOW())");
@@ -1471,6 +1815,18 @@ $pdo->exec("INSERT INTO tenant_matricule_config (tenant_id, prefix, format_patte
 
 $run_forum_seed($pdo, $tenantId);
 $run_documents_seed($pdo, $tenantId);
+
+try {
+    $allTenants = $pdo->query('SELECT id FROM tenants');
+    if ($allTenants) {
+        while ($trow = $allTenants->fetch(PDO::FETCH_ASSOC)) {
+            \App\Services\Community\TenantSeedHelper::ensureTenantPermissionCatalog($pdo, (int) $trow['id']);
+        }
+    }
+    echo "Catalogue permissions tenant synchronisé.\n";
+} catch (Throwable $e) {
+    echo '  [ATTENTION] Catalogue permissions : ' . $e->getMessage() . "\n";
+}
 
 echo "Seed OK. Compte : admin@athena.local / admin\n";
 echo "Migrations terminées.\n";

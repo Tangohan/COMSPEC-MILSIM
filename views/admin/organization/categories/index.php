@@ -2,9 +2,9 @@
 <div class="max-w-4xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Catégories</h1>
-        <a href="<?= url('admin/organization/categories/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouvelle catégorie</a>
+        <a href="<?= url('back-office/categories/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouvelle catégorie</a>
     </div>
-    <form method="get" action="<?= url('admin/organization/categories') ?>" class="mb-6 flex gap-2">
+    <form method="get" action="<?= url('back-office/categories') ?>" class="mb-6 flex gap-2">
         <select name="type" class="px-3 py-2 border border-slate-200 rounded text-sm">
             <option value="">Tous les types</option>
             <option value="role" <?= $filterType === 'role' ? 'selected' : '' ?>>Rôles</option>
@@ -35,12 +35,12 @@
                 <td class="p-3"><?= !empty($c['color']) ? '<span class="inline-block w-4 h-4 rounded border border-slate-300" style="background:' . htmlspecialchars($c['color']) . '"></span>' : '—' ?></td>
                 <td class="p-3"><?= (int) ($c['display_order'] ?? 0) ?></td>
                 <td class="p-3">
-                    <a href="<?= url('admin/organization/categories/' . $c['id'] . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
+                    <a href="<?= url('back-office/categories/' . $c['id'] . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
                 </td>
             </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
     <?php endif; ?>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('admin/organization') ?>" class="underline">Retour administration organisationnelle</a></p>
+    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour administration organisationnelle</a></p>
 </div>

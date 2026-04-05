@@ -5,13 +5,13 @@
 <div class="max-w-5xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Modération</h1>
-        <a href="<?= url('admin/organization') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
+        <a href="<?= url('back-office') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
     </div>
     <?php $f = \App\Core\Session::getFlash('error'); $s = \App\Core\Session::getFlash('success'); ?>
     <?php if ($f): ?><p class="text-red-600 text-sm mb-4"><?= htmlspecialchars($f) ?></p><?php endif; ?>
     <?php if ($s): ?><p class="text-emerald-700 text-sm mb-4"><?= htmlspecialchars($s) ?></p><?php endif; ?>
 
-    <form method="post" action="<?= url('admin/organization/moderation/apply') ?>" class="grid md:grid-cols-2 gap-4 mb-10 border border-slate-200 rounded-lg p-4">
+    <form method="post" action="<?= url('back-office/moderation/apply') ?>" class="grid md:grid-cols-2 gap-4 mb-10 border border-slate-200 rounded-lg p-4">
         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
         <div class="md:col-span-2">
             <label class="block text-xs text-slate-500 mb-1">Membre</label>
@@ -64,7 +64,7 @@
                 <td class="p-2"><?= htmlspecialchars((string) ($a['actor_email'] ?? '')) ?></td>
                 <td class="p-2">
                     <?php if (empty($a['revoked_at'])): ?>
-                    <form method="post" action="<?= url('admin/organization/moderation/revoke') ?>" class="inline">
+                    <form method="post" action="<?= url('back-office/moderation/revoke') ?>" class="inline">
                         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
                         <input type="hidden" name="action_id" value="<?= (int) ($a['id'] ?? 0) ?>">
                         <button type="submit" class="text-rose-600 text-xs underline">Lever</button>

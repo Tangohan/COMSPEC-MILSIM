@@ -8,6 +8,10 @@ $api = $health['api'] ?? [];
     <h1 class="text-2xl font-black text-slate-900 mb-2">Paramètres</h1>
     <p class="text-slate-600 mb-8">Gérez vos préférences, votre adresse email, votre photo et votre mot de passe.</p>
     <nav class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <a href="<?= url('account/recruitment-presets') ?>" class="block p-4 border border-slate-200 rounded-lg hover:bg-slate-50">
+            <span class="font-semibold text-slate-900">Profils de candidature</span>
+            <p class="text-sm text-slate-500 mt-1">Préréglages pour les formulaires d’enrôlement</p>
+        </a>
         <a href="<?= url('account/preferences') ?>" class="block p-4 border border-slate-200 rounded-lg hover:bg-slate-50">
             <span class="font-semibold text-slate-900">Préférences</span>
             <p class="text-sm text-slate-500 mt-1">Nom d'affichage, indicatif, fuseau horaire, langue</p>
@@ -34,7 +38,7 @@ $api = $health['api'] ?? [];
     <section class="mt-10 border border-slate-200 rounded-lg overflow-hidden">
         <div class="bg-slate-50 px-4 py-3 border-b border-slate-200">
             <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider">État de santé du système</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Base de données, tables, API ATAK</p>
+            <p class="text-xs text-slate-500 mt-0.5">Base de données, API ATAK</p>
         </div>
         <div class="p-4 space-y-4 bg-white">
             <div>
@@ -43,26 +47,6 @@ $api = $health['api'] ?? [];
                     <span class="text-sm font-semibold text-slate-800">Base de données</span>
                 </div>
                 <p class="text-xs text-slate-600 ml-4"><?= !empty($db['ok']) ? htmlspecialchars($db['message']) : htmlspecialchars($db['message'] ?? 'Indisponible') ?></p>
-                <?php if (!empty($db['tables'])): ?>
-                <div class="ml-4 mt-2 border border-slate-100 rounded p-2 bg-slate-50/50">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Tables principales</p>
-                    <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                        <?php foreach ($db['tables'] as $table => $info): ?>
-                        <div class="flex justify-between">
-                            <dt class="text-slate-600"><?= htmlspecialchars($table) ?></dt>
-                            <dd class="font-mono text-slate-800">
-                                <?php if (!empty($info['exists'])): ?>
-                                    <?php if (isset($info['rows'])): ?><?= (int) $info['rows'] ?> ligne(s)<?php else: ?>—<?php endif; ?>
-                                    <?php if (!empty($info['error'])): ?><span class="text-rose-600" title="<?= htmlspecialchars($info['error']) ?>">erreur</span><?php endif; ?>
-                                <?php else: ?>
-                                    <span class="text-amber-600">absente</span>
-                                <?php endif; ?>
-                            </dd>
-                        </div>
-                        <?php endforeach; ?>
-                    </dl>
-                </div>
-                <?php endif; ?>
             </div>
             <div>
                 <div class="flex items-center gap-2 mb-1">

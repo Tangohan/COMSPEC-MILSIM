@@ -25,7 +25,7 @@ class ForumModerationAdminApiController
         if (!$tenantId) {
             return Response::json(['success' => false, 'message' => 'Non authentifié'], 401);
         }
-        if (!Gate::getInstance()->allows('admin.access') && !(function_exists('can') && can('forum.moderate'))) {
+        if (!Gate::getInstance()->allows('admin.access') && !(function_exists('forum_user_can_moderate') && forum_user_can_moderate())) {
             return Response::json(['success' => false, 'message' => 'Non autorisé'], 403);
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {

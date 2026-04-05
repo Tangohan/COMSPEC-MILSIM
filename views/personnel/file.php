@@ -19,6 +19,9 @@ $canEditNotes = $canEditNotes ?? false;
 $canEditProfile = $canEditProfile ?? false;
 $canViewCivil = $canViewCivil ?? false;
 $canViewCommandNotes = $canViewCommandNotes ?? true;
+$displaySettings = $displaySettings ?? [];
+$showEmailInContact = $showEmailInContact ?? true;
+$showMatriculePublic = $showMatriculePublic ?? true;
 
 if (!$targetUser) {
     echo '<p>Utilisateur non trouvé.</p>';
@@ -69,7 +72,7 @@ $sectionsCritiques = $completeness['sections_critiques'] ?? [];
                         <?php if ($callsign): ?>
                         <span class="text-lg md:text-xl font-black text-slate-300 italic"><?= htmlspecialchars($callsign) ?></span>
                         <?php endif; ?>
-                        <?php if ($matricule): ?>
+                        <?php if ($matricule && !empty($showMatriculePublic)): ?>
                         <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Matricule <?= htmlspecialchars($matricule) ?></span>
                         <?php endif; ?>
                     </div>
@@ -184,6 +187,7 @@ $sectionsCritiques = $completeness['sections_critiques'] ?? [];
                         <?php endif; ?>
                     </div>
                     <div class="space-y-3">
+                        <?php if (!empty($showMatriculePublic)): ?>
                         <div>
                             <p class="text-[7px] font-black text-slate-400 tracking-[0.3em] mb-0.5 uppercase">Matricule</p>
                             <?php if ($matricule): ?>
@@ -194,6 +198,7 @@ $sectionsCritiques = $completeness['sections_critiques'] ?? [];
                             <p class="text-xs text-slate-400 italic">Non attribué</p>
                             <?php endif; ?>
                         </div>
+                        <?php endif; ?>
                         <?php if ($callsign): ?>
                         <div>
                             <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Callsign</p>
@@ -228,7 +233,7 @@ $sectionsCritiques = $completeness['sections_critiques'] ?? [];
                     <div class="grid md:grid-cols-2 gap-6">
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom opérateur</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($displayName) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatif radio</p><p class="text-sm font-black text-slate-900"><?= $callsign ? htmlspecialchars($callsign) : '—' ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Matricule</p><p class="text-sm font-black text-slate-900"><?= $matricule ? htmlspecialchars($matricule) : '—' ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Matricule</p><p class="text-sm font-black text-slate-900"><?= !empty($showMatriculePublic) ? ($matricule ? htmlspecialchars($matricule) : '—') : '—' ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Rôle principal</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($personnelProfile['primary_role'] ?? '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Rôle secondaire</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($personnelProfile['secondary_role'] ?? '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : '—' ?></p></div>
@@ -374,11 +379,15 @@ $sectionsCritiques = $completeness['sections_critiques'] ?? [];
                 </section>
                 <?php endif; ?>
 
-                <!-- Contact (toujours visible) -->
+                <!-- Contact -->
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Contact</h2>
                     <div class="space-y-4">
+                        <?php if (!empty($showEmailInContact)): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail Ops</p><p class="text-[11px] font-bold text-slate-900 italic"><?= htmlspecialchars($targetUser['email']) ?></p></div>
+                        <?php else: ?>
+                        <p class="text-[11px] text-slate-500 italic">E-mail masqué par les préférences de visibilité du titulaire.</p>
+                        <?php endif; ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut Réseau</p><p class="text-[11px] font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?> italic"><?= ($targetUser['status'] ?? '') === 'active' ? 'Actif' : htmlspecialchars($targetUser['status'] ?? '—') ?></p></div>
                     </div>
                 </section>

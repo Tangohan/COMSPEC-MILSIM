@@ -9,12 +9,16 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\ForumCategoryRepository;
 use App\Repositories\ForumTopicRepository;
+use App\Repositories\ForumAuthorIdentityRepository;
+use App\Services\Profile\ProfilePublicIdentityService;
 
 class ForumCategoryController
 {
     public function __construct(
         private ForumCategoryRepository $categoryRepository,
-        private ForumTopicRepository $topicRepository
+        private ForumTopicRepository $topicRepository,
+        private ForumAuthorIdentityRepository $forumAuthorIdentityRepository,
+        private ProfilePublicIdentityService $profilePublicIdentityService
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -39,7 +43,7 @@ class ForumCategoryController
             return (new Response())->setStatusCode(403)->setBody('Accès refusé à cette catégorie.');
         }
 
-        $isModo = function_exists('can') && can('forum.moderate');
+        $isModo = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
         $canCreate = function_exists('can') && can('forum.create_topic') && forum_can_read($userId, $category);
         $filter = (string) $request->query('filter', '');
         $sort = (string) $request->query('sort', 'activity');
@@ -49,6 +53,11 @@ class ForumCategoryController
 
         if ($q !== '') {
             $topics = $this->topicRepository->searchByCategory((int) $category['id'], $q, $tenantId, $isModo, 100);
+            $topics = $this->profilePublicIdentityService->enrichTopicRowsWithPublicNames(
+                $topics,
+                $this->forumAuthorIdentityRepository,
+                (int) $tenantId
+            );
             $totalTopics = count($topics);
             $totalPages = 1;
             $topics = array_slice($topics, ($page - 1) * $perPage, $perPage);
@@ -64,6 +73,11 @@ class ForumCategoryController
                 $filter ?: null,
                 $userId,
                 $isModo
+            );
+            $topics = $this->profilePublicIdentityService->enrichTopicRowsWithPublicNames(
+                $topics,
+                $this->forumAuthorIdentityRepository,
+                (int) $tenantId
             );
         }
 
@@ -81,7 +95,7 @@ class ForumCategoryController
         return Response::view('layout.forum', [
             'content' => 'forum.category',
             'title' => $category['name'],
-            'forumConfig' => config('forum') ?? [],
+            'forumConfig' => forum_config_for_tenant((int) $tenantId),
             'category' => $category,
             'topics' => $topics,
             'subcategories' => $subcategories,

@@ -2,45 +2,40 @@
 $labels = $forumConfig['labels'] ?? [];
 $baseUrl = url('');
 $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('email') ?? 'Connecté';
+$heroImageUrl = trim((string) ($forumConfig['forum_hero_image_url'] ?? ''));
+$hasHeroBg = $heroImageUrl !== '';
 ?>
 <div class="w-full px-4 sm:px-6 lg:px-8 py-10 bg-[#f8fafc]">
-  <!-- Ticker -->
-  <div class="border-b border-slate-200 bg-slate-100/90 py-2 overflow-hidden mb-8 rounded-t-lg">
-    <div class="flex animate-ticker whitespace-nowrap">
-      <span class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600"><?= htmlspecialchars($forumConfig['name'] ?? 'Forum') ?></span>
-      <span class="text-emerald-600/40 mx-4">///</span>
-      <span class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600"><?= htmlspecialchars($forumConfig['subtitle'] ?? '') ?></span>
-      <span class="text-emerald-600/40 mx-4">///</span>
-      <span class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600"><?= (int) ($topicCount ?? 0) ?> sujets actifs</span>
-      <span class="text-emerald-600/40 mx-4">///</span>
-      <span class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600"><?= (int) ($postCount ?? 0) ?> messages</span>
-      <span class="text-emerald-600/40 mx-4">///</span>
-      <span class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600"><?= (int) ($activeMembers24h ?? 0) ?> membres actifs (24 h)</span>
-      <span class="text-emerald-600/40 mx-4">///</span>
-      <span class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600"><?= htmlspecialchars($forumConfig['name'] ?? 'Forum') ?></span>
-      <span class="text-emerald-600/40 mx-4">///</span>
-      <span class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600"><?= htmlspecialchars($forumConfig['subtitle'] ?? '') ?></span>
-    </div>
-  </div>
-
   <!-- Hero -->
-  <div class="relative mb-12">
+  <div class="relative mb-10 md:mb-12">
+    <?php if (!$hasHeroBg): ?>
     <div class="absolute left-0 top-0 w-32 h-32 rounded-full bg-emerald-500/10 blur-[120px] -z-10"></div>
     <div class="absolute right-0 top-0 w-40 h-40 rounded-full bg-emerald-400/5 blur-[100px] -z-10"></div>
-    <div class="flex items-center gap-3 mb-4">
-      <span class="h-px w-12 bg-emerald-500/50"></span>
-      <span class="text-[9px] font-black uppercase tracking-[0.5em] text-emerald-700"><?= htmlspecialchars($forumConfig['context'] ?? '') ?></span>
+    <?php endif; ?>
+    <?php if ($hasHeroBg): ?>
+    <div class="relative overflow-hidden rounded-2xl border border-slate-200/60 shadow-md">
+      <div class="absolute inset-0 bg-cover bg-center bg-slate-800" style="background-image:url('<?= htmlspecialchars($heroImageUrl, ENT_QUOTES, 'UTF-8') ?>')"></div>
+      <div class="absolute inset-0 forum-hero-overlay bg-gradient-to-br from-slate-950/90 via-slate-900/65 to-emerald-950/40"></div>
+      <div class="relative z-10 px-5 py-8 sm:px-8 sm:py-10 md:px-10 md:py-11">
+    <?php endif; ?>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="h-px w-12 <?= $hasHeroBg ? 'bg-emerald-400/55' : 'bg-emerald-500/50' ?>"></span>
+      <span class="text-[9px] font-black uppercase tracking-[0.5em] <?= $hasHeroBg ? 'text-emerald-300' : 'text-emerald-700' ?>"><?= htmlspecialchars($forumConfig['context'] ?? '') ?></span>
     </div>
-    <h1 class="text-5xl md:text-7xl lg:text-8xl font-black italic uppercase tracking-tighter text-slate-900 leading-[0.9] mb-2">
+    <h1 class="text-4xl md:text-5xl lg:text-6xl font-black italic uppercase tracking-tighter leading-[0.95] mb-3 <?= $hasHeroBg ? 'text-white drop-shadow-sm' : 'text-slate-900' ?>">
       La Salle<br>
-      de <span class="bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-700 bg-clip-text text-transparent">brief</span><span class="text-emerald-600 animate-blink">_</span>
+      de <span class="bg-gradient-to-r <?= $hasHeroBg ? 'from-emerald-300 via-emerald-200 to-teal-300' : 'from-emerald-500 via-emerald-600 to-teal-700' ?> bg-clip-text text-transparent">brief</span><span class="<?= $hasHeroBg ? 'text-emerald-300' : 'text-emerald-600' ?> animate-blink">_</span>
     </h1>
-    <p class="text-slate-600 text-sm border-l-2 border-emerald-500/35 pl-6 italic max-w-2xl mb-6"><?= htmlspecialchars($forumConfig['tagline'] ?? '') ?></p>
-    <div class="flex flex-wrap items-center gap-4">
-      <a href="<?= $baseUrl ?>/forum/new-topic" class="inline-block bg-emerald-600 text-white px-8 py-4 font-black uppercase text-[10px] tracking-[0.25em] hover:bg-emerald-700 transition shadow-sm">Nouveau Sujet</a>
-      <a href="<?= $baseUrl ?>/" class="inline-block border border-slate-300 bg-white px-6 py-3 text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-slate-900 hover:border-slate-400 transition">Retour</a>
-      <span class="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-auto"><?= htmlspecialchars($userName) ?></span>
+    <p class="text-sm border-l-2 pl-6 italic max-w-2xl mb-6 leading-relaxed <?= $hasHeroBg ? 'border-emerald-400/45 text-slate-200' : 'border-emerald-500/35 text-slate-600' ?>"><?= htmlspecialchars($forumConfig['tagline'] ?? '') ?></p>
+    <div class="flex flex-wrap items-center gap-3 md:gap-4">
+      <a href="<?= $baseUrl ?>/forum/new-topic" class="inline-block bg-emerald-600 text-white px-6 py-3 md:px-8 md:py-3.5 font-black uppercase text-[10px] tracking-[0.25em] hover:bg-emerald-500 transition shadow-sm rounded-md">Nouveau Sujet</a>
+      <a href="<?= $baseUrl ?>/" class="inline-block px-5 py-2.5 md:px-6 md:py-3 text-xs font-bold uppercase tracking-wider transition rounded-md <?= $hasHeroBg ? 'border border-white/25 bg-white/10 text-white hover:bg-white/15' : 'border border-slate-300 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-400' ?>">Retour</a>
+      <span class="text-[9px] font-black uppercase tracking-widest <?= $hasHeroBg ? 'text-slate-300' : 'text-slate-500' ?> ml-auto"><?= htmlspecialchars($userName) ?></span>
     </div>
+    <?php if ($hasHeroBg): ?>
+      </div>
+    </div>
+    <?php endif; ?>
   </div>
 
   <!-- Search -->
@@ -54,7 +49,7 @@ $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('em
       <?php if (!empty($searchResults)): ?>
         <ul class="mt-2 space-y-1">
           <?php foreach ($searchResults as $r): ?>
-            <li><a href="<?= $baseUrl ?>/forum/topic/<?= (int) $r['id'] ?>" class="text-sm text-emerald-700 hover:text-emerald-600"><?= htmlspecialchars($r['title']) ?></a> — <?= htmlspecialchars($r['category_name'] ?? '') ?> · Par <?= htmlspecialchars($r['author_name'] ?? '') ?></li>
+            <li><a href="<?= $baseUrl ?>/forum/topic/<?= (int) $r['id'] ?>" class="text-sm text-emerald-700 hover:text-emerald-600"><?= htmlspecialchars($r['title']) ?></a> — <?= htmlspecialchars($r['category_name'] ?? '') ?> · Par <?= htmlspecialchars($r['topic_author_display'] ?? $r['author_name'] ?? '') ?></li>
           <?php endforeach; ?>
         </ul>
       <?php endif; ?>
@@ -62,30 +57,26 @@ $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('em
   </div>
 
   <!-- KPIs -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
-    <div class="stat-card bg-white p-6 border border-slate-200 rounded-lg shadow-sm hover:border-emerald-300/60 transition">
-      <p class="text-[8px] font-black uppercase tracking-[0.25em] text-slate-500">Sujets</p>
-      <p class="text-3xl font-black italic text-slate-900 mt-1"><?= (int) ($topicCount ?? 0) ?></p>
-      <p class="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-1">total</p>
-      <span class="block text-[22px] opacity-40 mt-2">📁</span>
+  <div class="flex md:grid md:grid-cols-4 gap-2 md:gap-3 mb-8 md:mb-10 overflow-x-auto pb-1 md:pb-0 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none">
+    <div class="stat-card bg-white p-3 md:p-4 border border-slate-200 rounded-lg shadow-sm hover:border-emerald-300/60 hover:shadow transition min-w-[7rem] md:min-w-0 shrink-0 snap-start">
+      <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Sujets</p>
+      <p class="text-lg md:text-xl font-black italic text-slate-900 tabular-nums mt-0.5"><?= (int) ($topicCount ?? 0) ?></p>
+      <p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wide mt-0.5">total</p>
     </div>
-    <div class="stat-card bg-white p-6 border border-slate-200 rounded-lg shadow-sm hover:border-emerald-300/60 transition">
-      <p class="text-[8px] font-black uppercase tracking-[0.25em] text-slate-500">Messages</p>
-      <p class="text-3xl font-black italic text-slate-900 mt-1"><?= (int) ($postCount ?? 0) ?></p>
-      <p class="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-1">total</p>
-      <span class="block text-[22px] opacity-40 mt-2">💬</span>
+    <div class="stat-card bg-white p-3 md:p-4 border border-slate-200 rounded-lg shadow-sm hover:border-emerald-300/60 hover:shadow transition min-w-[7rem] md:min-w-0 shrink-0 snap-start">
+      <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Messages</p>
+      <p class="text-lg md:text-xl font-black italic text-slate-900 tabular-nums mt-0.5"><?= (int) ($postCount ?? 0) ?></p>
+      <p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wide mt-0.5">total</p>
     </div>
-    <div class="stat-card bg-white p-6 border border-slate-200 rounded-lg shadow-sm hover:border-emerald-300/60 transition">
-      <p class="text-[8px] font-black uppercase tracking-[0.25em] text-slate-500">Cette semaine</p>
-      <p class="text-3xl font-black italic text-slate-900 mt-1">+<?= (int) ($postsThisWeek ?? 0) ?></p>
-      <p class="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-1">messages</p>
-      <span class="block text-[22px] opacity-40 mt-2">⚡</span>
+    <div class="stat-card bg-white p-3 md:p-4 border border-slate-200 rounded-lg shadow-sm hover:border-emerald-300/60 hover:shadow transition min-w-[7rem] md:min-w-0 shrink-0 snap-start">
+      <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Cette semaine</p>
+      <p class="text-lg md:text-xl font-black italic text-emerald-800 tabular-nums mt-0.5">+<?= (int) ($postsThisWeek ?? 0) ?></p>
+      <p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wide mt-0.5">messages</p>
     </div>
-    <div class="stat-card bg-white p-6 border border-slate-200 rounded-lg shadow-sm hover:border-emerald-300/60 transition">
-      <p class="text-[8px] font-black uppercase tracking-[0.25em] text-slate-500">Membres actifs</p>
-      <p class="text-3xl font-black italic text-slate-900 mt-1"><?= (int) ($activeMembers24h ?? 0) ?></p>
-      <p class="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-1">24 h</p>
-      <span class="block text-[22px] opacity-40 mt-2">🔥</span>
+    <div class="stat-card bg-white p-3 md:p-4 border border-slate-200 rounded-lg shadow-sm hover:border-emerald-300/60 hover:shadow transition min-w-[7rem] md:min-w-0 shrink-0 snap-start">
+      <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Membres actifs</p>
+      <p class="text-lg md:text-xl font-black italic text-slate-900 tabular-nums mt-0.5"><?= (int) ($activeMembers24h ?? 0) ?></p>
+      <p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wide mt-0.5">24 h</p>
     </div>
   </div>
 
@@ -106,11 +97,11 @@ $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('em
                 <div class="flex items-start justify-between border-b border-slate-100 pb-6 mb-6 gap-4">
                   <div class="flex items-center gap-4">
                     <div class="shrink-0 h-12 w-12 bg-emerald-100 text-emerald-900 font-black flex items-center justify-center italic text-lg select-none rounded-md">
-                      <?= mb_strtoupper(mb_substr($ann['author_name'] ?? 'A', 0, 1)) ?>
+                      <?= mb_strtoupper(mb_substr($ann['topic_author_display'] ?? $ann['author_name'] ?? 'A', 0, 1)) ?>
                     </div>
                     <div>
                       <p class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Équipe</p>
-                      <h2 class="text-xl font-black text-slate-900 uppercase italic leading-tight"><?= htmlspecialchars($ann['author_name'] ?? '') ?></h2>
+                      <h2 class="text-xl font-black text-slate-900 uppercase italic leading-tight"><?= htmlspecialchars($ann['topic_author_display'] ?? $ann['author_name'] ?? '') ?></h2>
                     </div>
                   </div>
                   <div class="text-right shrink-0">
@@ -187,10 +178,10 @@ $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('em
             $theme = $colorThemes[$cat['color_theme'] ?? 'slate'] ?? $colorThemes['slate'];
             $num = str_pad((string) ($idx + 1), 2, '0', STR_PAD_LEFT);
           ?>
-            <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($cat['slug']) ?>" class="category-card group block border <?= $theme['border'] ?> <?= $theme['hover'] ?> bg-white rounded-xl shadow-sm transition relative overflow-hidden">
+            <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($cat['slug']) ?>" class="category-card group block border <?= $theme['border'] ?> <?= $theme['hover'] ?> bg-white rounded-xl shadow-sm transition relative overflow-hidden hover:shadow-md">
               <div class="absolute -right-10 -top-10 w-52 h-52 <?= $theme['glow'] ?> blur-3xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full"></div>
-              <div class="relative flex flex-col md:flex-row p-6 md:p-8">
-                <span class="absolute top-4 right-4 text-[9px] font-black text-slate-300 tabular-nums"><?= $num ?></span>
+              <div class="relative flex flex-col md:flex-row p-4 md:p-6">
+                <span class="absolute top-3 right-3 text-[8px] font-bold text-slate-300/90 tabular-nums select-none"><?= $num ?></span>
                 <div class="w-16 h-16 md:w-20 md:h-20 <?= $theme['icon'] ?> flex items-center justify-center text-2xl md:text-3xl mb-4 md:mb-0 md:mr-6 transition -rotate-0 group-hover:-rotate-3 rounded-lg">📁</div>
                 <div class="flex-1">
                   <h2 class="text-xl md:text-2xl font-black italic uppercase tracking-tighter text-slate-900 <?= $theme['title'] ?>"><?= htmlspecialchars($cat['name']) ?></h2>
@@ -279,8 +270,8 @@ $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('em
           ?>
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <span class="w-8 h-8 flex items-center justify-center text-xs font-black border <?= $cls ?>"><?= mb_substr($c['display_name'] ?? $c['callsign'] ?? '?', 0, 1) ?></span>
-                <span class="text-xs font-bold text-slate-900 uppercase"><?= htmlspecialchars($c['display_name'] ?? $c['callsign'] ?? 'Anon') ?></span>
+                <span class="w-8 h-8 flex items-center justify-center text-xs font-black border <?= $cls ?>"><?= mb_substr($c['display_name_resolved'] ?? $c['display_name'] ?? $c['callsign'] ?? '?', 0, 1) ?></span>
+                <span class="text-xs font-bold text-slate-900 uppercase"><?= htmlspecialchars($c['display_name_resolved'] ?? $c['display_name'] ?? $c['callsign'] ?? 'Anon') ?></span>
               </div>
               <span class="text-[9px] font-black text-slate-500"><?= (int) ($c['post_count'] ?? 0) ?> MSG</span>
             </div>
@@ -301,7 +292,7 @@ $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('em
             <div class="bg-rose-50 border border-rose-200 p-4 rounded-lg">
               <span class="text-[8px] font-black uppercase text-rose-400">Urgent</span>
               <p class="text-xs text-slate-700 mt-1"><?= count($pendingReports) ?> signalement(s) en attente.</p>
-              <a href="<?= $baseUrl ?>/admin/forum-moderation" class="inline-block mt-2 text-xs font-bold text-rose-400 hover:text-rose-300">Traiter →</a>
+              <a href="<?= $baseUrl ?>/back-office/forum-moderation" class="inline-block mt-2 text-xs font-bold text-rose-400 hover:text-rose-300">Traiter →</a>
             </div>
           <?php else: ?>
             <div class="bg-emerald-50 border border-emerald-200 p-4 text-xs text-slate-600 rounded-lg">Aucun signalement en attente.</div>
