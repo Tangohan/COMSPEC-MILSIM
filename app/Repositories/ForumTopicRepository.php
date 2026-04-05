@@ -65,10 +65,11 @@ class ForumTopicRepository
             ? ', (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id AND fp.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS posts_7d'
             : '';
 
-        $sql = "SELECT ft.*, u.display_name AS author_name, u.callsign AS author_callsign,
+        $sql = "SELECT ft.*, u.id AS topic_author_user_id, u.display_name AS author_name, u.callsign AS author_callsign,
                     (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id) AS post_count,
                     (SELECT fp.created_at FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_at,
-                    (SELECT u2.display_name FROM forum_posts fp JOIN users u2 ON u2.id = fp.user_id WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_author_name
+                    (SELECT u2.display_name FROM forum_posts fp JOIN users u2 ON u2.id = fp.user_id WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_author_name_legacy,
+                    (SELECT fp.user_id FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id
                     $selectExtra
              FROM forum_topics ft
              $filterJoin
@@ -120,10 +121,11 @@ class ForumTopicRepository
         $term = '%' . trim($query) . '%';
         $hiddenCond = $includeHiddenForUser ? '1' : 'ft.is_hidden = 0';
         $stmt = $this->pdo->prepare(
-            "SELECT ft.*, u.display_name AS author_name,
+            "SELECT ft.*, u.id AS topic_author_user_id, u.display_name AS author_name,
                     (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id) AS post_count,
                     (SELECT fp.created_at FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_at,
-                    (SELECT u2.display_name FROM forum_posts fp JOIN users u2 ON u2.id = fp.user_id WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_author_name
+                    (SELECT u2.display_name FROM forum_posts fp JOIN users u2 ON u2.id = fp.user_id WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_author_name_legacy,
+                    (SELECT fp.user_id FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id
              FROM forum_topics ft
              LEFT JOIN users u ON u.id = ft.user_id
              WHERE ft.category_id = ? AND ft.tenant_id = ? AND ($hiddenCond) AND (ft.title LIKE ? OR EXISTS (
@@ -139,7 +141,7 @@ class ForumTopicRepository
     public function findById(int $id, int $tenantId): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT ft.*, u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id,
+            'SELECT ft.*, u.id AS topic_author_user_id, u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id,
                     fc.name AS category_name, fc.slug AS category_slug
              FROM forum_topics ft
              LEFT JOIN users u ON u.id = ft.user_id
@@ -197,7 +199,7 @@ class ForumTopicRepository
     public function getPinnedInCategory(int $categoryId, int $tenantId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT ft.*, u.display_name AS author_name
+            'SELECT ft.*, u.id AS topic_author_user_id, u.display_name AS author_name
              FROM forum_topics ft
              LEFT JOIN users u ON u.id = ft.user_id
              WHERE ft.category_id = ? AND ft.tenant_id = ? AND ft.is_pinned = 1 AND ft.is_hidden = 0
@@ -211,7 +213,7 @@ class ForumTopicRepository
     {
         $stmt = $this->pdo->prepare(
             'SELECT ft.id, ft.title, ft.slug, ft.updated_at, fc.name AS category_name, fc.slug AS category_slug, fc.color_theme,
-                    (SELECT u.display_name FROM forum_posts fp JOIN users u ON u.id = fp.user_id WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_author_name
+                    (SELECT fp.user_id FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id
              FROM forum_topics ft
              JOIN forum_categories fc ON fc.id = ft.category_id
              WHERE ft.tenant_id = ? AND ft.is_hidden = 0

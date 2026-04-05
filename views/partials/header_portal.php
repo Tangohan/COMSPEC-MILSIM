@@ -33,26 +33,26 @@ $defaultAccent = 'slate';
         data-portal-nav>
     <div class="portal-nav__shell">
         <div class="mx-auto max-w-[1800px] px-4 sm:px-6">
-            <div class="flex flex-col gap-2 py-2 lg:flex-row lg:items-center lg:gap-4 lg:py-3 xl:min-h-[4.5rem]">
-                <div class="flex min-w-0 flex-1 items-start gap-3" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
+            <div class="flex flex-col gap-2 py-2 lg:flex-row lg:items-center lg:gap-4 lg:py-3 xl:grid xl:min-h-[4.5rem] xl:grid-cols-[minmax(0,17rem)_minmax(0,1fr)_auto] xl:items-center xl:gap-5 xl:py-3">
+                <div class="flex min-w-0 max-w-[17rem] shrink-0 items-start gap-3 overflow-hidden" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
                     <span class="portal-nav__brand-mark mt-0.5 hidden h-14 w-1 shrink-0 sm:block" aria-hidden="true"></span>
                     <a href="<?= htmlspecialchars($nav['brand']['href']) ?>"
                        class="group flex min-w-0 flex-col leading-none">
                         <span class="text-[13px] font-black uppercase italic tracking-[0.38em] text-slate-950 transition-colors group-hover:text-slate-800">
                             <?= htmlspecialchars($nav['brand']['name']) ?>
                         </span>
-                        <span class="mt-1 text-[11px] font-semibold leading-tight text-slate-600">
+                        <span class="mt-1 line-clamp-2 text-[11px] font-semibold leading-snug text-slate-600">
                             <?= htmlspecialchars($nav['brand']['subtitle']) ?>
                         </span>
                         <?php if ($brandTagline !== ''): ?>
-                            <span class="mt-0.5 text-[10px] font-mono uppercase tracking-[0.12em] text-slate-400">
+                            <span class="mt-0.5 line-clamp-1 text-[10px] font-mono uppercase tracking-[0.12em] text-slate-400">
                                 <?= htmlspecialchars($brandTagline) ?>
                             </span>
                         <?php endif; ?>
                     </a>
                 </div>
 
-                <nav class="hidden min-w-0 flex-[1.2] justify-center xl:flex" aria-label="Navigation principale" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
+                <nav class="relative z-[1] hidden min-w-0 justify-center justify-self-center xl:flex xl:w-full" aria-label="Navigation principale" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
                     <ul class="flex h-full items-stretch gap-0.5">
                         <?php foreach ($nav['menu'] as $item): ?>
                             <?php
@@ -113,7 +113,7 @@ $defaultAccent = 'slate';
                     </ul>
                 </nav>
 
-                <div class="flex w-full min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3 lg:flex-initial lg:justify-end">
+                <div class="flex w-full min-w-0 shrink-0 items-center justify-end justify-self-end gap-2 sm:gap-3 lg:ml-auto lg:w-auto xl:ml-0">
                     <?php if (!empty($nav['search']['enabled'])): ?>
                         <form method="<?= htmlspecialchars(strtoupper($nav['search']['method'])) ?>"
                               action="<?= htmlspecialchars($nav['search']['action']) ?>"
@@ -234,7 +234,7 @@ $defaultAccent = 'slate';
             </div>
 
             <?php if ($loggedIn): ?>
-                <div class="portal-nav__status flex flex-wrap items-center gap-2 border-t border-slate-200/90 px-0 py-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-600">
+                <div class="portal-nav__status relative z-[2] flex flex-wrap items-center gap-2 border-t border-slate-200 bg-slate-50 px-0 py-2.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-600">
                     <span class="<?= htmlspecialchars($alertsChipClass) ?> rounded-lg px-2 py-1">
                         Env · <?= htmlspecialchars($ctx['environment']) ?>
                     </span>
@@ -242,7 +242,7 @@ $defaultAccent = 'slate';
                         Statut · <?= htmlspecialchars($ctx['system_status']) ?>
                     </span>
                     <?php if (($ctx['tenant_label'] ?? '') !== ''): ?>
-                        <span class="portal-nav__status-chip max-w-[200px] truncate rounded-lg px-2 py-1" title="<?= htmlspecialchars($ctx['tenant_label']) ?>">
+                        <span class="portal-nav__status-chip max-w-[min(22rem,42vw)] truncate rounded-lg px-2 py-1" title="<?= htmlspecialchars($ctx['tenant_label']) ?>">
                             Communauté · <?= htmlspecialchars($ctx['tenant_label']) ?>
                         </span>
                     <?php endif; ?>

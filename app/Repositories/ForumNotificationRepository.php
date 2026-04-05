@@ -45,4 +45,34 @@ class ForumNotificationRepository
 
         return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function listRecentUnread(int $tenantId, int $userId, int $limit = 15): array
+    {
+        if (!$this->tableExists()) {
+            return [];
+        }
+        $limit = max(1, min(50, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT id, type, payload_json, created_at FROM forum_notifications
+             WHERE tenant_id = ? AND user_id = ? AND read_at IS NULL
+             ORDER BY created_at DESC LIMIT {$limit}"
+        );
+        $stmt->execute([$tenantId, $userId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return $rows;
+    }
+
+    public function markAllRead(int $tenantId, int $userId): void
+    {
+        if (!$this->tableExists()) {
+            return;
+        }
+        $this->pdo->prepare(
+            'UPDATE forum_notifications SET read_at = NOW() WHERE tenant_id = ? AND user_id = ? AND read_at IS NULL'
+        )->execute([$tenantId, $userId]);
+    }
 }

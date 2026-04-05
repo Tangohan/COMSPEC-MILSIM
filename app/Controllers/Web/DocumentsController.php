@@ -11,8 +11,10 @@ use App\Core\Session;
 use App\Repositories\DocumentCategoryRepository;
 use App\Repositories\DocumentLinkRepository;
 use App\Repositories\DocumentRepository;
+use App\Repositories\ModerationArtifactRepository;
 use App\Services\Audit\AuditService;
 use App\Services\Documents\DocumentAccessService;
+use App\Services\Moderation\ModerationArtifactState;
 
 class DocumentsController
 {
@@ -23,7 +25,8 @@ class DocumentsController
         private DocumentCategoryRepository $categoryRepository,
         private DocumentLinkRepository $linkRepository,
         private DocumentAccessService $documentAccessService,
-        private AuditService $auditService
+        private AuditService $auditService,
+        private ModerationArtifactRepository $moderationArtifactRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -77,6 +80,9 @@ class DocumentsController
         if (empty($doc['file_path']) || empty($doc['mime_type'])) {
             return (new Response())->setStatusCode(404)->setBody('Aucune version de fichier.');
         }
+        if ($this->isDocumentFileBlockedForViewer($doc)) {
+            return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération).');
+        }
         $viewType = 'pdf';
         if (str_starts_with($doc['mime_type'], 'image/')) {
             $viewType = 'image';
@@ -109,6 +115,9 @@ class DocumentsController
         }
         if (($doc['status'] ?? '') !== 'published') {
             return (new Response())->setStatusCode(404)->setBody('Document non disponible');
+        }
+        if ($this->isDocumentFileBlockedForViewer($doc)) {
+            return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
         }
         $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
         if (!is_file($fullPath)) {
@@ -149,6 +158,9 @@ class DocumentsController
         if (($doc['status'] ?? '') !== 'published') {
             return (new Response())->setStatusCode(404)->setBody('Document non disponible');
         }
+        if ($this->isDocumentFileBlockedForViewer($doc)) {
+            return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
+        }
         $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
         if (!is_file($fullPath)) {
             return (new Response())->setStatusCode(404)->setBody('Fichier absent');
@@ -166,5 +178,43 @@ class DocumentsController
             }
         });
         return $response;
+    }
+
+    /**
+     * @param array<string, mixed> $doc
+     */
+    private function isDocumentFileBlockedForViewer(array $doc): bool
+    {
+        if (!$this->moderationArtifactRepository->tableExists()) {
+            return false;
+        }
+        $versionId = (int) ($doc['version_id'] ?? 0);
+        if ($versionId <= 0) {
+            return false;
+        }
+        if ($this->viewerMayBypassModerationBlock()) {
+            return false;
+        }
+        $row = $this->moderationArtifactRepository->findByDocumentVersionId($versionId);
+        if (!$row) {
+            return false;
+        }
+        $st = (string) ($row['state'] ?? '');
+
+        return in_array($st, [
+            ModerationArtifactState::PENDING_SCAN,
+            ModerationArtifactState::QUARANTINED,
+            ModerationArtifactState::REJECTED,
+        ], true);
+    }
+
+    private function viewerMayBypassModerationBlock(): bool
+    {
+        $gate = Gate::getInstance();
+
+        return (function_exists('can') && (can('forum.moderate') || can('forum.moderate_organization')))
+            || $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('admin.system');
     }
 }

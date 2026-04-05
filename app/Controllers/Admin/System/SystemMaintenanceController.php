@@ -44,14 +44,14 @@ final class SystemMaintenanceController
     public function create(Request $request, array $params = []): Response
     {
         if (!$this->repo->tableExists()) {
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
 
         return Response::view('layout.main', [
             'content' => 'admin.system.maintenance_form',
             'title' => 'Nouvelle règle de maintenance',
             'maintenanceRule' => null,
-            'formAction' => url('admin/system/maintenance'),
+            'formAction' => url('admin/maintenance'),
         ]);
     }
 
@@ -60,10 +60,10 @@ final class SystemMaintenanceController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
         if (!$this->repo->tableExists()) {
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
 
         try {
@@ -77,27 +77,27 @@ final class SystemMaintenanceController
             Session::flash('error', 'Enregistrement impossible.');
         }
 
-        return Response::redirect(url('admin/system/maintenance'));
+        return Response::redirect(url('admin/maintenance'));
     }
 
     public function edit(Request $request, array $params = []): Response
     {
         if (!$this->repo->tableExists()) {
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
         $id = (int) ($params['id'] ?? 0);
         $row = $id > 0 ? $this->repo->findById($id) : null;
         if (!$row) {
             Session::flash('error', 'Règle introuvable.');
 
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
 
         return Response::view('layout.main', [
             'content' => 'admin.system.maintenance_form',
             'title' => 'Modifier la règle #' . $id,
             'maintenanceRule' => $row,
-            'formAction' => url('admin/system/maintenance/' . $id . '/update'),
+            'formAction' => url('admin/maintenance/' . $id . '/update'),
         ]);
     }
 
@@ -106,13 +106,13 @@ final class SystemMaintenanceController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0 || !$this->repo->findById($id)) {
             Session::flash('error', 'Règle introuvable.');
 
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
 
         try {
@@ -126,7 +126,7 @@ final class SystemMaintenanceController
             Session::flash('error', 'Mise à jour impossible.');
         }
 
-        return Response::redirect(url('admin/system/maintenance'));
+        return Response::redirect(url('admin/maintenance'));
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -134,11 +134,11 @@ final class SystemMaintenanceController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0) {
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
 
         try {
@@ -151,7 +151,7 @@ final class SystemMaintenanceController
             Session::flash('error', 'Suppression impossible.');
         }
 
-        return Response::redirect(url('admin/system/maintenance'));
+        return Response::redirect(url('admin/maintenance'));
     }
 
     public function toggle(Request $request, array $params = []): Response
@@ -159,14 +159,14 @@ final class SystemMaintenanceController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
         $id = (int) ($params['id'] ?? 0);
         $enabled = $request->input('enabled');
         $on = $enabled === '1' || $enabled === 1 || $enabled === true;
 
         if ($id <= 0) {
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
 
         try {
@@ -179,20 +179,20 @@ final class SystemMaintenanceController
             Session::flash('error', 'Changement d\'état impossible.');
         }
 
-        return Response::redirect(url('admin/system/maintenance'));
+        return Response::redirect(url('admin/maintenance'));
     }
 
     public function audit(Request $request, array $params = []): Response
     {
         if (!$this->repo->tableExists()) {
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
         $id = (int) ($params['id'] ?? 0);
         $rule = $id > 0 ? $this->repo->findById($id) : null;
         if (!$rule) {
             Session::flash('error', 'Règle introuvable.');
 
-            return Response::redirect(url('admin/system/maintenance'));
+            return Response::redirect(url('admin/maintenance'));
         }
 
         return Response::view('layout.main', [

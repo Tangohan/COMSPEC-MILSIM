@@ -41,7 +41,7 @@ final class SystemSiteRoleAssignmentController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('admin/system/site-roles'));
+            return Response::redirect(url('admin/site-roles'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $actorId = (int) Session::get('user_id');
@@ -53,7 +53,7 @@ final class SystemSiteRoleAssignmentController
         if (!$this->siteRoleAssignments->assign($email, $roleId, $actorId)) {
             Session::flash('error', 'Email ou rôle site invalide.');
 
-            return Response::redirect(url('admin/system/site-roles'));
+            return Response::redirect(url('admin/site-roles'));
         }
         $this->auditService->log(
             AuditAction::SITE_ROLE_ASSIGNED,
@@ -66,7 +66,7 @@ final class SystemSiteRoleAssignmentController
         );
         Session::flash('success', 'Rôle site affecté.');
 
-        return Response::redirect(url('admin/system/site-roles'));
+        return Response::redirect(url('admin/site-roles'));
     }
 
     public function revoke(Request $request, array $params = []): Response
@@ -74,7 +74,7 @@ final class SystemSiteRoleAssignmentController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('admin/system/site-roles'));
+            return Response::redirect(url('admin/site-roles'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $actorId = (int) Session::get('user_id');
@@ -85,7 +85,7 @@ final class SystemSiteRoleAssignmentController
         if ($id <= 0 || !$this->siteRoleAssignments->revoke($id)) {
             Session::flash('error', 'Révocation impossible.');
 
-            return Response::redirect(url('admin/system/site-roles'));
+            return Response::redirect(url('admin/site-roles'));
         }
         $this->auditService->log(
             AuditAction::SITE_ROLE_REVOKED,
@@ -96,6 +96,6 @@ final class SystemSiteRoleAssignmentController
         );
         Session::flash('success', 'Affectation révoquée.');
 
-        return Response::redirect(url('admin/system/site-roles'));
+        return Response::redirect(url('admin/site-roles'));
     }
 }

@@ -37,7 +37,7 @@ class SystemDashboardController
             'adminKpiBlockError' => $metrics['blockError'],
             'adminRecentActivity' => $recent,
             'adminRecentActivityError' => $recentError,
-            'adminRecentActivityMoreUrl' => url('admin/system/audit'),
+            'adminRecentActivityMoreUrl' => url('admin/audit'),
         ]);
     }
 }

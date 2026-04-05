@@ -53,6 +53,8 @@
   border-bottom: 1px solid rgb(226 232 240);
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(10px);
+  /* Évite que le contenu de la page ne se lise à travers la barre de statut */
+  isolation: isolate;
 }
 
 @supports (backdrop-filter: blur(10px)) {
@@ -73,8 +75,8 @@
 
 .portal-nav__status-chip {
   letter-spacing: 0.06em;
-  border: 1px solid rgb(226 232 240 / 0.95);
-  background: rgb(248 250 252 / 0.85);
+  border: 1px solid rgb(226 232 240);
+  background: rgb(241 245 249);
 }
 
 .portal-nav__status-chip--alert-urgent {

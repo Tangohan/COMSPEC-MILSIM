@@ -10,7 +10,7 @@ use App\Core\Session;
 use App\Repositories\ForumReportRepository;
 
 /**
- * Console centralisée /admin/forum-moderation (modérateurs + admins).
+ * Console centralisée /back-office/forum-moderation (modérateurs + admins).
  */
 final class ForumModerationDashboardController
 {
@@ -44,7 +44,7 @@ final class ForumModerationDashboardController
         return Response::view('layout.forum', [
             'content' => 'admin.forum_moderation',
             'title' => 'Modération forum',
-            'forumConfig' => config('forum') ?? [],
+            'forumConfig' => forum_config_for_tenant($tenantId),
             'pendingReports' => $pendingReports,
             'handledReports' => $handledReports,
             'modScopeFilter' => $scopeFilter,

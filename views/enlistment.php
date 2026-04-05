@@ -315,48 +315,20 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                     <section>
                         <div class="section-title"><?= htmlspecialchars((string) $p['section_2']) ?></div>
                         <div class="space-y-6">
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black tracking-wider uppercase"><?= htmlspecialchars($fld('system_config')['label']) ?></label>
-                                <input type="text" name="system_config" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('system_config')['placeholder']) ?>">
-                            </div>
+                            <?php $fieldName = 'system_config'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
                             <div class="grid md:grid-cols-2 gap-6">
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black tracking-wider uppercase"><?= htmlspecialchars($fld('microphone_quality')['label']) ?></label>
-                                    <select name="microphone_quality" class="input-field bg-white track-field">
-                                        <option value="">Sélectionner</option>
-                                        <option value="Oui">Oui</option>
-                                        <option value="Non">Non</option>
-                                    </select>
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black tracking-wider uppercase"><?= htmlspecialchars($fld('ace_acre_level')['label']) ?></label>
-                                    <select name="ace_acre_level" class="input-field bg-white track-field">
-                                        <option value="">Sélectionner</option>
-                                        <option value="Aucune">Aucune</option>
-                                        <option value="Basique">Basique</option>
-                                        <option value="Expérimenté">Expérimenté</option>
-                                        <option value="Avancé">Avancé</option>
-                                    </select>
-                                </div>
+                                <?php $fieldName = 'microphone_quality'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
+                                <?php $fieldName = 'ace_acre_level'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
                             </div>
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black tracking-wider uppercase"><?= htmlspecialchars($fld('past_milsim_experience')['label']) ?></label>
-                                <textarea name="past_milsim_experience" class="input-field h-32 track-field" placeholder="<?= htmlspecialchars($fld('past_milsim_experience')['placeholder']) ?>"></textarea>
-                            </div>
+                            <?php $fieldName = 'past_milsim_experience'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
                         </div>
                     </section>
 
                     <section>
                         <div class="section-title"><?= htmlspecialchars((string) $p['section_3']) ?></div>
                         <div class="space-y-6">
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black tracking-wider uppercase"><?= htmlspecialchars($fld('motivation_why_join')['label']) ?></label>
-                                <textarea name="motivation_why_join" class="input-field h-24 track-field" placeholder="<?= htmlspecialchars($fld('motivation_why_join')['placeholder']) ?>"></textarea>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black tracking-wider uppercase"><?= htmlspecialchars($fld('motivation_accountability')['label']) ?></label>
-                                <textarea name="motivation_accountability" class="input-field h-24 track-field" placeholder="<?= htmlspecialchars($fld('motivation_accountability')['placeholder']) ?>"></textarea>
-                            </div>
+                            <?php $fieldName = 'motivation_why_join'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
+                            <?php $fieldName = 'motivation_accountability'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
                         </div>
                     </section>
 

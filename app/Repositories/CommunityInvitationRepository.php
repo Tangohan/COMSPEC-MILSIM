@@ -59,6 +59,15 @@ class CommunityInvitationRepository
         $stmt->execute([$acceptedUserId, $id]);
     }
 
+    public function findByIdForTenant(int $id, int $tenantId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM community_invitations WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $stmt->execute([$id, $tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function markRevoked(int $id, int $tenantId): bool
     {
         $stmt = $this->pdo->prepare(

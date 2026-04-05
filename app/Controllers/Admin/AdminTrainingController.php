@@ -128,11 +128,13 @@ class AdminTrainingController
         ]);
     }
 
-    /** Accès au back-office formations : admin global OU permission training.manage (instructeur). */
+    /** Accès au back-office formations : admin, training.manage ou droits de création / édition LMS. */
     private function requireTrainingAccess(): void
     {
         $gate = Gate::getInstance();
-        if ($gate->allows('admin.access') || $gate->allows('training.manage')) {
+        if ($gate->allows('admin.access') || $gate->allows('training.manage')
+            || $gate->allows('training.create') || $gate->allows('training.update')
+            || $gate->allows('training.delete') || $gate->allows('training.publish')) {
             return;
         }
         throw new \RuntimeException('Accès refusé.', 403);

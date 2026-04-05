@@ -16,6 +16,22 @@ class PersonnelAssignmentRepository
         $this->pdo = Database::getPdo();
     }
 
+    /**
+     * Source métier : `personnel_assignments` en priorité ; si aucune ligne active, repli sur `user_units`
+     * (historique / compat). Pour les écritures futures, privilégier `personnel_assignments`.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listActiveForUserResolved(int $userId): array
+    {
+        $rows = $this->listActiveForUser($userId);
+        if ($rows !== []) {
+            return $rows;
+        }
+
+        return $this->listActiveForUserLegacy($userId);
+    }
+
     /** @return list<array<string, mixed>> Affectations actives (status = active, ended_at null ou future). */
     public function listActiveForUser(int $userId): array
     {
@@ -74,5 +90,32 @@ class PersonnelAssignmentRepository
             $this->pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * Insère dans personnel_assignments les couples (user, unit) présents dans user_units mais absents du dossier.
+     * Idempotent ; utile après migration ou import legacy.
+     */
+    public function syncMissingFromUserUnits(int $userId): int
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO personnel_assignments (user_id, unit_id, role_name, is_primary, started_at, ended_at, status, created_at)
+             SELECT uu.user_id, uu.unit_id,
+                    COALESCE(NULLIF(TRIM(uu.assignment_type), \'\'), \'Membre\'),
+                    COALESCE(uu.is_primary, 0),
+                    CASE WHEN uu.assigned_at IS NULL THEN CURDATE() ELSE DATE(uu.assigned_at) END,
+                    CASE WHEN uu.ended_at IS NULL THEN NULL ELSE DATE(uu.ended_at) END,
+                    CASE WHEN uu.ended_at IS NULL OR uu.ended_at > NOW() THEN \'active\' ELSE \'inactive\' END,
+                    NOW()
+             FROM user_units uu
+             WHERE uu.user_id = ?
+               AND NOT EXISTS (
+                 SELECT 1 FROM personnel_assignments pa
+                 WHERE pa.user_id = uu.user_id AND pa.unit_id = uu.unit_id
+               )'
+        );
+        $stmt->execute([$userId]);
+
+        return $stmt->rowCount();
     }
 }

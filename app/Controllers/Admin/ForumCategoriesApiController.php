@@ -23,7 +23,7 @@ class ForumCategoriesApiController
         if (!$tenantId) {
             return Response::json(['success' => false, 'message' => 'Non authentifié'], 401);
         }
-        if (!Gate::getInstance()->allows('admin.access') && !(function_exists('can') && can('forum.manage_categories'))) {
+        if (!Gate::getInstance()->allows('admin.access') && !(function_exists('can') && can('forum.categories.manage'))) {
             return Response::json(['success' => false, 'message' => 'Non autorisé'], 403);
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {

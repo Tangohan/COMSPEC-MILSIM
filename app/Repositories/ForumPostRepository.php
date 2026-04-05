@@ -14,9 +14,22 @@ class ForumPostRepository
     /** @var array{select: string, join: string}|null */
     private ?array $gradesConfig = null;
 
+    private ?bool $hasDisplaySettingsTable = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    private function hasDisplaySettingsTable(): bool
+    {
+        if ($this->hasDisplaySettingsTable !== null) {
+            return $this->hasDisplaySettingsTable;
+        }
+        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' LIMIT 1");
+        $this->hasDisplaySettingsTable = (bool) ($stmt && $stmt->fetchColumn());
+
+        return $this->hasDisplaySettingsTable;
     }
 
     /**
@@ -61,8 +74,35 @@ class ForumPostRepository
         $grades = $this->getGradesConfig();
         $gradeCols = $grades['select'];
         $gradeJoin = $grades['join'];
+        $identityCols = $this->hasDisplaySettingsTable()
+            ? 'u.id AS author_user_id,
+                    u.email AS author_email,
+                    up.first_name AS author_first_name,
+                    up.last_name AS author_last_name,
+                    pp.character_name AS author_character_name,
+                    ups.forum_alias AS author_forum_alias,
+                    ups.forum_label_mode AS author_forum_label_mode,
+                    COALESCE(ups.show_matricule_forum, 1) AS author_show_matricule_forum,
+                    COALESCE(ups.show_grade_forum, 1) AS author_show_grade_forum,
+                    COALESCE(ups.show_unit_forum, 1) AS author_show_unit_forum,
+                    COALESCE(ups.show_bio_forum, 1) AS author_show_bio_forum,'
+            : 'u.id AS author_user_id,
+                    u.email AS author_email,
+                    up.first_name AS author_first_name,
+                    up.last_name AS author_last_name,
+                    pp.character_name AS author_character_name,
+                    NULL AS author_forum_alias,
+                    NULL AS author_forum_label_mode,
+                    1 AS author_show_matricule_forum,
+                    1 AS author_show_grade_forum,
+                    1 AS author_show_unit_forum,
+                    1 AS author_show_bio_forum,';
+        $upsJoin = $this->hasDisplaySettingsTable()
+            ? 'LEFT JOIN user_profile_display_settings ups ON ups.user_id = u.id'
+            : '';
         $fullSql = "SELECT fp.*,
                     u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id, u.avatar_url AS author_avatar_url, u.created_at AS author_created_at,
+                    $identityCols
                     r.name AS author_role_name,
                     up.bio AS author_bio,
                     $gradeCols,
@@ -79,11 +119,23 @@ class ForumPostRepository
              $gradeJoin
              LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
              LEFT JOIN units un ON un.id = pp.primary_unit_id
+             $upsJoin
              WHERE fp.topic_id = ? AND ($hiddenCond)
              ORDER BY fp.created_at ASC
              LIMIT $perPage OFFSET $offset";
         $fallbackSql = "SELECT fp.*,
                     u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id, u.avatar_url AS author_avatar_url, u.created_at AS author_created_at,
+                    u.id AS author_user_id,
+                    u.email AS author_email,
+                    up.first_name AS author_first_name,
+                    up.last_name AS author_last_name,
+                    NULL AS author_character_name,
+                    NULL AS author_forum_alias,
+                    NULL AS author_forum_label_mode,
+                    1 AS author_show_matricule_forum,
+                    1 AS author_show_grade_forum,
+                    1 AS author_show_unit_forum,
+                    1 AS author_show_bio_forum,
                     r.name AS author_role_name,
                     up.bio AS author_bio,
                     $gradeCols,
@@ -200,16 +252,54 @@ class ForumPostRepository
 
     public function getTopContributors(int $tenantId, int $limit = 10): array
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT u.id, u.display_name, u.callsign, COUNT(fp.id) AS post_count
+        if ($this->hasDisplaySettingsTable()) {
+            $sql = 'SELECT u.id, u.email, u.display_name, u.callsign,
+                    up.first_name AS author_first_name, up.last_name AS author_last_name,
+                    pp.character_name AS author_character_name,
+                    ups.forum_alias AS author_forum_alias, ups.forum_label_mode AS author_forum_label_mode,
+                    COUNT(fp.id) AS post_count
              FROM forum_posts fp
              JOIN users u ON u.id = fp.user_id
+             LEFT JOIN user_profiles up ON up.user_id = u.id
+             LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+             LEFT JOIN user_profile_display_settings ups ON ups.user_id = u.id
              WHERE fp.tenant_id = ?
-             GROUP BY fp.user_id
+             GROUP BY u.id, u.email, u.display_name, u.callsign, up.first_name, up.last_name, pp.character_name, ups.forum_alias, ups.forum_label_mode
              ORDER BY post_count DESC
-             LIMIT ?'
-        );
-        $stmt->execute([$tenantId, $limit]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+             LIMIT ?';
+        } else {
+            $sql = 'SELECT u.id, u.email, u.display_name, u.callsign,
+                    up.first_name AS author_first_name, up.last_name AS author_last_name,
+                    pp.character_name AS author_character_name,
+                    NULL AS author_forum_alias, NULL AS author_forum_label_mode,
+                    COUNT(fp.id) AS post_count
+             FROM forum_posts fp
+             JOIN users u ON u.id = fp.user_id
+             LEFT JOIN user_profiles up ON up.user_id = u.id
+             LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+             WHERE fp.tenant_id = ?
+             GROUP BY u.id, u.email, u.display_name, u.callsign, up.first_name, up.last_name, pp.character_name
+             ORDER BY post_count DESC
+             LIMIT ?';
+        }
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$tenantId, $limit]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            $stmt = $this->pdo->prepare(
+                'SELECT u.id, u.email, u.display_name, u.callsign, COUNT(fp.id) AS post_count
+                 FROM forum_posts fp
+                 JOIN users u ON u.id = fp.user_id
+                 WHERE fp.tenant_id = ?
+                 GROUP BY u.id, u.email, u.display_name, u.callsign
+                 ORDER BY post_count DESC
+                 LIMIT ?'
+            );
+            $stmt->execute([$tenantId, $limit]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
     }
 }

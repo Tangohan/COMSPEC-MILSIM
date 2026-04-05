@@ -23,7 +23,7 @@ class ForumCategoryRepository
                     (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS topic_count,
                     (SELECT COUNT(*) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS post_count,
                     (SELECT MAX(fp.created_at) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id) AS last_post_at,
-                    (SELECT u.display_name FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id LEFT JOIN users u ON u.id = fp.user_id WHERE ft.category_id = fc.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_author
+                    (SELECT fp.user_id FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id
              FROM forum_categories fc
              WHERE fc.tenant_id = ? AND fc.parent_id IS NULL
              ORDER BY fc.display_order ASC, fc.id ASC'

@@ -18,7 +18,7 @@ class SystemSettingsController
             'url' => config('app.url') ?: '—',
             'timezone' => config('app.timezone'),
             'locale' => config('app.locale'),
-            'maintenance' => 'Tables app_maintenance — /admin/system/maintenance (plus de simple booléen .env)',
+            'maintenance' => 'Tables app_maintenance — /admin/maintenance (plus de simple booléen .env)',
             'log_channel' => config('app.log.channel'),
             'log_level' => config('app.log.level'),
         ];

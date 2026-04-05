@@ -49,13 +49,13 @@ class SystemRoleController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/system/roles'));
+            return Response::redirect(url('admin/roles'));
         }
         $role = $this->roleRepository->findById($id, null);
         if (!$role || ($role['tenant_id'] ?? null) !== null || (($role['role_layer'] ?? '') !== 'site')) {
             Session::flash('error', 'Rôle site introuvable.');
 
-            return Response::redirect(url('admin/system/roles'));
+            return Response::redirect(url('admin/roles'));
         }
         $permissionIds = $this->rolePermissionService->getPermissionIdsForRole($id);
         $allPermissions = $this->permissionRepository->allGlobalSite();
@@ -76,16 +76,16 @@ class SystemRoleController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/system/roles'));
+            return Response::redirect(url('admin/roles'));
         }
         if ($this->rolePermissionService->isRoleLocked($id)) {
             Session::flash('error', 'Ce rôle est verrouillé.');
 
-            return Response::redirect(url('admin/system/roles/' . $id));
+            return Response::redirect(url('admin/roles/' . $id));
         }
         $role = $this->roleRepository->findById($id, null);
         if (!$role || ($role['tenant_id'] ?? null) !== null || (($role['role_layer'] ?? '') !== 'site')) {
-            return Response::redirect(url('admin/system/roles'));
+            return Response::redirect(url('admin/roles'));
         }
         $permissionIds = $this->rolePermissionService->getPermissionIdsForRole($id);
         $allPermissions = $this->permissionRepository->allGlobalSite();
@@ -104,18 +104,18 @@ class SystemRoleController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/system/roles'));
+            return Response::redirect(url('admin/roles'));
         }
         if ($this->rolePermissionService->isRoleLocked($id)) {
             Session::flash('error', 'Ce rôle est verrouillé.');
 
-            return Response::redirect(url('admin/system/roles/' . $id));
+            return Response::redirect(url('admin/roles/' . $id));
         }
         $role = $this->roleRepository->findById($id, null);
         if (!$role || ($role['tenant_id'] ?? null) !== null || (($role['role_layer'] ?? '') !== 'site')) {
             Session::flash('error', 'Rôle invalide.');
 
-            return Response::redirect(url('admin/system/roles'));
+            return Response::redirect(url('admin/roles'));
         }
         $permissionIds = $request->input('permission_ids');
         if (is_array($permissionIds)) {
@@ -141,6 +141,6 @@ class SystemRoleController
         }
         Session::flash('success', 'Permissions mises à jour.');
 
-        return Response::redirect(url('admin/system/roles/' . $id));
+        return Response::redirect(url('admin/roles/' . $id));
     }
 }

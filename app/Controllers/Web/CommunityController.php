@@ -355,11 +355,16 @@ class CommunityController
             'style_badges' => $styleBadges,
             'public_banner_url' => trim((string) ($data['wizard_public_banner_url'] ?? '')),
         ];
+        $wm = $data['wizard_milsim'] ?? null;
+        $frag = \App\Services\Community\EnlistmentMilsimPackService::mergeWizardMilsimInput(is_array($wm) ? $wm : null);
+        if ($frag !== null) {
+            $c['enlistment_milsim'] = $frag;
+        }
         $json = trim((string) ($data['wizard_enlistment_milsim_json'] ?? ''));
         if ($json !== '') {
             $d = json_decode($json, true);
             if (is_array($d)) {
-                $c['enlistment_milsim'] = $d;
+                $c['enlistment_milsim'] = array_merge(is_array($c['enlistment_milsim'] ?? null) ? $c['enlistment_milsim'] : [], $d);
             }
         }
 

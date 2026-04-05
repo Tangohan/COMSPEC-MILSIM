@@ -115,12 +115,12 @@ class UserAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/users'));
+            return Response::redirect(url('back-office/users'));
         }
         $user = $this->userRepository->findById($id, $tenantId);
         if (!$user) {
             Session::flash('error', 'Utilisateur introuvable.');
-            return Response::redirect(url('admin/organization/users'));
+            return Response::redirect(url('back-office/users'));
         }
         $userProfile = $this->userProfileRepository->getByUserId($id);
         $personnelProfile = $this->personnelProfileRepository->getByUserId($id);
@@ -181,22 +181,22 @@ class UserAdminController
 
         if ($email === '' || $password === '' || strlen($password) < 6) {
             Session::flash('error', 'Email et mot de passe (min. 6 caractères) requis.');
-            return Response::redirect(url('admin/organization/users/create'));
+            return Response::redirect(url('back-office/users/create'));
         }
         if ($this->userRepository->emailExistsInTenant($tenantId, $email)) {
             Session::flash('error', 'Cet email est déjà utilisé.');
-            return Response::redirect(url('admin/organization/users/create'));
+            return Response::redirect(url('back-office/users/create'));
         }
 
         $gate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
         if (!$gate->canAddMember($tenantId)) {
             Session::flash('error', 'Limite de membres du plan atteinte.');
-            return Response::redirect(url('admin/organization/users/create'));
+            return Response::redirect(url('back-office/users/create'));
         }
         if ($roleId !== null && !$this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
             Session::flash('error', 'Ce rôle ne peut pas être attribué depuis l’administration communauté.');
 
-            return Response::redirect(url('admin/organization/users/create'));
+            return Response::redirect(url('back-office/users/create'));
         }
 
         $passwordHash = password_hash($password, PASSWORD_ARGON2ID);
@@ -213,9 +213,10 @@ class UserAdminController
             'professional_category_code' => $professionalCategoryCode,
         ]);
 
+        $this->userRepository->markEmailVerifiedWithoutStatusChange($userId, $tenantId);
         $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, $email);
         Session::flash('success', 'Utilisateur créé.');
-        return Response::redirect(url('admin/organization/users/' . $userId));
+        return Response::redirect(url('back-office/users/' . $userId));
     }
 
     public function edit(Request $request, array $params = []): Response
@@ -223,12 +224,12 @@ class UserAdminController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
-            return Response::redirect(url('admin/organization/users'));
+            return Response::redirect(url('back-office/users'));
         }
         $user = $this->userRepository->findById($id, $tenantId);
         if (!$user) {
             Session::flash('error', 'Utilisateur introuvable.');
-            return Response::redirect(url('admin/organization/users'));
+            return Response::redirect(url('back-office/users'));
         }
         $userProfile = $this->userProfileRepository->getByUserId($id);
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
@@ -253,12 +254,12 @@ class UserAdminController
         $actorUserId = (int) Session::get('user_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$actorUserId || !$id) {
-            return Response::redirect(url('admin/organization/users'));
+            return Response::redirect(url('back-office/users'));
         }
         $user = $this->userRepository->findById($id, $tenantId);
         if (!$user) {
             Session::flash('error', 'Utilisateur introuvable.');
-            return Response::redirect(url('admin/organization/users'));
+            return Response::redirect(url('back-office/users'));
         }
 
         $data = [];
@@ -272,7 +273,7 @@ class UserAdminController
             $email = trim((string) $request->input('email'));
             if ($email !== '' && $this->userRepository->emailExistsInTenant($tenantId, $email, $id)) {
                 Session::flash('error', 'Cet email est déjà utilisé.');
-                return Response::redirect(url('admin/organization/users/' . $id . '/edit'));
+                return Response::redirect(url('back-office/users/' . $id . '/edit'));
             }
             $data['email'] = $email;
         }
@@ -284,13 +285,13 @@ class UserAdminController
                 $count = $this->userRepository->countUsersWithRole($ownerRoleId);
                 if ($count <= 1) {
                     Session::flash('error', 'Impossible de retirer le rôle propriétaire communauté au dernier titulaire.');
-                    return Response::redirect(url('admin/organization/users/' . $id . '/edit'));
+                    return Response::redirect(url('back-office/users/' . $id . '/edit'));
                 }
             }
             if ($newRoleId !== null && !$this->roleRepository->canAssignInTenantAdminContext($newRoleId, $tenantId)) {
                 Session::flash('error', 'Ce rôle ne peut pas être attribué depuis l’administration communauté.');
 
-                return Response::redirect(url('admin/organization/users/' . $id . '/edit'));
+                return Response::redirect(url('back-office/users/' . $id . '/edit'));
             }
             $data['role_id'] = $newRoleId;
             $this->adminAuditService->logRoleAssigned($tenantId, $actorUserId, $id, $oldRoleId !== null ? (string) $oldRoleId : null, $newRoleId !== null ? (string) $newRoleId : null);
@@ -326,7 +327,7 @@ class UserAdminController
             foreach ($gradeValidationIssues as $i) {
                 if (($i['type'] ?? '') === 'error') {
                     Session::flash('error', $i['message']);
-                    return Response::redirect(url('admin/organization/users/' . $id . '/edit'));
+                    return Response::redirect(url('back-office/users/' . $id . '/edit'));
                 }
             }
         }
@@ -337,7 +338,7 @@ class UserAdminController
             Session::flash('success', 'Utilisateur mis à jour.');
         }
 
-        return Response::redirect(url('admin/organization/users/' . $id));
+        return Response::redirect(url('back-office/users/' . $id));
     }
 
     public function deactivate(Request $request, array $params = []): Response
@@ -346,12 +347,12 @@ class UserAdminController
         $actorUserId = (int) Session::get('user_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$actorUserId || !$id) {
-            return Response::redirect(url('admin/organization/users'));
+            return Response::redirect(url('back-office/users'));
         }
         $user = $this->userRepository->findById($id, $tenantId);
         if (!$user) {
             Session::flash('error', 'Utilisateur introuvable.');
-            return Response::redirect(url('admin/organization/users'));
+            return Response::redirect(url('back-office/users'));
         }
         $ownerRoleId = $this->roleRepository->getIdBySlug($tenantId, 'community_owner');
         if ($ownerRoleId !== null && (int) ($user['role_id'] ?? 0) === $ownerRoleId) {
@@ -359,12 +360,12 @@ class UserAdminController
             if ($count <= 1) {
                 Session::flash('error', 'Impossible de désactiver le dernier propriétaire communauté.');
 
-                return Response::redirect(url('admin/organization/users/' . $id));
+                return Response::redirect(url('back-office/users/' . $id));
             }
         }
         $this->userRepository->update($id, $tenantId, ['status' => 'inactive']);
         $this->adminAuditService->logUserDeactivated($tenantId, $actorUserId, $id);
         Session::flash('success', 'Utilisateur désactivé.');
-        return Response::redirect(url('admin/organization/users'));
+        return Response::redirect(url('back-office/users'));
     }
 }

@@ -54,11 +54,11 @@ final class CommunityEventsAdminController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('admin/organization/events'));
+            return Response::redirect(url('back-office/events'));
         }
         $tenantId = (int) Session::get('tenant_id');
         if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
-            return Response::redirect(url('admin/organization/events'));
+            return Response::redirect(url('back-office/events'));
         }
         $user = $this->authService->user();
         if (!$user) {
@@ -68,14 +68,14 @@ final class CommunityEventsAdminController
             $this->featureGate->recordQuotaLimitReached($tenantId, (int) $user['id'], 'events');
             Session::flash('error', 'Quota mensuel de créations d’événements atteint. Passez à un plan supérieur pour en ajouter davantage.');
 
-            return Response::redirect(url('admin/organization/events'));
+            return Response::redirect(url('back-office/events'));
         }
         $title = trim((string) $request->input('title'));
         $starts = trim((string) $request->input('starts_at'));
         if ($title === '' || $starts === '') {
             Session::flash('error', 'Titre et date de début requis.');
 
-            return Response::redirect(url('admin/organization/events'));
+            return Response::redirect(url('back-office/events'));
         }
         $this->events->create(
             $tenantId,
@@ -90,6 +90,6 @@ final class CommunityEventsAdminController
         $this->featureGate->recordQuotaUse($tenantId, 'events', (int) $user['id']);
         Session::flash('success', 'Événement créé.');
 
-        return Response::redirect(url('admin/organization/events'));
+        return Response::redirect(url('back-office/events'));
     }
 }

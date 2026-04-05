@@ -11,19 +11,27 @@ class EnlistmentRepository
 {
     private PDO $pdo;
 
+    private static ?bool $hasAccountColumns = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
     }
 
+    private function hasAccountColumns(): bool
+    {
+        if (self::$hasAccountColumns === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistments' AND COLUMN_NAME = 'submitted_via' LIMIT 1");
+            self::$hasAccountColumns = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasAccountColumns;
+    }
+
     public function create(int $tenantId, array $data): int
     {
-        // Colonnes de la table de base (CREATE TABLE) — toujours présentes
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO enlistments (tenant_id, first_name, last_name, email, callsign, country, experience, specialty, platform, availability, notes, status, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
-        );
-        $stmt->execute([
+        $status = $data['status'] ?? 'submitted';
+        $baseParams = [
             $tenantId,
             $data['first_name'] ?? '',
             $data['last_name'] ?? '',
@@ -35,13 +43,76 @@ class EnlistmentRepository
             $data['platform'] ?? null,
             $data['availability'] ?? null,
             $data['notes'] ?? null,
-            $data['status'] ?? 'submitted',
-        ]);
+            $status,
+        ];
+
+        if ($this->hasAccountColumns()) {
+            $shared = null;
+            if (!empty($data['shared_fields']) && is_array($data['shared_fields'])) {
+                $shared = json_encode($data['shared_fields'], JSON_UNESCAPED_UNICODE);
+            }
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO enlistments (tenant_id, first_name, last_name, email, callsign, country, experience, specialty, platform, availability, notes, status, submitter_user_id, recruitment_preset_id, submitted_via, consent_sharing_at, shared_fields, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+            );
+            $stmt->execute([
+                ...$baseParams,
+                isset($data['submitter_user_id']) && $data['submitter_user_id'] !== '' ? (int) $data['submitter_user_id'] : null,
+                isset($data['recruitment_preset_id']) && $data['recruitment_preset_id'] !== '' ? (int) $data['recruitment_preset_id'] : null,
+                $data['submitted_via'] ?? 'guest',
+                $data['consent_sharing_at'] ?? null,
+                $shared,
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO enlistments (tenant_id, first_name, last_name, email, callsign, country, experience, specialty, platform, availability, notes, status, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+            );
+            $stmt->execute($baseParams);
+        }
         $id = (int) $this->pdo->lastInsertId();
         if ($id > 0) {
             $this->updateOlympusColumns($id, $data);
+            if (!empty($data['recruitment_rp_snapshot']) && is_array($data['recruitment_rp_snapshot'])) {
+                $this->updateRecruitmentRpJsonColumn($id, $data['recruitment_rp_snapshot']);
+            }
         }
         return $id;
+    }
+
+    /**
+     * @param array<string, mixed> $snapshot
+     */
+    private function updateRecruitmentRpJsonColumn(int $enlistmentId, array $snapshot): void
+    {
+        try {
+            $stmt = $this->pdo->prepare('UPDATE enlistments SET recruitment_rp_json = ? WHERE id = ?');
+            $stmt->execute([json_encode($snapshot, JSON_UNESCAPED_UNICODE), $enlistmentId]);
+        } catch (\Throwable) {
+            // Colonne absente si migration non exécutée
+        }
+    }
+
+    public function findForTenant(int $tenantId, int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM enlistments WHERE tenant_id = ? AND id = ? LIMIT 1');
+        $stmt->execute([$tenantId, $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+        if (!empty($row['recruitment_rp_json'])) {
+            if (is_string($row['recruitment_rp_json'])) {
+                $d = json_decode($row['recruitment_rp_json'], true);
+                $row['recruitment_rp_json'] = is_array($d) ? $d : null;
+            } elseif (!is_array($row['recruitment_rp_json'])) {
+                $row['recruitment_rp_json'] = null;
+            }
+        } else {
+            $row['recruitment_rp_json'] = null;
+        }
+
+        return $row;
     }
 
     /** Met à jour les colonnes Olympus (ajoutées par ALTER) si elles existent. */

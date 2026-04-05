@@ -28,6 +28,8 @@ use App\Repositories\UserRepository;
 use App\Services\Audit\AuditService;
 use App\Services\Documents\DocumentAccessService;
 use App\Services\Documents\DocumentUploadService;
+use App\Services\Moderation\ModerationBlockedException;
+use App\Services\Moderation\ModerationQuarantineException;
 
 class AdminDocumentsController
 {
@@ -179,6 +181,16 @@ class AdminDocumentsController
             try {
                 $result = $this->uploadService->uploadNewVersion($tenantId, $documentId, $file, null, $userId);
                 $versionId = $result['version_id'] ?? 0;
+            } catch (ModerationBlockedException $e) {
+                $this->documentRepository->deleteHard($documentId, $tenantId);
+                Session::set('error', $e->getMessage());
+
+                return Response::redirect(url('documents/gestion/ajout'));
+            } catch (ModerationQuarantineException $e) {
+                $this->documentRepository->deleteHard($documentId, $tenantId);
+                Session::set('error', $e->getMessage());
+
+                return Response::redirect(url('documents/gestion/ajout'));
             } catch (\Throwable $e) {
                 Session::set('error', 'Erreur lors de l\'upload : ' . $e->getMessage());
                 return Response::redirect(url('documents/gestion/ajout'));
@@ -390,6 +402,14 @@ class AdminDocumentsController
             );
             $this->documentAuditRepository->log($id, (int) $userId, 'version_created', null, ['version_id' => $result['version_id'] ?? 0]);
             $this->auditService->logDocumentUploaded((int) $tenantId, (int) $userId, $id, $result['version_id']);
+        } catch (ModerationBlockedException $e) {
+            Session::set('error', $e->getMessage());
+
+            return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+        } catch (ModerationQuarantineException $e) {
+            Session::set('error', $e->getMessage() . ' (réf. artefact #' . $e->artifactId . ').');
+
+            return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
         } catch (\Throwable $e) {
             Session::set('error', 'Erreur : ' . $e->getMessage());
             return Response::redirect(url('documents/gestion/' . $id . '/modifier'));

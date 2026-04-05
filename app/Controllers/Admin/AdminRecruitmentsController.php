@@ -31,4 +31,26 @@ class AdminRecruitmentsController
             'statusFilter' => $statusFilter,
         ]);
     }
+
+    public function show(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+        if (!$row) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'admin.recruitments.show',
+            'title' => 'Candidature #' . $id,
+            'enlistment' => $row,
+        ]);
+    }
 }

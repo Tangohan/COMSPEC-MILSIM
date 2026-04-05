@@ -224,7 +224,7 @@ return [
                     'title' => 'Pilotage',
                     'slot' => 'center',
                     'links' => [
-                        ['label' => 'Administration formation', 'path' => 'admin/training', 'any_permissions' => ['training.manage', 'training.assign']],
+                        ['label' => 'Administration formation', 'path' => 'admin/training', 'any_permissions' => ['training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish']],
                     ],
                 ],
             ],
@@ -279,7 +279,7 @@ return [
                         ['label' => 'Configuration ATAK', 'path' => 'admin/atak-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Mod ATAK', 'path' => 'admin/atak-mod', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Configuration forum', 'path' => 'admin/forum-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
-                        ['label' => 'Formations (LMS)', 'path' => 'admin/training', 'any_permissions' => ['admin.system', 'training.manage', 'training.assign', 'admin.access']],
+                        ['label' => 'Formations (LMS)', 'path' => 'admin/training', 'any_permissions' => ['admin.system', 'training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish', 'admin.access']],
                         ['label' => 'Gestion documentaire', 'path' => 'documents/gestion', 'any_permissions' => ['admin.system', 'documents.upload', 'admin.access']],
                     ],
                 ],
@@ -288,8 +288,8 @@ return [
                     'slot' => 'center',
                     'links' => [
                         ['label' => 'Back-office', 'path' => 'back-office', 'any_permissions' => ['admin.organization', 'admin.access']],
-                        ['label' => 'Modération forum', 'path' => 'back-office/forum-moderation', 'any_permissions' => ['forum.moderate', 'forum.moderate_organization']],
-                        ['label' => 'Modération fichiers', 'path' => 'back-office/content-moderation', 'any_permissions' => ['forum.moderate', 'forum.moderate_organization']],
+                        ['label' => 'Modération forum', 'path' => 'back-office/forum-moderation', 'any_permissions' => ['forum.moderate', 'forum.moderate_organization', 'forum.topic.pin', 'forum.reports.manage', 'forum.post.edit_any', 'admin.organization', 'admin.access']],
+                        ['label' => 'Modération fichiers', 'path' => 'back-office/content-moderation', 'any_permissions' => ['forum.moderate', 'forum.moderate_organization', 'forum.topic.pin', 'forum.reports.manage', 'admin.organization', 'admin.access']],
                         ['label' => 'Audit organisation', 'path' => 'back-office/audit', 'any_permissions' => ['admin.organization', 'admin.access']],
                     ],
                 ],

@@ -117,8 +117,8 @@ class CourrierDocumentRepository
         }
         $sql = 'INSERT INTO courrier_documents (uuid, tenant_id, template_id, preset_id, type, status, title, reference_number, subject,
                 destination_label, issuer_label, body_rendered, variables_json, metadata_json, attachments_json, classification_level,
-                created_by, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
+                moderation_state, created_by, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
             $uuid,
@@ -137,6 +137,7 @@ class CourrierDocumentRepository
             isset($data['metadata_json']) ? (is_string($data['metadata_json']) ? $data['metadata_json'] : json_encode($data['metadata_json'])) : null,
             isset($data['attachments_json']) ? (is_string($data['attachments_json']) ? $data['attachments_json'] : json_encode($data['attachments_json'])) : null,
             $data['classification_level'] ?? 'interne',
+            $data['moderation_state'] ?? null,
             $data['created_by'] ?? null,
         ]);
         return (int) $this->pdo->lastInsertId();
@@ -147,7 +148,7 @@ class CourrierDocumentRepository
         $fields = [];
         $params = [];
         $allowed = ['template_id', 'preset_id', 'type', 'status', 'title', 'reference_number', 'subject', 'destination_label', 'issuer_label',
-            'body_rendered', 'variables_json', 'metadata_json', 'attachments_json', 'classification_level', 'validated_by', 'signed_by',
+            'body_rendered', 'variables_json', 'metadata_json', 'attachments_json', 'classification_level', 'moderation_state', 'validated_by', 'signed_by',
             'signed_at', 'signature_data_json', 'content_hash', 'sent_at', 'archived_at', 'updated_at'];
         foreach ($allowed as $k) {
             if (!array_key_exists($k, $data)) {
@@ -201,5 +202,34 @@ class CourrierDocumentRepository
             return $prefix . '-' . $year . '-' . str_pad((string) $num, 4, '0', STR_PAD_LEFT);
         }
         return $prefix . '-' . $year . '-0001';
+    }
+
+    /**
+     * Documents du tenant où l’utilisateur est impliqué (rédacteur, validateur ou signataire).
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function listForUserInvolvement(
+        int $tenantId,
+        int $userId,
+        ?string $status = null,
+        int $limit = 100,
+        int $offset = 0
+    ): array {
+        $sql = 'SELECT d.*, t.name AS template_name, t.slug AS template_slug, p.name AS preset_name
+                FROM courrier_documents d
+                LEFT JOIN document_templates t ON t.id = d.template_id
+                LEFT JOIN document_presets p ON p.id = d.preset_id
+                WHERE d.tenant_id = ?
+                  AND (d.created_by = ? OR d.signed_by = ? OR d.validated_by = ?)';
+        $params = [$tenantId, $userId, $userId, $userId];
+        if ($status !== null && $status !== '') {
+            $sql .= ' AND d.status = ?';
+            $params[] = $status;
+        }
+        $sql .= ' ORDER BY d.updated_at DESC, d.created_at DESC LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset;
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

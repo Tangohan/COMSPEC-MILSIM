@@ -19,7 +19,10 @@ class SystemAdminMiddleware
         $gate = \App\Core\Gate::getInstance();
         if ($gate->deny('admin.system')) {
             Session::flash('error', 'Accès réservé aux super-administrateurs.');
-            return Response::redirect(url('admin'));
+            if ($gate->allows('admin.organization') || $gate->allows('admin.access')) {
+                return Response::redirect(url('back-office'));
+            }
+            return Response::redirect(url('dashboard'));
         }
         return $next($request);
     }

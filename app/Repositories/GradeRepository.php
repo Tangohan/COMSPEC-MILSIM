@@ -82,12 +82,63 @@ class GradeRepository
     }
 
     /**
-     * Pour compatibilité avec l'ancienne API : retourne tous les grades actifs (ignorant le tenant).
+     * Grades visibles pour une communauté : système choisi dans settings (grade_system_code),
+     * avec overrides optionnels (tenant_grade_overrides).
      * @return list<array<string, mixed>>
      */
     public function listForTenant(int $tenantId): array
     {
-        return $this->listActive();
+        $tenantRepo = new TenantRepository();
+        $settings = $tenantRepo->getSettings($tenantId);
+        $code = isset($settings['grade_system_code']) ? trim((string) $settings['grade_system_code']) : '';
+        if ($code === '') {
+            return $this->listActive();
+        }
+        $rows = $this->listBySystemCode($code);
+        $overrideRepo = new TenantGradeOverrideRepository();
+        if (!$overrideRepo->tableExists()) {
+            return $rows;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT grade_id, label_short_override, label_long_override, sort_order_override, is_enabled
+             FROM tenant_grade_overrides WHERE tenant_id = ?'
+        );
+        $stmt->execute([$tenantId]);
+        $over = [];
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $over[(int) $r['grade_id']] = $r;
+        }
+        $out = [];
+        foreach ($rows as $g) {
+            $id = (int) $g['id'];
+            if (isset($over[$id]) && (int) ($over[$id]['is_enabled'] ?? 1) === 0) {
+                continue;
+            }
+            if (isset($over[$id])) {
+                $o = $over[$id];
+                if ($o['label_short_override'] !== null && $o['label_short_override'] !== '') {
+                    $g['label_short'] = (string) $o['label_short_override'];
+                }
+                if ($o['label_long_override'] !== null && $o['label_long_override'] !== '') {
+                    $g['label_long'] = (string) $o['label_long_override'];
+                }
+                if ($o['sort_order_override'] !== null) {
+                    $g['sort_order'] = (int) $o['sort_order_override'];
+                }
+            }
+            $out[] = $g;
+        }
+        usort($out, static function ($a, $b) {
+            $oa = (int) ($a['sort_order'] ?? 0);
+            $ob = (int) ($b['sort_order'] ?? 0);
+            if ($oa !== $ob) {
+                return $oa <=> $ob;
+            }
+
+            return ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));
+        });
+
+        return $out;
     }
 
     /**

@@ -417,11 +417,13 @@ class TrainingApiController
         }
     }
 
-    /** Admin formations : admin global OU training.manage (instructeur). */
+    /** Admin formations : admin, training.manage ou droits de création / édition LMS. */
     private function requireTrainingAccess(): void
     {
         $gate = \App\Core\Gate::getInstance();
-        if ($gate->allows('admin.access') || $gate->allows('training.manage')) {
+        if ($gate->allows('admin.access') || $gate->allows('training.manage')
+            || $gate->allows('training.create') || $gate->allows('training.update')
+            || $gate->allows('training.delete') || $gate->allows('training.publish')) {
             return;
         }
         throw new \RuntimeException('Accès refusé.', 403);

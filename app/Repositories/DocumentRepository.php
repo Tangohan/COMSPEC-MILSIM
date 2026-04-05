@@ -302,4 +302,13 @@ class DocumentRepository
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /** Suppression stricte (cascade document_versions). Usage : annulation création document après échec upload. */
+    public function deleteHard(int $id, int $tenantId): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM documents WHERE id = ? AND tenant_id = ?');
+        $stmt->execute([$id, $tenantId]);
+
+        return $stmt->rowCount() > 0;
+    }
 }

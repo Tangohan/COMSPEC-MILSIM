@@ -7,6 +7,11 @@ namespace App\Repositories;
 use App\Core\Database;
 use PDO;
 
+/**
+ * Données legacy (service_number, admin_notes, etc.). La vérité métier pour clearance / readiness
+ * doit être portée par {@see PersonnelProfileRepository} ; les champs ici servent encore à la
+ * compatibilité et à la double-écriture matricule (voir {@see MatriculeService}).
+ */
 class PersonnelExtrasRepository
 {
     private PDO $pdo;

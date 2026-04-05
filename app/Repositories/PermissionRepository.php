@@ -19,9 +19,11 @@ class PermissionRepository
     /** @return list<array<string, mixed>> */
     public function allForTenant(int $tenantId): array
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT id, name, slug, module, scope FROM permissions WHERE tenant_id = ? ORDER BY module ASC, slug ASC'
-        );
+        $hasAction = $this->tableHasColumn('permissions', 'action');
+        $sql = $hasAction
+            ? 'SELECT id, name, slug, module, action, scope FROM permissions WHERE tenant_id = ? ORDER BY module ASC, COALESCE(action, \'\') ASC, slug ASC'
+            : 'SELECT id, name, slug, module, scope FROM permissions WHERE tenant_id = ? ORDER BY module ASC, slug ASC';
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$tenantId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -31,11 +33,29 @@ class PermissionRepository
     /** @return list<array<string, mixed>> */
     public function allGlobalSite(): array
     {
-        $stmt = $this->pdo->query(
-            "SELECT id, name, slug, module, scope FROM permissions WHERE tenant_id IS NULL ORDER BY module ASC, slug ASC"
-        );
+        $hasAction = $this->tableHasColumn('permissions', 'action');
+        $sql = $hasAction
+            ? 'SELECT id, name, slug, module, action, scope FROM permissions WHERE tenant_id IS NULL ORDER BY module ASC, COALESCE(action, \'\') ASC, slug ASC'
+            : 'SELECT id, name, slug, module, scope FROM permissions WHERE tenant_id IS NULL ORDER BY module ASC, slug ASC';
+        $stmt = $this->pdo->query($sql);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function tableHasColumn(string $table, string $column): bool
+    {
+        static $cache = [];
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+        );
+        $stmt->execute([$table, $column]);
+        $cache[$key] = (bool) $stmt->fetchColumn();
+
+        return $cache[$key];
     }
 
     /** @return list<int> Permission IDs pour un rôle. */

@@ -22,6 +22,8 @@ use App\Repositories\TrainingCertificateRepository;
 use App\Core\Csrf;
 use App\Services\Personnel\MatriculeService;
 use App\Services\Personnel\PersonnelCompletenessService;
+use App\Repositories\UserProfileDisplaySettingsRepository;
+use App\Core\Gate;
 
 class PersonnelController
 {
@@ -61,7 +63,8 @@ class PersonnelController
         private PersonnelAdminDataRepository $adminDataRepository,
         private TrainingCertificateRepository $trainingCertificateRepository,
         private MatriculeService $matriculeService,
-        private PersonnelCompletenessService $completenessService
+        private PersonnelCompletenessService $completenessService,
+        private UserProfileDisplaySettingsRepository $displaySettingsRepository
     ) {}
 
     public function me(Request $request, array $params = []): Response
@@ -88,10 +91,7 @@ class PersonnelController
         $extras = $this->personnelExtrasRepository->getByUserId((int) $target['id']);
         $profile = $this->personnelExtrasRepository->getProfileByUserId((int) $target['id']);
         $personnelProfile = $this->personnelProfileRepository->getByUserId((int) $target['id']);
-        $assignments = $this->personnelAssignmentRepository->listActiveForUser((int) $target['id']);
-        if (empty($assignments)) {
-            $assignments = $this->personnelAssignmentRepository->listActiveForUserLegacy((int) $target['id']);
-        }
+        $assignments = $this->personnelAssignmentRepository->listActiveForUserResolved((int) $target['id']);
         $primaryAssignment = $assignments[0] ?? null;
         $commander = null;
         if (!empty($primaryAssignment['commander_user_id'])) {
@@ -118,11 +118,17 @@ class PersonnelController
         $currentUser = $this->authService->user();
         $currentUserId = $currentUser ? (int) $currentUser['id'] : 0;
         $isSelf = $currentUserId === (int) $target['id'];
-        $isAdmin = \App\Core\Gate::getInstance()->allows('admin.access');
-        $canEditNotes = $isSelf || $isAdmin;
-        $canEditProfile = $isSelf || $isAdmin;
-        $canViewCivil = $isSelf || $isAdmin;
-        $canViewCommandNotes = $isSelf || $isAdmin;
+        $canStaffEdit = $this->canStaffEditPersonnel();
+        $canStaffView = $this->canStaffViewPersonnel();
+        $canSensitive = $this->canViewSensitivePersonnel();
+        $isForumMod = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
+        $canEditNotes = $isSelf || $canStaffEdit;
+        $canEditProfile = $isSelf || $canStaffEdit;
+        $canViewCivil = $isSelf || $canStaffView || $canSensitive || $isForumMod;
+        $canViewCommandNotes = $isSelf || $canStaffEdit;
+        $displaySettings = $this->displaySettingsRepository->getOrDefaults((int) $target['id']);
+        $showEmailInContact = $isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_email_to_others'] ?? 0) === 1;
+        $showMatriculePublic = $isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_matricule_to_others'] ?? 1) === 1;
 
         return Response::view('layout.main', [
             'content' => 'personnel.file',
@@ -146,6 +152,9 @@ class PersonnelController
             'canEditProfile' => $canEditProfile,
             'canViewCivil' => $canViewCivil,
             'canViewCommandNotes' => $canViewCommandNotes,
+            'displaySettings' => $displaySettings,
+            'showEmailInContact' => $showEmailInContact,
+            'showMatriculePublic' => $showMatriculePublic,
         ]);
     }
 
@@ -162,8 +171,8 @@ class PersonnelController
         }
         $currentUserId = (int) Session::get('user_id');
         $isSelf = ($currentUserId === (int) $target['id']);
-        $isAdmin = \App\Core\Gate::getInstance()->allows('admin.access');
-        if (!$isSelf && !$isAdmin) {
+        $gate = Gate::getInstance();
+        if (!$isSelf && !$this->canStaffEditPersonnel() && !$gate->allows('personnel.grades.manage')) {
             return (new Response())->setStatusCode(403)->setBody('Non autorisé.');
         }
         $this->matriculeService->assignNextForUser((int) $target['id'], $tenantId);
@@ -184,8 +193,7 @@ class PersonnelController
         }
         $currentUserId = (int) Session::get('user_id');
         $isSelf = ($currentUserId === (int) $target['id']);
-        $isAdmin = \App\Core\Gate::getInstance()->allows('admin.access');
-        if (!$isSelf && !$isAdmin) {
+        if (!$isSelf && !$this->canStaffEditPersonnel()) {
             return (new Response())->setStatusCode(403)->setBody('Non autorisé.');
         }
         $notes = trim((string) ($request->input('admin_notes') ?? ''));
@@ -223,17 +231,18 @@ class PersonnelController
         }
         $currentUserId = (int) $currentUser['id'];
         $isSelf = ($currentUserId === (int) $target['id']);
-        $isAdmin = \App\Core\Gate::getInstance()->allows('admin.access');
-        if (!$isSelf && !$isAdmin) {
+        if (!$isSelf && !$this->canStaffEditPersonnel()) {
             return (new Response())->setStatusCode(403)->setBody('Non autorisé.');
         }
         $personnelProfile = $this->personnelProfileRepository->getByUserId((int) $target['id']);
+        $displaySettings = $this->displaySettingsRepository->getOrDefaults((int) $target['id']);
         $units = $this->unitRepository->allForTenant($tenantId);
         return Response::view('layout.main', [
             'content' => 'personnel.edit',
             'title' => 'Éditer le dossier',
             'targetUser' => $target,
             'personnelProfile' => $personnelProfile,
+            'displaySettings' => $displaySettings,
             'units' => $units,
         ]);
     }
@@ -256,8 +265,8 @@ class PersonnelController
         }
         $currentUserId = (int) $currentUser['id'];
         $isSelf = ($currentUserId === (int) $target['id']);
-        $isAdmin = \App\Core\Gate::getInstance()->allows('admin.access');
-        if (!$isSelf && !$isAdmin) {
+        $canStaffEdit = $this->canStaffEditPersonnel();
+        if (!$isSelf && !$canStaffEdit) {
             return (new Response())->setStatusCode(403)->setBody('Non autorisé.');
         }
         $data = [
@@ -275,14 +284,46 @@ class PersonnelController
             'weapon_specialty' => trim((string) $request->input('weapon_specialty')),
             'deployable' => (int) $request->input('deployable', 1) ? 1 : 0,
         ];
-        if ($isSelf || $isAdmin) {
+        if ($isSelf || $canStaffEdit) {
             $notes = trim((string) $request->input('command_notes'));
             $data['command_notes'] = $notes;
             $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
         }
         $this->personnelProfileRepository->update((int) $target['id'], $data);
+        if ($isSelf || $canStaffEdit) {
+            $mode = trim((string) $request->input('forum_label_mode')) ?: 'display_name';
+            if (!in_array($mode, ['display_name', 'callsign', 'character_name', 'forum_alias'], true)) {
+                $mode = 'display_name';
+            }
+            $this->displaySettingsRepository->upsert((int) $target['id'], [
+                'forum_alias' => trim((string) $request->input('forum_alias')) ?: null,
+                'forum_label_mode' => $mode,
+                'show_matricule_forum' => $request->input('show_matricule_forum') ? 1 : 0,
+                'show_grade_forum' => $request->input('show_grade_forum') ? 1 : 0,
+                'show_unit_forum' => $request->input('show_unit_forum') ? 1 : 0,
+                'show_bio_forum' => $request->input('show_bio_forum') ? 1 : 0,
+                'fiche_show_email_to_others' => $request->input('fiche_show_email_to_others') ? 1 : 0,
+                'fiche_show_matricule_to_others' => $request->input('fiche_show_matricule_to_others') ? 1 : 0,
+                'public_roster_opt_in' => $request->input('public_roster_opt_in') ? 1 : 0,
+            ]);
+        }
         Session::flash('success', 'Dossier mis à jour.');
         $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
         return Response::redirect($redirect);
+    }
+
+    private function canStaffViewPersonnel(): bool
+    {
+        return Gate::getInstance()->allows('personnel.profile.view');
+    }
+
+    private function canStaffEditPersonnel(): bool
+    {
+        return Gate::getInstance()->allows('personnel.profile.update');
+    }
+
+    private function canViewSensitivePersonnel(): bool
+    {
+        return Gate::getInstance()->allows('personnel.sensitive.view');
     }
 }

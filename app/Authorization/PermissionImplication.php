@@ -1,0 +1,116 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Authorization;
+
+/**
+ * Résout les permissions implicites (agrégats historiques et rôles larges).
+ */
+final class PermissionImplication
+{
+    /** @var list<string>|null */
+    private static ?array $tenantCatalogSlugs = null;
+
+    /** @return list<string> */
+    private static function tenantCatalogSlugs(): array
+    {
+        if (self::$tenantCatalogSlugs === null) {
+            self::$tenantCatalogSlugs = TenantPermissionCatalog::allSlugs();
+        }
+
+        return self::$tenantCatalogSlugs;
+    }
+
+    /**
+     * @param list<string> $granted Slugs issus du rôle + rôles site
+     */
+    public static function isGranted(array $granted, string $permission): bool
+    {
+        if ($permission === '') {
+            return false;
+        }
+        if (in_array($permission, $granted, true) || in_array('*', $granted, true)) {
+            return true;
+        }
+
+        if (in_array('admin.system', $granted, true)) {
+            return true;
+        }
+
+        if (in_array('admin.access', $granted, true) && in_array($permission, self::tenantCatalogSlugs(), true)) {
+            return true;
+        }
+
+        if (in_array('admin.organization', $granted, true) && self::impliedByAdminOrganization($permission)) {
+            return true;
+        }
+
+        if (in_array('forum.moderate', $granted, true) && self::impliedByForumModerate($permission)) {
+            return true;
+        }
+
+        if (in_array('forum.moderate_organization', $granted, true) && self::impliedByForumModerate($permission)) {
+            return true;
+        }
+
+        if (in_array('training.manage', $granted, true) && self::impliedByTrainingManage($permission)) {
+            return true;
+        }
+
+        if (self::aliasMatch($granted, $permission)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static function impliedByAdminOrganization(string $permission): bool
+    {
+        if (str_starts_with($permission, 'admin.') || str_starts_with($permission, 'personnel.')) {
+            return true;
+        }
+
+        return $permission === 'invitations.send';
+    }
+
+    private static function impliedByForumModerate(string $permission): bool
+    {
+        $set = array_merge(
+            TenantPermissionCatalog::forumModerateGranularSlugs(),
+            ['forum.categories.manage', 'forum.manage_categories']
+        );
+
+        return in_array($permission, $set, true);
+    }
+
+    private static function impliedByTrainingManage(string $permission): bool
+    {
+        $set = array_merge(
+            TenantPermissionCatalog::trainingManageGranularSlugs(),
+            ['training.view', 'training.results.view', 'training.results.export']
+        );
+
+        return in_array($permission, $set, true);
+    }
+
+    /**
+     * @param list<string> $granted
+     */
+    private static function aliasMatch(array $granted, string $permission): bool
+    {
+        $pairs = [
+            ['forum.categories.manage', 'forum.manage_categories'],
+        ];
+        foreach ($pairs as [$a, $b]) {
+            if ($permission === $a && in_array($b, $granted, true)) {
+                return true;
+            }
+            if ($permission === $b && in_array($a, $granted, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}

@@ -13,6 +13,8 @@ use App\Repositories\ForumPostRepository;
 use App\Repositories\ForumReportRepository;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumVoteRepository;
+use App\Services\Profile\ProfilePublicIdentityService;
+
 /**
  * API REST structurée (/api/forum/topics, /api/forum/posts, …) — JSON + CSRF sur mutations.
  */
@@ -23,7 +25,8 @@ final class ForumRestController
         private ForumTopicRepository $topicRepository,
         private ForumPostRepository $postRepository,
         private ForumReportRepository $reportRepository,
-        private ForumVoteRepository $voteRepository
+        private ForumVoteRepository $voteRepository,
+        private ProfilePublicIdentityService $profilePublicIdentityService
     ) {}
 
     public function listTopics(Request $request, array $params = []): Response
@@ -91,14 +94,32 @@ final class ForumRestController
         }
         $page = max(1, (int) $request->query('page', 1));
         $perPage = min(100, max(1, (int) $request->query('per_page', 20)));
-        $isModo = function_exists('can') && can('forum.moderate');
+        $isModo = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
         $posts = $this->postRepository->listByTopicPaginated($topicId, $page, $perPage, $isModo);
         $count = $this->postRepository->countByTopic($topicId, $isModo);
+        $sanitized = [];
+        foreach ($posts as $p) {
+            $p = $this->profilePublicIdentityService->filterAuthorFieldsForForumViewer($p, $isModo);
+            $enriched = $this->profilePublicIdentityService->enrichFromForumPostRow($p);
+            $p['author_display_resolved'] = $enriched['public_display_name'];
+            if ($isModo) {
+                $p['moderation'] = [
+                    'legal_full_name' => $enriched['legal_full_name'],
+                    'author_email' => $enriched['author_email'],
+                    'author_user_id' => $enriched['author_user_id'],
+                ];
+            } else {
+                foreach (['author_email', 'author_first_name', 'author_last_name', 'author_forum_alias', 'author_forum_label_mode'] as $k) {
+                    unset($p[$k]);
+                }
+            }
+            $sanitized[] = $p;
+        }
 
         return Response::json([
             'success' => true,
             'data' => [
-                'posts' => $posts,
+                'posts' => $sanitized,
                 'page' => $page,
                 'total' => $count,
             ],

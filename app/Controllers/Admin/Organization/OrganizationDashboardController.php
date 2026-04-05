@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\ModerationRepository;
+use App\Repositories\TenantRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
 
 class OrganizationDashboardController
@@ -26,6 +27,15 @@ class OrganizationDashboardController
     public function index(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
+        $tenantName = '';
+        try {
+            $tenantRow = (new TenantRepository())->findById($tenantId);
+            if ($tenantRow !== null) {
+                $tenantName = (string) ($tenantRow['name'] ?? '');
+            }
+        } catch (\Throwable) {
+            $tenantName = '';
+        }
         $metrics = $this->metrics->getOrganizationMetrics($tenantId);
         $workQueue = $this->metrics->getOrganizationWorkQueue($tenantId);
         $recent = [];
@@ -50,10 +60,11 @@ class OrganizationDashboardController
             'adminKpiBlockError' => $metrics['blockError'],
             'adminRecentActivity' => $recent,
             'adminRecentActivityError' => $recentError,
-            'adminRecentActivityMoreUrl' => url('admin/organization/audit'),
+            'adminRecentActivityMoreUrl' => url('back-office/audit'),
             'orgWorkQueue' => $workQueue,
             'orgModerationRecent' => $moderationRecent,
             'orgModerationError' => $moderationError,
+            'tenantName' => $tenantName,
         ]);
     }
 }
