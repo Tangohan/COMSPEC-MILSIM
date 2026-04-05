@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Community;
 
+use App\Authorization\TenantPermissionCatalog;
 use PDO;
 use PDOException;
 
@@ -276,6 +277,210 @@ final class TenantSeedHelper
                 }
             }
         }
+    }
+
+    /**
+     * Libellés métier et rôles suggérés après seed forum / permissions (wizard onboarding).
+     */
+    public static function applyWizardCommunityRoles(PDO $pdo, int $tenantId, string $template): void
+    {
+        $pdo->prepare('UPDATE roles SET name = ? WHERE tenant_id = ? AND slug = ?')->execute(['Fondateur', $tenantId, 'community_owner']);
+        $pdo->prepare('UPDATE roles SET name = ? WHERE tenant_id = ? AND slug = ?')->execute(['Commandement', $tenantId, 'tenant_admin']);
+        $pdo->prepare('UPDATE roles SET name = ? WHERE tenant_id = ? AND slug = ?')->execute(['Membre', $tenantId, 'member']);
+        $pdo->prepare('UPDATE roles SET name = ? WHERE tenant_id = ? AND slug = ?')->execute(['Instructeur', $tenantId, 'officer']);
+
+        $st = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        foreach (['hr' => 'RH', 'invite' => 'Invité'] as $slug => $label) {
+            $st->execute([$tenantId, $slug]);
+            if (!$st->fetch()) {
+                $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, role_layer, created_at) VALUES (?, ?, ?, \'\', 1, \'intra\', NOW())')
+                    ->execute([$tenantId, $label, $slug]);
+            }
+        }
+
+        $permIds = [];
+        $q = $pdo->prepare('SELECT id, slug FROM permissions WHERE tenant_id = ?');
+        $q->execute([$tenantId]);
+        while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+            $permIds[(string) $row['slug']] = (int) $row['id'];
+        }
+
+        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+        $roleId = static function (string $slug) use ($pdo, $tenantId): int {
+            $s = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $s->execute([$tenantId, $slug]);
+            $r = $s->fetch(PDO::FETCH_ASSOC);
+
+            return $r ? (int) $r['id'] : 0;
+        };
+
+        $hrId = $roleId('hr');
+        if ($hrId) {
+            foreach (['documents.view', 'forum.view', 'forum.create_topic', 'forum.reply', 'training.view'] as $ps) {
+                if (isset($permIds[$ps])) {
+                    $link->execute([$hrId, $permIds[$ps]]);
+                }
+            }
+        }
+
+        $inviteId = $roleId('invite');
+        if ($inviteId && isset($permIds['forum.view'])) {
+            $link->execute([$inviteId, $permIds['forum.view']]);
+        }
+
+        if ($template === 'standard') {
+            $modId = $roleId('forum_moderator');
+            if ($modId && isset($permIds['forum.moderate_organization'])) {
+                $link->execute([$modId, $permIds['forum.moderate_organization']]);
+            }
+        }
+    }
+
+    /**
+     * Rôles métier supplémentaires définis dans l’assistant (hors rôles système).
+     *
+     * @param list<array{name: string, slug: string, permission_slugs: list<string>}> $roles
+     */
+    public static function applyWizardCustomRoles(PDO $pdo, int $tenantId, array $roles): void
+    {
+        if ($roles === []) {
+            return;
+        }
+        $permIds = [];
+        $q = $pdo->prepare('SELECT id, slug FROM permissions WHERE tenant_id = ?');
+        $q->execute([$tenantId]);
+        while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+            $permIds[(string) $row['slug']] = (int) $row['id'];
+        }
+        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+        $insRole = $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, 0, 0, \'intra\', NOW())');
+        $chk = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+
+        foreach ($roles as $r) {
+            $name = trim((string) ($r['name'] ?? ''));
+            $slug = trim((string) ($r['slug'] ?? ''));
+            if ($name === '' || $slug === '') {
+                continue;
+            }
+            $chk->execute([$tenantId, $slug]);
+            if ($chk->fetch()) {
+                continue;
+            }
+            $insRole->execute([$tenantId, $name, $slug, '']);
+            $rid = (int) $pdo->lastInsertId();
+            foreach ($r['permission_slugs'] ?? [] as $ps) {
+                $ps = is_string($ps) ? trim($ps) : '';
+                if ($ps === '' || !isset($permIds[$ps])) {
+                    continue;
+                }
+                $link->execute([$rid, $permIds[$ps]]);
+            }
+        }
+    }
+
+    /**
+     * Insère ou met à jour le catalogue de permissions (slug, module, action) pour un tenant
+     * et rattache les rôles système (admin, propriétaire, modérateur forum).
+     */
+    public static function ensureTenantPermissionCatalog(PDO $pdo, int $tenantId): void
+    {
+        if ($tenantId <= 0) {
+            return;
+        }
+        $hasAction = self::permissionsTableHasActionColumn($pdo);
+        $defs = TenantPermissionCatalog::definitions();
+        if ($hasAction) {
+            $insert = $pdo->prepare(
+                'INSERT INTO permissions (tenant_id, name, slug, module, action, scope, created_at) VALUES (?, ?, ?, ?, ?, \'community\', NOW())'
+            );
+            $update = $pdo->prepare(
+                'UPDATE permissions SET name = ?, module = ?, action = ? WHERE tenant_id = ? AND slug = ? LIMIT 1'
+            );
+        } else {
+            $insert = $pdo->prepare(
+                'INSERT INTO permissions (tenant_id, name, slug, module, scope, created_at) VALUES (?, ?, ?, ?, \'community\', NOW())'
+            );
+            $update = $pdo->prepare(
+                'UPDATE permissions SET name = ?, module = ? WHERE tenant_id = ? AND slug = ? LIMIT 1'
+            );
+        }
+
+        $selectId = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        foreach ($defs as $row) {
+            $slug = $row['slug'];
+            $selectId->execute([$tenantId, $slug]);
+            $existing = $selectId->fetch(PDO::FETCH_ASSOC);
+            if ($existing) {
+                if ($hasAction) {
+                    $update->execute([$row['name'], $row['module'], $row['action'], $tenantId, $slug]);
+                } else {
+                    $update->execute([$row['name'], $row['module'], $tenantId, $slug]);
+                }
+                continue;
+            }
+            if ($hasAction) {
+                $insert->execute([$tenantId, $row['name'], $slug, $row['module'], $row['action']]);
+            } else {
+                $insert->execute([$tenantId, $row['name'], $slug, $row['module']]);
+            }
+        }
+
+        $permIdsBySlug = [];
+        $q = $pdo->prepare('SELECT id, slug FROM permissions WHERE tenant_id = ?');
+        $q->execute([$tenantId]);
+        while ($pr = $q->fetch(PDO::FETCH_ASSOC)) {
+            $permIdsBySlug[(string) $pr['slug']] = (int) $pr['id'];
+        }
+
+        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+        foreach (['tenant_admin', 'community_owner'] as $roleSlug) {
+            $rid = self::roleId($pdo, $tenantId, $roleSlug);
+            if (!$rid) {
+                continue;
+            }
+            foreach ($permIdsBySlug as $pid) {
+                $link->execute([$rid, $pid]);
+            }
+        }
+
+        $modId = self::roleId($pdo, $tenantId, 'forum_moderator');
+        if ($modId) {
+            $modSlugs = array_unique(array_merge(
+                [
+                    'forum.view',
+                    'forum.create_topic',
+                    'forum.reply',
+                    'forum.edit_own',
+                    'forum.delete_own',
+                    'forum.moderate',
+                    'forum.moderate_organization',
+                    'forum.categories.manage',
+                    'forum.manage_categories',
+                ],
+                TenantPermissionCatalog::forumModerateGranularSlugs()
+            ));
+            foreach ($modSlugs as $ms) {
+                if (isset($permIdsBySlug[$ms])) {
+                    $link->execute([$modId, $permIdsBySlug[$ms]]);
+                }
+            }
+        }
+    }
+
+    private static function permissionsTableHasActionColumn(PDO $pdo): bool
+    {
+        $st = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'permissions' AND COLUMN_NAME = 'action' LIMIT 1");
+
+        return (bool) ($st && $st->fetch());
+    }
+
+    private static function roleId(PDO $pdo, int $tenantId, string $slug): int
+    {
+        $st = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $st->execute([$tenantId, $slug]);
+        $r = $st->fetch(PDO::FETCH_ASSOC);
+
+        return $r ? (int) $r['id'] : 0;
     }
 
     public static function ensurePersonnelPanelsAndMatricule(PDO $pdo, int $tenantId): void

@@ -10,7 +10,7 @@ $flashError = \App\Core\Session::getFlash('error');
     <?php if ($flashError): ?>
     <p class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded"><?= htmlspecialchars($flashError) ?></p>
     <?php endif; ?>
-    <form method="post" action="<?= $isEdit ? url('admin/organization/referentiels/grades/' . (int)$grade['id'] . '/update') : url('admin/organization/referentiels/grades/store') ?>" class="space-y-4">
+    <form method="post" action="<?= $isEdit ? url('back-office/referentiels/grades/' . (int)$grade['id'] . '/update') : url('back-office/referentiels/grades/store') ?>" class="space-y-4">
         <?= \App\Core\Csrf::field() ?>
         <div>
             <label for="grade_system_id" class="block text-sm font-medium text-slate-700">Système de grade</label>
@@ -62,8 +62,8 @@ $flashError = \App\Core\Session::getFlash('error');
         <?php endif; ?>
         <div class="flex gap-3 pt-4">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800"><?= $isEdit ? 'Enregistrer' : 'Créer' ?></button>
-            <a href="<?= url('admin/organization/referentiels/grades') ?>" class="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded hover:bg-slate-50">Annuler</a>
+            <a href="<?= url('back-office/referentiels/grades') ?>" class="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded hover:bg-slate-50">Annuler</a>
         </div>
     </form>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('admin/organization') ?>" class="underline">Retour administration organisationnelle</a></p>
+    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour administration organisationnelle</a></p>
 </div>

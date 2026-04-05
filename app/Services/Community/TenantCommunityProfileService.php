@@ -1,0 +1,469 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Community;
+
+use App\Core\Request;
+
+/**
+ * Lecture / écriture du bloc settings.community (CV registre, contact, accès public).
+ */
+final class TenantCommunityProfileService
+{
+    public const BADGE_MILSIM = 'milsim';
+    public const BADGE_SEMI_MILSIM = 'semi_milsim';
+    public const BADGE_CASUAL = 'casual';
+
+    /** @return array<string, string> slug => libellé affiché */
+    public static function badgeLabels(): array
+    {
+        return [
+            self::BADGE_MILSIM => 'Milsim',
+            self::BADGE_SEMI_MILSIM => 'Semi-milsim',
+            self::BADGE_CASUAL => 'Casual',
+        ];
+    }
+
+    /** @return list<string> */
+    public static function allowedBadgeSlugs(): array
+    {
+        return array_keys(self::badgeLabels());
+    }
+
+    /** @return list<string> Slugs de badges autorisés (alias plan « badgesAllowed »). */
+    public static function badgesAllowed(): array
+    {
+        return self::allowedBadgeSlugs();
+    }
+
+    /**
+     * Normalisation / validation depuis le formulaire back-office (alias sémantique de buildCommunityFromRequest).
+     *
+     * @param array<string, mixed> $existing bloc community existant
+     * @return array<string, mixed> bloc à fusionner dans settings
+     */
+    public function normalizeFromRequest(Request $request, array $existing): array
+    {
+        return $this->buildCommunityFromRequest($request, $existing);
+    }
+
+    /**
+     * Données d’affichage pour la fiche publique /c/{slug} (évite la logique métier dans le template).
+     *
+     * @param array<string, mixed> $community bloc settings.community
+     * @return array<string, mixed>
+     */
+    public static function getPublicViewModel(array $community): array
+    {
+        $labels = self::badgeLabels();
+        $styleBadgeLabels = [];
+        foreach (is_array($community['style_badges'] ?? null) ? $community['style_badges'] : [] as $slug) {
+            if (is_string($slug) && isset($labels[$slug])) {
+                $styleBadgeLabels[] = $labels[$slug];
+            }
+        }
+        $presentationMode = ($community['presentation_mode'] ?? 'simple') === 'military' ? 'military' : 'simple';
+        $simpleBody = trim((string) ($community['simple_body'] ?? ''));
+        $expectations = trim((string) ($community['expectations'] ?? ''));
+        $gameLabel = trim((string) ($community['game_label'] ?? ''));
+        $mainMods = trim((string) ($community['main_mods'] ?? ''));
+        $modpackSize = $community['modpack_size_gb'] ?? null;
+        $militarySections = is_array($community['military_sections'] ?? null) ? $community['military_sections'] : [];
+        $welcomeText = trim((string) ($community['welcome_text'] ?? ''));
+        $isSimpleReg = ($community['registration_mode'] ?? 'milsim') === 'simple';
+
+        $contactEmail = trim((string) ($community['contact_email'] ?? ''));
+
+        return [
+            'presentationMode' => $presentationMode,
+            'gameLabel' => $gameLabel,
+            'mainMods' => $mainMods,
+            'modpackSize' => $modpackSize !== null && (string) $modpackSize !== '' ? (string) $modpackSize : null,
+            'simpleBody' => $simpleBody,
+            'expectations' => $expectations,
+            'militarySections' => $militarySections,
+            'styleBadgeLabels' => $styleBadgeLabels,
+            'welcomeText' => $welcomeText,
+            'registrationModeLabel' => $isSimpleReg ? 'Simple' : 'MilSim complet',
+            'isLocked' => !empty($community['community_locked']),
+            'discordUrl' => trim((string) ($community['contact_discord_url'] ?? '')),
+            'contactEmail' => $contactEmail,
+            'contactIntro' => trim((string) ($community['contact_intro'] ?? '')),
+            'contactFormEnabled' => !empty($community['contact_form_enabled']) && $contactEmail !== '',
+        ];
+    }
+
+    /**
+     * Tags affichés sur le registre /communities (sélection admin).
+     *
+     * @return array<string, string> slug => libellé
+     */
+    public static function registryTagLabels(): array
+    {
+        return [
+            'infantry' => 'Infanterie',
+            'armor' => 'Blindés',
+            'air' => 'Aérien / hélico',
+            'soar' => 'Forces spéciales',
+            'logistics' => 'Logistique',
+            'training' => 'Entraînement / école',
+            'campaign' => 'Campagne longue durée',
+            'one_shot' => 'OP ponctuelles',
+            'rp' => 'Roleplay',
+            'tactical' => 'Jeu tactique',
+            'international' => 'International',
+            'fr_speaking' => 'Francophone',
+        ];
+    }
+
+    /** @return list<string> */
+    public static function allowedRegistryTagSlugs(): array
+    {
+        return array_keys(self::registryTagLabels());
+    }
+
+    /**
+     * @param array<string, mixed> $existing bloc community existant (ou [])
+     * @return array<string, mixed> bloc community complet à fusionner dans settings
+     */
+    public function buildCommunityFromRequest(Request $request, array $existing): array
+    {
+        $c = $existing;
+
+        $c['registration_mode'] = ((string) $request->input('registration_mode', 'milsim')) === 'simple' ? 'simple' : 'milsim';
+
+        $c['registry_listed'] = (string) $request->input('registry_listed', '1') !== '0';
+        $c['forum_members_only'] = (string) $request->input('forum_members_only', '0') === '1';
+
+        $c['game_label'] = $this->clip((string) $request->input('game_label', ''), 120);
+        $c['main_mods'] = $this->clip((string) $request->input('main_mods', ''), 4000);
+        $modpack = trim((string) $request->input('modpack_size_gb', ''));
+        $c['modpack_size_gb'] = $modpack === '' ? null : $this->clip($modpack, 32);
+
+        $mode = (string) $request->input('presentation_mode', 'simple');
+        $c['presentation_mode'] = $mode === 'military' ? 'military' : 'simple';
+        $c['simple_body'] = $this->clip((string) $request->input('simple_body', ''), 8000);
+        $c['expectations'] = $this->clip((string) $request->input('expectations', ''), 8000);
+
+        $c['military_sections'] = $this->parseMilitarySections($request);
+
+        $badges = $request->input('style_badges', []);
+        if (!is_array($badges)) {
+            $badges = [];
+        }
+        $allowed = array_flip(self::allowedBadgeSlugs());
+        $c['style_badges'] = array_values(array_filter(array_map(static function ($s) use ($allowed) {
+            $k = is_string($s) ? strtolower(trim($s)) : '';
+
+            return isset($allowed[$k]) ? $k : null;
+        }, $badges)));
+
+        $regTags = $request->input('registry_tags', []);
+        if (!is_array($regTags)) {
+            $regTags = [];
+        }
+        $allowedReg = array_flip(self::allowedRegistryTagSlugs());
+        $c['registry_tags'] = array_values(array_filter(array_map(static function ($s) use ($allowedReg) {
+            $k = is_string($s) ? strtolower(trim($s)) : '';
+
+            return isset($allowedReg[$k]) ? $k : null;
+        }, $regTags)));
+
+        $c['contact_discord_url'] = $this->sanitizeUrl((string) $request->input('contact_discord_url', ''), 500);
+        $c['contact_email'] = $this->sanitizeEmail((string) $request->input('contact_email', ''));
+        $c['contact_form_enabled'] = (string) $request->input('contact_form_enabled', '0') === '1';
+        $c['contact_intro'] = $this->clip((string) $request->input('contact_intro', ''), 500);
+
+        $c['enlistment_milsim'] = EnlistmentMilsimPackService::buildFromRequest($request);
+
+        $layout = (string) $request->input('public_page_layout', 'legacy');
+        $c['public_page_layout'] = $layout === 'showcase' ? 'showcase' : 'legacy';
+        $c['public_hero_subtitle'] = $this->clip((string) $request->input('public_hero_subtitle', ''), 600);
+        $c['public_doctrine'] = $this->clip((string) $request->input('public_doctrine', ''), 200);
+        $c['public_access_label'] = $this->clip((string) $request->input('public_access_label', ''), 120);
+        $c['public_mission'] = $this->clip((string) $request->input('public_mission', ''), 4000);
+        $c['public_region_badges'] = $this->parseStringList($request->input('public_region_badges', ''), 8, 48);
+        $c['public_specialties'] = $this->parseStringList($request->input('public_specialties', ''), 24, 64);
+        $c['public_stats_mode'] = ((string) $request->input('public_stats_mode', 'manual')) === 'computed' ? 'computed' : 'manual';
+        $c['public_stats_manual'] = [
+            'effectif' => $this->clip((string) $request->input('public_stats_effectif', ''), 12),
+            'unites' => $this->clip((string) $request->input('public_stats_unites', ''), 12),
+            'activite_percent' => $this->clip((string) $request->input('public_stats_activite', ''), 12),
+            'theatre' => $this->clip((string) $request->input('public_stats_theatre', ''), 120),
+        ];
+        $c['public_command_chain'] = $this->parseCommandChain($request);
+        $c['public_roster_enabled'] = (string) $request->input('public_roster_enabled', '0') === '1';
+        $c['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
+        $mods = [
+            'forum' => (string) $request->input('public_mod_forum', '0') === '1',
+            'documents' => (string) $request->input('public_mod_documents', '0') === '1',
+            'events' => (string) $request->input('public_mod_events', '0') === '1',
+            'roster' => (string) $request->input('public_mod_roster', '0') === '1',
+            'training' => (string) $request->input('public_mod_training', '0') === '1',
+            'analytics' => (string) $request->input('public_mod_analytics', '0') === '1',
+        ];
+        $c['public_modules'] = $mods;
+
+        // Conserver clés existantes non gérées par ce formulaire
+        foreach ([
+            'community_locked', 'welcome_text', 'require_ai_ack',
+            'default_locale', 'orbat_visibility', 'default_guest_role_slug',
+        ] as $preserve) {
+            if (!array_key_exists($preserve, $c) && array_key_exists($preserve, $existing)) {
+                $c[$preserve] = $existing[$preserve];
+            }
+        }
+
+        return $c;
+    }
+
+    /**
+     * Modèle vitrine + stats (manuelles ou calculées côté contrôleur).
+     *
+     * @param array<string, mixed> $community
+     * @param array<string, mixed> $computed effectif_actifs, unites_public, activite_pct, roster_public_count, roster_rows_count
+     * @param array<string, mixed> $tenant row tenant (name, community_code, …)
+     * @param array<string, mixed> $tenantMerge settings racine (timezone, …)
+     * @return array<string, mixed>
+     */
+    public static function getShowcaseViewModel(array $community, array $computed, array $tenant, array $tenantMerge = []): array
+    {
+        $manual = is_array($community['public_stats_manual'] ?? null) ? $community['public_stats_manual'] : [];
+        $mode = ($community['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed' : 'manual';
+        $eff = $mode === 'computed'
+            ? (string) ($computed['effectif_actifs'] ?? '')
+            : (string) ($manual['effectif'] ?? '');
+        $uni = $mode === 'computed'
+            ? (string) ($computed['unites_public'] ?? '')
+            : (string) ($manual['unites'] ?? '');
+        if ($mode === 'computed') {
+            $ap = $computed['activite_pct'] ?? null;
+            $act = $ap !== null && $ap !== '' ? (string) $ap . '%' : '—';
+        } else {
+            $act = (string) ($manual['activite_percent'] ?? '');
+            if ($act !== '' && !str_contains($act, '%')) {
+                $act .= '%';
+            }
+        }
+        $theatre = $mode === 'computed'
+            ? (string) ($computed['theatre_default'] ?? '')
+            : (string) ($manual['theatre'] ?? '');
+
+        $regionBadges = is_array($community['public_region_badges'] ?? null) ? $community['public_region_badges'] : [];
+        $specialties = is_array($community['public_specialties'] ?? null) ? $community['public_specialties'] : [];
+        $commandChain = [];
+        foreach (is_array($community['public_command_chain'] ?? null) ? $community['public_command_chain'] : [] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $rl = trim((string) ($row['role_label'] ?? ''));
+            $dn = trim((string) ($row['display_name'] ?? ''));
+            $hint = trim((string) ($row['hint'] ?? ''));
+            if ($rl === '' && $dn === '' && $hint === '') {
+                continue;
+            }
+            $commandChain[] = ['role_label' => $rl, 'display_name' => $dn, 'hint' => $hint];
+        }
+        $mods = is_array($community['public_modules'] ?? null) ? $community['public_modules'] : [];
+        $modules = [
+            'forum' => !empty($mods['forum']),
+            'documents' => !empty($mods['documents']),
+            'events' => !empty($mods['events']),
+            'roster' => !empty($mods['roster']),
+            'training' => !empty($mods['training']),
+            'analytics' => !empty($mods['analytics']),
+        ];
+
+        return [
+            'publicPageLayout' => ($community['public_page_layout'] ?? 'legacy') === 'showcase' ? 'showcase' : 'legacy',
+            'heroSubtitle' => trim((string) ($community['public_hero_subtitle'] ?? '')),
+            'publicDoctrine' => trim((string) ($community['public_doctrine'] ?? '')),
+            'publicAccessLabel' => trim((string) ($community['public_access_label'] ?? '')),
+            'publicMission' => trim((string) ($community['public_mission'] ?? '')),
+            'regionBadges' => $regionBadges,
+            'specialties' => $specialties,
+            'stats' => [
+                'effectif' => $eff,
+                'unites' => $uni,
+                'activite' => $act,
+                'theatre' => $theatre,
+            ],
+            'statsMode' => $mode,
+            'commandChain' => $commandChain,
+            'publicRosterEnabled' => !empty($community['public_roster_enabled']),
+            'recruitmentBadgeOpen' => !empty($community['public_recruitment_badge_open']),
+            'publicModules' => $modules,
+            'timezoneLabel' => (string) ($tenantMerge['timezone'] ?? ''),
+            'rosterPublicCount' => (int) ($computed['roster_public_count'] ?? 0),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $community
+     * @return array{
+     *   tagline: string,
+     *   style_badge_labels: list<string>,
+     *   registry_tag_labels: list<string>
+     * }
+     */
+    public static function registryCardMeta(array $community): array
+    {
+        $styleBadgeLabels = [];
+        if (!empty($community['style_badges']) && is_array($community['style_badges'])) {
+            $labels = self::badgeLabels();
+            foreach ($community['style_badges'] as $slug) {
+                if (is_string($slug) && isset($labels[$slug])) {
+                    $styleBadgeLabels[] = $labels[$slug];
+                }
+            }
+        }
+        $registryTagLabels = [];
+        if (!empty($community['registry_tags']) && is_array($community['registry_tags'])) {
+            $reg = self::registryTagLabels();
+            foreach ($community['registry_tags'] as $slug) {
+                if (is_string($slug) && isset($reg[$slug])) {
+                    $registryTagLabels[] = $reg[$slug];
+                }
+            }
+        }
+        $tagline = '';
+        if (($community['presentation_mode'] ?? 'simple') === 'simple') {
+            $t = trim((string) ($community['simple_body'] ?? ''));
+            $tagline = $t !== '' ? mb_substr(preg_replace('/\s+/', ' ', $t), 0, 220) : '';
+        } else {
+            $sections = $community['military_sections'] ?? [];
+            if (is_array($sections) && $sections !== []) {
+                $first = $sections[0];
+                if (is_array($first)) {
+                    $tagline = trim((string) ($first['body'] ?? ''));
+                    $tagline = $tagline !== '' ? mb_substr(preg_replace('/\s+/', ' ', $tagline), 0, 220) : '';
+                }
+            }
+        }
+        if ($tagline === '' && !empty($community['game_label'])) {
+            $tagline = (string) $community['game_label'];
+        }
+
+        return [
+            'tagline' => $tagline,
+            'style_badge_labels' => $styleBadgeLabels,
+            'registry_tag_labels' => $registryTagLabels,
+        ];
+    }
+
+    private function clip(string $s, int $max): string
+    {
+        if (mb_strlen($s) <= $max) {
+            return $s;
+        }
+
+        return mb_substr($s, 0, $max);
+    }
+
+    private function sanitizeUrl(string $url, int $maxLen): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+        if (strlen($url) > $maxLen) {
+            return '';
+        }
+        if (stripos($url, 'javascript:') !== false || preg_match('#^\s*data:#i', $url)) {
+            return '';
+        }
+        if (preg_match('#^https?://#i', $url)) {
+            return $url;
+        }
+
+        return '';
+    }
+
+    private function sanitizeEmail(string $email): string
+    {
+        $email = trim($email);
+        if ($email === '' || strlen($email) > 255) {
+            return '';
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return '';
+        }
+
+        return $email;
+    }
+
+    /** @return list<array{label: string, title: string, body: string}> */
+    private function parseMilitarySections(Request $request): array
+    {
+        $labels = $request->input('military_label', []);
+        $titles = $request->input('military_title', []);
+        $bodies = $request->input('military_body', []);
+        if (!is_array($labels) || !is_array($titles) || !is_array($bodies)) {
+            return [];
+        }
+        $out = [];
+        $n = max(count($labels), count($titles), count($bodies));
+        $defaults = ['PRIMO', 'SECUNDO', 'TERTIO', 'QUARTO', 'QUINTO', 'SEXTO'];
+        for ($i = 0; $i < $n && $i < 12; $i++) {
+            $label = isset($labels[$i]) ? $this->clip((string) $labels[$i], 32) : '';
+            if ($label === '') {
+                $label = $defaults[$i] ?? ('POINT ' . ($i + 1));
+            }
+            $title = isset($titles[$i]) ? $this->clip((string) $titles[$i], 200) : '';
+            $body = isset($bodies[$i]) ? $this->clip((string) $bodies[$i], 4000) : '';
+            if ($title === '' && $body === '') {
+                continue;
+            }
+            $out[] = ['label' => $label, 'title' => $title, 'body' => $body];
+        }
+
+        return $out;
+    }
+
+    /** @return list<string> */
+    private function parseStringList(mixed $raw, int $maxItems, int $maxLen): array
+    {
+        if (!is_string($raw)) {
+            return [];
+        }
+        $lines = preg_split('/\r\n|\r|\n|,/', $raw) ?: [];
+        $out = [];
+        foreach ($lines as $line) {
+            $t = trim((string) $line);
+            if ($t === '') {
+                continue;
+            }
+            $out[] = $this->clip($t, $maxLen);
+            if (count($out) >= $maxItems) {
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    /** @return list<array{role_label: string, display_name: string, hint: string}> */
+    private function parseCommandChain(Request $request): array
+    {
+        $roles = $request->input('cmd_role_label', []);
+        $names = $request->input('cmd_display_name', []);
+        $hints = $request->input('cmd_hint', []);
+        if (!is_array($roles) || !is_array($names) || !is_array($hints)) {
+            return [];
+        }
+        $n = min(max(count($roles), count($names), count($hints)), 8);
+        $out = [];
+        for ($i = 0; $i < $n; $i++) {
+            $rl = isset($roles[$i]) ? $this->clip((string) $roles[$i], 80) : '';
+            $dn = isset($names[$i]) ? $this->clip((string) $names[$i], 120) : '';
+            $hint = isset($hints[$i]) ? $this->clip((string) $hints[$i], 200) : '';
+            if ($rl === '' && $dn === '' && $hint === '') {
+                continue;
+            }
+            $out[] = ['role_label' => $rl, 'display_name' => $dn, 'hint' => $hint];
+        }
+
+        return $out;
+    }
+}

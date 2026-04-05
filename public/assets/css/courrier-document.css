@@ -38,14 +38,19 @@
   min-height: 210mm;
 }
 
+.courrier-preview-inner {
+  position: relative;
+  z-index: 1;
+}
+
 .courrier-classification-banner {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   text-align: center;
-  padding: 6px 8px;
-  margin: -1px -1px 0 -1px;
+  padding: 8px 10px;
+  margin: 0;
   border-bottom: 2px solid #0b1220;
   background: #f1f5f9;
 }
@@ -74,6 +79,81 @@
   text-align: justify;
 }
 .courrier-body p { margin-bottom: 0.75rem; }
+
+.courrier-body p.courrier-alinea {
+  text-indent: 2.5em;
+}
+
+.courrier-envelope-a {
+  margin: 0.35rem 0 0.35rem 0;
+  font-weight: 600;
+}
+.courrier-envelope-a-sep {
+  font-size: 11px;
+  font-style: normal;
+  color: var(--courrier-text);
+  text-transform: lowercase;
+}
+
+/* Bloc signature (placeholder et zone signée) — centré, impact visuel */
+.courrier-signature-block--draft {
+  margin-top: 4rem;
+}
+.courrier-signature-block--signed {
+  width: 100%;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+.courrier-signature-title {
+  font-weight: 800;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  margin-bottom: 1rem;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  color: var(--courrier-text);
+}
+.courrier-signature-placeholder {
+  min-height: 3.25rem;
+  border: 1px dashed #94a3b8;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 11px;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(180deg, #fafbfc 0%, #f1f5f9 100%);
+}
+.courrier-signature-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--courrier-text);
+}
+.courrier-signature-img {
+  filter: contrast(1.05);
+}
+/* Tampon « Original signé » — rouge institutionnel */
+.courrier-signature-original-stamp {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b91c1c;
+  border: 2px solid #dc2626;
+  border-radius: 6px;
+  padding: 6px 14px;
+  display: inline-block;
+  background: linear-gradient(180deg, #fff5f5 0%, #fee2e2 100%);
+  box-shadow: 0 1px 3px rgba(185, 28, 28, 0.15);
+}
+.courrier-signature-signed-inner {
+  align-items: center !important;
+  text-align: center;
+}
 
 /* Utilitaires (aperçu sans Tailwind) */
 .courrier-preview .text-\[10px\] { font-size: 10px; }

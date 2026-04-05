@@ -2,7 +2,7 @@
 <div class="max-w-4xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900"><?= htmlspecialchars($role['name']) ?></h1>
-        <a href="<?= url('admin/organization/roles') ?>" class="text-sm font-medium text-slate-600 hover:underline">Liste des rôles</a>
+        <a href="<?= url('back-office/roles') ?>" class="text-sm font-medium text-slate-600 hover:underline">Liste des rôles</a>
     </div>
     <dl class="grid gap-4 md:grid-cols-2 mb-6">
         <div><dt class="text-slate-500 text-sm">Slug</dt><dd class="font-mono"><?= htmlspecialchars($role['slug']) ?></dd></div>

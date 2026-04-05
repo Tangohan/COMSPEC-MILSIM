@@ -26,7 +26,7 @@ class UserProfileRepository
 
     public function upsert(int $userId, array $data): void
     {
-        $fields = ['first_name', 'last_name', 'birth_date', 'nationality', 'timezone', 'language', 'bio', 'phone', 'emergency_contact', 'arma_callsign'];
+        $fields = ['first_name', 'last_name', 'birth_date', 'nationality', 'timezone', 'language', 'bio', 'phone', 'emergency_contact'];
         $existing = $this->getByUserId($userId);
         if ($existing) {
             $set = [];

@@ -38,10 +38,7 @@ class ProfileCompletenessService
     {
         $userProfile = $userProfile ?? $this->userProfileRepository->getByUserId($userId);
         $personnelProfile = $personnelProfile ?? $this->personnelProfileRepository->getByUserId($userId);
-        $assignments = $this->assignmentRepository->listActiveForUser($userId);
-        if (empty($assignments)) {
-            $assignments = $this->assignmentRepository->listActiveForUserLegacy($userId);
-        }
+        $assignments = $this->assignmentRepository->listActiveForUserResolved($userId);
         $primary = $assignments[0] ?? null;
         $unitName = $primary['unit_name'] ?? null;
 

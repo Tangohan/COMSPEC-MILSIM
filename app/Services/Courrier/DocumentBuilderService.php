@@ -82,12 +82,31 @@ class DocumentBuilderService
         $paperClass = $orientation === 'landscape' ? 'a4-landscape' : 'a4-portrait';
         $styleAttr = !empty($styles) ? ' style="' . implode(' ', $styles) . '"' : '';
 
-        $html = '<div class="courrier-preview ' . $paperClass . ' max-w-[21cm] mx-auto min-h-[29.7cm] p-10 border border-gray-200 bg-white" data-paper="a4" data-orientation="' . htmlspecialchars($orientation) . '"' . $styleAttr . '>';
+        $html = '<div class="courrier-preview ' . $paperClass . ' max-w-[21cm] mx-auto min-h-[29.7cm] border border-gray-200 bg-white" data-paper="a4" data-orientation="' . htmlspecialchars($orientation) . '"' . $styleAttr . '>';
         $html .= $this->buildClassificationOverlay($document);
+        $html .= '<div class="courrier-preview-inner p-10">';
         $html .= $this->buildEnvelopeHtml($document, $preset);
         $html .= '<div class="courrier-body text-xs leading-relaxed text-justify space-y-4">' . $body . '</div>';
-        $html .= '</div>';
+        $html .= '</div></div>';
         return $html;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function documentMetadata(array $document): array
+    {
+        $raw = $document['metadata_json'] ?? null;
+        if ($raw === null || $raw === '') {
+            return [];
+        }
+        if (is_string($raw)) {
+            $d = json_decode($raw, true);
+
+            return is_array($d) ? $d : [];
+        }
+
+        return is_array($raw) ? $raw : [];
     }
 
     /**
@@ -109,8 +128,23 @@ class DocumentBuilderService
         $lines = is_array($headerConfig['lines'] ?? null) ? $headerConfig['lines'] : null;
         $datePlace = trim((string) ($headerConfig['date_place'] ?? ''));
 
-        $out .= '<div class="text-[10px] font-bold uppercase leading-tight mb-12">';
-        if (is_array($lines) && count($lines) >= 3) {
+        $meta = $this->documentMetadata($document);
+        $hasMetaHeader = (trim((string) ($meta['header_line1'] ?? '')) !== '')
+            || (trim((string) ($meta['header_unit'] ?? '')) !== '')
+            || (trim((string) ($meta['header_section'] ?? '')) !== '');
+
+        $out .= '<div class="courrier-envelope-header text-[10px] font-bold uppercase leading-tight mb-12">';
+        if ($hasMetaHeader) {
+            $l1 = trim((string) ($meta['header_line1'] ?? ''));
+            if ($l1 === '') {
+                $l1 = 'MINISTÈRE DE LA DÉFENSE';
+            }
+            $u = trim((string) ($meta['header_unit'] ?? ''));
+            $s = trim((string) ($meta['header_section'] ?? ''));
+            $out .= '<p>' . htmlspecialchars($l1) . '</p>';
+            $out .= '<p class="border-b-2 border-black w-fit mb-1">' . htmlspecialchars('UNITÉ : ' . ($u !== '' ? $u : '(à définir)')) . '</p>';
+            $out .= '<p>' . htmlspecialchars('SECTION : ' . ($s !== '' ? $s : '(à définir)')) . '</p>';
+        } elseif (is_array($lines) && count($lines) >= 3) {
             $out .= '<p>' . htmlspecialchars((string) $lines[0]) . '</p>';
             $out .= '<p class="border-b-2 border-black w-fit mb-1">' . htmlspecialchars((string) $lines[1]) . '</p>';
             $out .= '<p>' . htmlspecialchars((string) $lines[2]) . '</p>';
@@ -119,7 +153,7 @@ class DocumentBuilderService
             $out .= '<p class="border-b-2 border-black w-fit mb-1">UNITÉ : (à définir)</p>';
             $out .= '<p>SECTION : (à définir)</p>';
         }
-        $refTemplate = $headerConfig['reference_template'] ?? 'N° {{ref}} / CERBERE / RH';
+        $refTemplate = is_array($headerConfig) ? ($headerConfig['reference_template'] ?? 'N° {{ref}} / CERBERE / RH') : 'N° {{ref}} / CERBERE / RH';
         $refLine = str_replace('{{ref}}', $refDisplay, $refTemplate);
         $out .= '<p class="mt-4">' . htmlspecialchars($refLine) . '</p>';
         $out .= '</div>';
@@ -132,17 +166,32 @@ class DocumentBuilderService
         $subject = trim((string) ($document['subject'] ?? ''));
 
         if ($issuer !== '' || $destination !== '') {
-            $out .= '<div class="ml-auto w-1/2 text-[11px] font-bold space-y-1 mb-12">';
-            if ($issuer !== '') {
-                foreach (preg_split('/\r\n|\r|\n/', $issuer, -1, PREG_SPLIT_NO_EMPTY) ?: [$issuer] as $line) {
+            $out .= '<div class="courrier-envelope-recipients ml-auto w-1/2 text-[11px] font-bold mb-12">';
+            if ($issuer !== '' && $destination !== '') {
+                $issuerLines = preg_split('/\r\n|\r|\n/', $issuer, -1, PREG_SPLIT_NO_EMPTY) ?: [$issuer];
+                $destLines = preg_split('/\r\n|\r|\n/', $destination, -1, PREG_SPLIT_NO_EMPTY) ?: [$destination];
+                $out .= '<div class="courrier-envelope-recipients-inner space-y-1">';
+                foreach ($issuerLines as $line) {
                     $out .= '<p>' . htmlspecialchars(trim($line)) . '</p>';
                 }
-            }
-            if ($destination !== '') {
-                $out .= '<p class="text-blue-600 italic py-2">à</p>';
-                foreach (preg_split('/\r\n|\r|\n/', $destination, -1, PREG_SPLIT_NO_EMPTY) ?: [$destination] as $line) {
+                $out .= '<p class="courrier-envelope-a"><span class="courrier-envelope-a-sep">à</span></p>';
+                foreach ($destLines as $line) {
                     $out .= '<p>' . htmlspecialchars(trim($line)) . '</p>';
                 }
+                $out .= '</div>';
+            } else {
+                $out .= '<div class="space-y-1">';
+                if ($issuer !== '') {
+                    foreach (preg_split('/\r\n|\r|\n/', $issuer, -1, PREG_SPLIT_NO_EMPTY) ?: [$issuer] as $line) {
+                        $out .= '<p>' . htmlspecialchars(trim($line)) . '</p>';
+                    }
+                }
+                if ($destination !== '') {
+                    foreach (preg_split('/\r\n|\r|\n/', $destination, -1, PREG_SPLIT_NO_EMPTY) ?: [$destination] as $line) {
+                        $out .= '<p>' . htmlspecialchars(trim($line)) . '</p>';
+                    }
+                }
+                $out .= '</div>';
             }
             $out .= '</div>';
         }
@@ -190,6 +239,7 @@ class DocumentBuilderService
 
     /**
      * Remplace {{signature_block}} dans le body par un placeholder (brouillon) ou l'image + tampons (document signé).
+     * Si le marqueur est absent, le bloc est ajouté en fin de corps.
      */
     public function injectSignatureBlock(string $body, array $document, array $context = []): string
     {
@@ -198,14 +248,9 @@ class DocumentBuilderService
 
         if (empty($data) || empty($data['signature_image_path'])) {
             $issuerLabel = trim((string) ($document['issuer_label'] ?? ''));
-            $placeholder = '<div class="mt-24 ml-auto w-1/3 text-center text-[10px]">';
-            $placeholder .= '<p class="font-bold uppercase underline mb-8">Signature</p>';
-            $placeholder .= '<div class="h-12 border border-dashed border-gray-300 flex items-center justify-center text-gray-400 mb-2">Signature Numérique</div>';
-            if ($issuerLabel !== '') {
-                $placeholder .= '<p>' . htmlspecialchars($issuerLabel) . '</p>';
-            }
-            $placeholder .= '</div>';
-            return str_replace('{{signature_block}}', $placeholder, $body);
+            $placeholder = $this->buildSignaturePlaceholderHtml($issuerLabel);
+
+            return $this->mergeSignatureIntoBody($body, $placeholder);
         }
 
         $docId = (int) ($document['id'] ?? 0);
@@ -214,12 +259,15 @@ class DocumentBuilderService
         $stampName = htmlspecialchars($data['stamp_name_signature'] ?? '');
         $stampGrade = htmlspecialchars($data['stamp_grade'] ?? '');
 
-        $block = '<div class="mt-10 flex flex-col items-end gap-2 text-[11px]">';
+        $block = '<div class="courrier-signature-block courrier-signature-block--signed mt-10 text-[11px]">';
+        $block .= '<div class="courrier-signature-signed-inner flex flex-col items-center text-center gap-3">';
         if ($imgUrl !== '') {
-            $block .= '<img src="' . htmlspecialchars($imgUrl) . '" alt="Signature" class="max-h-16 object-contain" />';
+            $block .= '<img src="' . htmlspecialchars($imgUrl) . '" alt="Signature" class="courrier-signature-img max-h-20 object-contain" />';
         }
         if ($stampOrig !== '') {
-            $block .= '<p class="font-semibold">' . $stampOrig . '</p>';
+            $block .= '<p class="courrier-signature-original-stamp">' . $stampOrig . '</p>';
+        } elseif ($imgUrl !== '') {
+            $block .= '<p class="courrier-signature-original-stamp">Original signé</p>';
         }
         if ($stampName !== '') {
             $block .= '<p>' . $stampName . '</p>';
@@ -231,8 +279,31 @@ class DocumentBuilderService
             $block .= '<p class="font-semibold">' . htmlspecialchars('Signé numériquement — ' . (string) $data['verification_code']) . '</p>';
         }
         $block .= '<!--COURRIER_QR-->';
-        $block .= '</div>';
+        $block .= '</div></div>';
 
-        return str_replace('{{signature_block}}', $block, $body);
+        return $this->mergeSignatureIntoBody($body, $block);
+    }
+
+    private function buildSignaturePlaceholderHtml(string $issuerLabel): string
+    {
+        $html = '<div class="courrier-signature-block courrier-signature-block--draft mt-24 mx-auto max-w-sm text-center text-[10px]">';
+        $html .= '<p class="courrier-signature-title">SIGNATURE</p>';
+        $html .= '<div class="courrier-signature-placeholder">Signature Numérique</div>';
+        if ($issuerLabel !== '') {
+            $html .= '<p class="courrier-signature-name">' . htmlspecialchars($issuerLabel) . '</p>';
+        }
+        $html .= '</div>';
+
+        return $html;
+    }
+
+    private function mergeSignatureIntoBody(string $body, string $blockHtml): string
+    {
+        $marker = '{{signature_block}}';
+        if (str_contains($body, $marker)) {
+            return str_replace($marker, $blockHtml, $body);
+        }
+
+        return $body . $blockHtml;
     }
 }

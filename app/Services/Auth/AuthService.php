@@ -21,6 +21,9 @@ class AuthService
         if (!$user || !password_verify($password, $user['password_hash'])) {
             return false;
         }
+        if (!empty($user['is_service_account'])) {
+            return false;
+        }
         if (($user['status'] ?? '') !== 'active') {
             return false;
         }
@@ -79,7 +82,7 @@ class AuthService
             return false;
         }
         $user = $this->userRepository->findByEmail($tenantId, (string) $email);
-        if (!$user || ($user['status'] ?? '') !== 'active') {
+        if (!$user || !empty($user['is_service_account']) || ($user['status'] ?? '') !== 'active') {
             return false;
         }
         $this->loginUser($user);

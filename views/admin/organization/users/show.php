@@ -14,9 +14,9 @@ $uid = (int) $user['id'];
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Fiche utilisateur</h1>
         <div class="flex gap-2">
-            <a href="<?= url('admin/organization/users/' . $uid . '/edit') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Modifier</a>
+            <a href="<?= url('back-office/users/' . $uid . '/edit') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Modifier</a>
             <?php if (($user['status'] ?? '') !== 'inactive'): ?>
-            <form method="post" action="<?= url('admin/organization/users/' . $uid . '/deactivate') ?>" class="inline" onsubmit="return confirm('Désactiver cet utilisateur ?');">
+            <form method="post" action="<?= url('back-office/users/' . $uid . '/deactivate') ?>" class="inline" onsubmit="return confirm('Désactiver cet utilisateur ?');">
                 <?= \App\Core\Csrf::field() ?>
                 <button type="submit" class="px-4 py-2 bg-rose-100 text-rose-800 text-sm font-semibold rounded hover:bg-rose-200">Désactiver</button>
             </form>
@@ -70,6 +70,6 @@ $uid = (int) $user['id'];
     </div>
 
     <p class="mt-8 text-sm text-slate-500">
-        <a href="<?= url('admin/organization/users') ?>" class="underline">Retour à la liste</a>
+        <a href="<?= url('back-office/users') ?>" class="underline">Retour à la liste</a>
     </p>
 </div>

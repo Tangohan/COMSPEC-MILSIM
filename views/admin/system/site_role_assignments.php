@@ -7,7 +7,7 @@ $s = \App\Core\Session::getFlash('success');
 <div class="max-w-5xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Affectations rôles site</h1>
-        <a href="<?= url('admin/system') ?>" class="text-sm font-medium text-slate-600 hover:underline">Retour</a>
+        <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:underline">Retour</a>
     </div>
     <p class="text-slate-600 text-sm mb-6">Attribuez un rôle plateforme à un compte par email. Les rôles site ne sont pas gérables depuis l’administration d’une communauté.</p>
     <?php if ($f): ?><p class="text-red-600 text-sm mb-4"><?= htmlspecialchars($f) ?></p><?php endif; ?>
@@ -23,7 +23,7 @@ $s = \App\Core\Session::getFlash('success');
     }
     ?>
     <?php if ($firstRoleId > 0): ?>
-    <form method="post" action="<?= url('admin/system/site-roles/assign') ?>" class="flex flex-wrap gap-3 items-end mb-10 border border-slate-200 rounded-lg p-4">
+    <form method="post" action="<?= url('admin/site-roles/assign') ?>" class="flex flex-wrap gap-3 items-end mb-10 border border-slate-200 rounded-lg p-4">
         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
         <div class="flex-1 min-w-[200px]">
             <label class="block text-xs text-slate-500 mb-1">Email</label>
@@ -53,7 +53,7 @@ $s = \App\Core\Session::getFlash('success');
                     <?php foreach ($assignments as $a): ?>
                         <li class="px-4 py-2 flex justify-between items-center text-sm">
                             <span><?= htmlspecialchars((string) ($a['email_normalized'] ?? '')) ?></span>
-                            <form method="post" action="<?= url('admin/system/site-roles/revoke') ?>" onsubmit="return confirm('Révoquer cette affectation ?');">
+                            <form method="post" action="<?= url('admin/site-roles/revoke') ?>" onsubmit="return confirm('Révoquer cette affectation ?');">
                                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
                                 <input type="hidden" name="id" value="<?= (int) ($a['id'] ?? 0) ?>">
                                 <button type="submit" class="text-red-600 text-xs underline">Révoquer</button>

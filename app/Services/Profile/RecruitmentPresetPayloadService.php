@@ -1,0 +1,389 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Profile;
+
+use App\Core\Request;
+
+/**
+ * Structure JSON des profils de candidature (recruitment_presets.payload) + fusion vers enlistments.
+ *
+ * @phpstan-type ScheduleSlot array{dow:int,start:string,end:string}
+ */
+final class RecruitmentPresetPayloadService
+{
+    public const PAYLOAD_VERSION = 2;
+
+    public const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
+    /** Lundi = 1 … Dimanche = 7 (ISO-8601) */
+    private const DAY_LABELS = [
+        1 => 'Lun',
+        2 => 'Mar',
+        3 => 'Mer',
+        4 => 'Jeu',
+        5 => 'Ven',
+        6 => 'Sam',
+        7 => 'Dim',
+    ];
+
+    /** @var list<string> */
+    private const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+
+    /**
+     * Normalise un payload décodé (rétrocompatibilité v1 : chaîne availability seule).
+     *
+     * @param array<string, mixed> $raw
+     * @return array<string, mixed>
+     */
+    public function normalizeDecodedPayload(array $raw): array
+    {
+        $out = $raw;
+        $out['payload_version'] = (int) ($out['payload_version'] ?? 1);
+
+        $legacyAvailabilityString = '';
+        if (isset($raw['availability']) && is_string($raw['availability']) && trim($raw['availability']) !== '') {
+            $legacyAvailabilityString = trim($raw['availability']);
+        }
+
+        if (!isset($out['rp']) || !is_array($out['rp'])) {
+            $out['rp'] = [];
+        }
+        $rp = &$out['rp'];
+        $rp['character_name'] = isset($rp['character_name']) ? trim((string) $rp['character_name']) : '';
+        $rp['bio'] = isset($rp['bio']) ? trim((string) $rp['bio']) : '';
+        $rp['cv'] = isset($rp['cv']) ? trim((string) $rp['cv']) : '';
+        $rp['image_url'] = isset($rp['image_url']) ? trim((string) $rp['image_url']) : '';
+        $rp['image_external_url'] = isset($rp['image_external_url']) ? trim((string) $rp['image_external_url']) : '';
+
+        $out['admin_notes'] = isset($out['admin_notes']) ? trim((string) $out['admin_notes']) : '';
+
+        if (!isset($out['availability']) || !is_array($out['availability'])) {
+            $out['availability'] = [];
+        }
+        $av = &$out['availability'];
+        if (!isset($av['schedule']) || !is_array($av['schedule'])) {
+            $av['schedule'] = [];
+        }
+        $av['timezone_label'] = isset($av['timezone_label']) ? trim((string) $av['timezone_label']) : '';
+        $av['free_text'] = isset($av['free_text']) ? trim((string) $av['free_text']) : '';
+
+        if ($legacyAvailabilityString !== '') {
+            $av['free_text'] = $av['free_text'] !== '' ? $av['free_text'] : $legacyAvailabilityString;
+        }
+
+        // Champs MilSim (racine)
+        foreach ([
+            'callsign', 'timezone', 'weekly_availability', 'system_config', 'microphone_quality',
+            'past_milsim_experience', 'ace_acre_level', 'motivation_why_join', 'motivation_accountability',
+            'commitment_effort', 'availability_wed_sat',
+        ] as $k) {
+            if (!array_key_exists($k, $out)) {
+                $out[$k] = '';
+            } else {
+                $out[$k] = trim((string) $out[$k]);
+            }
+        }
+        if (!isset($out['age']) || $out['age'] === '' || $out['age'] === null) {
+            $out['age'] = '';
+        } else {
+            $out['age'] = (string) (int) $out['age'];
+        }
+
+        $out['payload_version'] = self::PAYLOAD_VERSION;
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $normalizedPayload
+     * @return array{availability: string, weekly_availability: string}
+     */
+    public function deriveAvailabilityStrings(array $normalizedPayload): array
+    {
+        $av = $normalizedPayload['availability'] ?? [];
+        if (!is_array($av)) {
+            $av = [];
+        }
+        $schedule = $av['schedule'] ?? [];
+        if (!is_array($schedule)) {
+            $schedule = [];
+        }
+        $slots = $this->normalizeScheduleSlots($schedule);
+        $tz = isset($av['timezone_label']) ? trim((string) $av['timezone_label']) : '';
+        $free = isset($av['free_text']) ? trim((string) $av['free_text']) : '';
+
+        $lines = [];
+        foreach ($slots as $s) {
+            $dow = (int) ($s['dow'] ?? 0);
+            $start = (string) ($s['start'] ?? '');
+            $end = (string) ($s['end'] ?? '');
+            if ($dow < 1 || $dow > 7 || $start === '' || $end === '') {
+                continue;
+            }
+            $label = self::DAY_LABELS[$dow] ?? (string) $dow;
+            $lines[] = $label . ' ' . $start . '–' . $end;
+        }
+        $scheduleText = $lines !== [] ? implode(' ; ', $lines) : '';
+        $parts = [];
+        if ($scheduleText !== '') {
+            $parts[] = $scheduleText;
+        }
+        if ($tz !== '') {
+            $parts[] = 'Fuseau / réf. : ' . $tz;
+        }
+        if ($free !== '') {
+            $parts[] = $free;
+        }
+        $combined = implode("\n", $parts);
+
+        return [
+            'availability' => $combined !== '' ? $combined : $free,
+            'weekly_availability' => $scheduleText !== '' ? $scheduleText : $free,
+        ];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $schedule
+     * @return list<ScheduleSlot>
+     */
+    public function normalizeScheduleSlots(array $schedule): array
+    {
+        $out = [];
+        foreach ($schedule as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $dow = (int) ($row['dow'] ?? 0);
+            $start = $this->normalizeTime((string) ($row['start'] ?? ''));
+            $end = $this->normalizeTime((string) ($row['end'] ?? ''));
+            if ($dow < 1 || $dow > 7 || $start === null || $end === null) {
+                continue;
+            }
+            $out[] = ['dow' => $dow, 'start' => $start, 'end' => $end];
+        }
+
+        return $out;
+    }
+
+    private function normalizeTime(string $t): ?string
+    {
+        $t = trim($t);
+        if ($t === '') {
+            return null;
+        }
+        if (preg_match('/^(\d{1,2}):(\d{2})$/', $t, $m)) {
+            $h = (int) $m[1];
+            $min = (int) $m[2];
+            if ($h >= 0 && $h <= 23 && $min >= 0 && $min <= 59) {
+                return sprintf('%02d:%02d', $h, $min);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Construit le tableau payload à enregistrer (hors upload fichier — fait par le contrôleur).
+     *
+     * @param array<string, mixed> $existingNormalized
+     * @return array<string, mixed>
+     */
+    public function buildPayloadFromRequest(Request $request, array $existingNormalized, bool $removeImage): array
+    {
+        $p = $this->normalizeDecodedPayload($existingNormalized);
+
+        $p['callsign'] = trim((string) $request->input('callsign'));
+        $p['age'] = trim((string) $request->input('age'));
+        if ($p['age'] !== '' && !ctype_digit($p['age'])) {
+            $p['age'] = '';
+        }
+        $p['timezone'] = trim((string) $request->input('timezone'));
+        $p['system_config'] = trim((string) $request->input('system_config'));
+        $p['microphone_quality'] = trim((string) $request->input('microphone_quality'));
+        $p['past_milsim_experience'] = trim((string) $request->input('past_milsim_experience'));
+        $p['ace_acre_level'] = trim((string) $request->input('ace_acre_level'));
+        $p['motivation_why_join'] = trim((string) $request->input('motivation_why_join'));
+        $p['motivation_accountability'] = trim((string) $request->input('motivation_accountability'));
+        $p['commitment_effort'] = trim((string) $request->input('commitment_effort'));
+        $p['availability_wed_sat'] = trim((string) $request->input('availability_wed_sat'));
+
+        $p['admin_notes'] = trim((string) $request->input('admin_notes'));
+
+        if (!isset($p['rp']) || !is_array($p['rp'])) {
+            $p['rp'] = [];
+        }
+        $p['rp']['character_name'] = trim((string) $request->input('rp_character_name'));
+        $p['rp']['bio'] = trim((string) $request->input('rp_bio'));
+        $p['rp']['cv'] = trim((string) $request->input('rp_cv'));
+        $p['rp']['image_external_url'] = trim((string) $request->input('rp_image_external_url'));
+        if ($removeImage) {
+            $p['rp']['image_url'] = '';
+        }
+
+        if (!isset($p['availability']) || !is_array($p['availability'])) {
+            $p['availability'] = [];
+        }
+        $p['availability']['timezone_label'] = trim((string) $request->input('availability_timezone_label'));
+        $p['availability']['free_text'] = trim((string) $request->input('availability_free_text'));
+
+        $dows = $request->input('slot_dow', []);
+        $starts = $request->input('slot_start', []);
+        $ends = $request->input('slot_end', []);
+        $schedule = [];
+        if (is_array($dows) && is_array($starts) && is_array($ends)) {
+            $n = max(count($dows), count($starts), count($ends));
+            for ($i = 0; $i < $n; $i++) {
+                $schedule[] = [
+                    'dow' => isset($dows[$i]) ? (int) $dows[$i] : 0,
+                    'start' => isset($starts[$i]) ? (string) $starts[$i] : '',
+                    'end' => isset($ends[$i]) ? (string) $ends[$i] : '',
+                ];
+            }
+        }
+        $p['availability']['schedule'] = array_values($this->normalizeScheduleSlots($schedule));
+
+        return $this->normalizeDecodedPayload($p);
+    }
+
+    /**
+     * Fusionne un preset normalisé dans le payload d'enlistment (POST / preset).
+     *
+     * @param array<string, mixed> $presetPayload
+     * @param array<string, mixed> $enlistmentPayload
+     */
+    public function mergePresetIntoEnlistmentPayload(array $presetPayload, array &$enlistmentPayload): void
+    {
+        $p = $this->normalizeDecodedPayload($presetPayload);
+        $derived = $this->deriveAvailabilityStrings($p);
+
+        $stringKeys = [
+            'timezone', 'system_config', 'microphone_quality', 'past_milsim_experience', 'ace_acre_level',
+            'motivation_why_join', 'motivation_accountability', 'commitment_effort', 'availability_wed_sat',
+        ];
+        foreach ($stringKeys as $k) {
+            if (isset($p[$k]) && trim((string) $p[$k]) !== '') {
+                $enlistmentPayload[$k] = trim((string) $p[$k]);
+            }
+        }
+
+        if (!empty($p['age']) && ctype_digit((string) $p['age'])) {
+            $enlistmentPayload['age'] = (int) $p['age'];
+        }
+
+        if ($derived['availability'] !== '') {
+            $enlistmentPayload['availability'] = $derived['availability'];
+        }
+        if ($derived['weekly_availability'] !== '') {
+            $enlistmentPayload['weekly_availability'] = $derived['weekly_availability'];
+        }
+
+        $notesParts = [];
+        $rp = is_array($p['rp'] ?? null) ? $p['rp'] : [];
+        $cn = trim((string) ($rp['character_name'] ?? ''));
+        $bio = trim((string) ($rp['bio'] ?? ''));
+        $cv = trim((string) ($rp['cv'] ?? ''));
+        $img = trim((string) ($rp['image_url'] ?? ''));
+        $ext = trim((string) ($rp['image_external_url'] ?? ''));
+        $adm = trim((string) ($p['admin_notes'] ?? ''));
+
+        if ($cn !== '') {
+            $notesParts[] = "— Personnage RP —\nNom : " . $cn;
+        }
+        if ($bio !== '') {
+            $notesParts[] = "Bio :\n" . $bio;
+        }
+        if ($cv !== '') {
+            $notesParts[] = "CV / historique :\n" . $cv;
+        }
+        if ($img !== '') {
+            $notesParts[] = 'Portrait (fichier) : ' . $img;
+        }
+        if ($ext !== '') {
+            $notesParts[] = 'Portrait (lien) : ' . $ext;
+        }
+        if ($adm !== '') {
+            $notesParts[] = "— Notes (candidat) —\n" . $adm;
+        }
+        if ($notesParts !== []) {
+            $extra = implode("\n\n", $notesParts);
+            $prev = trim((string) ($enlistmentPayload['notes'] ?? ''));
+            $enlistmentPayload['notes'] = $prev !== '' ? $prev . "\n\n" . $extra : $extra;
+        }
+    }
+
+    /**
+     * Snapshot RP + dispo pour colonne enlistments.recruitment_rp_json (figé au dépôt).
+     *
+     * @param array<string, mixed> $presetPayload
+     * @return array<string, mixed>
+     */
+    public function buildRpSnapshotForEnlistment(array $presetPayload): array
+    {
+        $p = $this->normalizeDecodedPayload($presetPayload);
+        $rp = is_array($p['rp'] ?? null) ? $p['rp'] : [];
+
+        return [
+            'payload_version' => $p['payload_version'] ?? self::PAYLOAD_VERSION,
+            'character_name' => $rp['character_name'] ?? '',
+            'bio' => $rp['bio'] ?? '',
+            'cv' => $rp['cv'] ?? '',
+            'image_url' => $rp['image_url'] ?? '',
+            'image_external_url' => $rp['image_external_url'] ?? '',
+            'admin_notes' => $p['admin_notes'] ?? '',
+            'availability' => $p['availability'] ?? [],
+            'derived_availability' => $this->deriveAvailabilityStrings($p),
+        ];
+    }
+
+    /**
+     * @return array{ok: bool, path?: string, error?: string}
+     */
+    public function saveCharacterImage(int $userId, ?array $file): array
+    {
+        if (!$file || ($file['error'] ?? 0) !== UPLOAD_ERR_OK) {
+            return ['ok' => false, 'error' => 'Fichier manquant ou erreur d’envoi.'];
+        }
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = $finfo ? finfo_file($finfo, $file['tmp_name']) : false;
+        if ($finfo) {
+            finfo_close($finfo);
+        }
+        if (!is_string($mime) || !in_array($mime, self::ALLOWED_IMAGE_MIMES, true) || ($file['size'] ?? 0) > self::MAX_IMAGE_BYTES) {
+            return ['ok' => false, 'error' => 'Image JPG, PNG ou WebP, max 2 Mo.'];
+        }
+        $dir = base_path('public/uploads/recruitment-presets/' . $userId);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $ext = match ($mime) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'jpg',
+        };
+        $name = 'ch_' . bin2hex(random_bytes(8)) . '.' . $ext;
+        $pathFs = $dir . DIRECTORY_SEPARATOR . $name;
+        if (!move_uploaded_file($file['tmp_name'], $pathFs)) {
+            return ['ok' => false, 'error' => 'Enregistrement du fichier impossible.'];
+        }
+
+        return ['ok' => true, 'path' => 'uploads/recruitment-presets/' . $userId . '/' . $name];
+    }
+
+    public function deleteCharacterImageFile(?string $relativePath): void
+    {
+        if ($relativePath === null || $relativePath === '') {
+            return;
+        }
+        $relativePath = str_replace(['..', '\\'], '', $relativePath);
+        if (!str_starts_with($relativePath, 'uploads/recruitment-presets/')) {
+            return;
+        }
+        $full = base_path('public/' . $relativePath);
+        if (is_file($full)) {
+            @unlink($full);
+        }
+    }
+}

@@ -10,7 +10,7 @@ $flashError = \App\Core\Session::getFlash('error');
 <div class="max-w-5xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Référentiel des grades</h1>
-        <a href="<?= url('admin/organization/referentiels/grades/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouveau grade</a>
+        <a href="<?= url('back-office/referentiels/grades/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouveau grade</a>
     </div>
     <?php if ($flashSuccess): ?>
     <p class="mb-4 text-sm text-emerald-700 bg-emerald-50 px-3 py-2 rounded"><?= htmlspecialchars($flashSuccess) ?></p>
@@ -20,10 +20,10 @@ $flashError = \App\Core\Session::getFlash('error');
     <?php endif; ?>
 
     <nav class="flex gap-2 border-b border-slate-200 mb-6">
-        <a href="<?= url('admin/organization/referentiels/grades') ?>?tab=fr" class="px-4 py-2 text-sm font-medium <?= $tab === 'fr' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Grades français</a>
-        <a href="<?= url('admin/organization/referentiels/grades') ?>?tab=us" class="px-4 py-2 text-sm font-medium <?= $tab === 'us' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Grades américains</a>
-        <a href="<?= url('admin/organization/referentiels/grades') ?>?tab=otan" class="px-4 py-2 text-sm font-medium <?= $tab === 'otan' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Correspondances OTAN</a>
-        <a href="<?= url('admin/organization/referentiels/grades') ?>?tab=categories" class="px-4 py-2 text-sm font-medium <?= $tab === 'categories' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Catégories</a>
+        <a href="<?= url('back-office/referentiels/grades') ?>?tab=fr" class="px-4 py-2 text-sm font-medium <?= $tab === 'fr' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Grades français</a>
+        <a href="<?= url('back-office/referentiels/grades') ?>?tab=us" class="px-4 py-2 text-sm font-medium <?= $tab === 'us' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Grades américains</a>
+        <a href="<?= url('back-office/referentiels/grades') ?>?tab=otan" class="px-4 py-2 text-sm font-medium <?= $tab === 'otan' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Correspondances OTAN</a>
+        <a href="<?= url('back-office/referentiels/grades') ?>?tab=categories" class="px-4 py-2 text-sm font-medium <?= $tab === 'categories' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Catégories</a>
     </nav>
 
     <?php if ($tab === 'fr'): ?>
@@ -57,9 +57,9 @@ $flashError = \App\Core\Session::getFlash('error');
                     <?php endif; ?>
                 </td>
                 <td class="p-3">
-                    <a href="<?= url('admin/organization/referentiels/grades/' . $g['id'] . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
+                    <a href="<?= url('back-office/referentiels/grades/' . $g['id'] . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
                     <?php if (!empty($g['is_active'])): ?>
-                    · <form action="<?= url('admin/organization/referentiels/grades/' . $g['id'] . '/deactivate') ?>" method="post" class="inline" onsubmit="return confirm('Désactiver ce grade ?');">
+                    · <form action="<?= url('back-office/referentiels/grades/' . $g['id'] . '/deactivate') ?>" method="post" class="inline" onsubmit="return confirm('Désactiver ce grade ?');">
                         <?= \App\Core\Csrf::field() ?>
                         <button type="submit" class="text-amber-600 hover:underline text-sm">Désactiver</button>
                     </form>
@@ -105,9 +105,9 @@ $flashError = \App\Core\Session::getFlash('error');
                     <?php endif; ?>
                 </td>
                 <td class="p-3">
-                    <a href="<?= url('admin/organization/referentiels/grades/' . $g['id'] . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
+                    <a href="<?= url('back-office/referentiels/grades/' . $g['id'] . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
                     <?php if (!empty($g['is_active'])): ?>
-                    · <form action="<?= url('admin/organization/referentiels/grades/' . $g['id'] . '/deactivate') ?>" method="post" class="inline" onsubmit="return confirm('Désactiver ce grade ?');">
+                    · <form action="<?= url('back-office/referentiels/grades/' . $g['id'] . '/deactivate') ?>" method="post" class="inline" onsubmit="return confirm('Désactiver ce grade ?');">
                         <?= \App\Core\Csrf::field() ?>
                         <button type="submit" class="text-amber-600 hover:underline text-sm">Désactiver</button>
                     </form>
@@ -150,5 +150,5 @@ $flashError = \App\Core\Session::getFlash('error');
     <?php endif; ?>
     <?php endif; ?>
 
-    <p class="mt-8 text-sm text-slate-500"><a href="<?= url('admin/organization') ?>" class="underline">Retour administration organisationnelle</a></p>
+    <p class="mt-8 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour administration organisationnelle</a></p>
 </div>

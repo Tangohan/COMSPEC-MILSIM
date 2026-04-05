@@ -26,10 +26,7 @@ class PersonnelCompletenessService
     public function getScore(int $userId, array $user, ?array $userProfile, ?array $personnelExtras): array
     {
         $profile = $this->profileRepository->getByUserId($userId);
-        $assignments = $this->assignmentRepository->listActiveForUser($userId);
-        if (empty($assignments)) {
-            $assignments = $this->assignmentRepository->listActiveForUserLegacy($userId);
-        }
+        $assignments = $this->assignmentRepository->listActiveForUserResolved($userId);
         $qualifications = $this->qualificationRepository->listForUser($userId);
 
         $primary = $assignments[0] ?? null;
@@ -38,7 +35,8 @@ class PersonnelCompletenessService
 
         $checks = [
             'identity_name' => !empty(trim((string) ($profile['character_name'] ?? $user['display_name'] ?? ''))),
-            'identity_callsign' => !empty(trim((string) ($profile['callsign'] ?? $user['callsign'] ?? ''))),
+            'identity_callsign' => !empty(trim((string) ($user['callsign'] ?? '')))
+                || !empty(trim((string) ($profile['callsign'] ?? ''))),
             'identity_matricule' => !empty(trim((string) ($profile['matricule_internal'] ?? $personnelExtras['service_number'] ?? ''))),
             'identity_role' => !empty(trim((string) ($profile['primary_role'] ?? ''))),
             'identity_unit' => !empty($unitName) || !empty(trim((string) ($personnelExtras['squadron'] ?? ''))),
@@ -47,7 +45,8 @@ class PersonnelCompletenessService
             'security_clearance' => !empty(trim((string) ($profile['clearance_level'] ?? $personnelExtras['clearance_level'] ?? ''))),
             'security_review' => !empty($profile['clearance_reviewed_at'] ?? null),
             'qualifications' => count($qualifications) > 0,
-            'readiness' => isset($profile['readiness_score']) || isset($personnelExtras['readiness_percent']),
+            'readiness' => ((int) ($profile['readiness_score'] ?? 0)) > 0
+                || (isset($personnelExtras['readiness_percent']) && (int) $personnelExtras['readiness_percent'] > 0),
             'contact_email' => !empty(trim((string) ($user['email'] ?? ''))),
         ];
 

@@ -10,7 +10,7 @@ class DefaultTenantSeeder extends AbstractSeed
     {
         $conn = $this->getAdapter()->getConnection();
 
-        $conn->exec("INSERT INTO tenants (name, slug, logo_url, settings, created_at, updated_at) VALUES ('Default Organisation', 'default', NULL, NULL, NOW(), NOW())");
+        $conn->exec("INSERT INTO tenants (name, slug, logo_url, settings, created_at, updated_at) VALUES ('Pas d\'organisation', 'default', NULL, NULL, NOW(), NOW())");
         $tenantId = (int) $conn->lastInsertId();
         if ($tenantId === 0) {
             $row = $conn->query("SELECT id FROM tenants WHERE slug = 'default' LIMIT 1")->fetch(\PDO::FETCH_ASSOC);

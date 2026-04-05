@@ -32,6 +32,61 @@ class TenantRepository
         return $row ?: null;
     }
 
+    /**
+     * Registre des unités / communautés (hors tenant placeholder id = 1).
+     * Exclut les communautés avec `settings.community.registry_listed === false`.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listForRegistry(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT id, name, slug, community_code, logo_url, settings FROM tenants WHERE id != 1 ORDER BY name ASC'
+        );
+        if ($stmt === false) {
+            return [];
+        }
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $community = [];
+            if (!empty($row['settings']) && is_string($row['settings'])) {
+                $decoded = json_decode($row['settings'], true);
+                if (is_array($decoded) && isset($decoded['community']) && is_array($decoded['community'])) {
+                    $community = $decoded['community'];
+                }
+            }
+            if (array_key_exists('registry_listed', $community) && $community['registry_listed'] === false) {
+                continue;
+            }
+            $meta = \App\Services\Community\TenantCommunityProfileService::registryCardMeta($community);
+            $row['registry_tagline'] = $meta['tagline'];
+            $row['registry_style_badge_labels'] = $meta['style_badge_labels'];
+            $row['registry_tag_labels'] = $meta['registry_tag_labels'];
+            $row['game_label'] = trim((string) ($community['game_label'] ?? ''));
+            $row['registry_locked'] = !empty($community['community_locked']);
+            $row['registry_simple_reg'] = ($community['registration_mode'] ?? 'milsim') === 'simple';
+            $welcome = trim((string) ($community['welcome_text'] ?? ''));
+            $excerpt = $meta['tagline'];
+            if ($excerpt === '' && $welcome !== '') {
+                $excerpt = $welcome;
+            }
+            if ($excerpt !== '' && function_exists('mb_strlen') && mb_strlen($excerpt) > 220) {
+                $excerpt = mb_substr($excerpt, 0, 217) . '…';
+            } elseif ($excerpt !== '' && strlen($excerpt) > 220) {
+                $excerpt = substr($excerpt, 0, 217) . '…';
+            }
+            $row['registry_excerpt'] = $excerpt;
+            unset($row['settings']);
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
     public static function normalizeCommunityCode(string $raw): string
     {
         $s = strtoupper(trim($raw));
@@ -109,6 +164,19 @@ class TenantRepository
     {
         $stmt = $this->pdo->prepare('UPDATE tenants SET name = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$name, $tenantId]);
+    }
+
+    public function updateLogoUrl(int $tenantId, ?string $url): void
+    {
+        $url = $url !== null ? trim($url) : '';
+        if ($url === '') {
+            return;
+        }
+        if (strlen($url) > 500) {
+            $url = substr($url, 0, 500);
+        }
+        $stmt = $this->pdo->prepare('UPDATE tenants SET logo_url = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$url, $tenantId]);
     }
 
     /** @return int id du tenant créé */

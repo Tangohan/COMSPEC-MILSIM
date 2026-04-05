@@ -68,7 +68,7 @@ $title = $title ?? 'Nouveau mot de passe';
         <p class="text-slate-600 text-sm mb-8">Choisissez un nouveau mot de passe (minimum 8 caractères).</p>
 
         <?php if ($error): ?>
-        <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 text-sm rounded-xl"><?= htmlspecialchars($error) ?></div>
+        <?php $flash_variant = 'error'; $flash_message = $error; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
 
         <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">

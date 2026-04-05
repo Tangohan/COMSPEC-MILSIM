@@ -12,9 +12,9 @@ $rid = (int) $role['id'];
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900"><?= htmlspecialchars($role['name']) ?></h1>
         <div class="flex gap-2">
-            <a href="<?= url('admin/system/roles') ?>" class="text-sm font-medium text-slate-600 hover:underline">Liste des rôles</a>
+            <a href="<?= url('admin/roles') ?>" class="text-sm font-medium text-slate-600 hover:underline">Liste des rôles</a>
             <?php if (!$isLocked): ?>
-            <a href="<?= url('admin/system/roles/' . $rid . '/edit') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Modifier les permissions</a>
+            <a href="<?= url('admin/roles/' . $rid . '/edit') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Modifier les permissions</a>
             <?php endif; ?>
         </div>
     </div>

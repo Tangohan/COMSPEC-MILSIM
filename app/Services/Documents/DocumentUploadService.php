@@ -6,6 +6,13 @@ namespace App\Services\Documents;
 
 use App\Repositories\DocumentRepository;
 use App\Repositories\DocumentVersionRepository;
+use App\Repositories\ModerationArtifactRepository;
+use App\Services\Moderation\ContentModerationConfig;
+use App\Services\Moderation\ContentModerationOrchestrator;
+use App\Services\Moderation\ModerationArtifactState;
+use App\Services\Moderation\ModerationBlockedException;
+use App\Services\Moderation\ModerationQuarantineException;
+use App\Services\Moderation\ModerationSourceType;
 
 class DocumentUploadService
 {
@@ -27,8 +34,12 @@ class DocumentUploadService
 
     public function __construct(
         private DocumentRepository $documentRepository,
-        private DocumentVersionRepository $versionRepository
-    ) {}
+        private DocumentVersionRepository $versionRepository,
+        private ContentModerationOrchestrator $moderationOrchestrator,
+        private ModerationArtifactRepository $moderationArtifactRepository,
+        private ContentModerationConfig $moderationConfig
+    ) {
+    }
 
     /**
      * @param array{tmp_name: string, size: int, name: string} $file
@@ -52,38 +63,17 @@ class DocumentUploadService
         }
     }
 
-    /**
-     * Stocke le fichier et retourne le chemin relatif (tenant_id/document_id/vN.ext).
-     * @param array{tmp_name: string, size: int, name: string} $file
-     */
-    public function storeFile(int $tenantId, int $documentId, array $file, int $versionNumber): string
-    {
-        $mime = $this->getMime($file['tmp_name']);
-        $ext = self::MIME_TO_EXT[$mime] ?? 'bin';
-        $relativeDir = $tenantId . '/' . $documentId;
-        $baseDir = base_path('storage/documents/' . $relativeDir);
-        if (!is_dir($baseDir)) {
-            mkdir($baseDir, 0755, true);
-        }
-        $filename = 'v' . $versionNumber . '.' . $ext;
-        $fullPath = $baseDir . DIRECTORY_SEPARATOR . $filename;
-        if (!move_uploaded_file($file['tmp_name'], $fullPath)) {
-            throw new \RuntimeException('Impossible d\'enregistrer le fichier.');
-        }
-        return $relativeDir . '/' . $filename;
-    }
-
     public function computeChecksum(string $relativePath): string
     {
         $fullPath = base_path('storage/documents/' . $relativePath);
         if (!is_file($fullPath)) {
             return '';
         }
+
         return hash_file('sha256', $fullPath) ?: '';
     }
 
     /**
-     * Crée une nouvelle version en base et la définit comme courante.
      * @param array{tmp_name: string, size: int, name: string} $file
      * @return array{version_id: int, version_number: int, file_path: string}
      */
@@ -96,16 +86,80 @@ class DocumentUploadService
     ): array {
         $this->validateFile($file);
         $nextVersion = $this->versionRepository->getNextVersionNumber($documentId);
-        $relativePath = $this->storeFile($tenantId, $documentId, $file, $nextVersion);
-        $checksum = $this->computeChecksum($relativePath);
-        $mime = $this->getMime(base_path('storage/documents/' . $relativePath));
-        $size = (int) (is_file(base_path('storage/documents/' . $relativePath)) ? filesize(base_path('storage/documents/' . $relativePath)) : $file['size'] ?? 0);
+        $mime = $this->getMime($file['tmp_name']);
+        $ext = self::MIME_TO_EXT[$mime] ?? 'bin';
+        $originalName = isset($file['name']) ? basename((string) $file['name']) : 'file';
 
-        $originalName = isset($file['name']) ? basename((string) $file['name']) : null;
+        $relativeDir = $tenantId . '/' . $documentId;
+        $filename = 'v' . $nextVersion . '.' . $ext;
+        $finalRelative = $relativeDir . '/' . $filename;
+
+        $quarantineRelative = 'quarantine/' . $tenantId . '/doc_' . $documentId . '_v' . $nextVersion . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $fullQuarantine = base_path('storage/' . $quarantineRelative);
+        $dir = dirname($fullQuarantine);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        if (!move_uploaded_file($file['tmp_name'], $fullQuarantine)) {
+            throw new \RuntimeException('Impossible d\'enregistrer le fichier.');
+        }
+
+        $scan = $this->moderationOrchestrator->scanBinaryFile($fullQuarantine, $mime, $originalName);
+
+        if ($scan->state === ModerationArtifactState::REJECTED) {
+            @unlink($fullQuarantine);
+            throw new ModerationBlockedException(
+                'Le fichier a été refusé par la modération automatique (score trop élevé ou analyse antivirus).'
+            );
+        }
+
+        if ($scan->state === ModerationArtifactState::QUARANTINED) {
+            $checksum = hash_file('sha256', $fullQuarantine) ?: '';
+            $expires = (new \DateTimeImmutable())->modify('+' . $this->moderationConfig->quarantineTtlDays . ' days');
+            $scanLog = $scan->scanLog;
+            $scanLog['pending_document'] = [
+                'document_id' => $documentId,
+                'version_number' => $nextVersion,
+                'target_relative_path' => $finalRelative,
+            ];
+            $artifactId = $this->moderationArtifactRepository->insert($tenantId, [
+                'user_id' => $userId,
+                'source_type' => ModerationSourceType::DOCUMENT_VERSION,
+                'source_id' => 0,
+                'source_key' => 'document:' . $documentId . ':v:' . $nextVersion,
+                'file_path' => $quarantineRelative,
+                'original_name' => $originalName,
+                'mime' => $mime,
+                'sha256' => $checksum,
+                'state' => ModerationArtifactState::QUARANTINED,
+                'risk_score' => $scan->riskScore,
+                'reason_codes' => $scan->reasonCodes,
+                'scan_log' => $scanLog,
+                'ruleset_version' => $this->moderationConfig->rulesetVersion,
+                'expires_at' => $expires->format('Y-m-d H:i:s'),
+            ]);
+            throw new ModerationQuarantineException(
+                'Fichier mis en quarantaine en attente de validation par un modérateur.',
+                $artifactId
+            );
+        }
+
+        $baseDoc = base_path('storage/documents/' . $relativeDir);
+        if (!is_dir($baseDoc)) {
+            mkdir($baseDoc, 0755, true);
+        }
+        $fullFinal = base_path('storage/documents/' . $finalRelative);
+        if (!rename($fullQuarantine, $fullFinal)) {
+            @unlink($fullQuarantine);
+            throw new \RuntimeException('Impossible de finaliser le fichier.');
+        }
+
+        $checksum = hash_file('sha256', $fullFinal) ?: '';
+        $size = (int) filesize($fullFinal);
 
         $versionId = $this->versionRepository->create($documentId, [
             'version_number' => $nextVersion,
-            'file_path' => $relativePath,
+            'file_path' => $finalRelative,
             'original_name' => $originalName,
             'checksum' => $checksum,
             'mime_type' => $mime,
@@ -114,13 +168,98 @@ class DocumentUploadService
             'change_notes' => $changeNotes,
         ]);
         $this->versionRepository->setCurrentVersion($documentId, $versionId);
-
         $this->documentRepository->update($documentId, $tenantId, ['current_file_id' => $versionId]);
+
+        if ($this->moderationArtifactRepository->tableExists()) {
+            $this->moderationArtifactRepository->insert($tenantId, [
+                'user_id' => $userId,
+                'source_type' => ModerationSourceType::DOCUMENT_VERSION,
+                'source_id' => $versionId,
+                'source_key' => null,
+                'file_path' => 'documents/' . $finalRelative,
+                'original_name' => $originalName,
+                'mime' => $mime,
+                'sha256' => $checksum,
+                'state' => ModerationArtifactState::CLEAN,
+                'risk_score' => $scan->riskScore,
+                'reason_codes' => $scan->reasonCodes,
+                'scan_log' => $scan->scanLog,
+                'ruleset_version' => $this->moderationConfig->rulesetVersion,
+                'expires_at' => null,
+            ]);
+        }
 
         return [
             'version_id' => $versionId,
             'version_number' => $nextVersion,
-            'file_path' => $relativePath,
+            'file_path' => $finalRelative,
+        ];
+    }
+
+    /**
+     * Approuve un fichier document en quarantaine : crée la version et déplace le fichier.
+     *
+     * @return array{version_id: int, version_number: int, file_path: string}
+     */
+    public function approveQuarantinedDocumentArtifact(array $artifact, int $tenantId, int $moderatorUserId, ?string $changeNotes = null): array
+    {
+        $documentId = (int) ($artifact['scan_log']['pending_document']['document_id'] ?? 0);
+        if ($documentId <= 0) {
+            throw new \RuntimeException('Artefact invalide pour promotion document.');
+        }
+        $doc = $this->documentRepository->findById($documentId, $tenantId);
+        if (!$doc) {
+            throw new \RuntimeException('Document introuvable.');
+        }
+        $quarantineRel = (string) ($artifact['file_path'] ?? '');
+        $fullQ = base_path('storage/' . $quarantineRel);
+        if (!is_file($fullQ)) {
+            throw new \RuntimeException('Fichier en quarantaine introuvable.');
+        }
+        $nextVersion = $this->versionRepository->getNextVersionNumber($documentId);
+        $mime = $this->getMime($fullQ);
+        $ext = self::MIME_TO_EXT[$mime] ?? 'bin';
+        $orig = (string) ($artifact['original_name'] ?? '');
+        if ($ext === 'bin' && $orig !== '') {
+            $pe = pathinfo($orig, PATHINFO_EXTENSION);
+            if (is_string($pe) && $pe !== '') {
+                $ext = strtolower($pe);
+            }
+        }
+        $relativeDir = $tenantId . '/' . $documentId;
+        $target = $relativeDir . '/v' . $nextVersion . '.' . $ext;
+        $baseDoc = base_path('storage/documents/' . $relativeDir);
+        if (!is_dir($baseDoc)) {
+            mkdir($baseDoc, 0755, true);
+        }
+        $fullFinal = base_path('storage/documents/' . $target);
+        if (!rename($fullQ, $fullFinal)) {
+            throw new \RuntimeException('Impossible de déplacer le fichier vers le stockage documentaire.');
+        }
+
+        $mime = $this->getMime($fullFinal);
+        $checksum = hash_file('sha256', $fullFinal) ?: '';
+        $size = (int) filesize($fullFinal);
+        $versionNumber = $nextVersion;
+        $originalName = $artifact['original_name'] ?? basename($target);
+
+        $versionId = $this->versionRepository->create($documentId, [
+            'version_number' => $versionNumber,
+            'file_path' => $target,
+            'original_name' => $originalName,
+            'checksum' => $checksum,
+            'mime_type' => $mime,
+            'size' => $size,
+            'created_by' => $moderatorUserId,
+            'change_notes' => $changeNotes,
+        ]);
+        $this->versionRepository->setCurrentVersion($documentId, $versionId);
+        $this->documentRepository->update($documentId, $tenantId, ['current_file_id' => $versionId]);
+
+        return [
+            'version_id' => $versionId,
+            'version_number' => $versionNumber,
+            'file_path' => $target,
         ];
     }
 
@@ -132,6 +271,7 @@ class DocumentUploadService
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $path) ?: '';
         finfo_close($finfo);
+
         return $mime;
     }
 }

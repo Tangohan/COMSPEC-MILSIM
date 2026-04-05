@@ -208,41 +208,46 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
             </div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Présentation</h2>
-            <div class="flex gap-6 text-sm">
-                <label class="inline-flex items-center gap-2">
-                    <input type="radio" name="presentation_mode" value="simple" <?= $presentationMode === 'simple' ? 'checked' : '' ?>>
-                    Texte libre
-                </label>
-                <label class="inline-flex items-center gap-2">
-                    <input type="radio" name="presentation_mode" value="military" <?= $presentationMode === 'military' ? 'checked' : '' ?>>
-                    Sections type PRIMO / SECUNDO
-                </label>
+        <section class="rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/30 to-white p-6 shadow-md space-y-6">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Présentation</h2>
+                    <p class="text-xs text-slate-500 mt-1 max-w-xl">Contenu affiché sur votre fiche publique : mode texte libre ou sections étiquetées (type PRIMO / SECUNDO).</p>
+                </div>
+                <div class="flex flex-wrap gap-3 text-sm">
+                    <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm cursor-pointer hover:border-indigo-300">
+                        <input type="radio" name="presentation_mode" value="simple" <?= $presentationMode === 'simple' ? 'checked' : '' ?>>
+                        Texte libre
+                    </label>
+                    <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm cursor-pointer hover:border-indigo-300">
+                        <input type="radio" name="presentation_mode" value="military" <?= $presentationMode === 'military' ? 'checked' : '' ?>>
+                        Sections étiquetées
+                    </label>
+                </div>
             </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Texte simple (mode libre)</label>
-                <textarea name="simple_body" rows="8" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['simple_body'] ?? '')) ?></textarea>
+            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <label class="block text-xs font-bold text-slate-700 mb-2">Texte simple (mode libre)</label>
+                <textarea name="simple_body" rows="8" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm leading-relaxed focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"><?= htmlspecialchars((string) ($c['simple_body'] ?? '')) ?></textarea>
             </div>
             <div class="space-y-4" id="military-sections">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <p class="text-xs font-bold text-slate-700">Sections militaires</p>
-                    <button type="button" id="add-military-section" class="text-xs font-bold text-emerald-700 underline hover:text-emerald-900">+ Ajouter une section</button>
+                    <p class="text-xs font-bold text-slate-800">Sections étiquetées (mode militaire)</p>
+                    <button type="button" id="add-military-section" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-emerald-700">+ Section</button>
                 </div>
                 <?php foreach ($military as $i => $sec): ?>
                     <?php if (!is_array($sec)) { continue; } ?>
-                    <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-2">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-3 shadow-sm">
                         <div class="grid gap-2 sm:grid-cols-3">
-                            <input type="text" name="military_label[]" value="<?= htmlspecialchars((string) ($sec['label'] ?? '')) ?>" maxlength="32" class="rounded border border-slate-300 px-2 py-1 text-xs font-mono" placeholder="PRIMO">
-                            <input type="text" name="military_title[]" value="<?= htmlspecialchars((string) ($sec['title'] ?? '')) ?>" maxlength="200" class="rounded border border-slate-300 px-2 py-1 text-sm sm:col-span-2" placeholder="Titre">
+                            <input type="text" name="military_label[]" value="<?= htmlspecialchars((string) ($sec['label'] ?? '')) ?>" maxlength="32" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono" placeholder="Étiquette (ex. PRIMO)">
+                            <input type="text" name="military_title[]" value="<?= htmlspecialchars((string) ($sec['title'] ?? '')) ?>" maxlength="200" class="rounded-lg border border-slate-300 px-3 py-2 text-sm sm:col-span-2" placeholder="Titre de section">
                         </div>
-                        <textarea name="military_body[]" rows="4" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Contenu"><?= htmlspecialchars((string) ($sec['body'] ?? '')) ?></textarea>
+                        <textarea name="military_body[]" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Contenu"><?= htmlspecialchars((string) ($sec['body'] ?? '')) ?></textarea>
                     </div>
                 <?php endforeach; ?>
             </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Attentes (joueurs)</label>
-                <textarea name="expectations" rows="4" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['expectations'] ?? '')) ?></textarea>
+            <div class="rounded-xl border border-slate-200 bg-white p-4">
+                <label class="block text-xs font-bold text-slate-700 mb-2">Attentes vis-à-vis des joueurs</label>
+                <textarea name="expectations" rows="4" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"><?= htmlspecialchars((string) ($c['expectations'] ?? '')) ?></textarea>
             </div>
         </section>
 
@@ -267,61 +272,85 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
             </label>
         </section>
 
-        <section id="pack-milsim-editor" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6 scroll-mt-24">
-            <div>
-                <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Pack MilSim — formulaire /enlistment</h2>
-                <p class="text-xs text-slate-500 mt-1">Visible lorsque le mode d’inscription est <strong>MilSim complet</strong> (pas le formulaire simple). Personnalise textes, ROE, filigrane et libellés des champs.</p>
+        <section id="pack-milsim-editor" class="rounded-2xl border border-emerald-100 bg-gradient-to-b from-white to-emerald-50/20 p-6 shadow-md space-y-4 scroll-mt-24">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-emerald-100 pb-4">
+                <div>
+                    <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Pack MilSim — formulaire /enlistment</h2>
+                    <p class="text-xs text-slate-500 mt-1 max-w-2xl">Affiché lorsque l’inscription est en <strong>MilSim complet</strong>. Ajustez le préambule, les champs (type de contrôle), les ROE et les textes latéraux.</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700 max-w-xs shadow-sm">
+                    <p class="font-bold text-slate-900 mb-1">Barre de navigation</p>
+                    <p class="leading-relaxed">La marque affichée est fixée par la plateforme : <strong class="text-emerald-800"><?= htmlspecialchars(\App\Services\Community\EnlistmentMilsimPackService::PLATFORM_NAV_BRAND) ?></strong>. Elle n’est pas modifiable ici (cohérence Athena).</p>
+                </div>
             </div>
+
+            <details open class="group rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white">1</span> Préambule &amp; portail</span>
+                </summary>
+                <div class="space-y-4 border-t border-slate-100 p-4">
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Lettre logo (préambule)</label>
-                    <input type="text" name="em_logo_letter" value="<?= htmlspecialchars(mb_substr((string) ($em['logo_letter'] ?? 'F'), 0, 3)) ?>" maxlength="3" class="w-full max-w-[6rem] rounded border border-slate-300 px-3 py-2 text-sm font-mono">
+                    <input type="text" name="em_logo_letter" value="<?= htmlspecialchars(mb_substr((string) ($em['logo_letter'] ?? 'F'), 0, 3)) ?>" maxlength="3" class="w-full max-w-[6rem] rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Filigrane (arrière-plan)</label>
-                    <input type="text" name="em_watermark" value="<?= htmlspecialchars((string) ($em['watermark'] ?? '')) ?>" maxlength="40" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                    <input type="text" name="em_watermark" value="<?= htmlspecialchars((string) ($em['watermark'] ?? '')) ?>" maxlength="40" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                 </div>
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Titre portail (préambule)</label>
-                <input type="text" name="em_portal_title" value="<?= htmlspecialchars((string) ($em['portal_title'] ?? '')) ?>" maxlength="200" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                <input type="text" name="em_portal_title" value="<?= htmlspecialchars((string) ($em['portal_title'] ?? '')) ?>" maxlength="200" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Sous-titre portail</label>
-                <input type="text" name="em_portal_subtitle" value="<?= htmlspecialchars((string) ($em['portal_subtitle'] ?? '')) ?>" maxlength="400" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                <input type="text" name="em_portal_subtitle" value="<?= htmlspecialchars((string) ($em['portal_subtitle'] ?? '')) ?>" maxlength="400" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Titre préambule (grand)</label>
-                <input type="text" name="em_preamble_title" value="<?= htmlspecialchars((string) ($em['preamble_title'] ?? '')) ?>" maxlength="200" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                <input type="text" name="em_preamble_title" value="<?= htmlspecialchars((string) ($em['preamble_title'] ?? '')) ?>" maxlength="200" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Texte d’introduction</label>
-                <textarea name="em_preamble_lead" rows="3" maxlength="2000" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($em['preamble_lead'] ?? '')) ?></textarea>
+                <textarea name="em_preamble_lead" rows="3" maxlength="2000" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($em['preamble_lead'] ?? '')) ?></textarea>
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Bloc statut (une ligne par ligne)</label>
-                <textarea name="em_preamble_status" rows="4" class="w-full rounded border border-slate-300 px-3 py-2 text-sm font-mono"><?= htmlspecialchars($emPreambleStatus) ?></textarea>
+                <textarea name="em_preamble_status" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"><?= htmlspecialchars($emPreambleStatus) ?></textarea>
             </div>
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Bouton d’entrée</label>
-                    <input type="text" name="em_preamble_cta" value="<?= htmlspecialchars((string) ($em['preamble_cta'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                    <input type="text" name="em_preamble_cta" value="<?= htmlspecialchars((string) ($em['preamble_cta'] ?? '')) ?>" maxlength="120" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Pied préambule</label>
-                    <input type="text" name="em_preamble_footer" value="<?= htmlspecialchars((string) ($em['preamble_footer'] ?? '')) ?>" maxlength="600" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                    <input type="text" name="em_preamble_footer" value="<?= htmlspecialchars((string) ($em['preamble_footer'] ?? '')) ?>" maxlength="600" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                 </div>
             </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Marque barre nav (ex. JNET)</label>
-                    <input type="text" name="em_nav_brand" value="<?= htmlspecialchars((string) ($em['nav_brand'] ?? '')) ?>" maxlength="80" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Badge « classifié »</label>
-                    <input type="text" name="em_classified_badge" value="<?= htmlspecialchars((string) ($em['classified_badge'] ?? '')) ?>" maxlength="40" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
+            </details>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Badge « classifié »</label>
+                <input type="text" name="em_classified_badge" value="<?= htmlspecialchars((string) ($em['classified_badge'] ?? '')) ?>" maxlength="40" class="w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 text-sm">
             </div>
+
+            <details open class="rounded-2xl border border-emerald-200 bg-white shadow-sm">
+                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-emerald-50/50 [&::-webkit-details-marker]:hidden">
+                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-xs font-black text-white">2</span> Champs du dossier candidat</span>
+                </summary>
+                <div class="border-t border-emerald-100 p-4 space-y-2">
+                    <p class="text-xs text-slate-600 mb-3">Pour chaque champ : libellé, aide, <strong>type de contrôle</strong> (texte, zone, liste, oui/non). Les options s’affichent une par ligne pour les listes.</p>
+                    <?php
+                    $fieldsData = is_array($em['fields'] ?? null) ? $em['fields'] : [];
+                    $inputPrefix = 'em_fld';
+                    include base_path('views/partials/milsim_pack_fields_editor.php');
+                    ?>
+                </div>
+            </details>
+
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Préfixe progression (sidebar)</label>
@@ -385,13 +414,20 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                 <label class="block text-xs font-bold text-slate-700 mb-1">Note d’archive (encadré gris)</label>
                 <textarea name="em_archive_note" rows="2" maxlength="1200" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($em['archive_note'] ?? '')) ?></textarea>
             </div>
-            <div class="grid gap-2 sm:grid-cols-2">
-                <?php for ($si = 1; $si <= 4; $si++): ?>
+            <div class="space-y-3">
+                <p class="text-xs font-bold text-slate-800">Titres des blocs du formulaire (sections I à IV + entête)</p>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Titre section <?= $si ?></label>
-                    <input type="text" name="em_section_<?= $si ?>" value="<?= htmlspecialchars((string) ($em['section_' . $si] ?? '')) ?>" maxlength="200" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Titre section 0 (mode de candidature)</label>
+                    <input type="text" name="em_section_0" value="<?= htmlspecialchars((string) ($em['section_0'] ?? '')) ?>" maxlength="200" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                 </div>
-                <?php endfor; ?>
+                <div class="grid gap-2 sm:grid-cols-2">
+                    <?php for ($si = 1; $si <= 4; $si++): ?>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre section <?= $si ?></label>
+                        <input type="text" name="em_section_<?= $si ?>" value="<?= htmlspecialchars((string) ($em['section_' . $si] ?? '')) ?>" maxlength="200" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                    <?php endfor; ?>
+                </div>
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Questions engagement (lignes)</label>
@@ -412,11 +448,13 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                     <input type="text" name="em_submit_footer" value="<?= htmlspecialchars((string) ($em['submit_footer'] ?? '')) ?>" maxlength="200" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
                 </div>
             </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Libellés des champs (JSON avancé)</label>
-                <p class="text-[11px] text-slate-500 mb-1">Clés : full_name, age, timezone, weekly_availability, email, system_config, microphone_quality, past_milsim_experience, ace_acre_level, motivation_why_join, motivation_accountability — chaque entrée <code class="text-xs">label</code> et <code class="text-xs">placeholder</code>.</p>
-                <textarea name="em_fields_json" rows="14" class="w-full rounded border border-slate-300 px-3 py-2 text-xs font-mono"><?= htmlspecialchars($emFieldsJson) ?></textarea>
-            </div>
+            <details class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80">
+                <summary class="cursor-pointer px-4 py-3 text-xs font-bold text-slate-600 [&::-webkit-details-marker]:hidden">Import JSON (expert) — surcharge des champs</summary>
+                <div class="border-t border-slate-200 p-4">
+                    <p class="text-[11px] text-slate-500 mb-2">Optionnel. Même clés que l’éditeur visuel ; utile pour copier-coller une config. Peut compléter <code class="text-xs">widget</code> et <code class="text-xs">options</code>.</p>
+                    <textarea name="em_fields_json" rows="10" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono"><?= htmlspecialchars($emFieldsJson) ?></textarea>
+                </div>
+            </details>
         </section>
 
         <button type="submit" class="px-6 py-3 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-emerald-700">Enregistrer</button>
