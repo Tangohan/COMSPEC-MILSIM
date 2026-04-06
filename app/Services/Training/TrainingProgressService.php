@@ -73,18 +73,34 @@ class TrainingProgressService
         ]);
         $this->auditService->logLessonCompleted($tenantId, $userId, $enrollmentId, $lessonId);
 
+        $this->maybeCompleteEnrollmentAndNotify($enrollmentId, $tenantId, $userId);
+    }
+
+    /**
+     * Si le parcours est entièrement validé (leçons + quiz modules / final), passe l’inscription en terminé et envoie le mail de félicitations.
+     * Idempotent : ne fait rien si déjà terminé ou si les critères ne sont pas réunis.
+     */
+    public function maybeCompleteEnrollmentAndNotify(int $enrollmentId, int $tenantId, int $userId): void
+    {
         $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
-        if ($enrollment) {
-            $wasAlreadyCompleted = (($enrollment['status'] ?? '') === 'completed');
-            $courseProgress = $this->computeCourseProgress($enrollmentId);
-            if ($courseProgress['completed'] && !$wasAlreadyCompleted) {
-                $this->enrollmentRepository->update($enrollmentId, [
-                    'status' => 'completed',
-                    'completed_at' => date('Y-m-d H:i:s'),
-                ]);
-                $this->notifyCourseCompleted($tenantId, $userId, (int) $enrollment['course_id'], $enrollmentId);
-            }
+        if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
+            return;
         }
+        if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired', 'pending_approval', 'withdrawn'], true)) {
+            return;
+        }
+        if (($enrollment['status'] ?? '') === 'completed') {
+            return;
+        }
+        $courseProgress = $this->computeCourseProgress($enrollmentId);
+        if (!$courseProgress['completed']) {
+            return;
+        }
+        $this->enrollmentRepository->update($enrollmentId, [
+            'status' => 'completed',
+            'completed_at' => date('Y-m-d H:i:s'),
+        ]);
+        $this->notifyCourseCompleted($tenantId, $userId, (int) $enrollment['course_id'], $enrollmentId);
     }
 
     /** Félicitations par e-mail (échec d’envoi ignoré). */

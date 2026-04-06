@@ -622,7 +622,7 @@ final class EmailService
             EmailEvents::TRAINING_COURSE_COMPLETED,
             'training_course_completed',
             $to,
-            'Parcours terminé — ' . $courseTitle,
+            'Félicitations — parcours terminé — ' . $courseTitle,
             [
                 'displayName' => $displayName,
                 'tenantName' => $tenantName,
@@ -752,6 +752,40 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'training_module_blocked', 'course_title' => $courseTitle]
+        );
+    }
+
+    public function sendTrainingCourseSessionScheduledLearner(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $courseTitle,
+        string $courseUrl,
+        string $periodLine,
+        ?string $sessionLabel,
+        ?string $sessionLocation,
+        int $tenantId
+    ): bool {
+        $myTrainingUrl = \url('formations/mes-formations');
+
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_COURSE_SESSION_SCHEDULED_LEARNER,
+            'training_course_session_scheduled_learner',
+            $to,
+            'Nouveau créneau — ' . $courseTitle,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'courseTitle' => $courseTitle,
+                'courseUrl' => $courseUrl,
+                'periodLine' => $periodLine,
+                'sessionLabel' => $sessionLabel,
+                'sessionLocation' => $sessionLocation,
+                'myTrainingUrl' => $myTrainingUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_session_scheduled', 'course_title' => $courseTitle]
         );
     }
 }

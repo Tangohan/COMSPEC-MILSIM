@@ -11,7 +11,10 @@ $statusLabel = static function (string $s): string {
         'in_progress' => 'En cours',
         'completed' => 'Terminé',
         'revoked' => 'Révoqué',
+        'withdrawn' => 'Inscription annulée',
         'pending_approval' => 'En attente de validation',
+        'failed' => 'Non validé',
+        'expired' => 'Expiré',
         default => $s,
     };
 };
@@ -30,6 +33,9 @@ $statusStyles = static function (string $s): string {
         'assigned' => 'bg-amber-50 text-amber-900 ring-amber-200',
         'completed' => 'bg-emerald-100 text-emerald-900 ring-emerald-200',
         'revoked' => 'bg-slate-200 text-slate-700 ring-slate-300',
+        'withdrawn' => 'bg-slate-200 text-slate-700 ring-slate-300',
+        'failed' => 'bg-orange-50 text-orange-900 ring-orange-200',
+        'expired' => 'bg-slate-100 text-slate-600 ring-slate-200',
         'pending_approval' => 'bg-violet-50 text-violet-900 ring-violet-200',
         default => 'bg-slate-100 text-slate-800 ring-slate-200',
     };
@@ -154,7 +160,16 @@ $coverUrl = static function (array $e): string {
           $img = $coverUrl($e);
           $certId = (int) ($e['certificate_id'] ?? 0);
           $isDone = $st === 'completed';
-          $cta = $isDone ? 'Consulter' : ($st === 'assigned' ? 'Commencer' : 'Reprendre');
+          $cta = match (true) {
+              $st === 'completed' => 'Consulter',
+              in_array($st, ['revoked', 'expired', 'withdrawn'], true) => 'Voir la fiche',
+              $st === 'pending_approval' => 'Fiche formation',
+              $st === 'assigned' => 'Commencer',
+              default => 'Reprendre',
+          };
+          $showWithdrawBtn = function_exists('training_enrollment_can_withdraw_by_member')
+              && training_enrollment_can_withdraw_by_member($e)
+              && $certId < 1;
           ?>
         <li class="group overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm transition hover:shadow-md hover:border-emerald-200/80">
           <div class="flex flex-col lg:flex-row">
@@ -226,6 +241,16 @@ $coverUrl = static function (array $e): string {
                   <a href="<?= $base ?>/formations/certificate/<?= $certId ?>" class="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-[11px] font-black uppercase tracking-wider text-emerald-900 transition hover:bg-emerald-100">
                     Attestation
                   </a>
+                <?php endif; ?>
+                <?php if ($showWithdrawBtn): ?>
+                  <form method="post" action="<?= htmlspecialchars($base) ?>/formations/inscription/annuler" class="inline-flex" onsubmit="return confirm('Annuler votre inscription à cette formation ? Vous pourrez vous réinscrire depuis le catalogue si les conditions le permettent.');">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="enrollment_id" value="<?= (int) $e['id'] ?>">
+                    <input type="hidden" name="return_path" value="formations/mes-formations">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-5 py-3 text-[11px] font-black uppercase tracking-wider text-rose-900 transition hover:bg-rose-100">
+                      Annuler l’inscription
+                    </button>
+                  </form>
                 <?php endif; ?>
               </div>
             </div>

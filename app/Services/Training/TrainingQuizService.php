@@ -14,7 +14,8 @@ class TrainingQuizService
         private TrainingQuizRepository $quizRepository,
         private TrainingEnrollmentRepository $enrollmentRepository,
         private TrainingModuleRepository $moduleRepository,
-        private TrainingAuditService $auditService
+        private TrainingAuditService $auditService,
+        private TrainingProgressService $progressService
     ) {}
 
     /** Démarre une tentative. Vérifie max_attempts et qu'aucune tentative in_progress n'existe. */
@@ -147,6 +148,13 @@ class TrainingQuizService
             'score' => $attempt['score'],
             'passed' => $attempt['passed'],
         ]);
+        if ((int) ($attempt['passed'] ?? 0) === 1) {
+            try {
+                $this->progressService->maybeCompleteEnrollmentAndNotify((int) $attempt['enrollment_id'], $tenantId, $userId);
+            } catch (\Throwable) {
+            }
+        }
+
         return $attempt;
     }
 

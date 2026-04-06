@@ -12,6 +12,7 @@ $commander = $commander ?? null;
 $qualifications = $qualifications ?? [];
 $serviceHistory = $serviceHistory ?? [];
 $trainingCertificates = $trainingCertificates ?? [];
+$lmsEnrollmentsForPersonnel = $lmsEnrollmentsForPersonnel ?? [];
 $completeness = $completeness ?? ['score' => 0, 'sections_critiques' => [], 'details' => []];
 $adminPanels = $adminPanels ?? [];
 $adminDataByPanel = $adminDataByPanel ?? [];
@@ -30,10 +31,34 @@ $primaryUnitFallbackName = $primaryUnitFallbackName ?? null;
 $rpDossierNeedsAttention = $rpDossierNeedsAttention ?? false;
 $latestEnlistment = $latestEnlistment ?? null;
 
+$lmsEnrollmentStatusFr = static function (string $s): string {
+    return match ($s) {
+        'assigned' => 'Non démarré',
+        'in_progress' => 'En cours',
+        'completed' => 'Terminé',
+        'failed' => 'Non validé',
+        'expired' => 'Expiré',
+        'revoked' => 'Retiré par l’organisation',
+        'withdrawn' => 'Inscription annulée',
+        'pending_approval' => 'En attente de validation',
+        default => '—',
+    };
+};
+$lmsCertificateStatusFr = static function (string $s): string {
+    return match ($s) {
+        'valid' => 'À jour',
+        'expired' => 'Expirée',
+        'revoked' => 'Retirée',
+        default => '—',
+    };
+};
+
 if (!$targetUser) {
     echo '<p>Utilisateur non trouvé.</p>';
     return;
 }
+
+$viewerIsPersonnelSubject = (int) (\App\Core\Session::get('user_id') ?? 0) === (int) ($targetUser['id'] ?? 0);
 
 $userProfile = is_array($userProfile ?? null) ? $userProfile : [];
 $personnelProfile = is_array($personnelProfile ?? null) ? $personnelProfile : [];
@@ -262,6 +287,9 @@ if (is_array($grade)) {
                 <?php endif; ?>
                 <a href="<?= url('orbat') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Voir ORBAT</a>
                 <a href="<?= url('documents') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Documents</a>
+                <?php if ($viewerIsPersonnelSubject): ?>
+                <a href="<?= url('formations/mes-formations') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Mes parcours</a>
+                <?php endif; ?>
                 <a href="<?= url('formations') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Formations</a>
                 <a href="<?= url('dashboard') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Dashboard</a>
             </aside>
@@ -329,36 +357,141 @@ if (is_array($grade)) {
                     </div>
                 </section>
 
-                <!-- Certifications & formations -->
+                <!-- Formations Athena, attestations, qualifications dossier -->
+                <?php
+                $hasLmsSummary = $lmsEnrollmentsForPersonnel !== [] || $trainingCertificates !== [];
+                $hasDossierQuals = $qualifications !== [] || (bool) $specializations;
+                ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.4em] text-slate-700 mb-6">Certifications & formations</h2>
-                    <div class="flex flex-wrap gap-4">
-                        <?php if ($specializations): ?>
-                        <div class="px-6 py-4 border border-slate-200 rounded-2xl flex flex-col gap-2 min-w-[200px]">
-                            <span class="text-[7px] font-black tracking-widest text-slate-400 uppercase">Spécialisations</span>
-                            <p class="text-xs font-bold text-slate-900 leading-relaxed"><?= nl2br(htmlspecialchars($specializations)) ?></p>
+                    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+                        <div>
+                            <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Formations, attestations et certifications</h2>
+                            <p class="text-sm text-slate-600 mt-2 max-w-2xl leading-relaxed">Parcours Athena (suivi et réussites), documents délivrés pour les modules certifiants, et qualifications saisies dans <?= $viewerIsPersonnelSubject ? 'votre dossier' : 'ce dossier' ?>.</p>
                         </div>
-                        <?php endif; ?>
-                        <?php foreach ($qualifications as $q): ?>
-                        <div class="px-6 py-4 border border-slate-200 rounded-2xl flex flex-col gap-2">
-                            <span class="text-[7px] font-black tracking-widest text-slate-400 uppercase"><?= htmlspecialchars($q['qualification_name']) ?></span>
-                            <p class="text-xs font-bold text-slate-900"><?= htmlspecialchars($q['level'] ?? '') ?> — <?= htmlspecialchars($q['status']) ?></p>
-                            <?php if (!empty($q['expires_at'])): ?><p class="text-[10px] text-slate-500">Expire <?= date('d/m/Y', strtotime($q['expires_at'])) ?></p><?php endif; ?>
-                        </div>
-                        <?php endforeach; ?>
-                        <?php foreach ($trainingCertificates as $cert): ?>
-                        <div class="px-6 py-4 border border-emerald-200 rounded-2xl flex flex-col gap-2 bg-emerald-50/50">
-                            <span class="text-[7px] font-black tracking-widest text-emerald-700 uppercase"><?= htmlspecialchars($cert['course_title'] ?? 'Certificat') ?></span>
-                            <p class="text-xs font-bold text-slate-900"><?= htmlspecialchars($cert['status'] ?? 'valid') ?></p>
-                            <?php if (!empty($cert['expires_at'])): ?><p class="text-[10px] text-slate-500">Expire <?= date('d/m/Y', strtotime($cert['expires_at'])) ?></p><?php endif; ?>
-                        </div>
-                        <?php endforeach; ?>
-                        <?php if (empty($qualifications) && empty($trainingCertificates) && !$specializations): ?>
-                        <div class="px-6 py-4 border border-slate-100 bg-slate-50 rounded-2xl">
-                            <span class="text-[7px] font-black tracking-widest text-slate-300 uppercase italic">Non renseigné</span>
+                        <?php if ($viewerIsPersonnelSubject): ?>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="<?= htmlspecialchars(url('formations/mes-formations')) ?>" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700 transition">Mes parcours</a>
+                            <a href="<?= htmlspecialchars(url('formations')) ?>" class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-50 transition">Catalogue</a>
                         </div>
                         <?php endif; ?>
                     </div>
+
+                    <?php if ($lmsEnrollmentsForPersonnel !== []): ?>
+                    <div class="mb-10">
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-4">Parcours et suivi</h3>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <?php foreach ($lmsEnrollmentsForPersonnel as $enr):
+                                $est = (string) ($enr['status'] ?? '');
+                                $pct = (int) round((float) ($enr['progress_percent'] ?? 0));
+                                $slugEnr = trim((string) ($enr['course_slug'] ?? ''));
+                                $courseLink = $slugEnr !== '' ? url('formations/' . rawurlencode($slugEnr)) : url('formations');
+                                $showProgress = !in_array($est, ['revoked', 'expired', 'withdrawn', 'pending_approval'], true);
+                                ?>
+                            <div class="rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 bg-slate-50/40">
+                                <div class="flex flex-wrap items-start justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-black text-slate-900 leading-snug">
+                                            <a href="<?= htmlspecialchars($courseLink) ?>" class="hover:text-emerald-700"><?= htmlspecialchars((string) ($enr['course_title'] ?? 'Formation')) ?></a>
+                                        </p>
+                                        <?php if (!empty($enr['is_certifying'])): ?>
+                                        <span class="inline-flex mt-1.5 rounded-md bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-900">Certifiant</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <span class="shrink-0 inline-flex rounded-full bg-white px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-600 ring-1 ring-slate-200"><?= htmlspecialchars($lmsEnrollmentStatusFr($est)) ?></span>
+                                </div>
+                                <?php if ($showProgress): ?>
+                                <div>
+                                    <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
+                                        <span>Progression</span>
+                                        <span class="tabular-nums"><?= $pct ?> %</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
+                                        <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" style="width: <?= min(100, max(0, $pct)) ?>%"></div>
+                                    </div>
+                                </div>
+                                <?php elseif ($est === 'pending_approval'): ?>
+                                <p class="text-xs text-slate-600">Demande transmise — un formateur doit valider l’accès au parcours.</p>
+                                <?php elseif ($est === 'completed'): ?>
+                                <p class="text-xs font-semibold text-emerald-800">Parcours terminé<?= $pct >= 100 ? '' : ' — progression ' . $pct . ' %' ?>.</p>
+                                <?php endif; ?>
+                                <?php if (!empty($enr['expires_at']) && !in_array($est, ['completed', 'revoked', 'expired', 'withdrawn'], true)): ?>
+                                <p class="text-[10px] text-slate-500">Échéance <?= date('d/m/Y', strtotime((string) $enr['expires_at'])) ?></p>
+                                <?php endif; ?>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($trainingCertificates !== []): ?>
+                    <div class="mb-10">
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-4">Attestations et certifications (parcours Athena)</h3>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <?php foreach ($trainingCertificates as $cert):
+                                $cst = (string) ($cert['status'] ?? 'valid');
+                                $certId = (int) ($cert['id'] ?? 0);
+                                $canOpenAttestation = $viewerIsPersonnelSubject && $cst === 'valid' && $certId > 0;
+                                ?>
+                            <div class="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 to-white p-5 flex flex-col gap-2">
+                                <span class="text-[9px] font-black uppercase tracking-widest text-emerald-800"><?= htmlspecialchars((string) ($cert['course_title'] ?? 'Formation')) ?></span>
+                                <p class="text-xs text-slate-700">
+                                    <span class="font-bold text-slate-900"><?= htmlspecialchars($lmsCertificateStatusFr($cst)) ?></span>
+                                    <?php if (!empty($cert['issued_at'])): ?>
+                                    <span class="text-slate-500"> · Délivré le <?= date('d/m/Y', strtotime((string) $cert['issued_at'])) ?></span>
+                                    <?php endif; ?>
+                                </p>
+                                <?php
+                                $num = trim((string) ($cert['certificate_number'] ?? ''));
+                                if ($num !== ''):
+                                ?>
+                                <p class="text-[10px] text-slate-600">Référence document : <span class="font-mono font-semibold"><?= htmlspecialchars($num) ?></span></p>
+                                <?php endif; ?>
+                                <?php if (isset($cert['final_score']) && $cert['final_score'] !== null && $cert['final_score'] !== ''): ?>
+                                <p class="text-[10px] text-slate-600">Résultat final : <?= htmlspecialchars(number_format((float) $cert['final_score'], 1, ',', ' ')) ?> %</p>
+                                <?php endif; ?>
+                                <?php if (!empty($cert['expires_at'])): ?>
+                                <p class="text-[10px] text-amber-800">Validité jusqu’au <?= date('d/m/Y', strtotime((string) $cert['expires_at'])) ?></p>
+                                <?php endif; ?>
+                                <?php if ($canOpenAttestation): ?>
+                                <a href="<?= htmlspecialchars(url('formations/certificate/' . $certId)) ?>" class="mt-2 inline-flex w-fit items-center rounded-xl bg-emerald-600 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700 transition">Voir l’attestation</a>
+                                <?php elseif (!$viewerIsPersonnelSubject && $cst === 'valid'): ?>
+                                <p class="text-[10px] text-slate-500 italic mt-1">La consultation du document est réservée au titulaire du compte.</p>
+                                <?php endif; ?>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($hasDossierQuals): ?>
+                    <div>
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-4">Qualifications enregistrées dans le dossier</h3>
+                        <div class="flex flex-wrap gap-4">
+                            <?php if ($specializations): ?>
+                            <div class="px-6 py-4 border border-slate-200 rounded-2xl flex flex-col gap-2 min-w-[200px]">
+                                <span class="text-[7px] font-black tracking-widest text-slate-400 uppercase">Spécialisations</span>
+                                <p class="text-xs font-bold text-slate-900 leading-relaxed"><?= nl2br(htmlspecialchars($specializations)) ?></p>
+                            </div>
+                            <?php endif; ?>
+                            <?php foreach ($qualifications as $q): ?>
+                            <div class="px-6 py-4 border border-slate-200 rounded-2xl flex flex-col gap-2">
+                                <span class="text-[7px] font-black tracking-widest text-slate-400 uppercase"><?= htmlspecialchars($q['qualification_name']) ?></span>
+                                <p class="text-xs font-bold text-slate-900"><?= htmlspecialchars($q['level'] ?? '') ?> — <?= htmlspecialchars($q['status']) ?></p>
+                                <?php if (!empty($q['expires_at'])): ?><p class="text-[10px] text-slate-500">Expire <?= date('d/m/Y', strtotime($q['expires_at'])) ?></p><?php endif; ?>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!$hasLmsSummary && !$hasDossierQuals): ?>
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-8 text-center">
+                        <p class="text-sm text-slate-600">Aucune formation ni qualification renseignée pour l’instant.</p>
+                        <?php if ($viewerIsPersonnelSubject): ?>
+                        <a href="<?= htmlspecialchars(url('formations')) ?>" class="mt-4 inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700 transition">Découvrir le catalogue</a>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
                 </section>
 
                 <!-- Équipement / dotation -->

@@ -265,6 +265,7 @@ return function (Router $router) {
     $router->get('/modpacks/{slug}', [ModpackController::class, 'show'], [AuthMiddleware::class]);
     $router->get('/formations', [TrainingController::class, 'index'], $mwTraining);
     $router->post('/formations/enroll', [TrainingController::class, 'postEnroll'], $mwTraining);
+    $router->post('/formations/inscription/annuler', [TrainingController::class, 'postWithdrawEnrollment'], $mwTraining);
     $router->post('/formations/favorite', [TrainingController::class, 'postFavorite'], $mwTraining);
     $router->post('/formations/review', [TrainingController::class, 'postReview'], $mwTraining);
     $router->post('/formations/question', [TrainingController::class, 'postQuestion'], $mwTraining);

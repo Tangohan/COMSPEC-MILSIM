@@ -21,7 +21,7 @@ $certBlock = $cert
     : '';
 
 $body = '<p>Félicitations ' . $name . ',</p>'
-    . '<p>Vous avez terminé le parcours <strong>' . $ct . '</strong> sur <strong>' . $tn . '</strong>.</p>'
+    . '<p>Vous avez mené à bien l’ensemble du parcours <strong>' . $ct . '</strong> sur <strong>' . $tn . '</strong>. Bravo pour votre engagement.</p>'
     . $certBlock
     . email_html_button($courseUrl, 'Voir la formation', 'emerald')
     . email_html_url_fallback($courseUrl)
@@ -30,8 +30,8 @@ $body = '<p>Félicitations ' . $name . ',</p>'
     . email_html_url_fallback($myTrainingUrl);
 
 $html = email_html_layout(
-    'Parcours terminé — ' . $courseTitle,
-    'Formation terminée',
+    'Félicitations — ' . $courseTitle,
+    'Parcours terminé',
     $body,
     ['accent' => 'emerald']
 );
@@ -39,7 +39,7 @@ $html = email_html_layout(
 $certLine = $cert ? "Cette formation est certifiante : consultez le portail pour votre attestation.\n\n" : '';
 
 $text = "Bonjour {$displayName},\n\n"
-    . "Félicitations : vous avez terminé « {$courseTitle} » sur « {$tenantName} ».\n\n"
+    . "Félicitations : vous avez mené à bien l’ensemble du parcours « {$courseTitle} » sur « {$tenantName} ».\n\n"
     . $certLine
     . "Page de la formation : {$courseUrl}\n\n"
     . "Mes formations : {$myTrainingUrl}\n";

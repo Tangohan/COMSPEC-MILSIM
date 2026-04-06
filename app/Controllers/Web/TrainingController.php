@@ -26,6 +26,9 @@ use App\Repositories\TrainingCourseLmsSocialRepository;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingCertificateShareService;
 use App\Services\Training\TrainingAuditService;
+use App\Repositories\PersonnelProfileRepository;
+use App\Repositories\PersonnelAssignmentRepository;
+use App\Repositories\UserRepository;
 use App\Core\Csrf;
 
 class TrainingController
@@ -50,7 +53,51 @@ class TrainingController
         private TrainingQuizRepository $trainingQuizRepository,
         private TrainingCertificateShareService $certificateShareService,
         private TrainingAuditService $trainingAuditService,
+        private PersonnelProfileRepository $personnelProfileRepository,
+        private PersonnelAssignmentRepository $personnelAssignmentRepository,
+        private UserRepository $userRepository,
     ) {}
+
+    /**
+     * Données d’affichage « personnel RP » pour la page d’attestation partagée (lien signé).
+     *
+     * @return array{operator_display_name: string, callsign: string, unit_label: string, portrait_url: string}|null
+     */
+    private function attestationPublicPersonnelPresentation(?array $cert): ?array
+    {
+        if ($cert === null) {
+            return null;
+        }
+        $tenantId = (int) ($cert['tenant_id'] ?? 0);
+        $learnerId = (int) ($cert['user_id'] ?? 0);
+        if ($tenantId < 1 || $learnerId < 1) {
+            return null;
+        }
+        $pp = $this->personnelProfileRepository->getByUserId($learnerId) ?? [];
+        $userRow = $this->userRepository->findById($learnerId, $tenantId) ?? [];
+        $characterName = trim((string) ($pp['character_name'] ?? ''));
+        $displayName = trim((string) ($userRow['display_name'] ?? ''));
+        $operatorDisplay = $characterName !== '' ? $characterName : $displayName;
+        $callsign = trim((string) ($pp['callsign'] ?? ''));
+        if ($callsign === '' && isset($userRow['callsign'])) {
+            $callsign = trim((string) $userRow['callsign']);
+        }
+        $assignments = $this->personnelAssignmentRepository->listActiveForUserResolved($learnerId);
+        $unitLabel = trim((string) (($assignments[0] ?? [])['unit_name'] ?? ''));
+        $portraitPath = trim((string) ($pp['character_portrait_path'] ?? ''));
+        $portraitUrl = '';
+        if ($portraitPath !== '') {
+            $base = rtrim(url(''), '/');
+            $portraitUrl = $base . '/' . ltrim($portraitPath, '/');
+        }
+
+        return [
+            'operator_display_name' => $operatorDisplay,
+            'callsign' => $callsign,
+            'unit_label' => $unitLabel,
+            'portrait_url' => $portraitUrl,
+        ];
+    }
 
     private function trainingQuizHasPassingAttempt(int $enrollmentId, int $quizId): bool
     {
@@ -143,7 +190,8 @@ class TrainingController
                     'pending_approval' => 1,
                     'assigned' => 2,
                     'completed' => 3,
-                    'revoked' => 4,
+                    'withdrawn' => 4,
+                    'revoked' => 5,
                     default => 9,
                 };
             };
@@ -162,7 +210,7 @@ class TrainingController
             'assigned' => count(array_filter($withProgress, static fn (array $x): bool => ($x['status'] ?? '') === 'assigned')),
             'completed' => count(array_filter($withProgress, static fn (array $x): bool => ($x['status'] ?? '') === 'completed')),
             'expiring_soon' => count(array_filter($withProgress, static function (array $x): bool {
-                if (empty($x['expires_at']) || in_array($x['status'] ?? '', ['completed', 'revoked'], true)) {
+                if (empty($x['expires_at']) || in_array($x['status'] ?? '', ['completed', 'revoked', 'withdrawn', 'expired'], true)) {
                     return false;
                 }
                 $t = strtotime((string) $x['expires_at']);
@@ -279,12 +327,16 @@ class TrainingController
         $courseId = (int) $course['id'];
         $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId);
         $enrollment = $userId ? $this->enrollmentRepository->findByCourseAndUser($courseId, (int) $userId) : null;
-        if ($enrollment && in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired'], true)) {
+        if ($enrollment && in_array((string) ($enrollment['status'] ?? ''), training_enrollment_inactive_for_member_ui_statuses(), true)) {
             $enrollment = null;
         }
         $canAccessLearning = $userId && $enrollment
             ? $this->trainingService->canAccessCourse((int) $userId, $courseId, $tenantId)
             : false;
+        $canWithdrawEnrollment = false;
+        if ($userId && $enrollment && training_enrollment_can_withdraw_by_member($enrollment)) {
+            $canWithdrawEnrollment = $this->certificateService->getByEnrollment((int) $enrollment['id']) === null;
+        }
         $progressPercent = ($enrollment && $canAccessLearning) ? $this->trainingService->getGlobalProgress((int) $enrollment['id']) : 0;
         $certificate = ($enrollment && $canAccessLearning) ? $this->certificateService->getByEnrollment((int) $enrollment['id']) : null;
         $lmsShowCompletionBanner = false;
@@ -344,7 +396,73 @@ class TrainingController
             'lessonDone' => $lessonDone,
             'canAccessLearning' => $canAccessLearning,
             'lmsCommentsEnabled' => $lmsCommentsEnabled,
+            'canWithdrawEnrollment' => $canWithdrawEnrollment,
         ]);
+    }
+
+    public function postWithdrawEnrollment(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        $redirectTo = $this->trainingWithdrawRedirectUrl($request);
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée, réessayez.');
+
+            return Response::redirect($redirectTo);
+        }
+        $enrollmentId = (int) $request->input('enrollment_id', 0);
+        if ($enrollmentId < 1) {
+            Session::flash('error', 'Demande incomplète.');
+
+            return Response::redirect($redirectTo);
+        }
+        $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
+        if (!$enrollment || (int) ($enrollment['user_id'] ?? 0) !== $userId) {
+            Session::flash('error', 'Inscription introuvable ou non autorisée.');
+
+            return Response::redirect($redirectTo);
+        }
+        if (!training_enrollment_can_withdraw_by_member($enrollment)) {
+            Session::flash('error', 'Cette inscription ne peut pas être annulée dans l’état actuel.');
+
+            return Response::redirect($redirectTo);
+        }
+        if ($this->certificateService->getByEnrollment($enrollmentId) !== null) {
+            Session::flash('error', 'Une attestation a déjà été délivrée pour ce parcours : l’inscription ne peut plus être annulée.');
+
+            return Response::redirect($redirectTo);
+        }
+        $prevStatus = (string) ($enrollment['status'] ?? '');
+        $courseId = (int) ($enrollment['course_id'] ?? 0);
+        $courseTitle = (string) ($enrollment['course_title'] ?? '');
+        $ok = $this->enrollmentRepository->withdrawByLearner($enrollmentId, $userId, $tenantId);
+        if (!$ok) {
+            Session::flash('error', 'L’annulation n’a pas pu être enregistrée. Réessayez ou contactez le staff.');
+
+            return Response::redirect($redirectTo);
+        }
+        $this->trainingAuditService->logEnrollmentWithdrawn($tenantId, $userId, $enrollmentId, [
+            'user_id' => $userId,
+            'course_id' => $courseId,
+            'course_title' => $courseTitle,
+            'previous_status' => $prevStatus,
+        ]);
+        Session::flash('success', 'Votre inscription à cette formation a été annulée.');
+
+        return Response::redirect($redirectTo);
+    }
+
+    private function trainingWithdrawRedirectUrl(Request $request): string
+    {
+        $to = trim((string) $request->input('return_path', ''));
+        if ($to !== '' && str_starts_with($to, 'formations/') && !str_contains($to, '..') && strlen($to) < 400) {
+            return url($to);
+        }
+
+        return url('formations/mes-formations');
     }
 
     public function postEnroll(Request $request, array $params = []): Response
@@ -529,12 +647,16 @@ class TrainingController
         $courseId = (int) $course['id'];
         $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId);
         $enrollment = $userId ? $this->enrollmentRepository->findByCourseAndUser($courseId, (int) $userId) : null;
-        if ($enrollment && in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired'], true)) {
+        if ($enrollment && in_array((string) ($enrollment['status'] ?? ''), training_enrollment_inactive_for_member_ui_statuses(), true)) {
             $enrollment = null;
         }
         $canAccessLearning = $userId && $enrollment
             ? $this->trainingService->canAccessCourse((int) $userId, $courseId, $tenantId)
             : false;
+        $canWithdrawEnrollment = false;
+        if ($userId && $enrollment && training_enrollment_can_withdraw_by_member($enrollment)) {
+            $canWithdrawEnrollment = $this->certificateService->getByEnrollment((int) $enrollment['id']) === null;
+        }
         $progressPercent = ($enrollment && $canAccessLearning) ? $this->trainingService->getGlobalProgress((int) $enrollment['id']) : 0;
         $policyDecoded = $this->enrollmentPolicyService->decodePolicy($course['enrollment_policy_json'] ?? null);
         $lmsCommentsEnabled = function_exists('training_lms_policy_comments_enabled')
@@ -564,6 +686,7 @@ class TrainingController
             'firstLesson' => $firstLesson,
             'canAccessLearning' => $canAccessLearning,
             'lmsCommentsEnabled' => $lmsCommentsEnabled,
+            'canWithdrawEnrollment' => $canWithdrawEnrollment,
         ]);
     }
 
@@ -941,9 +1064,16 @@ class TrainingController
         }
         $canonical = $this->certificateShareService->buildConsultationUrl($id, $token, $exp);
         $courseTitle = (string) ($cert['course_title'] ?? 'Formation');
-        $ogTitle = 'Attestation — ' . $courseTitle;
+        $sharePersonnel = $this->attestationPublicPersonnelPresentation($cert);
+        $honorName = trim((string) ($sharePersonnel['operator_display_name'] ?? ''));
+        $ogTitle = $honorName !== ''
+            ? ('Attestation — ' . $honorName . ' — ' . $courseTitle)
+            : ('Attestation — ' . $courseTitle);
         $issued = !empty($cert['issued_at']) ? date('d/m/Y', strtotime((string) $cert['issued_at'])) : '';
         $ogDesc = $issued !== '' ? ('Délivrée le ' . $issued . ' — référence ' . (string) ($cert['certificate_number'] ?? '') . '.') : 'Attestation de formation.';
+        if ($honorName !== '') {
+            $ogDesc = $honorName . ' a validé le parcours « ' . $courseTitle . ' ». ' . $ogDesc;
+        }
 
         return Response::view('training.certificate', [
             'title' => 'Attestation',
@@ -952,6 +1082,7 @@ class TrainingController
             'og_url' => $canonical,
             'og_title' => $ogTitle,
             'og_description' => $ogDesc,
+            'attestationSharePersonnel' => $sharePersonnel,
         ]);
     }
 

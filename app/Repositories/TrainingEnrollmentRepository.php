@@ -51,6 +51,28 @@ class TrainingEnrollmentRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Apprenants dont l’inscription est encore active sur le parcours (pas terminée / retirée / expirée).
+     * Une ligne par utilisateur (DISTINCT).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listIncompleteLearnersForCourseSessionNotify(int $tenantId, int $courseId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT DISTINCT e.user_id, u.email, u.display_name, u.callsign
+             FROM training_enrollments e
+             INNER JOIN users u ON u.id = e.user_id
+             WHERE e.course_id = ?
+               AND e.tenant_id = ?
+               AND e.status IN (\'assigned\', \'in_progress\', \'pending_approval\', \'failed\')
+             ORDER BY e.user_id ASC'
+        );
+        $stmt->execute([$courseId, $tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function findById(int $id, ?int $tenantId = null): ?array
     {
         $sql = 'SELECT e.*, c.title AS course_title, c.slug AS course_slug, c.estimated_minutes, c.passing_score, c.is_certifying, c.validity_days

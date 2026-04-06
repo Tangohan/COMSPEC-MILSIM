@@ -20,6 +20,8 @@ use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAdminPanelRepository;
 use App\Repositories\PersonnelAdminDataRepository;
 use App\Repositories\TrainingCertificateRepository;
+use App\Repositories\TrainingEnrollmentRepository;
+use App\Services\Training\TrainingService;
 use App\Core\Csrf;
 use App\Services\Personnel\MatriculeService;
 use App\Services\Personnel\PersonnelCompletenessService;
@@ -104,6 +106,8 @@ class PersonnelController
         private PersonnelAdminPanelRepository $adminPanelRepository,
         private PersonnelAdminDataRepository $adminDataRepository,
         private TrainingCertificateRepository $trainingCertificateRepository,
+        private TrainingEnrollmentRepository $trainingEnrollmentRepository,
+        private TrainingService $trainingService,
         private MatriculeService $matriculeService,
         private PersonnelCompletenessService $completenessService,
         private UserProfileDisplaySettingsRepository $displaySettingsRepository,
@@ -218,6 +222,36 @@ class PersonnelController
         $qualifications = $this->personnelQualificationRepository->listForUser($uid);
         $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($uid);
         $trainingCertificates = $this->trainingCertificateRepository->listByUserId($uid, (int) $tenantId);
+        $lmsEnrollmentsForPersonnel = [];
+        foreach ($this->trainingEnrollmentRepository->listByUserId($uid, (int) $tenantId) as $enr) {
+            $st = (string) ($enr['status'] ?? '');
+            $enr['progress_percent'] = $st === 'pending_approval'
+                ? 0.0
+                : $this->trainingService->getGlobalProgress((int) $enr['id']);
+            $lmsEnrollmentsForPersonnel[] = $enr;
+        }
+        usort($lmsEnrollmentsForPersonnel, static function (array $a, array $b): int {
+            $rank = static function (array $x): int {
+                return match ($x['status'] ?? '') {
+                    'in_progress' => 0,
+                    'pending_approval' => 1,
+                    'assigned' => 2,
+                    'completed' => 3,
+                    'failed' => 4,
+                    'withdrawn' => 5,
+                    'revoked' => 6,
+                    'expired' => 7,
+                    default => 9,
+                };
+            };
+            $ra = $rank($a);
+            $rb = $rank($b);
+            if ($ra !== $rb) {
+                return $ra <=> $rb;
+            }
+
+            return strcmp((string) ($b['assigned_at'] ?? ''), (string) ($a['assigned_at'] ?? ''));
+        });
         $completeness = $this->completenessService->getScore($uid, $target, $mergedProfileForScore, $extras, (int) $tenantId);
 
         $grades = $this->gradeRepository->listForTenant((int) $tenantId);
@@ -270,6 +304,7 @@ class PersonnelController
             'qualifications' => $qualifications,
             'serviceHistory' => $serviceHistory,
             'trainingCertificates' => $trainingCertificates,
+            'lmsEnrollmentsForPersonnel' => $lmsEnrollmentsForPersonnel,
             'completeness' => $completeness,
             'adminPanels' => $adminPanels,
             'adminDataByPanel' => $adminDataByPanel,

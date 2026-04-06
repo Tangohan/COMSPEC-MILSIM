@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le : dim. 05 avr. 2026 à 16:24
+-- Généré le : lun. 06 avr. 2026 à 20:19
 -- Version du serveur : 11.8.6-MariaDB-log
 -- Version de PHP : 7.2.34
 
@@ -103,6 +103,24 @@ CREATE TABLE `asset_logistics_status_history` (
   `snapshot_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`snapshot_json`)),
   `logged_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `async_jobs`
+--
+
+CREATE TABLE `async_jobs` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED DEFAULT NULL,
+  `job_type` varchar(64) NOT NULL,
+  `payload_json` mediumtext NOT NULL,
+  `available_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `attempts` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
+  `reserved_at` datetime DEFAULT NULL,
+  `last_error` text DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -455,7 +473,36 @@ INSERT INTO `audit_logs` (`id`, `tenant_id`, `user_id`, `action`, `entity_type`,
 (22, 1, 7, 'auth.login_success', 'auth', 7, NULL, NULL, '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 11:22:14'),
 (23, 7, 5, 'auth.login_success', 'auth', 5, NULL, NULL, '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 12:03:17'),
 (24, 7, 5, 'invitation.sent', 'invitation', NULL, NULL, 'wikzzcoc@gmail.com', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 12:04:47'),
-(25, 7, 5, 'auth.login_success', 'auth', 5, NULL, NULL, '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 15:52:27');
+(25, 7, 5, 'auth.login_success', 'auth', 5, NULL, NULL, '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 15:52:27'),
+(26, 7, 5, 'user_created', 'user', 8, NULL, 'tanguy.inc@gmail.com', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 16:32:08'),
+(27, 1, 7, 'auth.login_success', 'auth', 7, NULL, NULL, '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 16:33:02'),
+(28, 7, 5, 'auth.login_success', 'auth', 5, NULL, NULL, '2a01:e0a:8ee:2720:14c:15c3:b6f6:9e3f', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 21:25:48'),
+(29, 7, 5, 'role_assigned', 'user', 5, '22', '23,22,29,26,37,39,24,25,38,41,40,27,28', '2a01:e0a:8ee:2720:14c:15c3:b6f6:9e3f', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 22:37:44'),
+(30, 7, 5, 'user_updated', 'user', 5, NULL, NULL, '2a01:e0a:8ee:2720:14c:15c3:b6f6:9e3f', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 22:37:44'),
+(31, 7, 5, 'auth.login_success', 'auth', 5, NULL, NULL, '2a01:e0a:8ee:2720:14c:15c3:b6f6:9e3f', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 22:38:29'),
+(32, 7, 5, 'auth.logout', 'auth', 5, NULL, NULL, '2a01:e0a:8ee:2720:14c:15c3:b6f6:9e3f', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 22:43:39'),
+(33, 7, 5, 'auth.login_success', 'auth', 5, NULL, NULL, '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 10:37:30'),
+(34, 7, 5, 'auth.login_success', 'auth', 5, NULL, NULL, '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 11:50:23'),
+(35, 7, 5, 'auth.login_success', 'auth', 5, NULL, NULL, '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 17:01:20'),
+(36, 7, 5, 'auth.login_success', 'auth', 5, NULL, NULL, '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 17:03:47'),
+(37, 1, 7, 'auth.login_success', 'auth', 7, NULL, NULL, '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 17:47:37'),
+(38, 7, 5, 'auth.login_success', 'auth', 5, NULL, NULL, '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:04:22');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `badges`
+--
+
+CREATE TABLE `badges` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `slug` varchar(80) NOT NULL,
+  `name` varchar(160) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  `icon_url` varchar(500) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -470,8 +517,11 @@ CREATE TABLE `blocked_indicators` (
   `value_hash` varchar(64) NOT NULL,
   `scope` varchar(16) NOT NULL DEFAULT 'tenant',
   `reason` varchar(500) DEFAULT NULL,
+  `created_by_user_id` int(10) UNSIGNED DEFAULT NULL,
+  `moderation_action_id` int(10) UNSIGNED DEFAULT NULL,
   `expires_at` datetime DEFAULT NULL,
-  `created_at` datetime DEFAULT current_timestamp()
+  `created_at` datetime DEFAULT current_timestamp(),
+  `revoked_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
@@ -492,6 +542,38 @@ CREATE TABLE `categories` (
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `certifications`
+--
+
+CREATE TABLE `certifications` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `slug` varchar(80) NOT NULL,
+  `name` varchar(160) NOT NULL,
+  `description` varchar(600) DEFAULT NULL,
+  `training_course_id` int(10) UNSIGNED DEFAULT NULL,
+  `validity_days` int(10) UNSIGNED DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `clearance_levels`
+--
+
+CREATE TABLE `clearance_levels` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `slug` varchar(80) NOT NULL,
+  `name` varchar(120) NOT NULL,
+  `rank_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
@@ -561,7 +643,7 @@ CREATE TABLE `community_invitations` (
 --
 
 INSERT INTO `community_invitations` (`id`, `tenant_id`, `email`, `token_hash`, `role_id`, `invitation_payload`, `invited_by_user_id`, `status`, `expires_at`, `accepted_user_id`, `accepted_at`, `created_at`, `updated_at`) VALUES
-(1, 7, 'wikzzcoc@gmail.com', '56ea13c46e80dfab3a38a5df5b68543f110d6b1f80116d1d431ef0897ea16b7c', 29, NULL, 5, 'pending', '2026-04-12 12:04:47', NULL, NULL, '2026-04-05 12:04:47', NULL);
+(1, 7, 'wikzzcoc@gmail.com', '56ea13c46e80dfab3a38a5df5b68543f110d6b1f80116d1d431ef0897ea16b7c', 29, NULL, 5, 'revoked', '2026-04-12 12:04:47', NULL, NULL, '2026-04-05 12:04:47', '2026-04-06 17:44:33');
 
 -- --------------------------------------------------------
 
@@ -1116,7 +1198,14 @@ INSERT INTO `email_deliveries` (`id`, `tenant_id`, `event_code`, `recipient`, `s
 (11, 1, 'USER_REGISTER_CONFIRMATION', 'tanguy.inc@gmail.com', 'Confirmez votre adresse e-mail — Aucune organisation', 'smtp', 'sent', NULL, NULL, '{\"purpose\":\"register\"}', '2026-04-05 11:21:42'),
 (12, 1, 'NEW_COMMUNITY_MEMBER', 'tetard.tanguy@gmail.com', 'Nouveau membre — Aucune organisation', 'smtp', 'sent', NULL, NULL, '{\"purpose\":\"staff_notify\"}', '2026-04-05 11:21:58'),
 (13, 1, 'NEW_DEVICE_LOGIN', 'tanguy.inc@gmail.com', 'Nouvelle connexion sur votre compte', 'smtp', 'sent', NULL, NULL, '{\"purpose\":\"new_device\"}', '2026-04-05 11:22:15'),
-(14, 7, 'COMMUNITY_INVITATION', 'wikzzcoc@gmail.com', 'Invitation — ATHENA', 'smtp', 'sent', NULL, NULL, '{\"purpose\":\"invitation\"}', '2026-04-05 12:04:47');
+(14, 7, 'COMMUNITY_INVITATION', 'wikzzcoc@gmail.com', 'Invitation — ATHENA', 'smtp', 'sent', NULL, NULL, '{\"purpose\":\"invitation\"}', '2026-04-05 12:04:47'),
+(15, 7, 'TENANT_USER_SETUP', 'tanguy.inc@gmail.com', 'Finalisez votre compte — ATHENA', 'smtp', 'sent', NULL, NULL, '{\"purpose\":\"tenant_user_setup\"}', '2026-04-05 16:31:54'),
+(16, 7, 'ENLISTMENT_ACCEPTED_CANDIDATE', 'tanguy.inc@gmail.com', 'Candidature acceptée — ATHENA', 'smtp', 'failed', NULL, 'SMTP Error: Could not authenticate.', '{\"purpose\":\"enlistment_accepted_candidate\"}', '2026-04-05 16:32:01'),
+(17, 7, 'ENLISTMENT_ACCEPTED_STAFF', 'tetard.tanguy@gmail.com', 'Candidature acceptée — ATHENA — #2', 'smtp', 'failed', NULL, 'SMTP Error: Could not authenticate.', '{\"purpose\":\"enlistment_accepted\",\"enlistment_id\":2}', '2026-04-05 16:32:08'),
+(18, 7, 'PROFILE_INCOMPLETE_REMINDER', 'tetard.tanguy@gmail.com', 'Complétez votre fiche personnelle — ATHENA', 'smtp', 'failed', NULL, 'SMTP Error: Could not authenticate.', '{\"target_user_id\":5}', '2026-04-05 22:37:54'),
+(19, 7, 'PROFILE_INCOMPLETE_REMINDER', 'tanguy.inc@gmail.com', 'Complétez votre fiche personnelle — ATHENA', 'smtp', 'sent', NULL, NULL, '{\"target_user_id\":8}', '2026-04-06 17:36:23'),
+(20, 7, 'USER_REGISTER_CONFIRMATION', 'tanguy.inc@gmail.com', 'Confirmez votre adresse e-mail — ATHENA', 'smtp', 'sent', NULL, NULL, '{\"purpose\":\"register\"}', '2026-04-06 17:44:55'),
+(21, 7, 'NEW_COMMUNITY_MEMBER', 'tetard.tanguy@gmail.com', 'Nouveau membre — ATHENA', 'smtp', 'sent', NULL, NULL, '{\"purpose\":\"staff_notify\"}', '2026-04-06 17:45:09');
 
 -- --------------------------------------------------------
 
@@ -1144,7 +1233,8 @@ CREATE TABLE `email_tokens` (
 INSERT INTO `email_tokens` (`id`, `tenant_id`, `user_id`, `purpose`, `token_hash`, `nonce`, `expires_at`, `consumed_at`, `metadata`, `created_at`) VALUES
 (1, 7, 5, 'device_deny', '7ff2009903eb7f62ab3dfb76afac0d7212b5e0ffe1d995011c0ee65a1a12303b', 'effbbc8d4dc54d3a', '2026-04-07 10:02:15', NULL, '{\"ip\":\"2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4\",\"ua\":\"Mozilla\\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\\/537.36 (KHTML, like Gecko) Chrome\\/146.0.0.0 Safari\\/537.36 Edg\\/146.0.0.0\"}', '2026-04-05 10:02:15'),
 (4, 1, 7, 'register_confirm', '965a7a53f5a9940514a3d16025f1422a65f7b7774ba78febb387fe665edfe334', 'f3ac003c65139733b354104b25060a50', '2026-04-05 11:36:41', '2026-04-05 11:21:58', NULL, '2026-04-05 11:21:42'),
-(5, 1, 7, 'device_deny', '54f65a2ffd5fe6bdb6124800702dc248d54c879b829d2b8b712b0fd50b9480c8', 'f12d050aa70608cf', '2026-04-07 11:22:14', NULL, '{\"ip\":\"2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4\",\"ua\":\"Mozilla\\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\\/537.36 (KHTML, like Gecko) Chrome\\/146.0.0.0 Safari\\/537.36 Edg\\/146.0.0.0\"}', '2026-04-05 11:22:14');
+(5, 1, 7, 'device_deny', '54f65a2ffd5fe6bdb6124800702dc248d54c879b829d2b8b712b0fd50b9480c8', 'f12d050aa70608cf', '2026-04-07 11:22:14', NULL, '{\"ip\":\"2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4\",\"ua\":\"Mozilla\\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\\/537.36 (KHTML, like Gecko) Chrome\\/146.0.0.0 Safari\\/537.36 Edg\\/146.0.0.0\"}', '2026-04-05 11:22:14'),
+(6, 7, 8, 'register_confirm', 'f673ef0ac08697528698bd71daa44abf2cbbcb670cb418ec918c5c6c4e187cbf', '53b244b54eba8aa493fbccd897307f9b', '2026-04-06 17:59:54', '2026-04-06 17:45:08', NULL, '2026-04-06 17:44:55');
 
 -- --------------------------------------------------------
 
@@ -1196,8 +1286,7 @@ CREATE TABLE `enlistments` (
 --
 
 INSERT INTO `enlistments` (`id`, `tenant_id`, `first_name`, `last_name`, `email`, `callsign`, `country`, `experience`, `specialty`, `platform`, `availability`, `notes`, `age`, `timezone`, `weekly_availability`, `system_config`, `microphone_quality`, `past_milsim_experience`, `ace_acre_level`, `motivation_why_join`, `motivation_accountability`, `commitment_effort`, `availability_wed_sat`, `no_ai_confirmed`, `status`, `reviewed_by`, `reviewed_at`, `reviewer_comment`, `submitter_user_id`, `recruitment_preset_id`, `submitted_via`, `consent_sharing_at`, `shared_fields`, `recruitment_rp_json`, `created_at`, `updated_at`) VALUES
-(1, 1, 'Tanguy', 'TETARD', 'wikzzcoc@gmail.com', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 25, 'Paris', 'Jeudi et vendredi', 'I9', 'Oui', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer interdum at sem ac finibus. Pellentesque pellentesque justo lorem, sit amet placerat augue finibus nec. Proin ac libero eget mi iaculis tempor eget non felis. Phasellus euismod, nibh sit amet tempus imperdiet, massa sem luctus metus, et laoreet velit leo et nibh. Vivamus ac libero sed ex rhoncus cursus at eu turpis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut posuere ante nec ipsum facilisis, quis pulvinar ex maximus. Phasellus a tempus augue. Etiam accumsan lacinia felis, eget eleifend tortor suscipit eget. Etiam at sollicitudin turpis. Pellentesque sed sodales nisl, eu sollicitudin massa. Etiam pulvinar magna nisi, nec aliquam erat consequat et.', 'Basique', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer interdum at sem ac finibus. Pellentesque pellentesque justo lorem, sit amet placerat augue finibus nec. Proin ac libero eget mi iaculis tempor eget non felis. Phasellus euismod, nibh sit amet tempus imperdiet, massa sem luctus metus, et laoreet velit leo et nibh. Vivamus ac libero sed ex rhoncus cursus at eu turpis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut posuere ante nec ipsum facilisis, quis pulvinar ex maximus. Phasellus a tempus augue. Etiam accumsan lacinia felis, eget eleifend tortor suscipit eget. Etiam at sollicitudin turpis. Pellentesque sed sodales nisl, eu sollicitudin massa. Etiam pulvinar magna nisi, nec aliquam erat consequat et.', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer interdum at sem ac finibus. Pellentesque pellentesque justo lorem, sit amet placerat augue finibus nec. Proin ac libero eget mi iaculis tempor eget non felis. Phasellus euismod, nibh sit amet tempus imperdiet, massa sem luctus metus, et laoreet velit leo et nibh. Vivamus ac libero sed ex rhoncus cursus at eu turpis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut posuere ante nec ipsum facilisis, quis pulvinar ex maximus. Phasellus a tempus augue. Etiam accumsan lacinia felis, eget eleifend tortor suscipit eget. Etiam at sollicitudin turpis. Pellentesque sed sodales nisl, eu sollicitudin massa. Etiam pulvinar magna nisi, nec aliquam erat consequat et.', 'Oui', 'Variable', 1, 'submitted', NULL, NULL, NULL, NULL, NULL, 'guest', NULL, NULL, NULL, '2026-03-13 19:38:46', '2026-03-13 19:38:46'),
-(2, 7, 'Melvin', 'MESNEL', 'tanguy.inc@gmail.com', NULL, NULL, NULL, NULL, NULL, 'Ok', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ok', NULL, NULL, NULL, 1, 'reviewed', 5, '2026-04-05 12:04:09', 'Bienvenu(e)', NULL, NULL, 'guest', NULL, NULL, NULL, '2026-04-05 11:23:35', '2026-04-05 12:04:09');
+(2, 7, 'Melvin', 'MESNEL', 'tanguy.inc@gmail.com', NULL, NULL, NULL, NULL, NULL, 'Ok', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ok', NULL, NULL, NULL, 1, 'reviewed', 5, '2026-04-05 16:31:53', 'Bienvenu(e)\r\nPense à compléter ton profil rapidement.\r\nLe service RH', 8, NULL, 'guest', NULL, NULL, NULL, '2026-04-05 11:23:35', '2026-04-05 16:31:53');
 
 -- --------------------------------------------------------
 
@@ -1377,7 +1466,10 @@ INSERT INTO `forum_categories` (`id`, `tenant_id`, `scope`, `owner_tenant_id`, `
 (15, 7, 'general', NULL, NULL, 'Missions & Opérations', 'missions', 'Briefs et retours d\'opérations.', NULL, 'violet', 30, 0, NULL, '2026-04-05 09:10:02', '2026-04-05 09:10:02'),
 (16, 7, 'general', NULL, NULL, 'Support & Technique', 'support', 'Aide, ATAK, équipement, technique.', NULL, 'rose', 40, 0, NULL, '2026-04-05 09:10:02', '2026-04-05 09:10:02'),
 (17, 7, 'general', NULL, NULL, 'Hors sujet', 'hors-sujet', 'Échanges informels.', NULL, 'emerald', 50, 0, NULL, '2026-04-05 09:10:02', '2026-04-05 09:10:02'),
-(18, 7, 'organization', 7, NULL, 'ATHENA — Espace dédié', 'org-athena-sys', 'Section forum de votre organisation.', NULL, 'slate', 15, 0, NULL, '2026-04-05 09:10:02', '2026-04-05 09:10:02');
+(18, 7, 'organization', 7, NULL, 'ATHENA — Espace dédié', 'org-athena-sys', 'Section forum de votre organisation.', NULL, 'slate', 15, 0, NULL, '2026-04-05 09:10:02', '2026-04-05 09:10:02'),
+(19, 7, 'general', NULL, 16, 'ATAK / COMSPEC', 'atak-comspec', '', NULL, 'slate', 0, 0, NULL, '2026-04-06 17:07:42', '2026-04-06 17:07:42'),
+(20, 7, 'general', NULL, 16, 'CTAB', 'ctab', '', NULL, 'slate', 0, 0, NULL, '2026-04-06 17:07:56', '2026-04-06 17:07:56'),
+(21, 7, 'general', NULL, 14, 'FORMATIONS', 'formations', 'Pour partager vos code de formation hors catalogue', NULL, 'slate', 0, 0, NULL, '2026-04-06 17:12:51', '2026-04-06 17:12:51');
 
 -- --------------------------------------------------------
 
@@ -1580,8 +1672,8 @@ CREATE TABLE `forum_topics` (
 --
 
 INSERT INTO `forum_topics` (`id`, `tenant_id`, `category_id`, `user_id`, `title`, `slug`, `is_pinned`, `is_locked`, `is_archived`, `is_solved`, `best_answer_post_id`, `is_hidden`, `is_official`, `view_count`, `created_at`, `updated_at`, `auto_locked_at`, `suppress_auto_lock`) VALUES
-(2, 7, 18, 5, 'Ouverture de l\'équipe d\'administration', 'ouverture-de-léquipe-dadministration-953547', 0, 0, 0, 0, NULL, 0, 0, 40, '2026-04-05 09:19:27', '2026-04-05 16:14:17', NULL, 0),
-(3, 7, 13, 5, 'Fonctionnement du \"Brief\"', 'fonctionnement-du-brief-431290', 0, 1, 0, 0, NULL, 0, 0, 11, '2026-04-05 09:25:31', '2026-04-05 12:00:03', NULL, 0);
+(2, 7, 18, 5, 'Ouverture de l\'équipe d\'administration', 'ouverture-de-léquipe-dadministration-953547', 0, 0, 0, 0, NULL, 0, 0, 43, '2026-04-05 09:19:27', '2026-04-06 19:13:10', NULL, 0),
+(3, 7, 13, 5, 'Fonctionnement du \"Brief\"', 'fonctionnement-du-brief-431290', 0, 1, 0, 0, NULL, 0, 0, 21, '2026-04-05 09:25:31', '2026-04-06 19:47:27', NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1662,7 +1754,19 @@ INSERT INTO `grades` (`id`, `grade_system_id`, `grade_category_id`, `code`, `lab
 (27, 2, 3, 'CPL', 'CPL', 'Corporal', 'E-4', 31, 0, 1, '2026-04-05 08:28:44', '2026-04-05 08:28:44', NULL),
 (28, 2, 3, 'PFC', 'PFC', 'Private First Class', 'E-3', 32, 0, 1, '2026-04-05 08:28:44', '2026-04-05 08:28:44', NULL),
 (29, 2, 3, 'PV2', 'PV2', 'Private Second Class', 'E-2', 33, 0, 1, '2026-04-05 08:28:44', '2026-04-05 08:28:44', NULL),
-(30, 2, 3, 'PVT', 'PVT', 'Private', 'E-1', 34, 0, 1, '2026-04-05 08:28:44', '2026-04-05 08:28:44', NULL);
+(30, 2, 3, 'PVT', 'PVT', 'Private', 'E-1', 34, 0, 1, '2026-04-05 08:28:44', '2026-04-05 08:28:44', NULL),
+(31, 1, 1, 'GBR', 'Gén. bde', 'Général de brigade', 'OF-6', 17, 1, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL),
+(32, 1, 1, 'GDV', 'Gén. div.', 'Général de division', 'OF-7', 18, 1, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL),
+(33, 1, 1, 'GCA', 'Gén. c. a.', 'Général de corps d’armée', 'OF-8', 19, 1, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL),
+(34, 1, 1, 'GAR', 'Gén. armée', 'Général d’armée', 'OF-9', 20, 1, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL),
+(35, 2, 1, 'BG', 'Brig. Gen.', 'Brigadier General', 'O-7', 17, 1, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL),
+(36, 2, 1, 'MG', 'Maj. Gen.', 'Major General', 'O-8', 18, 1, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL),
+(37, 2, 1, 'LTG', 'Lt Gen.', 'Lieutenant General', 'O-9', 19, 1, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL),
+(38, 2, 1, 'GEN', 'Gen.', 'General', 'O-10', 20, 1, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL),
+(39, 1, 4, 'CIV', 'Civil', 'Personnel civil', NULL, 80, 0, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL),
+(40, 2, 4, 'CIV', 'Civilian', 'Civilian (non-military)', NULL, 80, 0, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL),
+(41, 1, 5, 'HG', 'Hors grade', 'Sans grade militaire', NULL, 90, 0, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL),
+(42, 2, 5, 'HG', 'No grade', 'No military grade', NULL, 90, 0, 1, '2026-04-06 17:17:38', '2026-04-06 17:17:38', NULL);
 
 -- --------------------------------------------------------
 
@@ -1817,6 +1921,55 @@ CREATE TABLE `intel_reports_events` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `interteam_missions`
+--
+
+CREATE TABLE `interteam_missions` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `slug` varchar(120) NOT NULL,
+  `status` varchar(24) NOT NULL DEFAULT 'draft',
+  `created_by_tenant_id` int(10) UNSIGNED NOT NULL,
+  `created_by_user_id` int(10) UNSIGNED NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `interteam_mission_forum_grants`
+--
+
+CREATE TABLE `interteam_mission_forum_grants` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `mission_id` bigint(20) UNSIGNED NOT NULL,
+  `grant_type` varchar(16) NOT NULL,
+  `resource_id` int(10) UNSIGNED NOT NULL,
+  `home_tenant_id` int(10) UNSIGNED NOT NULL,
+  `consumer_tenant_id` int(10) UNSIGNED NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `interteam_mission_participants`
+--
+
+CREATE TABLE `interteam_mission_participants` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `mission_id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `role` varchar(16) NOT NULL DEFAULT 'partner',
+  `status` varchar(16) NOT NULL DEFAULT 'invited',
+  `invited_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `responded_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `legacy_training_certificates`
 --
 
@@ -1892,7 +2045,16 @@ INSERT INTO `login_attempts` (`id`, `email`, `ip`, `success`, `created_at`) VALU
 (1, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 1, '2026-04-05 10:02:15'),
 (2, 'tanguy.inc@gmail.com', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 1, '2026-04-05 11:22:14'),
 (3, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 1, '2026-04-05 12:03:17'),
-(4, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 1, '2026-04-05 15:52:27');
+(4, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 1, '2026-04-05 15:52:27'),
+(5, 'tanguy.inc@gmail.com', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 1, '2026-04-05 16:33:02'),
+(6, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:14c:15c3:b6f6:9e3f', 1, '2026-04-05 21:25:48'),
+(7, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:14c:15c3:b6f6:9e3f', 1, '2026-04-05 22:38:29'),
+(8, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 1, '2026-04-06 10:37:30'),
+(9, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 1, '2026-04-06 11:50:23'),
+(10, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 1, '2026-04-06 17:01:20'),
+(11, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 1, '2026-04-06 17:03:47'),
+(12, 'tanguy.inc@gmail.com', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 1, '2026-04-06 17:47:37'),
+(13, 'tetard.tanguy@gmail.com', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 1, '2026-04-06 19:04:22');
 
 -- --------------------------------------------------------
 
@@ -1930,6 +2092,7 @@ CREATE TABLE `moderation_actions` (
   `actor_user_id` int(10) UNSIGNED NOT NULL,
   `action_type` varchar(32) NOT NULL,
   `reason` text DEFAULT NULL,
+  `restrictions_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Granular restrictions' CHECK (json_valid(`restrictions_json`)),
   `expires_at` datetime DEFAULT NULL,
   `revoked_at` datetime DEFAULT NULL,
   `revoked_by_user_id` int(10) UNSIGNED DEFAULT NULL,
@@ -2069,6 +2232,13 @@ CREATE TABLE `password_resets` (
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Déchargement des données de la table `password_resets`
+--
+
+INSERT INTO `password_resets` (`id`, `user_id`, `token_hash`, `expires_at`, `created_at`) VALUES
+(2, 8, '96b859c892ac92a1b127e6a750706eddb6c860586656376cafb10615c1c27b97', '2026-04-08 16:31:53', '2026-04-05 16:31:53');
+
 -- --------------------------------------------------------
 
 --
@@ -2101,6 +2271,7 @@ CREATE TABLE `permissions` (
   `module` varchar(50) DEFAULT NULL,
   `action` varchar(32) DEFAULT NULL,
   `scope` enum('site','community','intra') NOT NULL DEFAULT 'community',
+  `rbac_scope` enum('global','tenant','unit') NOT NULL DEFAULT 'tenant',
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
@@ -2108,163 +2279,184 @@ CREATE TABLE `permissions` (
 -- Déchargement des données de la table `permissions`
 --
 
-INSERT INTO `permissions` (`id`, `tenant_id`, `name`, `slug`, `module`, `action`, `scope`, `created_at`) VALUES
-(1, 1, 'Voir le forum', 'forum.view', 'forum', 'view', 'intra', '2026-03-13 19:23:12'),
-(2, 1, 'Créer un sujet', 'forum.create_topic', 'forum', 'create', 'intra', '2026-03-13 19:23:12'),
-(3, 1, 'Répondre', 'forum.reply', 'forum', 'create', 'intra', '2026-03-13 19:23:12'),
-(4, 1, 'Modifier ses messages', 'forum.edit_own', 'forum', 'update', 'intra', '2026-03-13 19:23:12'),
-(5, 1, 'Supprimer ses messages', 'forum.delete_own', 'forum', 'delete', 'intra', '2026-03-13 19:23:12'),
-(6, 1, 'Modérer le forum (périmètre étendu)', 'forum.moderate', 'forum', 'moderate', 'community', '2026-03-13 19:23:12'),
-(7, 1, 'Gérer les catégories (identifiant historique)', 'forum.manage_categories', 'forum', 'manage', 'community', '2026-03-13 19:23:12'),
-(8, 1, 'Accès administration (tenant)', 'admin.access', 'admin', 'manage', 'community', '2026-03-13 22:57:32'),
-(9, 1, 'Voir les documents', 'documents.view', 'documents', 'view', 'community', '2026-03-14 00:01:46'),
-(10, 1, 'Téléverser des documents', 'documents.upload', 'documents', 'create', 'community', '2026-03-14 00:01:46'),
-(11, 1, 'Modifier les documents (héritage)', 'documents.update', 'documents', 'update', 'community', '2026-03-14 00:01:46'),
-(12, 1, 'Archiver / désarchiver', 'documents.archive', 'documents', 'archive', 'community', '2026-03-14 00:01:46'),
-(13, 1, 'Télécharger les documents sensibles', 'documents.download_sensitive', 'documents', 'view', 'community', '2026-03-14 00:01:46'),
-(14, 1, 'Voir les formations', 'training.view', 'training', 'view', 'community', '2026-03-15 11:51:40'),
-(15, 1, 'Gérer les formations (périmètre étendu)', 'training.manage', 'training', 'manage', 'community', '2026-03-15 11:51:40'),
-(16, 1, 'Assigner les formations', 'training.assign', 'training', 'assign', 'community', '2026-03-15 11:51:40'),
-(17, 1, 'Administration système', 'admin.system', 'admin', NULL, 'community', '2026-03-15 12:02:28'),
-(18, 1, 'Administration organisationnelle', 'admin.organization', 'admin', 'manage', 'community', '2026-03-15 12:02:28'),
-(19, 1, 'Voir le Bureau Courrier', 'courrier.view', 'courrier', 'view', 'community', '2026-03-15 12:43:17'),
-(20, 1, 'Créer des documents courrier', 'courrier.create', 'courrier', 'create', 'community', '2026-03-15 12:43:17'),
-(21, 1, 'Valider des documents courrier', 'courrier.validate', 'courrier', 'approve', 'community', '2026-03-15 12:43:17'),
-(22, 1, 'Archiver des documents courrier', 'courrier.archive', 'courrier', 'archive', 'community', '2026-03-15 12:43:17'),
-(23, NULL, 'Administration système (plateforme)', 'admin.system', 'admin', NULL, 'site', '2026-04-04 15:13:10'),
-(24, NULL, 'Accès back-office plateforme', 'admin.access', 'admin', NULL, 'site', '2026-04-04 15:13:10'),
-(25, NULL, 'Gérer les communautés (tenants)', 'site.tenants.manage', 'admin', NULL, 'site', '2026-04-04 15:13:10'),
-(26, 1, 'Modérer la section forum organisation', 'forum.moderate_organization', 'forum', 'moderate', 'community', '2026-04-04 15:13:10'),
-(45, 1, 'Envoyer des invitations', 'invitations.send', 'admin', 'create', 'community', '2026-04-05 08:48:49'),
-(46, 1, 'Voir le back-office', 'admin.backoffice.view', 'admin', 'view', 'community', '2026-04-05 09:03:38'),
-(47, 1, 'Voir les membres', 'admin.members.view', 'admin', 'view', 'community', '2026-04-05 09:03:38'),
-(48, 1, 'Gérer les membres', 'admin.members.manage', 'admin', 'manage', 'community', '2026-04-05 09:03:38'),
-(49, 1, 'Inviter des membres', 'admin.members.invite', 'admin', 'create', 'community', '2026-04-05 09:03:38'),
-(50, 1, 'Suspendre / exclure un membre', 'admin.members.moderate', 'admin', 'moderate', 'community', '2026-04-05 09:03:38'),
-(51, 1, 'Gérer les rôles', 'admin.roles.manage', 'admin', 'manage', 'community', '2026-04-05 09:03:38'),
-(52, 1, 'Gérer les permissions', 'admin.permissions.manage', 'admin', 'manage', 'community', '2026-04-05 09:03:38'),
-(53, 1, 'Voir les journaux d’audit', 'admin.audit.view', 'admin', 'view', 'community', '2026-04-05 09:03:38'),
-(54, 1, 'Gérer les paramètres de la communauté', 'admin.settings.manage', 'admin', 'manage', 'community', '2026-04-05 09:03:38'),
-(55, 1, 'Gérer l’identité visuelle / branding', 'admin.branding.manage', 'admin', 'manage', 'community', '2026-04-05 09:03:38'),
-(56, 1, 'Gérer les intégrations / API / webhooks', 'admin.integrations.manage', 'admin', 'manage', 'community', '2026-04-05 09:03:38'),
-(57, 1, 'Voir les sections privées', 'forum.private.view', 'forum', 'view', 'community', '2026-04-05 09:03:38'),
-(58, 1, 'Épingler un sujet', 'forum.topic.pin', 'forum', 'manage', 'community', '2026-04-05 09:03:38'),
-(59, 1, 'Verrouiller / déverrouiller un sujet', 'forum.topic.lock', 'forum', 'moderate', 'community', '2026-04-05 09:03:38'),
-(60, 1, 'Déplacer un sujet', 'forum.topic.move', 'forum', 'manage', 'community', '2026-04-05 09:03:38'),
-(61, 1, 'Éditer n’importe quel message', 'forum.post.edit_any', 'forum', 'update', 'community', '2026-04-05 09:03:38'),
-(62, 1, 'Supprimer n’importe quel message', 'forum.post.delete_any', 'forum', 'delete', 'community', '2026-04-05 09:03:38'),
-(63, 1, 'Gérer les signalements', 'forum.reports.manage', 'forum', 'moderate', 'community', '2026-04-05 09:03:38'),
-(64, 1, 'Gérer les tags / labels', 'forum.tags.manage', 'forum', 'manage', 'community', '2026-04-05 09:03:38'),
-(65, 1, 'Gérer les catégories forum', 'forum.categories.manage', 'forum', 'manage', 'community', '2026-04-05 09:03:38'),
-(66, 1, 'Publier des annonces globales', 'forum.announcements.publish', 'forum', 'approve', 'community', '2026-04-05 09:03:38'),
-(67, 1, 'Voir les documents sensibles', 'documents.sensitive.view', 'documents', 'view', 'community', '2026-04-05 09:03:38'),
-(68, 1, 'Télécharger les documents standards', 'documents.download.standard', 'documents', 'view', 'community', '2026-04-05 09:03:38'),
-(69, 1, 'Remplacer une version', 'documents.version.replace', 'documents', 'update', 'community', '2026-04-05 09:03:38'),
-(70, 1, 'Modifier les métadonnées', 'documents.metadata.update', 'documents', 'update', 'community', '2026-04-05 09:03:38'),
-(71, 1, 'Supprimer un document', 'documents.delete', 'documents', 'delete', 'community', '2026-04-05 09:03:38'),
-(72, 1, 'Gérer les catégories documentaires', 'documents.categories.manage', 'documents', 'manage', 'community', '2026-04-05 09:03:38'),
-(73, 1, 'Gérer les droits d’accès documentaires', 'documents.access.manage', 'documents', 'manage', 'community', '2026-04-05 09:03:38'),
-(74, 1, 'Partager en lien public', 'documents.share.public', 'documents', 'manage', 'community', '2026-04-05 09:03:38'),
-(75, 1, 'Valider / publier un document', 'documents.publish', 'documents', 'approve', 'community', '2026-04-05 09:03:38'),
-(76, 1, 'Créer une formation', 'training.create', 'training', 'create', 'community', '2026-04-05 09:03:38'),
-(77, 1, 'Modifier une formation', 'training.update', 'training', 'update', 'community', '2026-04-05 09:03:38'),
-(78, 1, 'Supprimer une formation', 'training.delete', 'training', 'delete', 'community', '2026-04-05 09:03:38'),
-(79, 1, 'Publier / dépublier une formation', 'training.publish', 'training', 'approve', 'community', '2026-04-05 09:03:38'),
-(80, 1, 'Corriger / valider les rendus', 'training.submissions.grade', 'training', 'approve', 'community', '2026-04-05 09:03:38'),
-(81, 1, 'Voir les résultats', 'training.results.view', 'training', 'view', 'community', '2026-04-05 09:03:38'),
-(82, 1, 'Exporter les résultats', 'training.results.export', 'training', 'export', 'community', '2026-04-05 09:03:38'),
-(83, 1, 'Gérer les certifications', 'training.certifications.manage', 'training', 'manage', 'community', '2026-04-05 09:03:38'),
-(84, 1, 'Gérer les prérequis', 'training.prerequisites.manage', 'training', 'manage', 'community', '2026-04-05 09:03:38'),
-(85, 1, 'Voir les fiches membres', 'personnel.profile.view', 'personnel', 'view', 'community', '2026-04-05 09:03:38'),
-(86, 1, 'Modifier les fiches membres', 'personnel.profile.update', 'personnel', 'update', 'community', '2026-04-05 09:03:38'),
-(87, 1, 'Voir les informations sensibles', 'personnel.sensitive.view', 'personnel', 'view', 'community', '2026-04-05 09:03:38'),
-(88, 1, 'Gérer les grades', 'personnel.grades.manage', 'personnel', 'manage', 'community', '2026-04-05 09:03:38'),
-(89, 1, 'Gérer affectations / unités', 'personnel.assignments.manage', 'personnel', 'assign', 'community', '2026-04-05 09:03:38'),
-(90, 1, 'Gérer les statuts', 'personnel.status.manage', 'personnel', 'manage', 'community', '2026-04-05 09:03:38'),
-(91, 1, 'Gérer badges / qualifications', 'personnel.badges.manage', 'personnel', 'manage', 'community', '2026-04-05 09:03:38'),
-(92, 1, 'Exporter l’annuaire', 'personnel.directory.export', 'personnel', 'export', 'community', '2026-04-05 09:03:38'),
-(93, 1, 'Envoyer une annonce', 'comms.announcement.send', 'comms', 'create', 'community', '2026-04-05 09:03:38'),
-(94, 1, 'Envoyer un email aux membres', 'comms.email.broadcast', 'comms', 'manage', 'community', '2026-04-05 09:03:38'),
-(95, 1, 'Gérer les modèles d’email', 'comms.email_templates.manage', 'comms', 'manage', 'community', '2026-04-05 09:03:38'),
-(96, 1, 'Voir l’historique des notifications', 'comms.notifications.history.view', 'comms', 'view', 'community', '2026-04-05 09:03:38'),
-(97, 1, 'Gérer les alertes automatiques', 'comms.alerts.manage', 'comms', 'manage', 'community', '2026-04-05 09:03:38'),
-(98, 1, 'Paramétrage fin des communications', 'comms.settings.advanced', 'comms', 'manage', 'community', '2026-04-05 09:03:38'),
-(99, 7, 'Accès administration (tenant)', 'admin.access', 'admin', 'manage', 'community', '2026-04-05 09:10:01'),
-(100, 7, 'Voir le forum', 'forum.view', 'forum', 'view', 'intra', '2026-04-05 09:10:01'),
-(101, 7, 'Créer un sujet', 'forum.create_topic', 'forum', 'create', 'intra', '2026-04-05 09:10:01'),
-(102, 7, 'Répondre', 'forum.reply', 'forum', 'create', 'intra', '2026-04-05 09:10:01'),
-(103, 7, 'Modifier ses messages', 'forum.edit_own', 'forum', 'update', 'intra', '2026-04-05 09:10:01'),
-(104, 7, 'Supprimer ses messages', 'forum.delete_own', 'forum', 'delete', 'intra', '2026-04-05 09:10:01'),
-(105, 7, 'Modérer le forum (périmètre étendu)', 'forum.moderate', 'forum', 'moderate', 'community', '2026-04-05 09:10:01'),
-(106, 7, 'Modérer la section forum organisation', 'forum.moderate_organization', 'forum', 'moderate', 'community', '2026-04-05 09:10:01'),
-(107, 7, 'Gérer les catégories (identifiant historique)', 'forum.manage_categories', 'forum', 'manage', 'community', '2026-04-05 09:10:01'),
-(108, 7, 'Voir les documents', 'documents.view', 'documents', 'view', 'community', '2026-04-05 09:10:02'),
-(109, 7, 'Téléverser des documents', 'documents.upload', 'documents', 'create', 'community', '2026-04-05 09:10:02'),
-(110, 7, 'Modifier les documents (héritage)', 'documents.update', 'documents', 'update', 'community', '2026-04-05 09:10:02'),
-(111, 7, 'Archiver / désarchiver', 'documents.archive', 'documents', 'archive', 'community', '2026-04-05 09:10:02'),
-(112, 7, 'Télécharger les documents sensibles', 'documents.download_sensitive', 'documents', 'view', 'community', '2026-04-05 09:10:02'),
-(113, 7, 'Administration organisationnelle', 'admin.organization', 'admin', 'manage', 'community', '2026-04-05 09:10:02'),
-(114, 7, 'Voir les formations', 'training.view', 'training', 'view', 'community', '2026-04-05 09:10:02'),
-(115, 7, 'Gérer les formations (périmètre étendu)', 'training.manage', 'training', 'manage', 'community', '2026-04-05 09:10:02'),
-(116, 7, 'Assigner les formations', 'training.assign', 'training', 'assign', 'community', '2026-04-05 09:10:02'),
-(117, 7, 'Voir le back-office', 'admin.backoffice.view', 'admin', 'view', 'community', '2026-04-05 09:10:02'),
-(118, 7, 'Voir les membres', 'admin.members.view', 'admin', 'view', 'community', '2026-04-05 09:10:02'),
-(119, 7, 'Gérer les membres', 'admin.members.manage', 'admin', 'manage', 'community', '2026-04-05 09:10:02'),
-(120, 7, 'Inviter des membres', 'admin.members.invite', 'admin', 'create', 'community', '2026-04-05 09:10:02'),
-(121, 7, 'Suspendre / exclure un membre', 'admin.members.moderate', 'admin', 'moderate', 'community', '2026-04-05 09:10:02'),
-(122, 7, 'Gérer les rôles', 'admin.roles.manage', 'admin', 'manage', 'community', '2026-04-05 09:10:02'),
-(123, 7, 'Gérer les permissions', 'admin.permissions.manage', 'admin', 'manage', 'community', '2026-04-05 09:10:02'),
-(124, 7, 'Voir les journaux d’audit', 'admin.audit.view', 'admin', 'view', 'community', '2026-04-05 09:10:02'),
-(125, 7, 'Gérer les paramètres de la communauté', 'admin.settings.manage', 'admin', 'manage', 'community', '2026-04-05 09:10:02'),
-(126, 7, 'Gérer l’identité visuelle / branding', 'admin.branding.manage', 'admin', 'manage', 'community', '2026-04-05 09:10:02'),
-(127, 7, 'Gérer les intégrations / API / webhooks', 'admin.integrations.manage', 'admin', 'manage', 'community', '2026-04-05 09:10:02'),
-(128, 7, 'Envoyer des invitations', 'invitations.send', 'admin', 'create', 'community', '2026-04-05 09:10:02'),
-(129, 7, 'Voir les sections privées', 'forum.private.view', 'forum', 'view', 'community', '2026-04-05 09:10:02'),
-(130, 7, 'Épingler un sujet', 'forum.topic.pin', 'forum', 'manage', 'community', '2026-04-05 09:10:02'),
-(131, 7, 'Verrouiller / déverrouiller un sujet', 'forum.topic.lock', 'forum', 'moderate', 'community', '2026-04-05 09:10:02'),
-(132, 7, 'Déplacer un sujet', 'forum.topic.move', 'forum', 'manage', 'community', '2026-04-05 09:10:02'),
-(133, 7, 'Éditer n’importe quel message', 'forum.post.edit_any', 'forum', 'update', 'community', '2026-04-05 09:10:02'),
-(134, 7, 'Supprimer n’importe quel message', 'forum.post.delete_any', 'forum', 'delete', 'community', '2026-04-05 09:10:02'),
-(135, 7, 'Gérer les signalements', 'forum.reports.manage', 'forum', 'moderate', 'community', '2026-04-05 09:10:02'),
-(136, 7, 'Gérer les tags / labels', 'forum.tags.manage', 'forum', 'manage', 'community', '2026-04-05 09:10:02'),
-(137, 7, 'Gérer les catégories forum', 'forum.categories.manage', 'forum', 'manage', 'community', '2026-04-05 09:10:02'),
-(138, 7, 'Publier des annonces globales', 'forum.announcements.publish', 'forum', 'approve', 'community', '2026-04-05 09:10:02'),
-(139, 7, 'Voir les documents sensibles', 'documents.sensitive.view', 'documents', 'view', 'community', '2026-04-05 09:10:02'),
-(140, 7, 'Télécharger les documents standards', 'documents.download.standard', 'documents', 'view', 'community', '2026-04-05 09:10:02'),
-(141, 7, 'Remplacer une version', 'documents.version.replace', 'documents', 'update', 'community', '2026-04-05 09:10:02'),
-(142, 7, 'Modifier les métadonnées', 'documents.metadata.update', 'documents', 'update', 'community', '2026-04-05 09:10:02'),
-(143, 7, 'Supprimer un document', 'documents.delete', 'documents', 'delete', 'community', '2026-04-05 09:10:02'),
-(144, 7, 'Gérer les catégories documentaires', 'documents.categories.manage', 'documents', 'manage', 'community', '2026-04-05 09:10:02'),
-(145, 7, 'Gérer les droits d’accès documentaires', 'documents.access.manage', 'documents', 'manage', 'community', '2026-04-05 09:10:02'),
-(146, 7, 'Partager en lien public', 'documents.share.public', 'documents', 'manage', 'community', '2026-04-05 09:10:02'),
-(147, 7, 'Valider / publier un document', 'documents.publish', 'documents', 'approve', 'community', '2026-04-05 09:10:02'),
-(148, 7, 'Créer une formation', 'training.create', 'training', 'create', 'community', '2026-04-05 09:10:02'),
-(149, 7, 'Modifier une formation', 'training.update', 'training', 'update', 'community', '2026-04-05 09:10:02'),
-(150, 7, 'Supprimer une formation', 'training.delete', 'training', 'delete', 'community', '2026-04-05 09:10:02'),
-(151, 7, 'Publier / dépublier une formation', 'training.publish', 'training', 'approve', 'community', '2026-04-05 09:10:02'),
-(152, 7, 'Corriger / valider les rendus', 'training.submissions.grade', 'training', 'approve', 'community', '2026-04-05 09:10:02'),
-(153, 7, 'Voir les résultats', 'training.results.view', 'training', 'view', 'community', '2026-04-05 09:10:02'),
-(154, 7, 'Exporter les résultats', 'training.results.export', 'training', 'export', 'community', '2026-04-05 09:10:02'),
-(155, 7, 'Gérer les certifications', 'training.certifications.manage', 'training', 'manage', 'community', '2026-04-05 09:10:02'),
-(156, 7, 'Gérer les prérequis', 'training.prerequisites.manage', 'training', 'manage', 'community', '2026-04-05 09:10:02'),
-(157, 7, 'Voir les fiches membres', 'personnel.profile.view', 'personnel', 'view', 'community', '2026-04-05 09:10:02'),
-(158, 7, 'Modifier les fiches membres', 'personnel.profile.update', 'personnel', 'update', 'community', '2026-04-05 09:10:02'),
-(159, 7, 'Voir les informations sensibles', 'personnel.sensitive.view', 'personnel', 'view', 'community', '2026-04-05 09:10:02'),
-(160, 7, 'Gérer les grades', 'personnel.grades.manage', 'personnel', 'manage', 'community', '2026-04-05 09:10:02'),
-(161, 7, 'Gérer affectations / unités', 'personnel.assignments.manage', 'personnel', 'assign', 'community', '2026-04-05 09:10:02'),
-(162, 7, 'Gérer les statuts', 'personnel.status.manage', 'personnel', 'manage', 'community', '2026-04-05 09:10:02'),
-(163, 7, 'Gérer badges / qualifications', 'personnel.badges.manage', 'personnel', 'manage', 'community', '2026-04-05 09:10:02'),
-(164, 7, 'Exporter l’annuaire', 'personnel.directory.export', 'personnel', 'export', 'community', '2026-04-05 09:10:02'),
-(165, 7, 'Envoyer une annonce', 'comms.announcement.send', 'comms', 'create', 'community', '2026-04-05 09:10:02'),
-(166, 7, 'Envoyer un email aux membres', 'comms.email.broadcast', 'comms', 'manage', 'community', '2026-04-05 09:10:02'),
-(167, 7, 'Gérer les modèles d’email', 'comms.email_templates.manage', 'comms', 'manage', 'community', '2026-04-05 09:10:02'),
-(168, 7, 'Voir l’historique des notifications', 'comms.notifications.history.view', 'comms', 'view', 'community', '2026-04-05 09:10:02'),
-(169, 7, 'Gérer les alertes automatiques', 'comms.alerts.manage', 'comms', 'manage', 'community', '2026-04-05 09:10:02'),
-(170, 7, 'Paramétrage fin des communications', 'comms.settings.advanced', 'comms', 'manage', 'community', '2026-04-05 09:10:02'),
-(171, 7, 'Voir le Bureau Courrier', 'courrier.view', 'courrier', 'view', 'community', '2026-04-05 09:10:02'),
-(172, 7, 'Créer des documents courrier', 'courrier.create', 'courrier', 'create', 'community', '2026-04-05 09:10:02'),
-(173, 7, 'Valider des documents courrier', 'courrier.validate', 'courrier', 'approve', 'community', '2026-04-05 09:10:02'),
-(174, 7, 'Archiver des documents courrier', 'courrier.archive', 'courrier', 'archive', 'community', '2026-04-05 09:10:02');
+INSERT INTO `permissions` (`id`, `tenant_id`, `name`, `slug`, `module`, `action`, `scope`, `rbac_scope`, `created_at`) VALUES
+(1, 1, 'Voir le forum', 'forum.view', 'forum', 'view', 'intra', 'unit', '2026-03-13 19:23:12'),
+(2, 1, 'Créer un sujet', 'forum.create_topic', 'forum', 'create', 'intra', 'unit', '2026-03-13 19:23:12'),
+(3, 1, 'Répondre', 'forum.reply', 'forum', 'create', 'intra', 'unit', '2026-03-13 19:23:12'),
+(4, 1, 'Modifier ses messages', 'forum.edit_own', 'forum', 'update', 'intra', 'unit', '2026-03-13 19:23:12'),
+(5, 1, 'Supprimer ses messages', 'forum.delete_own', 'forum', 'delete', 'intra', 'unit', '2026-03-13 19:23:12'),
+(6, 1, 'Modérer le forum (périmètre étendu)', 'forum.moderate', 'forum', 'moderate', 'community', 'tenant', '2026-03-13 19:23:12'),
+(7, 1, 'Gérer les catégories (identifiant historique)', 'forum.manage_categories', 'forum', 'manage', 'community', 'tenant', '2026-03-13 19:23:12'),
+(8, 1, 'Accès administration (tenant)', 'admin.access', 'admin', 'manage', 'community', 'tenant', '2026-03-13 22:57:32'),
+(9, 1, 'Voir les documents', 'documents.view', 'documents', 'view', 'community', 'tenant', '2026-03-14 00:01:46'),
+(10, 1, 'Téléverser des documents', 'documents.upload', 'documents', 'create', 'community', 'tenant', '2026-03-14 00:01:46'),
+(11, 1, 'Modifier les documents (héritage)', 'documents.update', 'documents', 'update', 'community', 'tenant', '2026-03-14 00:01:46'),
+(12, 1, 'Archiver / désarchiver', 'documents.archive', 'documents', 'archive', 'community', 'tenant', '2026-03-14 00:01:46'),
+(13, 1, 'Télécharger les documents sensibles', 'documents.download_sensitive', 'documents', 'view', 'community', 'tenant', '2026-03-14 00:01:46'),
+(14, 1, 'Voir les formations', 'training.view', 'training', 'view', 'community', 'tenant', '2026-03-15 11:51:40'),
+(15, 1, 'Gérer les formations (périmètre étendu)', 'training.manage', 'training', 'manage', 'community', 'tenant', '2026-03-15 11:51:40'),
+(16, 1, 'Assigner les formations', 'training.assign', 'training', 'assign', 'community', 'tenant', '2026-03-15 11:51:40'),
+(17, 1, 'Administration système', 'admin.system', 'admin', NULL, 'community', 'tenant', '2026-03-15 12:02:28'),
+(18, 1, 'Administration organisationnelle', 'admin.organization', 'admin', 'manage', 'community', 'tenant', '2026-03-15 12:02:28'),
+(19, 1, 'Voir le Bureau Courrier', 'courrier.view', 'courrier', 'view', 'community', 'tenant', '2026-03-15 12:43:17'),
+(20, 1, 'Créer des documents courrier', 'courrier.create', 'courrier', 'create', 'community', 'tenant', '2026-03-15 12:43:17'),
+(21, 1, 'Valider des documents courrier', 'courrier.validate', 'courrier', 'approve', 'community', 'tenant', '2026-03-15 12:43:17'),
+(22, 1, 'Archiver des documents courrier', 'courrier.archive', 'courrier', 'archive', 'community', 'tenant', '2026-03-15 12:43:17'),
+(23, NULL, 'Administration système (plateforme)', 'admin.system', 'admin', NULL, 'site', 'global', '2026-04-04 15:13:10'),
+(24, NULL, 'Accès back-office plateforme', 'admin.access', 'admin', NULL, 'site', 'global', '2026-04-04 15:13:10'),
+(25, NULL, 'Gérer les communautés (tenants)', 'site.tenants.manage', 'admin', NULL, 'site', 'global', '2026-04-04 15:13:10'),
+(26, 1, 'Modérer la section forum organisation', 'forum.moderate_organization', 'forum', 'moderate', 'community', 'tenant', '2026-04-04 15:13:10'),
+(45, 1, 'Envoyer des invitations', 'invitations.send', 'admin', 'create', 'community', 'tenant', '2026-04-05 08:48:49'),
+(46, 1, 'Voir le back-office', 'admin.backoffice.view', 'admin', 'view', 'community', 'tenant', '2026-04-05 09:03:38'),
+(47, 1, 'Voir les membres', 'admin.members.view', 'admin', 'view', 'community', 'tenant', '2026-04-05 09:03:38'),
+(48, 1, 'Gérer les membres', 'admin.members.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(49, 1, 'Inviter des membres', 'admin.members.invite', 'admin', 'create', 'community', 'tenant', '2026-04-05 09:03:38'),
+(50, 1, 'Suspendre / exclure un membre', 'admin.members.moderate', 'admin', 'moderate', 'community', 'tenant', '2026-04-05 09:03:38'),
+(51, 1, 'Gérer les rôles', 'admin.roles.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(52, 1, 'Gérer les permissions', 'admin.permissions.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(53, 1, 'Voir les journaux d’audit', 'admin.audit.view', 'admin', 'view', 'community', 'tenant', '2026-04-05 09:03:38'),
+(54, 1, 'Gérer les paramètres de la communauté', 'admin.settings.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(55, 1, 'Gérer l’identité visuelle / branding', 'admin.branding.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(56, 1, 'Gérer les intégrations / API / webhooks', 'admin.integrations.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(57, 1, 'Voir les sections privées', 'forum.private.view', 'forum', 'view', 'community', 'tenant', '2026-04-05 09:03:38'),
+(58, 1, 'Épingler un sujet', 'forum.topic.pin', 'forum', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(59, 1, 'Verrouiller / déverrouiller un sujet', 'forum.topic.lock', 'forum', 'moderate', 'community', 'tenant', '2026-04-05 09:03:38'),
+(60, 1, 'Déplacer un sujet', 'forum.topic.move', 'forum', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(61, 1, 'Éditer n’importe quel message', 'forum.post.edit_any', 'forum', 'update', 'community', 'tenant', '2026-04-05 09:03:38'),
+(62, 1, 'Supprimer n’importe quel message', 'forum.post.delete_any', 'forum', 'delete', 'community', 'tenant', '2026-04-05 09:03:38'),
+(63, 1, 'Gérer les signalements', 'forum.reports.manage', 'forum', 'moderate', 'community', 'tenant', '2026-04-05 09:03:38'),
+(64, 1, 'Gérer les tags / labels', 'forum.tags.manage', 'forum', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(65, 1, 'Gérer les catégories forum', 'forum.categories.manage', 'forum', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(66, 1, 'Publier des annonces globales', 'forum.announcements.publish', 'forum', 'approve', 'community', 'tenant', '2026-04-05 09:03:38'),
+(67, 1, 'Voir les documents sensibles', 'documents.sensitive.view', 'documents', 'view', 'community', 'tenant', '2026-04-05 09:03:38'),
+(68, 1, 'Télécharger les documents standards', 'documents.download.standard', 'documents', 'view', 'community', 'tenant', '2026-04-05 09:03:38'),
+(69, 1, 'Remplacer une version', 'documents.version.replace', 'documents', 'update', 'community', 'tenant', '2026-04-05 09:03:38'),
+(70, 1, 'Modifier les métadonnées', 'documents.metadata.update', 'documents', 'update', 'community', 'tenant', '2026-04-05 09:03:38'),
+(71, 1, 'Supprimer un document', 'documents.delete', 'documents', 'delete', 'community', 'tenant', '2026-04-05 09:03:38'),
+(72, 1, 'Gérer les catégories documentaires', 'documents.categories.manage', 'documents', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(73, 1, 'Gérer les droits d’accès documentaires', 'documents.access.manage', 'documents', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(74, 1, 'Partager en lien public', 'documents.share.public', 'documents', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(75, 1, 'Valider / publier un document', 'documents.publish', 'documents', 'approve', 'community', 'tenant', '2026-04-05 09:03:38'),
+(76, 1, 'Créer une formation', 'training.create', 'training', 'create', 'community', 'tenant', '2026-04-05 09:03:38'),
+(77, 1, 'Modifier une formation', 'training.update', 'training', 'update', 'community', 'tenant', '2026-04-05 09:03:38'),
+(78, 1, 'Supprimer une formation', 'training.delete', 'training', 'delete', 'community', 'tenant', '2026-04-05 09:03:38'),
+(79, 1, 'Publier / dépublier une formation', 'training.publish', 'training', 'approve', 'community', 'tenant', '2026-04-05 09:03:38'),
+(80, 1, 'Corriger / valider les rendus', 'training.submissions.grade', 'training', 'approve', 'community', 'tenant', '2026-04-05 09:03:38'),
+(81, 1, 'Voir les résultats', 'training.results.view', 'training', 'view', 'community', 'tenant', '2026-04-05 09:03:38'),
+(82, 1, 'Exporter les résultats', 'training.results.export', 'training', 'export', 'community', 'tenant', '2026-04-05 09:03:38'),
+(83, 1, 'Gérer les certifications', 'training.certifications.manage', 'training', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(84, 1, 'Gérer les prérequis', 'training.prerequisites.manage', 'training', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(85, 1, 'Voir les fiches membres', 'personnel.profile.view', 'personnel', 'view', 'community', 'tenant', '2026-04-05 09:03:38'),
+(86, 1, 'Modifier les fiches membres', 'personnel.profile.update', 'personnel', 'update', 'community', 'tenant', '2026-04-05 09:03:38'),
+(87, 1, 'Voir les informations sensibles', 'personnel.sensitive.view', 'personnel', 'view', 'community', 'tenant', '2026-04-05 09:03:38'),
+(88, 1, 'Gérer les grades', 'personnel.grades.manage', 'personnel', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(89, 1, 'Gérer affectations / unités', 'personnel.assignments.manage', 'personnel', 'assign', 'community', 'tenant', '2026-04-05 09:03:38'),
+(90, 1, 'Gérer les statuts', 'personnel.status.manage', 'personnel', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(91, 1, 'Gérer badges / qualifications', 'personnel.badges.manage', 'personnel', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(92, 1, 'Exporter l’annuaire', 'personnel.directory.export', 'personnel', 'export', 'community', 'tenant', '2026-04-05 09:03:38'),
+(93, 1, 'Envoyer une annonce', 'comms.announcement.send', 'comms', 'create', 'community', 'tenant', '2026-04-05 09:03:38'),
+(94, 1, 'Envoyer un email aux membres', 'comms.email.broadcast', 'comms', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(95, 1, 'Gérer les modèles d’email', 'comms.email_templates.manage', 'comms', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(96, 1, 'Voir l’historique des notifications', 'comms.notifications.history.view', 'comms', 'view', 'community', 'tenant', '2026-04-05 09:03:38'),
+(97, 1, 'Gérer les alertes automatiques', 'comms.alerts.manage', 'comms', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(98, 1, 'Paramétrage fin des communications', 'comms.settings.advanced', 'comms', 'manage', 'community', 'tenant', '2026-04-05 09:03:38'),
+(99, 7, 'Accès administration (tenant)', 'admin.access', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:10:01'),
+(100, 7, 'Voir le forum', 'forum.view', 'forum', 'view', 'intra', 'unit', '2026-04-05 09:10:01'),
+(101, 7, 'Créer un sujet', 'forum.create_topic', 'forum', 'create', 'intra', 'unit', '2026-04-05 09:10:01'),
+(102, 7, 'Répondre', 'forum.reply', 'forum', 'create', 'intra', 'unit', '2026-04-05 09:10:01'),
+(103, 7, 'Modifier ses messages', 'forum.edit_own', 'forum', 'update', 'intra', 'unit', '2026-04-05 09:10:01'),
+(104, 7, 'Supprimer ses messages', 'forum.delete_own', 'forum', 'delete', 'intra', 'unit', '2026-04-05 09:10:01'),
+(105, 7, 'Modérer le forum (périmètre étendu)', 'forum.moderate', 'forum', 'moderate', 'community', 'tenant', '2026-04-05 09:10:01'),
+(106, 7, 'Modérer la section forum organisation', 'forum.moderate_organization', 'forum', 'moderate', 'community', 'tenant', '2026-04-05 09:10:01'),
+(107, 7, 'Gérer les catégories (identifiant historique)', 'forum.manage_categories', 'forum', 'manage', 'community', 'tenant', '2026-04-05 09:10:01'),
+(108, 7, 'Voir les documents', 'documents.view', 'documents', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(109, 7, 'Téléverser des documents', 'documents.upload', 'documents', 'create', 'community', 'tenant', '2026-04-05 09:10:02'),
+(110, 7, 'Modifier les documents (héritage)', 'documents.update', 'documents', 'update', 'community', 'tenant', '2026-04-05 09:10:02'),
+(111, 7, 'Archiver / désarchiver', 'documents.archive', 'documents', 'archive', 'community', 'tenant', '2026-04-05 09:10:02'),
+(112, 7, 'Télécharger les documents sensibles', 'documents.download_sensitive', 'documents', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(113, 7, 'Administration organisationnelle', 'admin.organization', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(114, 7, 'Voir les formations', 'training.view', 'training', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(115, 7, 'Gérer les formations (périmètre étendu)', 'training.manage', 'training', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(116, 7, 'Assigner les formations', 'training.assign', 'training', 'assign', 'community', 'tenant', '2026-04-05 09:10:02'),
+(117, 7, 'Voir le back-office', 'admin.backoffice.view', 'admin', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(118, 7, 'Voir les membres', 'admin.members.view', 'admin', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(119, 7, 'Gérer les membres', 'admin.members.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(120, 7, 'Inviter des membres', 'admin.members.invite', 'admin', 'create', 'community', 'tenant', '2026-04-05 09:10:02'),
+(121, 7, 'Suspendre / exclure un membre', 'admin.members.moderate', 'admin', 'moderate', 'community', 'tenant', '2026-04-05 09:10:02'),
+(122, 7, 'Gérer les rôles', 'admin.roles.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(123, 7, 'Gérer les permissions', 'admin.permissions.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(124, 7, 'Voir les journaux d’audit', 'admin.audit.view', 'admin', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(125, 7, 'Gérer les paramètres de la communauté', 'admin.settings.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(126, 7, 'Gérer l’identité visuelle / branding', 'admin.branding.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(127, 7, 'Gérer les intégrations / API / webhooks', 'admin.integrations.manage', 'admin', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(128, 7, 'Envoyer des invitations', 'invitations.send', 'admin', 'create', 'community', 'tenant', '2026-04-05 09:10:02'),
+(129, 7, 'Voir les sections privées', 'forum.private.view', 'forum', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(130, 7, 'Épingler un sujet', 'forum.topic.pin', 'forum', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(131, 7, 'Verrouiller / déverrouiller un sujet', 'forum.topic.lock', 'forum', 'moderate', 'community', 'tenant', '2026-04-05 09:10:02'),
+(132, 7, 'Déplacer un sujet', 'forum.topic.move', 'forum', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(133, 7, 'Éditer n’importe quel message', 'forum.post.edit_any', 'forum', 'update', 'community', 'tenant', '2026-04-05 09:10:02'),
+(134, 7, 'Supprimer n’importe quel message', 'forum.post.delete_any', 'forum', 'delete', 'community', 'tenant', '2026-04-05 09:10:02'),
+(135, 7, 'Gérer les signalements', 'forum.reports.manage', 'forum', 'moderate', 'community', 'tenant', '2026-04-05 09:10:02'),
+(136, 7, 'Gérer les tags / labels', 'forum.tags.manage', 'forum', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(137, 7, 'Gérer les catégories forum', 'forum.categories.manage', 'forum', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(138, 7, 'Publier des annonces globales', 'forum.announcements.publish', 'forum', 'approve', 'community', 'tenant', '2026-04-05 09:10:02'),
+(139, 7, 'Voir les documents sensibles', 'documents.sensitive.view', 'documents', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(140, 7, 'Télécharger les documents standards', 'documents.download.standard', 'documents', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(141, 7, 'Remplacer une version', 'documents.version.replace', 'documents', 'update', 'community', 'tenant', '2026-04-05 09:10:02'),
+(142, 7, 'Modifier les métadonnées', 'documents.metadata.update', 'documents', 'update', 'community', 'tenant', '2026-04-05 09:10:02'),
+(143, 7, 'Supprimer un document', 'documents.delete', 'documents', 'delete', 'community', 'tenant', '2026-04-05 09:10:02'),
+(144, 7, 'Gérer les catégories documentaires', 'documents.categories.manage', 'documents', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(145, 7, 'Gérer les droits d’accès documentaires', 'documents.access.manage', 'documents', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(146, 7, 'Partager en lien public', 'documents.share.public', 'documents', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(147, 7, 'Valider / publier un document', 'documents.publish', 'documents', 'approve', 'community', 'tenant', '2026-04-05 09:10:02'),
+(148, 7, 'Créer une formation', 'training.create', 'training', 'create', 'community', 'tenant', '2026-04-05 09:10:02'),
+(149, 7, 'Modifier une formation', 'training.update', 'training', 'update', 'community', 'tenant', '2026-04-05 09:10:02'),
+(150, 7, 'Supprimer une formation', 'training.delete', 'training', 'delete', 'community', 'tenant', '2026-04-05 09:10:02'),
+(151, 7, 'Publier / dépublier une formation', 'training.publish', 'training', 'approve', 'community', 'tenant', '2026-04-05 09:10:02'),
+(152, 7, 'Corriger / valider les rendus', 'training.submissions.grade', 'training', 'approve', 'community', 'tenant', '2026-04-05 09:10:02'),
+(153, 7, 'Voir les résultats', 'training.results.view', 'training', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(154, 7, 'Exporter les résultats', 'training.results.export', 'training', 'export', 'community', 'tenant', '2026-04-05 09:10:02'),
+(155, 7, 'Gérer les certifications', 'training.certifications.manage', 'training', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(156, 7, 'Gérer les prérequis', 'training.prerequisites.manage', 'training', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(157, 7, 'Voir les fiches membres', 'personnel.profile.view', 'personnel', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(158, 7, 'Modifier les fiches membres', 'personnel.profile.update', 'personnel', 'update', 'community', 'tenant', '2026-04-05 09:10:02'),
+(159, 7, 'Voir les informations sensibles', 'personnel.sensitive.view', 'personnel', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(160, 7, 'Gérer les grades', 'personnel.grades.manage', 'personnel', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(161, 7, 'Gérer affectations / unités', 'personnel.assignments.manage', 'personnel', 'assign', 'community', 'tenant', '2026-04-05 09:10:02'),
+(162, 7, 'Gérer les statuts', 'personnel.status.manage', 'personnel', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(163, 7, 'Gérer badges / qualifications', 'personnel.badges.manage', 'personnel', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(164, 7, 'Exporter l’annuaire', 'personnel.directory.export', 'personnel', 'export', 'community', 'tenant', '2026-04-05 09:10:02'),
+(165, 7, 'Envoyer une annonce', 'comms.announcement.send', 'comms', 'create', 'community', 'tenant', '2026-04-05 09:10:02'),
+(166, 7, 'Envoyer un email aux membres', 'comms.email.broadcast', 'comms', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(167, 7, 'Gérer les modèles d’email', 'comms.email_templates.manage', 'comms', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(168, 7, 'Voir l’historique des notifications', 'comms.notifications.history.view', 'comms', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(169, 7, 'Gérer les alertes automatiques', 'comms.alerts.manage', 'comms', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(170, 7, 'Paramétrage fin des communications', 'comms.settings.advanced', 'comms', 'manage', 'community', 'tenant', '2026-04-05 09:10:02'),
+(171, 7, 'Voir le Bureau Courrier', 'courrier.view', 'courrier', 'view', 'community', 'tenant', '2026-04-05 09:10:02'),
+(172, 7, 'Créer des documents courrier', 'courrier.create', 'courrier', 'create', 'community', 'tenant', '2026-04-05 09:10:02'),
+(173, 7, 'Valider des documents courrier', 'courrier.validate', 'courrier', 'approve', 'community', 'tenant', '2026-04-05 09:10:02'),
+(174, 7, 'Archiver des documents courrier', 'courrier.archive', 'courrier', 'archive', 'community', 'tenant', '2026-04-05 09:10:02'),
+(175, 1, 'Gérer les raccourcis du tableau de bord', 'dashboard.pins.manage', 'dashboard', 'manage', 'community', 'tenant', '2026-04-05 16:40:50'),
+(176, 7, 'Gérer les raccourcis du tableau de bord', 'dashboard.pins.manage', 'dashboard', 'manage', 'community', 'tenant', '2026-04-05 16:40:50'),
+(177, 1, 'Exporter les dossiers conformité (formations)', 'admin.compliance.export', 'admin', 'export', 'community', 'tenant', '2026-04-06 18:33:03'),
+(178, 1, 'Piloter les missions inter-unités (invitations, partages)', 'interteam.missions.manage', 'interteam', 'manage', 'community', 'tenant', '2026-04-06 18:33:03'),
+(179, 1, 'Accepter ou refuser une mission inter-unités', 'interteam.missions.respond', 'interteam', 'approve', 'community', 'tenant', '2026-04-06 18:33:03'),
+(180, 7, 'Exporter les dossiers conformité (formations)', 'admin.compliance.export', 'admin', 'export', 'community', 'tenant', '2026-04-06 18:33:03'),
+(181, 7, 'Piloter les missions inter-unités (invitations, partages)', 'interteam.missions.manage', 'interteam', 'manage', 'community', 'tenant', '2026-04-06 18:33:03'),
+(182, 7, 'Accepter ou refuser une mission inter-unités', 'interteam.missions.respond', 'interteam', 'approve', 'community', 'tenant', '2026-04-06 18:33:03'),
+(183, 1, 'Consulter l’ORBAT', 'organization.orbat.view', 'organization', 'view', 'community', 'tenant', '2026-04-06 19:22:01'),
+(184, 1, 'Gérer la structure ORBAT (unités, rattachements)', 'organization.orbat.manage', 'organization', 'manage', 'community', 'tenant', '2026-04-06 19:22:01'),
+(185, 1, 'Accéder au hub effectifs', 'organization.effectifs.hub.view', 'organization', 'view', 'community', 'tenant', '2026-04-06 19:22:01'),
+(186, 1, 'Gérer le recrutement (dossiers, décisions)', 'organization.recruitment.manage', 'organization', 'manage', 'community', 'tenant', '2026-04-06 19:22:01'),
+(187, 1, 'Gérer le référentiel des emplois métier', 'organization.job_roles.referential.manage', 'organization', 'manage', 'community', 'tenant', '2026-04-06 19:22:01'),
+(188, 7, 'Consulter l’ORBAT', 'organization.orbat.view', 'organization', 'view', 'community', 'tenant', '2026-04-06 19:22:01'),
+(189, 7, 'Gérer la structure ORBAT (unités, rattachements)', 'organization.orbat.manage', 'organization', 'manage', 'community', 'tenant', '2026-04-06 19:22:01'),
+(190, 7, 'Accéder au hub effectifs', 'organization.effectifs.hub.view', 'organization', 'view', 'community', 'tenant', '2026-04-06 19:22:01'),
+(191, 7, 'Gérer le recrutement (dossiers, décisions)', 'organization.recruitment.manage', 'organization', 'manage', 'community', 'tenant', '2026-04-06 19:22:01'),
+(192, 7, 'Gérer le référentiel des emplois métier', 'organization.job_roles.referential.manage', 'organization', 'manage', 'community', 'tenant', '2026-04-06 19:22:01'),
+(193, NULL, 'Modération forum (toutes communautés)', 'forum.moderate', 'forum', NULL, 'site', 'global', '2026-04-06 20:07:27'),
+(194, NULL, 'Canaux forum (toutes communautés)', 'forum.categories.manage', 'forum', NULL, 'site', 'global', '2026-04-06 20:07:27'),
+(195, NULL, 'Assistance membres (accès guidé)', 'site.support', 'admin', NULL, 'site', 'global', '2026-04-06 20:07:27');
 
 -- --------------------------------------------------------
 
@@ -2342,7 +2534,10 @@ INSERT INTO `personnel_assignments` (`id`, `user_id`, `unit_id`, `role_name`, `i
 (2, 5, 2, 'Officier opérations', 0, '2026-04-05', '2026-04-05', 'inactive', '2026-04-05 11:45:48', '2026-04-05 11:59:27'),
 (3, 5, 2, 'Officier opérations', 0, '2026-04-05', '2026-04-05', 'inactive', '2026-04-05 11:59:27', '2026-04-05 11:59:38'),
 (4, 5, 2, 'Officier opérations', 0, '2026-04-05', '2026-04-05', 'inactive', '2026-04-05 11:59:38', '2026-04-05 12:09:47'),
-(5, 5, 2, 'Officier opérations', 1, '2026-04-05', NULL, 'active', '2026-04-05 12:09:47', NULL);
+(5, 5, 2, 'Officier opérations', 0, '2026-04-05', '2026-04-06', 'inactive', '2026-04-05 12:09:47', '2026-04-06 18:59:04'),
+(6, 8, 4, 'Instructeur — Spécialiste communication', 1, '2026-04-06', NULL, 'active', '2026-04-06 17:46:32', NULL),
+(7, 5, 2, 'Officier opérations — Officier gestionnaire administratif', 0, '2026-04-06', '2026-04-06', 'inactive', '2026-04-06 18:59:04', '2026-04-06 18:59:13'),
+(8, 5, 2, 'Officier opérations — Spécialiste gestionnaire administratif', 1, '2026-04-06', NULL, 'active', '2026-04-06 18:59:13', NULL);
 
 -- --------------------------------------------------------
 
@@ -2356,6 +2551,7 @@ CREATE TABLE `personnel_extras` (
   `squadron` varchar(100) DEFAULT NULL,
   `date_of_enlistment` date DEFAULT NULL,
   `clearance_level` varchar(100) DEFAULT NULL,
+  `clearance_level_id` int(10) UNSIGNED DEFAULT NULL,
   `flight_hours` decimal(10,1) DEFAULT NULL,
   `specializations` text DEFAULT NULL,
   `readiness_percent` int(11) DEFAULT NULL,
@@ -2368,8 +2564,9 @@ CREATE TABLE `personnel_extras` (
 -- Déchargement des données de la table `personnel_extras`
 --
 
-INSERT INTO `personnel_extras` (`user_id`, `service_number`, `squadron`, `date_of_enlistment`, `clearance_level`, `flight_hours`, `specializations`, `readiness_percent`, `admin_notes`, `created_at`, `updated_at`) VALUES
-(5, 'ATH-00001', NULL, NULL, NULL, NULL, NULL, NULL, '', '2026-04-05 09:16:46', '2026-04-05 12:09:47');
+INSERT INTO `personnel_extras` (`user_id`, `service_number`, `squadron`, `date_of_enlistment`, `clearance_level`, `clearance_level_id`, `flight_hours`, `specializations`, `readiness_percent`, `admin_notes`, `created_at`, `updated_at`) VALUES
+(5, 'ATH-00001', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '2026-04-05 09:16:46', '2026-04-05 12:09:47'),
+(8, 'ATH-00002', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '2026-04-06 17:46:32', '2026-04-06 17:46:35');
 
 -- --------------------------------------------------------
 
@@ -2384,6 +2581,7 @@ CREATE TABLE `personnel_job_roles` (
   `name` varchar(120) NOT NULL,
   `slug` varchar(80) NOT NULL,
   `description` varchar(500) DEFAULT NULL,
+  `label_en` varchar(160) DEFAULT NULL,
   `sort_order` int(11) NOT NULL DEFAULT 0,
   `is_system` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
@@ -2393,25 +2591,145 @@ CREATE TABLE `personnel_job_roles` (
 -- Déchargement des données de la table `personnel_job_roles`
 --
 
-INSERT INTO `personnel_job_roles` (`id`, `tenant_id`, `category_id`, `name`, `slug`, `description`, `sort_order`, `is_system`, `created_at`) VALUES
-(1, 1, 5, 'Officier opérations', 'officier-operations', 'Coordination des opérations et briefs.', 0, 1, '2026-04-05 11:27:53'),
-(2, 1, 5, 'Chef de section', 'chef-de-section', 'Encadrement de section.', 1, 1, '2026-04-05 11:27:53'),
-(3, 1, 6, 'Fusilier', 'fusilier', 'Combattant polyvalent.', 2, 1, '2026-04-05 11:27:53'),
-(4, 1, 6, 'Grenadier', 'grenadier', 'Appui grenades / lourd léger.', 3, 1, '2026-04-05 11:27:53'),
-(5, 1, 7, 'JTAC / FO', 'jtac', 'Guidage feu indirect.', 4, 1, '2026-04-05 11:27:53'),
-(6, 1, 7, 'Medic / secouriste', 'medic', 'Soutien sanitaire.', 5, 1, '2026-04-05 11:27:53'),
-(7, 1, 8, 'Logistique', 'logistique-r', 'Ravitaillement, transport.', 6, 1, '2026-04-05 11:27:53'),
-(8, 1, 9, 'Formateur', 'formateur', 'Pédagogie, montée en compétence.', 7, 1, '2026-04-05 11:27:53'),
-(9, 1, 9, 'Instructeur', 'instructeur', 'Instruction collective.', 8, 1, '2026-04-05 11:27:53'),
-(10, 7, 14, 'Officier opérations', 'officier-operations', 'Coordination des opérations et briefs.', 0, 1, '2026-04-05 11:27:53'),
-(11, 7, 14, 'Chef de section', 'chef-de-section', 'Encadrement de section.', 1, 1, '2026-04-05 11:27:53'),
-(12, 7, 15, 'Fusilier', 'fusilier', 'Combattant polyvalent.', 2, 1, '2026-04-05 11:27:53'),
-(13, 7, 15, 'Grenadier', 'grenadier', 'Appui grenades / lourd léger.', 3, 1, '2026-04-05 11:27:53'),
-(14, 7, 16, 'JTAC / FO', 'jtac', 'Guidage feu indirect.', 4, 1, '2026-04-05 11:27:53'),
-(15, 7, 16, 'Medic / secouriste', 'medic', 'Soutien sanitaire.', 5, 1, '2026-04-05 11:27:53'),
-(16, 7, 17, 'Logistique', 'logistique-r', 'Ravitaillement, transport.', 6, 1, '2026-04-05 11:27:53'),
-(17, 7, 18, 'Formateur', 'formateur', 'Pédagogie, montée en compétence.', 7, 1, '2026-04-05 11:27:53'),
-(18, 7, 18, 'Instructeur', 'instructeur', 'Instruction collective.', 8, 1, '2026-04-05 11:27:53');
+INSERT INTO `personnel_job_roles` (`id`, `tenant_id`, `category_id`, `name`, `slug`, `description`, `label_en`, `sort_order`, `is_system`, `created_at`) VALUES
+(1, 1, 5, 'Officier opérations', 'officier-operations', 'Coordination des opérations et briefs.', NULL, 0, 1, '2026-04-05 11:27:53'),
+(2, 1, 5, 'Chef de section', 'chef-de-section', 'Encadrement de section.', NULL, 1, 1, '2026-04-05 11:27:53'),
+(3, 1, 6, 'Fusilier', 'fusilier', 'Combattant polyvalent.', NULL, 2, 1, '2026-04-05 11:27:53'),
+(4, 1, 6, 'Grenadier', 'grenadier', 'Appui grenades / lourd léger.', NULL, 3, 1, '2026-04-05 11:27:53'),
+(5, 1, 7, 'JTAC / FO', 'jtac', 'Guidage feu indirect.', NULL, 4, 1, '2026-04-05 11:27:53'),
+(6, 1, 7, 'Medic / secouriste', 'medic', 'Soutien sanitaire.', NULL, 5, 1, '2026-04-05 11:27:53'),
+(7, 1, 8, 'Logistique', 'logistique-r', 'Ravitaillement, transport.', NULL, 6, 1, '2026-04-05 11:27:53'),
+(8, 1, 9, 'Formateur', 'formateur', 'Pédagogie, montée en compétence.', NULL, 7, 1, '2026-04-05 11:27:53'),
+(9, 1, 9, 'Instructeur', 'instructeur', 'Instruction collective.', NULL, 8, 1, '2026-04-05 11:27:53'),
+(10, 7, 14, 'Officier opérations', 'officier-operations', 'Coordination des opérations et briefs.', NULL, 0, 1, '2026-04-05 11:27:53'),
+(11, 7, 14, 'Chef de section', 'chef-de-section', 'Encadrement de section.', NULL, 1, 1, '2026-04-05 11:27:53'),
+(12, 7, 15, 'Fusilier', 'fusilier', 'Combattant polyvalent.', NULL, 2, 1, '2026-04-05 11:27:53'),
+(13, 7, 15, 'Grenadier', 'grenadier', 'Appui grenades / lourd léger.', NULL, 3, 1, '2026-04-05 11:27:53'),
+(14, 7, 16, 'JTAC / FO', 'jtac', 'Guidage feu indirect.', NULL, 4, 1, '2026-04-05 11:27:53'),
+(15, 7, 16, 'Medic / secouriste', 'medic', 'Soutien sanitaire.', NULL, 5, 1, '2026-04-05 11:27:53'),
+(16, 7, 17, 'Logistique', 'logistique-r', 'Ravitaillement, transport.', NULL, 6, 1, '2026-04-05 11:27:53'),
+(17, 7, 18, 'Formateur', 'formateur', 'Pédagogie, montée en compétence.', NULL, 7, 1, '2026-04-05 11:27:53'),
+(18, 7, 18, 'Instructeur', 'instructeur', 'Instruction collective.', NULL, 8, 1, '2026-04-05 11:27:53'),
+(19, 1, 20, 'Chef de corps', 'command_unit_commander', 'Autorité de commandement de l’unité.', 'Commanding Officer', 10, 1, '2026-04-06 18:58:10'),
+(20, 1, 20, 'Chef adjoint', 'command_executive_officer', 'Adjoint au commandement et relais opérationnel.', 'Executive Officer', 20, 1, '2026-04-06 18:58:10'),
+(21, 1, 20, 'Officier supérieur', 'command_senior_officer', 'Encadrement supérieur et coordination générale.', 'Senior Officer', 30, 1, '2026-04-06 18:58:10'),
+(22, 1, 20, 'Officier de permanence', 'command_duty_officer', 'Responsable de la permanence et des décisions courantes.', 'Duty Officer', 40, 1, '2026-04-06 18:58:10'),
+(23, 1, 21, 'Officier opérations', 'operations_officer', 'Coordination des opérations et activités.', 'Operations Officer (S3)', 50, 1, '2026-04-06 18:58:10'),
+(24, 1, 21, 'Officier planification', 'staff_plans_officer', 'Plans, ordres et synchronisation des moyens.', 'Plans Officer', 60, 1, '2026-04-06 18:58:10'),
+(25, 1, 21, 'Officier conduite', 'staff_battle_captain', 'Conduite de la manœuvre et de la situation tactique.', 'Battle Captain', 70, 1, '2026-04-06 18:58:10'),
+(26, 1, 21, 'Officier coordination interarmes', 'staff_joint_coordination_officer', 'Coordination des effets interarmes et appuis.', 'Joint Fires Coordinator', 80, 1, '2026-04-06 18:58:10'),
+(27, 1, 22, 'Officier renseignement', 'intelligence_officer', 'Collecte, analyse et diffusion du renseignement.', 'Intelligence Officer (S2)', 90, 1, '2026-04-06 18:58:10'),
+(28, 1, 22, 'Analyste renseignement', 'staff_intel_analyst', 'Production d’analyses et de fiches situation.', 'Intelligence Analyst', 100, 1, '2026-04-06 18:58:10'),
+(29, 1, 22, 'Officier exploitation', 'staff_intel_exploitation', 'Exploitation technique des sources et des flux.', 'SIGINT Specialist', 110, 1, '2026-04-06 18:58:10'),
+(30, 1, 22, 'Cellule renseignement', 'staff_intel_cell', 'Traitement et diffusion au sein de la cellule.', 'Intelligence Cell Operator', 120, 1, '2026-04-06 18:58:10'),
+(31, 1, 23, 'Officier logistique', 'logistics_officer', 'Pilotage du soutien et de la chaîne logistique.', 'Logistics Officer (S4)', 130, 1, '2026-04-06 18:58:10'),
+(32, 1, 23, 'Responsable soutien', 'staff_sustainment_lead', 'Gestion des stocks et du soutien quotidien.', 'Supply Specialist', 140, 1, '2026-04-06 18:58:10'),
+(33, 1, 23, 'Gestionnaire flux logistiques', 'staff_logistics_flow_manager', 'Organisation des flux, convois et dotations.', 'Motor Transport Operator', 150, 1, '2026-04-06 18:58:10'),
+(34, 1, 25, 'Chef de section', 'infantry_section_chief', 'Encadrement d’une section au combat.', 'Platoon Leader', 10, 1, '2026-04-06 18:58:10'),
+(35, 1, 25, 'Chef de groupe', 'infantry_group_chief', 'Encadrement d’un groupe tactique.', 'Squad Leader', 20, 1, '2026-04-06 18:58:10'),
+(36, 1, 25, 'Chef d’équipe', 'infantry_team_chief', 'Encadrement d’une équipe élémentaire.', 'Team Leader', 30, 1, '2026-04-06 18:58:10'),
+(37, 1, 26, 'Fusilier', 'infantry_rifleman', 'Combattant d’infanterie polyvalent.', 'Rifleman', 40, 1, '2026-04-06 18:58:10'),
+(38, 1, 26, 'Grenadier', 'infantry_grenadier', 'Appui grenades et armement lourd léger.', 'Grenadier', 50, 1, '2026-04-06 18:58:10'),
+(39, 1, 26, 'Tireur d’élite', 'infantry_sharpshooter', 'Précision renforcée et tir d’appui.', 'Sharpshooter', 60, 1, '2026-04-06 18:58:10'),
+(40, 1, 26, 'Tireur de précision', 'infantry_marksman', 'Neutralisation sélective à moyenne portée.', 'Designated Marksman', 70, 1, '2026-04-06 18:58:10'),
+(41, 1, 26, 'Tireur isolé', 'infantry_sniper', 'Tir de précision longue portée en retrait.', 'Sniper', 75, 1, '2026-04-06 18:58:10'),
+(42, 1, 26, 'Mitrailleur', 'infantry_machine_gunner', 'Appui feu soutenu et manœuvre d’appui.', 'Automatic Rifleman', 80, 1, '2026-04-06 18:58:10'),
+(43, 1, 27, 'Opérateur radio', 'infantry_radio_operator', 'Transmissions et liaisons tactiques.', 'Radio Operator', 90, 1, '2026-04-06 18:58:10'),
+(44, 1, 27, 'Éclaireur', 'infantry_scout', 'Reconnaissance et renseignement terrain.', 'Scout', 100, 1, '2026-04-06 18:58:10'),
+(45, 1, 27, 'Chef binôme', 'infantry_team_pair_chief', 'Coordination d’un binôme au contact.', 'Buddy team leader', 110, 1, '2026-04-06 18:58:10'),
+(46, 1, 29, 'JTAC', 'fires_jtac', 'Contrôleur d’attaques au sol.', 'JTAC', 10, 1, '2026-04-06 18:58:10'),
+(47, 1, 29, 'Forward Observer', 'fires_forward_observer', 'Observation et ajustement des tirs.', 'Forward Observer', 20, 1, '2026-04-06 18:58:10'),
+(48, 1, 29, 'Officier appuis feux', 'fires_support_officer', 'Synthèse et coordination des appuis.', 'Fire Support Officer', 30, 1, '2026-04-06 18:58:10'),
+(49, 1, 30, 'Chef pièce', 'fires_gun_chief', 'Chef de pièce et conduite du tir.', 'Fire Direction Specialist', 40, 1, '2026-04-06 18:58:10'),
+(50, 1, 30, 'Servant artillerie', 'fires_gun_crew', 'Mise en œuvre et service de pièce.', 'Artillery Crew', 50, 1, '2026-04-06 18:58:10'),
+(51, 1, 32, 'Sapeur', 'engineer_sapper', 'Ouverture de passages et travaux au contact.', 'Combat Engineer', 10, 1, '2026-04-06 18:58:10'),
+(52, 1, 32, 'Démineur', 'engineer_eod', 'Neutralisation des dangers explosifs.', 'EOD Specialist', 20, 1, '2026-04-06 18:58:10'),
+(53, 1, 32, 'Chef groupe génie', 'engineer_group_chief', 'Encadrement d’un groupe de combat du génie.', 'Engineer Squad Leader', 30, 1, '2026-04-06 18:58:10'),
+(54, 1, 33, 'Technicien infrastructure', 'engineer_infra_technician', 'Travaux d’infrastructure et ouvrages.', 'Construction Engineer', 40, 1, '2026-04-06 18:58:10'),
+(55, 1, 33, 'Responsable travaux', 'engineer_works_lead', 'Pilotage des chantiers et contrôle qualité.', 'Works Supervisor', 50, 1, '2026-04-06 18:58:10'),
+(56, 1, 35, 'Conducteur militaire', 'logistics_driver', 'Conduite et manœuvre des véhicules logistiques.', 'Motor Transport Operator', 10, 1, '2026-04-06 18:58:10'),
+(57, 1, 35, 'Chef convoi', 'logistics_convoy_chief', 'Responsabilité d’un convoi ou d’un détachement roulant.', 'Convoy Commander', 20, 1, '2026-04-06 18:58:10'),
+(58, 1, 36, 'Mécanicien', 'logistics_mechanic', 'Maintenance de premier et second échelon.', 'Mechanic', 30, 1, '2026-04-06 18:58:10'),
+(59, 1, 36, 'Technicien maintenance', 'logistics_maint_technician', 'Diagnostic et réparation des systèmes.', 'Maintenance Technician', 40, 1, '2026-04-06 18:58:10'),
+(60, 1, 36, 'Responsable parc matériel', 'logistics_fleet_manager', 'Gestion du parc et disponibilité opérationnelle.', 'Fleet Manager', 50, 1, '2026-04-06 18:58:10'),
+(61, 1, 38, 'Médecin militaire', 'medical_officer', 'Responsabilité médicale et décisions sanitaires.', 'Medical Officer', 10, 1, '2026-04-06 18:58:10'),
+(62, 1, 38, 'Infirmier militaire', 'medical_nurse', 'Soins infirmiers et stabilisation.', 'Field Nurse', 20, 1, '2026-04-06 18:58:10'),
+(63, 1, 38, 'Auxiliaire sanitaire', 'medical_auxiliary', 'Soutien sanitaire et assistance au poste de secours.', 'Medical Assistant', 30, 1, '2026-04-06 18:58:10'),
+(64, 1, 38, 'Secouriste', 'medical_first_responder', 'Premiers secours et évacuation sanitaire initiale.', 'Combat Medic', 40, 1, '2026-04-06 18:58:10'),
+(65, 1, 40, 'Instructeur', 'instructor', 'Instruction collective et maintien des standards.', 'Drill Instructor', 10, 1, '2026-04-06 18:58:10'),
+(66, 1, 40, 'Formateur', 'instruction_trainer', 'Conception et animation de modules pédagogiques.', 'Training Instructor', 20, 1, '2026-04-06 18:58:10'),
+(67, 1, 40, 'Responsable formation', 'training_officer', 'Pilotage des parcours et des qualifications.', 'Training Lead', 30, 1, '2026-04-06 18:58:10'),
+(68, 1, 40, 'Évaluateur', 'instruction_evaluator', 'Évaluation des compétences et des qualifications.', 'Evaluator', 40, 1, '2026-04-06 18:58:10'),
+(69, 1, 42, 'Gestionnaire RH', 'hr', 'Gestion des effectifs et du dossier personnel.', 'Human Resources Specialist', 10, 1, '2026-04-06 18:58:10'),
+(70, 1, 42, 'Officier administratif', 'admin_staff_officer', 'Courrier, dossiers et formalités administratives.', 'Administrative Officer', 20, 1, '2026-04-06 18:58:10'),
+(71, 1, 42, 'Secrétaire unité', 'admin_unit_secretary', 'Secrétariat et suivi administratif de l’unité.', 'Unit Secretary', 30, 1, '2026-04-06 18:58:10'),
+(72, 1, 44, 'Vétéran', 'veteran', 'Ancien combattant ou membre d’honneur actif en visibilité.', 'Veteran', 10, 1, '2026-04-06 18:58:10'),
+(73, 1, 44, 'En formation', 'status_in_training', 'Parcours de formation en cours.', 'In training', 20, 1, '2026-04-06 18:58:10'),
+(74, 1, 44, 'En probation', 'probation_member', 'Intégration sous période probatoire.', 'Probationary Member', 30, 1, '2026-04-06 18:58:10'),
+(75, 1, 44, 'Suspendu', 'suspended_status', 'Participation suspendue — visibilité limitée.', 'Suspended', 40, 1, '2026-04-06 18:58:10'),
+(76, 1, 44, 'Réserviste', 'status_reservist', 'Statut de réserve et disponibilité partielle.', 'Reservist', 50, 1, '2026-04-06 18:58:10'),
+(77, 1, 44, 'Instructeur certifié', 'certified_instructor', 'Qualification pédagogique reconnue.', 'Instructor Certified', 60, 1, '2026-04-06 18:58:10'),
+(78, 1, 44, 'En service actif', 'status_active_duty', 'Engagement opérationnel à plein temps.', 'Active Duty', 70, 1, '2026-04-06 18:58:10'),
+(79, 7, 46, 'Chef de corps', 'command_unit_commander', 'Autorité de commandement de l’unité.', 'Commanding Officer', 10, 1, '2026-04-06 18:58:10'),
+(80, 7, 46, 'Chef adjoint', 'command_executive_officer', 'Adjoint au commandement et relais opérationnel.', 'Executive Officer', 20, 1, '2026-04-06 18:58:10'),
+(81, 7, 46, 'Officier supérieur', 'command_senior_officer', 'Encadrement supérieur et coordination générale.', 'Senior Officer', 30, 1, '2026-04-06 18:58:10'),
+(82, 7, 46, 'Officier de permanence', 'command_duty_officer', 'Responsable de la permanence et des décisions courantes.', 'Duty Officer', 40, 1, '2026-04-06 18:58:10'),
+(83, 7, 47, 'Officier opérations', 'operations_officer', 'Coordination des opérations et activités.', 'Operations Officer (S3)', 50, 1, '2026-04-06 18:58:10'),
+(84, 7, 47, 'Officier planification', 'staff_plans_officer', 'Plans, ordres et synchronisation des moyens.', 'Plans Officer', 60, 1, '2026-04-06 18:58:10'),
+(85, 7, 47, 'Officier conduite', 'staff_battle_captain', 'Conduite de la manœuvre et de la situation tactique.', 'Battle Captain', 70, 1, '2026-04-06 18:58:10'),
+(86, 7, 47, 'Officier coordination interarmes', 'staff_joint_coordination_officer', 'Coordination des effets interarmes et appuis.', 'Joint Fires Coordinator', 80, 1, '2026-04-06 18:58:10'),
+(87, 7, 48, 'Officier renseignement', 'intelligence_officer', 'Collecte, analyse et diffusion du renseignement.', 'Intelligence Officer (S2)', 90, 1, '2026-04-06 18:58:10'),
+(88, 7, 48, 'Analyste renseignement', 'staff_intel_analyst', 'Production d’analyses et de fiches situation.', 'Intelligence Analyst', 100, 1, '2026-04-06 18:58:10'),
+(89, 7, 48, 'Officier exploitation', 'staff_intel_exploitation', 'Exploitation technique des sources et des flux.', 'SIGINT Specialist', 110, 1, '2026-04-06 18:58:10'),
+(90, 7, 48, 'Cellule renseignement', 'staff_intel_cell', 'Traitement et diffusion au sein de la cellule.', 'Intelligence Cell Operator', 120, 1, '2026-04-06 18:58:10'),
+(91, 7, 49, 'Officier logistique', 'logistics_officer', 'Pilotage du soutien et de la chaîne logistique.', 'Logistics Officer (S4)', 130, 1, '2026-04-06 18:58:10'),
+(92, 7, 49, 'Responsable soutien', 'staff_sustainment_lead', 'Gestion des stocks et du soutien quotidien.', 'Supply Specialist', 140, 1, '2026-04-06 18:58:10'),
+(93, 7, 49, 'Gestionnaire flux logistiques', 'staff_logistics_flow_manager', 'Organisation des flux, convois et dotations.', 'Motor Transport Operator', 150, 1, '2026-04-06 18:58:10'),
+(94, 7, 51, 'Chef de section', 'infantry_section_chief', 'Encadrement d’une section au combat.', 'Platoon Leader', 10, 1, '2026-04-06 18:58:10'),
+(95, 7, 51, 'Chef de groupe', 'infantry_group_chief', 'Encadrement d’un groupe tactique.', 'Squad Leader', 20, 1, '2026-04-06 18:58:10'),
+(96, 7, 51, 'Chef d’équipe', 'infantry_team_chief', 'Encadrement d’une équipe élémentaire.', 'Team Leader', 30, 1, '2026-04-06 18:58:10'),
+(97, 7, 52, 'Fusilier', 'infantry_rifleman', 'Combattant d’infanterie polyvalent.', 'Rifleman', 40, 1, '2026-04-06 18:58:10'),
+(98, 7, 52, 'Grenadier', 'infantry_grenadier', 'Appui grenades et armement lourd léger.', 'Grenadier', 50, 1, '2026-04-06 18:58:10'),
+(99, 7, 52, 'Tireur d’élite', 'infantry_sharpshooter', 'Précision renforcée et tir d’appui.', 'Sharpshooter', 60, 1, '2026-04-06 18:58:10'),
+(100, 7, 52, 'Tireur de précision', 'infantry_marksman', 'Neutralisation sélective à moyenne portée.', 'Designated Marksman', 70, 1, '2026-04-06 18:58:10'),
+(101, 7, 52, 'Tireur isolé', 'infantry_sniper', 'Tir de précision longue portée en retrait.', 'Sniper', 75, 1, '2026-04-06 18:58:10'),
+(102, 7, 52, 'Mitrailleur', 'infantry_machine_gunner', 'Appui feu soutenu et manœuvre d’appui.', 'Automatic Rifleman', 80, 1, '2026-04-06 18:58:10'),
+(103, 7, 53, 'Opérateur radio', 'infantry_radio_operator', 'Transmissions et liaisons tactiques.', 'Radio Operator', 90, 1, '2026-04-06 18:58:10'),
+(104, 7, 53, 'Éclaireur', 'infantry_scout', 'Reconnaissance et renseignement terrain.', 'Scout', 100, 1, '2026-04-06 18:58:10'),
+(105, 7, 53, 'Chef binôme', 'infantry_team_pair_chief', 'Coordination d’un binôme au contact.', 'Buddy team leader', 110, 1, '2026-04-06 18:58:10'),
+(106, 7, 55, 'JTAC', 'fires_jtac', 'Contrôleur d’attaques au sol.', 'JTAC', 10, 1, '2026-04-06 18:58:10'),
+(107, 7, 55, 'Forward Observer', 'fires_forward_observer', 'Observation et ajustement des tirs.', 'Forward Observer', 20, 1, '2026-04-06 18:58:10'),
+(108, 7, 55, 'Officier appuis feux', 'fires_support_officer', 'Synthèse et coordination des appuis.', 'Fire Support Officer', 30, 1, '2026-04-06 18:58:10'),
+(109, 7, 56, 'Chef pièce', 'fires_gun_chief', 'Chef de pièce et conduite du tir.', 'Fire Direction Specialist', 40, 1, '2026-04-06 18:58:10'),
+(110, 7, 56, 'Servant artillerie', 'fires_gun_crew', 'Mise en œuvre et service de pièce.', 'Artillery Crew', 50, 1, '2026-04-06 18:58:10'),
+(111, 7, 58, 'Sapeur', 'engineer_sapper', 'Ouverture de passages et travaux au contact.', 'Combat Engineer', 10, 1, '2026-04-06 18:58:10'),
+(112, 7, 58, 'Démineur', 'engineer_eod', 'Neutralisation des dangers explosifs.', 'EOD Specialist', 20, 1, '2026-04-06 18:58:10'),
+(113, 7, 58, 'Chef groupe génie', 'engineer_group_chief', 'Encadrement d’un groupe de combat du génie.', 'Engineer Squad Leader', 30, 1, '2026-04-06 18:58:10'),
+(114, 7, 59, 'Technicien infrastructure', 'engineer_infra_technician', 'Travaux d’infrastructure et ouvrages.', 'Construction Engineer', 40, 1, '2026-04-06 18:58:10'),
+(115, 7, 59, 'Responsable travaux', 'engineer_works_lead', 'Pilotage des chantiers et contrôle qualité.', 'Works Supervisor', 50, 1, '2026-04-06 18:58:10'),
+(116, 7, 61, 'Conducteur militaire', 'logistics_driver', 'Conduite et manœuvre des véhicules logistiques.', 'Motor Transport Operator', 10, 1, '2026-04-06 18:58:10'),
+(117, 7, 61, 'Chef convoi', 'logistics_convoy_chief', 'Responsabilité d’un convoi ou d’un détachement roulant.', 'Convoy Commander', 20, 1, '2026-04-06 18:58:10'),
+(118, 7, 62, 'Mécanicien', 'logistics_mechanic', 'Maintenance de premier et second échelon.', 'Mechanic', 30, 1, '2026-04-06 18:58:10'),
+(119, 7, 62, 'Technicien maintenance', 'logistics_maint_technician', 'Diagnostic et réparation des systèmes.', 'Maintenance Technician', 40, 1, '2026-04-06 18:58:10'),
+(120, 7, 62, 'Responsable parc matériel', 'logistics_fleet_manager', 'Gestion du parc et disponibilité opérationnelle.', 'Fleet Manager', 50, 1, '2026-04-06 18:58:10'),
+(121, 7, 64, 'Médecin militaire', 'medical_officer', 'Responsabilité médicale et décisions sanitaires.', 'Medical Officer', 10, 1, '2026-04-06 18:58:10'),
+(122, 7, 64, 'Infirmier militaire', 'medical_nurse', 'Soins infirmiers et stabilisation.', 'Field Nurse', 20, 1, '2026-04-06 18:58:10'),
+(123, 7, 64, 'Auxiliaire sanitaire', 'medical_auxiliary', 'Soutien sanitaire et assistance au poste de secours.', 'Medical Assistant', 30, 1, '2026-04-06 18:58:10'),
+(124, 7, 64, 'Secouriste', 'medical_first_responder', 'Premiers secours et évacuation sanitaire initiale.', 'Combat Medic', 40, 1, '2026-04-06 18:58:10'),
+(125, 7, 66, 'Instructeur', 'instructor', 'Instruction collective et maintien des standards.', 'Drill Instructor', 10, 1, '2026-04-06 18:58:10'),
+(126, 7, 66, 'Formateur', 'instruction_trainer', 'Conception et animation de modules pédagogiques.', 'Training Instructor', 20, 1, '2026-04-06 18:58:10'),
+(127, 7, 66, 'Responsable formation', 'training_officer', 'Pilotage des parcours et des qualifications.', 'Training Lead', 30, 1, '2026-04-06 18:58:10'),
+(128, 7, 66, 'Évaluateur', 'instruction_evaluator', 'Évaluation des compétences et des qualifications.', 'Evaluator', 40, 1, '2026-04-06 18:58:10'),
+(129, 7, 68, 'Gestionnaire RH', 'hr', 'Gestion des effectifs et du dossier personnel.', 'Human Resources Specialist', 10, 1, '2026-04-06 18:58:10'),
+(130, 7, 68, 'Officier administratif', 'admin_staff_officer', 'Courrier, dossiers et formalités administratives.', 'Administrative Officer', 20, 1, '2026-04-06 18:58:10'),
+(131, 7, 68, 'Secrétaire unité', 'admin_unit_secretary', 'Secrétariat et suivi administratif de l’unité.', 'Unit Secretary', 30, 1, '2026-04-06 18:58:10'),
+(132, 7, 70, 'Vétéran', 'veteran', 'Ancien combattant ou membre d’honneur actif en visibilité.', 'Veteran', 10, 1, '2026-04-06 18:58:10'),
+(133, 7, 70, 'En formation', 'status_in_training', 'Parcours de formation en cours.', 'In training', 20, 1, '2026-04-06 18:58:10'),
+(134, 7, 70, 'En probation', 'probation_member', 'Intégration sous période probatoire.', 'Probationary Member', 30, 1, '2026-04-06 18:58:10'),
+(135, 7, 70, 'Suspendu', 'suspended_status', 'Participation suspendue — visibilité limitée.', 'Suspended', 40, 1, '2026-04-06 18:58:10'),
+(136, 7, 70, 'Réserviste', 'status_reservist', 'Statut de réserve et disponibilité partielle.', 'Reservist', 50, 1, '2026-04-06 18:58:10'),
+(137, 7, 70, 'Instructeur certifié', 'certified_instructor', 'Qualification pédagogique reconnue.', 'Instructor Certified', 60, 1, '2026-04-06 18:58:10'),
+(138, 7, 70, 'En service actif', 'status_active_duty', 'Engagement opérationnel à plein temps.', 'Active Duty', 70, 1, '2026-04-06 18:58:10');
 
 -- --------------------------------------------------------
 
@@ -2451,7 +2769,59 @@ INSERT INTO `personnel_job_role_categories` (`id`, `tenant_id`, `parent_id`, `na
 (15, 7, 11, 'Infanterie', 'combat-infanterie', 1, '2026-04-05 11:27:53'),
 (16, 7, 11, 'Appuis & feux', 'combat-appuis', 2, '2026-04-05 11:27:53'),
 (17, 7, 12, 'Logistique', 'soutien-log', 1, '2026-04-05 11:27:53'),
-(18, 7, 13, 'Instruction', 'formation-inst', 1, '2026-04-05 11:27:53');
+(18, 7, 13, 'Instruction', 'formation-inst', 1, '2026-04-05 11:27:53'),
+(19, 1, NULL, 'État-major', 'etat-major', 50, '2026-04-06 18:58:10'),
+(20, 1, 19, 'Commandement', 'etat-major-commandement', 10, '2026-04-06 18:58:10'),
+(21, 1, 19, 'Opérations', 'etat-major-operations', 20, '2026-04-06 18:58:10'),
+(22, 1, 19, 'Renseignement', 'etat-major-renseignement', 30, '2026-04-06 18:58:10'),
+(23, 1, 19, 'Logistique', 'etat-major-logistique', 40, '2026-04-06 18:58:10'),
+(24, 1, NULL, 'Infanterie', 'infanterie', 60, '2026-04-06 18:58:10'),
+(25, 1, 24, 'Commandement', 'infanterie-commandement', 10, '2026-04-06 18:58:10'),
+(26, 1, 24, 'Combattant', 'infanterie-combattant', 20, '2026-04-06 18:58:10'),
+(27, 1, 24, 'Spécialités', 'infanterie-specialites', 30, '2026-04-06 18:58:10'),
+(28, 1, NULL, 'Appuis & feux', 'appuis-feux', 70, '2026-04-06 18:58:10'),
+(29, 1, 28, 'Coordination', 'appuis-feux-coordination', 10, '2026-04-06 18:58:10'),
+(30, 1, 28, 'Artillerie', 'appuis-feux-artillerie', 20, '2026-04-06 18:58:10'),
+(31, 1, NULL, 'Génie', 'genie', 80, '2026-04-06 18:58:10'),
+(32, 1, 31, 'Combat', 'genie-combat', 10, '2026-04-06 18:58:10'),
+(33, 1, 31, 'Infrastructure', 'genie-infrastructure', 20, '2026-04-06 18:58:10'),
+(34, 1, NULL, 'Logistique', 'logistique', 90, '2026-04-06 18:58:10'),
+(35, 1, 34, 'Transport', 'logistique-transport', 10, '2026-04-06 18:58:10'),
+(36, 1, 34, 'Maintenance', 'logistique-maintenance', 20, '2026-04-06 18:58:10'),
+(37, 1, NULL, 'Santé', 'sante', 100, '2026-04-06 18:58:10'),
+(38, 1, 37, 'Médical', 'sante-medical', 10, '2026-04-06 18:58:10'),
+(39, 1, NULL, 'Instruction', 'instruction', 110, '2026-04-06 18:58:10'),
+(40, 1, 39, 'Formation', 'instruction-formation', 10, '2026-04-06 18:58:10'),
+(41, 1, NULL, 'Administration', 'administration', 120, '2026-04-06 18:58:10'),
+(42, 1, 41, 'Gestion', 'administration-gestion', 10, '2026-04-06 18:58:10'),
+(43, 1, NULL, 'Statut', 'statut', 130, '2026-04-06 18:58:10'),
+(44, 1, 43, 'Affichage', 'statut-affichage', 10, '2026-04-06 18:58:10'),
+(45, 7, NULL, 'État-major', 'etat-major', 50, '2026-04-06 18:58:10'),
+(46, 7, 45, 'Commandement', 'etat-major-commandement', 10, '2026-04-06 18:58:10'),
+(47, 7, 45, 'Opérations', 'etat-major-operations', 20, '2026-04-06 18:58:10'),
+(48, 7, 45, 'Renseignement', 'etat-major-renseignement', 30, '2026-04-06 18:58:10'),
+(49, 7, 45, 'Logistique', 'etat-major-logistique', 40, '2026-04-06 18:58:10'),
+(50, 7, NULL, 'Infanterie', 'infanterie', 60, '2026-04-06 18:58:10'),
+(51, 7, 50, 'Commandement', 'infanterie-commandement', 10, '2026-04-06 18:58:10'),
+(52, 7, 50, 'Combattant', 'infanterie-combattant', 20, '2026-04-06 18:58:10'),
+(53, 7, 50, 'Spécialités', 'infanterie-specialites', 30, '2026-04-06 18:58:10'),
+(54, 7, NULL, 'Appuis & feux', 'appuis-feux', 70, '2026-04-06 18:58:10'),
+(55, 7, 54, 'Coordination', 'appuis-feux-coordination', 10, '2026-04-06 18:58:10'),
+(56, 7, 54, 'Artillerie', 'appuis-feux-artillerie', 20, '2026-04-06 18:58:10'),
+(57, 7, NULL, 'Génie', 'genie', 80, '2026-04-06 18:58:10'),
+(58, 7, 57, 'Combat', 'genie-combat', 10, '2026-04-06 18:58:10'),
+(59, 7, 57, 'Infrastructure', 'genie-infrastructure', 20, '2026-04-06 18:58:10'),
+(60, 7, NULL, 'Logistique', 'logistique', 90, '2026-04-06 18:58:10'),
+(61, 7, 60, 'Transport', 'logistique-transport', 10, '2026-04-06 18:58:10'),
+(62, 7, 60, 'Maintenance', 'logistique-maintenance', 20, '2026-04-06 18:58:10'),
+(63, 7, NULL, 'Santé', 'sante', 100, '2026-04-06 18:58:10'),
+(64, 7, 63, 'Médical', 'sante-medical', 10, '2026-04-06 18:58:10'),
+(65, 7, NULL, 'Instruction', 'instruction', 110, '2026-04-06 18:58:10'),
+(66, 7, 65, 'Formation', 'instruction-formation', 10, '2026-04-06 18:58:10'),
+(67, 7, NULL, 'Administration', 'administration', 120, '2026-04-06 18:58:10'),
+(68, 7, 67, 'Gestion', 'administration-gestion', 10, '2026-04-06 18:58:10'),
+(69, 7, NULL, 'Statut', 'statut', 130, '2026-04-06 18:58:10'),
+(70, 7, 69, 'Affichage', 'statut-affichage', 10, '2026-04-06 18:58:10');
 
 -- --------------------------------------------------------
 
@@ -2573,8 +2943,35 @@ CREATE TABLE `personnel_profiles` (
 --
 
 INSERT INTO `personnel_profiles` (`id`, `user_id`, `character_name`, `callsign`, `rank_display`, `rank_display_override`, `primary_role`, `secondary_role`, `personnel_job_role_id`, `role_sub_label`, `primary_unit_id`, `clearance_level`, `character_portrait_path`, `character_banner_path`, `blood_type`, `nationality`, `languages`, `enlistment_date`, `motto`, `readiness_score`, `command_notes`, `matricule_internal`, `clearance_reviewed_at`, `equipment_class`, `kit_assigned`, `radio_assigned`, `vehicle_authorized`, `weapon_specialty`, `deployable`, `created_at`, `updated_at`) VALUES
-(4, 5, 'NewPI', 'ADMIN', NULL, NULL, 'Officier opérations', 'Liaison', 10, NULL, 2, 'Secret', 'uploads/portraits/5_1775383355.png', NULL, NULL, NULL, NULL, '2026-04-05', NULL, 0, '', 'ATH-00001', NULL, 'Command & Control', 'C2 léger / tablette mission', 'PRC-152', 'Utility / VT4', 'Carabine / pistolet', 1, '2026-04-05 09:16:46', '2026-04-05 12:09:47'),
-(28, 7, 'Melvin MESNEL', 'E-11', NULL, NULL, 'JTAC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-05 11:03:21', '2026-04-05 11:03:21');
+(4, 5, 'NewPI', 'ADMIN', NULL, NULL, 'Officier opérations — Spécialiste gestionnaire administratif', 'Liaison', 10, 'Spécialiste gestionnaire administratif', 2, 'Secret', 'uploads/portraits/5_1775383355.png', NULL, NULL, NULL, NULL, '2026-04-05', NULL, 0, '', 'ATH-00001', NULL, 'Command & Control', 'C2 léger / tablette mission', 'PRC-152', 'Utility / VT4', 'Carabine / pistolet', 1, '2026-04-05 09:16:46', '2026-04-06 18:59:13'),
+(28, 7, 'Melvin MESNEL', 'E-11', NULL, NULL, 'JTAC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-05 11:03:21', '2026-04-05 11:03:21'),
+(43, 8, 'Melvin MESNEL', '', NULL, NULL, 'Instructeur — Spécialiste communication', '', 18, 'Spécialiste communication', 4, 'Confidentiel', NULL, NULL, NULL, NULL, NULL, '2026-04-06', NULL, 100, '', 'ATH-00002', '2026-04-06 00:00:00', '', '', '', '', '', 1, '2026-04-05 16:31:53', '2026-04-06 17:46:35');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `personnel_profile_job_roles`
+--
+
+CREATE TABLE `personnel_profile_job_roles` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `personnel_job_role_id` int(10) UNSIGNED NOT NULL,
+  `is_primary` tinyint(1) NOT NULL DEFAULT 0,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `role_detail` varchar(150) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `personnel_profile_job_roles`
+--
+
+INSERT INTO `personnel_profile_job_roles` (`id`, `tenant_id`, `user_id`, `personnel_job_role_id`, `is_primary`, `sort_order`, `role_detail`, `created_at`, `updated_at`) VALUES
+(1, 7, 5, 10, 1, 0, NULL, '2026-04-06 19:01:45', NULL),
+(2, 7, 8, 18, 1, 0, NULL, '2026-04-06 19:01:45', NULL);
 
 -- --------------------------------------------------------
 
@@ -2641,6 +3038,26 @@ CREATE TABLE `platform_alerts` (
 
 INSERT INTO `platform_alerts` (`id`, `kind`, `title`, `body`, `cta_label`, `cta_url`, `coupon_code`, `starts_at`, `ends_at`, `sort_order`, `is_active`, `audience_json`, `created_at`, `updated_at`) VALUES
 (1, 'info', 'Mise à jour', 'Une important update de la base de donnée est en cours, des ralentissements peuvent se produire.', NULL, NULL, NULL, '2026-04-04 11:50:00', NULL, 0, 1, '{\"guest\":true,\"authenticated\":true,\"free\":true,\"paid\":true}', '2026-04-05 09:50:38', '2026-04-05 09:51:41');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `platform_settings`
+--
+
+CREATE TABLE `platform_settings` (
+  `setting_key` varchar(100) NOT NULL,
+  `value` text DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `platform_settings`
+--
+
+INSERT INTO `platform_settings` (`setting_key`, `value`, `updated_at`) VALUES
+('brief_member_access', '1', '2026-04-06 18:33:03'),
+('brief_member_closed_message', '', '2026-04-06 18:33:03');
 
 -- --------------------------------------------------------
 
@@ -2747,7 +3164,213 @@ INSERT INTO `platform_usage_events` (`id`, `tenant_id`, `user_id`, `feature_key`
 (83, 7, 5, 'dashboard_visit', 'view', '2026-04-05 16:19:39'),
 (84, 7, 5, 'dashboard_visit', 'view', '2026-04-05 16:19:43'),
 (85, 7, 5, 'dashboard_visit', 'view', '2026-04-05 16:19:45'),
-(86, 7, 5, 'dashboard_visit', 'view', '2026-04-05 16:22:44');
+(86, 7, 5, 'dashboard_visit', 'view', '2026-04-05 16:22:44'),
+(87, 7, 5, 'dashboard_visit', 'view', '2026-04-05 16:25:39'),
+(88, 7, 5, 'dashboard_visit', 'view', '2026-04-05 16:25:44'),
+(89, 7, 5, 'dashboard_visit', 'view', '2026-04-05 16:26:14'),
+(90, 1, 7, 'dashboard_visit', 'view', '2026-04-05 16:33:02'),
+(91, 1, 7, 'dashboard_visit', 'view', '2026-04-05 16:33:04'),
+(92, 1, 7, 'dashboard_visit', 'view', '2026-04-05 16:33:12'),
+(93, 1, 7, 'dashboard_visit', 'view', '2026-04-05 16:33:12'),
+(94, 1, 7, 'dashboard_visit', 'view', '2026-04-05 16:33:13'),
+(95, 7, 5, 'dashboard_visit', 'view', '2026-04-05 21:25:50'),
+(96, 7, 5, 'dashboard_visit', 'view', '2026-04-05 21:38:01'),
+(97, 7, 5, 'dashboard_visit', 'view', '2026-04-05 21:56:26'),
+(98, 7, 5, 'dashboard_visit', 'view', '2026-04-05 22:02:02'),
+(99, 7, 5, 'dashboard_visit', 'view', '2026-04-05 22:34:56'),
+(100, 7, 5, 'dashboard_visit', 'view', '2026-04-05 22:34:56'),
+(101, 7, 5, 'dashboard_visit', 'view', '2026-04-05 22:38:29'),
+(102, 7, 5, 'dashboard_visit', 'view', '2026-04-05 22:40:02'),
+(103, 7, 5, 'dashboard_visit', 'view', '2026-04-05 22:40:06'),
+(104, 7, 5, 'dashboard_visit', 'view', '2026-04-05 22:43:34'),
+(105, 7, 5, 'dashboard_visit', 'view', '2026-04-06 10:37:31'),
+(106, 7, 5, 'dashboard_visit', 'view', '2026-04-06 10:39:38'),
+(107, 7, 5, 'dashboard_visit', 'view', '2026-04-06 10:39:38'),
+(108, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:35:12'),
+(109, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:35:13'),
+(110, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:35:13'),
+(111, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:35:14'),
+(112, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:36:38'),
+(113, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:50:23'),
+(114, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:52:12'),
+(115, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:52:13'),
+(116, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:52:21'),
+(117, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:52:22'),
+(118, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:52:23'),
+(119, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:52:25'),
+(120, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:53:34'),
+(121, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:53:35'),
+(122, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:53:35'),
+(123, 7, 5, 'dashboard_visit', 'view', '2026-04-06 11:55:10'),
+(124, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:41'),
+(125, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:43'),
+(126, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:45'),
+(127, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:47'),
+(128, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:48'),
+(129, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:48'),
+(130, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:48'),
+(131, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:49'),
+(132, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:49'),
+(133, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:49'),
+(134, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:50'),
+(135, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:04:50'),
+(136, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:01'),
+(137, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:02'),
+(138, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:02'),
+(139, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:03'),
+(140, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:03'),
+(141, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:06'),
+(142, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:07'),
+(143, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:07'),
+(144, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:07'),
+(145, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:08'),
+(146, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:08'),
+(147, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:08'),
+(148, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:08'),
+(149, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:14:09'),
+(150, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:21:02'),
+(151, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:21:04'),
+(152, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:21:05'),
+(153, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:21:05'),
+(154, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:21:06'),
+(155, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:21:06'),
+(156, 7, 5, 'dashboard_visit', 'view', '2026-04-06 12:21:06'),
+(157, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:20'),
+(158, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:21'),
+(159, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:27'),
+(160, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:27'),
+(161, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:28'),
+(162, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:28'),
+(163, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:28'),
+(164, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:28'),
+(165, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:29'),
+(166, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:29'),
+(167, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:29'),
+(168, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:29'),
+(169, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:29'),
+(170, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:29'),
+(171, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:30'),
+(172, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:30'),
+(173, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:30'),
+(174, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:30'),
+(175, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:30'),
+(176, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:31'),
+(177, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:40'),
+(178, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:40'),
+(179, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:41'),
+(180, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:41'),
+(181, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:41'),
+(182, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:44'),
+(183, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:01:45'),
+(184, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:02:44'),
+(185, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:02:46'),
+(186, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:03:47'),
+(187, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:05:36'),
+(188, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:06:18'),
+(189, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:08:20'),
+(190, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:37'),
+(191, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:38'),
+(192, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:38'),
+(193, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:38'),
+(194, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:39'),
+(195, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:41'),
+(196, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:41'),
+(197, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:41'),
+(198, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:42'),
+(199, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:42'),
+(200, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:42'),
+(201, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:42'),
+(202, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:43'),
+(203, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:13:48'),
+(204, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:15:00'),
+(205, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:15:01'),
+(206, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:17:03'),
+(207, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:01'),
+(208, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:02'),
+(209, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:02'),
+(210, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:02'),
+(211, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:28'),
+(212, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:31'),
+(213, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:31'),
+(214, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:31'),
+(215, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:32'),
+(216, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:33'),
+(217, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:33'),
+(218, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:33'),
+(219, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:33'),
+(220, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:19:54'),
+(221, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:22:55'),
+(222, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:22:58'),
+(223, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:22:58'),
+(224, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:22:59'),
+(225, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:22:59'),
+(226, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:00'),
+(227, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:00'),
+(228, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:00'),
+(229, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:00'),
+(230, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:01'),
+(231, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:01'),
+(232, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:01'),
+(233, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:04'),
+(234, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:04'),
+(235, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:04'),
+(236, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:05'),
+(237, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:05'),
+(238, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:05'),
+(239, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:10'),
+(240, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:10'),
+(241, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:12'),
+(242, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:12'),
+(243, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:12'),
+(244, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:13'),
+(245, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:13'),
+(246, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:13'),
+(247, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:13'),
+(248, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:13'),
+(249, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:13'),
+(250, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:14'),
+(251, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:14'),
+(252, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:23:14'),
+(253, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:25:53'),
+(254, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:25:54'),
+(255, 7, 5, 'dashboard_visit', 'view', '2026-04-06 17:43:59'),
+(256, 7, 8, 'dashboard_visit', 'view', '2026-04-06 17:47:37'),
+(257, 7, 8, 'dashboard_visit', 'view', '2026-04-06 17:47:44'),
+(258, 7, 5, 'dashboard_visit', 'view', '2026-04-06 18:17:42'),
+(259, 7, 8, 'dashboard_visit', 'view', '2026-04-06 18:18:10'),
+(260, 7, 5, 'dashboard_visit', 'view', '2026-04-06 19:04:22'),
+(261, 7, 5, 'dashboard_visit', 'view', '2026-04-06 19:04:23'),
+(262, 7, 8, 'dashboard_visit', 'view', '2026-04-06 19:10:29'),
+(263, 7, 8, 'dashboard_visit', 'view', '2026-04-06 19:10:30'),
+(264, 7, 8, 'dashboard_visit', 'view', '2026-04-06 19:11:08'),
+(265, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:00:50'),
+(266, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:02:48'),
+(267, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:02:48'),
+(268, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:07:31'),
+(269, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:07:32'),
+(270, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:11:15'),
+(271, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:11:17'),
+(272, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:11:18'),
+(273, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:12:36'),
+(274, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:14:03'),
+(275, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:14:23'),
+(276, 7, 5, 'dashboard_visit', 'view', '2026-04-06 20:15:32');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `positions`
+--
+
+CREATE TABLE `positions` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(160) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  `is_temporary` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -2835,12 +3458,24 @@ CREATE TABLE `referral_codes` (
 CREATE TABLE `roles` (
   `id` int(10) UNSIGNED NOT NULL,
   `tenant_id` int(10) UNSIGNED DEFAULT NULL,
-  `name` varchar(100) NOT NULL,
+  `name` varchar(160) NOT NULL,
+  `category` varchar(100) DEFAULT NULL,
+  `subcategory` varchar(100) DEFAULT NULL,
+  `label_en` varchar(160) DEFAULT NULL,
   `slug` varchar(100) NOT NULL,
   `description` varchar(500) DEFAULT NULL,
   `is_system` tinyint(1) DEFAULT 0,
   `is_locked` tinyint(1) DEFAULT 0,
   `role_layer` enum('site','community','intra') NOT NULL DEFAULT 'community',
+  `semantic_tier` enum('authority','function','specialty','status','support','liaison') NOT NULL DEFAULT 'function',
+  `is_visual_only` tinyint(1) NOT NULL DEFAULT 0,
+  `display_priority` int(11) NOT NULL DEFAULT 0,
+  `display_weight` int(11) NOT NULL DEFAULT 0,
+  `display_group` int(11) NOT NULL DEFAULT 2,
+  `parent_role_id` int(10) UNSIGNED DEFAULT NULL,
+  `badge_style` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`badge_style`)),
+  `is_system_critical` tinyint(1) NOT NULL DEFAULT 0,
+  `definition_id` int(10) UNSIGNED DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
@@ -2848,34 +3483,277 @@ CREATE TABLE `roles` (
 -- Déchargement des données de la table `roles`
 --
 
-INSERT INTO `roles` (`id`, `tenant_id`, `name`, `slug`, `description`, `is_system`, `is_locked`, `role_layer`, `created_at`) VALUES
-(1, 1, 'État-major', 'tenant_admin', 'Direction de l’unité au quotidien : effectifs, ORBAT, rôles, invitations, modération organisationnelle et paramètres.', 1, 0, 'community', '2026-03-13 17:47:31'),
-(2, 1, 'Modérateur forum', 'forum_moderator', 'Modération des espaces de discussion de l’unité (épinglage, signalements, catégories). Périmètre organisation, pas administration plateforme.', 1, 0, 'intra', '2026-03-13 19:23:12'),
-(3, 1, 'Opérateur', 'member', 'Membre titulaire de l’unité : accès forum, documents standards et formations selon affectation.', 1, 0, 'intra', '2026-03-13 19:23:12'),
-(4, 1, 'Cadre', 'officer', 'Encadrement : coordination d’équipe, documents opérationnels et visibilité renforcée sur les ressources.', 1, 0, 'intra', '2026-03-14 00:01:46'),
-(14, NULL, 'Super administrateur site', 'site_super_admin', 'Administration plateforme (global)', 1, 1, 'site', '2026-04-04 15:13:10'),
-(15, 1, 'Fondateur', 'community_owner', 'Propriétaire de la communauté : vision, gouvernance et validation stratégique. Ne confère pas l’administration technique de la plateforme.', 1, 1, 'community', '2026-04-04 15:13:10'),
-(21, 1, 'Recruteur', 'recruiter', 'Pipeline recrutement : candidatures, échanges avec les postulants et liaison avec le commandement.', 1, 0, 'community', '2026-04-05 08:48:49'),
-(22, 7, 'Fondateur', 'community_owner', 'Propriétaire de la communauté : vision, gouvernance et validation stratégique. Ne confère pas l’administration technique de la plateforme.', 1, 1, 'community', '2026-04-05 09:10:01'),
-(23, 7, 'État-major', 'tenant_admin', 'Direction de l’unité au quotidien : effectifs, ORBAT, rôles, invitations, modération organisationnelle et paramètres.', 1, 0, 'community', '2026-04-05 09:10:01'),
-(24, 7, 'Modérateur forum', 'forum_moderator', 'Modération des espaces de discussion de l’unité (épinglage, signalements, catégories). Périmètre organisation, pas administration plateforme.', 1, 0, 'intra', '2026-04-05 09:10:01'),
-(25, 7, 'Opérateur', 'member', 'Membre titulaire de l’unité : accès forum, documents standards et formations selon affectation.', 1, 0, 'intra', '2026-04-05 09:10:01'),
-(26, 7, 'Cadre', 'officer', 'Encadrement : coordination d’équipe, documents opérationnels et visibilité renforcée sur les ressources.', 1, 0, 'intra', '2026-04-05 09:10:01'),
-(27, 7, 'RH (S1)', 'hr', 'Ressources humaines : dossiers personnel, grades et suivi administratif des effectifs.', 1, 0, 'intra', '2026-04-05 09:10:02'),
-(28, 7, 'Visiteur', 'invite', 'Accès limité en attente d’intégration ou compte prospect (lecture ciblée).', 1, 0, 'intra', '2026-04-05 09:10:02'),
-(29, 7, 'Recruteur', 'recruiter', 'Pipeline recrutement : candidatures, échanges avec les postulants et liaison avec le commandement.', 1, 0, 'community', '2026-04-05 09:11:07'),
-(30, 1, 'RH (S1)', 'hr', 'Ressources humaines : dossiers personnel, grades et suivi administratif des effectifs.', 1, 0, 'intra', '2026-04-05 11:45:15'),
-(31, 1, 'Visiteur', 'invite', 'Accès limité en attente d’intégration ou compte prospect (lecture ciblée).', 1, 0, 'intra', '2026-04-05 11:45:15'),
-(32, 1, 'Instructeur', 'instructor', 'Pôle formation : parcours, assignations, correction des rendus et suivi des qualifications.', 1, 0, 'intra', '2026-04-05 11:45:15'),
-(33, 1, 'OPSAN', 'medic', 'Santé / secours : visibilité renforcée sur les informations médicales autorisées et coordination sanitaire.', 1, 0, 'intra', '2026-04-05 11:45:15'),
-(34, 1, 'Logistique', 'logistics', 'Soutien matériel : dépôt, fiches équipement et documentation de soutien.', 1, 0, 'intra', '2026-04-05 11:45:15'),
-(35, 1, 'R2 (transmissions)', 'rto', 'Radio-téléphoniste / transmissions : diffusion d’informations officielles et coordination des annonces.', 1, 0, 'intra', '2026-04-05 11:45:15'),
-(36, 1, 'Période d’essai', 'probation', 'Intégration provisoire : participation encadrée au forum en attendant la titularisation.', 1, 0, 'intra', '2026-04-05 11:45:15'),
-(37, 7, 'Instructeur', 'instructor', 'Pôle formation : parcours, assignations, correction des rendus et suivi des qualifications.', 1, 0, 'intra', '2026-04-05 11:45:15'),
-(38, 7, 'OPSAN', 'medic', 'Santé / secours : visibilité renforcée sur les informations médicales autorisées et coordination sanitaire.', 1, 0, 'intra', '2026-04-05 11:45:15'),
-(39, 7, 'Logistique', 'logistics', 'Soutien matériel : dépôt, fiches équipement et documentation de soutien.', 1, 0, 'intra', '2026-04-05 11:45:15'),
-(40, 7, 'R2 (transmissions)', 'rto', 'Radio-téléphoniste / transmissions : diffusion d’informations officielles et coordination des annonces.', 1, 0, 'intra', '2026-04-05 11:45:15'),
-(41, 7, 'Période d’essai', 'probation', 'Intégration provisoire : participation encadrée au forum en attendant la titularisation.', 1, 0, 'intra', '2026-04-05 11:45:15');
+INSERT INTO `roles` (`id`, `tenant_id`, `name`, `category`, `subcategory`, `label_en`, `slug`, `description`, `is_system`, `is_locked`, `role_layer`, `semantic_tier`, `is_visual_only`, `display_priority`, `display_weight`, `display_group`, `parent_role_id`, `badge_style`, `is_system_critical`, `definition_id`, `created_at`) VALUES
+(1, 1, 'Gestionnaire administratif d’organisation', NULL, NULL, NULL, 'tenant_admin', 'Administration opérationnelle quotidienne : membres, contenus et paramètres internes.', 1, 0, 'community', 'authority', 0, 0, 0, 1, NULL, NULL, 0, NULL, '2026-03-13 17:47:31'),
+(2, 1, 'Officier responsable de la communication', NULL, NULL, NULL, 'forum_moderator', 'Supervision des échanges, diffusion des annonces, modération et structuration du discours collectif.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-03-13 19:23:12'),
+(3, 1, 'Opérateur', NULL, NULL, NULL, 'member', 'Membre titulaire de l’unité : accès forum, documents standards et formations selon affectation.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-03-13 19:23:12'),
+(4, 1, 'Cadre', NULL, NULL, NULL, 'officer', 'Encadrement : coordination d’équipe, documents opérationnels et visibilité renforcée sur les ressources.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-03-14 00:01:46'),
+(14, NULL, 'Gestionnaire de la plateforme', NULL, NULL, NULL, 'site_super_admin', 'Administration transverse du système : accès global, maintenance, sécurité et supervision technique.', 1, 1, 'site', 'authority', 0, 0, 0, 1, NULL, NULL, 1, NULL, '2026-04-04 15:13:10'),
+(15, 1, 'Gestionnaire d’organisation', NULL, NULL, NULL, 'community_owner', 'Détient l’autorité stratégique sur l’entité. Gouvernance globale, hors périmètre technique plateforme.', 1, 1, 'community', 'authority', 0, 0, 0, 1, NULL, NULL, 1, NULL, '2026-04-04 15:13:10'),
+(21, 1, 'Recruteur', NULL, NULL, NULL, 'recruiter', 'Pipeline recrutement : candidatures, échanges avec les postulants et liaison avec le commandement.', 1, 0, 'community', 'function', 0, 0, 0, 2, NULL, NULL, 0, 10, '2026-04-05 08:48:49'),
+(22, 7, 'Gestionnaire d’organisation', NULL, NULL, NULL, 'community_owner', 'Détient l’autorité stratégique sur l’entité. Gouvernance globale, hors périmètre technique plateforme.', 1, 1, 'community', 'authority', 0, 0, 0, 1, NULL, NULL, 1, NULL, '2026-04-05 09:10:01'),
+(23, 7, 'Gestionnaire administratif d’organisation', NULL, NULL, NULL, 'tenant_admin', 'Administration opérationnelle quotidienne : membres, contenus et paramètres internes.', 1, 0, 'community', 'authority', 0, 0, 0, 1, NULL, NULL, 0, NULL, '2026-04-05 09:10:01'),
+(24, 7, 'Officier responsable de la communication', NULL, NULL, NULL, 'forum_moderator', 'Supervision des échanges, diffusion des annonces, modération et structuration du discours collectif.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 09:10:01'),
+(25, 7, 'Opérateur', NULL, NULL, NULL, 'member', 'Membre titulaire de l’unité : accès forum, documents standards et formations selon affectation.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 09:10:01'),
+(26, 7, 'Cadre', NULL, NULL, NULL, 'officer', 'Encadrement : coordination d’équipe, documents opérationnels et visibilité renforcée sur les ressources.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 09:10:01'),
+(27, 7, 'Gestionnaire RH', 'Administration', 'Gestion', 'Human Resources Specialist', 'hr', 'Gestion des effectifs et du dossier personnel.', 1, 0, 'intra', 'support', 0, 10, 10, 100, NULL, '{\"icon\":\"heroicon-o-clipboard-document-list\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-05 09:10:02'),
+(28, 7, 'Visiteur', NULL, NULL, NULL, 'invite', 'Accès limité en attente d’intégration ou compte prospect (lecture ciblée).', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 09:10:02'),
+(29, 7, 'Recruteur', NULL, NULL, NULL, 'recruiter', 'Pipeline recrutement : candidatures, échanges avec les postulants et liaison avec le commandement.', 1, 0, 'community', 'function', 0, 0, 0, 2, NULL, NULL, 0, 10, '2026-04-05 09:11:07'),
+(30, 1, 'Gestionnaire RH', 'Administration', 'Gestion', 'Human Resources Specialist', 'hr', 'Gestion des effectifs et du dossier personnel.', 1, 0, 'intra', 'support', 0, 10, 10, 100, NULL, '{\"icon\":\"heroicon-o-clipboard-document-list\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-05 11:45:15'),
+(31, 1, 'Visiteur', NULL, NULL, NULL, 'invite', 'Accès limité en attente d’intégration ou compte prospect (lecture ciblée).', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 11:45:15'),
+(32, 1, 'Instructeur', 'Instruction', 'Formation', 'Drill Instructor', 'instructor', 'Instruction collective et maintien des standards.', 1, 0, 'intra', 'function', 0, 10, 10, 90, NULL, '{\"icon\":\"heroicon-o-academic-cap\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-05 11:45:15'),
+(33, 1, 'OPSAN', NULL, NULL, NULL, 'medic', 'Santé / secours : visibilité renforcée sur les informations médicales autorisées et coordination sanitaire.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 11:45:15'),
+(34, 1, 'Logistique', NULL, NULL, NULL, 'logistics', 'Soutien matériel : dépôt, fiches équipement et documentation de soutien.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 11:45:15'),
+(36, 1, 'Période d’essai', NULL, NULL, NULL, 'probation', 'Intégration provisoire : participation encadrée au forum en attendant la titularisation.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 11:45:15'),
+(37, 7, 'Instructeur', 'Instruction', 'Formation', 'Drill Instructor', 'instructor', 'Instruction collective et maintien des standards.', 1, 0, 'intra', 'function', 0, 10, 10, 90, NULL, '{\"icon\":\"heroicon-o-academic-cap\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-05 11:45:15'),
+(38, 7, 'OPSAN', NULL, NULL, NULL, 'medic', 'Santé / secours : visibilité renforcée sur les informations médicales autorisées et coordination sanitaire.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 11:45:15'),
+(39, 7, 'Logistique', NULL, NULL, NULL, 'logistics', 'Soutien matériel : dépôt, fiches équipement et documentation de soutien.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 11:45:15'),
+(40, 7, 'R2 (transmissions)', NULL, NULL, NULL, 'rto', 'Radio-téléphoniste / transmissions : diffusion d’informations officielles et coordination des annonces.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 11:45:15'),
+(41, 7, 'Période d’essai', NULL, NULL, NULL, 'probation', 'Intégration provisoire : participation encadrée au forum en attendant la titularisation.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-05 11:45:15'),
+(42, 1, 'R2 (transmissions)', NULL, NULL, NULL, 'rto', 'Radio-téléphoniste / transmissions : diffusion d’informations officielles et coordination des annonces.', 1, 0, 'intra', 'function', 0, 0, 0, 2, NULL, NULL, 0, NULL, '2026-04-06 17:33:18'),
+(43, 1, 'Chef adjoint d’organisation', NULL, NULL, NULL, 'deputy_commander', 'Adjoint à la direction : coordination et relais de gouvernance.', 1, 0, 'community', 'authority', 0, 50, 0, 1, 15, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(44, 1, 'Officier opérations', 'État-major', 'Opérations', 'Operations Officer (S3)', 'operations_officer', 'Coordination des opérations et activités.', 1, 0, 'intra', 'function', 0, 50, 50, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, 8, '2026-04-06 18:33:03'),
+(45, 1, 'Responsable formation', 'Instruction', 'Formation', 'Training Lead', 'training_officer', 'Pilotage des parcours et des qualifications.', 1, 0, 'intra', 'function', 0, 30, 30, 90, NULL, '{\"icon\":\"heroicon-o-academic-cap\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, 17, '2026-04-06 18:33:03'),
+(46, 1, 'Officier renseignement', 'État-major', 'Renseignement', 'Intelligence Officer (S2)', 'intelligence_officer', 'Collecte, analyse et diffusion du renseignement.', 1, 0, 'intra', 'function', 0, 90, 90, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:33:03'),
+(47, 1, 'Officier logistique', 'État-major', 'Logistique', 'Logistics Officer (S4)', 'logistics_officer', 'Pilotage du soutien et de la chaîne logistique.', 1, 0, 'intra', 'function', 0, 130, 130, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:33:03'),
+(48, 1, 'Officier discipline', NULL, NULL, NULL, 'discipline_officer', 'Application du règlement intérieur et suivi des incidents.', 1, 0, 'intra', 'function', 0, 50, 0, 2, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(49, 1, 'Officier recrutement', NULL, NULL, NULL, 'recruitment_officer', 'Pipeline des candidatures et intégration des nouveaux membres.', 1, 0, 'intra', 'function', 0, 50, 0, 2, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(50, 1, 'Officier sécurité', NULL, NULL, NULL, 'security_officer', 'Sensibilisation, bonnes pratiques et coordination sécurité.', 1, 0, 'intra', 'function', 0, 50, 0, 2, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(51, 1, 'Administrateur technique local', NULL, NULL, NULL, 'technical_admin', 'Paramètres techniques et outils au sein de la communauté.', 1, 0, 'community', 'authority', 0, 50, 0, 1, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(52, 1, 'Contrôleur interne', NULL, NULL, NULL, 'auditor_internal', 'Contrôles internes et recommandations d’amélioration.', 1, 0, 'intra', 'function', 0, 50, 0, 2, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(53, 1, 'Fondateur', NULL, NULL, NULL, 'founder', 'Reconnaissance historique de la création de l’entité.', 1, 0, 'intra', 'status', 1, 80, 0, 3, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(54, 1, 'Vétéran', 'Statut', 'Affichage', 'Veteran', 'veteran', 'Ancien combattant ou membre d’honneur actif en visibilité.', 1, 0, 'intra', 'status', 1, 10, 10, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:33:03'),
+(55, 1, 'Instructeur certifié', 'Statut', 'Affichage', 'Instructor Certified', 'certified_instructor', 'Qualification pédagogique reconnue.', 1, 0, 'intra', 'status', 1, 60, 60, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:33:03'),
+(56, 1, 'Membre d’élite', NULL, NULL, NULL, 'elite_member', 'Performance ou engagement remarquable.', 1, 0, 'intra', 'status', 1, 80, 0, 3, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(57, 1, 'Sous surveillance', NULL, NULL, NULL, 'disciplinary_watch', 'Signal interne de suivi disciplinaire.', 1, 0, 'intra', 'status', 1, 80, 0, 3, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(58, 1, 'En probation', 'Statut', 'Affichage', 'Probationary Member', 'probation_member', 'Intégration sous période probatoire.', 1, 0, 'intra', 'status', 1, 30, 30, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:33:03'),
+(59, 1, 'Suspendu', 'Statut', 'Affichage', 'Suspended', 'suspended_status', 'Participation suspendue — visibilité limitée.', 1, 0, 'intra', 'status', 1, 40, 40, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:33:03'),
+(60, 1, 'Membre d’honneur', NULL, NULL, NULL, 'honorary_member', 'Reconnaissance pour membres externes ou retraités.', 1, 0, 'intra', 'status', 1, 80, 0, 3, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(61, 7, 'Chef adjoint d’organisation', NULL, NULL, NULL, 'deputy_commander', 'Adjoint à la direction : coordination et relais de gouvernance.', 1, 0, 'community', 'authority', 0, 50, 0, 1, 22, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(62, 7, 'Officier opérations', 'État-major', 'Opérations', 'Operations Officer (S3)', 'operations_officer', 'Coordination des opérations et activités.', 1, 0, 'intra', 'function', 0, 50, 50, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, 8, '2026-04-06 18:33:03'),
+(63, 7, 'Responsable formation', 'Instruction', 'Formation', 'Training Lead', 'training_officer', 'Pilotage des parcours et des qualifications.', 1, 0, 'intra', 'function', 0, 30, 30, 90, NULL, '{\"icon\":\"heroicon-o-academic-cap\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, 17, '2026-04-06 18:33:03'),
+(64, 7, 'Officier renseignement', 'État-major', 'Renseignement', 'Intelligence Officer (S2)', 'intelligence_officer', 'Collecte, analyse et diffusion du renseignement.', 1, 0, 'intra', 'function', 0, 90, 90, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:33:03'),
+(65, 7, 'Officier logistique', 'État-major', 'Logistique', 'Logistics Officer (S4)', 'logistics_officer', 'Pilotage du soutien et de la chaîne logistique.', 1, 0, 'intra', 'function', 0, 130, 130, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:33:03'),
+(66, 7, 'Officier discipline', NULL, NULL, NULL, 'discipline_officer', 'Application du règlement intérieur et suivi des incidents.', 1, 0, 'intra', 'function', 0, 50, 0, 2, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(67, 7, 'Officier recrutement', NULL, NULL, NULL, 'recruitment_officer', 'Pipeline des candidatures et intégration des nouveaux membres.', 1, 0, 'intra', 'function', 0, 50, 0, 2, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(68, 7, 'Officier sécurité', NULL, NULL, NULL, 'security_officer', 'Sensibilisation, bonnes pratiques et coordination sécurité.', 1, 0, 'intra', 'function', 0, 50, 0, 2, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(69, 7, 'Administrateur technique local', NULL, NULL, NULL, 'technical_admin', 'Paramètres techniques et outils au sein de la communauté.', 1, 0, 'community', 'authority', 0, 50, 0, 1, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(70, 7, 'Contrôleur interne', NULL, NULL, NULL, 'auditor_internal', 'Contrôles internes et recommandations d’amélioration.', 1, 0, 'intra', 'function', 0, 50, 0, 2, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(71, 7, 'Fondateur', NULL, NULL, NULL, 'founder', 'Reconnaissance historique de la création de l’entité.', 1, 0, 'intra', 'status', 1, 80, 0, 3, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(72, 7, 'Vétéran', 'Statut', 'Affichage', 'Veteran', 'veteran', 'Ancien combattant ou membre d’honneur actif en visibilité.', 1, 0, 'intra', 'status', 1, 10, 10, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:33:03'),
+(73, 7, 'Instructeur certifié', 'Statut', 'Affichage', 'Instructor Certified', 'certified_instructor', 'Qualification pédagogique reconnue.', 1, 0, 'intra', 'status', 1, 60, 60, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:33:03'),
+(74, 7, 'Membre d’élite', NULL, NULL, NULL, 'elite_member', 'Performance ou engagement remarquable.', 1, 0, 'intra', 'status', 1, 80, 0, 3, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(75, 7, 'Sous surveillance', NULL, NULL, NULL, 'disciplinary_watch', 'Signal interne de suivi disciplinaire.', 1, 0, 'intra', 'status', 1, 80, 0, 3, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(76, 7, 'En probation', 'Statut', 'Affichage', 'Probationary Member', 'probation_member', 'Intégration sous période probatoire.', 1, 0, 'intra', 'status', 1, 30, 30, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:33:03'),
+(77, 7, 'Suspendu', 'Statut', 'Affichage', 'Suspended', 'suspended_status', 'Participation suspendue — visibilité limitée.', 1, 0, 'intra', 'status', 1, 40, 40, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:33:03'),
+(78, 7, 'Membre d’honneur', NULL, NULL, NULL, 'honorary_member', 'Reconnaissance pour membres externes ou retraités.', 1, 0, 'intra', 'status', 1, 80, 0, 3, NULL, NULL, 0, NULL, '2026-04-06 18:33:03'),
+(79, 1, 'Chef de corps', 'État-major', 'Commandement', 'Commanding Officer', 'command_unit_commander', 'Autorité de commandement de l’unité.', 1, 0, 'intra', 'authority', 0, 10, 10, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-rose-100 text-rose-900 ring-rose-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(80, 1, 'Chef adjoint', 'État-major', 'Commandement', 'Executive Officer', 'command_executive_officer', 'Adjoint au commandement et relais opérationnel.', 1, 0, 'intra', 'authority', 0, 20, 20, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-rose-100 text-rose-900 ring-rose-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(81, 1, 'Officier supérieur', 'État-major', 'Commandement', 'Senior Officer', 'command_senior_officer', 'Encadrement supérieur et coordination générale.', 1, 0, 'intra', 'authority', 0, 30, 30, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-rose-100 text-rose-900 ring-rose-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(82, 1, 'Officier de permanence', 'État-major', 'Commandement', 'Duty Officer', 'command_duty_officer', 'Responsable de la permanence et des décisions courantes.', 1, 0, 'intra', 'function', 0, 40, 40, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(83, 1, 'Officier planification', 'État-major', 'Opérations', 'Plans Officer', 'staff_plans_officer', 'Plans, ordres et synchronisation des moyens.', 1, 0, 'intra', 'function', 0, 60, 60, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(84, 1, 'Officier conduite', 'État-major', 'Opérations', 'Battle Captain', 'staff_battle_captain', 'Conduite de la manœuvre et de la situation tactique.', 1, 0, 'intra', 'function', 0, 70, 70, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(85, 1, 'Officier coordination interarmes', 'État-major', 'Opérations', 'Joint Fires Coordinator', 'staff_joint_coordination_officer', 'Coordination des effets interarmes et appuis.', 1, 0, 'intra', 'liaison', 0, 80, 80, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-amber-100 text-amber-950 ring-amber-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(86, 1, 'Analyste renseignement', 'État-major', 'Renseignement', 'Intelligence Analyst', 'staff_intel_analyst', 'Production d’analyses et de fiches situation.', 1, 0, 'intra', 'function', 0, 100, 100, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(87, 1, 'Officier exploitation', 'État-major', 'Renseignement', 'SIGINT Specialist', 'staff_intel_exploitation', 'Exploitation technique des sources et des flux.', 1, 0, 'intra', 'specialty', 0, 110, 110, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(88, 1, 'Cellule renseignement', 'État-major', 'Renseignement', 'Intelligence Cell Operator', 'staff_intel_cell', 'Traitement et diffusion au sein de la cellule.', 1, 0, 'intra', 'function', 0, 120, 120, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(89, 1, 'Responsable soutien', 'État-major', 'Logistique', 'Supply Specialist', 'staff_sustainment_lead', 'Gestion des stocks et du soutien quotidien.', 1, 0, 'intra', 'support', 0, 140, 140, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(90, 1, 'Gestionnaire flux logistiques', 'État-major', 'Logistique', 'Motor Transport Operator', 'staff_logistics_flow_manager', 'Organisation des flux, convois et dotations.', 1, 0, 'intra', 'support', 0, 150, 150, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(91, 1, 'Chef de section', 'Infanterie', 'Commandement', 'Platoon Leader', 'infantry_section_chief', 'Encadrement d’une section au combat.', 1, 0, 'intra', 'authority', 0, 10, 10, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-rose-100 text-rose-900 ring-rose-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(92, 1, 'Chef de groupe', 'Infanterie', 'Commandement', 'Squad Leader', 'infantry_group_chief', 'Encadrement d’un groupe tactique.', 1, 0, 'intra', 'function', 0, 20, 20, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(93, 1, 'Chef d’équipe', 'Infanterie', 'Commandement', 'Team Leader', 'infantry_team_chief', 'Encadrement d’une équipe élémentaire.', 1, 0, 'intra', 'function', 0, 30, 30, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(94, 1, 'Fusilier', 'Infanterie', 'Combattant', 'Rifleman', 'infantry_rifleman', 'Combattant d’infanterie polyvalent.', 1, 0, 'intra', 'function', 0, 40, 40, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(95, 1, 'Grenadier', 'Infanterie', 'Combattant', 'Grenadier', 'infantry_grenadier', 'Appui grenades et armement lourd léger.', 1, 0, 'intra', 'function', 0, 50, 50, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(96, 1, 'Tireur d’élite', 'Infanterie', 'Combattant', 'Sharpshooter', 'infantry_sharpshooter', 'Précision renforcée et tir d’appui.', 1, 0, 'intra', 'specialty', 0, 60, 60, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(97, 1, 'Tireur de précision', 'Infanterie', 'Combattant', 'Designated Marksman', 'infantry_marksman', 'Neutralisation sélective à moyenne portée.', 1, 0, 'intra', 'specialty', 0, 70, 70, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(98, 1, 'Tireur isolé', 'Infanterie', 'Combattant', 'Sniper', 'infantry_sniper', 'Tir de précision longue portée en retrait.', 1, 0, 'intra', 'specialty', 0, 75, 75, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(99, 1, 'Mitrailleur', 'Infanterie', 'Combattant', 'Automatic Rifleman', 'infantry_machine_gunner', 'Appui feu soutenu et manœuvre d’appui.', 1, 0, 'intra', 'function', 0, 80, 80, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(100, 1, 'Opérateur radio', 'Infanterie', 'Spécialités', 'Radio Operator', 'infantry_radio_operator', 'Transmissions et liaisons tactiques.', 1, 0, 'intra', 'liaison', 0, 90, 90, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-amber-100 text-amber-950 ring-amber-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(101, 1, 'Éclaireur', 'Infanterie', 'Spécialités', 'Scout', 'infantry_scout', 'Reconnaissance et renseignement terrain.', 1, 0, 'intra', 'specialty', 0, 100, 100, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(102, 1, 'Chef binôme', 'Infanterie', 'Spécialités', 'Buddy team leader', 'infantry_team_pair_chief', 'Coordination d’un binôme au contact.', 1, 0, 'intra', 'function', 0, 110, 110, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(103, 1, 'JTAC', 'Appuis & feux', 'Coordination', 'JTAC', 'fires_jtac', 'Contrôleur d’attaques au sol.', 1, 0, 'intra', 'liaison', 0, 10, 10, 50, NULL, '{\"icon\":\"heroicon-o-fire\",\"tierClass\":\"bg-amber-100 text-amber-950 ring-amber-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(104, 1, 'Forward Observer', 'Appuis & feux', 'Coordination', 'Forward Observer', 'fires_forward_observer', 'Observation et ajustement des tirs.', 1, 0, 'intra', 'liaison', 0, 20, 20, 50, NULL, '{\"icon\":\"heroicon-o-fire\",\"tierClass\":\"bg-amber-100 text-amber-950 ring-amber-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(105, 1, 'Officier appuis feux', 'Appuis & feux', 'Coordination', 'Fire Support Officer', 'fires_support_officer', 'Synthèse et coordination des appuis.', 1, 0, 'intra', 'liaison', 0, 30, 30, 50, NULL, '{\"icon\":\"heroicon-o-fire\",\"tierClass\":\"bg-amber-100 text-amber-950 ring-amber-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(106, 1, 'Chef pièce', 'Appuis & feux', 'Artillerie', 'Fire Direction Specialist', 'fires_gun_chief', 'Chef de pièce et conduite du tir.', 1, 0, 'intra', 'function', 0, 40, 40, 50, NULL, '{\"icon\":\"heroicon-o-fire\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(107, 1, 'Servant artillerie', 'Appuis & feux', 'Artillerie', 'Artillery Crew', 'fires_gun_crew', 'Mise en œuvre et service de pièce.', 1, 0, 'intra', 'function', 0, 50, 50, 50, NULL, '{\"icon\":\"heroicon-o-fire\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(108, 1, 'Sapeur', 'Génie', 'Combat', 'Combat Engineer', 'engineer_sapper', 'Ouverture de passages et travaux au contact.', 1, 0, 'intra', 'function', 0, 10, 10, 60, NULL, '{\"icon\":\"heroicon-o-wrench-screwdriver\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(109, 1, 'Démineur', 'Génie', 'Combat', 'EOD Specialist', 'engineer_eod', 'Neutralisation des dangers explosifs.', 1, 0, 'intra', 'specialty', 0, 20, 20, 60, NULL, '{\"icon\":\"heroicon-o-wrench-screwdriver\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(110, 1, 'Chef groupe génie', 'Génie', 'Combat', 'Engineer Squad Leader', 'engineer_group_chief', 'Encadrement d’un groupe de combat du génie.', 1, 0, 'intra', 'function', 0, 30, 30, 60, NULL, '{\"icon\":\"heroicon-o-wrench-screwdriver\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(111, 1, 'Technicien infrastructure', 'Génie', 'Infrastructure', 'Construction Engineer', 'engineer_infra_technician', 'Travaux d’infrastructure et ouvrages.', 1, 0, 'intra', 'support', 0, 40, 40, 60, NULL, '{\"icon\":\"heroicon-o-wrench-screwdriver\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(112, 1, 'Responsable travaux', 'Génie', 'Infrastructure', 'Works Supervisor', 'engineer_works_lead', 'Pilotage des chantiers et contrôle qualité.', 1, 0, 'intra', 'support', 0, 50, 50, 60, NULL, '{\"icon\":\"heroicon-o-wrench-screwdriver\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(113, 1, 'Conducteur militaire', 'Logistique', 'Transport', 'Motor Transport Operator', 'logistics_driver', 'Conduite et manœuvre des véhicules logistiques.', 1, 0, 'intra', 'support', 0, 10, 10, 70, NULL, '{\"icon\":\"heroicon-o-truck\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(114, 1, 'Chef convoi', 'Logistique', 'Transport', 'Convoy Commander', 'logistics_convoy_chief', 'Responsabilité d’un convoi ou d’un détachement roulant.', 1, 0, 'intra', 'support', 0, 20, 20, 70, NULL, '{\"icon\":\"heroicon-o-truck\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(115, 1, 'Mécanicien', 'Logistique', 'Maintenance', 'Mechanic', 'logistics_mechanic', 'Maintenance de premier et second échelon.', 1, 0, 'intra', 'support', 0, 30, 30, 70, NULL, '{\"icon\":\"heroicon-o-truck\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(116, 1, 'Technicien maintenance', 'Logistique', 'Maintenance', 'Maintenance Technician', 'logistics_maint_technician', 'Diagnostic et réparation des systèmes.', 1, 0, 'intra', 'support', 0, 40, 40, 70, NULL, '{\"icon\":\"heroicon-o-truck\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(117, 1, 'Responsable parc matériel', 'Logistique', 'Maintenance', 'Fleet Manager', 'logistics_fleet_manager', 'Gestion du parc et disponibilité opérationnelle.', 1, 0, 'intra', 'support', 0, 50, 50, 70, NULL, '{\"icon\":\"heroicon-o-truck\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(118, 1, 'Médecin militaire', 'Santé', 'Médical', 'Medical Officer', 'medical_officer', 'Responsabilité médicale et décisions sanitaires.', 1, 0, 'intra', 'function', 0, 10, 10, 80, NULL, '{\"icon\":\"heroicon-o-heart\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(119, 1, 'Infirmier militaire', 'Santé', 'Médical', 'Field Nurse', 'medical_nurse', 'Soins infirmiers et stabilisation.', 1, 0, 'intra', 'function', 0, 20, 20, 80, NULL, '{\"icon\":\"heroicon-o-heart\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(120, 1, 'Auxiliaire sanitaire', 'Santé', 'Médical', 'Medical Assistant', 'medical_auxiliary', 'Soutien sanitaire et assistance au poste de secours.', 1, 0, 'intra', 'support', 0, 30, 30, 80, NULL, '{\"icon\":\"heroicon-o-heart\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(121, 1, 'Secouriste', 'Santé', 'Médical', 'Combat Medic', 'medical_first_responder', 'Premiers secours et évacuation sanitaire initiale.', 1, 0, 'intra', 'support', 0, 40, 40, 80, NULL, '{\"icon\":\"heroicon-o-heart\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(122, 1, 'Formateur', 'Instruction', 'Formation', 'Training Instructor', 'instruction_trainer', 'Conception et animation de modules pédagogiques.', 1, 0, 'intra', 'function', 0, 20, 20, 90, NULL, '{\"icon\":\"heroicon-o-academic-cap\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(123, 1, 'Évaluateur', 'Instruction', 'Formation', 'Evaluator', 'instruction_evaluator', 'Évaluation des compétences et des qualifications.', 1, 0, 'intra', 'function', 0, 40, 40, 90, NULL, '{\"icon\":\"heroicon-o-academic-cap\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(124, 1, 'Officier administratif', 'Administration', 'Gestion', 'Administrative Officer', 'admin_staff_officer', 'Courrier, dossiers et formalités administratives.', 1, 0, 'intra', 'support', 0, 20, 20, 100, NULL, '{\"icon\":\"heroicon-o-clipboard-document-list\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(125, 1, 'Secrétaire unité', 'Administration', 'Gestion', 'Unit Secretary', 'admin_unit_secretary', 'Secrétariat et suivi administratif de l’unité.', 1, 0, 'intra', 'support', 0, 30, 30, 100, NULL, '{\"icon\":\"heroicon-o-clipboard-document-list\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(126, 1, 'En formation', 'Statut', 'Affichage', 'In training', 'status_in_training', 'Parcours de formation en cours.', 1, 0, 'intra', 'status', 1, 20, 20, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:58:10'),
+(127, 1, 'Réserviste', 'Statut', 'Affichage', 'Reservist', 'status_reservist', 'Statut de réserve et disponibilité partielle.', 1, 0, 'intra', 'status', 1, 50, 50, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:58:10'),
+(128, 1, 'En service actif', 'Statut', 'Affichage', 'Active Duty', 'status_active_duty', 'Engagement opérationnel à plein temps.', 1, 0, 'intra', 'status', 1, 70, 70, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:58:10'),
+(129, 7, 'Chef de corps', 'État-major', 'Commandement', 'Commanding Officer', 'command_unit_commander', 'Autorité de commandement de l’unité.', 1, 0, 'intra', 'authority', 0, 10, 10, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-rose-100 text-rose-900 ring-rose-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(130, 7, 'Chef adjoint', 'État-major', 'Commandement', 'Executive Officer', 'command_executive_officer', 'Adjoint au commandement et relais opérationnel.', 1, 0, 'intra', 'authority', 0, 20, 20, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-rose-100 text-rose-900 ring-rose-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(131, 7, 'Officier supérieur', 'État-major', 'Commandement', 'Senior Officer', 'command_senior_officer', 'Encadrement supérieur et coordination générale.', 1, 0, 'intra', 'authority', 0, 30, 30, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-rose-100 text-rose-900 ring-rose-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(132, 7, 'Officier de permanence', 'État-major', 'Commandement', 'Duty Officer', 'command_duty_officer', 'Responsable de la permanence et des décisions courantes.', 1, 0, 'intra', 'function', 0, 40, 40, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(133, 7, 'Officier planification', 'État-major', 'Opérations', 'Plans Officer', 'staff_plans_officer', 'Plans, ordres et synchronisation des moyens.', 1, 0, 'intra', 'function', 0, 60, 60, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(134, 7, 'Officier conduite', 'État-major', 'Opérations', 'Battle Captain', 'staff_battle_captain', 'Conduite de la manœuvre et de la situation tactique.', 1, 0, 'intra', 'function', 0, 70, 70, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(135, 7, 'Officier coordination interarmes', 'État-major', 'Opérations', 'Joint Fires Coordinator', 'staff_joint_coordination_officer', 'Coordination des effets interarmes et appuis.', 1, 0, 'intra', 'liaison', 0, 80, 80, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-amber-100 text-amber-950 ring-amber-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(136, 7, 'Analyste renseignement', 'État-major', 'Renseignement', 'Intelligence Analyst', 'staff_intel_analyst', 'Production d’analyses et de fiches situation.', 1, 0, 'intra', 'function', 0, 100, 100, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(137, 7, 'Officier exploitation', 'État-major', 'Renseignement', 'SIGINT Specialist', 'staff_intel_exploitation', 'Exploitation technique des sources et des flux.', 1, 0, 'intra', 'specialty', 0, 110, 110, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(138, 7, 'Cellule renseignement', 'État-major', 'Renseignement', 'Intelligence Cell Operator', 'staff_intel_cell', 'Traitement et diffusion au sein de la cellule.', 1, 0, 'intra', 'function', 0, 120, 120, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(139, 7, 'Responsable soutien', 'État-major', 'Logistique', 'Supply Specialist', 'staff_sustainment_lead', 'Gestion des stocks et du soutien quotidien.', 1, 0, 'intra', 'support', 0, 140, 140, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(140, 7, 'Gestionnaire flux logistiques', 'État-major', 'Logistique', 'Motor Transport Operator', 'staff_logistics_flow_manager', 'Organisation des flux, convois et dotations.', 1, 0, 'intra', 'support', 0, 150, 150, 20, NULL, '{\"icon\":\"heroicon-o-building-library\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(141, 7, 'Chef de section', 'Infanterie', 'Commandement', 'Platoon Leader', 'infantry_section_chief', 'Encadrement d’une section au combat.', 1, 0, 'intra', 'authority', 0, 10, 10, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-rose-100 text-rose-900 ring-rose-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(142, 7, 'Chef de groupe', 'Infanterie', 'Commandement', 'Squad Leader', 'infantry_group_chief', 'Encadrement d’un groupe tactique.', 1, 0, 'intra', 'function', 0, 20, 20, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(143, 7, 'Chef d’équipe', 'Infanterie', 'Commandement', 'Team Leader', 'infantry_team_chief', 'Encadrement d’une équipe élémentaire.', 1, 0, 'intra', 'function', 0, 30, 30, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(144, 7, 'Fusilier', 'Infanterie', 'Combattant', 'Rifleman', 'infantry_rifleman', 'Combattant d’infanterie polyvalent.', 1, 0, 'intra', 'function', 0, 40, 40, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(145, 7, 'Grenadier', 'Infanterie', 'Combattant', 'Grenadier', 'infantry_grenadier', 'Appui grenades et armement lourd léger.', 1, 0, 'intra', 'function', 0, 50, 50, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(146, 7, 'Tireur d’élite', 'Infanterie', 'Combattant', 'Sharpshooter', 'infantry_sharpshooter', 'Précision renforcée et tir d’appui.', 1, 0, 'intra', 'specialty', 0, 60, 60, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(147, 7, 'Tireur de précision', 'Infanterie', 'Combattant', 'Designated Marksman', 'infantry_marksman', 'Neutralisation sélective à moyenne portée.', 1, 0, 'intra', 'specialty', 0, 70, 70, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(148, 7, 'Tireur isolé', 'Infanterie', 'Combattant', 'Sniper', 'infantry_sniper', 'Tir de précision longue portée en retrait.', 1, 0, 'intra', 'specialty', 0, 75, 75, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(149, 7, 'Mitrailleur', 'Infanterie', 'Combattant', 'Automatic Rifleman', 'infantry_machine_gunner', 'Appui feu soutenu et manœuvre d’appui.', 1, 0, 'intra', 'function', 0, 80, 80, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(150, 7, 'Opérateur radio', 'Infanterie', 'Spécialités', 'Radio Operator', 'infantry_radio_operator', 'Transmissions et liaisons tactiques.', 1, 0, 'intra', 'liaison', 0, 90, 90, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-amber-100 text-amber-950 ring-amber-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(151, 7, 'Éclaireur', 'Infanterie', 'Spécialités', 'Scout', 'infantry_scout', 'Reconnaissance et renseignement terrain.', 1, 0, 'intra', 'specialty', 0, 100, 100, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(152, 7, 'Chef binôme', 'Infanterie', 'Spécialités', 'Buddy team leader', 'infantry_team_pair_chief', 'Coordination d’un binôme au contact.', 1, 0, 'intra', 'function', 0, 110, 110, 40, NULL, '{\"icon\":\"heroicon-o-shield-check\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(153, 7, 'JTAC', 'Appuis & feux', 'Coordination', 'JTAC', 'fires_jtac', 'Contrôleur d’attaques au sol.', 1, 0, 'intra', 'liaison', 0, 10, 10, 50, NULL, '{\"icon\":\"heroicon-o-fire\",\"tierClass\":\"bg-amber-100 text-amber-950 ring-amber-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(154, 7, 'Forward Observer', 'Appuis & feux', 'Coordination', 'Forward Observer', 'fires_forward_observer', 'Observation et ajustement des tirs.', 1, 0, 'intra', 'liaison', 0, 20, 20, 50, NULL, '{\"icon\":\"heroicon-o-fire\",\"tierClass\":\"bg-amber-100 text-amber-950 ring-amber-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(155, 7, 'Officier appuis feux', 'Appuis & feux', 'Coordination', 'Fire Support Officer', 'fires_support_officer', 'Synthèse et coordination des appuis.', 1, 0, 'intra', 'liaison', 0, 30, 30, 50, NULL, '{\"icon\":\"heroicon-o-fire\",\"tierClass\":\"bg-amber-100 text-amber-950 ring-amber-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(156, 7, 'Chef pièce', 'Appuis & feux', 'Artillerie', 'Fire Direction Specialist', 'fires_gun_chief', 'Chef de pièce et conduite du tir.', 1, 0, 'intra', 'function', 0, 40, 40, 50, NULL, '{\"icon\":\"heroicon-o-fire\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(157, 7, 'Servant artillerie', 'Appuis & feux', 'Artillerie', 'Artillery Crew', 'fires_gun_crew', 'Mise en œuvre et service de pièce.', 1, 0, 'intra', 'function', 0, 50, 50, 50, NULL, '{\"icon\":\"heroicon-o-fire\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(158, 7, 'Sapeur', 'Génie', 'Combat', 'Combat Engineer', 'engineer_sapper', 'Ouverture de passages et travaux au contact.', 1, 0, 'intra', 'function', 0, 10, 10, 60, NULL, '{\"icon\":\"heroicon-o-wrench-screwdriver\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(159, 7, 'Démineur', 'Génie', 'Combat', 'EOD Specialist', 'engineer_eod', 'Neutralisation des dangers explosifs.', 1, 0, 'intra', 'specialty', 0, 20, 20, 60, NULL, '{\"icon\":\"heroicon-o-wrench-screwdriver\",\"tierClass\":\"bg-violet-100 text-violet-900 ring-violet-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(160, 7, 'Chef groupe génie', 'Génie', 'Combat', 'Engineer Squad Leader', 'engineer_group_chief', 'Encadrement d’un groupe de combat du génie.', 1, 0, 'intra', 'function', 0, 30, 30, 60, NULL, '{\"icon\":\"heroicon-o-wrench-screwdriver\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(161, 7, 'Technicien infrastructure', 'Génie', 'Infrastructure', 'Construction Engineer', 'engineer_infra_technician', 'Travaux d’infrastructure et ouvrages.', 1, 0, 'intra', 'support', 0, 40, 40, 60, NULL, '{\"icon\":\"heroicon-o-wrench-screwdriver\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(162, 7, 'Responsable travaux', 'Génie', 'Infrastructure', 'Works Supervisor', 'engineer_works_lead', 'Pilotage des chantiers et contrôle qualité.', 1, 0, 'intra', 'support', 0, 50, 50, 60, NULL, '{\"icon\":\"heroicon-o-wrench-screwdriver\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(163, 7, 'Conducteur militaire', 'Logistique', 'Transport', 'Motor Transport Operator', 'logistics_driver', 'Conduite et manœuvre des véhicules logistiques.', 1, 0, 'intra', 'support', 0, 10, 10, 70, NULL, '{\"icon\":\"heroicon-o-truck\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(164, 7, 'Chef convoi', 'Logistique', 'Transport', 'Convoy Commander', 'logistics_convoy_chief', 'Responsabilité d’un convoi ou d’un détachement roulant.', 1, 0, 'intra', 'support', 0, 20, 20, 70, NULL, '{\"icon\":\"heroicon-o-truck\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(165, 7, 'Mécanicien', 'Logistique', 'Maintenance', 'Mechanic', 'logistics_mechanic', 'Maintenance de premier et second échelon.', 1, 0, 'intra', 'support', 0, 30, 30, 70, NULL, '{\"icon\":\"heroicon-o-truck\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(166, 7, 'Technicien maintenance', 'Logistique', 'Maintenance', 'Maintenance Technician', 'logistics_maint_technician', 'Diagnostic et réparation des systèmes.', 1, 0, 'intra', 'support', 0, 40, 40, 70, NULL, '{\"icon\":\"heroicon-o-truck\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(167, 7, 'Responsable parc matériel', 'Logistique', 'Maintenance', 'Fleet Manager', 'logistics_fleet_manager', 'Gestion du parc et disponibilité opérationnelle.', 1, 0, 'intra', 'support', 0, 50, 50, 70, NULL, '{\"icon\":\"heroicon-o-truck\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(168, 7, 'Médecin militaire', 'Santé', 'Médical', 'Medical Officer', 'medical_officer', 'Responsabilité médicale et décisions sanitaires.', 1, 0, 'intra', 'function', 0, 10, 10, 80, NULL, '{\"icon\":\"heroicon-o-heart\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(169, 7, 'Infirmier militaire', 'Santé', 'Médical', 'Field Nurse', 'medical_nurse', 'Soins infirmiers et stabilisation.', 1, 0, 'intra', 'function', 0, 20, 20, 80, NULL, '{\"icon\":\"heroicon-o-heart\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(170, 7, 'Auxiliaire sanitaire', 'Santé', 'Médical', 'Medical Assistant', 'medical_auxiliary', 'Soutien sanitaire et assistance au poste de secours.', 1, 0, 'intra', 'support', 0, 30, 30, 80, NULL, '{\"icon\":\"heroicon-o-heart\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(171, 7, 'Secouriste', 'Santé', 'Médical', 'Combat Medic', 'medical_first_responder', 'Premiers secours et évacuation sanitaire initiale.', 1, 0, 'intra', 'support', 0, 40, 40, 80, NULL, '{\"icon\":\"heroicon-o-heart\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(172, 7, 'Formateur', 'Instruction', 'Formation', 'Training Instructor', 'instruction_trainer', 'Conception et animation de modules pédagogiques.', 1, 0, 'intra', 'function', 0, 20, 20, 90, NULL, '{\"icon\":\"heroicon-o-academic-cap\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(173, 7, 'Évaluateur', 'Instruction', 'Formation', 'Evaluator', 'instruction_evaluator', 'Évaluation des compétences et des qualifications.', 1, 0, 'intra', 'function', 0, 40, 40, 90, NULL, '{\"icon\":\"heroicon-o-academic-cap\",\"tierClass\":\"bg-sky-100 text-sky-900 ring-sky-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(174, 7, 'Officier administratif', 'Administration', 'Gestion', 'Administrative Officer', 'admin_staff_officer', 'Courrier, dossiers et formalités administratives.', 1, 0, 'intra', 'support', 0, 20, 20, 100, NULL, '{\"icon\":\"heroicon-o-clipboard-document-list\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(175, 7, 'Secrétaire unité', 'Administration', 'Gestion', 'Unit Secretary', 'admin_unit_secretary', 'Secrétariat et suivi administratif de l’unité.', 1, 0, 'intra', 'support', 0, 30, 30, 100, NULL, '{\"icon\":\"heroicon-o-clipboard-document-list\",\"tierClass\":\"bg-teal-100 text-teal-900 ring-teal-200\"}', 0, NULL, '2026-04-06 18:58:10'),
+(176, 7, 'En formation', 'Statut', 'Affichage', 'In training', 'status_in_training', 'Parcours de formation en cours.', 1, 0, 'intra', 'status', 1, 20, 20, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:58:10'),
+(177, 7, 'Réserviste', 'Statut', 'Affichage', 'Reservist', 'status_reservist', 'Statut de réserve et disponibilité partielle.', 1, 0, 'intra', 'status', 1, 50, 50, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:58:10'),
+(178, 7, 'En service actif', 'Statut', 'Affichage', 'Active Duty', 'status_active_duty', 'Engagement opérationnel à plein temps.', 1, 0, 'intra', 'status', 1, 70, 70, 110, NULL, '{\"icon\":\"heroicon-o-tag\",\"tierClass\":\"bg-slate-200 text-slate-800 ring-slate-300\"}', 0, NULL, '2026-04-06 18:58:10'),
+(179, NULL, 'Modérateur plateforme', NULL, NULL, NULL, 'site_moderator', 'Modération des contenus du brief sur l’ensemble des communautés, sans administration système ni gestion des organisations.', 1, 0, 'site', 'function', 0, 0, 0, 1, NULL, NULL, 0, NULL, '2026-04-06 20:07:27'),
+(180, NULL, 'Modérateur senior plateforme', NULL, NULL, NULL, 'site_senior_moderator', 'Même périmètre que le modérateur plateforme, avec la gestion de l’arborescence des canaux forum sur toutes les communautés.', 1, 0, 'site', 'authority', 0, 0, 0, 1, NULL, NULL, 0, NULL, '2026-04-06 20:07:27'),
+(181, NULL, 'Équipe assistance', NULL, NULL, NULL, 'site_support', 'Accompagnement des membres : consultation des éléments utiles au support dans le back-office, sans modération globale des canaux ni réglages système.', 1, 0, 'site', 'authority', 0, 0, 0, 1, NULL, NULL, 0, NULL, '2026-04-06 20:07:27');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `role_assignments_log`
+--
+
+CREATE TABLE `role_assignments_log` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `role_id` int(10) UNSIGNED NOT NULL,
+  `action` enum('assign','revoke') NOT NULL,
+  `assigned_by` int(10) UNSIGNED DEFAULT NULL,
+  `assigned_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `revoked_at` datetime DEFAULT NULL,
+  `reason` varchar(500) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `role_definitions`
+--
+
+CREATE TABLE `role_definitions` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `slug` varchar(100) NOT NULL,
+  `name_fr` varchar(160) NOT NULL,
+  `name_us` varchar(160) NOT NULL,
+  `family` varchar(64) NOT NULL DEFAULT 'general',
+  `description` varchar(600) DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `role_definitions`
+--
+
+INSERT INTO `role_definitions` (`id`, `slug`, `name_fr`, `name_us`, `family`, `description`, `sort_order`, `created_at`) VALUES
+(1, 'unit_manager', 'Gestionnaire d’unité', 'Unit Manager', 'command', 'Ancrage fondateur / gestion d’unité (équivalent « Fondateur » historique).', 10, '2026-04-06 10:45:04'),
+(2, 'unit_commander', 'Commandant d’unité', 'Unit Commander', 'command', 'Commandement de l’unité.', 20, '2026-04-06 10:45:04'),
+(3, 'unit_responsible', 'Responsable d’unité', 'Unit Lead', 'command', 'Responsabilité opérationnelle de l’unité.', 30, '2026-04-06 10:45:04'),
+(4, 'platoon_leader', 'Chef de peloton', 'Platoon Leader', 'command', 'Encadrement d’un peloton.', 40, '2026-04-06 10:45:04'),
+(5, 'squad_leader', 'Chef de groupe', 'Squad Leader', 'command', 'Encadrement d’une équipe / groupe.', 50, '2026-04-06 10:45:04'),
+(6, 'team_leader', 'Chef d’équipe', 'Team Leader', 'command', 'Encadrement d’une équipe réduite.', 60, '2026-04-06 10:45:04'),
+(7, 'section_adjutant', 'Adjoint de section', 'Section Adjutant', 'command', 'Soutien au commandement de section.', 70, '2026-04-06 10:45:04'),
+(8, 'operations_officer', 'Officier opérations', 'Operations Officer (S3)', 'command', 'Planification et conduite des opérations.', 80, '2026-04-06 10:45:04'),
+(9, 'executive_officer', 'Officier adjoint', 'Executive Officer (XO)', 'command', 'Adjoint au commandement.', 90, '2026-04-06 10:45:04'),
+(10, 'recruiter', 'Recruteur', 'Recruiting Officer', 'hr', 'Pipeline de recrutement.', 100, '2026-04-06 10:45:04'),
+(11, 'recruitment_lead', 'Responsable recrutement', 'Recruiting Lead', 'hr', 'Pilotage du recrutement.', 110, '2026-04-06 10:45:04'),
+(12, 'applications_analyst', 'Analyste candidatures', 'Applications Analyst', 'hr', 'Analyse des dossiers.', 120, '2026-04-06 10:45:04'),
+(13, 'selection_officer', 'Officier sélection', 'Selection Officer', 'hr', 'Décision de sélection.', 130, '2026-04-06 10:45:04'),
+(14, 'integration_lead', 'Responsable intégration', 'Integration Lead', 'hr', 'Onboarding des nouveaux membres.', 140, '2026-04-06 10:45:04'),
+(15, 'trainer', 'Formateur', 'Trainer', 'training', 'Animation de formation.', 200, '2026-04-06 10:45:04'),
+(16, 'senior_instructor', 'Instructeur senior', 'Senior Instructor', 'training', 'Expertise pédagogique avancée.', 210, '2026-04-06 10:45:04'),
+(17, 'training_officer', 'Responsable instruction', 'Training Officer', 'training', 'Pilotage des programmes.', 220, '2026-04-06 10:45:04'),
+(18, 'evaluator', 'Évaluateur', 'Evaluator', 'training', 'Évaluation des compétences.', 230, '2026-04-06 10:45:04'),
+(19, 'pedagogy_coordinator', 'Coordinateur pédagogique', 'Pedagogy Coordinator', 'training', 'Coordination des parcours.', 240, '2026-04-06 10:45:04'),
+(20, 'certification_lead', 'Responsable certification', 'Certification Lead', 'training', 'Gestion des certifications.', 250, '2026-04-06 10:45:04'),
+(21, 'super_admin', 'Super Admin', 'Super Admin', 'system', 'Plateforme (hors tenant).', 300, '2026-04-06 10:45:04'),
+(22, 'system_admin', 'Admin système', 'System Admin', 'system', 'Administration plateforme.', 310, '2026-04-06 10:45:04'),
+(23, 'tech_admin', 'Admin technique', 'Technical Admin', 'system', 'Infrastructure et intégration.', 320, '2026-04-06 10:45:04'),
+(24, 'security_admin', 'Admin sécurité', 'Security Admin', 'system', 'Sécurité et accès.', 330, '2026-04-06 10:45:04'),
+(25, 'rbac_manager', 'Gestionnaire RBAC', 'RBAC Manager', 'system', 'Gouvernance des rôles et permissions.', 340, '2026-04-06 10:45:04'),
+(26, 'logistics_lead', 'Responsable logistique', 'Logistics Officer (S4)', 'support', 'Logistique générale.', 400, '2026-04-06 10:45:04'),
+(27, 'equipment_manager', 'Gestionnaire matériel', 'Equipment Manager', 'support', 'Suivi du matériel.', 410, '2026-04-06 10:45:04'),
+(28, 'fleet_lead', 'Responsable parc', 'Fleet Lead', 'support', 'Parc véhicules / équipements lourds.', 420, '2026-04-06 10:45:04'),
+(29, 'mission_coordinator', 'Coordinateur missions', 'Mission Coordinator', 'support', 'Coordination des missions.', 430, '2026-04-06 10:45:04'),
+(30, 'comms_lead', 'Responsable communication', 'Communications Lead', 'comms', 'Stratégie de communication.', 500, '2026-04-06 10:45:04'),
+(31, 'global_moderator', 'Modérateur global', 'Global Moderator', 'comms', 'Modération transverse.', 510, '2026-04-06 10:45:04'),
+(32, 'unit_moderator', 'Modérateur unité', 'Unit Moderator', 'comms', 'Modération au sein d’une unité.', 520, '2026-04-06 10:45:04'),
+(33, 'content_analyst', 'Analyste contenu', 'Content Analyst', 'comms', 'Qualité et analyse du contenu.', 530, '2026-04-06 10:45:04'),
+(34, 'intel_officer', 'Officier renseignement', 'Intelligence Officer (S2)', 'support', 'Renseignement et synthèse.', 440, '2026-04-06 10:45:04'),
+(35, 'first_sergeant', 'Sous-officier référent', 'First Sergeant', 'command', 'Encadrement et discipline.', 95, '2026-04-06 10:45:04');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `role_definition_relations`
+--
+
+CREATE TABLE `role_definition_relations` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `from_definition_id` int(10) UNSIGNED NOT NULL,
+  `to_definition_id` int(10) UNSIGNED NOT NULL,
+  `relation_type` varchar(32) NOT NULL DEFAULT 'reports_to'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `role_definition_relations`
+--
+
+INSERT INTO `role_definition_relations` (`id`, `from_definition_id`, `to_definition_id`, `relation_type`) VALUES
+(3, 3, 2, 'reports_to'),
+(2, 4, 3, 'reports_to'),
+(1, 5, 4, 'reports_to'),
+(5, 8, 2, 'reports_to'),
+(4, 9, 2, 'reports_to'),
+(9, 10, 3, 'cross_cutting'),
+(6, 10, 11, 'reports_to'),
+(8, 15, 5, 'independent'),
+(7, 15, 17, 'reports_to');
 
 -- --------------------------------------------------------
 
@@ -2896,44 +3774,255 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (1, 1),
 (2, 1),
 (3, 1),
+(4, 1),
 (15, 1),
 (21, 1),
 (30, 1),
 (32, 1),
 (33, 1),
 (34, 1),
-(35, 1),
 (36, 1),
+(42, 1),
+(79, 1),
+(80, 1),
+(81, 1),
+(82, 1),
+(83, 1),
+(84, 1),
+(85, 1),
+(86, 1),
+(87, 1),
+(88, 1),
+(89, 1),
+(90, 1),
+(91, 1),
+(92, 1),
+(93, 1),
+(94, 1),
+(95, 1),
+(96, 1),
+(97, 1),
+(98, 1),
+(99, 1),
+(100, 1),
+(101, 1),
+(102, 1),
+(103, 1),
+(104, 1),
+(105, 1),
+(106, 1),
+(107, 1),
+(108, 1),
+(109, 1),
+(110, 1),
+(111, 1),
+(112, 1),
+(113, 1),
+(114, 1),
+(115, 1),
+(116, 1),
+(117, 1),
+(118, 1),
+(119, 1),
+(120, 1),
+(121, 1),
+(122, 1),
+(123, 1),
+(124, 1),
+(125, 1),
+(126, 1),
+(127, 1),
+(128, 1),
 (1, 2),
 (2, 2),
 (3, 2),
+(4, 2),
 (15, 2),
 (21, 2),
 (30, 2),
 (32, 2),
 (34, 2),
-(35, 2),
+(42, 2),
+(79, 2),
+(80, 2),
+(81, 2),
+(82, 2),
+(83, 2),
+(84, 2),
+(85, 2),
+(86, 2),
+(87, 2),
+(88, 2),
+(89, 2),
+(90, 2),
+(91, 2),
+(92, 2),
+(93, 2),
+(94, 2),
+(95, 2),
+(96, 2),
+(97, 2),
+(98, 2),
+(99, 2),
+(100, 2),
+(101, 2),
+(102, 2),
+(103, 2),
+(104, 2),
+(105, 2),
+(106, 2),
+(107, 2),
+(108, 2),
+(109, 2),
+(110, 2),
+(111, 2),
+(112, 2),
+(113, 2),
+(114, 2),
+(115, 2),
+(116, 2),
+(117, 2),
+(122, 2),
+(123, 2),
+(124, 2),
+(125, 2),
+(126, 2),
+(127, 2),
+(128, 2),
 (1, 3),
 (2, 3),
 (3, 3),
+(4, 3),
 (15, 3),
 (21, 3),
 (30, 3),
 (32, 3),
 (33, 3),
 (34, 3),
-(35, 3),
 (36, 3),
+(42, 3),
+(79, 3),
+(80, 3),
+(81, 3),
+(82, 3),
+(83, 3),
+(84, 3),
+(85, 3),
+(86, 3),
+(87, 3),
+(88, 3),
+(89, 3),
+(90, 3),
+(91, 3),
+(92, 3),
+(93, 3),
+(94, 3),
+(95, 3),
+(96, 3),
+(97, 3),
+(98, 3),
+(99, 3),
+(100, 3),
+(101, 3),
+(102, 3),
+(103, 3),
+(104, 3),
+(105, 3),
+(106, 3),
+(107, 3),
+(108, 3),
+(109, 3),
+(110, 3),
+(111, 3),
+(112, 3),
+(113, 3),
+(114, 3),
+(115, 3),
+(116, 3),
+(117, 3),
+(118, 3),
+(119, 3),
+(120, 3),
+(121, 3),
+(122, 3),
+(123, 3),
+(124, 3),
+(125, 3),
+(126, 3),
+(127, 3),
+(128, 3),
 (1, 4),
 (2, 4),
 (3, 4),
+(4, 4),
 (15, 4),
 (32, 4),
-(35, 4),
+(42, 4),
+(79, 4),
+(80, 4),
+(81, 4),
+(82, 4),
+(83, 4),
+(84, 4),
+(85, 4),
+(86, 4),
+(87, 4),
+(88, 4),
+(91, 4),
+(92, 4),
+(93, 4),
+(94, 4),
+(95, 4),
+(96, 4),
+(97, 4),
+(98, 4),
+(99, 4),
+(100, 4),
+(101, 4),
+(102, 4),
+(103, 4),
+(104, 4),
+(105, 4),
+(106, 4),
+(107, 4),
+(108, 4),
+(109, 4),
+(110, 4),
+(111, 4),
+(112, 4),
+(113, 4),
+(114, 4),
+(122, 4),
+(123, 4),
+(124, 4),
+(125, 4),
+(126, 4),
+(127, 4),
+(128, 4),
 (1, 5),
 (2, 5),
+(4, 5),
 (15, 5),
 (32, 5),
+(79, 5),
+(80, 5),
+(81, 5),
+(82, 5),
+(83, 5),
+(84, 5),
+(85, 5),
+(86, 5),
+(91, 5),
+(92, 5),
+(93, 5),
+(103, 5),
+(105, 5),
+(110, 5),
+(112, 5),
+(114, 5),
+(122, 5),
+(123, 5),
+(124, 5),
 (1, 6),
 (2, 6),
 (15, 6),
@@ -2950,26 +4039,136 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (32, 9),
 (33, 9),
 (34, 9),
+(79, 9),
+(80, 9),
+(81, 9),
+(82, 9),
+(83, 9),
+(84, 9),
+(85, 9),
+(86, 9),
+(87, 9),
+(88, 9),
+(89, 9),
+(90, 9),
+(91, 9),
+(92, 9),
+(93, 9),
+(94, 9),
+(95, 9),
+(96, 9),
+(97, 9),
+(98, 9),
+(99, 9),
+(101, 9),
+(102, 9),
+(103, 9),
+(104, 9),
+(105, 9),
+(106, 9),
+(107, 9),
+(108, 9),
+(109, 9),
+(110, 9),
+(111, 9),
+(112, 9),
+(113, 9),
+(114, 9),
+(115, 9),
+(116, 9),
+(117, 9),
+(118, 9),
+(119, 9),
+(120, 9),
+(121, 9),
+(122, 9),
+(123, 9),
+(124, 9),
+(125, 9),
+(126, 9),
+(127, 9),
+(128, 9),
 (1, 10),
 (4, 10),
 (15, 10),
 (34, 10),
+(79, 10),
+(80, 10),
+(81, 10),
+(82, 10),
+(83, 10),
+(84, 10),
+(85, 10),
+(86, 10),
+(89, 10),
+(90, 10),
+(91, 10),
+(92, 10),
+(93, 10),
+(103, 10),
+(105, 10),
+(110, 10),
+(112, 10),
+(114, 10),
+(115, 10),
+(116, 10),
+(117, 10),
+(124, 10),
 (1, 11),
 (4, 11),
 (15, 11),
+(79, 11),
+(80, 11),
+(81, 11),
+(82, 11),
+(83, 11),
+(84, 11),
+(85, 11),
+(86, 11),
+(91, 11),
+(92, 11),
+(93, 11),
+(103, 11),
+(105, 11),
+(110, 11),
+(112, 11),
+(114, 11),
+(124, 11),
 (1, 12),
 (15, 12),
 (1, 13),
 (15, 13),
 (1, 14),
+(4, 14),
 (15, 14),
 (30, 14),
 (32, 14),
+(79, 14),
+(80, 14),
+(81, 14),
+(82, 14),
+(83, 14),
+(84, 14),
+(85, 14),
+(86, 14),
+(91, 14),
+(92, 14),
+(93, 14),
+(103, 14),
+(105, 14),
+(110, 14),
+(112, 14),
+(114, 14),
+(122, 14),
+(123, 14),
+(124, 14),
 (1, 15),
 (15, 15),
 (1, 16),
 (15, 16),
 (32, 16),
+(122, 16),
+(123, 16),
 (1, 17),
 (15, 17),
 (1, 18),
@@ -2977,6 +4176,27 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (1, 19),
 (3, 19),
 (15, 19),
+(87, 19),
+(88, 19),
+(94, 19),
+(95, 19),
+(96, 19),
+(97, 19),
+(98, 19),
+(99, 19),
+(101, 19),
+(102, 19),
+(104, 19),
+(106, 19),
+(107, 19),
+(108, 19),
+(109, 19),
+(111, 19),
+(113, 19),
+(125, 19),
+(126, 19),
+(127, 19),
+(128, 19),
 (1, 20),
 (15, 20),
 (1, 21),
@@ -3050,14 +4270,43 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (1, 67),
 (15, 67),
 (1, 68),
+(4, 68),
 (15, 68),
 (32, 68),
 (33, 68),
+(79, 68),
+(80, 68),
+(81, 68),
+(82, 68),
+(83, 68),
+(84, 68),
+(85, 68),
+(86, 68),
+(91, 68),
+(92, 68),
+(93, 68),
+(103, 68),
+(105, 68),
+(110, 68),
+(112, 68),
+(114, 68),
+(118, 68),
+(119, 68),
+(120, 68),
+(121, 68),
+(122, 68),
+(123, 68),
+(124, 68),
 (1, 69),
 (15, 69),
 (1, 70),
 (15, 70),
 (34, 70),
+(89, 70),
+(90, 70),
+(115, 70),
+(116, 70),
+(117, 70),
 (1, 71),
 (15, 71),
 (1, 72),
@@ -3079,9 +4328,13 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (1, 80),
 (15, 80),
 (32, 80),
+(122, 80),
+(123, 80),
 (1, 81),
 (15, 81),
 (32, 81),
+(122, 81),
+(123, 81),
 (1, 82),
 (15, 82),
 (1, 83),
@@ -3089,17 +4342,45 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (1, 84),
 (15, 84),
 (1, 85),
+(4, 85),
 (15, 85),
 (21, 85),
 (30, 85),
 (32, 85),
 (33, 85),
+(79, 85),
+(80, 85),
+(81, 85),
+(82, 85),
+(83, 85),
+(84, 85),
+(85, 85),
+(86, 85),
+(91, 85),
+(92, 85),
+(93, 85),
+(103, 85),
+(105, 85),
+(110, 85),
+(112, 85),
+(114, 85),
+(118, 85),
+(119, 85),
+(120, 85),
+(121, 85),
+(122, 85),
+(123, 85),
+(124, 85),
 (1, 86),
 (15, 86),
 (30, 86),
 (1, 87),
 (15, 87),
 (33, 87),
+(118, 87),
+(119, 87),
+(120, 87),
+(121, 87),
 (1, 88),
 (15, 88),
 (1, 89),
@@ -3112,7 +4393,8 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (15, 92),
 (1, 93),
 (15, 93),
-(35, 93),
+(42, 93),
+(100, 93),
 (1, 94),
 (15, 94),
 (1, 95),
@@ -3129,6 +4411,7 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (23, 100),
 (24, 100),
 (25, 100),
+(26, 100),
 (27, 100),
 (28, 100),
 (29, 100),
@@ -3137,19 +4420,117 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (39, 100),
 (40, 100),
 (41, 100),
+(129, 100),
+(130, 100),
+(131, 100),
+(132, 100),
+(133, 100),
+(134, 100),
+(135, 100),
+(136, 100),
+(137, 100),
+(138, 100),
+(139, 100),
+(140, 100),
+(141, 100),
+(142, 100),
+(143, 100),
+(144, 100),
+(145, 100),
+(146, 100),
+(147, 100),
+(148, 100),
+(149, 100),
+(150, 100),
+(151, 100),
+(152, 100),
+(153, 100),
+(154, 100),
+(155, 100),
+(156, 100),
+(157, 100),
+(158, 100),
+(159, 100),
+(160, 100),
+(161, 100),
+(162, 100),
+(163, 100),
+(164, 100),
+(165, 100),
+(166, 100),
+(167, 100),
+(168, 100),
+(169, 100),
+(170, 100),
+(171, 100),
+(172, 100),
+(173, 100),
+(174, 100),
+(175, 100),
+(176, 100),
+(177, 100),
+(178, 100),
 (22, 101),
 (23, 101),
 (24, 101),
 (25, 101),
+(26, 101),
 (27, 101),
 (29, 101),
 (37, 101),
 (39, 101),
 (40, 101),
+(129, 101),
+(130, 101),
+(131, 101),
+(132, 101),
+(133, 101),
+(134, 101),
+(135, 101),
+(136, 101),
+(137, 101),
+(138, 101),
+(139, 101),
+(140, 101),
+(141, 101),
+(142, 101),
+(143, 101),
+(144, 101),
+(145, 101),
+(146, 101),
+(147, 101),
+(148, 101),
+(149, 101),
+(150, 101),
+(151, 101),
+(152, 101),
+(153, 101),
+(154, 101),
+(155, 101),
+(156, 101),
+(157, 101),
+(158, 101),
+(159, 101),
+(160, 101),
+(161, 101),
+(162, 101),
+(163, 101),
+(164, 101),
+(165, 101),
+(166, 101),
+(167, 101),
+(172, 101),
+(173, 101),
+(174, 101),
+(175, 101),
+(176, 101),
+(177, 101),
+(178, 101),
 (22, 102),
 (23, 102),
 (24, 102),
 (25, 102),
+(26, 102),
 (27, 102),
 (29, 102),
 (37, 102),
@@ -3157,16 +4538,128 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (39, 102),
 (40, 102),
 (41, 102),
+(129, 102),
+(130, 102),
+(131, 102),
+(132, 102),
+(133, 102),
+(134, 102),
+(135, 102),
+(136, 102),
+(137, 102),
+(138, 102),
+(139, 102),
+(140, 102),
+(141, 102),
+(142, 102),
+(143, 102),
+(144, 102),
+(145, 102),
+(146, 102),
+(147, 102),
+(148, 102),
+(149, 102),
+(150, 102),
+(151, 102),
+(152, 102),
+(153, 102),
+(154, 102),
+(155, 102),
+(156, 102),
+(157, 102),
+(158, 102),
+(159, 102),
+(160, 102),
+(161, 102),
+(162, 102),
+(163, 102),
+(164, 102),
+(165, 102),
+(166, 102),
+(167, 102),
+(168, 102),
+(169, 102),
+(170, 102),
+(171, 102),
+(172, 102),
+(173, 102),
+(174, 102),
+(175, 102),
+(176, 102),
+(177, 102),
+(178, 102),
 (22, 103),
 (23, 103),
 (24, 103),
 (25, 103),
+(26, 103),
 (37, 103),
 (40, 103),
+(129, 103),
+(130, 103),
+(131, 103),
+(132, 103),
+(133, 103),
+(134, 103),
+(135, 103),
+(136, 103),
+(137, 103),
+(138, 103),
+(141, 103),
+(142, 103),
+(143, 103),
+(144, 103),
+(145, 103),
+(146, 103),
+(147, 103),
+(148, 103),
+(149, 103),
+(150, 103),
+(151, 103),
+(152, 103),
+(153, 103),
+(154, 103),
+(155, 103),
+(156, 103),
+(157, 103),
+(158, 103),
+(159, 103),
+(160, 103),
+(161, 103),
+(162, 103),
+(163, 103),
+(164, 103),
+(172, 103),
+(173, 103),
+(174, 103),
+(175, 103),
+(176, 103),
+(177, 103),
+(178, 103),
 (22, 104),
 (23, 104),
 (24, 104),
+(26, 104),
 (37, 104),
+(129, 104),
+(130, 104),
+(131, 104),
+(132, 104),
+(133, 104),
+(134, 104),
+(135, 104),
+(136, 104),
+(141, 104),
+(142, 104),
+(143, 104),
+(153, 104),
+(155, 104),
+(160, 104),
+(162, 104),
+(164, 104),
+(172, 104),
+(173, 104),
+(174, 104),
 (22, 105),
 (23, 105),
 (24, 105),
@@ -3184,13 +4677,101 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (37, 108),
 (38, 108),
 (39, 108),
+(129, 108),
+(130, 108),
+(131, 108),
+(132, 108),
+(133, 108),
+(134, 108),
+(135, 108),
+(136, 108),
+(137, 108),
+(138, 108),
+(139, 108),
+(140, 108),
+(141, 108),
+(142, 108),
+(143, 108),
+(144, 108),
+(145, 108),
+(146, 108),
+(147, 108),
+(148, 108),
+(149, 108),
+(151, 108),
+(152, 108),
+(153, 108),
+(154, 108),
+(155, 108),
+(156, 108),
+(157, 108),
+(158, 108),
+(159, 108),
+(160, 108),
+(161, 108),
+(162, 108),
+(163, 108),
+(164, 108),
+(165, 108),
+(166, 108),
+(167, 108),
+(168, 108),
+(169, 108),
+(170, 108),
+(171, 108),
+(172, 108),
+(173, 108),
+(174, 108),
+(175, 108),
+(176, 108),
+(177, 108),
+(178, 108),
 (22, 109),
 (23, 109),
 (26, 109),
 (39, 109),
+(129, 109),
+(130, 109),
+(131, 109),
+(132, 109),
+(133, 109),
+(134, 109),
+(135, 109),
+(136, 109),
+(139, 109),
+(140, 109),
+(141, 109),
+(142, 109),
+(143, 109),
+(153, 109),
+(155, 109),
+(160, 109),
+(162, 109),
+(164, 109),
+(165, 109),
+(166, 109),
+(167, 109),
+(174, 109),
 (22, 110),
 (23, 110),
 (26, 110),
+(129, 110),
+(130, 110),
+(131, 110),
+(132, 110),
+(133, 110),
+(134, 110),
+(135, 110),
+(136, 110),
+(141, 110),
+(142, 110),
+(143, 110),
+(153, 110),
+(155, 110),
+(160, 110),
+(162, 110),
+(164, 110),
+(174, 110),
 (22, 111),
 (23, 111),
 (22, 112),
@@ -3199,13 +4780,35 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (23, 113),
 (22, 114),
 (23, 114),
+(26, 114),
 (27, 114),
 (37, 114),
+(129, 114),
+(130, 114),
+(131, 114),
+(132, 114),
+(133, 114),
+(134, 114),
+(135, 114),
+(136, 114),
+(141, 114),
+(142, 114),
+(143, 114),
+(153, 114),
+(155, 114),
+(160, 114),
+(162, 114),
+(164, 114),
+(172, 114),
+(173, 114),
+(174, 114),
 (22, 115),
 (23, 115),
 (22, 116),
 (23, 116),
 (37, 116),
+(172, 116),
+(173, 116),
 (22, 117),
 (23, 117),
 (22, 118),
@@ -3268,13 +4871,42 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (23, 139),
 (22, 140),
 (23, 140),
+(26, 140),
 (37, 140),
 (38, 140),
+(129, 140),
+(130, 140),
+(131, 140),
+(132, 140),
+(133, 140),
+(134, 140),
+(135, 140),
+(136, 140),
+(141, 140),
+(142, 140),
+(143, 140),
+(153, 140),
+(155, 140),
+(160, 140),
+(162, 140),
+(164, 140),
+(168, 140),
+(169, 140),
+(170, 140),
+(171, 140),
+(172, 140),
+(173, 140),
+(174, 140),
 (22, 141),
 (23, 141),
 (22, 142),
 (23, 142),
 (39, 142),
+(139, 142),
+(140, 142),
+(165, 142),
+(166, 142),
+(167, 142),
 (22, 143),
 (23, 143),
 (22, 144),
@@ -3296,9 +4928,13 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (22, 152),
 (23, 152),
 (37, 152),
+(172, 152),
+(173, 152),
 (22, 153),
 (23, 153),
 (37, 153),
+(172, 153),
+(173, 153),
 (22, 154),
 (23, 154),
 (22, 155),
@@ -3307,16 +4943,44 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (23, 156),
 (22, 157),
 (23, 157),
+(26, 157),
 (27, 157),
 (29, 157),
 (37, 157),
 (38, 157),
+(129, 157),
+(130, 157),
+(131, 157),
+(132, 157),
+(133, 157),
+(134, 157),
+(135, 157),
+(136, 157),
+(141, 157),
+(142, 157),
+(143, 157),
+(153, 157),
+(155, 157),
+(160, 157),
+(162, 157),
+(164, 157),
+(168, 157),
+(169, 157),
+(170, 157),
+(171, 157),
+(172, 157),
+(173, 157),
+(174, 157),
 (22, 158),
 (23, 158),
 (27, 158),
 (22, 159),
 (23, 159),
 (38, 159),
+(168, 159),
+(169, 159),
+(170, 159),
+(171, 159),
 (22, 160),
 (23, 160),
 (22, 161),
@@ -3330,6 +4994,7 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (22, 165),
 (23, 165),
 (40, 165),
+(150, 165),
 (22, 166),
 (23, 166),
 (22, 167),
@@ -3347,7 +5012,189 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 (22, 173),
 (23, 173),
 (22, 174),
-(23, 174);
+(23, 174),
+(1, 175),
+(4, 175),
+(15, 175),
+(30, 175),
+(32, 175),
+(79, 175),
+(80, 175),
+(81, 175),
+(82, 175),
+(83, 175),
+(84, 175),
+(85, 175),
+(86, 175),
+(91, 175),
+(92, 175),
+(93, 175),
+(103, 175),
+(105, 175),
+(110, 175),
+(112, 175),
+(114, 175),
+(122, 175),
+(123, 175),
+(124, 175),
+(22, 176),
+(23, 176),
+(26, 176),
+(27, 176),
+(37, 176),
+(129, 176),
+(130, 176),
+(131, 176),
+(132, 176),
+(133, 176),
+(134, 176),
+(135, 176),
+(136, 176),
+(141, 176),
+(142, 176),
+(143, 176),
+(153, 176),
+(155, 176),
+(160, 176),
+(162, 176),
+(164, 176),
+(172, 176),
+(173, 176),
+(174, 176),
+(1, 177),
+(15, 177),
+(1, 178),
+(15, 178),
+(1, 179),
+(2, 179),
+(4, 179),
+(15, 179),
+(79, 179),
+(80, 179),
+(81, 179),
+(82, 179),
+(83, 179),
+(84, 179),
+(85, 179),
+(86, 179),
+(91, 179),
+(92, 179),
+(93, 179),
+(103, 179),
+(105, 179),
+(110, 179),
+(112, 179),
+(114, 179),
+(124, 179),
+(22, 180),
+(23, 180),
+(22, 181),
+(23, 181),
+(22, 182),
+(23, 182),
+(24, 182),
+(26, 182),
+(129, 182),
+(130, 182),
+(131, 182),
+(132, 182),
+(133, 182),
+(134, 182),
+(135, 182),
+(136, 182),
+(141, 182),
+(142, 182),
+(143, 182),
+(153, 182),
+(155, 182),
+(160, 182),
+(162, 182),
+(164, 182),
+(174, 182),
+(1, 183),
+(15, 183),
+(1, 184),
+(15, 184),
+(1, 185),
+(15, 185),
+(1, 186),
+(15, 186),
+(1, 187),
+(15, 187),
+(22, 188),
+(23, 188),
+(22, 189),
+(23, 189),
+(22, 190),
+(23, 190),
+(22, 191),
+(23, 191),
+(22, 192),
+(23, 192),
+(179, 193),
+(180, 193),
+(180, 194),
+(181, 195);
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `role_relations`
+--
+
+CREATE TABLE `role_relations` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `from_role_id` int(10) UNSIGNED NOT NULL,
+  `to_role_id` int(10) UNSIGNED NOT NULL,
+  `relation_type` varchar(32) NOT NULL DEFAULT 'reports_to',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `role_sets`
+--
+
+CREATE TABLE `role_sets` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(160) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `role_sets`
+--
+
+INSERT INTO `role_sets` (`id`, `tenant_id`, `name`, `description`, `created_at`) VALUES
+(1, 1, 'État-major opérations', 'Pack : opérations, renseignement et logistique.', '2026-04-06 18:33:03'),
+(2, 7, 'État-major opérations', 'Pack : opérations, renseignement et logistique.', '2026-04-06 18:33:03');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `role_set_roles`
+--
+
+CREATE TABLE `role_set_roles` (
+  `role_set_id` int(10) UNSIGNED NOT NULL,
+  `role_id` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `role_set_roles`
+--
+
+INSERT INTO `role_set_roles` (`role_set_id`, `role_id`) VALUES
+(1, 44),
+(1, 46),
+(1, 47),
+(2, 62),
+(2, 64),
+(2, 65);
 
 -- --------------------------------------------------------
 
@@ -3417,6 +5264,34 @@ CREATE TABLE `site_settings` (
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Déchargement des données de la table `site_settings`
+--
+
+INSERT INTO `site_settings` (`id`, `tenant_id`, `key`, `value`, `created_at`, `updated_at`) VALUES
+(1, 7, 'forum_hero_image_url', 'https://www.crimson.eu/images/domaines-applications/defense/cerbere2.jpg', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(2, 7, 'forum_enabled', '1', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(3, 7, 'forum_guest_read', '1', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(4, 7, 'forum_role_read_label', 'Lecture seule uniquement', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(5, 7, 'forum_role_write_label', '', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(6, 7, 'forum_topics_per_page', '20', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(7, 7, 'forum_posts_per_page', '20', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(8, 7, 'forum_cooldown_seconds', '0', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(9, 7, 'forum_antispam_enabled', '1', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(10, 7, 'forum_antispam_min_length', '10', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(11, 7, 'forum_sandbox_enabled', '1', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(12, 7, 'forum_bot_enabled', '1', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(13, 7, 'forum_attachments_max_size', '0', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(14, 7, 'forum_attachments_allowed_ext', '', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(15, 7, 'forum_url_gate_enabled', '1', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(16, 7, 'forum_notify_moderators', '1', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(17, 7, 'forum_moderation_tutorial_html', '', '2026-04-06 17:10:47', '2026-04-06 18:18:08'),
+(18, 7, 'forum_name', 'Salle de brief', '2026-04-06 17:27:32', '2026-04-06 18:18:08'),
+(19, 7, 'forum_subtitle', 'COMSPEC · Athena', '2026-04-06 17:27:32', '2026-04-06 18:18:08'),
+(20, 7, 'forum_tagline', 'Ici, les ordres et les retours d\'opération circulent. Briefs, comptes-rendus et annonces au cœur de la communauté.', '2026-04-06 17:27:32', '2026-04-06 18:18:08'),
+(21, 7, 'forum_context', 'Centre des transmissions · Communauté', '2026-04-06 17:27:32', '2026-04-06 18:18:08'),
+(72, 7, 'forum_max_post_length', '10000', '2026-04-06 18:18:08', '2026-04-06 18:18:08');
+
 -- --------------------------------------------------------
 
 --
@@ -3476,7 +5351,7 @@ CREATE TABLE `tenants` (
 
 INSERT INTO `tenants` (`id`, `name`, `slug`, `community_code`, `logo_url`, `settings`, `owner_user_id`, `plan_slug`, `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `subscription_current_period_end`, `created_at`, `updated_at`, `default_timezone`, `default_locale`, `country_code`) VALUES
 (1, 'Aucune organisation', 'default', NULL, NULL, NULL, NULL, 'free', NULL, NULL, 'none', NULL, '2026-03-13 17:47:31', '2026-03-13 17:47:31', 'Europe/Paris', 'fr-FR', NULL),
-(7, 'ATHENA', 'athena-sys', 'ATHENA-SYS', 'https://athena.ttrd.fr/public/uploads/community-wizard/3/logo_1a0c4d6535b4040a.png', '{\"community\":{\"registration_mode\":\"simple\",\"community_locked\":false,\"require_ai_ack\":true,\"welcome_text\":\"Concerne l\'administration et la mod\\u00e9ration syst\\u00e8me\",\"public_page_layout\":\"legacy\",\"public_hero_subtitle\":\"Gestionnaire plateforme\",\"default_locale\":\"fr\",\"orbat_visibility\":\"public\",\"default_guest_role_slug\":\"invite\",\"presentation_mode\":\"simple\",\"style_badges\":[],\"simple_body\":\"Encadrement dynamique de la plateforme et de l\'administration technique\",\"expectations\":\"7\\/7 - 24-24\",\"enlistment_milsim\":{\"portal_title\":\"e\",\"fields\":{\"full_name\":{\"label\":\"01 Nom & Pr\\u00e9nom (identit\\u00e9 dossier)\",\"placeholder\":\"ex: Jonathan King\",\"widget\":\"text\",\"options\":[]},\"legal_full_name\":{\"label\":\"Contact IRL (si personnage RP)\",\"placeholder\":\"Nom l\\u00e9gal pour recontact \\u2014 optionnel si d\\u00e9j\\u00e0 indiqu\\u00e9 ailleurs\",\"widget\":\"text\",\"options\":[]},\"age\":{\"label\":\"02 \\u00c2ge\",\"placeholder\":\"\\u00c2ge minimum requis\",\"widget\":\"text\",\"options\":[]},\"timezone\":{\"label\":\"03 Fuseau Horaire\",\"placeholder\":\"ex: Paris (UTC+1)\",\"widget\":\"text\",\"options\":[]},\"weekly_availability\":{\"label\":\"04 Disponibilit\\u00e9s Hebdomadaires\",\"placeholder\":\"Jours de la semaine\",\"widget\":\"text\",\"options\":[]},\"email\":{\"label\":\"Email (obligatoire)\",\"placeholder\":\"email@exemple.fr\",\"widget\":\"text\",\"options\":[]},\"callsign\":{\"label\":\"Indicatif \\/ callsign (optionnel)\",\"placeholder\":\"ex: Ghost-2-1\",\"widget\":\"text\",\"options\":[]},\"system_config\":{\"label\":\"05 Configuration (CPU\\/GPU\\/RAM)\",\"placeholder\":\"Configuration syst\\u00e8me\",\"widget\":\"text\",\"options\":[]},\"microphone_quality\":{\"label\":\"06 Microphone de Haute Qualit\\u00e9 ?\",\"placeholder\":\"\",\"widget\":\"yesno\",\"options\":[\"Oui\",\"Non\"]},\"past_milsim_experience\":{\"label\":\"07 Exp\\u00e9riences MilSim Pass\\u00e9es\",\"placeholder\":\"Unit\\u00e9s, r\\u00f4les, dur\\u00e9es...\",\"widget\":\"textarea\",\"options\":[]},\"ace_acre_level\":{\"label\":\"08 Ma\\u00eetrise ACE \\/ ACRE\",\"placeholder\":\"\",\"widget\":\"select\",\"options\":[\"Aucune\",\"Basique\",\"Exp\\u00e9riment\\u00e9\",\"Avanc\\u00e9\"]},\"motivation_why_join\":{\"label\":\"09 Pourquoi rejoindre ?\",\"placeholder\":\"Motivation, engagement...\",\"widget\":\"textarea\",\"options\":[]},\"motivation_accountability\":{\"label\":\"10 Qu\'est-ce que l\'Accountability ?\",\"placeholder\":\"Responsabilit\\u00e9 individuelle dans une unit\\u00e9...\",\"widget\":\"textarea\",\"options\":[]}},\"nav_brand\":\"Athena\"}},\"founder_trial_ends_at\":\"2026-05-05T09:10:02+00:00\",\"grade_system_code\":\"FR_CLASSIC\",\"timezone\":\"Europe\\/Paris\",\"onboarding_wizard_version\":2,\"onboarding_completed_at\":\"2026-04-05T09:10:02+00:00\"}', 5, 'free', NULL, NULL, 'none', NULL, '2026-04-05 09:10:01', '2026-04-05 09:10:02', 'Europe/Paris', 'fr-FR', NULL);
+(7, 'ATHENA', 'athena-sys', 'ATHENA-SYS', 'https://athena.ttrd.fr/public/uploads/community-wizard/3/logo_1a0c4d6535b4040a.png', '{\"community\":{\"registration_mode\":\"simple\",\"community_locked\":false,\"require_ai_ack\":true,\"welcome_text\":\"Concerne l\'administration et la mod\\u00e9ration syst\\u00e8me\",\"public_page_layout\":\"showcase\",\"public_hero_subtitle\":\"Gestionnaire plateforme\",\"default_locale\":\"fr\",\"orbat_visibility\":\"public\",\"default_guest_role_slug\":\"invite\",\"presentation_mode\":\"simple\",\"style_badges\":[],\"simple_body\":\"Encadrement dynamique de la plateforme et de l\'administration technique\",\"expectations\":\"7\\/7 - 24-24\",\"enlistment_milsim\":{\"logo_letter\":\"F\",\"portal_title\":\"e\",\"portal_subtitle\":\"Infrastructure s\\u00e9curis\\u00e9e \\u2014 Athena COMSPEC\",\"preamble_title\":\"Acc\\u00e8s Contr\\u00f4l\\u00e9\",\"preamble_lead\":\"Vous allez acc\\u00e9der \\u00e0 l\\u2019interface de candidature. Ce formulaire constitue un dossier d\\u2019\\u00e9valuation pr\\u00e9alable.\",\"preamble_status_lines\":[\"V\\u00e9rification de session : conforme\",\"Canal de transmission : s\\u00e9curis\\u00e9\",\"Journalisation des acc\\u00e8s : active\"],\"preamble_cta\":\"Acc\\u00e9der au Formulaire\",\"preamble_footer\":\"La poursuite vaut prise de connaissance des conditions de traitement des donn\\u00e9es.\",\"nav_brand\":\"Athena\",\"session_block_title\":\"Statut Session\",\"ref_label\":\"R\\u00e9f.\",\"security_label\":\"Encrypted\",\"progress_prefix\":\"FORMULAIRE :\",\"roe_title\":\"R\\u00e8gles d\'Engagement (ROE)\",\"roe_items\":[\"R\\u00e9ponses d\\u00e9taill\\u00e9es obligatoires.\",\"Microphone de qualit\\u00e9 requis.\",\"Disponibilit\\u00e9 mercredi et samedi soir attendue.\",\"Ne pas relancer l\'\\u00e9tat-major apr\\u00e8s soumission.\"],\"watermark\":\"OLYMPUS\",\"doc_control\":\"Document Control\",\"queue_label\":\"File d\'attente active\",\"candidate_prefix\":\"Candidature\",\"classified_badge\":\"CLASSIFIED\",\"op_note_title\":\"Note Op\\u00e9rationnelle\",\"op_col1\":\"Toute soumission est examin\\u00e9e par la cellule de recrutement.\",\"op_ai_warning\":\"L\'utilisation de l\'IA est strictement interdite.\",\"op_col2\":\"Les candidats retenus seront contact\\u00e9s directement.\",\"archive_note\":\"Chaque r\\u00e9ponse incompl\\u00e8te ou assist\\u00e9e par IA entra\\u00eene l\'archivage du dossier.\",\"section_0\":\"Mode de candidature\",\"section_1\":\"Section I \\u2014 Cadre administratif & contact\",\"section_2\":\"Section II \\u2014 Mat\\u00e9riel & exp\\u00e9rience de jeu\",\"section_3\":\"Section III \\u2014 Motivation & intention\",\"section_4\":\"Section IV \\u2014 Engagement\",\"commitment_q13\":\"13 Je comprends l\'investissement temps\\/effort requis\",\"availability_q15\":\"15 Disponible mercredi & samedi soir\",\"ai_checkbox\":\"20 Je confirme l\'absence d\'IA dans ce rapport\",\"submit_button\":\"Soumettre au Commandement\",\"submit_footer\":\"Transmission s\\u00e9curis\\u00e9e\",\"fields\":{\"full_name\":{\"label\":\"01 Nom & Pr\\u00e9nom (identit\\u00e9 dossier)\",\"placeholder\":\"ex: Jonathan King\",\"widget\":\"text\",\"options\":[]},\"legal_full_name\":{\"label\":\"Contact IRL (si personnage RP)\",\"placeholder\":\"Nom l\\u00e9gal pour recontact \\u2014 optionnel si d\\u00e9j\\u00e0 indiqu\\u00e9 ailleurs\",\"widget\":\"text\",\"options\":[]},\"age\":{\"label\":\"02 \\u00c2ge\",\"placeholder\":\"\\u00c2ge minimum requis\",\"widget\":\"text\",\"options\":[]},\"timezone\":{\"label\":\"03 Fuseau Horaire\",\"placeholder\":\"ex: Paris (UTC+1)\",\"widget\":\"text\",\"options\":[]},\"weekly_availability\":{\"label\":\"04 Disponibilit\\u00e9s Hebdomadaires\",\"placeholder\":\"Jours de la semaine\",\"widget\":\"text\",\"options\":[]},\"email\":{\"label\":\"Email (obligatoire)\",\"placeholder\":\"email@exemple.fr\",\"widget\":\"text\",\"options\":[]},\"callsign\":{\"label\":\"Indicatif \\/ callsign (optionnel)\",\"placeholder\":\"ex: Ghost-2-1\",\"widget\":\"text\",\"options\":[]},\"system_config\":{\"label\":\"05 Configuration (CPU\\/GPU\\/RAM)\",\"placeholder\":\"Configuration syst\\u00e8me\",\"widget\":\"text\",\"options\":[]},\"microphone_quality\":{\"label\":\"06 Microphone de Haute Qualit\\u00e9 ?\",\"placeholder\":\"\",\"widget\":\"yesno\",\"options\":[\"Oui\",\"Non\"]},\"past_milsim_experience\":{\"label\":\"07 Exp\\u00e9riences MilSim Pass\\u00e9es\",\"placeholder\":\"Unit\\u00e9s, r\\u00f4les, dur\\u00e9es...\",\"widget\":\"textarea\",\"options\":[]},\"ace_acre_level\":{\"label\":\"08 Ma\\u00eetrise ACE \\/ ACRE\",\"placeholder\":\"\",\"widget\":\"select\",\"options\":[\"Aucune\",\"Basique\",\"Exp\\u00e9riment\\u00e9\",\"Avanc\\u00e9\"]},\"motivation_why_join\":{\"label\":\"09 Pourquoi rejoindre ?\",\"placeholder\":\"Motivation, engagement...\",\"widget\":\"textarea\",\"options\":[]},\"motivation_accountability\":{\"label\":\"10 Qu\'est-ce que l\'Accountability ?\",\"placeholder\":\"Responsabilit\\u00e9 individuelle dans une unit\\u00e9...\",\"widget\":\"textarea\",\"options\":[]}}},\"registry_listed\":true,\"forum_members_only\":false,\"game_label\":\"\",\"main_mods\":\"\",\"modpack_size_gb\":null,\"military_sections\":[],\"registry_tags\":[],\"contact_discord_url\":\"\",\"contact_email\":\"\",\"contact_form_enabled\":false,\"contact_intro\":\"\",\"public_audience\":\"unit\",\"public_doctrine\":\"\",\"public_access_label\":\"\",\"public_mission\":\"\",\"public_region_badges\":[],\"public_specialties\":[],\"public_stats_mode\":\"manual\",\"public_stats_manual\":{\"effectif\":\"\",\"unites\":\"\",\"activite_percent\":\"\",\"theatre\":\"\"},\"public_command_chain\":[],\"public_roster_enabled\":true,\"public_recruitment_badge_open\":true,\"public_modules\":{\"forum\":false,\"documents\":true,\"events\":true,\"roster\":false,\"training\":true,\"analytics\":false}},\"founder_trial_ends_at\":\"2026-05-05T09:10:02+00:00\",\"grade_system_code\":\"FR_CLASSIC\",\"timezone\":\"Europe\\/Paris\",\"onboarding_wizard_version\":2,\"onboarding_completed_at\":\"2026-04-05T09:10:02+00:00\"}', 5, 'free', NULL, NULL, 'none', NULL, '2026-04-05 09:10:01', '2026-04-06 18:30:03', 'Europe/Paris', 'fr-FR', NULL);
 
 -- --------------------------------------------------------
 
@@ -3499,6 +5374,38 @@ CREATE TABLE `tenant_alerts` (
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tenant_api_keys`
+--
+
+CREATE TABLE `tenant_api_keys` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(120) NOT NULL,
+  `key_prefix` varchar(16) NOT NULL,
+  `key_hash` varchar(255) NOT NULL,
+  `scopes_json` text DEFAULT NULL,
+  `quota_per_day` int(10) UNSIGNED NOT NULL DEFAULT 10000,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `revoked_at` datetime DEFAULT NULL,
+  `last_used_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tenant_api_key_daily_usage`
+--
+
+CREATE TABLE `tenant_api_key_daily_usage` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `api_key_id` int(10) UNSIGNED NOT NULL,
+  `usage_day` date NOT NULL,
+  `request_count` int(10) UNSIGNED NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -3555,6 +5462,52 @@ INSERT INTO `tenant_branding` (`tenant_id`, `logo_url`, `banner_url`, `primary_c
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `tenant_community_feed`
+--
+
+CREATE TABLE `tenant_community_feed` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `category` varchar(64) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `body` text DEFAULT NULL,
+  `link_url` varchar(512) DEFAULT NULL,
+  `actor_user_id` int(10) UNSIGNED DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `tenant_community_feed`
+--
+
+INSERT INTO `tenant_community_feed` (`id`, `tenant_id`, `category`, `title`, `body`, `link_url`, `actor_user_id`, `created_at`) VALUES
+(1, 7, 'training_course_completed', 'Parcours terminé — Parcours portail — Bien utiliser le site', 'NewPI a validé l’ensemble des exigences de cette formation.', 'https://athena.ttrd.fr/public/formations/parcours-portail', 5, '2026-04-06 19:36:17');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tenant_dashboard_pins`
+--
+
+CREATE TABLE `tenant_dashboard_pins` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `pin_type` enum('document_category','document','courrier_document','external_url','notice') NOT NULL,
+  `document_category_id` int(10) UNSIGNED DEFAULT NULL,
+  `document_id` int(10) UNSIGNED DEFAULT NULL,
+  `courrier_document_id` int(10) UNSIGNED DEFAULT NULL,
+  `external_url` varchar(2000) DEFAULT NULL,
+  `title` varchar(500) DEFAULT NULL,
+  `notice_body` mediumtext DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_by` int(10) UNSIGNED DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `tenant_grade_overrides`
 --
 
@@ -3590,7 +5543,7 @@ CREATE TABLE `tenant_matricule_config` (
 
 INSERT INTO `tenant_matricule_config` (`tenant_id`, `prefix`, `format_pattern`, `next_number`, `updated_at`) VALUES
 (1, 'ATH', '{prefix}-{seq:5}', 2, '2026-03-13 19:23:21'),
-(7, 'ATH', '{prefix}-{seq:5}', 2, '2026-04-05 09:16:46');
+(7, 'ATH', '{prefix}-{seq:5}', 3, '2026-04-06 17:46:35');
 
 -- --------------------------------------------------------
 
@@ -3696,6 +5649,59 @@ CREATE TABLE `tenant_usage_counters` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `tenant_user_roles`
+--
+
+CREATE TABLE `tenant_user_roles` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `role_id` int(10) UNSIGNED NOT NULL,
+  `org_unit_id` int(10) UNSIGNED DEFAULT NULL,
+  `valid_from` datetime DEFAULT NULL,
+  `valid_until` datetime DEFAULT NULL,
+  `metadata` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`metadata`)),
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `co_unit_id` bigint(20) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Miroir IFNULL(org_unit_id,0) pour unicité — maintenu par triggers (MariaDB sans GENERATED sur org_unit_id)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `tenant_user_roles`
+--
+
+INSERT INTO `tenant_user_roles` (`id`, `tenant_id`, `user_id`, `role_id`, `org_unit_id`, `valid_from`, `valid_until`, `metadata`, `created_at`, `co_unit_id`) VALUES
+(1, 1, 3, 15, NULL, NULL, NULL, NULL, '2026-04-05 11:59:36', 0),
+(2, 1, 7, 3, NULL, NULL, NULL, NULL, '2026-04-05 11:59:36', 0),
+(3, 7, 5, 22, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(4, 7, 5, 23, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(5, 7, 5, 24, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(6, 7, 5, 25, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(7, 7, 5, 26, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(8, 7, 5, 27, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(9, 7, 5, 28, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(10, 7, 5, 29, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(11, 7, 5, 37, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(12, 7, 5, 38, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(13, 7, 5, 39, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(14, 7, 5, 40, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(15, 7, 5, 41, NULL, NULL, NULL, NULL, '2026-04-05 22:37:44', 0),
+(16, 7, 8, 25, NULL, NULL, NULL, NULL, '2026-04-05 16:31:53', 0);
+
+--
+-- Déclencheurs `tenant_user_roles`
+--
+DELIMITER $$
+CREATE TRIGGER `tur_co_unit_bi` BEFORE INSERT ON `tenant_user_roles` FOR EACH ROW SET NEW.co_unit_id = IFNULL(NEW.org_unit_id, 0)
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `tur_co_unit_bu` BEFORE UPDATE ON `tenant_user_roles` FOR EACH ROW SET NEW.co_unit_id = IFNULL(NEW.org_unit_id, 0)
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `training_audit_log`
 --
 
@@ -3713,6 +5719,40 @@ CREATE TABLE `training_audit_log` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Déchargement des données de la table `training_audit_log`
+--
+
+INSERT INTO `training_audit_log` (`id`, `tenant_id`, `user_id`, `action`, `target_type`, `target_id`, `old_value`, `new_value`, `ip_address`, `user_agent`, `created_at`) VALUES
+(1, 7, 5, 'course_created', 'training_course', 1, NULL, '{\"title\":\"Introduction à l\'unité\",\"slug\":\"introduction-a-l-unite\",\"visibility\":\"draft\"}', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 16:49:15'),
+(2, 7, 5, 'course_updated', 'training_course', 1, '{\"title\":\"Introduction à l\'unité\",\"slug\":\"introduction-a-l-unite\",\"visibility\":\"draft\"}', '{\"title\":\"Introduction à l\'unité\",\"slug\":\"introduction-a-l-unite\",\"visibility\":\"draft\"}', '2a01:e0a:8ee:2720:14c:15c3:b6f6:9e3f', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 21:43:30'),
+(3, 7, 5, 'course_updated', 'training_course', 1, NULL, '{\"module_created\":1}', '2a01:e0a:8ee:2720:14c:15c3:b6f6:9e3f', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 21:43:41'),
+(4, 7, 5, 'course_updated', 'training_course', 1, NULL, '{\"module_created\":2}', '2a01:e0a:8ee:2720:14c:15c3:b6f6:9e3f', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 21:56:50'),
+(5, 7, 5, 'enrollment_assigned', 'training_enrollment', 1, NULL, '{\"user_id\":5,\"course_id\":1,\"assignment_type\":\"self_enroll\"}', '2a01:e0a:8ee:2720:14c:15c3:b6f6:9e3f', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-05 22:01:39'),
+(6, 7, 5, 'enrollment_assigned', 'training_enrollment', 2, NULL, '{\"user_id\":5,\"course_id\":3,\"assignment_type\":\"self_enroll\",\"motivation_provided\":false}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 10:47:11'),
+(7, 7, 5, 'lesson_completed', 'training_progress', 2, NULL, '{\"lesson_id\":8}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 10:59:49'),
+(8, 7, 5, 'enrollment_assigned', 'training_enrollment', 3, NULL, '{\"user_id\":5,\"course_id\":5,\"assignment_type\":\"self_enroll\",\"motivation_provided\":false}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 11:16:04'),
+(9, 7, 5, 'course_created', 'training_course', 6, NULL, '{\"title\":\"Introduction au LMS\",\"slug\":\"introduction-au-lms\",\"visibility\":\"draft\"}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 12:23:01'),
+(10, 7, 5, 'course_updated', 'training_course', 6, NULL, '{\"enrollment_share_code_regenerated\":true}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 12:23:09'),
+(11, 7, 5, 'lesson_completed', 'training_progress', 3, NULL, '{\"lesson_id\":18}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:05:53'),
+(12, 7, 5, 'lesson_completed', 'training_progress', 3, NULL, '{\"lesson_id\":30}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:05:56'),
+(13, 7, 5, 'lesson_completed', 'training_progress', 3, NULL, '{\"lesson_id\":31}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:06:04'),
+(14, 7, 5, 'lesson_completed', 'training_progress', 3, NULL, '{\"lesson_id\":32}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:06:07'),
+(15, 7, 5, 'lesson_completed', 'training_progress', 3, NULL, '{\"lesson_id\":29}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:06:19'),
+(16, 7, 5, 'quiz_attempt_submitted', 'training_quiz_attempt', 4, NULL, '{\"score\":\"100.00\",\"passed\":1}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:06:51'),
+(17, 7, 5, 'lesson_completed', 'training_progress', 3, NULL, '{\"lesson_id\":19}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:08:32'),
+(18, 7, 5, 'lesson_completed', 'training_progress', 3, NULL, '{\"lesson_id\":20}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:08:57'),
+(19, 7, 5, 'lesson_completed', 'training_progress', 3, NULL, '{\"lesson_id\":33}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:09:03'),
+(20, 7, 5, 'lesson_completed', 'training_progress', 3, NULL, '{\"lesson_id\":34}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:09:22'),
+(21, 7, 5, 'quiz_attempt_submitted', 'training_quiz_attempt', 5, NULL, '{\"score\":\"100.00\",\"passed\":1}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:31:09'),
+(22, 7, 5, 'quiz_attempt_submitted', 'training_quiz_attempt', 6, NULL, '{\"score\":\"100.00\",\"passed\":1}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:32:02'),
+(23, 7, 5, 'lesson_completed', 'training_progress', 3, NULL, '{\"lesson_id\":21}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:35:20'),
+(24, 7, 5, 'lesson_completed', 'training_progress', 3, NULL, '{\"lesson_id\":22}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:36:17'),
+(25, 7, 5, 'certificate_issued', 'training_certificate', 1, NULL, '{\"certificate_number\":\"ATH-7-2026-00001\",\"enrollment_id\":3}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 19:52:31'),
+(26, 7, 5, 'course_created', 'training_course', 7, NULL, '{\"title\":\"Installer Task Force Radio sur Arma 3\",\"slug\":\"installer-task-force-radio-arma3\",\"imported\":true}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 20:11:27'),
+(27, 7, 5, 'enrollment_assigned', 'training_enrollment', 4, NULL, '{\"user_id\":5,\"course_id\":7,\"assignment_type\":\"self_enroll\",\"motivation_provided\":false,\"status\":\"assigned\"}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 20:13:37'),
+(28, 7, 5, 'course_updated', 'training_course', 7, '{\"title\":\"Installer Task Force Radio sur Arma 3\",\"slug\":\"installer-task-force-radio-arma3\",\"visibility\":\"published\"}', '{\"title\":\"Installer Task Force Radio sur Arma 3\",\"slug\":\"installer-task-force-radio-arma3\",\"visibility\":\"published\"}', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-06 20:16:57');
+
 -- --------------------------------------------------------
 
 --
@@ -3723,6 +5763,7 @@ CREATE TABLE `training_certificates` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `tenant_id` int(10) UNSIGNED NOT NULL,
   `enrollment_id` bigint(20) UNSIGNED NOT NULL,
+  `issued_by_user_id` int(10) UNSIGNED DEFAULT NULL,
   `certificate_number` varchar(100) NOT NULL,
   `issued_at` datetime NOT NULL DEFAULT current_timestamp(),
   `expires_at` datetime DEFAULT NULL,
@@ -3730,6 +5771,35 @@ CREATE TABLE `training_certificates` (
   `pdf_path` varchar(255) DEFAULT NULL,
   `status` enum('valid','expired','revoked') DEFAULT 'valid'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Déchargement des données de la table `training_certificates`
+--
+
+INSERT INTO `training_certificates` (`id`, `tenant_id`, `enrollment_id`, `issued_by_user_id`, `certificate_number`, `issued_at`, `expires_at`, `final_score`, `pdf_path`, `status`) VALUES
+(1, 7, 3, NULL, 'ATH-7-2026-00001', '2026-04-06 19:52:31', NULL, 100.00, NULL, 'valid');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `training_certificate_templates`
+--
+
+CREATE TABLE `training_certificate_templates` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(120) NOT NULL DEFAULT 'Modèle par défaut',
+  `headline` varchar(255) NOT NULL DEFAULT 'Attestation de formation',
+  `subtitle` varchar(255) DEFAULT NULL,
+  `footer_legal` text DEFAULT NULL,
+  `primary_hex` varchar(7) NOT NULL DEFAULT '#0f172a',
+  `accent_hex` varchar(7) NOT NULL DEFAULT '#059669',
+  `logo_relative_path` varchar(500) DEFAULT NULL,
+  `background_relative_path` varchar(500) DEFAULT NULL,
+  `layout_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`layout_json`)),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -3740,11 +5810,15 @@ CREATE TABLE `training_certificates` (
 CREATE TABLE `training_courses` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `tenant_id` int(10) UNSIGNED NOT NULL,
+  `lms_scope` enum('tenant','platform') NOT NULL DEFAULT 'tenant',
   `uuid` char(36) NOT NULL,
   `title` varchar(255) NOT NULL,
   `slug` varchar(255) NOT NULL,
+  `course_code` varchar(32) DEFAULT NULL,
   `short_description` varchar(500) DEFAULT NULL,
   `description` longtext DEFAULT NULL,
+  `learning_objectives` longtext DEFAULT NULL,
+  `theme_json` longtext DEFAULT NULL,
   `thumbnail_path` varchar(255) DEFAULT NULL,
   `banner_path` varchar(255) DEFAULT NULL,
   `showcase_cycle_date` date DEFAULT NULL,
@@ -3764,8 +5838,130 @@ CREATE TABLE `training_courses` (
   `created_by` int(10) UNSIGNED NOT NULL,
   `updated_by` int(10) UNSIGNED DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp(),
+  `enrollment_policy_json` longtext DEFAULT NULL,
+  `instruction_audio_url` varchar(512) DEFAULT NULL,
+  `instruction_audio_instructor_optional` tinyint(1) NOT NULL DEFAULT 1,
+  `instruction_audio_notes` varchar(500) DEFAULT NULL,
+  `enrollment_share_code` varchar(20) DEFAULT NULL,
+  `lms_created_with_version` varchar(32) DEFAULT NULL,
+  `lms_last_saved_with_version` varchar(32) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Déchargement des données de la table `training_courses`
+--
+
+INSERT INTO `training_courses` (`id`, `tenant_id`, `lms_scope`, `uuid`, `title`, `slug`, `course_code`, `short_description`, `description`, `learning_objectives`, `theme_json`, `thumbnail_path`, `banner_path`, `showcase_cycle_date`, `showcase_location`, `showcase_badge`, `showcase_card_style`, `showcase_sort_order`, `category`, `level`, `language_code`, `estimated_minutes`, `passing_score`, `is_mandatory`, `is_certifying`, `validity_days`, `visibility`, `created_by`, `updated_by`, `created_at`, `updated_at`, `enrollment_policy_json`, `instruction_audio_url`, `instruction_audio_instructor_optional`, `instruction_audio_notes`, `enrollment_share_code`, `lms_created_with_version`, `lms_last_saved_with_version`) VALUES
+(4, 1, 'tenant', '56f57a31-c578-4d86-bffe1a9e892c', 'Parcours portail — Bien utiliser le site', 'parcours-portail', 'PORTAIL-101', 'Parcours structuré : finalité du portail, navigation et compte, contenus et formations, communauté, validation.', 'Ce parcours d’accueil fixe le socle commun pour utiliser le portail de votre communauté de manière correcte et prévisible. Il ne remplace ni le règlement intérieur ni les consignes d’emploi de votre unité : il précise où vit l’information sur le site, comment la retrouver sans perdre de temps, et quels gestes minimaux protègent votre compte et celui des autres.\n\nLa progression suit une montée en puissance : finalité du portail, repérage après connexion, actions sur le compte, lieux où l’information stable coexiste avec la coordination vivante, logique des formations et de la progression enregistrée, règles de vie collective (forum, événements), puis validation par questionnaires. Vous y verrez des situations types, des erreurs fréquentes et des procédures pas à pas lorsque c’est utile.\n\nLe ton est institutionnel et concret. Prenez le temps de lire les encadrés de vigilance et les synthèses de fin de module. Un bilan interrogé à mi-parcours ancre les acquis des trois premiers blocs ; un questionnaire final porte sur l’ensemble du parcours. En cas d’échec, les explications affichées servent de plan de révision avant une nouvelle tentative.', 'Comprendre la finalité du portail : information stabilisée, coordination, suivi pédagogique — et ce qu’il ne remplace pas\nSe repérer après connexion : tableau de bord, menu, zone Opérations selon les droits, multi-communautés\nAgir sur son compte : profil, préférences, sécurité, contact à jour\nSavoir où vit l’information : dossier personnel, organigramme, documents de référence, catalogue des formations\nComprendre la logique LMS : progression réelle, obligation, attestation, reprise de parcours\nAdopter les règles de vie collective : forum, annonces, événements, signalements, présence\nRéussir le bilan à mi-parcours puis le questionnaire final, et distinguer validation de parcours et habilitation métier', '{\"accent\":\"#0d9488\",\"accentRgb\":\"13, 148, 136\",\"font\":\"\'IBM Plex Sans\', system-ui, sans-serif\",\"radius\":\"1.25rem\",\"variant\":\"default\"}', NULL, NULL, NULL, NULL, 'open', 'default', 1, 'Portail', 'initiation', 'fr', 152, 80.00, 1, 1, NULL, 'published', 3, 3, '2026-04-06 11:14:44', '2026-04-06 20:14:16', '{}', NULL, 1, NULL, NULL, NULL, NULL),
+(5, 7, 'tenant', 'bba229dc-fe11-46b7-a25ec28eedcb', 'Parcours portail — Bien utiliser le site', 'parcours-portail', 'PORTAIL-101', 'Parcours structuré : finalité du portail, navigation et compte, contenus et formations, communauté, validation.', 'Ce parcours d’accueil fixe le socle commun pour utiliser le portail de votre communauté de manière correcte et prévisible. Il ne remplace ni le règlement intérieur ni les consignes d’emploi de votre unité : il précise où vit l’information sur le site, comment la retrouver sans perdre de temps, et quels gestes minimaux protègent votre compte et celui des autres.\n\nLa progression suit une montée en puissance : finalité du portail, repérage après connexion, actions sur le compte, lieux où l’information stable coexiste avec la coordination vivante, logique des formations et de la progression enregistrée, règles de vie collective (forum, événements), puis validation par questionnaires. Vous y verrez des situations types, des erreurs fréquentes et des procédures pas à pas lorsque c’est utile.\n\nLe ton est institutionnel et concret. Prenez le temps de lire les encadrés de vigilance et les synthèses de fin de module. Un bilan interrogé à mi-parcours ancre les acquis des trois premiers blocs ; un questionnaire final porte sur l’ensemble du parcours. En cas d’échec, les explications affichées servent de plan de révision avant une nouvelle tentative.', 'Comprendre la finalité du portail : information stabilisée, coordination, suivi pédagogique — et ce qu’il ne remplace pas\nSe repérer après connexion : tableau de bord, menu, zone Opérations selon les droits, multi-communautés\nAgir sur son compte : profil, préférences, sécurité, contact à jour\nSavoir où vit l’information : dossier personnel, organigramme, documents de référence, catalogue des formations\nComprendre la logique LMS : progression réelle, obligation, attestation, reprise de parcours\nAdopter les règles de vie collective : forum, annonces, événements, signalements, présence\nRéussir le bilan à mi-parcours puis le questionnaire final, et distinguer validation de parcours et habilitation métier', '{\"accent\":\"#0d9488\",\"accentRgb\":\"13, 148, 136\",\"font\":\"\'IBM Plex Sans\', system-ui, sans-serif\",\"radius\":\"1.25rem\",\"variant\":\"default\"}', NULL, NULL, NULL, NULL, 'open', 'default', 1, 'Portail', 'initiation', 'fr', 152, 80.00, 1, 1, NULL, 'published', 5, 5, '2026-04-06 11:14:44', '2026-04-06 20:14:16', '{}', NULL, 1, NULL, NULL, NULL, NULL),
+(6, 7, 'tenant', '1cf853ef-601b-4729-9bee-17452be1553f', 'Introduction au LMS', 'introduction-au-lms', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'open', 'default', NULL, NULL, 'initiation', 'fr', 0, 80.00, 0, 0, NULL, 'draft', 5, 5, '2026-04-06 12:23:01', '2026-04-06 12:23:09', NULL, NULL, 1, NULL, 'MWYHFAV64V', '1.0.0', '1.0.0'),
+(7, 7, 'platform', '69c67f45-3207-41c3-8506-79f6075611b2', 'Installer Task Force Radio sur Arma 3', 'installer-task-force-radio-arma3', NULL, NULL, NULL, NULL, '{\"accent\":\"#0b019d\",\"accentRgb\":\"11, 1, 157\",\"font\":\"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace\",\"radius\":\"0.5rem\",\"variant\":\"soft\"}', 'https://i.redd.it/olaj2hud66d51.jpg', 'https://i.redd.it/olaj2hud66d51.jpg', NULL, NULL, 'required', 'default', 10, NULL, 'initiation', 'fr', 0, 80.00, 0, 0, NULL, 'published', 5, 5, '2026-04-06 20:11:27', '2026-04-06 20:16:57', '{\"enrollments_blocked\":false,\"self_enroll_allowed\":true,\"self_enroll_requires_approval\":false,\"comments_enabled\":true,\"enrollment_approver_user_ids\":[],\"prerequisite_course_ids\":[],\"require_certificate_from_course_ids\":[],\"required_role_ids\":[],\"required_grade_ids\":[],\"required_user_statuses\":[]}', NULL, 1, NULL, 'LSKGZ97F47', '1.1.1', '1.1.1');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `training_course_comments`
+--
+
+CREATE TABLE `training_course_comments` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `course_id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `parent_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `body` text NOT NULL,
+  `status` enum('visible','hidden') NOT NULL DEFAULT 'visible',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `training_course_comments`
+--
+
+INSERT INTO `training_course_comments` (`id`, `tenant_id`, `course_id`, `user_id`, `parent_id`, `body`, `status`, `created_at`) VALUES
+(1, 7, 5, 5, NULL, 'Je sais, la formation est un peu vide mais c\'est un premier jet pour le fonctionnement du LMS.', 'visible', '2026-04-06 17:16:51');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `training_course_favorites`
+--
+
+CREATE TABLE `training_course_favorites` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `course_id` bigint(20) UNSIGNED NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `training_course_questions`
+--
+
+CREATE TABLE `training_course_questions` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `course_id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `question_text` text NOT NULL,
+  `answer_text` text DEFAULT NULL,
+  `answered_by` int(10) UNSIGNED DEFAULT NULL,
+  `answered_at` datetime DEFAULT NULL,
+  `status` enum('open','answered','hidden') NOT NULL DEFAULT 'open',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `training_course_reviews`
+--
+
+CREATE TABLE `training_course_reviews` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `course_id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `rating` tinyint(3) UNSIGNED NOT NULL DEFAULT 5,
+  `title` varchar(255) DEFAULT NULL,
+  `body` text DEFAULT NULL,
+  `kind` enum('rating','review') NOT NULL DEFAULT 'rating',
+  `status` enum('pending','published','hidden') NOT NULL DEFAULT 'published',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `training_course_sessions`
+--
+
+CREATE TABLE `training_course_sessions` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `course_id` bigint(20) UNSIGNED NOT NULL,
+  `starts_at` datetime NOT NULL,
+  `ends_at` datetime NOT NULL,
+  `label` varchar(255) DEFAULT NULL,
+  `location` varchar(255) DEFAULT NULL,
+  `max_seats` int(10) UNSIGNED DEFAULT NULL,
+  `instructor_user_id` int(10) UNSIGNED DEFAULT NULL,
+  `audio_briefing_url` varchar(512) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `training_course_sessions`
+--
+
+INSERT INTO `training_course_sessions` (`id`, `tenant_id`, `course_id`, `starts_at`, `ends_at`, `label`, `location`, `max_seats`, `instructor_user_id`, `audio_briefing_url`, `notes`, `created_at`) VALUES
+(1, 7, 7, '2026-04-07 22:17:00', '2026-04-07 22:17:00', NULL, 'Discord', 10, 1, NULL, NULL, '2026-04-06 20:17:42');
 
 -- --------------------------------------------------------
 
@@ -3780,12 +5976,21 @@ CREATE TABLE `training_enrollments` (
   `user_id` int(10) UNSIGNED NOT NULL,
   `assigned_by` int(10) UNSIGNED DEFAULT NULL,
   `assignment_type` enum('manual','role','unit','campaign','self_enroll') DEFAULT 'manual',
-  `status` enum('assigned','in_progress','completed','failed','expired','revoked') DEFAULT 'assigned',
+  `status` enum('assigned','in_progress','completed','failed','expired','revoked','pending_approval') NOT NULL DEFAULT 'assigned',
   `assigned_at` datetime NOT NULL DEFAULT current_timestamp(),
   `started_at` datetime DEFAULT NULL,
   `completed_at` datetime DEFAULT NULL,
-  `expires_at` datetime DEFAULT NULL
+  `expires_at` datetime DEFAULT NULL,
+  `motivation_text` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Déchargement des données de la table `training_enrollments`
+--
+
+INSERT INTO `training_enrollments` (`id`, `tenant_id`, `course_id`, `user_id`, `assigned_by`, `assignment_type`, `status`, `assigned_at`, `started_at`, `completed_at`, `expires_at`, `motivation_text`) VALUES
+(3, 7, 5, 5, 5, 'self_enroll', 'completed', '2026-04-06 11:16:04', '2026-04-06 11:16:04', '2026-04-06 19:36:17', NULL, NULL),
+(4, 7, 7, 5, 5, 'self_enroll', 'in_progress', '2026-04-06 20:13:37', '2026-04-06 20:13:37', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -3797,15 +6002,61 @@ CREATE TABLE `training_lessons` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `module_id` bigint(20) UNSIGNED NOT NULL,
   `title` varchar(255) NOT NULL,
-  `lesson_type` enum('richtext','video','pdf','audio','scorm_like','checklist','external_link','canvas') NOT NULL DEFAULT 'richtext',
+  `summary` varchar(500) DEFAULT NULL,
+  `learning_objectives` text DEFAULT NULL,
+  `instructor_notes` text DEFAULT NULL,
+  `lesson_type` enum('richtext','video','pdf','audio','scorm_like','checklist','external_link','canvas','quiz','modals','video_embed','video_integrated','slideshow') NOT NULL DEFAULT 'richtext',
   `content` longtext DEFAULT NULL,
   `external_url` varchar(500) DEFAULT NULL,
   `duration_minutes` int(10) UNSIGNED DEFAULT 0,
+  `difficulty` varchar(20) DEFAULT NULL,
   `position` int(10) UNSIGNED NOT NULL DEFAULT 1,
   `is_required` tinyint(1) DEFAULT 1,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Déchargement des données de la table `training_lessons`
+--
+
+INSERT INTO `training_lessons` (`id`, `module_id`, `title`, `summary`, `learning_objectives`, `instructor_notes`, `lesson_type`, `content`, `external_url`, `duration_minutes`, `difficulty`, `position`, `is_required`, `created_at`, `updated_at`) VALUES
+(13, 13, 'Vue d’ensemble — parcours visuel', 'Rôle du portail, déroulé pédagogique, méthode de travail, sécurité du compte, liens vers l’aide.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[{\"id\":\"onb-sec\",\"title\":\"Rappels sécurité\",\"body\":\"<ul><li><strong>Mot de passe :</strong> gardez-le pour vous ; changez-le si vous pensez qu’il a pu être vu par une autre personne.</li><li><strong>Ordinateur partagé :</strong> déconnectez-vous du portail quand vous avez terminé.</li><li><strong>Adresse e-mail :</strong> si vous la modifiez, suivez les étapes de confirmation affichées sur le site.</li><li><strong>Contenus sensibles :</strong> ne les copiez pas sur des canaux personnels ; restez dans les espaces prévus par votre organisation.</li></ul>\"}],\"opening\":{\"eyebrow\":\"Parcours d’accueil\",\"title\":\"\",\"lead\":\"Ce module pose le cadre : à quoi sert le portail, comment lire ce parcours, et quels réflexes de sécurité garder en tête.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~26 min\"},{\"label\":\"Format\",\"value\":\"Parcours visuel\"},{\"label\":\"Objectif\",\"value\":\"Finalité + risques + sécurité\"}]},\"closure\":{\"title\":\"Synthèse — Vue d’ensemble\",\"seen\":[\"Finalité institutionnelle : information stable, coordination vivante, suivi pédagogique — avec des lieux distincts sur le site.\",\"Ce que le portail n’est pas : ni substitut à la chaîne de commandement, ni dépôt anarchique des notes officielles sur le forum.\",\"Erreurs fréquentes (forum = tout, panne imaginaire, session laissée ouverte) et comment les corriger.\"],\"acquired\":[\"Vous savez réagir de façon raisonnable si une rubrique manque : contexte, rôle, puis demande au staff.\",\"Vous distinguez référence documentaire et discussion ; vous connaissez les gestes de sécurité du compte.\"],\"nextHint\":\"Enchaînez avec le module « Navigation et compte » : tableau de bord, menus, profil, préférences et multi-communautés.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Bienvenue sur le portail\",\"subtitle\":\"Formation d’accueil — lecture active\",\"body\":\"<p>Ce site regroupe ce dont vous avez besoin pour suivre la vie de votre communauté : <strong>consignes stabilisées</strong> (documents), <strong>échanges</strong> (forum), <strong>compétences</strong> (formations), <strong>coordination</strong> (événements, pointage selon les réglages) et <strong>votre dossier</strong> (personnel). Ce parcours vise un seul résultat : que vous sachiez <em>où</em> chercher l’information et <em>comment</em> agir sans improviser.</p><p>Les textes sont longs volontairement : ce n’est pas une brochure marketing, c’est un mode d’emploi. Si une rubrique n’existe pas chez vous, c’est souvent lié aux droits ou à la configuration — ce n’est pas une erreur de parcours de votre part.</p>\",\"contextKicker\":\"Étape 01 · Cadrage\",\"surface\":\"elevated\",\"metric\":{\"label\":\"Pour qui\",\"value\":\"Tous les membres\"},\"cards\":[{\"label\":\"Documents\",\"body\":\"Notes et fichiers de référence, retrouvables et mis à jour par le staff.\"},{\"label\":\"Forum & annonces\",\"body\":\"Échanges et relances ; ce n’est pas le stockage des versions finales.\"},{\"label\":\"Formations\",\"body\":\"Parcours tracés, parfois obligatoires ou certifiants selon les règles.\"}],\"insights\":[{\"variant\":\"key\",\"title\":\"\",\"body\":\"Le portail oriente : tableau de bord et menu reflètent ce que votre rôle permet de voir.\"}]},{\"template\":\"reading_article\",\"title\":\"À quoi sert concrètement ce portail ?\",\"subtitle\":\"Stabiliser l’information, pas la noyer\",\"contextKicker\":\"Étape 02 · Lecture\",\"surface\":\"default\",\"insights\":[{\"variant\":\"vigilance\",\"title\":\"\",\"body\":\"Si une rubrique manque, vérifiez la communauté active et votre affectation avant de conclure à une « panne ».\"}],\"body\":\"<p>Le portail répond à un problème simple : lorsque chacun va chercher l’information sur des canaux informels, les versions se multiplient, les retardataires ne voient pas les mises à jour, et le staff passe son temps à répéter la même consigne. Ici, l’objectif est que la <strong>version de référence</strong> vive dans des endroits identifiables : documents publiés, fils de discussion classés, formations suivies et tracées.</p>\\n<p>Après connexion, vous n’êtes pas censé « explorer au hasard » : le <strong>tableau de bord</strong> et le <strong>menu</strong> vous orientent vers ce qui est ouvert pour votre rôle. Vous pouvez aussi disposer d’une zone regroupant les modules d’<strong>opérations</strong> : lieu central de mission, briefings, organigramme, outils tactiques selon ce que votre communauté a activé. Ce n’est pas décoratif : ce sont des raccourcis pour éviter les détours.</p>\\n<p>Le portail ne remplace pas le jugement ni la chaîne de commandement : il <strong>porte</strong> l’information et la formation. Une note officielle reste une note officielle ; un message sur le forum reste un échange ; une formation indique ce que vous avez parcouru et validé, pas votre valeur opérationnelle au sens tactique.</p>\\n<div class=\\\"lms-reading-callout lms-reading-callout--info\\\"><p><strong>À retenir</strong> : si vous ne voyez pas une rubrique mentionnée dans ce parcours, commencez par vérifier que vous êtes dans la bonne communauté (lorsque vous en avez plusieurs), puis demandez au staff si l’accès est normal ou s’il manque une affectation de rôle.</p></div>\"},{\"template\":\"reading_article\",\"title\":\"Déroulé de ce parcours et méthode de travail\",\"subtitle\":\"Lectures, bilan interrogé, puis validation finale\",\"body\":\"<p>Ce parcours enchaîne plusieurs modules de lecture, un <strong>bilan interrogé à mi-parcours</strong> pour ancrer les premiers acquis, puis le module sur la vie collective (forum, événements) et enfin la <strong>validation finale</strong>. L’ordre est logique : d’abord la vision d’ensemble et la sécurité du compte, ensuite la navigation quotidienne, puis les contenus « métier » (personnel, documents, formations), avant le bilan, le collectif et la manière dont le site atteste vos acquis.</p>\\n<h3>Comment lire efficacement</h3>\\n<p>Utilisez les boutons <strong>Précédent</strong> et <strong>Suivant</strong> sous les diapositives. Ne cherchez pas à « swiper » trop vite : plusieurs écrans contiennent des nuances importantes (par exemple la différence entre un document officiel et un fil de discussion). Lorsqu’un <strong>texte à trous</strong> apparaît, complétez-le avant de valider : c’est un mini-test de vocabulaire intégré au parcours.</p>\\n<h3>Si quelque chose reste flou pour votre unité</h3>\\n<p>Notez la question pendant la lecture, puis posez-la sur le canal prévu par votre organisation (référent, réunion, fil dédié). Ce parcours décrit le fonctionnement général du portail ; votre unité peut avoir des conventions supplémentaires (horaires, niveaux de diffusion, procédure de validation des absences, etc.).</p>\\n<div class=\\\"lms-reading-callout lms-reading-callout--tip\\\"><p><strong>Erreur fréquente</strong> : croire que « tout est sur le forum ». Le forum sert à débattre, annoncer, relancer ; les fichiers de référence et les textes stabilisés doivent vivre dans la rubrique documents (ou équivalent) lorsque le staff les y place.</p></div>\"},{\"template\":\"reading_article\",\"title\":\"À l’issue du parcours complet, vous saurez…\",\"subtitle\":\"Objectifs opérationnels\",\"body\":\"<ul>\\n<li>expliquer à un nouveau membre à quoi sert le tableau de bord et comment retrouver l’aide ou la documentation du site ;</li>\\n<li>mettre à jour vous-même profil, préférences et sécurité du compte sans demander au staff pour chaque détail ;</li>\\n<li>ouvrir la rubrique documents, comprendre pourquoi un fichier peut être masqué, et ne pas rediffuser un contenu sensible hors des canaux prévus ;</li>\\n<li>parcourir le catalogue des formations, distinguer inscription libre et assignation par le staff, et reprendre un module en cours ;</li>\\n<li>participer au forum sans saturer les catégories ni ignorer les annonces officielles ;</li>\\n<li>traiter un événement comme un engagement : inscription, prévenance en cas d’empêchement, respect des consignes de présence ;</li>\\n<li>réussir le bilan interrogé à mi-parcours puis le questionnaire final, et utiliser les explications affichées pour réviser en cas d’échec ;</li>\\n<li>comprendre ce que signifient pour vous une formation <strong>obligatoire</strong> et une formation <strong>certifiante</strong>, ainsi que le rôle de l’attestation.</li>\\n</ul>\\n<p>Ce n’est pas une liste à décorer : c’est le socle minimal attendu d’un membre qui utilise le portail au quotidien.</p>\"},{\"template\":\"reading_article\",\"title\":\"Ce que le portail n’est pas\",\"subtitle\":\"Éviter les malentendus d’usage\",\"contextKicker\":\"Étape 03 · Cadrage\",\"body\":\"<p>Le portail <strong>n’est pas</strong> un substitut à la chaîne de commandement ni au jugement sur le terrain : il porte l’information et la formation, pas l’autorité opérationnelle.</p>\\n<p>Il <strong>n’est pas</strong> un espace où toute note officielle peut rester définitivement dans un fil de discussion : la version stabilisée appartient aux documents (ou équivalent) lorsque le staff y procède.</p>\\n<p>Il <strong>n’est pas</strong> une messagerie personnelle : les échanges publics ou de service suivent des règles de canal ; les sujets sensibles passent par les procédures prévues.</p>\\n<p>Enfin, une formation validée sur le site <strong>n’est pas</strong>, à elle seule, une reconnaissance tacite de toutes les compétences métier : elle atteste du parcours réalisé selon les règles affichées.</p>\"},{\"template\":\"common_mistakes\",\"title\":\"Erreurs d’usage les plus fréquentes\",\"mistakes\":[{\"error\":\"Tout centraliser sur le forum\",\"why\":\"Le forum est conçu pour la conversation et les relais, pas pour remplacer la rubrique documents.\",\"consequence\":\"Versions multiples, fils longs, nouveaux membres qui ne retrouvent pas la référence.\",\"correction\":\"Demander ou attendre la publication dans les documents lorsque le staff valide un texte de référence.\"},{\"error\":\"Conclure trop vite à une « panne » du site\",\"why\":\"Souvent, une rubrique absente correspond à des droits, à une autre communauté active ou à une fonction non activée.\",\"consequence\":\"Messages d’alerte publics inutiles et temps perdu pour le staff.\",\"correction\":\"Vérifier le contexte (communauté, rôle), puis s’adresser au canal prévu pour le support.\"},{\"error\":\"Négliger la déconnexion sur poste partagé\",\"why\":\"La session peut rester ouverte pour le prochain utilisateur du même équipement.\",\"consequence\":\"Accès au compte et aux contenus au nom de la mauvaise personne.\",\"correction\":\"Utiliser la déconnexion explicite du portail en fin de session.\"}]},{\"template\":\"scenario_decision\",\"title\":\"Je ne trouve pas une rubrique mentionnée dans ce parcours\",\"context\":\"Vous suivez la formation ; un encadré cite une page (documents, organigramme, etc.) que vous ne voyez pas dans votre menu.\",\"situation\":\"<p>Vous devez agir rapidement pour un sujet opérationnel. Vous pensez que le site est « cassé ».</p>\",\"options\":[{\"id\":\"a\",\"text\":\"Vérifier la communauté active et, si besoin, demander au staff si l’accès est normal pour votre rôle avant de conclure.\"},{\"id\":\"b\",\"text\":\"Publier immédiatement un message d’alerte dans toutes les catégories du forum.\"},{\"id\":\"c\",\"text\":\"Partager vos identifiants avec un camarade pour qu’il teste depuis son compte.\"},{\"id\":\"d\",\"text\":\"Abandonner toute utilisation du portail jusqu’à nouvel ordre.\"}],\"correctOptionId\":\"a\",\"explanation\":\"<p>La première démarche raisonnable est de contrôler le <strong>contexte</strong> (communauté, rôle) puis de solliciter le staff sur le canal prévu. Les autres options créent du bruit, un risque de sécurité ou une interruption inutile de travail.</p>\"},{\"template\":\"title_hero\",\"title\":\"Sécurité : les bases\",\"subtitle\":\"Gestes simples, effet collectif\",\"body\":\"<p>Un compte compromis ou une session laissée ouverte sur un poste partagé, ce n’est pas « une affaire personnelle » : c’est un risque pour toute la communauté (usurpation, fuite de consignes, spam). Les bons réflexes sont courts : mot de passe sérieux, déconnexion explicite, prudence sur les copies d’écran et les transferts hors site.</p>\",\"primaryAction\":{\"type\":\"modal\",\"label\":\"Voir la liste des rappels\",\"modalId\":\"onb-sec\"}},{\"template\":\"resources_list\",\"title\":\"Accès directs après connexion\",\"subtitle\":\"Liens utiles\",\"body\":\"<p>Si un lien ne fonctionne pas, votre site peut utiliser une adresse légèrement différente : repassez alors par le menu principal.</p>\",\"resources\":[{\"title\":\"Tableau de bord\",\"url\":\"/public/dashboard\"},{\"title\":\"Documentation du portail\",\"url\":\"/public/documentation\"}]},{\"template\":\"reading_article\",\"title\":\"Avant de passer au module suivant\",\"subtitle\":\"Prenez le temps de l’ancrage\",\"body\":\"<p>La suite du parcours entre dans le détail de la navigation et du compte. Si vous avez sauté des paragraphes, revenez en arrière : les modules suivants supposent que vous savez déjà ce qu’est le tableau de bord, pourquoi les documents ne sont pas interchangeables avec le forum, et pourquoi la sécurité du compte est une responsabilité partagée.</p>\"}]}', NULL, 17, 'initiation', 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(14, 14, 'Navigation et compte — parcours visuel', 'Menu principal, zone Opérations, tableau de bord, compte, préférences, recherche, bonnes pratiques.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Module pratique\",\"title\":\"\",\"lead\":\"Menus, tableau de bord, compte et recherche : les bons réflexes pour ne pas perdre le fil au quotidien.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~28 min\"},{\"label\":\"Focus\",\"value\":\"Repérage + compte\"}]},\"closure\":{\"title\":\"Synthèse — Navigation et compte\",\"seen\":[\"Tableau de bord comme premier arrêt ; menu et zone Opérations selon les droits.\",\"Procédure type de mise à jour du profil et des préférences dans la rubrique compte.\",\"Comparaison poste personnel / poste partagé et conduite en cas de page invisible.\"],\"acquired\":[\"Vous savez enchaîner les étapes pour tenir votre compte à jour sans improvisation.\",\"Vous évitez les erreurs de contexte entre communautés et les sessions ouvertes sur poste partagé.\"],\"nextHint\":\"Poursuivez avec « Organisation et contenus » : personnel, documents, formations et attestations.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Navigation et compte\",\"subtitle\":\"Lire le site comme un outil de travail\",\"body\":\"<p>Le <strong>menu principal</strong> n’est pas une vitrine : c’est la liste des fonctions auxquelles votre rôle a droit. Les intitulés sont volontairement lisibles (accueil, formations, forum, personnel, documents…). Sur grand écran, vous pouvez aussi avoir un menu regroupant les <strong>opérations</strong> : lieu central de mission, pointage, briefings, organigramme, outils tactiques — selon ce que votre communauté a activé. Sur mobile, le même contenu est souvent dans un menu latéral ou derrière une icône « menu ».</p><p>L’habitude à prendre : avant de poster ou de répondre, vérifiez que vous êtes au bon endroit dans le site (bonne communauté, bonne rubrique).</p>\",\"contextKicker\":\"Étape 01 · Structure du site\",\"surface\":\"elevated\",\"cards\":[{\"label\":\"Menu principal\",\"body\":\"Accès aux rubriques autorisées pour votre rôle.\"},{\"label\":\"Zone Opérations\",\"body\":\"Raccourcis tactiques et logistiques si votre communauté les active.\"},{\"label\":\"Mobile\",\"body\":\"Même logique, présentation adaptée (menu latéral ou icône).\"}]},{\"template\":\"reading_article\",\"title\":\"Tableau de bord : votre premier arrêt\",\"subtitle\":\"Synthèse, pas détail tactique\",\"body\":\"<p>Le <strong>tableau de bord</strong> est l’écran qui accueille souvent la session après connexion. Il ne remplace pas une carte d’opération ni un ordre écrit : il <strong>signale</strong> ce qui mérite attention pour votre compte — raccourcis vers des pages utiles, rappels de formations en cours ou à venir, parfois les prochains événements ou des messages du staff selon la configuration.</p>\\n<p>Traitez-le comme la « une » du portail pour <em>vous</em> : deux minutes suffisent à repérer si une date limite approche, si une formation obligatoire attend une action, ou si une annonce récente a été mise en avant. Si le tableau de bord est vide, cela ne veut pas dire qu’il ne se passe rien dans la communauté : ouvrez le forum, les documents ou le calendrier selon votre fonction.</p>\\n<div class=\\\"lms-reading-callout lms-reading-callout--tip\\\"><p><strong>Bon réflexe</strong> : à chaque retour sur le site, passez par le tableau de bord avant d’aller sur les réseaux sociaux ou messageries externes — la consigne officielle est ici en premier.</p></div>\"},{\"template\":\"reading_article\",\"title\":\"Compte, profil, préférences et sécurité\",\"subtitle\":\"Ce que vous contrôlez vous-même\",\"body\":\"<p>La rubrique <strong>compte</strong> (souvent « Mon compte » ou « Paramètres ») concentre tout ce qui touche à <em>votre</em> présence sur le portail. Elle sert à trois grandes familles d’actions.</p>\\n<h3>Profil et identité affichée</h3>\\n<p>Selon les règles de votre communauté, certaines informations peuvent être visibles par le staff ou d’autres membres (nom affiché, affectation, champs de dossier). Les mettre à jour quand elles changent évite les erreurs d’affectation et les convocations à mauvais escient.</p>\\n<h3>Préférences</h3>\\n<p>Notifications, affichage, parfois choix de ce que vous acceptez de montrer : ce sont des réglages personnels. Si vous désactivez tout sans le vouloir, vous raterez des rappels légitimes ; si vous laissez tout ouvert sur un canal bruyant, vous finirez par ignorer les messages importants. Trouvez un équilibre et révisez-le après une grosse période d’activité.</p>\\n<h3>Sécurité</h3>\\n<p>Mot de passe, confirmation d’adresse de contact, parfois la liste des appareils reconnus : toute modification sensible peut déclencher une vérification supplémentaire. C’est normal. Gardez une adresse de contact <strong>valide</strong> : c’est le filet de sécurité si vous perdez l’accès.</p>\"},{\"template\":\"reading_article\",\"title\":\"Recherche et multi-organisations\",\"subtitle\":\"Éviter les doublons et les erreurs de contexte\",\"body\":\"<p>Lorsque la recherche est disponible, utilisez-la avant de créer un nouveau sujet sur le forum ou avant de redemander un document : souvent, le fil ou le fichier existe déjà. Les résultats respectent vos droits : si quelque chose n’apparaît pas, ce n’est pas forcément qu’il n’existe pas — il peut être simplement hors de votre périmètre.</p>\\n<p>Si vous participez à <strong>plusieurs communautés</strong> sur la même plateforme, un écran de choix peut s’afficher à la connexion. L’erreur classique est de répondre à un briefing ou de signer une présence alors qu’on est encore « dans » l’autre organisation. Vérifiez l’en-tête du site ou le sélecteur avant toute action engageante.</p>\"},{\"template\":\"fill_blanks\",\"title\":\"Vérification rapide\",\"contextKicker\":\"Étape intermédiaire · Auto-évaluation\",\"metric\":{\"label\":\"Validation\",\"value\":\"Réponses exactes requises\"},\"body\":\"<p>Après connexion, l’écran qui regroupe en général raccourcis et rappels utiles pour votre session est le [[tableau de bord]].</p><p>Pour le mot de passe, les préférences et les réglages du compte, ouvrez la section <strong>compte</strong> (souvent intitulée « Mon compte ») depuis le menu principal.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"Repères pour le quotidien\",\"body\":\"Revoyez périodiquement vos préférences de notification : un rappel de formation ou d’événement se joue souvent sur un simple e-mail ou une alerte interne.\\nSi un libellé de menu vous échappe, ouvrez la rubrique plutôt que d’ignorer : les intitulés sont pensés pour le langage courant.\\nSur un poste partagé, déconnectez-vous explicitement ; fermer l’onglet ne suffit pas toujours.\\nAvant d’ouvrir un nouveau fil sur le forum, recherchez ou parcourez la catégorie pour éviter les doublons.\\nSi une page refuse l’accès, considérez que votre rôle n’inclut peut-être pas cette fonction : demandez au staff au lieu d’essayer de contourner.\"},{\"template\":\"process_steps\",\"title\":\"Procédure type : mettre à jour son profil et ses préférences\",\"steps\":[{\"title\":\"Ouvrir la rubrique compte\",\"action\":\"Depuis le menu principal, accédez à « Mon compte » (ou libellé équivalent).\",\"vigilance\":\"Vérifiez que vous êtes dans la bonne communauté si vous en avez plusieurs.\"},{\"title\":\"Parcourir les sections proposées\",\"action\":\"Identifiez profil (identité affichée, champs de dossier), préférences (notifications, affichage) et sécurité (mot de passe, contact).\",\"vigilance\":\"Ne modifiez le mot de passe ou l’adresse de contact que si vous pouvez assumer la confirmation demandée par le site.\"},{\"title\":\"Enregistrer et contrôler\",\"action\":\"Validez les changements ; relisez les messages de confirmation ou les e-mails de vérification.\",\"vigilance\":\"Un contact obsolète bloque souvent la récupération d’accès en cas de problème.\"}]},{\"template\":\"role_scope_compare\",\"title\":\"Poste personnel et poste partagé\",\"memberView\":\"<p>Sur <strong>votre</strong> ordinateur ou appareil personnel, vous gérez la session comme d’habitude : fermeture du navigateur peut suffire selon les réglages, mais la déconnexion du portail reste recommandée si d’autres applications sont ouvertes.</p>\",\"staffView\":\"<p>Pour le <strong>staff</strong>, l’enjeu est le même au niveau collectif : rappeler la déconnexion sur les postes de permanence ou salles partagées fait partie du bon usage du service.</p>\",\"rightsNote\":\"<p>Les droits d’accès (menu, rubriques) ne changent pas selon le type de machine : ils dépendent du <strong>compte</strong> et du <strong>rôle</strong>. En revanche, le <strong>risque</strong> de session laissée ouverte est maximal sur un poste partagé.</p>\",\"notAnomaly\":\"<p>Que le site vous demande une reconnexion après une durée d’inactivité n’est pas une anomalie : c’est souvent une protection de session.</p>\"},{\"template\":\"scenario_decision\",\"title\":\"Une page du parcours ne s’affiche pas pour vous\",\"context\":\"Un encadré de formation cite une page (recherche, organigramme, etc.) ; chez vous le menu ne propose pas la même chose qu’illustré.\",\"situation\":\"<p>Vous devez compléter une tâche qui, selon vous, nécessite cette page.</p>\",\"options\":[{\"id\":\"a\",\"text\":\"Contrôler la communauté active et demander au staff si l’accès est normal pour votre affectation avant d’alerter tout le monde.\"},{\"id\":\"b\",\"text\":\"Installer un outil tiers pour « forcer » l’affichage du site.\"},{\"id\":\"c\",\"text\":\"Utiliser le compte d’un autre membre pour entrer à sa place.\"},{\"id\":\"d\",\"text\":\"Publier sur le forum que le portail est inutilisable sans plus de précision.\"}],\"correctOptionId\":\"a\",\"explanation\":\"<p>La conduite attendue combine <strong>vérification du contexte</strong> et <strong>escalade par le canal prévu</strong>. Les autres options exposent la sécurité ou créent du bruit.</p>\"},{\"template\":\"resources_list\",\"title\":\"Raccourcis fréquents\",\"subtitle\":\"\",\"body\":\"\",\"resources\":[{\"title\":\"Tableau de bord\",\"url\":\"/public/dashboard\"},{\"title\":\"Mon compte\",\"url\":\"/public/account\"},{\"title\":\"Préférences\",\"url\":\"/public/account/preferences\"},{\"title\":\"Recherche\",\"url\":\"/public/search\"}]}]}', NULL, 19, 'initiation', 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(15, 15, 'Organisation et contenus — parcours visuel', 'Fiche personnelle, organigramme, documents officiels, catalogue LMS, progression et erreurs fréquentes.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Contenus structurés\",\"title\":\"\",\"lead\":\"Personnel, documents et formations : où vit l’information « durable » et comment la progression est enregistrée.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~32 min\"},{\"label\":\"Thème\",\"value\":\"Organisation\"}]},\"closure\":{\"title\":\"Synthèse — Organisation et contenus\",\"seen\":[\"Distinction nette : dossier personnel, organigramme, documents de référence, catalogue des formations.\",\"Cas pratiques : document sensible, version obsolète, formation assignée mais non terminée.\",\"Attestation : ce qu’elle atteste sur le portail et ce qu’elle ne remplace pas.\"],\"acquired\":[\"Vous savez pourquoi un contenu peut être invisible selon le rôle et que ce n’est pas forcément une erreur.\",\"Vous distinguez progression réelle et intention ; assignation vs inscription libre.\"],\"nextHint\":\"Passez au bilan interrogé de mi-parcours, puis au module sur le forum et les événements.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Organisation et contenus\",\"subtitle\":\"Personnel, documents, formations : la chaîne de l’information\",\"body\":\"<p>Ce module décrit comment le portail porte l’information « durable » : <strong>qui vous êtes dans l’unité</strong>, <strong>où sont les fichiers de référence</strong>, et <strong>comment le site enregistre ce que vous avez appris</strong>. Ce que vous voyez dépend de votre rôle ; l’absence d’accès n’est pas une punition, c’est en général un périmètre de diffusion.</p>\",\"contextKicker\":\"Étape 01 · Chaîne d’information\",\"surface\":\"elevated\",\"metric\":{\"label\":\"Principe\",\"value\":\"Périmètre selon le rôle\"},\"insights\":[{\"variant\":\"result\",\"title\":\"\",\"body\":\"Objectif : savoir où mettre à jour votre dossier et où trouver la version officielle d’un texte.\"}]},{\"template\":\"reading_article\",\"title\":\"Personnel et organigramme\",\"subtitle\":\"Dossier individuel et structure collective\",\"body\":\"<p>L’espace <strong>personnel</strong> relie votre compte de connexion à votre <strong>dossier</strong> tel que la communauté le tient : affectation, fonctions affichées, champs que le staff a demandés de remplir, parfois pièces ou validations selon les processus en place. Une fiche incomplète ou périmée produit des erreurs réelles : mauvaise convocation, mauvais groupe, retard sur une exigence administrative.</p>\\n<p>L’<strong>organigramme</strong> donne une vue de la structure et des rattachements. Il aide à savoir à qui s’adresser pour un sujet donné, mais il ne remplace pas un ordre du jour ou une note officielle : c’est une photographie organisationnelle, pas la doctrine complète.</p>\"},{\"template\":\"reading_article\",\"title\":\"Documents : la version de référence\",\"subtitle\":\"Pourquoi ce n’est pas « comme le forum »\",\"contextKicker\":\"Étape clé · Référence vs discussion\",\"surface\":\"default\",\"cards\":[{\"label\":\"Documents\",\"body\":\"Textes et fichiers stabilisés, avec contrôle de diffusion.\"},{\"label\":\"Forum\",\"body\":\"Conversation vivante : annonces, questions, relances.\"},{\"label\":\"Erreur fréquente\",\"body\":\"Publier la « version finale » uniquement dans un fil de discussion.\"}],\"body\":\"<p>La rubrique <strong>documents</strong> sert à publier ce qui doit rester <strong>stable</strong> et <strong>retrouvable</strong> : notes, guides, modèles, visuels autorisés, parfois packs techniques. Chaque dossier ou fichier peut avoir un niveau de diffusion différent ; si vous ne voyez pas un contenu, c’est souvent qu’il est réservé à un autre groupe.</p>\\n<p>Le <strong>forum</strong>, lui, vit par messages successifs : on y annonce, on débat, on relance. Un fil n’est pas un bon endroit pour « stocker » la version finale d’un texte : il se noie, on ne sait plus laquelle est la bonne page, et les nouveaux arrivants ne remontent pas 200 messages. En pratique, lorsque le staff valide un document, il doit vivre dans la rubrique documents (ou équivalent) ; le forum sert à expliquer le contexte ou à répondre aux questions.</p>\\n<p>Ne recopiez pas un fichier sensible sur une messagerie personnelle ou un stockage privé : vous perdez le contrôle de la diffusion et vous contournez les traces prévues par l’organisation.</p>\\n<div class=\\\"lms-reading-callout lms-reading-callout--info\\\"><p><strong>À retenir</strong> : document = référence stabilisée ; forum = conversation. Si les deux se mélangent, l’information se dégrade pour tout le monde.</p></div>\"},{\"template\":\"reading_article\",\"title\":\"Formations et catalogue LMS\",\"subtitle\":\"Inscription, assignation, progression, obligation\",\"body\":\"<p>Le <strong>catalogue</strong> liste les parcours auxquels vous pouvez accéder. Deux grands cas : vous vous inscrivez vous-même à une formation ouverte, ou le staff vous <strong>assigne</strong> un parcours (souvent avec une attente de complétion dans un délai). La fiche indique en général la durée estimée, le niveau, et si le parcours est <strong>obligatoire</strong> et/ou <strong>certifiant</strong>.</p>\\n<p>À l’intérieur d’un parcours, les <strong>modules</strong> et <strong>leçons</strong> peuvent être verrouillés dans un ordre : respectez-le, sinon vous risquez de croire avoir « tout vu » alors qu’une étape bloquante manque encore. Le site enregistre la progression : vous pouvez fermer la session et reprendre, mais une formation n’est réellement terminée que lorsque toutes les étapes requises le sont — le système reflète le parcours effectif, pas l’intention.</p>\\n<p>Les parcours « canvas » comme celui-ci se lisent diapositive par diapositive ; d’autres formations mélangent texte, média, quiz intermédiaires. Le principe reste le même : chaque étape a une fonction pédagogique ou réglementaire.</p>\"},{\"template\":\"reading_article\",\"title\":\"Déroulé type d’un parcours sur le portail\",\"subtitle\":\"De l’ouverture à l’attestation\",\"body\":\"<p><strong>Ouverture.</strong> Vous accédez à la fiche formation après inscription ou assignation. Lisez l’introduction et les objectifs : elles disent ce que le staff attend comme résultat.</p>\\n<p><strong>Modules.</strong> Vous enchaînez les leçons selon les règles du parcours. Certaines sont de la lecture, d’autres des exercices ou des questionnaires partiels.</p>\\n<p><strong>Évaluation.</strong> Un quiz ou une épreuve finale peut exiger un score minimal. Les tentatives sont en nombre limité : utilisez les retours du questionnaire pour combler vos lacunes avant de retenter.</p>\\n<p><strong>Clôture.</strong> Lorsque tout est validé, le parcours est marqué comme terminé. Si la formation est certifiante, une <strong>attestation</strong> ou un équivalent peut être proposé selon les réglages de votre communauté.</p>\"},{\"template\":\"case_review\",\"title\":\"Cas : document sensible et diffusion\",\"caseText\":\"<p>Un fichier marqué restreint circule dans une messagerie personnelle externe « pour aller plus vite ». Un membre vous demande la « bonne » copie.</p>\",\"analysis\":\"<p>La diffusion hors des espaces prévus fait perdre la maîtrise des accès et la traçabilité attendue par l’organisation.</p>\",\"goodConduct\":\"<p>Ne pas recopier le fichier sur un canal non autorisé. Orienter vers la rubrique documents ou vers le staff si l’accès manque. Signaler la fuite si les règles internes l’exigent.</p>\",\"conclusion\":\"<p>La rapidité ne doit pas se faire au détriment du périmètre de diffusion défini par la communauté.</p>\"},{\"template\":\"common_mistakes\",\"title\":\"Document obsolète ou douteux\",\"mistakes\":[{\"error\":\"Recirculer une ancienne version « au cas où »\",\"why\":\"Plusieurs versions coexistent déjà ; en ajouter une informelle aggrave la confusion.\",\"consequence\":\"Des équipes travaillent sur des textes différents au même titre.\",\"correction\":\"Signaler au référent ou au staff ; laisser la mise à jour officielle dans la rubrique documents.\"},{\"error\":\"Considérer qu’une formation « presque finie » suffit\",\"why\":\"Le système enregistre les étapes réellement accomplies ; une obligation reste une obligation.\",\"consequence\":\"Retard sur l’exigence collective et rappels répétés du staff.\",\"correction\":\"Repérer les leçons ou quiz restants sur la fiche formation et les terminer dans le délai fixé.\"}]},{\"template\":\"reading_article\",\"title\":\"Attestation : ce qu’elle prouve et ce qu’elle ne prouve pas\",\"subtitle\":\"Lecture institutionnelle\",\"body\":\"<p>Lorsqu’une formation est <strong>certifiante</strong> et que vous avez accompli toutes les étapes requises (y compris les scores minimaux aux questionnaires), le portail peut délivrer une <strong>attestation</strong> (ou équivalent) selon les réglages de votre communauté.</p>\\n<p><strong>Ce que cela prouve en général</strong> : vous avez validé le parcours tel qu’il est conçu sur le site, aux dates enregistrées.</p>\\n<p><strong>Ce que cela ne prouve pas automatiquement</strong> : une habilitation opérationnelle spécifique, une clearance, ou toute compétence que seule votre unité peut reconnaître hors du LMS. L’attestation et le dossier métier peuvent coexiger : l’un ne remplace pas l’autre.</p>\"},{\"template\":\"role_scope_compare\",\"title\":\"Pourquoi un même contenu n’est pas visible pour tout le monde\",\"memberView\":\"<p>Un membre voit les dossiers, documents et formations correspondant à <strong>son rôle</strong> et aux <strong>niveaux de diffusion</strong> choisis par le staff. Certaines fiches ou fichiers sont volontairement limités à un groupe.</p>\",\"staffView\":\"<p>Le staff dispose en général d’outils d’administration ou de modération pour publier, retirer ou restreindre un contenu. La visibilité est une décision d’organisation, pas une préférence personnelle du site.</p>\",\"rightsNote\":\"<p>Si vous changez de fonction ou d’affectation, votre périmètre peut évoluer après mise à jour des rôles : ce n’est pas une punition, c’est l’alignement des accès.</p>\",\"notAnomaly\":\"<p>Deux camarades avec des rôles différents peuvent légitimement ne pas voir les mêmes rubriques : ce n’est pas systématiquement un dysfonctionnement.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"Ce qui compte vraiment côté organisation\",\"body\":\"Les contenus sensibles restent dans les espaces prévus ; ne les faites pas migrer vers des canaux privés non maîtrisés.\\nUne formation obligatoire doit être traitée dans les délais fixés par le staff : l’outil permet de suivre l’avancement.\\nConsultez régulièrement votre espace formations pour voir les assignations et les rappels.\\nL’organigramme oriente ; il ne remplace pas une consigne écrite ou un ordre de mission.\\nSi un document semble faux ou obsolète, signalez-le au responsable plutôt que de le recirculer.\"},{\"template\":\"resources_list\",\"title\":\"Accès directs\",\"subtitle\":\"\",\"body\":\"\",\"resources\":[{\"title\":\"Ma fiche personnelle\",\"url\":\"/public/personnel/me\"},{\"title\":\"Organigramme\",\"url\":\"/public/orbat\"},{\"title\":\"Documents\",\"url\":\"/public/documents\"},{\"title\":\"Catalogue des formations\",\"url\":\"/public/formations\"}]}]}', NULL, 21, 'initiation', 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(16, 16, 'Communauté — parcours visuel', 'Forum, annonces, événements, pointage, signalements, résumé des bons réflexes.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Vie collective\",\"title\":\"\",\"lead\":\"Forum, événements, annonces : des règles simples pour que l’information reste utile à toute l’unité.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~26 min\"},{\"label\":\"Enjeu\",\"value\":\"Canaux et rigueur\"}]},\"closure\":{\"title\":\"Synthèse — Communauté\",\"seen\":[\"Quand poster publiquement et quand passer par un canal dédié ou un signalement.\",\"Titres de sujet utiles vs vagues ; annonce officielle vs conversation libre.\",\"Cas types : doublon sur le forum, absence non signalée à un événement inscrit.\"],\"acquired\":[\"Vous réduisez le bruit informationnel par des réflexes simples (recherche, titre, prévenance).\",\"Vous savez qu’un engagement sur un créneau inscrit est une donnée logistique pour le staff.\"],\"nextHint\":\"Il reste le module « Validation finale » : questionnaire, attestation et limites de ce que couvre la certification sur le portail.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Vie de communauté\",\"subtitle\":\"Coordonner sans encombrer les canaux\",\"body\":\"<p>Le <strong>forum</strong> et les <strong>événements</strong> sont les lieux où la communauté vit au quotidien : annonces, questions, briefings, débriefs, organisation logistique. La qualité collective dépend de chacun : un fil lisible vaut mieux que vingt messages redondants ; une inscription honnête vaut mieux qu’une absence non signalée.</p>\",\"contextKicker\":\"Étape 01 · Cadre\",\"surface\":\"elevated\",\"cards\":[{\"label\":\"Forum\",\"body\":\"Structurer les sujets et respecter les annonces épinglées.\"},{\"label\":\"Événements\",\"body\":\"Inscription = engagement logistique pour le staff.\"},{\"label\":\"Signalement\",\"body\":\"Canal adapté pour les sujets sensibles.\"}]},{\"template\":\"reading_article\",\"title\":\"Forum : structurer la parole collective\",\"subtitle\":\"Titres, catégories, respect\",\"body\":\"<p>Avant d’ouvrir un <strong>nouveau sujet</strong>, parcourez la catégorie et utilisez la recherche : souvent, le problème est déjà en discussion. Si vous ouvrez un fil, choisissez un <strong>titre</strong> qui dit ce que vous cherchez ou ce que vous proposez, pas une phrase vague du type « question ».</p>\\n<p>Dans le fil, allez à l’essentiel : contexte utile, question claire, proposition si vous en avez une. Le désaccord est possible, la grossièreté n’apporte rien. Les messages hors-sujet répétés, le spam et les polémiques stériles obligent le staff à modérer — ce temps-là n’est plus disponible pour vous aider sur le fond.</p>\\n<p>Lorsque le staff épingle une annonce, considérez qu’elle a force de consigne pour la période concernée : lisez-la avant de poster une question déjà traitée.</p>\"},{\"template\":\"reading_article\",\"title\":\"Événements, inscriptions et présence\",\"subtitle\":\"Engagement et logistique\",\"body\":\"<p>Les <strong>événements</strong> matérialisent des créneaux : date, lieu ou lien, description, parfois matériel attendu ou tenue. Lorsque l’inscription est demandée, elle sert à dimensionner les moyens (places, encadrement, supports). S’inscrire « pour voir » puis ne pas venir sans prévenir dégrade la confiance et fait perdre du temps.</p>\\n<p>Si vous ne pouvez pas venir, <strong>prévenez</strong> selon la procédure de votre organisation (message au staff, modification de l’inscription, fil prévu). Ce n’est pas une option de politesse : c’est une donnée d’organisation.</p>\\n<p>Certaines communautés utilisent un <strong>pointage</strong> ou une feuille de présence numérique : suivez les consignes affichées sur place. Un pointage incorrect peut fausser les statistiques ou les validations administratives.</p>\"},{\"template\":\"reading_article\",\"title\":\"Annonces officielles et signalements\",\"subtitle\":\"Quand passer par un canal dédié\",\"body\":\"<p>Les annonces importantes sont souvent mises en avant en tête de forum ou sur le tableau de bord. Elles peuvent compléter une note dans les documents : l’une explique le « maintenant », l’autre stabilise le texte de référence.</p>\\n<p>Pour un problème sensible — contenu inapproprié, conflit personnel, erreur de sécurité — utilisez le <strong>canal prévu</strong> (signalement, message à un modérateur, procédure interne). Une « dénonciation » publique désordonnée crée du bruit, expose des personnes et complique la résolution.</p>\"},{\"template\":\"reading_article\",\"title\":\"Synthèse des bons réflexes\",\"subtitle\":\"À appliquer dès la première semaine\",\"body\":\"<p>Lisez les annonces avant de poster. Répondez dans le fil qui traite déjà le sujet lorsque c’est possible. Inscrivez-vous aux créneaux avec sérieux. Prévenez en cas d’empêchement. Remerciez ou synthétisez en fin de fil si cela clarifie la décision pour les suivants.</p>\\n<p>Ces gestes semblent mineurs ; cumulés sur une centaine de membres, ils font la différence entre un portail utilisable et un chaos de notifications.</p>\"},{\"template\":\"dos_donts\",\"title\":\"Canal public ou canal dédié ?\",\"dos\":[\"Poser une question générale dans la catégorie adaptée, après recherche.\",\"Utiliser le signalement ou la procédure interne pour un contenu inapproprié ou un conflit sensible.\",\"Écrire au staff sur le canal prévu pour un sujet personnel ou confidentiel.\"],\"donts\":[\"Épingler une polémique personnelle en tête de forum sans passer par la modération.\",\"Multiplier les posts identiques dans plusieurs catégories « pour être sûr d’être vu ».\",\"Diffuser des données sensibles sur un fil ouvert alors qu’un canal restreint existe.\"],\"synthesis\":\"<p>La règle simple : <strong>public</strong> pour ce qui doit être partagé et archivable par la collectivité ; <strong>canal dédié</strong> pour ce qui exige confidentialité, preuve ou traitement par le staff.</p>\"},{\"template\":\"reading_article\",\"title\":\"Titre utile, titre inutile\",\"subtitle\":\"Lisibilité collective\",\"body\":\"<p><strong>Inutile</strong> : « Question », « Urgent », « À lire » — aucun membre ne sait de quoi il s’agit sans ouvrir le fil.</p>\\n<p><strong>Utile</strong> : « Point logistique — convocation du 12 : tenue et horaire », « Document obsolète sur la fiche X : demande de retrait », « Besoin d’accès documents section Y pour la permanence ».</p>\\n<p>Le titre est le contrat de lecture avec les autres : il doit permettre de trier, d’archiver et de retrouver le sujet plus tard.</p>\"},{\"template\":\"reading_article\",\"title\":\"Annonce officielle et conversation\",\"subtitle\":\"Deux fonctions différentes\",\"body\":\"<p>Une <strong>annonce officielle</strong> (souvent épinglée ou mise en avant) fixe une consigne ou une information structurante pour une période donnée. Elle complète parfois un document de référence ; elle ne le remplace pas si la version stabilisée doit vivre dans la rubrique documents.</p>\\n<p>Une <strong>conversation</strong> sur le forum sert au débat, aux questions de détail, aux mises à jour de situation. Mélanger les deux — par exemple noyer une annonce sous des messages hors-sujet — rend la consigne illisible pour ceux qui arrivent après.</p>\"},{\"template\":\"case_review\",\"title\":\"Cas : doublon sur le forum\",\"caseText\":\"<p>Le même sujet apparaît en trois fils ouverts la même semaine dans la même catégorie. Les réponses se dispersent.</p>\",\"analysis\":\"<p>Chacun a voulu « gagner du temps » sans parcourir la catégorie ; le staff doit fusionner ou orienter, et les membres ne savent plus où lire la décision.</p>\",\"goodConduct\":\"<p>Avant d’ouvrir un sujet : recherche et lecture des fils récents. Si le sujet existe, poster dans le fil existant. Si vous avez ouvert par erreur un doublon, indiquez-le et renvoyez vers le fil principal.</p>\",\"conclusion\":\"<p>La discipline de fil unique sur un même sujet est un geste de respect du temps collectif.</p>\"},{\"template\":\"case_review\",\"title\":\"Cas : absence non signalée à un événement\",\"caseText\":\"<p>Vous étiez inscrit à un créneau ; un empêchement de dernière minute survient. Vous ne modifiez pas l’inscription et ne prévenez personne.</p>\",\"analysis\":\"<p>Le staff a dimensionné l’encadrement et le matériel sur la base des inscriptions. Une place vide non signalée est une ressource mal utilisée ; un autre membre aurait pu prendre la place.</p>\",\"goodConduct\":\"<p>Dès que l’empêchement est connu, suivre la procédure affichée (désinscription, message au référent, fil prévu). Mieux vaut prévenir tôt qu’imposer un silence au collectif.</p>\",\"conclusion\":\"<p>L’inscription à un événement est un engagement logistique, pas seulement un clic décoratif.</p>\"},{\"template\":\"fill_blanks\",\"title\":\"Une dernière vérification\",\"contextKicker\":\"Auto-évaluation\",\"metric\":{\"label\":\"Rappel\",\"value\":\"Une réponse exacte par trou\"},\"body\":\"<p>Avant d’ouvrir un nouveau sujet sur le forum, il est préférable de vérifier qu’un [[fil]] ou une discussion ne traite pas déjà le même problème.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"Participation utile\",\"body\":\"Un retour sur une formation aide lorsqu’il est précis (ce qui manquait, ce qui était clair), pas lorsqu’il se limite à une critique vague.\\nPour un événement, l’empêchement se signale ; l’absence non expliquée se compte aussi.\\nNe divulguez pas des informations personnelles sur des tiers sans accord.\\nRespectez le ton fixé par votre communauté (formel, sobre, etc.).\\nEn cas de doute sur la catégorie du forum, demandez au staff avant de poster.\"}]}', NULL, 17, 'initiation', 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16');
+INSERT INTO `training_lessons` (`id`, `module_id`, `title`, `summary`, `learning_objectives`, `instructor_notes`, `lesson_type`, `content`, `external_url`, `duration_minutes`, `difficulty`, `position`, `is_required`, `created_at`, `updated_at`) VALUES
+(17, 17, 'Validation — parcours visuel', 'Quiz, score, tentatives, attestation, reprise de parcours et gestion du stress de l’évaluation.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Validation\",\"title\":\"\",\"lead\":\"Questionnaire final, attestation et reprise de parcours : ce qui se passe après la dernière lecture.\",\"stats\":[{\"label\":\"Seuil de réussite\",\"value\":\"80 %\"},{\"label\":\"Tentatives\",\"value\":\"Plusieurs (selon la formation)\"}]},\"closure\":{\"title\":\"Avant de lancer le questionnaire\",\"seen\":[\"Le questionnaire final couvre l’ensemble du parcours : navigation, compte, contenus, forum, événements, sécurité.\",\"Les explications après une réponse incorrecte sont une aide pédagogique : servez-vous-en avant de retenter.\",\"Validation sur le portail et habilitation métier reconnue par l’unité sont deux choses distinctes.\"],\"acquired\":[\"Vous savez organiser une reprise de révision ciblée après un échec.\",\"Vous savez ce qu’une attestation atteste — et ce qu’elle ne remplace pas.\"],\"nextHint\":\"Passez à la leçon « Quiz » du module lorsqu’elle est disponible dans votre parcours.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Dernière étape : validation\",\"subtitle\":\"Quiz de fin de parcours\",\"body\":\"<p>Le questionnaire porte sur les <strong>idées directrices</strong> du portail : navigation, compte, documents, formations, forum, événements, sécurité. Le <strong>seuil de réussite est de 80&nbsp;%</strong>. Vous disposez de <strong>plusieurs tentatives</strong> dans la limite fixée par la formation.</p><p>Les formulations volontairement longues dans certaines réponses fausses imitent des croyances courantes : lisez jusqu’au bout avant de choisir.</p>\",\"contextKicker\":\"Étape finale · Évaluation\",\"surface\":\"elevated\",\"insights\":[{\"variant\":\"vigilance\",\"title\":\"\",\"body\":\"Ne validez pas la dernière réponse si votre connexion est très instable : en cas de doute, attendez un réseau fiable.\"}]},{\"template\":\"reading_article\",\"title\":\"Après le quiz : attestation, échec, reprise\",\"subtitle\":\"Ce que le site retient de vous\",\"body\":\"<p>Si vous atteignez le score requis et que la formation est <strong>certifiante</strong>, une <strong>attestation</strong> ou un équivalent peut être proposé (téléchargement, trace sur votre dossier, selon les réglages). Ce document atteste que vous avez parcouru et validé <em>ce</em> parcours à cette date — il ne remplace pas une habilitation métier qui serait définie ailleurs.</p>\\n<p>Si vous échouez, le questionnaire affiche en général des <strong>explications</strong> sur les réponses attendues. Utilisez-les comme liste de révision : retournez sur les modules qui coincent, puis retentez. L’objectif n’est pas de vous piéger mais de vérifier que vous ne partirez pas avec de fausses certitudes (par exemple confondre forum et documents, ou ignorer la déconnexion sur poste partagé).</p>\\n<p>Conservez une copie de votre attestation si votre organisation vous la demande hors ligne ; le portail peut aussi conserver l’historique de vos formations terminées.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"Avant de lancer le questionnaire\",\"body\":\"Prévoyez environ quinze à vingt minutes sans interruption.\\nInstallez-vous dans un endroit où vous pouvez lire calmement chaque énoncé.\\nSi votre connexion est instable, évitez de valider la dernière réponse au moment où le signal faiblit.\\nLes questions restent au niveau « membre du portail », pas au niveau administration technique.\\nCe parcours vous a déjà donné le vocabulaire et les situations : le quiz ne demande pas de culture générale extérieure au site.\"},{\"template\":\"reading_article\",\"title\":\"Pourquoi cette validation existe\",\"subtitle\":\"Responsabilité partagée\",\"body\":\"<p>La communauté a intérêt à ce que chaque membre sache se servir du portail correctement : moins d’erreurs de diffusion, moins de fichiers égarés, moins de questions répétitives au staff. En validant ce parcours, vous confirmez que vous connaissez les bons réflexes — pas que vous êtes infaillible, mais que vous savez où relire l’information quand un doute revient.</p>\"},{\"template\":\"scenario_decision\",\"title\":\"Vous avez réussi le quiz certifiant : que pouvez-vous en déduire ?\",\"context\":\"Le portail affiche le parcours comme terminé et propose une attestation.\",\"situation\":\"<p>Un camarade affirme que vous êtes « habilité » sur un poste sensible uniquement sur cette base.</p>\",\"options\":[{\"id\":\"a\",\"text\":\"Considérer que l’attestation couvre le parcours sur le site ; toute habilitation opérationnelle spécifique relève encore des règles de l’unité.\"},{\"id\":\"b\",\"text\":\"Conclure que l’attestation remplace toute validation métier interne sans autre formalité.\"},{\"id\":\"c\",\"text\":\"Refuser d’afficher l’attestation car elle n’a aucune valeur.\"},{\"id\":\"d\",\"text\":\"Publier l’attestation sur le forum comme preuve de clearance.\"}],\"correctOptionId\":\"a\",\"explanation\":\"<p>L’attestation atteste la <strong>validation du parcours</strong> tel que paramétré sur le portail. Les exigences métier (affectation, validation d’un chef, clearance) restent du ressort de l’organisation : ne pas les confondre évite les malentendus.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"En cas de doute pendant le questionnaire\",\"body\":\"Si deux réponses semblent crédibles, demandez-vous laquelle correspond au réflexe « membre du portail » décrit dans ce parcours, pas à une habitude personnelle ou à une astuce technique.\\nEn cas d’échec, notez les thèmes signalés par les explications puis rouvrez les synthèses des modules concernés.\\nNe tentez pas le quiz dans des conditions de connexion très dégradées : une coupure peut interrompre la session.\\nLe score seuil est rappelé sur la fiche formation : il est identique pour tous les membres sur ce parcours.\\nAprès réussite, conservez ou téléchargez l’attestation selon les options proposées par votre communauté.\"}]}', NULL, 15, 'initiation', 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(18, 18, 'Vue d’ensemble — parcours visuel', 'Rôle du portail, déroulé pédagogique, méthode de travail, sécurité du compte, liens vers l’aide.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[{\"id\":\"onb-sec\",\"title\":\"Rappels sécurité\",\"body\":\"<ul><li><strong>Mot de passe :</strong> gardez-le pour vous ; changez-le si vous pensez qu’il a pu être vu par une autre personne.</li><li><strong>Ordinateur partagé :</strong> déconnectez-vous du portail quand vous avez terminé.</li><li><strong>Adresse e-mail :</strong> si vous la modifiez, suivez les étapes de confirmation affichées sur le site.</li><li><strong>Contenus sensibles :</strong> ne les copiez pas sur des canaux personnels ; restez dans les espaces prévus par votre organisation.</li></ul>\"}],\"opening\":{\"eyebrow\":\"Parcours d’accueil\",\"title\":\"\",\"lead\":\"Ce module pose le cadre : à quoi sert le portail, comment lire ce parcours, et quels réflexes de sécurité garder en tête.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~26 min\"},{\"label\":\"Format\",\"value\":\"Parcours visuel\"},{\"label\":\"Objectif\",\"value\":\"Finalité + risques + sécurité\"}]},\"closure\":{\"title\":\"Synthèse — Vue d’ensemble\",\"seen\":[\"Finalité institutionnelle : information stable, coordination vivante, suivi pédagogique — avec des lieux distincts sur le site.\",\"Ce que le portail n’est pas : ni substitut à la chaîne de commandement, ni dépôt anarchique des notes officielles sur le forum.\",\"Erreurs fréquentes (forum = tout, panne imaginaire, session laissée ouverte) et comment les corriger.\"],\"acquired\":[\"Vous savez réagir de façon raisonnable si une rubrique manque : contexte, rôle, puis demande au staff.\",\"Vous distinguez référence documentaire et discussion ; vous connaissez les gestes de sécurité du compte.\"],\"nextHint\":\"Enchaînez avec le module « Navigation et compte » : tableau de bord, menus, profil, préférences et multi-communautés.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Bienvenue sur le portail\",\"subtitle\":\"Formation d’accueil — lecture active\",\"body\":\"<p>Ce site regroupe ce dont vous avez besoin pour suivre la vie de votre communauté : <strong>consignes stabilisées</strong> (documents), <strong>échanges</strong> (forum), <strong>compétences</strong> (formations), <strong>coordination</strong> (événements, pointage selon les réglages) et <strong>votre dossier</strong> (personnel). Ce parcours vise un seul résultat : que vous sachiez <em>où</em> chercher l’information et <em>comment</em> agir sans improviser.</p><p>Les textes sont longs volontairement : ce n’est pas une brochure marketing, c’est un mode d’emploi. Si une rubrique n’existe pas chez vous, c’est souvent lié aux droits ou à la configuration — ce n’est pas une erreur de parcours de votre part.</p>\",\"contextKicker\":\"Étape 01 · Cadrage\",\"surface\":\"elevated\",\"metric\":{\"label\":\"Pour qui\",\"value\":\"Tous les membres\"},\"cards\":[{\"label\":\"Documents\",\"body\":\"Notes et fichiers de référence, retrouvables et mis à jour par le staff.\"},{\"label\":\"Forum & annonces\",\"body\":\"Échanges et relances ; ce n’est pas le stockage des versions finales.\"},{\"label\":\"Formations\",\"body\":\"Parcours tracés, parfois obligatoires ou certifiants selon les règles.\"}],\"insights\":[{\"variant\":\"key\",\"title\":\"\",\"body\":\"Le portail oriente : tableau de bord et menu reflètent ce que votre rôle permet de voir.\"}]},{\"template\":\"reading_article\",\"title\":\"À quoi sert concrètement ce portail ?\",\"subtitle\":\"Stabiliser l’information, pas la noyer\",\"contextKicker\":\"Étape 02 · Lecture\",\"surface\":\"default\",\"insights\":[{\"variant\":\"vigilance\",\"title\":\"\",\"body\":\"Si une rubrique manque, vérifiez la communauté active et votre affectation avant de conclure à une « panne ».\"}],\"body\":\"<p>Le portail répond à un problème simple : lorsque chacun va chercher l’information sur des canaux informels, les versions se multiplient, les retardataires ne voient pas les mises à jour, et le staff passe son temps à répéter la même consigne. Ici, l’objectif est que la <strong>version de référence</strong> vive dans des endroits identifiables : documents publiés, fils de discussion classés, formations suivies et tracées.</p>\\n<p>Après connexion, vous n’êtes pas censé « explorer au hasard » : le <strong>tableau de bord</strong> et le <strong>menu</strong> vous orientent vers ce qui est ouvert pour votre rôle. Vous pouvez aussi disposer d’une zone regroupant les modules d’<strong>opérations</strong> : lieu central de mission, briefings, organigramme, outils tactiques selon ce que votre communauté a activé. Ce n’est pas décoratif : ce sont des raccourcis pour éviter les détours.</p>\\n<p>Le portail ne remplace pas le jugement ni la chaîne de commandement : il <strong>porte</strong> l’information et la formation. Une note officielle reste une note officielle ; un message sur le forum reste un échange ; une formation indique ce que vous avez parcouru et validé, pas votre valeur opérationnelle au sens tactique.</p>\\n<div class=\\\"lms-reading-callout lms-reading-callout--info\\\"><p><strong>À retenir</strong> : si vous ne voyez pas une rubrique mentionnée dans ce parcours, commencez par vérifier que vous êtes dans la bonne communauté (lorsque vous en avez plusieurs), puis demandez au staff si l’accès est normal ou s’il manque une affectation de rôle.</p></div>\"},{\"template\":\"reading_article\",\"title\":\"Déroulé de ce parcours et méthode de travail\",\"subtitle\":\"Lectures, bilan interrogé, puis validation finale\",\"body\":\"<p>Ce parcours enchaîne plusieurs modules de lecture, un <strong>bilan interrogé à mi-parcours</strong> pour ancrer les premiers acquis, puis le module sur la vie collective (forum, événements) et enfin la <strong>validation finale</strong>. L’ordre est logique : d’abord la vision d’ensemble et la sécurité du compte, ensuite la navigation quotidienne, puis les contenus « métier » (personnel, documents, formations), avant le bilan, le collectif et la manière dont le site atteste vos acquis.</p>\\n<h3>Comment lire efficacement</h3>\\n<p>Utilisez les boutons <strong>Précédent</strong> et <strong>Suivant</strong> sous les diapositives. Ne cherchez pas à « swiper » trop vite : plusieurs écrans contiennent des nuances importantes (par exemple la différence entre un document officiel et un fil de discussion). Lorsqu’un <strong>texte à trous</strong> apparaît, complétez-le avant de valider : c’est un mini-test de vocabulaire intégré au parcours.</p>\\n<h3>Si quelque chose reste flou pour votre unité</h3>\\n<p>Notez la question pendant la lecture, puis posez-la sur le canal prévu par votre organisation (référent, réunion, fil dédié). Ce parcours décrit le fonctionnement général du portail ; votre unité peut avoir des conventions supplémentaires (horaires, niveaux de diffusion, procédure de validation des absences, etc.).</p>\\n<div class=\\\"lms-reading-callout lms-reading-callout--tip\\\"><p><strong>Erreur fréquente</strong> : croire que « tout est sur le forum ». Le forum sert à débattre, annoncer, relancer ; les fichiers de référence et les textes stabilisés doivent vivre dans la rubrique documents (ou équivalent) lorsque le staff les y place.</p></div>\"},{\"template\":\"reading_article\",\"title\":\"À l’issue du parcours complet, vous saurez…\",\"subtitle\":\"Objectifs opérationnels\",\"body\":\"<ul>\\n<li>expliquer à un nouveau membre à quoi sert le tableau de bord et comment retrouver l’aide ou la documentation du site ;</li>\\n<li>mettre à jour vous-même profil, préférences et sécurité du compte sans demander au staff pour chaque détail ;</li>\\n<li>ouvrir la rubrique documents, comprendre pourquoi un fichier peut être masqué, et ne pas rediffuser un contenu sensible hors des canaux prévus ;</li>\\n<li>parcourir le catalogue des formations, distinguer inscription libre et assignation par le staff, et reprendre un module en cours ;</li>\\n<li>participer au forum sans saturer les catégories ni ignorer les annonces officielles ;</li>\\n<li>traiter un événement comme un engagement : inscription, prévenance en cas d’empêchement, respect des consignes de présence ;</li>\\n<li>réussir le bilan interrogé à mi-parcours puis le questionnaire final, et utiliser les explications affichées pour réviser en cas d’échec ;</li>\\n<li>comprendre ce que signifient pour vous une formation <strong>obligatoire</strong> et une formation <strong>certifiante</strong>, ainsi que le rôle de l’attestation.</li>\\n</ul>\\n<p>Ce n’est pas une liste à décorer : c’est le socle minimal attendu d’un membre qui utilise le portail au quotidien.</p>\"},{\"template\":\"reading_article\",\"title\":\"Ce que le portail n’est pas\",\"subtitle\":\"Éviter les malentendus d’usage\",\"contextKicker\":\"Étape 03 · Cadrage\",\"body\":\"<p>Le portail <strong>n’est pas</strong> un substitut à la chaîne de commandement ni au jugement sur le terrain : il porte l’information et la formation, pas l’autorité opérationnelle.</p>\\n<p>Il <strong>n’est pas</strong> un espace où toute note officielle peut rester définitivement dans un fil de discussion : la version stabilisée appartient aux documents (ou équivalent) lorsque le staff y procède.</p>\\n<p>Il <strong>n’est pas</strong> une messagerie personnelle : les échanges publics ou de service suivent des règles de canal ; les sujets sensibles passent par les procédures prévues.</p>\\n<p>Enfin, une formation validée sur le site <strong>n’est pas</strong>, à elle seule, une reconnaissance tacite de toutes les compétences métier : elle atteste du parcours réalisé selon les règles affichées.</p>\"},{\"template\":\"common_mistakes\",\"title\":\"Erreurs d’usage les plus fréquentes\",\"mistakes\":[{\"error\":\"Tout centraliser sur le forum\",\"why\":\"Le forum est conçu pour la conversation et les relais, pas pour remplacer la rubrique documents.\",\"consequence\":\"Versions multiples, fils longs, nouveaux membres qui ne retrouvent pas la référence.\",\"correction\":\"Demander ou attendre la publication dans les documents lorsque le staff valide un texte de référence.\"},{\"error\":\"Conclure trop vite à une « panne » du site\",\"why\":\"Souvent, une rubrique absente correspond à des droits, à une autre communauté active ou à une fonction non activée.\",\"consequence\":\"Messages d’alerte publics inutiles et temps perdu pour le staff.\",\"correction\":\"Vérifier le contexte (communauté, rôle), puis s’adresser au canal prévu pour le support.\"},{\"error\":\"Négliger la déconnexion sur poste partagé\",\"why\":\"La session peut rester ouverte pour le prochain utilisateur du même équipement.\",\"consequence\":\"Accès au compte et aux contenus au nom de la mauvaise personne.\",\"correction\":\"Utiliser la déconnexion explicite du portail en fin de session.\"}]},{\"template\":\"scenario_decision\",\"title\":\"Je ne trouve pas une rubrique mentionnée dans ce parcours\",\"context\":\"Vous suivez la formation ; un encadré cite une page (documents, organigramme, etc.) que vous ne voyez pas dans votre menu.\",\"situation\":\"<p>Vous devez agir rapidement pour un sujet opérationnel. Vous pensez que le site est « cassé ».</p>\",\"options\":[{\"id\":\"a\",\"text\":\"Vérifier la communauté active et, si besoin, demander au staff si l’accès est normal pour votre rôle avant de conclure.\"},{\"id\":\"b\",\"text\":\"Publier immédiatement un message d’alerte dans toutes les catégories du forum.\"},{\"id\":\"c\",\"text\":\"Partager vos identifiants avec un camarade pour qu’il teste depuis son compte.\"},{\"id\":\"d\",\"text\":\"Abandonner toute utilisation du portail jusqu’à nouvel ordre.\"}],\"correctOptionId\":\"a\",\"explanation\":\"<p>La première démarche raisonnable est de contrôler le <strong>contexte</strong> (communauté, rôle) puis de solliciter le staff sur le canal prévu. Les autres options créent du bruit, un risque de sécurité ou une interruption inutile de travail.</p>\"},{\"template\":\"title_hero\",\"title\":\"Sécurité : les bases\",\"subtitle\":\"Gestes simples, effet collectif\",\"body\":\"<p>Un compte compromis ou une session laissée ouverte sur un poste partagé, ce n’est pas « une affaire personnelle » : c’est un risque pour toute la communauté (usurpation, fuite de consignes, spam). Les bons réflexes sont courts : mot de passe sérieux, déconnexion explicite, prudence sur les copies d’écran et les transferts hors site.</p>\",\"primaryAction\":{\"type\":\"modal\",\"label\":\"Voir la liste des rappels\",\"modalId\":\"onb-sec\"}},{\"template\":\"resources_list\",\"title\":\"Accès directs après connexion\",\"subtitle\":\"Liens utiles\",\"body\":\"<p>Si un lien ne fonctionne pas, votre site peut utiliser une adresse légèrement différente : repassez alors par le menu principal.</p>\",\"resources\":[{\"title\":\"Tableau de bord\",\"url\":\"/public/dashboard\"},{\"title\":\"Documentation du portail\",\"url\":\"/public/documentation\"}]},{\"template\":\"reading_article\",\"title\":\"Avant de passer au module suivant\",\"subtitle\":\"Prenez le temps de l’ancrage\",\"body\":\"<p>La suite du parcours entre dans le détail de la navigation et du compte. Si vous avez sauté des paragraphes, revenez en arrière : les modules suivants supposent que vous savez déjà ce qu’est le tableau de bord, pourquoi les documents ne sont pas interchangeables avec le forum, et pourquoi la sécurité du compte est une responsabilité partagée.</p>\"}]}', NULL, 17, 'initiation', 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(19, 19, 'Navigation et compte — parcours visuel', 'Menu principal, zone Opérations, tableau de bord, compte, préférences, recherche, bonnes pratiques.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Module pratique\",\"title\":\"\",\"lead\":\"Menus, tableau de bord, compte et recherche : les bons réflexes pour ne pas perdre le fil au quotidien.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~28 min\"},{\"label\":\"Focus\",\"value\":\"Repérage + compte\"}]},\"closure\":{\"title\":\"Synthèse — Navigation et compte\",\"seen\":[\"Tableau de bord comme premier arrêt ; menu et zone Opérations selon les droits.\",\"Procédure type de mise à jour du profil et des préférences dans la rubrique compte.\",\"Comparaison poste personnel / poste partagé et conduite en cas de page invisible.\"],\"acquired\":[\"Vous savez enchaîner les étapes pour tenir votre compte à jour sans improvisation.\",\"Vous évitez les erreurs de contexte entre communautés et les sessions ouvertes sur poste partagé.\"],\"nextHint\":\"Poursuivez avec « Organisation et contenus » : personnel, documents, formations et attestations.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Navigation et compte\",\"subtitle\":\"Lire le site comme un outil de travail\",\"body\":\"<p>Le <strong>menu principal</strong> n’est pas une vitrine : c’est la liste des fonctions auxquelles votre rôle a droit. Les intitulés sont volontairement lisibles (accueil, formations, forum, personnel, documents…). Sur grand écran, vous pouvez aussi avoir un menu regroupant les <strong>opérations</strong> : lieu central de mission, pointage, briefings, organigramme, outils tactiques — selon ce que votre communauté a activé. Sur mobile, le même contenu est souvent dans un menu latéral ou derrière une icône « menu ».</p><p>L’habitude à prendre : avant de poster ou de répondre, vérifiez que vous êtes au bon endroit dans le site (bonne communauté, bonne rubrique).</p>\",\"contextKicker\":\"Étape 01 · Structure du site\",\"surface\":\"elevated\",\"cards\":[{\"label\":\"Menu principal\",\"body\":\"Accès aux rubriques autorisées pour votre rôle.\"},{\"label\":\"Zone Opérations\",\"body\":\"Raccourcis tactiques et logistiques si votre communauté les active.\"},{\"label\":\"Mobile\",\"body\":\"Même logique, présentation adaptée (menu latéral ou icône).\"}]},{\"template\":\"reading_article\",\"title\":\"Tableau de bord : votre premier arrêt\",\"subtitle\":\"Synthèse, pas détail tactique\",\"body\":\"<p>Le <strong>tableau de bord</strong> est l’écran qui accueille souvent la session après connexion. Il ne remplace pas une carte d’opération ni un ordre écrit : il <strong>signale</strong> ce qui mérite attention pour votre compte — raccourcis vers des pages utiles, rappels de formations en cours ou à venir, parfois les prochains événements ou des messages du staff selon la configuration.</p>\\n<p>Traitez-le comme la « une » du portail pour <em>vous</em> : deux minutes suffisent à repérer si une date limite approche, si une formation obligatoire attend une action, ou si une annonce récente a été mise en avant. Si le tableau de bord est vide, cela ne veut pas dire qu’il ne se passe rien dans la communauté : ouvrez le forum, les documents ou le calendrier selon votre fonction.</p>\\n<div class=\\\"lms-reading-callout lms-reading-callout--tip\\\"><p><strong>Bon réflexe</strong> : à chaque retour sur le site, passez par le tableau de bord avant d’aller sur les réseaux sociaux ou messageries externes — la consigne officielle est ici en premier.</p></div>\"},{\"template\":\"reading_article\",\"title\":\"Compte, profil, préférences et sécurité\",\"subtitle\":\"Ce que vous contrôlez vous-même\",\"body\":\"<p>La rubrique <strong>compte</strong> (souvent « Mon compte » ou « Paramètres ») concentre tout ce qui touche à <em>votre</em> présence sur le portail. Elle sert à trois grandes familles d’actions.</p>\\n<h3>Profil et identité affichée</h3>\\n<p>Selon les règles de votre communauté, certaines informations peuvent être visibles par le staff ou d’autres membres (nom affiché, affectation, champs de dossier). Les mettre à jour quand elles changent évite les erreurs d’affectation et les convocations à mauvais escient.</p>\\n<h3>Préférences</h3>\\n<p>Notifications, affichage, parfois choix de ce que vous acceptez de montrer : ce sont des réglages personnels. Si vous désactivez tout sans le vouloir, vous raterez des rappels légitimes ; si vous laissez tout ouvert sur un canal bruyant, vous finirez par ignorer les messages importants. Trouvez un équilibre et révisez-le après une grosse période d’activité.</p>\\n<h3>Sécurité</h3>\\n<p>Mot de passe, confirmation d’adresse de contact, parfois la liste des appareils reconnus : toute modification sensible peut déclencher une vérification supplémentaire. C’est normal. Gardez une adresse de contact <strong>valide</strong> : c’est le filet de sécurité si vous perdez l’accès.</p>\"},{\"template\":\"reading_article\",\"title\":\"Recherche et multi-organisations\",\"subtitle\":\"Éviter les doublons et les erreurs de contexte\",\"body\":\"<p>Lorsque la recherche est disponible, utilisez-la avant de créer un nouveau sujet sur le forum ou avant de redemander un document : souvent, le fil ou le fichier existe déjà. Les résultats respectent vos droits : si quelque chose n’apparaît pas, ce n’est pas forcément qu’il n’existe pas — il peut être simplement hors de votre périmètre.</p>\\n<p>Si vous participez à <strong>plusieurs communautés</strong> sur la même plateforme, un écran de choix peut s’afficher à la connexion. L’erreur classique est de répondre à un briefing ou de signer une présence alors qu’on est encore « dans » l’autre organisation. Vérifiez l’en-tête du site ou le sélecteur avant toute action engageante.</p>\"},{\"template\":\"fill_blanks\",\"title\":\"Vérification rapide\",\"contextKicker\":\"Étape intermédiaire · Auto-évaluation\",\"metric\":{\"label\":\"Validation\",\"value\":\"Réponses exactes requises\"},\"body\":\"<p>Après connexion, l’écran qui regroupe en général raccourcis et rappels utiles pour votre session est le [[tableau de bord]].</p><p>Pour le mot de passe, les préférences et les réglages du compte, ouvrez la section <strong>compte</strong> (souvent intitulée « Mon compte ») depuis le menu principal.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"Repères pour le quotidien\",\"body\":\"Revoyez périodiquement vos préférences de notification : un rappel de formation ou d’événement se joue souvent sur un simple e-mail ou une alerte interne.\\nSi un libellé de menu vous échappe, ouvrez la rubrique plutôt que d’ignorer : les intitulés sont pensés pour le langage courant.\\nSur un poste partagé, déconnectez-vous explicitement ; fermer l’onglet ne suffit pas toujours.\\nAvant d’ouvrir un nouveau fil sur le forum, recherchez ou parcourez la catégorie pour éviter les doublons.\\nSi une page refuse l’accès, considérez que votre rôle n’inclut peut-être pas cette fonction : demandez au staff au lieu d’essayer de contourner.\"},{\"template\":\"process_steps\",\"title\":\"Procédure type : mettre à jour son profil et ses préférences\",\"steps\":[{\"title\":\"Ouvrir la rubrique compte\",\"action\":\"Depuis le menu principal, accédez à « Mon compte » (ou libellé équivalent).\",\"vigilance\":\"Vérifiez que vous êtes dans la bonne communauté si vous en avez plusieurs.\"},{\"title\":\"Parcourir les sections proposées\",\"action\":\"Identifiez profil (identité affichée, champs de dossier), préférences (notifications, affichage) et sécurité (mot de passe, contact).\",\"vigilance\":\"Ne modifiez le mot de passe ou l’adresse de contact que si vous pouvez assumer la confirmation demandée par le site.\"},{\"title\":\"Enregistrer et contrôler\",\"action\":\"Validez les changements ; relisez les messages de confirmation ou les e-mails de vérification.\",\"vigilance\":\"Un contact obsolète bloque souvent la récupération d’accès en cas de problème.\"}]},{\"template\":\"role_scope_compare\",\"title\":\"Poste personnel et poste partagé\",\"memberView\":\"<p>Sur <strong>votre</strong> ordinateur ou appareil personnel, vous gérez la session comme d’habitude : fermeture du navigateur peut suffire selon les réglages, mais la déconnexion du portail reste recommandée si d’autres applications sont ouvertes.</p>\",\"staffView\":\"<p>Pour le <strong>staff</strong>, l’enjeu est le même au niveau collectif : rappeler la déconnexion sur les postes de permanence ou salles partagées fait partie du bon usage du service.</p>\",\"rightsNote\":\"<p>Les droits d’accès (menu, rubriques) ne changent pas selon le type de machine : ils dépendent du <strong>compte</strong> et du <strong>rôle</strong>. En revanche, le <strong>risque</strong> de session laissée ouverte est maximal sur un poste partagé.</p>\",\"notAnomaly\":\"<p>Que le site vous demande une reconnexion après une durée d’inactivité n’est pas une anomalie : c’est souvent une protection de session.</p>\"},{\"template\":\"scenario_decision\",\"title\":\"Une page du parcours ne s’affiche pas pour vous\",\"context\":\"Un encadré de formation cite une page (recherche, organigramme, etc.) ; chez vous le menu ne propose pas la même chose qu’illustré.\",\"situation\":\"<p>Vous devez compléter une tâche qui, selon vous, nécessite cette page.</p>\",\"options\":[{\"id\":\"a\",\"text\":\"Contrôler la communauté active et demander au staff si l’accès est normal pour votre affectation avant d’alerter tout le monde.\"},{\"id\":\"b\",\"text\":\"Installer un outil tiers pour « forcer » l’affichage du site.\"},{\"id\":\"c\",\"text\":\"Utiliser le compte d’un autre membre pour entrer à sa place.\"},{\"id\":\"d\",\"text\":\"Publier sur le forum que le portail est inutilisable sans plus de précision.\"}],\"correctOptionId\":\"a\",\"explanation\":\"<p>La conduite attendue combine <strong>vérification du contexte</strong> et <strong>escalade par le canal prévu</strong>. Les autres options exposent la sécurité ou créent du bruit.</p>\"},{\"template\":\"resources_list\",\"title\":\"Raccourcis fréquents\",\"subtitle\":\"\",\"body\":\"\",\"resources\":[{\"title\":\"Tableau de bord\",\"url\":\"/public/dashboard\"},{\"title\":\"Mon compte\",\"url\":\"/public/account\"},{\"title\":\"Préférences\",\"url\":\"/public/account/preferences\"},{\"title\":\"Recherche\",\"url\":\"/public/search\"}]}]}', NULL, 19, 'initiation', 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(20, 20, 'Organisation et contenus — parcours visuel', 'Fiche personnelle, organigramme, documents officiels, catalogue LMS, progression et erreurs fréquentes.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Contenus structurés\",\"title\":\"\",\"lead\":\"Personnel, documents et formations : où vit l’information « durable » et comment la progression est enregistrée.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~32 min\"},{\"label\":\"Thème\",\"value\":\"Organisation\"}]},\"closure\":{\"title\":\"Synthèse — Organisation et contenus\",\"seen\":[\"Distinction nette : dossier personnel, organigramme, documents de référence, catalogue des formations.\",\"Cas pratiques : document sensible, version obsolète, formation assignée mais non terminée.\",\"Attestation : ce qu’elle atteste sur le portail et ce qu’elle ne remplace pas.\"],\"acquired\":[\"Vous savez pourquoi un contenu peut être invisible selon le rôle et que ce n’est pas forcément une erreur.\",\"Vous distinguez progression réelle et intention ; assignation vs inscription libre.\"],\"nextHint\":\"Passez au bilan interrogé de mi-parcours, puis au module sur le forum et les événements.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Organisation et contenus\",\"subtitle\":\"Personnel, documents, formations : la chaîne de l’information\",\"body\":\"<p>Ce module décrit comment le portail porte l’information « durable » : <strong>qui vous êtes dans l’unité</strong>, <strong>où sont les fichiers de référence</strong>, et <strong>comment le site enregistre ce que vous avez appris</strong>. Ce que vous voyez dépend de votre rôle ; l’absence d’accès n’est pas une punition, c’est en général un périmètre de diffusion.</p>\",\"contextKicker\":\"Étape 01 · Chaîne d’information\",\"surface\":\"elevated\",\"metric\":{\"label\":\"Principe\",\"value\":\"Périmètre selon le rôle\"},\"insights\":[{\"variant\":\"result\",\"title\":\"\",\"body\":\"Objectif : savoir où mettre à jour votre dossier et où trouver la version officielle d’un texte.\"}]},{\"template\":\"reading_article\",\"title\":\"Personnel et organigramme\",\"subtitle\":\"Dossier individuel et structure collective\",\"body\":\"<p>L’espace <strong>personnel</strong> relie votre compte de connexion à votre <strong>dossier</strong> tel que la communauté le tient : affectation, fonctions affichées, champs que le staff a demandés de remplir, parfois pièces ou validations selon les processus en place. Une fiche incomplète ou périmée produit des erreurs réelles : mauvaise convocation, mauvais groupe, retard sur une exigence administrative.</p>\\n<p>L’<strong>organigramme</strong> donne une vue de la structure et des rattachements. Il aide à savoir à qui s’adresser pour un sujet donné, mais il ne remplace pas un ordre du jour ou une note officielle : c’est une photographie organisationnelle, pas la doctrine complète.</p>\"},{\"template\":\"reading_article\",\"title\":\"Documents : la version de référence\",\"subtitle\":\"Pourquoi ce n’est pas « comme le forum »\",\"contextKicker\":\"Étape clé · Référence vs discussion\",\"surface\":\"default\",\"cards\":[{\"label\":\"Documents\",\"body\":\"Textes et fichiers stabilisés, avec contrôle de diffusion.\"},{\"label\":\"Forum\",\"body\":\"Conversation vivante : annonces, questions, relances.\"},{\"label\":\"Erreur fréquente\",\"body\":\"Publier la « version finale » uniquement dans un fil de discussion.\"}],\"body\":\"<p>La rubrique <strong>documents</strong> sert à publier ce qui doit rester <strong>stable</strong> et <strong>retrouvable</strong> : notes, guides, modèles, visuels autorisés, parfois packs techniques. Chaque dossier ou fichier peut avoir un niveau de diffusion différent ; si vous ne voyez pas un contenu, c’est souvent qu’il est réservé à un autre groupe.</p>\\n<p>Le <strong>forum</strong>, lui, vit par messages successifs : on y annonce, on débat, on relance. Un fil n’est pas un bon endroit pour « stocker » la version finale d’un texte : il se noie, on ne sait plus laquelle est la bonne page, et les nouveaux arrivants ne remontent pas 200 messages. En pratique, lorsque le staff valide un document, il doit vivre dans la rubrique documents (ou équivalent) ; le forum sert à expliquer le contexte ou à répondre aux questions.</p>\\n<p>Ne recopiez pas un fichier sensible sur une messagerie personnelle ou un stockage privé : vous perdez le contrôle de la diffusion et vous contournez les traces prévues par l’organisation.</p>\\n<div class=\\\"lms-reading-callout lms-reading-callout--info\\\"><p><strong>À retenir</strong> : document = référence stabilisée ; forum = conversation. Si les deux se mélangent, l’information se dégrade pour tout le monde.</p></div>\"},{\"template\":\"reading_article\",\"title\":\"Formations et catalogue LMS\",\"subtitle\":\"Inscription, assignation, progression, obligation\",\"body\":\"<p>Le <strong>catalogue</strong> liste les parcours auxquels vous pouvez accéder. Deux grands cas : vous vous inscrivez vous-même à une formation ouverte, ou le staff vous <strong>assigne</strong> un parcours (souvent avec une attente de complétion dans un délai). La fiche indique en général la durée estimée, le niveau, et si le parcours est <strong>obligatoire</strong> et/ou <strong>certifiant</strong>.</p>\\n<p>À l’intérieur d’un parcours, les <strong>modules</strong> et <strong>leçons</strong> peuvent être verrouillés dans un ordre : respectez-le, sinon vous risquez de croire avoir « tout vu » alors qu’une étape bloquante manque encore. Le site enregistre la progression : vous pouvez fermer la session et reprendre, mais une formation n’est réellement terminée que lorsque toutes les étapes requises le sont — le système reflète le parcours effectif, pas l’intention.</p>\\n<p>Les parcours « canvas » comme celui-ci se lisent diapositive par diapositive ; d’autres formations mélangent texte, média, quiz intermédiaires. Le principe reste le même : chaque étape a une fonction pédagogique ou réglementaire.</p>\"},{\"template\":\"reading_article\",\"title\":\"Déroulé type d’un parcours sur le portail\",\"subtitle\":\"De l’ouverture à l’attestation\",\"body\":\"<p><strong>Ouverture.</strong> Vous accédez à la fiche formation après inscription ou assignation. Lisez l’introduction et les objectifs : elles disent ce que le staff attend comme résultat.</p>\\n<p><strong>Modules.</strong> Vous enchaînez les leçons selon les règles du parcours. Certaines sont de la lecture, d’autres des exercices ou des questionnaires partiels.</p>\\n<p><strong>Évaluation.</strong> Un quiz ou une épreuve finale peut exiger un score minimal. Les tentatives sont en nombre limité : utilisez les retours du questionnaire pour combler vos lacunes avant de retenter.</p>\\n<p><strong>Clôture.</strong> Lorsque tout est validé, le parcours est marqué comme terminé. Si la formation est certifiante, une <strong>attestation</strong> ou un équivalent peut être proposé selon les réglages de votre communauté.</p>\"},{\"template\":\"case_review\",\"title\":\"Cas : document sensible et diffusion\",\"caseText\":\"<p>Un fichier marqué restreint circule dans une messagerie personnelle externe « pour aller plus vite ». Un membre vous demande la « bonne » copie.</p>\",\"analysis\":\"<p>La diffusion hors des espaces prévus fait perdre la maîtrise des accès et la traçabilité attendue par l’organisation.</p>\",\"goodConduct\":\"<p>Ne pas recopier le fichier sur un canal non autorisé. Orienter vers la rubrique documents ou vers le staff si l’accès manque. Signaler la fuite si les règles internes l’exigent.</p>\",\"conclusion\":\"<p>La rapidité ne doit pas se faire au détriment du périmètre de diffusion défini par la communauté.</p>\"},{\"template\":\"common_mistakes\",\"title\":\"Document obsolète ou douteux\",\"mistakes\":[{\"error\":\"Recirculer une ancienne version « au cas où »\",\"why\":\"Plusieurs versions coexistent déjà ; en ajouter une informelle aggrave la confusion.\",\"consequence\":\"Des équipes travaillent sur des textes différents au même titre.\",\"correction\":\"Signaler au référent ou au staff ; laisser la mise à jour officielle dans la rubrique documents.\"},{\"error\":\"Considérer qu’une formation « presque finie » suffit\",\"why\":\"Le système enregistre les étapes réellement accomplies ; une obligation reste une obligation.\",\"consequence\":\"Retard sur l’exigence collective et rappels répétés du staff.\",\"correction\":\"Repérer les leçons ou quiz restants sur la fiche formation et les terminer dans le délai fixé.\"}]},{\"template\":\"reading_article\",\"title\":\"Attestation : ce qu’elle prouve et ce qu’elle ne prouve pas\",\"subtitle\":\"Lecture institutionnelle\",\"body\":\"<p>Lorsqu’une formation est <strong>certifiante</strong> et que vous avez accompli toutes les étapes requises (y compris les scores minimaux aux questionnaires), le portail peut délivrer une <strong>attestation</strong> (ou équivalent) selon les réglages de votre communauté.</p>\\n<p><strong>Ce que cela prouve en général</strong> : vous avez validé le parcours tel qu’il est conçu sur le site, aux dates enregistrées.</p>\\n<p><strong>Ce que cela ne prouve pas automatiquement</strong> : une habilitation opérationnelle spécifique, une clearance, ou toute compétence que seule votre unité peut reconnaître hors du LMS. L’attestation et le dossier métier peuvent coexiger : l’un ne remplace pas l’autre.</p>\"},{\"template\":\"role_scope_compare\",\"title\":\"Pourquoi un même contenu n’est pas visible pour tout le monde\",\"memberView\":\"<p>Un membre voit les dossiers, documents et formations correspondant à <strong>son rôle</strong> et aux <strong>niveaux de diffusion</strong> choisis par le staff. Certaines fiches ou fichiers sont volontairement limités à un groupe.</p>\",\"staffView\":\"<p>Le staff dispose en général d’outils d’administration ou de modération pour publier, retirer ou restreindre un contenu. La visibilité est une décision d’organisation, pas une préférence personnelle du site.</p>\",\"rightsNote\":\"<p>Si vous changez de fonction ou d’affectation, votre périmètre peut évoluer après mise à jour des rôles : ce n’est pas une punition, c’est l’alignement des accès.</p>\",\"notAnomaly\":\"<p>Deux camarades avec des rôles différents peuvent légitimement ne pas voir les mêmes rubriques : ce n’est pas systématiquement un dysfonctionnement.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"Ce qui compte vraiment côté organisation\",\"body\":\"Les contenus sensibles restent dans les espaces prévus ; ne les faites pas migrer vers des canaux privés non maîtrisés.\\nUne formation obligatoire doit être traitée dans les délais fixés par le staff : l’outil permet de suivre l’avancement.\\nConsultez régulièrement votre espace formations pour voir les assignations et les rappels.\\nL’organigramme oriente ; il ne remplace pas une consigne écrite ou un ordre de mission.\\nSi un document semble faux ou obsolète, signalez-le au responsable plutôt que de le recirculer.\"},{\"template\":\"resources_list\",\"title\":\"Accès directs\",\"subtitle\":\"\",\"body\":\"\",\"resources\":[{\"title\":\"Ma fiche personnelle\",\"url\":\"/public/personnel/me\"},{\"title\":\"Organigramme\",\"url\":\"/public/orbat\"},{\"title\":\"Documents\",\"url\":\"/public/documents\"},{\"title\":\"Catalogue des formations\",\"url\":\"/public/formations\"}]}]}', NULL, 21, 'initiation', 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16');
+INSERT INTO `training_lessons` (`id`, `module_id`, `title`, `summary`, `learning_objectives`, `instructor_notes`, `lesson_type`, `content`, `external_url`, `duration_minutes`, `difficulty`, `position`, `is_required`, `created_at`, `updated_at`) VALUES
+(21, 21, 'Communauté — parcours visuel', 'Forum, annonces, événements, pointage, signalements, résumé des bons réflexes.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Vie collective\",\"title\":\"\",\"lead\":\"Forum, événements, annonces : des règles simples pour que l’information reste utile à toute l’unité.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~26 min\"},{\"label\":\"Enjeu\",\"value\":\"Canaux et rigueur\"}]},\"closure\":{\"title\":\"Synthèse — Communauté\",\"seen\":[\"Quand poster publiquement et quand passer par un canal dédié ou un signalement.\",\"Titres de sujet utiles vs vagues ; annonce officielle vs conversation libre.\",\"Cas types : doublon sur le forum, absence non signalée à un événement inscrit.\"],\"acquired\":[\"Vous réduisez le bruit informationnel par des réflexes simples (recherche, titre, prévenance).\",\"Vous savez qu’un engagement sur un créneau inscrit est une donnée logistique pour le staff.\"],\"nextHint\":\"Il reste le module « Validation finale » : questionnaire, attestation et limites de ce que couvre la certification sur le portail.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Vie de communauté\",\"subtitle\":\"Coordonner sans encombrer les canaux\",\"body\":\"<p>Le <strong>forum</strong> et les <strong>événements</strong> sont les lieux où la communauté vit au quotidien : annonces, questions, briefings, débriefs, organisation logistique. La qualité collective dépend de chacun : un fil lisible vaut mieux que vingt messages redondants ; une inscription honnête vaut mieux qu’une absence non signalée.</p>\",\"contextKicker\":\"Étape 01 · Cadre\",\"surface\":\"elevated\",\"cards\":[{\"label\":\"Forum\",\"body\":\"Structurer les sujets et respecter les annonces épinglées.\"},{\"label\":\"Événements\",\"body\":\"Inscription = engagement logistique pour le staff.\"},{\"label\":\"Signalement\",\"body\":\"Canal adapté pour les sujets sensibles.\"}]},{\"template\":\"reading_article\",\"title\":\"Forum : structurer la parole collective\",\"subtitle\":\"Titres, catégories, respect\",\"body\":\"<p>Avant d’ouvrir un <strong>nouveau sujet</strong>, parcourez la catégorie et utilisez la recherche : souvent, le problème est déjà en discussion. Si vous ouvrez un fil, choisissez un <strong>titre</strong> qui dit ce que vous cherchez ou ce que vous proposez, pas une phrase vague du type « question ».</p>\\n<p>Dans le fil, allez à l’essentiel : contexte utile, question claire, proposition si vous en avez une. Le désaccord est possible, la grossièreté n’apporte rien. Les messages hors-sujet répétés, le spam et les polémiques stériles obligent le staff à modérer — ce temps-là n’est plus disponible pour vous aider sur le fond.</p>\\n<p>Lorsque le staff épingle une annonce, considérez qu’elle a force de consigne pour la période concernée : lisez-la avant de poster une question déjà traitée.</p>\"},{\"template\":\"reading_article\",\"title\":\"Événements, inscriptions et présence\",\"subtitle\":\"Engagement et logistique\",\"body\":\"<p>Les <strong>événements</strong> matérialisent des créneaux : date, lieu ou lien, description, parfois matériel attendu ou tenue. Lorsque l’inscription est demandée, elle sert à dimensionner les moyens (places, encadrement, supports). S’inscrire « pour voir » puis ne pas venir sans prévenir dégrade la confiance et fait perdre du temps.</p>\\n<p>Si vous ne pouvez pas venir, <strong>prévenez</strong> selon la procédure de votre organisation (message au staff, modification de l’inscription, fil prévu). Ce n’est pas une option de politesse : c’est une donnée d’organisation.</p>\\n<p>Certaines communautés utilisent un <strong>pointage</strong> ou une feuille de présence numérique : suivez les consignes affichées sur place. Un pointage incorrect peut fausser les statistiques ou les validations administratives.</p>\"},{\"template\":\"reading_article\",\"title\":\"Annonces officielles et signalements\",\"subtitle\":\"Quand passer par un canal dédié\",\"body\":\"<p>Les annonces importantes sont souvent mises en avant en tête de forum ou sur le tableau de bord. Elles peuvent compléter une note dans les documents : l’une explique le « maintenant », l’autre stabilise le texte de référence.</p>\\n<p>Pour un problème sensible — contenu inapproprié, conflit personnel, erreur de sécurité — utilisez le <strong>canal prévu</strong> (signalement, message à un modérateur, procédure interne). Une « dénonciation » publique désordonnée crée du bruit, expose des personnes et complique la résolution.</p>\"},{\"template\":\"reading_article\",\"title\":\"Synthèse des bons réflexes\",\"subtitle\":\"À appliquer dès la première semaine\",\"body\":\"<p>Lisez les annonces avant de poster. Répondez dans le fil qui traite déjà le sujet lorsque c’est possible. Inscrivez-vous aux créneaux avec sérieux. Prévenez en cas d’empêchement. Remerciez ou synthétisez en fin de fil si cela clarifie la décision pour les suivants.</p>\\n<p>Ces gestes semblent mineurs ; cumulés sur une centaine de membres, ils font la différence entre un portail utilisable et un chaos de notifications.</p>\"},{\"template\":\"dos_donts\",\"title\":\"Canal public ou canal dédié ?\",\"dos\":[\"Poser une question générale dans la catégorie adaptée, après recherche.\",\"Utiliser le signalement ou la procédure interne pour un contenu inapproprié ou un conflit sensible.\",\"Écrire au staff sur le canal prévu pour un sujet personnel ou confidentiel.\"],\"donts\":[\"Épingler une polémique personnelle en tête de forum sans passer par la modération.\",\"Multiplier les posts identiques dans plusieurs catégories « pour être sûr d’être vu ».\",\"Diffuser des données sensibles sur un fil ouvert alors qu’un canal restreint existe.\"],\"synthesis\":\"<p>La règle simple : <strong>public</strong> pour ce qui doit être partagé et archivable par la collectivité ; <strong>canal dédié</strong> pour ce qui exige confidentialité, preuve ou traitement par le staff.</p>\"},{\"template\":\"reading_article\",\"title\":\"Titre utile, titre inutile\",\"subtitle\":\"Lisibilité collective\",\"body\":\"<p><strong>Inutile</strong> : « Question », « Urgent », « À lire » — aucun membre ne sait de quoi il s’agit sans ouvrir le fil.</p>\\n<p><strong>Utile</strong> : « Point logistique — convocation du 12 : tenue et horaire », « Document obsolète sur la fiche X : demande de retrait », « Besoin d’accès documents section Y pour la permanence ».</p>\\n<p>Le titre est le contrat de lecture avec les autres : il doit permettre de trier, d’archiver et de retrouver le sujet plus tard.</p>\"},{\"template\":\"reading_article\",\"title\":\"Annonce officielle et conversation\",\"subtitle\":\"Deux fonctions différentes\",\"body\":\"<p>Une <strong>annonce officielle</strong> (souvent épinglée ou mise en avant) fixe une consigne ou une information structurante pour une période donnée. Elle complète parfois un document de référence ; elle ne le remplace pas si la version stabilisée doit vivre dans la rubrique documents.</p>\\n<p>Une <strong>conversation</strong> sur le forum sert au débat, aux questions de détail, aux mises à jour de situation. Mélanger les deux — par exemple noyer une annonce sous des messages hors-sujet — rend la consigne illisible pour ceux qui arrivent après.</p>\"},{\"template\":\"case_review\",\"title\":\"Cas : doublon sur le forum\",\"caseText\":\"<p>Le même sujet apparaît en trois fils ouverts la même semaine dans la même catégorie. Les réponses se dispersent.</p>\",\"analysis\":\"<p>Chacun a voulu « gagner du temps » sans parcourir la catégorie ; le staff doit fusionner ou orienter, et les membres ne savent plus où lire la décision.</p>\",\"goodConduct\":\"<p>Avant d’ouvrir un sujet : recherche et lecture des fils récents. Si le sujet existe, poster dans le fil existant. Si vous avez ouvert par erreur un doublon, indiquez-le et renvoyez vers le fil principal.</p>\",\"conclusion\":\"<p>La discipline de fil unique sur un même sujet est un geste de respect du temps collectif.</p>\"},{\"template\":\"case_review\",\"title\":\"Cas : absence non signalée à un événement\",\"caseText\":\"<p>Vous étiez inscrit à un créneau ; un empêchement de dernière minute survient. Vous ne modifiez pas l’inscription et ne prévenez personne.</p>\",\"analysis\":\"<p>Le staff a dimensionné l’encadrement et le matériel sur la base des inscriptions. Une place vide non signalée est une ressource mal utilisée ; un autre membre aurait pu prendre la place.</p>\",\"goodConduct\":\"<p>Dès que l’empêchement est connu, suivre la procédure affichée (désinscription, message au référent, fil prévu). Mieux vaut prévenir tôt qu’imposer un silence au collectif.</p>\",\"conclusion\":\"<p>L’inscription à un événement est un engagement logistique, pas seulement un clic décoratif.</p>\"},{\"template\":\"fill_blanks\",\"title\":\"Une dernière vérification\",\"contextKicker\":\"Auto-évaluation\",\"metric\":{\"label\":\"Rappel\",\"value\":\"Une réponse exacte par trou\"},\"body\":\"<p>Avant d’ouvrir un nouveau sujet sur le forum, il est préférable de vérifier qu’un [[fil]] ou une discussion ne traite pas déjà le même problème.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"Participation utile\",\"body\":\"Un retour sur une formation aide lorsqu’il est précis (ce qui manquait, ce qui était clair), pas lorsqu’il se limite à une critique vague.\\nPour un événement, l’empêchement se signale ; l’absence non expliquée se compte aussi.\\nNe divulguez pas des informations personnelles sur des tiers sans accord.\\nRespectez le ton fixé par votre communauté (formel, sobre, etc.).\\nEn cas de doute sur la catégorie du forum, demandez au staff avant de poster.\"}]}', NULL, 17, 'initiation', 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(22, 22, 'Validation — parcours visuel', 'Quiz, score, tentatives, attestation, reprise de parcours et gestion du stress de l’évaluation.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Validation\",\"title\":\"\",\"lead\":\"Questionnaire final, attestation et reprise de parcours : ce qui se passe après la dernière lecture.\",\"stats\":[{\"label\":\"Seuil de réussite\",\"value\":\"80 %\"},{\"label\":\"Tentatives\",\"value\":\"Plusieurs (selon la formation)\"}]},\"closure\":{\"title\":\"Avant de lancer le questionnaire\",\"seen\":[\"Le questionnaire final couvre l’ensemble du parcours : navigation, compte, contenus, forum, événements, sécurité.\",\"Les explications après une réponse incorrecte sont une aide pédagogique : servez-vous-en avant de retenter.\",\"Validation sur le portail et habilitation métier reconnue par l’unité sont deux choses distinctes.\"],\"acquired\":[\"Vous savez organiser une reprise de révision ciblée après un échec.\",\"Vous savez ce qu’une attestation atteste — et ce qu’elle ne remplace pas.\"],\"nextHint\":\"Passez à la leçon « Quiz » du module lorsqu’elle est disponible dans votre parcours.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Dernière étape : validation\",\"subtitle\":\"Quiz de fin de parcours\",\"body\":\"<p>Le questionnaire porte sur les <strong>idées directrices</strong> du portail : navigation, compte, documents, formations, forum, événements, sécurité. Le <strong>seuil de réussite est de 80&nbsp;%</strong>. Vous disposez de <strong>plusieurs tentatives</strong> dans la limite fixée par la formation.</p><p>Les formulations volontairement longues dans certaines réponses fausses imitent des croyances courantes : lisez jusqu’au bout avant de choisir.</p>\",\"contextKicker\":\"Étape finale · Évaluation\",\"surface\":\"elevated\",\"insights\":[{\"variant\":\"vigilance\",\"title\":\"\",\"body\":\"Ne validez pas la dernière réponse si votre connexion est très instable : en cas de doute, attendez un réseau fiable.\"}]},{\"template\":\"reading_article\",\"title\":\"Après le quiz : attestation, échec, reprise\",\"subtitle\":\"Ce que le site retient de vous\",\"body\":\"<p>Si vous atteignez le score requis et que la formation est <strong>certifiante</strong>, une <strong>attestation</strong> ou un équivalent peut être proposé (téléchargement, trace sur votre dossier, selon les réglages). Ce document atteste que vous avez parcouru et validé <em>ce</em> parcours à cette date — il ne remplace pas une habilitation métier qui serait définie ailleurs.</p>\\n<p>Si vous échouez, le questionnaire affiche en général des <strong>explications</strong> sur les réponses attendues. Utilisez-les comme liste de révision : retournez sur les modules qui coincent, puis retentez. L’objectif n’est pas de vous piéger mais de vérifier que vous ne partirez pas avec de fausses certitudes (par exemple confondre forum et documents, ou ignorer la déconnexion sur poste partagé).</p>\\n<p>Conservez une copie de votre attestation si votre organisation vous la demande hors ligne ; le portail peut aussi conserver l’historique de vos formations terminées.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"Avant de lancer le questionnaire\",\"body\":\"Prévoyez environ quinze à vingt minutes sans interruption.\\nInstallez-vous dans un endroit où vous pouvez lire calmement chaque énoncé.\\nSi votre connexion est instable, évitez de valider la dernière réponse au moment où le signal faiblit.\\nLes questions restent au niveau « membre du portail », pas au niveau administration technique.\\nCe parcours vous a déjà donné le vocabulaire et les situations : le quiz ne demande pas de culture générale extérieure au site.\"},{\"template\":\"reading_article\",\"title\":\"Pourquoi cette validation existe\",\"subtitle\":\"Responsabilité partagée\",\"body\":\"<p>La communauté a intérêt à ce que chaque membre sache se servir du portail correctement : moins d’erreurs de diffusion, moins de fichiers égarés, moins de questions répétitives au staff. En validant ce parcours, vous confirmez que vous connaissez les bons réflexes — pas que vous êtes infaillible, mais que vous savez où relire l’information quand un doute revient.</p>\"},{\"template\":\"scenario_decision\",\"title\":\"Vous avez réussi le quiz certifiant : que pouvez-vous en déduire ?\",\"context\":\"Le portail affiche le parcours comme terminé et propose une attestation.\",\"situation\":\"<p>Un camarade affirme que vous êtes « habilité » sur un poste sensible uniquement sur cette base.</p>\",\"options\":[{\"id\":\"a\",\"text\":\"Considérer que l’attestation couvre le parcours sur le site ; toute habilitation opérationnelle spécifique relève encore des règles de l’unité.\"},{\"id\":\"b\",\"text\":\"Conclure que l’attestation remplace toute validation métier interne sans autre formalité.\"},{\"id\":\"c\",\"text\":\"Refuser d’afficher l’attestation car elle n’a aucune valeur.\"},{\"id\":\"d\",\"text\":\"Publier l’attestation sur le forum comme preuve de clearance.\"}],\"correctOptionId\":\"a\",\"explanation\":\"<p>L’attestation atteste la <strong>validation du parcours</strong> tel que paramétré sur le portail. Les exigences métier (affectation, validation d’un chef, clearance) restent du ressort de l’organisation : ne pas les confondre évite les malentendus.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"En cas de doute pendant le questionnaire\",\"body\":\"Si deux réponses semblent crédibles, demandez-vous laquelle correspond au réflexe « membre du portail » décrit dans ce parcours, pas à une habitude personnelle ou à une astuce technique.\\nEn cas d’échec, notez les thèmes signalés par les explications puis rouvrez les synthèses des modules concernés.\\nNe tentez pas le quiz dans des conditions de connexion très dégradées : une coupure peut interrompre la session.\\nLe score seuil est rappelé sur la fiche formation : il est identique pour tous les membres sur ce parcours.\\nAprès réussite, conservez ou téléchargez l’attestation selon les options proposées par votre communauté.\"}]}', NULL, 15, 'initiation', 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(23, 23, 'Pourquoi ce bilan', 'Fiche de révision puis questionnaire sur les trois premiers blocs avant la suite du parcours.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\">\n<h3 class=\"text-base font-bold text-slate-900\">Portée du bilan</h3>\n<p>Ce bilan porte sur les <strong>trois premiers modules</strong> : finalité du portail et cadre, navigation et compte, organisation des contenus (personnel, documents, formations). Il permet de vérifier que vous maîtrisez le vocabulaire et les réflexes avant le module <strong>Communauté</strong> et la <strong>validation finale</strong>.</p>\n<h3 class=\"text-base font-bold text-slate-900 mt-4\">Fiche de révision — rappels utiles</h3>\n<ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\">\n<li><strong>Information stabilisée</strong> : documents (ou équivalent) — version de référence contrôlée par le staff.</li>\n<li><strong>Coordination vivante</strong> : forum, annonces, fils — échanges, pas stockage de la version finale d’un texte officiel.</li>\n<li><strong>Tableau de bord</strong> : synthèse après connexion ; ne remplace ni ordre écrit ni carte tactique.</li>\n<li><strong>Compte</strong> : profil, préférences, sécurité — à jour pour éviter erreurs d’affectation et perte d’accès.</li>\n<li><strong>Multi-communautés</strong> : vérifier le contexte actif avant toute action engageante.</li>\n<li><strong>Progression LMS</strong> : une formation n’est achevée que lorsque toutes les étapes requises le sont ; l’affichage reflète le parcours réel.</li>\n<li><strong>Attestation</strong> : atteste la validation du parcours sur le portail selon les règles affichées ; elle ne remplace pas une habilitation métier décidée par l’unité.</li>\n</ul>\n<h3 class=\"text-base font-bold text-slate-900 mt-4\">Erreurs fréquentes à éviter</h3>\n<ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\">\n<li>Publier ou chercher la « version finale » d’une note uniquement dans un fil de discussion ancien.</li>\n<li>Conclure à une panne du site sans avoir vérifié la communauté active ou les droits de son rôle.</li>\n<li>Ignorer le tableau de bord et rater des rappels de formation ou d’événement.</li>\n<li>Laisser une session ouverte sur un poste partagé après utilisation du portail.</li>\n</ul>\n<h3 class=\"text-base font-bold text-slate-900 mt-4\">Méthode pour le questionnaire</h3>\n<p>Lisez chaque question en entier. Plusieurs réponses peuvent sembler raisonnables ; une seule correspond à la conduite ou au réflexe attendu dans ce parcours. Les propositions sont mélangées à chaque affichage. En cas de doute, revoyez les synthèses « À retenir » des trois premiers modules.</p>\n</div>', NULL, 3, 'initiation', 1, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(24, 13, 'À retenir — Vue d’ensemble', 'Synthèse courte pour ancrer les idées du module.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">Synthèse du module</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li><strong>Règle</strong> : documents, forum, formations et dossier personnel ont des rôles distincts.</li><li><strong>Bonne pratique</strong> : lire le tableau de bord en premier après connexion.</li><li><strong>Point de vigilance</strong> : une rubrique absente peut venir des droits ou de la communauté active, pas d’une « panne » systématique.</li><li><strong>Erreur fréquente</strong> : confondre conversation sur le forum et version de référence d’un texte.</li></ul></div>', NULL, 5, 'initiation', 2, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(25, 14, 'À retenir — Navigation et compte', 'Synthèse courte pour ancrer les idées du module.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">Synthèse du module</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li><strong>Règle</strong> : le menu n’affiche que ce que votre rôle autorise.</li><li><strong>Bonne pratique</strong> : vérifier la communauté active avant une action engageante.</li><li><strong>Procédure</strong> : compte → profil / préférences / sécurité selon le besoin.</li><li><strong>Vigilance</strong> : contact (e-mail) valide pour les vérifications et la récupération d’accès.</li></ul></div>', NULL, 5, 'initiation', 2, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(26, 15, 'À retenir — Organisation et contenus', 'Synthèse courte pour ancrer les idées du module.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">Synthèse du module</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li><strong>Règle</strong> : la version de référence vit dans les documents, pas dans un fil ancien du forum.</li><li><strong>Bonne pratique</strong> : signaler une erreur au responsable plutôt que rediffuser hors canal.</li><li><strong>Point clé</strong> : l’attestation atteste du parcours sur le portail, pas une habilitation métier tacite.</li><li><strong>Visibilité</strong> : l’absence d’un contenu peut être normale selon le rôle.</li></ul></div>', NULL, 5, 'initiation', 2, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(27, 16, 'À retenir — Communauté', 'Synthèse courte pour ancrer les idées du module.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">Synthèse du module</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li><strong>Règle</strong> : rechercher avant d’ouvrir un nouveau sujet.</li><li><strong>Bonne pratique</strong> : prévenir en cas d’absence à un créneau où vous étiez inscrit.</li><li><strong>Vigilance</strong> : sujets sensibles → canal prévu, pas tribune publique désordonnée.</li><li><strong>Différence</strong> : annonce officielle ≠ conversation libre.</li></ul></div>', NULL, 5, 'initiation', 2, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(28, 17, 'Avant le questionnaire final', 'Synthèse courte pour ancrer les idées du module.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">Avant le questionnaire final</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li><strong>Méthode</strong> : lire l’énoncé jusqu’au bout ; plusieurs réponses peuvent sembler crédibles.</li><li><strong>Règle</strong> : le seuil et les tentatives sont fixés sur la fiche formation.</li><li><strong>Pédagogie</strong> : en cas d’échec, utiliser les explications comme liste de révision.</li><li><strong>Clarification</strong> : la validation du parcours ne dispense pas des exigences métier de l’organisation.</li></ul></div>', NULL, 5, 'initiation', 2, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(29, 24, 'Pourquoi ce bilan', 'Fiche de révision puis questionnaire sur les trois premiers blocs avant la suite du parcours.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\">\n<h3 class=\"text-base font-bold text-slate-900\">Portée du bilan</h3>\n<p>Ce bilan porte sur les <strong>trois premiers modules</strong> : finalité du portail et cadre, navigation et compte, organisation des contenus (personnel, documents, formations). Il permet de vérifier que vous maîtrisez le vocabulaire et les réflexes avant le module <strong>Communauté</strong> et la <strong>validation finale</strong>.</p>\n<h3 class=\"text-base font-bold text-slate-900 mt-4\">Fiche de révision — rappels utiles</h3>\n<ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\">\n<li><strong>Information stabilisée</strong> : documents (ou équivalent) — version de référence contrôlée par le staff.</li>\n<li><strong>Coordination vivante</strong> : forum, annonces, fils — échanges, pas stockage de la version finale d’un texte officiel.</li>\n<li><strong>Tableau de bord</strong> : synthèse après connexion ; ne remplace ni ordre écrit ni carte tactique.</li>\n<li><strong>Compte</strong> : profil, préférences, sécurité — à jour pour éviter erreurs d’affectation et perte d’accès.</li>\n<li><strong>Multi-communautés</strong> : vérifier le contexte actif avant toute action engageante.</li>\n<li><strong>Progression LMS</strong> : une formation n’est achevée que lorsque toutes les étapes requises le sont ; l’affichage reflète le parcours réel.</li>\n<li><strong>Attestation</strong> : atteste la validation du parcours sur le portail selon les règles affichées ; elle ne remplace pas une habilitation métier décidée par l’unité.</li>\n</ul>\n<h3 class=\"text-base font-bold text-slate-900 mt-4\">Erreurs fréquentes à éviter</h3>\n<ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\">\n<li>Publier ou chercher la « version finale » d’une note uniquement dans un fil de discussion ancien.</li>\n<li>Conclure à une panne du site sans avoir vérifié la communauté active ou les droits de son rôle.</li>\n<li>Ignorer le tableau de bord et rater des rappels de formation ou d’événement.</li>\n<li>Laisser une session ouverte sur un poste partagé après utilisation du portail.</li>\n</ul>\n<h3 class=\"text-base font-bold text-slate-900 mt-4\">Méthode pour le questionnaire</h3>\n<p>Lisez chaque question en entier. Plusieurs réponses peuvent sembler raisonnables ; une seule correspond à la conduite ou au réflexe attendu dans ce parcours. Les propositions sont mélangées à chaque affichage. En cas de doute, revoyez les synthèses « À retenir » des trois premiers modules.</p>\n</div>', NULL, 3, 'initiation', 1, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(30, 18, 'À retenir — Vue d’ensemble', 'Synthèse courte pour ancrer les idées du module.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">Synthèse du module</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li><strong>Règle</strong> : documents, forum, formations et dossier personnel ont des rôles distincts.</li><li><strong>Bonne pratique</strong> : lire le tableau de bord en premier après connexion.</li><li><strong>Point de vigilance</strong> : une rubrique absente peut venir des droits ou de la communauté active, pas d’une « panne » systématique.</li><li><strong>Erreur fréquente</strong> : confondre conversation sur le forum et version de référence d’un texte.</li></ul></div>', NULL, 5, 'initiation', 2, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(31, 19, 'À retenir — Navigation et compte', 'Synthèse courte pour ancrer les idées du module.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">Synthèse du module</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li><strong>Règle</strong> : le menu n’affiche que ce que votre rôle autorise.</li><li><strong>Bonne pratique</strong> : vérifier la communauté active avant une action engageante.</li><li><strong>Procédure</strong> : compte → profil / préférences / sécurité selon le besoin.</li><li><strong>Vigilance</strong> : contact (e-mail) valide pour les vérifications et la récupération d’accès.</li></ul></div>', NULL, 5, 'initiation', 2, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(32, 20, 'À retenir — Organisation et contenus', 'Synthèse courte pour ancrer les idées du module.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">Synthèse du module</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li><strong>Règle</strong> : la version de référence vit dans les documents, pas dans un fil ancien du forum.</li><li><strong>Bonne pratique</strong> : signaler une erreur au responsable plutôt que rediffuser hors canal.</li><li><strong>Point clé</strong> : l’attestation atteste du parcours sur le portail, pas une habilitation métier tacite.</li><li><strong>Visibilité</strong> : l’absence d’un contenu peut être normale selon le rôle.</li></ul></div>', NULL, 5, 'initiation', 2, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(33, 21, 'À retenir — Communauté', 'Synthèse courte pour ancrer les idées du module.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">Synthèse du module</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li><strong>Règle</strong> : rechercher avant d’ouvrir un nouveau sujet.</li><li><strong>Bonne pratique</strong> : prévenir en cas d’absence à un créneau où vous étiez inscrit.</li><li><strong>Vigilance</strong> : sujets sensibles → canal prévu, pas tribune publique désordonnée.</li><li><strong>Différence</strong> : annonce officielle ≠ conversation libre.</li></ul></div>', NULL, 5, 'initiation', 2, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(34, 22, 'Avant le questionnaire final', 'Synthèse courte pour ancrer les idées du module.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">Avant le questionnaire final</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li><strong>Méthode</strong> : lire l’énoncé jusqu’au bout ; plusieurs réponses peuvent sembler crédibles.</li><li><strong>Règle</strong> : le seuil et les tentatives sont fixés sur la fiche formation.</li><li><strong>Pédagogie</strong> : en cas d’échec, utiliser les explications comme liste de révision.</li><li><strong>Clarification</strong> : la validation du parcours ne dispense pas des exigences métier de l’organisation.</li></ul></div>', NULL, 5, 'initiation', 2, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(35, 25, 'Vue d’ensemble — parcours visuel', 'Finalité du mod, articulation avec TeamSpeak, erreurs de compréhension fréquentes.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[{\"id\":\"m1-warning\",\"title\":\"Point de méthode\",\"body\":\"<p>Ne commencez pas par copier des fichiers au hasard. Dans la plupart des cas, les échecs viennent d’une confusion entre trois éléments distincts : le jeu Arma 3, le mod Task Force Radio et le plugin TeamSpeak associé.</p>\"}],\"opening\":{\"eyebrow\":\"Module 1\",\"title\":\"\",\"lead\":\"Avant l’installation, il faut comprendre ce que vous installez réellement et pourquoi deux environnements distincts doivent fonctionner ensemble.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~12 min\"},{\"label\":\"Objet\",\"value\":\"Compréhension\"},{\"label\":\"Niveau\",\"value\":\"Débutant\"}]},\"closure\":{\"title\":\"Synthèse — Vue d’ensemble\",\"seen\":[\"TFAR n’est pas un simple fichier Arma 3 : il implique aussi un plugin côté TeamSpeak.\",\"Une installation incomplète donne souvent l’illusion que le mod est présent alors que la chaîne vocale reste rompue.\"],\"acquired\":[\"Vous savez distinguer le mod de jeu et le plugin vocal.\",\"Vous comprenez pourquoi une vérification finale est obligatoire avant emploi réel.\"],\"nextHint\":\"Poursuivez avec les prérequis techniques et la préparation du poste.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Installer Task Force Radio\",\"subtitle\":\"Comprendre la chaîne complète avant action\",\"body\":\"<p><strong>Task Force Radio</strong> est un ensemble qui relie la simulation Arma 3 à un environnement vocal externe afin de produire un comportement radio crédible : proximité, réseaux, portée, gestion des postes et discipline des communications selon les réglages retenus par l’unité.</p><p>Beaucoup d’échecs viennent d’une erreur simple : croire qu’il suffit d’activer un mod Arma 3. En réalité, le fonctionnement dépend d’au moins <strong>deux éléments</strong> : le mod côté jeu et le <strong>plugin TeamSpeak</strong>. Si l’un des deux manque ou est mal placé, la chaîne est incomplète.</p>\",\"contextKicker\":\"Étape 01 · Finalité\",\"surface\":\"elevated\",\"cards\":[{\"label\":\"Arma 3\",\"body\":\"Charge le mod et ses composants côté jeu.\"},{\"label\":\"TeamSpeak\",\"body\":\"Exécute le plugin vocal nécessaire à l’intégration.\"},{\"label\":\"Utilisateur\",\"body\":\"Doit vérifier que les deux environnements sont cohérents.\"}]},{\"template\":\"reading_article\",\"title\":\"Ce que TFAR fait concrètement\",\"subtitle\":\"Communication simulée, pas simple vocal externe\",\"body\":\"<p>Sans TFAR, un groupe peut certes parler sur un logiciel vocal, mais la simulation ne tient pas compte de la distance, du poste radio porté, ni des canaux réellement utilisés. Avec TFAR, la voix et les communications sont intégrées à la logique de jeu : parler près d’un joueur n’est pas équivalent à émettre sur un réseau radio.</p><p>Le but de cette installation n’est donc pas purement technique. Il s’agit de rendre votre poste compatible avec les procédures de communication de l’unité. Une mauvaise installation ne gêne pas seulement votre confort personnel : elle perturbe la coordination collective.</p><div class=\\\"lms-reading-callout lms-reading-callout--info\\\"><p><strong>À retenir</strong> : si TFAR est mal installé, le problème n’est pas seulement « je n’entends pas bien » ; cela peut compromettre toute une séquence radio pendant une mission.</p></div>\"},{\"template\":\"dos_donts\",\"title\":\"À faire / À ne pas faire\",\"body\":\"Préparer une installation propre évite la majorité des incidents.\",\"dos\":[\"Identifier la méthode officielle utilisée par votre unité\",\"Vérifier Arma 3, TeamSpeak et les droits d’accès au poste\",\"Garder les chemins d’installation cohérents\"],\"donts\":[\"Mélanger plusieurs versions de TFAR sans contrôle\",\"Copier un plugin ancien sans savoir sa provenance\",\"Considérer l’installation comme terminée avant test réel\"]},{\"template\":\"common_mistakes\",\"title\":\"Erreurs de compréhension fréquentes\",\"items\":[{\"title\":\"Le mod est activé, donc tout est bon\",\"body\":\"Faux : le plugin TeamSpeak peut manquer ou rester désactivé.\"},{\"title\":\"TeamSpeak fonctionne, donc TFAR aussi\",\"body\":\"Faux : TeamSpeak peut fonctionner seul sans intégration TFAR.\"},{\"title\":\"Un ami m’a envoyé un fichier, je l’ai copié\",\"body\":\"Méthode instable : sans contrôle de version, vous multipliez les conflits et les faux diagnostics.\"}]},{\"template\":\"knowledge_check\",\"title\":\"Repères de départ\",\"body\":\"TFAR repose sur une articulation entre le jeu et le logiciel vocal.\\nUn poste prêt doit être cohérent, pas partiellement installé.\\nLa validation finale passe par un test, pas par une simple présence des fichiers.\\nUne installation défaillante est un risque collectif, pas seulement individuel.\"},{\"template\":\"title_hero\",\"title\":\"Avant d’aller plus loin\",\"subtitle\":\"Méthode et discipline\",\"body\":\"<p>Suivez l’ordre logique : comprendre, préparer, installer, vérifier, corriger. Ne sautez pas directement à la fin. Une installation réussie est une installation <strong>contrôlée</strong>.</p>\",\"primaryAction\":{\"type\":\"modal\",\"label\":\"Voir le rappel méthode\",\"modalId\":\"m1-warning\"}}]}', NULL, 9, 'initiation', 1, 1, '2026-04-06 20:11:27', NULL),
+(36, 25, 'À retenir — Vue d’ensemble', 'Synthèse d’ancrage du premier module.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">À retenir</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li>TFAR repose sur deux composantes : un mod Arma 3 et un plugin TeamSpeak.</li><li>Une installation partielle peut sembler correcte alors qu’elle est inutilisable en mission.</li><li>La bonne méthode consiste à préparer le poste, installer proprement, puis vérifier en situation.</li></ul></div>', NULL, 3, 'initiation', 2, 1, '2026-04-06 20:11:27', NULL),
+(37, 26, 'Pré requis — parcours visuel', 'Arma 3, TeamSpeak, launcher, droits et hygiène de poste.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Module 2\",\"title\":\"\",\"lead\":\"Avant l’installation, vérifiez que le poste est prêt. Beaucoup d’erreurs techniques sont en réalité des erreurs de préparation.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~14 min\"},{\"label\":\"Focus\",\"value\":\"Pré requis\"}]},\"closure\":{\"title\":\"Synthèse — Préparer le poste\",\"seen\":[\"Arma 3 et TeamSpeak doivent être présents et exploitables.\",\"Un environnement brouillé par des anciennes copies ou des droits insuffisants produit des erreurs évitables.\"],\"acquired\":[\"Vous savez ce qu’il faut contrôler avant l’installation.\",\"Vous pouvez distinguer un problème de préparation d’un problème TFAR réel.\"],\"nextHint\":\"Poursuivez avec l’installation du mod côté Arma 3.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Préparer le poste\",\"subtitle\":\"Ne pas construire sur une base instable\",\"body\":\"<p>Avant toute installation, vérifiez que votre poste remplit les conditions minimales de travail. TFAR ne corrige pas un environnement dégradé. Un jeu incomplet, un logiciel vocal absent ou une arborescence chaotique conduisent à des diagnostics faux.</p>\",\"contextKicker\":\"Étape 01 · Pré requis\",\"surface\":\"elevated\",\"cards\":[{\"label\":\"Jeu\",\"body\":\"Arma 3 installé et lancé au moins une fois.\"},{\"label\":\"Vocal\",\"body\":\"TeamSpeak installé localement et ouvrable.\"},{\"label\":\"Méthode\",\"body\":\"Voie officielle connue : workshop, pack unité ou dépôt interne.\"}]},{\"template\":\"process_steps\",\"title\":\"Contrôle préalable du poste\",\"steps\":[{\"label\":\"Étape 1\",\"title\":\"Vérifier Arma 3\",\"body\":\"Le jeu doit être installé, à jour et déjà lancé au moins une fois afin que son environnement initial soit créé correctement.\",\"note\":\"Un jeu jamais lancé peut générer des erreurs de chemin ou de détection.\"},{\"label\":\"Étape 2\",\"title\":\"Vérifier TeamSpeak\",\"body\":\"Le logiciel vocal doit être installé sur le poste et s’ouvrir normalement.\",\"note\":\"TFAR s’interface avec TeamSpeak ; sans TeamSpeak exploitable, le plugin n’a aucun effet utile.\"},{\"label\":\"Étape 3\",\"title\":\"Identifier la source du mod\",\"body\":\"Déterminez la méthode officielle imposée par l’unité : Steam Workshop, pack local, dépôt synchronisé ou autre.\",\"note\":\"Ne mélangez pas plusieurs sources sans contrôle.\"},{\"label\":\"Étape 4\",\"title\":\"Nettoyer les anciennes tentatives confuses\",\"body\":\"Supprimez ou isolez les copies anciennes, fichiers errants ou doublons si vous savez qu’ils traînent sur le poste.\",\"note\":\"Conserver plusieurs versions mal identifiées est une cause classique de panne.\"}]},{\"template\":\"role_scope_compare\",\"title\":\"Ce qui relève du jeu / du vocal / de l’utilisateur\",\"rows\":[{\"left\":\"Arma 3\",\"right\":\"Charge le mod, les fichiers et les composants côté simulation.\"},{\"left\":\"TeamSpeak\",\"right\":\"Exécute le plugin vocal associé et gère le canal vocal.\"},{\"left\":\"Utilisateur\",\"right\":\"Doit conserver une méthode propre, cohérente et conforme à la doctrine de l’unité.\"}]},{\"template\":\"case_review\",\"title\":\"Cas pratique — Poste mal préparé\",\"body\":\"<p>Un membre affirme que TFAR ne fonctionne pas. Après vérification, Arma 3 est bien installé, mais TeamSpeak ne l’est pas sur le poste concerné. Il a pourtant copié un dossier plugin provenant d’un autre PC.</p><p><strong>Analyse :</strong> le diagnostic initial est faux. Le problème ne vient pas d’abord de TFAR, mais d’un environnement incomplet. Copier un plugin sans logiciel cible exploitable n’a pas de sens opérationnel.</p><p><strong>Bonne conduite :</strong> rétablir d’abord les pré requis, puis reprendre l’installation dans l’ordre.</p>\"},{\"template\":\"fill_blanks\",\"title\":\"Contrôle rapide\",\"body\":\"<p>Avant l’installation de TFAR, il faut vérifier la présence d’<strong>Arma 3</strong> et de [[TeamSpeak]] sur le poste.</p><p>Il est préférable d’utiliser la [[méthode officielle]] retenue par l’unité plutôt que de mélanger des copies incertaines.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"Réflexes de préparation\",\"body\":\"Un poste propre vaut mieux qu’une accumulation de tentatives.\\nUn ancien plugin non identifié peut perturber les vérifications.\\nLe bon ordre commence toujours par les pré requis.\\nUne panne apparente TFAR peut en réalité provenir du poste lui-même.\"}]}', NULL, 10, 'initiation', 1, 1, '2026-04-06 20:11:27', NULL),
+(38, 26, 'Fiche d’ancrage — Pré requis', 'Récapitulatif court des contrôles préalables.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">Pré requis à contrôler</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li>Arma 3 installé, à jour, déjà lancé au moins une fois.</li><li>TeamSpeak installé et fonctionnel.</li><li>Méthode officielle d’installation identifiée.</li><li>Anciennes copies confuses de TFAR supprimées ou isolées.</li></ul><h4 class=\"text-sm font-bold text-slate-900 mt-5\">Erreurs à éviter</h4><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li>Installer plusieurs versions en parallèle.</li><li>Copier un plugin sans savoir pour quelle version il a été prévu.</li><li>Commencer les tests avant d’avoir stabilisé l’environnement.</li></ul></div>', NULL, 4, 'initiation', 2, 1, '2026-04-06 20:11:27', NULL),
+(39, 27, 'Installation Arma 3 — parcours visuel', 'Méthode générale d’intégration du mod, activation, chargement et contrôles de cohérence.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Module 3\",\"title\":\"\",\"lead\":\"Vous installez maintenant le mod TFAR côté Arma 3. Cette étape ne suffit pas à elle seule, mais elle doit être propre et traçable.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~16 min\"},{\"label\":\"Périmètre\",\"value\":\"Jeu\"}]},\"closure\":{\"title\":\"Synthèse — Mod Arma 3\",\"seen\":[\"Le mod doit être présent et activé dans un cadre de version cohérent.\",\"Le launcher Arma 3 sert à contrôler ce qui est réellement chargé.\"],\"acquired\":[\"Vous savez installer ou activer TFAR côté jeu.\",\"Vous savez pourquoi une activation incohérente suffit à faire échouer la suite.\"],\"nextHint\":\"Poursuivez avec l’installation du plugin TeamSpeak, indispensable au fonctionnement réel.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Installer TFAR dans Arma 3\",\"subtitle\":\"Mod présent, activé et lisible\",\"body\":\"<p>Selon la doctrine de votre unité, le mod peut être distribué par <strong>Steam Workshop</strong>, pack local, synchronisation dédiée ou dépôt interne. La méthode exacte varie ; le principe, lui, reste le même : le mod doit être <strong>présent</strong>, <strong>reconnu</strong> et <strong>chargé</strong> par Arma 3.</p><p>Cette formation reste volontairement générique : elle vous donne la logique à respecter quel que soit le mode de distribution retenu.</p>\",\"contextKicker\":\"Étape 01 · Chargement côté jeu\",\"surface\":\"elevated\"},{\"template\":\"process_steps\",\"title\":\"Procédure générale côté Arma 3\",\"steps\":[{\"label\":\"Étape 1\",\"title\":\"Récupérer le mod via la source officielle\",\"body\":\"Téléchargez ou synchronisez TFAR uniquement depuis la source imposée par l’unité.\",\"note\":\"Évitez les archives isolées ou les partages non contrôlés.\"},{\"label\":\"Étape 2\",\"title\":\"Vérifier sa présence dans le launcher\",\"body\":\"Ouvrez le launcher Arma 3 et vérifiez que le mod apparaît clairement dans la liste des mods disponibles ou chargés.\",\"note\":\"Un dossier présent sur le disque n’est pas forcément chargé par le jeu.\"},{\"label\":\"Étape 3\",\"title\":\"Activer le mod\",\"body\":\"Activez TFAR dans le preset de lancement utilisé par l’unité.\",\"note\":\"Le bon mod doit être actif au moment du lancement réel du jeu.\"},{\"label\":\"Étape 4\",\"title\":\"Contrôler la cohérence du preset\",\"body\":\"Vérifiez qu’aucun doublon manifeste ou ancienne variante du mod n’est activée simultanément.\",\"note\":\"Le conflit de versions est un classique.\"}]},{\"template\":\"scenario_decision\",\"title\":\"Décision correcte — Le mod apparaît deux fois\",\"context\":\"Dans le launcher, un membre voit deux entrées proches pour Task Force Radio, issues de deux sources différentes.\",\"options\":[{\"label\":\"A\",\"body\":\"Activer les deux pour être sûr que l’un fonctionne.\"},{\"label\":\"B\",\"body\":\"Ne garder que la source officielle utilisée par l’unité et supprimer l’ambiguïté.\"},{\"label\":\"C\",\"body\":\"Ignorer la situation et lancer rapidement le jeu.\"}],\"correct\":\"B\",\"explanation\":\"Activer plusieurs variantes ou sources concurrentes d’un même mod crée des conflits de chargement et rend le diagnostic presque impossible.\"},{\"template\":\"common_mistakes\",\"title\":\"Erreurs classiques côté launcher\",\"items\":[{\"title\":\"Le mod est téléchargé mais pas activé\",\"body\":\"Le fichier existe, mais le jeu ne le charge pas.\"},{\"title\":\"Le mauvais preset est lancé\",\"body\":\"Le membre pense jouer avec le bon ensemble alors qu’il a ouvert un preset ancien ou générique.\"},{\"title\":\"Deux variantes du mod coexistent\",\"body\":\"Le jeu charge un environnement ambigu, parfois sans message immédiatement clair.\"}]},{\"template\":\"dos_donts\",\"title\":\"Bonnes pratiques de chargement\",\"dos\":[\"Utiliser un preset identifié\",\"Contrôler la présence du mod avant lancement\",\"Rester fidèle à la source officielle\"],\"donts\":[\"Empiler les variantes du même mod\",\"Bricoler plusieurs répertoires sans méthode\",\"Lancer une mission sans vérifier le preset\"]},{\"template\":\"knowledge_check\",\"title\":\"Ce qui compte vraiment côté jeu\",\"body\":\"Le launcher Arma 3 est votre point de contrôle.\\nLa présence sur disque ne vaut pas activation réelle.\\nUne source officielle unique simplifie les diagnostics.\\nUn preset brouillon fait perdre du temps à toute l’équipe de support.\"}]}', NULL, 11, 'initiation', 1, 1, '2026-04-06 20:11:27', NULL),
+(40, 27, 'À retenir — Installation côté jeu', 'Synthèse sur l’installation du mod TFAR dans Arma 3.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">À retenir</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li>TFAR doit être récupéré depuis la source officielle de l’unité.</li><li>Le launcher Arma 3 doit montrer clairement que le mod est activé dans le bon preset.</li><li>La coexistence de plusieurs variantes du mod est un facteur majeur de panne.</li></ul></div>', NULL, 3, 'initiation', 2, 1, '2026-04-06 20:11:27', NULL);
+INSERT INTO `training_lessons` (`id`, `module_id`, `title`, `summary`, `learning_objectives`, `instructor_notes`, `lesson_type`, `content`, `external_url`, `duration_minutes`, `difficulty`, `position`, `is_required`, `created_at`, `updated_at`) VALUES
+(41, 28, 'Plugin TeamSpeak — parcours visuel', 'Installation du plugin, activation, redémarrage et contrôles simples.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[{\"id\":\"m4-reminder\",\"title\":\"Rappel clé\",\"body\":\"<p>Un TeamSpeak qui s’ouvre n’est pas la preuve que TFAR fonctionne. Le plugin doit être présent, reconnu et activé.</p>\"}],\"opening\":{\"eyebrow\":\"Module 4\",\"title\":\"\",\"lead\":\"Le plugin TeamSpeak est indispensable. Sans lui, TFAR reste incomplet même si le mod Arma 3 est actif.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~14 min\"},{\"label\":\"Périmètre\",\"value\":\"Vocal\"}]},\"closure\":{\"title\":\"Synthèse — Plugin TeamSpeak\",\"seen\":[\"Le plugin constitue le pont vocal nécessaire à TFAR.\",\"Une installation oubliée ou inactive côté TeamSpeak suffit à bloquer le système.\"],\"acquired\":[\"Vous savez installer et activer le plugin TeamSpeak.\",\"Vous comprenez l’intérêt d’un redémarrage propre après installation.\"],\"nextHint\":\"Poursuivez avec les vérifications finales de bon fonctionnement.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Installer le plugin TeamSpeak\",\"subtitle\":\"Le maillon vocal de la chaîne\",\"body\":\"<p>TFAR nécessite en général un <strong>plugin TeamSpeak</strong> spécifique. C’est lui qui permet l’intégration entre le jeu et l’environnement vocal. Sans plugin actif, TeamSpeak reste un logiciel vocal ordinaire, non synchronisé avec la logique radio attendue.</p>\",\"contextKicker\":\"Étape 01 · Intégration vocale\",\"surface\":\"elevated\",\"primaryAction\":{\"type\":\"modal\",\"label\":\"Voir le rappel clé\",\"modalId\":\"m4-reminder\"}},{\"template\":\"process_steps\",\"title\":\"Procédure générale côté TeamSpeak\",\"steps\":[{\"label\":\"Étape 1\",\"title\":\"Localiser le plugin officiel\",\"body\":\"Récupérez le plugin correspondant à la version de TFAR utilisée par l’unité.\",\"note\":\"Le bon plugin doit correspondre au bon environnement.\"},{\"label\":\"Étape 2\",\"title\":\"Lancer son installation ou le déposer selon la méthode prévue\",\"body\":\"Suivez la procédure retenue par la version distribuée : installateur, paquet dédié ou intégration guidée.\",\"note\":\"Ne remplacez pas au hasard des fichiers système si une méthode propre est fournie.\"},{\"label\":\"Étape 3\",\"title\":\"Ouvrir TeamSpeak et vérifier la présence du plugin\",\"body\":\"Dans TeamSpeak, contrôlez que le plugin figure bien dans la liste des plugins disponibles.\",\"note\":\"Présence visible et activation sont deux choses distinctes.\"},{\"label\":\"Étape 4\",\"title\":\"Activer le plugin puis redémarrer si nécessaire\",\"body\":\"Activez le plugin et redémarrez TeamSpeak si la procédure ou le logiciel l’exige.\",\"note\":\"Certaines intégrations ne sont effectives qu’après relance propre.\"}]},{\"template\":\"scenario_decision\",\"title\":\"Décision correcte — TeamSpeak fonctionne mais pas TFAR\",\"context\":\"Un membre rejoint le serveur TeamSpeak et parle normalement avec les autres, mais les fonctions radio attendues ne semblent pas réagir en jeu.\",\"options\":[{\"label\":\"A\",\"body\":\"Conclure que TFAR fonctionne quand même puisque l’audio passe.\"},{\"label\":\"B\",\"body\":\"Vérifier la présence et l’activation effective du plugin TeamSpeak lié à TFAR.\"},{\"label\":\"C\",\"body\":\"Réinstaller tout Arma 3 immédiatement sans autre contrôle.\"}],\"correct\":\"B\",\"explanation\":\"Le fait d’entendre ou de parler sur TeamSpeak ne prouve pas que l’intégration TFAR est active. Il faut d’abord contrôler le plugin dédié.\"},{\"template\":\"common_mistakes\",\"title\":\"Erreurs fréquentes côté vocal\",\"items\":[{\"title\":\"Plugin installé mais désactivé\",\"body\":\"Le logiciel le connaît, mais il n’est pas réellement employé.\"},{\"title\":\"Ancien plugin conservé\",\"body\":\"La version présente peut être incompatible avec l’environnement actuel.\"},{\"title\":\"Pas de redémarrage après installation\",\"body\":\"Le membre croit avoir terminé alors que TeamSpeak n’a pas chargé le plugin proprement.\"}]},{\"template\":\"dos_donts\",\"title\":\"Ce qu’il faut faire / éviter\",\"dos\":[\"Contrôler explicitement la liste des plugins\",\"Utiliser le plugin lié à la version officielle\",\"Redémarrer proprement si nécessaire\"],\"donts\":[\"Supposer que TeamSpeak seul suffit\",\"Garder plusieurs plugins concurrents sans contrôle\",\"Sauter la vérification visuelle dans TeamSpeak\"]},{\"template\":\"knowledge_check\",\"title\":\"Repères côté TeamSpeak\",\"body\":\"Un plugin absent ou inactif bloque TFAR.\\nUn logiciel vocal fonctionnel n’est pas la preuve d’une intégration réussie.\\nLe contrôle visuel dans TeamSpeak est indispensable.\\nLe redémarrage propre fait partie de la procédure normale.\"}]}', NULL, 10, 'initiation', 1, 1, '2026-04-06 20:11:27', NULL),
+(42, 28, 'À retenir — Plugin vocal', 'Synthèse d’ancrage sur le plugin TeamSpeak.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">À retenir</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li>TFAR n’est réellement exploitable que si le plugin TeamSpeak correspondant est présent et activé.</li><li>Parler sur TeamSpeak ne prouve pas que TFAR est opérationnel.</li><li>Après installation, un redémarrage propre du logiciel vocal est souvent nécessaire.</li></ul></div>', NULL, 3, 'initiation', 2, 1, '2026-04-06 20:11:27', NULL),
+(43, 29, 'Vérifier et corriger — parcours visuel', 'Test complet, signes d’échec, méthode de diagnostic et points de reprise.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Module 5\",\"title\":\"\",\"lead\":\"Une installation n’est validée qu’après contrôle. Ce module vous donne une méthode de test simple et une logique de dépannage initiale.\",\"stats\":[{\"label\":\"Durée indicative\",\"value\":\"~18 min\"},{\"label\":\"Objet\",\"value\":\"Vérification\"}]},\"closure\":{\"title\":\"Synthèse — Vérification et dépannage\",\"seen\":[\"Une installation se contrôle en chaîne : jeu, mod, plugin, test en situation.\",\"Les symptômes les plus simples suffisent souvent à orienter le diagnostic.\"],\"acquired\":[\"Vous savez effectuer un premier contrôle logique avant d’appeler à l’aide.\",\"Vous pouvez décrire une panne utilement au support ou au staff technique.\"],\"nextHint\":\"Terminez avec le quiz final de validation.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Tester avant mission\",\"subtitle\":\"La validation passe par la preuve de fonctionnement\",\"body\":\"<p>Le bon réflexe n’est pas de dire « j’ai installé ». Le bon réflexe est de pouvoir dire : <strong>j’ai installé, contrôlé, puis testé</strong>. Une configuration non testée est une configuration présumée douteuse.</p>\",\"contextKicker\":\"Étape 01 · Vérification finale\",\"surface\":\"elevated\"},{\"template\":\"process_steps\",\"title\":\"Méthode simple de vérification\",\"steps\":[{\"label\":\"Étape 1\",\"title\":\"Contrôler le launcher\",\"body\":\"Vérifiez encore une fois que TFAR est bien chargé dans le preset réellement utilisé.\",\"note\":\"Le mauvais preset rend les autres contrôles inutiles.\"},{\"label\":\"Étape 2\",\"title\":\"Contrôler TeamSpeak\",\"body\":\"Vérifiez la présence et l’activation du plugin TFAR dans TeamSpeak.\",\"note\":\"Sans plugin actif, la chaîne est rompue.\"},{\"label\":\"Étape 3\",\"title\":\"Lancer le jeu puis rejoindre l’environnement de test\",\"body\":\"Connectez-vous au serveur ou à l’environnement prévu pour la vérification.\",\"note\":\"Un test réel vaut mieux qu’une supposition locale.\"},{\"label\":\"Étape 4\",\"title\":\"Vérifier les effets attendus\",\"body\":\"Confirmez que les comportements radio ou de proximité attendus apparaissent réellement.\",\"note\":\"L’installation n’est validée que si les effets fonctionnels se manifestent.\"}]},{\"template\":\"common_mistakes\",\"title\":\"Symptômes typiques et premières hypothèses\",\"items\":[{\"title\":\"Le mod est actif mais aucune logique radio n’apparaît\",\"body\":\"Commencez par vérifier le plugin TeamSpeak et son activation.\"},{\"title\":\"Tout semblait marcher hier mais plus aujourd’hui\",\"body\":\"Vérifiez le preset lancé, une mise à jour, ou une divergence de version.\"},{\"title\":\"Le membre dit “ça ne marche pas” sans autre détail\",\"body\":\"Le problème est aussi méthodologique : il faut décrire le symptôme exact avant de conclure.\"}]},{\"template\":\"case_review\",\"title\":\"Cas pratique — Panne mal décrite\",\"body\":\"<p>Un membre indique seulement : « TFAR ne marche pas ». Après questions, on découvre qu’il n’a pas vérifié le preset Arma, n’a pas ouvert la liste des plugins TeamSpeak et n’a réalisé aucun test contrôlé.</p><p><strong>Analyse :</strong> il n’existe pas encore de diagnostic. Il existe seulement une impression d’échec.</p><p><strong>Bonne conduite :</strong> reprendre une séquence courte et ordonnée : preset, plugin, redémarrage propre, test en environnement prévu.</p>\"},{\"template\":\"dos_donts\",\"title\":\"Comportement utile en cas de panne\",\"dos\":[\"Décrire le symptôme exact\",\"Indiquer ce qui a été vérifié\",\"Tester avant de solliciter le support\"],\"donts\":[\"Dire seulement “ça ne marche pas”\",\"Réinstaller tout sans logique\",\"Modifier plusieurs paramètres à la fois sans suivi\"]},{\"template\":\"scenario_decision\",\"title\":\"Décision correcte — Demande d’aide\",\"context\":\"Après test, un membre n’obtient toujours pas le résultat attendu et doit contacter le support interne.\",\"options\":[{\"label\":\"A\",\"body\":\"Envoyer “aidez-moi” sans autre détail.\"},{\"label\":\"B\",\"body\":\"Décrire la version utilisée, ce qui a été installé, ce qui a été vérifié et le symptôme précis observé.\"},{\"label\":\"C\",\"body\":\"Attendre la mission en espérant que cela fonctionne sur place.\"}],\"correct\":\"B\",\"explanation\":\"Une demande d’aide utile repose sur des éléments vérifiables. Cela réduit le temps de diagnostic et évite les échanges inutiles.\"},{\"template\":\"fill_blanks\",\"title\":\"Vérification finale\",\"body\":\"<p>Une installation n’est réellement validée qu’après un [[test]] de fonctionnement.</p><p>En cas de panne, il faut décrire le [[symptôme]] observé et les vérifications déjà menées.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"Ce qu’on attend avant mission\",\"body\":\"Le poste doit être vérifié avant l’heure de rassemblement.\\nLe support n’a pas vocation à reconstituer à votre place ce que vous n’avez pas contrôlé.\\nUne panne décrite proprement se corrige plus vite.\\nL’ordre des vérifications compte autant que les fichiers eux-mêmes.\"}]}', NULL, 13, 'initiation', 1, 1, '2026-04-06 20:11:27', NULL),
+(44, 29, 'À retenir — Vérification et dépannage', 'Synthèse finale avant évaluation.', NULL, NULL, 'richtext', '<div class=\"prose prose-slate max-w-none\"><h3 class=\"text-base font-bold text-slate-900\">À retenir</h3><ul class=\"list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed\"><li>Une installation ne vaut rien sans test de fonctionnement.</li><li>Le bon ordre de contrôle est : preset Arma 3, plugin TeamSpeak, redémarrage propre, test réel.</li><li>En cas de panne, décrivez le symptôme exact et les vérifications déjà réalisées.</li></ul></div>', NULL, 3, 'initiation', 2, 1, '2026-04-06 20:11:27', NULL),
+(45, 30, 'Avant le quiz final', 'Consignes avant validation finale.', NULL, NULL, 'canvas', '{\"version\":2,\"modals\":[],\"opening\":{\"eyebrow\":\"Module 6\",\"title\":\"\",\"lead\":\"Le questionnaire final vérifie que vous maîtrisez la logique d’installation, de contrôle et de premier dépannage de TFAR.\",\"stats\":[{\"label\":\"Seuil de réussite\",\"value\":\"80 %\"},{\"label\":\"Temps indicatif\",\"value\":\"~12 min\"}]},\"closure\":{\"title\":\"Fin de parcours\",\"seen\":[\"Le quiz porte sur les étapes de préparation, d’installation et de vérification.\",\"La réussite ne remplace pas un test réel sur l’environnement de l’unité.\"],\"acquired\":[\"Vous avez le cadre logique minimal pour préparer votre poste proprement.\",\"Vous savez où reprendre si un doute persiste.\"],\"nextHint\":\"Passez maintenant au questionnaire final lorsqu’il est disponible.\"},\"slides\":[{\"template\":\"title_hero\",\"title\":\"Validation finale\",\"subtitle\":\"Contrôler la compréhension avant emploi\",\"body\":\"<p>Ce questionnaire final ne cherche pas à vous piéger. Il vérifie que vous ne partez pas avec de fausses certitudes sur l’installation de TFAR. Une bonne réponse traduit une méthode correcte ; une mauvaise réponse signale une étape à revoir.</p>\",\"contextKicker\":\"Étape finale · Contrôle des acquis\",\"surface\":\"elevated\"},{\"template\":\"reading_article\",\"title\":\"Ce que le quiz valide — et ce qu’il ne valide pas\",\"subtitle\":\"Connaissance de la méthode, pas garantie absolue du poste\",\"body\":\"<p>La réussite au questionnaire signifie que vous comprenez la logique correcte : pré requis, mod Arma 3, plugin TeamSpeak, vérification et dépannage initial. Elle ne remplace pas un test effectif sur le serveur ou l’environnement réel de votre unité.</p><p>Autrement dit : le quiz valide un <strong>niveau de compréhension</strong>. Le test réel valide un <strong>poste opérationnel</strong>.</p>\"},{\"template\":\"knowledge_check\",\"title\":\"Avant de répondre\",\"body\":\"Lisez jusqu’au bout.\\nDistinguez toujours jeu, plugin et test final.\\nÉvitez les réponses intuitives mais incomplètes.\\nLe bon ordre des étapes compte.\"}]}', NULL, 4, 'initiation', 1, 1, '2026-04-06 20:11:27', NULL);
 
 -- --------------------------------------------------------
 
@@ -3818,11 +6069,38 @@ CREATE TABLE `training_modules` (
   `course_id` bigint(20) UNSIGNED NOT NULL,
   `title` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
+  `subtitle` varchar(255) DEFAULT NULL,
+  `learning_objectives` text DEFAULT NULL,
+  `estimated_minutes` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `position` int(10) UNSIGNED NOT NULL DEFAULT 1,
   `is_required` tinyint(1) DEFAULT 1,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Déchargement des données de la table `training_modules`
+--
+
+INSERT INTO `training_modules` (`id`, `course_id`, `title`, `description`, `subtitle`, `learning_objectives`, `estimated_minutes`, `position`, `is_required`, `created_at`, `updated_at`) VALUES
+(13, 4, 'Vue d’ensemble', 'Ce module pose pourquoi le portail existe, ce qu’il centralise (information stable, coordination, formations) et ce qu’il ne remplace pas. Il introduit la méthode de lecture du parcours, les risques d’une mauvaise utilisation et les réflexes de sécurité du compte.', 'Finalité du portail et cadre', '[\"Expliquer en une phrase la différence entre information stabilisée, échanges vivants et suivi pédagogique sur le site.\",\"Identifier ce que le portail n’est pas (substitut à la chaîne de commandement, stockage anarchique sur le forum).\",\"Citer au moins trois erreurs d’usage fréquentes et leur correction.\"]', 26, 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(14, 4, 'Navigation et compte', 'Menus, tableau de bord, zone Opérations, profil, préférences, sécurité et multi-communautés : ce module décrit ce que vous faites réellement sur le portail au quotidien et comment éviter les erreurs de contexte.', 'Se repérer et agir sur son compte', '[\"Décrire le rôle du tableau de bord par rapport au menu principal.\",\"Enchaîner les étapes pour mettre à jour le profil et les préférences dans la rubrique compte.\",\"Expliquer pourquoi le poste partagé impose une déconnexion explicite.\"]', 28, 2, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(15, 4, 'Organisation et contenus', 'Personnel, organigramme, documents, catalogue des formations, progression et attestations : le cœur opérationnel du portail. Le module distingue référence documentaire et discussion, et clarifie ce qu’une attestation prouve ou ne prouve pas.', 'Où vit l’information et le LMS', '[\"Distinguer dossier personnel, organigramme et documents officiels.\",\"Traiter correctement un document sensible ou une version obsolète.\",\"Expliquer pourquoi une formation assignée mais incomplète reste « non validée ».\"]', 32, 3, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(16, 4, 'Communauté', 'Règles de participation au forum, distinction annonce officielle et conversation, inscriptions aux événements, présence et signalements. Le module vise à réduire le bruit informationnel et à sécuriser les canaux sensibles.', 'Forum, annonces, événements', '[\"Choisir entre message public et canal dédié selon le type de sujet.\",\"Rédiger un titre de sujet utile et éviter les doublons.\",\"Adopter la conduite attendue en cas d’empêchement à un événement inscrit.\"]', 26, 5, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(17, 4, 'Validation', 'Préparation au questionnaire final, logique du score et des tentatives, obtention de l’attestation lorsque le parcours est certifiant, et rappel de la différence entre validation LMS et compétence opérationnelle reconnue par l’unité.', 'Questionnaire, attestation, limites', '[\"Expliquer l’usage des explications après une réponse incorrecte.\",\"Décrire ce que couvre une attestation de fin de parcours sur le portail.\",\"Organiser une reprise de révision avant une nouvelle tentative de quiz.\"]', 22, 6, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(18, 5, 'Vue d’ensemble', 'Ce module pose pourquoi le portail existe, ce qu’il centralise (information stable, coordination, formations) et ce qu’il ne remplace pas. Il introduit la méthode de lecture du parcours, les risques d’une mauvaise utilisation et les réflexes de sécurité du compte.', 'Finalité du portail et cadre', '[\"Expliquer en une phrase la différence entre information stabilisée, échanges vivants et suivi pédagogique sur le site.\",\"Identifier ce que le portail n’est pas (substitut à la chaîne de commandement, stockage anarchique sur le forum).\",\"Citer au moins trois erreurs d’usage fréquentes et leur correction.\"]', 26, 1, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(19, 5, 'Navigation et compte', 'Menus, tableau de bord, zone Opérations, profil, préférences, sécurité et multi-communautés : ce module décrit ce que vous faites réellement sur le portail au quotidien et comment éviter les erreurs de contexte.', 'Se repérer et agir sur son compte', '[\"Décrire le rôle du tableau de bord par rapport au menu principal.\",\"Enchaîner les étapes pour mettre à jour le profil et les préférences dans la rubrique compte.\",\"Expliquer pourquoi le poste partagé impose une déconnexion explicite.\"]', 28, 2, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(20, 5, 'Organisation et contenus', 'Personnel, organigramme, documents, catalogue des formations, progression et attestations : le cœur opérationnel du portail. Le module distingue référence documentaire et discussion, et clarifie ce qu’une attestation prouve ou ne prouve pas.', 'Où vit l’information et le LMS', '[\"Distinguer dossier personnel, organigramme et documents officiels.\",\"Traiter correctement un document sensible ou une version obsolète.\",\"Expliquer pourquoi une formation assignée mais incomplète reste « non validée ».\"]', 32, 3, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(21, 5, 'Communauté', 'Règles de participation au forum, distinction annonce officielle et conversation, inscriptions aux événements, présence et signalements. Le module vise à réduire le bruit informationnel et à sécuriser les canaux sensibles.', 'Forum, annonces, événements', '[\"Choisir entre message public et canal dédié selon le type de sujet.\",\"Rédiger un titre de sujet utile et éviter les doublons.\",\"Adopter la conduite attendue en cas d’empêchement à un événement inscrit.\"]', 26, 5, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(22, 5, 'Validation', 'Préparation au questionnaire final, logique du score et des tentatives, obtention de l’attestation lorsque le parcours est certifiant, et rappel de la différence entre validation LMS et compétence opérationnelle reconnue par l’unité.', 'Questionnaire, attestation, limites', '[\"Expliquer l’usage des explications après une réponse incorrecte.\",\"Décrire ce que couvre une attestation de fin de parcours sur le portail.\",\"Organiser une reprise de révision avant une nouvelle tentative de quiz.\"]', 22, 6, 1, '2026-04-06 11:14:44', '2026-04-06 20:14:16'),
+(23, 4, 'Bilan à mi-parcours', 'Révision structurée des trois premiers blocs puis questionnaire à choix multiples. L’objectif est de consolider le vocabulaire et les réflexes avant la vie collective et la validation finale.', 'Ancrer les acquis (modules 1 à 3)', '[\"Relier les notions de tableau de bord, compte, documents et formations.\",\"Repérer les pièges classiques (forum vs documents, multi-communautés).\",\"Aborder le questionnaire avec une méthode de lecture complète des énoncés.\"]', 18, 4, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(24, 5, 'Bilan à mi-parcours', 'Révision structurée des trois premiers blocs puis questionnaire à choix multiples. L’objectif est de consolider le vocabulaire et les réflexes avant la vie collective et la validation finale.', 'Ancrer les acquis (modules 1 à 3)', '[\"Relier les notions de tableau de bord, compte, documents et formations.\",\"Repérer les pièges classiques (forum vs documents, multi-communautés).\",\"Aborder le questionnaire avec une méthode de lecture complète des énoncés.\"]', 18, 4, 1, '2026-04-06 18:33:03', '2026-04-06 20:14:16'),
+(25, 7, 'Vue d’ensemble et cadre', 'Module 1 — Finalité de TFAR, logique générale d’installation et points de vigilance.', 'Comprendre avant d’installer', '[\"Saisir le rôle de TFAR dans Arma 3\",\"Comprendre la chaîne mod + plugin vocal\",\"Identifier ce qui relève d’Arma et ce qui relève de TeamSpeak\"]', 12, 1, 1, '2026-04-06 20:11:27', NULL),
+(26, 7, 'Préparer le poste', 'Module 2 — Pré requis techniques, environnement logiciel et contrôles avant installation.', 'Pré requis et préparation', '[\"Vérifier les logiciels nécessaires\",\"Identifier les points de friction avant installation\",\"Préparer une base propre pour éviter les conflits\"]', 14, 2, 1, '2026-04-06 20:11:27', NULL),
+(27, 7, 'Installer le mod côté Arma 3', 'Module 3 — Intégration de TFAR dans Arma 3 selon la méthode officielle de l’unité.', 'Installation côté jeu', '[\"Installer ou activer correctement le mod TFAR\",\"Comprendre le rôle du launcher Arma 3\",\"Éviter les erreurs de version ou de chargement\"]', 16, 3, 1, '2026-04-06 20:11:27', NULL),
+(28, 7, 'Installer le plugin TeamSpeak', 'Module 4 — Installation et activation du plugin TeamSpeak nécessaire à TFAR.', 'Installation côté vocal', '[\"Comprendre le rôle du plugin TeamSpeak\",\"Installer ou activer correctement le plugin\",\"Distinguer TeamSpeak fonctionnel de TFAR réellement intégré\"]', 14, 4, 1, '2026-04-06 20:11:27', NULL),
+(29, 7, 'Vérification et dépannage initial', 'Module 5 — Contrôles de bon fonctionnement, symptômes typiques et premières corrections.', 'Tester avant mission', '[\"Savoir effectuer une vérification simple\",\"Identifier les symptômes les plus classiques\",\"Appliquer une méthode de dépannage initiale\"]', 18, 5, 1, '2026-04-06 20:11:27', NULL),
+(30, 7, 'Validation finale', 'Module 6 — Quiz final de validation du parcours.', 'Évaluation', '[\"Vérifier la compréhension des étapes d’installation\",\"Valider les bons réflexes de contrôle\",\"Confirmer l’autonomie minimale du membre\"]', 12, 6, 1, '2026-04-06 20:11:27', NULL);
 
 -- --------------------------------------------------------
 
@@ -3843,6 +6121,34 @@ CREATE TABLE `training_progress` (
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Déchargement des données de la table `training_progress`
+--
+
+INSERT INTO `training_progress` (`id`, `enrollment_id`, `lesson_id`, `status`, `progress_percent`, `time_spent_seconds`, `last_position_seconds`, `viewed_at`, `completed_at`, `updated_at`) VALUES
+(8, 3, 18, 'completed', 100.00, 0, 0, '2026-04-06 19:05:53', '2026-04-06 19:05:53', '2026-04-06 19:05:53'),
+(9, 3, 19, 'completed', 100.00, 0, 0, '2026-04-06 19:08:32', '2026-04-06 19:08:32', '2026-04-06 19:08:32'),
+(10, 3, 20, 'completed', 100.00, 0, 0, '2026-04-06 19:08:57', '2026-04-06 19:08:57', '2026-04-06 19:08:57'),
+(11, 3, 21, 'completed', 100.00, 0, 0, '2026-04-06 19:35:20', '2026-04-06 19:35:20', '2026-04-06 19:35:20'),
+(12, 3, 22, 'completed', 100.00, 0, 0, '2026-04-06 19:36:17', '2026-04-06 19:36:17', '2026-04-06 19:36:17'),
+(13, 3, 30, 'completed', 100.00, 0, 0, '2026-04-06 19:05:56', '2026-04-06 19:05:56', '2026-04-06 19:05:56'),
+(14, 3, 31, 'completed', 100.00, 0, 0, '2026-04-06 19:06:04', '2026-04-06 19:06:04', '2026-04-06 19:06:04'),
+(15, 3, 32, 'completed', 100.00, 0, 0, '2026-04-06 19:06:07', '2026-04-06 19:06:07', '2026-04-06 19:06:07'),
+(16, 3, 29, 'completed', 100.00, 0, 0, '2026-04-06 19:06:19', '2026-04-06 19:06:19', '2026-04-06 19:06:19'),
+(17, 3, 33, 'completed', 100.00, 0, 0, '2026-04-06 19:09:03', '2026-04-06 19:09:03', '2026-04-06 19:09:03'),
+(18, 3, 34, 'completed', 100.00, 0, 0, '2026-04-06 19:09:22', '2026-04-06 19:09:22', '2026-04-06 19:09:22'),
+(19, 4, 35, 'not_started', 0.00, 0, 0, NULL, NULL, '2026-04-06 20:13:37'),
+(20, 4, 36, 'not_started', 0.00, 0, 0, NULL, NULL, '2026-04-06 20:13:37'),
+(21, 4, 37, 'not_started', 0.00, 0, 0, NULL, NULL, '2026-04-06 20:13:37'),
+(22, 4, 38, 'not_started', 0.00, 0, 0, NULL, NULL, '2026-04-06 20:13:37'),
+(23, 4, 39, 'not_started', 0.00, 0, 0, NULL, NULL, '2026-04-06 20:13:37'),
+(24, 4, 40, 'not_started', 0.00, 0, 0, NULL, NULL, '2026-04-06 20:13:37'),
+(25, 4, 41, 'not_started', 0.00, 0, 0, NULL, NULL, '2026-04-06 20:13:37'),
+(26, 4, 42, 'not_started', 0.00, 0, 0, NULL, NULL, '2026-04-06 20:13:37'),
+(27, 4, 43, 'not_started', 0.00, 0, 0, NULL, NULL, '2026-04-06 20:13:37'),
+(28, 4, 44, 'not_started', 0.00, 0, 0, NULL, NULL, '2026-04-06 20:13:37'),
+(29, 4, 45, 'not_started', 0.00, 0, 0, NULL, NULL, '2026-04-06 20:13:37');
+
 -- --------------------------------------------------------
 
 --
@@ -3862,6 +6168,18 @@ CREATE TABLE `training_quizzes` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Déchargement des données de la table `training_quizzes`
+--
+
+INSERT INTO `training_quizzes` (`id`, `module_id`, `title`, `description`, `passing_score`, `max_attempts`, `time_limit_minutes`, `randomize_questions`, `is_final_exam`, `created_at`) VALUES
+(3, 17, 'Quiz — fonctionnement du portail', 'Validez vos acquis sur la navigation, le compte et la vie de la communauté.', 80.00, 5, 15, 0, 1, '2026-04-06 11:14:44'),
+(4, 22, 'Quiz — fonctionnement du portail', 'Validez vos acquis sur la navigation, le compte et la vie de la communauté.', 80.00, 5, 15, 0, 1, '2026-04-06 11:14:44'),
+(5, 23, 'Bilan — premiers réflexes', 'Questions sur la navigation, le compte, les documents et le catalogue des formations.', 75.00, 4, 15, 1, 0, '2026-04-06 18:33:03'),
+(6, 24, 'Bilan — premiers réflexes', 'Questions sur la navigation, le compte, les documents et le catalogue des formations.', 75.00, 4, 15, 1, 0, '2026-04-06 18:33:03'),
+(7, 29, 'Bilan intermédiaire — installation TFAR', 'Questions sur la structure de l’installation, les prérequis et les premières vérifications.', 75.00, 4, 12, 1, 0, '2026-04-06 20:11:27'),
+(8, 30, 'Quiz final — Installer Task Force Radio', 'Validation finale des connaissances sur l’installation et le contrôle de TFAR.', 80.00, 5, 15, 0, 1, '2026-04-06 20:11:27');
+
 -- --------------------------------------------------------
 
 --
@@ -3875,6 +6193,164 @@ CREATE TABLE `training_quiz_answers` (
   `is_correct` tinyint(1) DEFAULT 0,
   `position` int(10) UNSIGNED NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Déchargement des données de la table `training_quiz_answers`
+--
+
+INSERT INTO `training_quiz_answers` (`id`, `question_id`, `answer_text`, `is_correct`, `position`) VALUES
+(49, 13, 'Le tableau de bord', 1, 1),
+(50, 13, 'Uniquement l’écran de déconnexion', 0, 2),
+(51, 13, 'La page d’accueil du navigateur, hors portail', 0, 3),
+(52, 13, 'Un écran réservé aux seuls instructeurs', 0, 4),
+(53, 14, 'Dans le profil / Mon compte', 1, 1),
+(54, 14, 'Sur un document papier uniquement', 0, 2),
+(55, 14, 'En changeant le nom de son ordinateur', 0, 3),
+(56, 14, 'En contactant uniquement un hébergeur extérieur', 0, 4),
+(57, 15, 'Ouvrir la fiche formation et suivre l’inscription prévue (selon les règles de la communauté)', 1, 1),
+(58, 15, 'En demandant à un ami de s’inscrire à votre place', 0, 2),
+(59, 15, 'En fermant le navigateur puis en rouvrant n’importe quelle page', 0, 3),
+(60, 15, 'Ce n’est jamais possible', 0, 4),
+(61, 16, 'Respecter les canaux, rester courtois et pertinent', 1, 1),
+(62, 16, 'Publier des informations sensibles hors rubrique autorisée', 0, 2),
+(63, 16, 'Ignorer les annonces officielles', 0, 3),
+(64, 16, 'Créer un sujet par message', 0, 4),
+(65, 17, 'Prévenir selon les consignes de l’organisation (fil prévu, message au staff, etc.)', 1, 1),
+(66, 17, 'Ne jamais prévenir', 0, 2),
+(67, 17, 'Supprimer son compte', 0, 3),
+(68, 17, 'Modifier l’événement pour tout le monde', 0, 4),
+(69, 18, 'Elle est importante pour le collectif et peut débloquer une attestation après validation complète', 1, 1),
+(70, 18, 'Elle est optionnelle et sans suivi', 0, 2),
+(71, 18, 'Elle ne concerne que les administrateurs système', 0, 3),
+(72, 18, 'Elle remplace le règlement sans validation', 0, 4),
+(73, 19, 'Le tableau de bord', 1, 1),
+(74, 19, 'Uniquement l’écran de déconnexion', 0, 2),
+(75, 19, 'La page d’accueil du navigateur, hors portail', 0, 3),
+(76, 19, 'Un écran réservé aux seuls instructeurs', 0, 4),
+(77, 20, 'Dans le profil / Mon compte', 1, 1),
+(78, 20, 'Sur un document papier uniquement', 0, 2),
+(79, 20, 'En changeant le nom de son ordinateur', 0, 3),
+(80, 20, 'En contactant uniquement un hébergeur extérieur', 0, 4),
+(81, 21, 'Ouvrir la fiche formation et suivre l’inscription prévue (selon les règles de la communauté)', 1, 1),
+(82, 21, 'En demandant à un ami de s’inscrire à votre place', 0, 2),
+(83, 21, 'En fermant le navigateur puis en rouvrant n’importe quelle page', 0, 3),
+(84, 21, 'Ce n’est jamais possible', 0, 4),
+(85, 22, 'Respecter les canaux, rester courtois et pertinent', 1, 1),
+(86, 22, 'Publier des informations sensibles hors rubrique autorisée', 0, 2),
+(87, 22, 'Ignorer les annonces officielles', 0, 3),
+(88, 22, 'Créer un sujet par message', 0, 4),
+(89, 23, 'Prévenir selon les consignes de l’organisation (fil prévu, message au staff, etc.)', 1, 1),
+(90, 23, 'Ne jamais prévenir', 0, 2),
+(91, 23, 'Supprimer son compte', 0, 3),
+(92, 23, 'Modifier l’événement pour tout le monde', 0, 4),
+(93, 24, 'Elle est importante pour le collectif et peut débloquer une attestation après validation complète', 1, 1),
+(94, 24, 'Elle est optionnelle et sans suivi', 0, 2),
+(95, 24, 'Elle ne concerne que les administrateurs système', 0, 3),
+(96, 24, 'Elle remplace le règlement sans validation', 0, 4),
+(97, 25, 'L’historique du navigateur, hors portail', 0, 1),
+(98, 25, 'Le tableau de bord', 1, 2),
+(99, 25, 'Un écran réservé aux seuls formateurs', 0, 3),
+(100, 25, 'Uniquement la page de réinitialisation du mot de passe', 0, 4),
+(101, 26, 'En modifiant le nom du poste de travail', 0, 1),
+(102, 26, 'Uniquement sur un réseau social extérieur', 0, 2),
+(103, 26, 'Dans la rubrique compte (souvent « Mon compte ») du portail', 1, 3),
+(104, 26, 'Ce n’est jamais possible en ligne', 0, 4),
+(105, 27, 'Sur une messagerie personnelle uniquement', 0, 1),
+(106, 27, 'Dans la rubrique documents du portail, selon le niveau de diffusion', 1, 2),
+(107, 27, 'Uniquement en enchaînant des messages sur le forum sans fiche dédiée', 0, 3),
+(108, 27, 'Dans les préférences du compte', 0, 4),
+(109, 28, 'Le staff attend sa complétion dans le cadre fixé par la communauté', 1, 1),
+(110, 28, 'Elle est purement décorative sur le site', 0, 2),
+(111, 28, 'Elle ne concerne que les visiteurs non connectés', 0, 3),
+(112, 28, 'Elle se valide sans parcourir le contenu', 0, 4),
+(113, 29, 'Pour remplacer tous les documents officiels', 0, 1),
+(114, 29, 'Pour envoyer des messages privés automatiques', 0, 2),
+(115, 29, 'Pour comprendre la structure et les rattachements de l’unité', 1, 3),
+(116, 29, 'Pour stocker les mots de passe partagés', 0, 4),
+(117, 30, 'Un écran réservé aux seuls formateurs', 0, 1),
+(118, 30, 'Le tableau de bord', 1, 2),
+(119, 30, 'Uniquement la page de réinitialisation du mot de passe', 0, 3),
+(120, 30, 'L’historique du navigateur, hors portail', 0, 4),
+(121, 31, 'Uniquement sur un réseau social extérieur', 0, 1),
+(122, 31, 'En modifiant le nom du poste de travail', 0, 2),
+(123, 31, 'Dans la rubrique compte (souvent « Mon compte ») du portail', 1, 3),
+(124, 31, 'Ce n’est jamais possible en ligne', 0, 4),
+(125, 32, 'Sur une messagerie personnelle uniquement', 0, 1),
+(126, 32, 'Uniquement en enchaînant des messages sur le forum sans fiche dédiée', 0, 2),
+(127, 32, 'Dans les préférences du compte', 0, 3),
+(128, 32, 'Dans la rubrique documents du portail, selon le niveau de diffusion', 1, 4),
+(129, 33, 'Le staff attend sa complétion dans le cadre fixé par la communauté', 1, 1),
+(130, 33, 'Elle se valide sans parcourir le contenu', 0, 2),
+(131, 33, 'Elle est purement décorative sur le site', 0, 3),
+(132, 33, 'Elle ne concerne que les visiteurs non connectés', 0, 4),
+(133, 34, 'Pour envoyer des messages privés automatiques', 0, 1),
+(134, 34, 'Pour remplacer tous les documents officiels', 0, 2),
+(135, 34, 'Pour stocker les mots de passe partagés', 0, 3),
+(136, 34, 'Pour comprendre la structure et les rattachements de l’unité', 1, 4),
+(137, 35, 'Parce qu’il faut aussi un plugin TeamSpeak adapté', 1, 1),
+(138, 35, 'Parce qu’Arma 3 n’accepte jamais les mods audio', 0, 2),
+(139, 35, 'Parce que TeamSpeak remplace complètement Arma 3', 0, 3),
+(140, 35, 'Parce que le launcher Arma 3 est inutile', 0, 4),
+(141, 36, 'Vérifier qu’Arma 3 et TeamSpeak sont installés et exploitables', 1, 1),
+(142, 36, 'Supprimer immédiatement tous les autres mods sans distinction', 0, 2),
+(143, 36, 'Lancer une mission sans préparation pour voir si cela passe', 0, 3),
+(144, 36, 'Modifier le micro Windows avant toute autre chose, sans raison', 0, 4),
+(145, 37, 'Activer les deux pour augmenter les chances', 0, 1),
+(146, 37, 'Ne garder que la version officielle et cohérente', 1, 2),
+(147, 37, 'Ignorer l’ambiguïté et partir en mission', 0, 3),
+(148, 37, 'Désinstaller Arma 3 immédiatement', 0, 4),
+(149, 38, 'Si TeamSpeak fonctionne, TFAR est automatiquement validé', 0, 1),
+(150, 38, 'TeamSpeak doit aussi disposer du plugin TFAR actif', 1, 2),
+(151, 38, 'TeamSpeak est inutile si le mod est installé', 0, 3),
+(152, 38, 'TFAR remplace complètement le logiciel vocal', 0, 4),
+(153, 39, 'La présence des fichiers suffit à valider définitivement le poste', 0, 1),
+(154, 39, 'Le poste doit encore être contrôlé et testé en situation', 1, 2),
+(155, 39, 'Il n’est plus nécessaire d’ouvrir TeamSpeak', 0, 3),
+(156, 39, 'Le launcher Arma 3 n’a plus aucune utilité', 0, 4),
+(157, 40, 'Dire seulement “ça ne marche pas”', 0, 1),
+(158, 40, 'Décrire le symptôme précis et les contrôles déjà menés', 1, 2),
+(159, 40, 'Modifier au hasard plusieurs paramètres à la fois', 0, 3),
+(160, 40, 'Attendre la mission réelle pour refaire un essai', 0, 4),
+(161, 41, 'Ajouter uniquement un fond musical en mission', 0, 1),
+(162, 41, 'Intégrer la communication vocale à la logique radio et de proximité du jeu', 1, 2),
+(163, 41, 'Remplacer totalement Arma 3 par TeamSpeak', 0, 3),
+(164, 41, 'Supprimer le besoin de toute discipline radio', 0, 4),
+(165, 42, 'Le navigateur web et la carte graphique', 0, 1),
+(166, 42, 'Le mod Arma 3 et le plugin TeamSpeak', 1, 2),
+(167, 42, 'Le pare-feu Windows et le papier peint du bureau', 0, 3),
+(168, 42, 'Le micro USB et le thème Windows uniquement', 0, 4),
+(169, 43, 'Vérifier qu’Arma 3 et TeamSpeak sont installés et utilisables', 1, 1),
+(170, 43, 'Lancer la mission sans TeamSpeak pour gagner du temps', 0, 2),
+(171, 43, 'Activer tous les mods disponibles sans tri', 0, 3),
+(172, 43, 'Répondre au support avant toute vérification', 0, 4),
+(173, 44, 'Parce que le jeu refuse tout mod téléchargé officiellement', 0, 1),
+(174, 44, 'Parce que cela produit une configuration ambiguë et instable', 1, 2),
+(175, 44, 'Parce que TeamSpeak ne peut gérer qu’un seul casque', 0, 3),
+(176, 44, 'Parce que le micro devient inactif dans Windows immédiatement', 0, 4),
+(177, 45, 'Contrôler les mods présents et activés dans le bon preset', 1, 1),
+(178, 45, 'Installer automatiquement tous les plugins vocaux de Windows', 0, 2),
+(179, 45, 'Remplacer TeamSpeak', 0, 3),
+(180, 45, 'Valider à lui seul le fonctionnement complet de TFAR', 0, 4),
+(181, 46, 'Contrôler la présence et l’activation du plugin', 1, 1),
+(182, 46, 'Changer systématiquement de pseudo', 0, 2),
+(183, 46, 'Supprimer tous les autres plugins sans regarder', 0, 3),
+(184, 46, 'Désinstaller puis réinstaller le micro', 0, 4),
+(185, 47, 'S’il s’ouvre, TFAR est forcément opérationnel', 0, 1),
+(186, 47, 'Il peut fonctionner sans que TFAR soit correctement intégré', 1, 2),
+(187, 47, 'Il devient inutile dès que le mod est téléchargé', 0, 3),
+(188, 47, 'Il remplace automatiquement le launcher Arma 3', 0, 4),
+(189, 48, 'La présence des fichiers suffit définitivement', 0, 1),
+(190, 48, 'Il faut encore contrôler et tester en situation', 1, 2),
+(191, 48, 'Il n’est plus nécessaire d’ouvrir le logiciel vocal', 0, 3),
+(192, 48, 'Le support doit valider à distance sans autre élément', 0, 4),
+(193, 49, 'Preset Arma 3, plugin TeamSpeak, test réel', 1, 1),
+(194, 49, 'Test réel, puis éventuellement vérifier les mods plus tard', 0, 2),
+(195, 49, 'Changer tous les périphériques avant de regarder le preset', 0, 3),
+(196, 49, 'Demander au support d’emblée sans rien contrôler', 0, 4),
+(197, 50, 'Écrire simplement “TFAR cassé”', 0, 1),
+(198, 50, 'Décrire précisément le symptôme et les vérifications déjà menées', 1, 2),
+(199, 50, 'Attendre le début de mission sans prévenir', 0, 3),
+(200, 50, 'Réinstaller plusieurs fois sans méthode avant de contacter qui que ce soit', 0, 4);
 
 -- --------------------------------------------------------
 
@@ -3893,6 +6369,17 @@ CREATE TABLE `training_quiz_attempts` (
   `status` enum('in_progress','submitted','graded','expired') DEFAULT 'in_progress'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Déchargement des données de la table `training_quiz_attempts`
+--
+
+INSERT INTO `training_quiz_attempts` (`id`, `quiz_id`, `enrollment_id`, `started_at`, `submitted_at`, `score`, `passed`, `status`) VALUES
+(2, 4, 3, '2026-04-06 17:15:12', NULL, NULL, 0, 'expired'),
+(3, 4, 3, '2026-04-06 17:42:14', NULL, NULL, 0, 'expired'),
+(4, 6, 3, '2026-04-06 19:06:20', '2026-04-06 19:06:51', 100.00, 1, 'graded'),
+(5, 4, 3, '2026-04-06 19:30:53', '2026-04-06 19:31:09', 100.00, 1, 'graded'),
+(6, 6, 3, '2026-04-06 19:31:43', '2026-04-06 19:32:02', 100.00, 1, 'graded');
+
 -- --------------------------------------------------------
 
 --
@@ -3909,6 +6396,50 @@ CREATE TABLE `training_quiz_questions` (
   `position` int(10) UNSIGNED NOT NULL DEFAULT 1,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Déchargement des données de la table `training_quiz_questions`
+--
+
+INSERT INTO `training_quiz_questions` (`id`, `quiz_id`, `question_type`, `question_text`, `explanation`, `points`, `position`, `created_at`) VALUES
+(13, 3, 'single_choice', 'Après connexion, quel écran sert principalement de point de départ pour les rappels et raccourcis ?', 'Le tableau de bord regroupe l’essentiel de l’activité utile pour votre compte.', 1.00, 1, '2026-04-06 11:14:44'),
+(14, 3, 'single_choice', 'Où un membre met-il généralement à jour son identité affichée et ses préférences ?', NULL, 1.00, 2, '2026-04-06 11:14:44'),
+(15, 3, 'single_choice', 'Comment s’inscrire à une formation publiée dans le catalogue ?', NULL, 1.00, 3, '2026-04-06 11:14:44'),
+(16, 3, 'single_choice', 'Sur le forum, quelle attitude est attendue par défaut ?', NULL, 1.00, 4, '2026-04-06 11:14:44'),
+(17, 3, 'single_choice', 'Pour les événements communautaires (brief, séance…), que faut-il faire en cas d’empêchement ?', NULL, 1.00, 5, '2026-04-06 11:14:44'),
+(18, 3, 'single_choice', 'Une formation marquée « obligatoire » et « certifiante » signifie en général que :', NULL, 1.00, 6, '2026-04-06 11:14:44'),
+(19, 4, 'single_choice', 'Après connexion, quel écran sert principalement de point de départ pour les rappels et raccourcis ?', 'Le tableau de bord regroupe l’essentiel de l’activité utile pour votre compte.', 1.00, 1, '2026-04-06 11:14:44'),
+(20, 4, 'single_choice', 'Où un membre met-il généralement à jour son identité affichée et ses préférences ?', NULL, 1.00, 2, '2026-04-06 11:14:44'),
+(21, 4, 'single_choice', 'Comment s’inscrire à une formation publiée dans le catalogue ?', NULL, 1.00, 3, '2026-04-06 11:14:44'),
+(22, 4, 'single_choice', 'Sur le forum, quelle attitude est attendue par défaut ?', NULL, 1.00, 4, '2026-04-06 11:14:44'),
+(23, 4, 'single_choice', 'Pour les événements communautaires (brief, séance…), que faut-il faire en cas d’empêchement ?', NULL, 1.00, 5, '2026-04-06 11:14:44'),
+(24, 4, 'single_choice', 'Une formation marquée « obligatoire » et « certifiante » signifie en général que :', NULL, 1.00, 6, '2026-04-06 11:14:44'),
+(25, 5, 'single_choice', 'Après connexion, quel écran regroupe en général les raccourcis et rappels utiles pour votre session ?', 'Le tableau de bord est le point de départ logique après connexion.', 1.00, 1, '2026-04-06 18:33:03'),
+(26, 5, 'single_choice', 'Où met-on à jour en principe ses préférences de notification et son profil affiché ?', NULL, 1.00, 2, '2026-04-06 18:33:03'),
+(27, 5, 'single_choice', 'Où retrouver en priorité une note officielle stabilisée, destinée à tous les membres autorisés ?', NULL, 1.00, 3, '2026-04-06 18:33:03'),
+(28, 5, 'single_choice', 'Une formation du catalogue apparaît comme obligatoire : que signifie cela en général ?', NULL, 1.00, 4, '2026-04-06 18:33:03'),
+(29, 5, 'single_choice', 'Pourquoi l’organigramme (ORBAT) du portail est-il utile au quotidien ?', NULL, 1.00, 5, '2026-04-06 18:33:03'),
+(30, 6, 'single_choice', 'Après connexion, quel écran regroupe en général les raccourcis et rappels utiles pour votre session ?', 'Le tableau de bord est le point de départ logique après connexion.', 1.00, 1, '2026-04-06 18:33:03'),
+(31, 6, 'single_choice', 'Où met-on à jour en principe ses préférences de notification et son profil affiché ?', NULL, 1.00, 2, '2026-04-06 18:33:03'),
+(32, 6, 'single_choice', 'Où retrouver en priorité une note officielle stabilisée, destinée à tous les membres autorisés ?', NULL, 1.00, 3, '2026-04-06 18:33:03'),
+(33, 6, 'single_choice', 'Une formation du catalogue apparaît comme obligatoire : que signifie cela en général ?', NULL, 1.00, 4, '2026-04-06 18:33:03'),
+(34, 6, 'single_choice', 'Pourquoi l’organigramme (ORBAT) du portail est-il utile au quotidien ?', NULL, 1.00, 5, '2026-04-06 18:33:03'),
+(35, 7, 'single_choice', 'Pourquoi l’activation du mod TFAR dans Arma 3 ne suffit-elle pas à elle seule ?', 'Parce que TFAR dépend aussi d’un plugin TeamSpeak nécessaire à l’intégration vocale.', 1.00, 1, '2026-04-06 20:11:27'),
+(36, 7, 'single_choice', 'Avant d’installer TFAR, quel contrôle est cohérent ?', 'Il faut vérifier les pré requis réels du poste avant de commencer.', 1.00, 2, '2026-04-06 20:11:27'),
+(37, 7, 'single_choice', 'Dans le launcher Arma 3, vous voyez deux variantes proches de TFAR. Quelle conduite est correcte ?', 'Il faut supprimer l’ambiguïté et ne conserver que la source officielle retenue par l’unité.', 1.00, 3, '2026-04-06 20:11:27'),
+(38, 7, 'single_choice', 'Quel énoncé décrit correctement la relation entre TeamSpeak et TFAR ?', 'TeamSpeak peut fonctionner seul sans pour autant fournir l’intégration TFAR.', 1.00, 4, '2026-04-06 20:11:27'),
+(39, 7, 'single_choice', 'Quelle affirmation est la plus juste après installation ?', 'Une installation doit être testée pour être considérée comme valable.', 1.00, 5, '2026-04-06 20:11:27'),
+(40, 7, 'single_choice', 'En cas de panne, quelle attitude est la plus utile pour le support ?', 'Un symptôme clair et les vérifications déjà effectuées permettent un diagnostic rapide.', 1.00, 6, '2026-04-06 20:11:27'),
+(41, 8, 'single_choice', 'Quelle est la finalité correcte de Task Force Radio dans un environnement Arma 3 organisé ?', 'TFAR vise à intégrer la communication vocale à la logique radio et de proximité du jeu.', 1.00, 1, '2026-04-06 20:11:27'),
+(42, 8, 'single_choice', 'Quel couple d’éléments doit être cohérent pour qu’une installation TFAR soit exploitable ?', 'Le mod côté jeu et le plugin côté TeamSpeak doivent fonctionner ensemble.', 1.00, 2, '2026-04-06 20:11:27'),
+(43, 8, 'single_choice', 'Quelle étape est cohérente avant même de télécharger ou synchroniser TFAR ?', 'Il faut d’abord vérifier que le poste dispose des pré requis essentiels.', 1.00, 3, '2026-04-06 20:11:27'),
+(44, 8, 'single_choice', 'Pourquoi faut-il éviter de mélanger plusieurs sources ou versions proches de TFAR ?', 'Parce que cela crée des conflits de chargement et rend le diagnostic difficile.', 1.00, 4, '2026-04-06 20:11:27'),
+(45, 8, 'single_choice', 'Quel est le rôle principal du launcher Arma 3 dans le cadre de cette installation ?', 'Le launcher permet de voir et contrôler ce qui est réellement chargé côté jeu.', 1.00, 5, '2026-04-06 20:11:27'),
+(46, 8, 'single_choice', 'Dans TeamSpeak, quel contrôle est indispensable après installation du plugin TFAR ?', 'Il faut vérifier que le plugin est bien présent et activé.', 1.00, 6, '2026-04-06 20:11:27'),
+(47, 8, 'single_choice', 'Quel énoncé est juste concernant TeamSpeak seul ?', 'TeamSpeak peut fonctionner comme logiciel vocal sans que l’intégration TFAR soit active.', 1.00, 7, '2026-04-06 20:11:27'),
+(48, 8, 'single_choice', 'Après installation du mod et du plugin, quelle affirmation est correcte ?', 'L’installation n’est considérée comme solide qu’après un test de fonctionnement.', 1.00, 8, '2026-04-06 20:11:27'),
+(49, 8, 'single_choice', 'Quel ordre de vérification est le plus cohérent avant mission ?', 'On contrôle d’abord le chargement du mod, puis le plugin, puis le test réel.', 1.00, 9, '2026-04-06 20:11:27'),
+(50, 8, 'single_choice', 'Quel comportement est le plus utile si vous devez demander de l’aide ?', 'Une demande utile décrit le symptôme et les contrôles déjà effectués.', 1.00, 10, '2026-04-06 20:11:27');
 
 -- --------------------------------------------------------
 
@@ -3927,6 +6458,28 @@ CREATE TABLE `training_quiz_responses` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Déchargement des données de la table `training_quiz_responses`
+--
+
+INSERT INTO `training_quiz_responses` (`id`, `attempt_id`, `question_id`, `answer_id`, `response_text`, `is_correct`, `points_awarded`, `created_at`) VALUES
+(1, 4, 30, 118, NULL, 1, 1.00, '2026-04-06 19:06:51'),
+(2, 4, 31, 123, NULL, 1, 1.00, '2026-04-06 19:06:51'),
+(3, 4, 32, 128, NULL, 1, 1.00, '2026-04-06 19:06:51'),
+(4, 4, 33, 129, NULL, 1, 1.00, '2026-04-06 19:06:51'),
+(5, 4, 34, 136, NULL, 1, 1.00, '2026-04-06 19:06:51'),
+(6, 5, 19, 73, NULL, 1, 1.00, '2026-04-06 19:31:09'),
+(7, 5, 20, 77, NULL, 1, 1.00, '2026-04-06 19:31:09'),
+(8, 5, 21, 81, NULL, 1, 1.00, '2026-04-06 19:31:09'),
+(9, 5, 22, 85, NULL, 1, 1.00, '2026-04-06 19:31:09'),
+(10, 5, 23, 89, NULL, 1, 1.00, '2026-04-06 19:31:09'),
+(11, 5, 24, 93, NULL, 1, 1.00, '2026-04-06 19:31:09'),
+(12, 6, 30, 118, NULL, 1, 1.00, '2026-04-06 19:32:02'),
+(13, 6, 31, 123, NULL, 1, 1.00, '2026-04-06 19:32:02'),
+(14, 6, 32, 128, NULL, 1, 1.00, '2026-04-06 19:32:02'),
+(15, 6, 33, 129, NULL, 1, 1.00, '2026-04-06 19:32:02'),
+(16, 6, 34, 136, NULL, 1, 1.00, '2026-04-06 19:32:02');
+
 -- --------------------------------------------------------
 
 --
@@ -3944,6 +6497,21 @@ CREATE TABLE `training_resources` (
   `file_size` bigint(20) UNSIGNED DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `training_staff_ping_log`
+--
+
+CREATE TABLE `training_staff_ping_log` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `enrollment_id` bigint(20) UNSIGNED NOT NULL,
+  `module_id` bigint(20) UNSIGNED NOT NULL,
+  `ping_kind` varchar(32) NOT NULL DEFAULT 'module_blocked',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -3976,7 +6544,7 @@ INSERT INTO `units` (`id`, `tenant_id`, `parent_id`, `name`, `slug`, `type`, `co
 (1, 1, NULL, 'Cerbere', 'cerbere', 'organization', NULL, 1, 0, NULL, NULL, 1, '2026-03-13 19:43:43', '2026-03-13 19:43:43'),
 (2, 7, NULL, 'État-major', 'etat-major', 'group', NULL, NULL, 0, NULL, NULL, 1, '2026-04-05 09:10:02', '2026-04-05 09:10:02'),
 (3, 7, 2, '1re section', '1re-section', 'section', NULL, NULL, 0, NULL, NULL, 1, '2026-04-05 09:10:02', '2026-04-05 09:10:02'),
-(4, 7, NULL, 'Administration Générale', 'administration-generale', 'team', NULL, NULL, 0, NULL, NULL, 1, '2026-04-05 09:10:02', '2026-04-05 11:36:26');
+(4, 7, NULL, 'Administration Générale', 'administration-generale', 'command', NULL, 5, 0, NULL, NULL, 1, '2026-04-05 09:10:02', '2026-04-06 17:31:12');
 
 -- --------------------------------------------------------
 
@@ -3999,6 +6567,7 @@ CREATE TABLE `users` (
   `steam_id` varchar(20) DEFAULT NULL,
   `avatar_url` varchar(500) DEFAULT NULL,
   `role_id` int(10) UNSIGNED DEFAULT NULL,
+  `preferred_display_role_id` int(10) UNSIGNED DEFAULT NULL,
   `grade_id` bigint(20) UNSIGNED DEFAULT NULL,
   `professional_category_code` varchar(50) DEFAULT NULL,
   `status` varchar(50) DEFAULT 'pending',
@@ -4012,12 +6581,13 @@ CREATE TABLE `users` (
 -- Déchargement des données de la table `users`
 --
 
-INSERT INTO `users` (`id`, `tenant_id`, `email`, `email_verified_at`, `email_verification_sent_at`, `nationality_code`, `preferred_grade_format`, `password_hash`, `display_name`, `callsign`, `profile_slug`, `steam_id`, `avatar_url`, `role_id`, `grade_id`, `professional_category_code`, `status`, `is_service_account`, `last_login_at`, `created_at`, `updated_at`) VALUES
-(3, 1, 'tetard.tanguy@gmail.com', '2026-04-04 16:09:10', NULL, NULL, 'classic', '$argon2id$v=19$m=65536,t=4,p=1$R1JUM1hSLnlEenRpL3Ayaw$712JHsttH+eD0iS7qfW+jE1zovq+HrXCMEBg8mRDXbQ', 'NewPI', 'ADMIN', NULL, NULL, 'uploads/avatars/3_1775320910.png', 15, 1, NULL, 'active', 0, '2026-04-05 08:24:25', '2026-04-04 16:09:10', '2026-04-04 16:42:06'),
-(4, 1, 'system.moderation@internal.local', '2026-04-05 08:43:52', NULL, NULL, 'classic', '$argon2id$v=19$m=65536,t=4,p=1$eC5FYmV6U2NJLjVnemVCMw$STbZvnbDWhnbnZo5WgayzGr1HBeUHjpcOyM3Ud4Iaj4', 'Modération automatique', 'SYSMOD', NULL, NULL, NULL, NULL, NULL, NULL, 'inactive', 1, NULL, '2026-04-05 08:43:52', '2026-04-05 08:43:52'),
-(5, 7, 'tetard.tanguy@gmail.com', '2026-04-04 16:09:10', NULL, 'FR', 'hybrid', '$argon2id$v=19$m=65536,t=4,p=1$MFdQcHZLUzU3YVpEZ1VhVQ$ZTTgyYqHqr5Jk28sA/OPz1JPAU5UEb9/5rASCT3s2b4', 'NewPI', 'ADMIN', 'newpi', NULL, 'uploads/avatars/5_1775380800.jpg', 22, 6, 'OFFICIER', 'active', 0, '2026-04-05 15:52:27', '2026-04-05 09:10:02', '2026-04-05 10:01:02'),
-(6, 7, 'system.moderation@internal.local', '2026-04-05 09:10:02', NULL, NULL, 'classic', '$argon2id$v=19$m=65536,t=4,p=1$OEJQVVBHSk9ZNlZoak1VOQ$XEXunBkJMfuo6mF4N8E6S7Klewf21XtRArOjqKcdX58', 'Modération automatique', 'SYSMOD', NULL, NULL, NULL, NULL, NULL, 'HORS_GRADE', 'inactive', 1, NULL, '2026-04-05 09:10:02', '2026-04-05 11:11:44'),
-(7, 1, 'tanguy.inc@gmail.com', '2026-04-05 11:21:58', NULL, NULL, 'classic', '$argon2id$v=19$m=65536,t=4,p=1$N1o3bHBoekVuWWlGcXNUdw$Oi+PE3ydLgjNaq38DM7myVdsiCu7aXBbTkd37pi0JL8', 'Tangohan', 'E-11', 'tangohan', NULL, NULL, 3, NULL, NULL, 'active', 0, '2026-04-05 11:22:14', '2026-04-05 11:03:21', '2026-04-05 11:21:58');
+INSERT INTO `users` (`id`, `tenant_id`, `email`, `email_verified_at`, `email_verification_sent_at`, `nationality_code`, `preferred_grade_format`, `password_hash`, `display_name`, `callsign`, `profile_slug`, `steam_id`, `avatar_url`, `role_id`, `preferred_display_role_id`, `grade_id`, `professional_category_code`, `status`, `is_service_account`, `last_login_at`, `created_at`, `updated_at`) VALUES
+(3, 1, 'tetard.tanguy@gmail.com', '2026-04-04 16:09:10', NULL, NULL, 'classic', '$argon2id$v=19$m=65536,t=4,p=1$R1JUM1hSLnlEenRpL3Ayaw$712JHsttH+eD0iS7qfW+jE1zovq+HrXCMEBg8mRDXbQ', 'NewPI', 'ADMIN', NULL, NULL, 'uploads/avatars/3_1775320910.png', 15, NULL, 1, NULL, 'active', 0, '2026-04-05 08:24:25', '2026-04-04 16:09:10', '2026-04-04 16:42:06'),
+(4, 1, 'system.moderation@internal.local', '2026-04-05 08:43:52', NULL, NULL, 'classic', '$argon2id$v=19$m=65536,t=4,p=1$eC5FYmV6U2NJLjVnemVCMw$STbZvnbDWhnbnZo5WgayzGr1HBeUHjpcOyM3Ud4Iaj4', 'Modération automatique', 'SYSMOD', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'inactive', 1, NULL, '2026-04-05 08:43:52', '2026-04-05 08:43:52'),
+(5, 7, 'tetard.tanguy@gmail.com', '2026-04-04 16:09:10', NULL, 'FR', 'hybrid', '$argon2id$v=19$m=65536,t=4,p=1$MWhSZGxDZmtjbU9kNGJHcg$m+jI/7zz2fIIkmy9jYDzLwoEph2TpFPfw99HPCTncyY', 'NewPI', 'ADMIN', 'newpi', NULL, 'uploads/avatars/5_1775380800.jpg', 22, NULL, 6, 'OFFICIER', 'active', 0, '2026-04-06 19:04:22', '2026-04-05 09:10:02', '2026-04-06 17:19:51'),
+(6, 7, 'system.moderation@internal.local', '2026-04-05 09:10:02', NULL, NULL, 'classic', '$argon2id$v=19$m=65536,t=4,p=1$OEJQVVBHSk9ZNlZoak1VOQ$XEXunBkJMfuo6mF4N8E6S7Klewf21XtRArOjqKcdX58', 'Modération automatique', 'SYSMOD', NULL, NULL, NULL, NULL, NULL, NULL, 'HORS_GRADE', 'inactive', 1, NULL, '2026-04-05 09:10:02', '2026-04-05 11:11:44'),
+(7, 1, 'tanguy.inc@gmail.com', '2026-04-05 11:21:58', NULL, NULL, 'classic', '$argon2id$v=19$m=65536,t=4,p=1$N1o3bHBoekVuWWlGcXNUdw$Oi+PE3ydLgjNaq38DM7myVdsiCu7aXBbTkd37pi0JL8', 'Tangohan', 'E-11', 'tangohan', NULL, NULL, 3, NULL, NULL, NULL, 'active', 0, '2026-04-06 17:47:37', '2026-04-05 11:03:21', '2026-04-05 11:21:58'),
+(8, 7, 'tanguy.inc@gmail.com', '2026-04-06 17:45:08', NULL, NULL, 'classic', '$argon2id$v=19$m=65536,t=4,p=1$cm5rZU9kSzRpUDBRMWFGMw$UB7YaFOYCX07ZU3a6oInuaPATSB9O/FsjYRMvHReRb8', 'Melvin MESNEL', NULL, 'melvin-mesnel', NULL, NULL, 25, NULL, NULL, NULL, 'active', 0, '2026-04-06 17:47:37', '2026-04-05 16:31:53', '2026-04-06 17:45:08');
 
 -- --------------------------------------------------------
 
@@ -4039,6 +6609,39 @@ CREATE TABLE `user_alert_dismissals` (
 INSERT INTO `user_alert_dismissals` (`user_id`, `scope`, `alert_id`, `created_at`) VALUES
 (5, 'platform', 1, '2026-04-05 09:52:10'),
 (7, 'platform', 1, '2026-04-05 11:22:25');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `user_badges`
+--
+
+CREATE TABLE `user_badges` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `badge_id` int(10) UNSIGNED NOT NULL,
+  `granted_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `granted_by_user_id` int(10) UNSIGNED DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `user_certifications`
+--
+
+CREATE TABLE `user_certifications` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `certification_id` int(10) UNSIGNED NOT NULL,
+  `training_course_id` int(10) UNSIGNED DEFAULT NULL,
+  `status` varchar(32) NOT NULL DEFAULT 'active',
+  `issued_at` datetime DEFAULT NULL,
+  `expires_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -4086,8 +6689,8 @@ CREATE TABLE `user_login_devices` (
 --
 
 INSERT INTO `user_login_devices` (`id`, `user_id`, `tenant_id`, `fingerprint_hash`, `user_agent`, `first_seen_ip`, `last_seen_ip`, `geo_country`, `last_seen_at`, `created_at`) VALUES
-(1, 5, 7, '33ce8e1635031beb8fa0dbff7f1f3b22930089f4c8f62b83ad458bb135145ca1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 'FR', '2026-04-05 15:52:27', '2026-04-05 10:02:15'),
-(2, 7, 1, 'fbecafe40e809d0105a4ab52af329e8f8660e8f5a54e5c52e6247c72f11bdfb2', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', 'FR', '2026-04-05 11:22:14', '2026-04-05 11:22:14');
+(1, 5, 7, '33ce8e1635031beb8fa0dbff7f1f3b22930089f4c8f62b83ad458bb135145ca1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'FR', '2026-04-06 19:04:22', '2026-04-05 10:02:15'),
+(2, 7, 1, 'fbecafe40e809d0105a4ab52af329e8f8660e8f5a54e5c52e6247c72f11bdfb2', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2a01:e0a:8ee:2720:ec90:e096:ed67:b2c4', '2a01:e0a:8ee:2720:e5b0:837a:c533:57db', 'FR', '2026-04-06 17:47:37', '2026-04-05 11:22:14');
 
 -- --------------------------------------------------------
 
@@ -4104,6 +6707,67 @@ CREATE TABLE `user_notification_preferences` (
   `enabled` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `user_notification_preferences`
+--
+
+INSERT INTO `user_notification_preferences` (`id`, `user_id`, `tenant_id`, `channel`, `event_key`, `enabled`, `created_at`, `updated_at`) VALUES
+(1, 5, 7, 'email', 'NEW_DEVICE_LOGIN', 1, '2026-04-06 17:19:51', NULL),
+(2, 5, 7, 'email', 'MULTIPLE_LOGIN_ATTEMPTS', 1, '2026-04-06 17:19:51', NULL),
+(3, 5, 7, 'email', 'PROFILE_INCOMPLETE_REMINDER', 1, '2026-04-06 17:19:51', NULL),
+(4, 5, 7, 'email', 'ATTENDANCE_REMINDER', 1, '2026-04-06 17:19:51', NULL),
+(5, 5, 7, 'email', 'ATTENDANCE_RSVP_CONFIRM', 1, '2026-04-06 17:19:51', NULL),
+(6, 5, 7, 'email', 'ATTENDANCE_EVENT_CANCELLED', 1, '2026-04-06 17:19:51', NULL),
+(7, 5, 7, 'email', 'ATTENDANCE_CHECKIN_CONFIRM', 1, '2026-04-06 17:19:51', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `user_permission_overrides`
+--
+
+CREATE TABLE `user_permission_overrides` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `permission_id` int(10) UNSIGNED NOT NULL,
+  `grant_flag` tinyint(1) NOT NULL DEFAULT 1,
+  `org_unit_id` int(10) UNSIGNED DEFAULT NULL,
+  `co_unit_scope` bigint(20) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Miroir IFNULL(org_unit_id,0) — triggers',
+  `reason` varchar(255) DEFAULT NULL,
+  `created_by_user_id` int(10) UNSIGNED DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déclencheurs `user_permission_overrides`
+--
+DELIMITER $$
+CREATE TRIGGER `upo_co_scope_bi` BEFORE INSERT ON `user_permission_overrides` FOR EACH ROW SET NEW.co_unit_scope = IFNULL(NEW.org_unit_id, 0)
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `upo_co_scope_bu` BEFORE UPDATE ON `user_permission_overrides` FOR EACH ROW SET NEW.co_unit_scope = IFNULL(NEW.org_unit_id, 0)
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `user_positions`
+--
+
+CREATE TABLE `user_positions` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `tenant_id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `position_id` int(10) UNSIGNED NOT NULL,
+  `starts_at` date NOT NULL,
+  `ends_at` date DEFAULT NULL,
+  `assigned_by` int(10) UNSIGNED DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -4134,7 +6798,8 @@ CREATE TABLE `user_profiles` (
 
 INSERT INTO `user_profiles` (`user_id`, `first_name`, `last_name`, `birth_date`, `nationality`, `timezone`, `language`, `arma_callsign`, `bio`, `phone`, `emergency_contact`, `created_at`, `updated_at`) VALUES
 (3, 'Tanguy', 'TETARD', NULL, NULL, 'Europe/Paris', 'fr', NULL, NULL, '', NULL, '2026-04-04 16:42:06', NULL),
-(5, 'Tanguy', 'TETARD', NULL, NULL, 'Europe/Paris', 'fr', NULL, NULL, NULL, NULL, '2026-04-05 09:53:44', '2026-04-05 12:09:47');
+(5, 'Tanguy', 'TETARD', NULL, NULL, 'Europe/Paris', 'fr', NULL, NULL, '', NULL, '2026-04-05 09:53:44', '2026-04-06 17:19:51'),
+(8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-06 17:47:45', NULL);
 
 -- --------------------------------------------------------
 
@@ -4165,7 +6830,8 @@ CREATE TABLE `user_profile_display_settings` (
 --
 
 INSERT INTO `user_profile_display_settings` (`user_id`, `forum_alias`, `forum_label_mode`, `forum_visible_role_id`, `show_matricule_forum`, `show_grade_forum`, `show_unit_forum`, `show_bio_forum`, `hide_forum_level`, `fiche_show_email_to_others`, `fiche_show_matricule_to_others`, `public_roster_opt_in`, `hide_personal_info`, `created_at`, `updated_at`) VALUES
-(5, NULL, 'display_name', NULL, 0, 1, 1, 1, 1, 0, 0, 1, 1, '2026-04-05 09:17:12', '2026-04-05 12:09:47');
+(5, NULL, 'display_name', 14, 0, 1, 1, 1, 1, 0, 0, 1, 1, '2026-04-05 09:17:12', '2026-04-06 19:45:43'),
+(8, NULL, 'display_name', 25, 1, 1, 1, 1, 1, 0, 1, 1, 0, '2026-04-06 17:46:32', '2026-04-06 19:15:34');
 
 -- --------------------------------------------------------
 
@@ -4185,8 +6851,21 @@ CREATE TABLE `user_roles` (
 
 INSERT INTO `user_roles` (`user_id`, `role_id`, `created_at`) VALUES
 (3, 15, '2026-04-05 11:59:36'),
-(5, 22, '2026-04-05 11:59:36'),
-(7, 3, '2026-04-05 11:59:36');
+(5, 22, '2026-04-05 22:37:44'),
+(5, 23, '2026-04-05 22:37:44'),
+(5, 24, '2026-04-05 22:37:44'),
+(5, 25, '2026-04-05 22:37:44'),
+(5, 26, '2026-04-05 22:37:44'),
+(5, 27, '2026-04-05 22:37:44'),
+(5, 28, '2026-04-05 22:37:44'),
+(5, 29, '2026-04-05 22:37:44'),
+(5, 37, '2026-04-05 22:37:44'),
+(5, 38, '2026-04-05 22:37:44'),
+(5, 39, '2026-04-05 22:37:44'),
+(5, 40, '2026-04-05 22:37:44'),
+(5, 41, '2026-04-05 22:37:44'),
+(7, 3, '2026-04-05 11:59:36'),
+(8, 25, '2026-04-05 16:31:53');
 
 -- --------------------------------------------------------
 
@@ -4229,6 +6908,13 @@ CREATE TABLE `user_ui_preferences` (
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Déchargement des données de la table `user_ui_preferences`
+--
+
+INSERT INTO `user_ui_preferences` (`user_id`, `tenant_id`, `theme`, `density`, `sidebar_collapsed`, `dashboard_layout_json`, `favorite_modules_json`, `created_at`, `updated_at`) VALUES
+(5, 7, 'system', 'comfortable', 1, NULL, NULL, '2026-04-06 17:19:51', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -4256,7 +6942,10 @@ INSERT INTO `user_units` (`id`, `user_id`, `unit_id`, `is_primary`, `assigned_by
 (2, 5, 2, 1, NULL, '2026-04-05 11:45:48', '2026-04-05 11:59:27', 'Officier opérations', NULL),
 (3, 5, 2, 1, NULL, '2026-04-05 11:59:27', '2026-04-05 11:59:38', 'Officier opérations', NULL),
 (4, 5, 2, 1, NULL, '2026-04-05 11:59:38', '2026-04-05 12:09:47', 'Officier opérations', NULL),
-(5, 5, 2, 1, NULL, '2026-04-05 12:09:47', NULL, 'Officier opérations', NULL);
+(5, 5, 2, 1, NULL, '2026-04-05 12:09:47', '2026-04-06 18:59:04', 'Officier opérations', NULL),
+(6, 8, 4, 1, NULL, '2026-04-06 17:46:32', NULL, 'Instructeur — Spécialiste communication', NULL),
+(7, 5, 2, 1, NULL, '2026-04-06 18:59:04', '2026-04-06 18:59:13', 'Officier opérations — Officier gestionnaire admini', NULL),
+(8, 5, 2, 1, NULL, '2026-04-06 18:59:13', NULL, 'Officier opérations — Spécialiste gestionnaire adm', NULL);
 
 --
 -- Index pour les tables déchargées
@@ -4295,6 +6984,14 @@ ALTER TABLE `asset_logistics_status_history`
   ADD PRIMARY KEY (`id`),
   ADD KEY `mission_logged` (`mission_id`,`logged_at`),
   ADD KEY `mission_asset_logged` (`mission_id`,`asset_id`,`logged_at`);
+
+--
+-- Index pour la table `async_jobs`
+--
+ALTER TABLE `async_jobs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_async_jobs_poll` (`reserved_at`,`available_at`,`attempts`),
+  ADD KEY `idx_async_jobs_type` (`job_type`);
 
 --
 -- Index pour la table `atak_air_assets`
@@ -4413,12 +7110,20 @@ ALTER TABLE `audit_logs`
   ADD KEY `user_id` (`user_id`);
 
 --
+-- Index pour la table `badges`
+--
+ALTER TABLE `badges`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_badges_tenant_slug` (`tenant_id`,`slug`);
+
+--
 -- Index pour la table `blocked_indicators`
 --
 ALTER TABLE `blocked_indicators`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `scope_hash` (`scope`,`tenant_id`,`indicator_type`,`value_hash`),
-  ADD KEY `expires` (`expires_at`);
+  ADD KEY `expires` (`expires_at`),
+  ADD KEY `idx_blocked_active_email_tenant` (`tenant_id`,`indicator_type`,`revoked_at`,`expires_at`);
 
 --
 -- Index pour la table `categories`
@@ -4427,6 +7132,20 @@ ALTER TABLE `categories`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
   ADD KEY `tenant_id` (`tenant_id`);
+
+--
+-- Index pour la table `certifications`
+--
+ALTER TABLE `certifications`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_cert_tenant_slug` (`tenant_id`,`slug`);
+
+--
+-- Index pour la table `clearance_levels`
+--
+ALTER TABLE `clearance_levels`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_clearance_tenant_slug` (`tenant_id`,`slug`);
 
 --
 -- Index pour la table `community_events`
@@ -4895,6 +7614,33 @@ ALTER TABLE `intel_reports_events`
   ADD KEY `intel_report_id` (`intel_report_id`);
 
 --
+-- Index pour la table `interteam_missions`
+--
+ALTER TABLE `interteam_missions`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `interteam_missions_slug` (`slug`),
+  ADD KEY `interteam_missions_lead_tenant` (`created_by_tenant_id`),
+  ADD KEY `interteam_missions_status` (`status`);
+
+--
+-- Index pour la table `interteam_mission_forum_grants`
+--
+ALTER TABLE `interteam_mission_forum_grants`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `interteam_grant_unique` (`mission_id`,`grant_type`,`resource_id`,`consumer_tenant_id`),
+  ADD KEY `interteam_grant_consumer` (`consumer_tenant_id`,`mission_id`),
+  ADD KEY `interteam_grant_home` (`home_tenant_id`);
+
+--
+-- Index pour la table `interteam_mission_participants`
+--
+ALTER TABLE `interteam_mission_participants`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `interteam_mp_unique` (`mission_id`,`tenant_id`),
+  ADD KEY `interteam_mp_tenant` (`tenant_id`),
+  ADD KEY `interteam_mp_mission_status` (`mission_id`,`status`);
+
+--
 -- Index pour la table `legacy_training_certificates`
 --
 ALTER TABLE `legacy_training_certificates`
@@ -5051,7 +7797,8 @@ ALTER TABLE `personnel_assignments`
 -- Index pour la table `personnel_extras`
 --
 ALTER TABLE `personnel_extras`
-  ADD PRIMARY KEY (`user_id`);
+  ADD PRIMARY KEY (`user_id`),
+  ADD KEY `personnel_extras_clearance_level_id` (`clearance_level_id`);
 
 --
 -- Index pour la table `personnel_job_roles`
@@ -5095,6 +7842,16 @@ ALTER TABLE `personnel_profiles`
   ADD KEY `pp_personnel_job_role_fk` (`personnel_job_role_id`);
 
 --
+-- Index pour la table `personnel_profile_job_roles`
+--
+ALTER TABLE `personnel_profile_job_roles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_ppjr_tenant_user_role` (`tenant_id`,`user_id`,`personnel_job_role_id`),
+  ADD KEY `idx_ppjr_tenant_user` (`tenant_id`,`user_id`),
+  ADD KEY `idx_ppjr_jobrole` (`personnel_job_role_id`),
+  ADD KEY `ppjr_user_fk` (`user_id`);
+
+--
 -- Index pour la table `personnel_qualifications`
 --
 ALTER TABLE `personnel_qualifications`
@@ -5118,12 +7875,25 @@ ALTER TABLE `platform_alerts`
   ADD KEY `idx_platform_alerts_active` (`is_active`,`sort_order`);
 
 --
+-- Index pour la table `platform_settings`
+--
+ALTER TABLE `platform_settings`
+  ADD PRIMARY KEY (`setting_key`);
+
+--
 -- Index pour la table `platform_usage_events`
 --
 ALTER TABLE `platform_usage_events`
   ADD PRIMARY KEY (`id`),
   ADD KEY `tenant_day` (`tenant_id`,`created_at`),
   ADD KEY `feature` (`feature_key`);
+
+--
+-- Index pour la table `positions`
+--
+ALTER TABLE `positions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_positions_tenant` (`tenant_id`);
 
 --
 -- Index pour la table `recon_images`
@@ -5165,7 +7935,33 @@ ALTER TABLE `roles`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
   ADD KEY `tenant_id` (`tenant_id`),
-  ADD KEY `roles_tenant_layer` (`tenant_id`,`role_layer`);
+  ADD KEY `roles_tenant_layer` (`tenant_id`,`role_layer`),
+  ADD KEY `roles_definition_id` (`definition_id`),
+  ADD KEY `roles_parent_fk` (`parent_role_id`);
+
+--
+-- Index pour la table `role_assignments_log`
+--
+ALTER TABLE `role_assignments_log`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_ral_tenant_user` (`tenant_id`,`user_id`),
+  ADD KEY `idx_ral_role` (`role_id`);
+
+--
+-- Index pour la table `role_definitions`
+--
+ALTER TABLE `role_definitions`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_role_definitions_slug` (`slug`),
+  ADD KEY `idx_role_definitions_family` (`family`);
+
+--
+-- Index pour la table `role_definition_relations`
+--
+ALTER TABLE `role_definition_relations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_rdr_pair` (`from_definition_id`,`to_definition_id`,`relation_type`),
+  ADD KEY `idx_rdr_to` (`to_definition_id`);
 
 --
 -- Index pour la table `role_permissions`
@@ -5173,6 +7969,29 @@ ALTER TABLE `roles`
 ALTER TABLE `role_permissions`
   ADD PRIMARY KEY (`role_id`,`permission_id`),
   ADD KEY `permission_id` (`permission_id`);
+
+--
+-- Index pour la table `role_relations`
+--
+ALTER TABLE `role_relations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_rr_tenant_pair` (`tenant_id`,`from_role_id`,`to_role_id`,`relation_type`),
+  ADD KEY `idx_rr_from` (`from_role_id`),
+  ADD KEY `idx_rr_to` (`to_role_id`);
+
+--
+-- Index pour la table `role_sets`
+--
+ALTER TABLE `role_sets`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_role_sets_tenant` (`tenant_id`);
+
+--
+-- Index pour la table `role_set_roles`
+--
+ALTER TABLE `role_set_roles`
+  ADD PRIMARY KEY (`role_set_id`,`role_id`),
+  ADD KEY `rsr_role_fk` (`role_id`);
 
 --
 -- Index pour la table `security_events`
@@ -5232,6 +8051,22 @@ ALTER TABLE `tenant_alerts`
   ADD KEY `idx_tenant_alerts_tenant` (`tenant_id`,`is_active`,`sort_order`);
 
 --
+-- Index pour la table `tenant_api_keys`
+--
+ALTER TABLE `tenant_api_keys`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_tenant_api_keys_prefix` (`key_prefix`),
+  ADD KEY `idx_tenant_api_keys_tenant` (`tenant_id`);
+
+--
+-- Index pour la table `tenant_api_key_daily_usage`
+--
+ALTER TABLE `tenant_api_key_daily_usage`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_api_key_day` (`api_key_id`,`usage_day`),
+  ADD KEY `idx_api_usage_key` (`api_key_id`);
+
+--
 -- Index pour la table `tenant_atak_config`
 --
 ALTER TABLE `tenant_atak_config`
@@ -5242,6 +8077,24 @@ ALTER TABLE `tenant_atak_config`
 --
 ALTER TABLE `tenant_branding`
   ADD PRIMARY KEY (`tenant_id`);
+
+--
+-- Index pour la table `tenant_community_feed`
+--
+ALTER TABLE `tenant_community_feed`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_tcf_tenant_created` (`tenant_id`,`created_at`);
+
+--
+-- Index pour la table `tenant_dashboard_pins`
+--
+ALTER TABLE `tenant_dashboard_pins`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_tdp_tenant_sort` (`tenant_id`,`sort_order`),
+  ADD KEY `tdp_doc_cat_fk` (`document_category_id`),
+  ADD KEY `tdp_document_fk` (`document_id`),
+  ADD KEY `tdp_courrier_fk` (`courrier_document_id`),
+  ADD KEY `tdp_created_by_fk` (`created_by`);
 
 --
 -- Index pour la table `tenant_grade_overrides`
@@ -5310,6 +8163,17 @@ ALTER TABLE `tenant_usage_counters`
   ADD KEY `tenant_metric` (`tenant_id`,`metric_key`);
 
 --
+-- Index pour la table `tenant_user_roles`
+--
+ALTER TABLE `tenant_user_roles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_tur_scope` (`tenant_id`,`user_id`,`role_id`,`co_unit_id`),
+  ADD KEY `idx_tur_user` (`user_id`),
+  ADD KEY `idx_tur_tenant_role` (`tenant_id`,`role_id`),
+  ADD KEY `idx_tur_unit` (`org_unit_id`),
+  ADD KEY `tur_role_fk` (`role_id`);
+
+--
 -- Index pour la table `training_audit_log`
 --
 ALTER TABLE `training_audit_log`
@@ -5325,7 +8189,15 @@ ALTER TABLE `training_certificates`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uk_training_certificates_number` (`certificate_number`),
   ADD KEY `idx_training_certificates_enrollment` (`enrollment_id`),
-  ADD KEY `fk_training_certificates_tenant` (`tenant_id`);
+  ADD KEY `fk_training_certificates_tenant` (`tenant_id`),
+  ADD KEY `idx_training_certificates_issued_by` (`issued_by_user_id`);
+
+--
+-- Index pour la table `training_certificate_templates`
+--
+ALTER TABLE `training_certificate_templates`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_training_cert_tpl_tenant` (`tenant_id`);
 
 --
 -- Index pour la table `training_courses`
@@ -5334,9 +8206,56 @@ ALTER TABLE `training_courses`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uk_training_courses_uuid` (`uuid`),
   ADD UNIQUE KEY `uk_training_courses_tenant_slug` (`tenant_id`,`slug`),
+  ADD UNIQUE KEY `uk_training_courses_enrollment_share_code` (`enrollment_share_code`),
   ADD KEY `idx_training_courses_visibility` (`visibility`),
   ADD KEY `idx_training_courses_category` (`category`),
   ADD KEY `idx_training_courses_tenant` (`tenant_id`);
+
+--
+-- Index pour la table `training_course_comments`
+--
+ALTER TABLE `training_course_comments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_tcc_course` (`course_id`),
+  ADD KEY `idx_tcc_parent` (`parent_id`),
+  ADD KEY `fk_tcc_tenant` (`tenant_id`),
+  ADD KEY `fk_tcc_user` (`user_id`);
+
+--
+-- Index pour la table `training_course_favorites`
+--
+ALTER TABLE `training_course_favorites`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_tcf_user_course` (`user_id`,`course_id`),
+  ADD KEY `idx_tcf_course` (`course_id`),
+  ADD KEY `fk_tcf_tenant` (`tenant_id`);
+
+--
+-- Index pour la table `training_course_questions`
+--
+ALTER TABLE `training_course_questions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_tcq_course` (`course_id`),
+  ADD KEY `fk_tcq_tenant` (`tenant_id`),
+  ADD KEY `fk_tcq_user` (`user_id`);
+
+--
+-- Index pour la table `training_course_reviews`
+--
+ALTER TABLE `training_course_reviews`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_tcr_user_course_kind` (`course_id`,`user_id`,`kind`),
+  ADD KEY `idx_tcr_course` (`course_id`),
+  ADD KEY `fk_tcr_tenant` (`tenant_id`),
+  ADD KEY `fk_tcr_user` (`user_id`);
+
+--
+-- Index pour la table `training_course_sessions`
+--
+ALTER TABLE `training_course_sessions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_tcs_course` (`course_id`),
+  ADD KEY `idx_tcs_tenant` (`tenant_id`);
 
 --
 -- Index pour la table `training_enrollments`
@@ -5415,6 +8334,14 @@ ALTER TABLE `training_resources`
   ADD KEY `idx_training_resources_lesson` (`lesson_id`);
 
 --
+-- Index pour la table `training_staff_ping_log`
+--
+ALTER TABLE `training_staff_ping_log`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_tsp_cooldown` (`enrollment_id`,`module_id`,`ping_kind`,`created_at`),
+  ADD KEY `tsp_tenant_fk` (`tenant_id`);
+
+--
 -- Index pour la table `units`
 --
 ALTER TABLE `units`
@@ -5441,6 +8368,24 @@ ALTER TABLE `user_alert_dismissals`
   ADD PRIMARY KEY (`user_id`,`scope`,`alert_id`);
 
 --
+-- Index pour la table `user_badges`
+--
+ALTER TABLE `user_badges`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_user_badge` (`user_id`,`badge_id`),
+  ADD KEY `idx_ub_tenant` (`tenant_id`),
+  ADD KEY `ub_badge_fk` (`badge_id`);
+
+--
+-- Index pour la table `user_certifications`
+--
+ALTER TABLE `user_certifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_ucert_user` (`user_id`,`certification_id`),
+  ADD KEY `idx_ucert_tenant` (`tenant_id`),
+  ADD KEY `ucert_cert_fk` (`certification_id`);
+
+--
 -- Index pour la table `user_forum_stats`
 --
 ALTER TABLE `user_forum_stats`
@@ -5462,6 +8407,25 @@ ALTER TABLE `user_notification_preferences`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uk_unp_user_channel_event` (`user_id`,`channel`,`event_key`),
   ADD KEY `idx_unp_tenant` (`tenant_id`);
+
+--
+-- Index pour la table `user_permission_overrides`
+--
+ALTER TABLE `user_permission_overrides`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_upo` (`tenant_id`,`user_id`,`permission_id`,`co_unit_scope`),
+  ADD KEY `idx_upo_user` (`user_id`),
+  ADD KEY `upo_perm_fk` (`permission_id`),
+  ADD KEY `upo_unit_fk` (`org_unit_id`);
+
+--
+-- Index pour la table `user_positions`
+--
+ALTER TABLE `user_positions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_up_user` (`user_id`),
+  ADD KEY `idx_up_position` (`position_id`),
+  ADD KEY `idx_up_tenant` (`tenant_id`);
 
 --
 -- Index pour la table `user_profiles`
@@ -5531,6 +8495,12 @@ ALTER TABLE `asset_logistics_status`
 -- AUTO_INCREMENT pour la table `asset_logistics_status_history`
 --
 ALTER TABLE `asset_logistics_status_history`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `async_jobs`
+--
+ALTER TABLE `async_jobs`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -5621,7 +8591,13 @@ ALTER TABLE `atak_units`
 -- AUTO_INCREMENT pour la table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+
+--
+-- AUTO_INCREMENT pour la table `badges`
+--
+ALTER TABLE `badges`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `blocked_indicators`
@@ -5633,6 +8609,18 @@ ALTER TABLE `blocked_indicators`
 -- AUTO_INCREMENT pour la table `categories`
 --
 ALTER TABLE `categories`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `certifications`
+--
+ALTER TABLE `certifications`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `clearance_levels`
+--
+ALTER TABLE `clearance_levels`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -5765,13 +8753,13 @@ ALTER TABLE `document_workflows`
 -- AUTO_INCREMENT pour la table `email_deliveries`
 --
 ALTER TABLE `email_deliveries`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT pour la table `email_tokens`
 --
 ALTER TABLE `email_tokens`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT pour la table `enlistments`
@@ -5825,7 +8813,7 @@ ALTER TABLE `forum_blacklisted_domains`
 -- AUTO_INCREMENT pour la table `forum_categories`
 --
 ALTER TABLE `forum_categories`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT pour la table `forum_moderation_logs`
@@ -5885,7 +8873,7 @@ ALTER TABLE `forum_topics`
 -- AUTO_INCREMENT pour la table `grades`
 --
 ALTER TABLE `grades`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT pour la table `grades_legacy`
@@ -5930,6 +8918,24 @@ ALTER TABLE `intel_reports_events`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT pour la table `interteam_missions`
+--
+ALTER TABLE `interteam_missions`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `interteam_mission_forum_grants`
+--
+ALTER TABLE `interteam_mission_forum_grants`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `interteam_mission_participants`
+--
+ALTER TABLE `interteam_mission_participants`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT pour la table `legacy_training_certificates`
 --
 ALTER TABLE `legacy_training_certificates`
@@ -5951,7 +8957,7 @@ ALTER TABLE `legacy_training_progress`
 -- AUTO_INCREMENT pour la table `login_attempts`
 --
 ALTER TABLE `login_attempts`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT pour la table `logs_positions`
@@ -6005,7 +9011,7 @@ ALTER TABLE `modpack_images`
 -- AUTO_INCREMENT pour la table `password_resets`
 --
 ALTER TABLE `password_resets`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pour la table `pending_community_creates`
@@ -6017,7 +9023,7 @@ ALTER TABLE `pending_community_creates`
 -- AUTO_INCREMENT pour la table `permissions`
 --
 ALTER TABLE `permissions`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=175;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=196;
 
 --
 -- AUTO_INCREMENT pour la table `personnel_admin_data`
@@ -6035,19 +9041,19 @@ ALTER TABLE `personnel_admin_panels`
 -- AUTO_INCREMENT pour la table `personnel_assignments`
 --
 ALTER TABLE `personnel_assignments`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT pour la table `personnel_job_roles`
 --
 ALTER TABLE `personnel_job_roles`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=139;
 
 --
 -- AUTO_INCREMENT pour la table `personnel_job_role_categories`
 --
 ALTER TABLE `personnel_job_role_categories`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=71;
 
 --
 -- AUTO_INCREMENT pour la table `personnel_media`
@@ -6059,7 +9065,13 @@ ALTER TABLE `personnel_media`
 -- AUTO_INCREMENT pour la table `personnel_profiles`
 --
 ALTER TABLE `personnel_profiles`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+
+--
+-- AUTO_INCREMENT pour la table `personnel_profile_job_roles`
+--
+ALTER TABLE `personnel_profile_job_roles`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT pour la table `personnel_qualifications`
@@ -6083,7 +9095,13 @@ ALTER TABLE `platform_alerts`
 -- AUTO_INCREMENT pour la table `platform_usage_events`
 --
 ALTER TABLE `platform_usage_events`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=87;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=277;
+
+--
+-- AUTO_INCREMENT pour la table `positions`
+--
+ALTER TABLE `positions`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `recon_images`
@@ -6113,7 +9131,37 @@ ALTER TABLE `referral_codes`
 -- AUTO_INCREMENT pour la table `roles`
 --
 ALTER TABLE `roles`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=182;
+
+--
+-- AUTO_INCREMENT pour la table `role_assignments_log`
+--
+ALTER TABLE `role_assignments_log`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `role_definitions`
+--
+ALTER TABLE `role_definitions`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1611;
+
+--
+-- AUTO_INCREMENT pour la table `role_definition_relations`
+--
+ALTER TABLE `role_definition_relations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=415;
+
+--
+-- AUTO_INCREMENT pour la table `role_relations`
+--
+ALTER TABLE `role_relations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `role_sets`
+--
+ALTER TABLE `role_sets`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pour la table `security_events`
@@ -6131,7 +9179,7 @@ ALTER TABLE `site_role_assignments`
 -- AUTO_INCREMENT pour la table `site_settings`
 --
 ALTER TABLE `site_settings`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
 
 --
 -- AUTO_INCREMENT pour la table `subscription_plans`
@@ -6149,6 +9197,30 @@ ALTER TABLE `tenants`
 -- AUTO_INCREMENT pour la table `tenant_alerts`
 --
 ALTER TABLE `tenant_alerts`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `tenant_api_keys`
+--
+ALTER TABLE `tenant_api_keys`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `tenant_api_key_daily_usage`
+--
+ALTER TABLE `tenant_api_key_daily_usage`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `tenant_community_feed`
+--
+ALTER TABLE `tenant_community_feed`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT pour la table `tenant_dashboard_pins`
+--
+ALTER TABLE `tenant_dashboard_pins`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -6182,81 +9254,129 @@ ALTER TABLE `tenant_quotas`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT pour la table `tenant_user_roles`
+--
+ALTER TABLE `tenant_user_roles`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
+
+--
 -- AUTO_INCREMENT pour la table `training_audit_log`
 --
 ALTER TABLE `training_audit_log`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT pour la table `training_certificates`
 --
 ALTER TABLE `training_certificates`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT pour la table `training_certificate_templates`
+--
+ALTER TABLE `training_certificate_templates`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `training_courses`
 --
 ALTER TABLE `training_courses`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT pour la table `training_course_comments`
+--
+ALTER TABLE `training_course_comments`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT pour la table `training_course_favorites`
+--
+ALTER TABLE `training_course_favorites`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `training_course_questions`
+--
+ALTER TABLE `training_course_questions`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `training_course_reviews`
+--
+ALTER TABLE `training_course_reviews`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `training_course_sessions`
+--
+ALTER TABLE `training_course_sessions`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pour la table `training_enrollments`
 --
 ALTER TABLE `training_enrollments`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT pour la table `training_lessons`
 --
 ALTER TABLE `training_lessons`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT pour la table `training_modules`
 --
 ALTER TABLE `training_modules`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT pour la table `training_progress`
 --
 ALTER TABLE `training_progress`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT pour la table `training_quizzes`
 --
 ALTER TABLE `training_quizzes`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT pour la table `training_quiz_answers`
 --
 ALTER TABLE `training_quiz_answers`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=201;
 
 --
 -- AUTO_INCREMENT pour la table `training_quiz_attempts`
 --
 ALTER TABLE `training_quiz_attempts`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT pour la table `training_quiz_questions`
 --
 ALTER TABLE `training_quiz_questions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT pour la table `training_quiz_responses`
 --
 ALTER TABLE `training_quiz_responses`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT pour la table `training_resources`
 --
 ALTER TABLE `training_resources`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `training_staff_ping_log`
+--
+ALTER TABLE `training_staff_ping_log`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -6269,7 +9389,19 @@ ALTER TABLE `units`
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT pour la table `user_badges`
+--
+ALTER TABLE `user_badges`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `user_certifications`
+--
+ALTER TABLE `user_certifications`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `user_login_devices`
@@ -6281,7 +9413,19 @@ ALTER TABLE `user_login_devices`
 -- AUTO_INCREMENT pour la table `user_notification_preferences`
 --
 ALTER TABLE `user_notification_preferences`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT pour la table `user_permission_overrides`
+--
+ALTER TABLE `user_permission_overrides`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `user_positions`
+--
+ALTER TABLE `user_positions`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `user_signatures`
@@ -6293,7 +9437,7 @@ ALTER TABLE `user_signatures`
 -- AUTO_INCREMENT pour la table `user_units`
 --
 ALTER TABLE `user_units`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- Contraintes pour les tables déchargées
@@ -6378,10 +9522,28 @@ ALTER TABLE `atak_units`
   ADD CONSTRAINT `atak_units_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
 
 --
+-- Contraintes pour la table `badges`
+--
+ALTER TABLE `badges`
+  ADD CONSTRAINT `badges_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
+
+--
 -- Contraintes pour la table `categories`
 --
 ALTER TABLE `categories`
   ADD CONSTRAINT `categories_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `certifications`
+--
+ALTER TABLE `certifications`
+  ADD CONSTRAINT `cert_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `clearance_levels`
+--
+ALTER TABLE `clearance_levels`
+  ADD CONSTRAINT `clr_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `community_events`
@@ -6708,6 +9870,27 @@ ALTER TABLE `intel_reports_events`
   ADD CONSTRAINT `intel_reports_events_report_fk` FOREIGN KEY (`intel_report_id`) REFERENCES `intel_reports` (`id`) ON DELETE CASCADE;
 
 --
+-- Contraintes pour la table `interteam_missions`
+--
+ALTER TABLE `interteam_missions`
+  ADD CONSTRAINT `interteam_missions_tenant_fk` FOREIGN KEY (`created_by_tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `interteam_mission_forum_grants`
+--
+ALTER TABLE `interteam_mission_forum_grants`
+  ADD CONSTRAINT `interteam_grant_consumer_tenant_fk` FOREIGN KEY (`consumer_tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `interteam_grant_home_tenant_fk` FOREIGN KEY (`home_tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `interteam_grant_mission_fk` FOREIGN KEY (`mission_id`) REFERENCES `interteam_missions` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `interteam_mission_participants`
+--
+ALTER TABLE `interteam_mission_participants`
+  ADD CONSTRAINT `interteam_mp_mission_fk` FOREIGN KEY (`mission_id`) REFERENCES `interteam_missions` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `interteam_mp_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
+
+--
 -- Contraintes pour la table `legacy_training_certificates`
 --
 ALTER TABLE `legacy_training_certificates`
@@ -6817,6 +10000,7 @@ ALTER TABLE `personnel_assignments`
 -- Contraintes pour la table `personnel_extras`
 --
 ALTER TABLE `personnel_extras`
+  ADD CONSTRAINT `pe_clearance_fk` FOREIGN KEY (`clearance_level_id`) REFERENCES `clearance_levels` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `personnel_extras_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
@@ -6855,6 +10039,14 @@ ALTER TABLE `personnel_profiles`
   ADD CONSTRAINT `pp_personnel_job_role_fk` FOREIGN KEY (`personnel_job_role_id`) REFERENCES `personnel_job_roles` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
+-- Contraintes pour la table `personnel_profile_job_roles`
+--
+ALTER TABLE `personnel_profile_job_roles`
+  ADD CONSTRAINT `ppjr_jobrole_fk` FOREIGN KEY (`personnel_job_role_id`) REFERENCES `personnel_job_roles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `ppjr_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `ppjr_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Contraintes pour la table `personnel_qualifications`
 --
 ALTER TABLE `personnel_qualifications`
@@ -6865,6 +10057,12 @@ ALTER TABLE `personnel_qualifications`
 --
 ALTER TABLE `personnel_service_history`
   ADD CONSTRAINT `personnel_service_history_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `positions`
+--
+ALTER TABLE `positions`
+  ADD CONSTRAINT `positions_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `recon_images`
@@ -6895,7 +10093,16 @@ ALTER TABLE `referral_codes`
 -- Contraintes pour la table `roles`
 --
 ALTER TABLE `roles`
+  ADD CONSTRAINT `roles_definition_fk` FOREIGN KEY (`definition_id`) REFERENCES `role_definitions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `roles_parent_fk` FOREIGN KEY (`parent_role_id`) REFERENCES `roles` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `roles_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `role_definition_relations`
+--
+ALTER TABLE `role_definition_relations`
+  ADD CONSTRAINT `rdr_from_fk` FOREIGN KEY (`from_definition_id`) REFERENCES `role_definitions` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `rdr_to_fk` FOREIGN KEY (`to_definition_id`) REFERENCES `role_definitions` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `role_permissions`
@@ -6903,6 +10110,27 @@ ALTER TABLE `roles`
 ALTER TABLE `role_permissions`
   ADD CONSTRAINT `role_permissions_permission_id_fk` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `role_permissions_role_id_fk` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `role_relations`
+--
+ALTER TABLE `role_relations`
+  ADD CONSTRAINT `rr_from_fk` FOREIGN KEY (`from_role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `rr_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `rr_to_fk` FOREIGN KEY (`to_role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `role_sets`
+--
+ALTER TABLE `role_sets`
+  ADD CONSTRAINT `role_sets_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `role_set_roles`
+--
+ALTER TABLE `role_set_roles`
+  ADD CONSTRAINT `rsr_role_fk` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `rsr_set_fk` FOREIGN KEY (`role_set_id`) REFERENCES `role_sets` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `sessions`
@@ -6946,6 +10174,22 @@ ALTER TABLE `tenant_atak_config`
 --
 ALTER TABLE `tenant_branding`
   ADD CONSTRAINT `tenant_branding_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `tenant_community_feed`
+--
+ALTER TABLE `tenant_community_feed`
+  ADD CONSTRAINT `tcf_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `tenant_dashboard_pins`
+--
+ALTER TABLE `tenant_dashboard_pins`
+  ADD CONSTRAINT `tdp_courrier_fk` FOREIGN KEY (`courrier_document_id`) REFERENCES `courrier_documents` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `tdp_created_by_fk` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `tdp_doc_cat_fk` FOREIGN KEY (`document_category_id`) REFERENCES `document_categories` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `tdp_document_fk` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `tdp_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `tenant_grade_overrides`
@@ -7005,17 +10249,72 @@ ALTER TABLE `tenant_usage_counters`
   ADD CONSTRAINT `fk_tuc_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
 
 --
+-- Contraintes pour la table `tenant_user_roles`
+--
+ALTER TABLE `tenant_user_roles`
+  ADD CONSTRAINT `tur_role_fk` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tur_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tur_unit_fk` FOREIGN KEY (`org_unit_id`) REFERENCES `units` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tur_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Contraintes pour la table `training_certificates`
 --
 ALTER TABLE `training_certificates`
   ADD CONSTRAINT `fk_training_certificates_enrollment` FOREIGN KEY (`enrollment_id`) REFERENCES `training_enrollments` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_training_certificates_issued_by` FOREIGN KEY (`issued_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_training_certificates_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `training_certificate_templates`
+--
+ALTER TABLE `training_certificate_templates`
+  ADD CONSTRAINT `fk_training_cert_tpl_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Contraintes pour la table `training_courses`
 --
 ALTER TABLE `training_courses`
   ADD CONSTRAINT `fk_training_courses_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `training_course_comments`
+--
+ALTER TABLE `training_course_comments`
+  ADD CONSTRAINT `fk_tcc_course` FOREIGN KEY (`course_id`) REFERENCES `training_courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tcc_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tcc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `training_course_favorites`
+--
+ALTER TABLE `training_course_favorites`
+  ADD CONSTRAINT `fk_tcf_course` FOREIGN KEY (`course_id`) REFERENCES `training_courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tcf_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tcf_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `training_course_questions`
+--
+ALTER TABLE `training_course_questions`
+  ADD CONSTRAINT `fk_tcq_course` FOREIGN KEY (`course_id`) REFERENCES `training_courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tcq_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tcq_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `training_course_reviews`
+--
+ALTER TABLE `training_course_reviews`
+  ADD CONSTRAINT `fk_tcr_course` FOREIGN KEY (`course_id`) REFERENCES `training_courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tcr_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tcr_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `training_course_sessions`
+--
+ALTER TABLE `training_course_sessions`
+  ADD CONSTRAINT `fk_tcs_course` FOREIGN KEY (`course_id`) REFERENCES `training_courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tcs_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Contraintes pour la table `training_enrollments`
@@ -7083,6 +10382,12 @@ ALTER TABLE `training_resources`
   ADD CONSTRAINT `fk_training_resources_lesson` FOREIGN KEY (`lesson_id`) REFERENCES `training_lessons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Contraintes pour la table `training_staff_ping_log`
+--
+ALTER TABLE `training_staff_ping_log`
+  ADD CONSTRAINT `tsp_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
+
+--
 -- Contraintes pour la table `units`
 --
 ALTER TABLE `units`
@@ -7101,6 +10406,22 @@ ALTER TABLE `users`
 --
 ALTER TABLE `user_alert_dismissals`
   ADD CONSTRAINT `user_alert_dismissals_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `user_badges`
+--
+ALTER TABLE `user_badges`
+  ADD CONSTRAINT `ub_badge_fk` FOREIGN KEY (`badge_id`) REFERENCES `badges` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `ub_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `ub_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `user_certifications`
+--
+ALTER TABLE `user_certifications`
+  ADD CONSTRAINT `ucert_cert_fk` FOREIGN KEY (`certification_id`) REFERENCES `certifications` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `ucert_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `ucert_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `user_forum_stats`
@@ -7122,6 +10443,22 @@ ALTER TABLE `user_login_devices`
 ALTER TABLE `user_notification_preferences`
   ADD CONSTRAINT `unp_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `unp_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `user_permission_overrides`
+--
+ALTER TABLE `user_permission_overrides`
+  ADD CONSTRAINT `upo_perm_fk` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `upo_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `upo_unit_fk` FOREIGN KEY (`org_unit_id`) REFERENCES `units` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `upo_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `user_positions`
+--
+ALTER TABLE `user_positions`
+  ADD CONSTRAINT `up_position_fk` FOREIGN KEY (`position_id`) REFERENCES `positions` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `up_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `user_profiles`

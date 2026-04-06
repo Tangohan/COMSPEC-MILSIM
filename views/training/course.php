@@ -24,6 +24,7 @@ $firstLesson = $firstLesson ?? null;
 $lessonDone = $lessonDone ?? [];
 $hasCompletedAnyLesson = $lessonDone !== [];
 $canAccessLearning = $canAccessLearning ?? false;
+$canWithdrawEnrollment = $canWithdrawEnrollment ?? false;
 $lmsCommentsEnabled = $lmsCommentsEnabled ?? true;
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');

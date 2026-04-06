@@ -11,6 +11,7 @@ $enrollment = $enrollment ?? null;
 $progressPercent = (float) ($progressPercent ?? 0);
 $currentLessonId = isset($currentLessonId) ? (int) $currentLessonId : null;
 $lmsHideEchangesSidebarLink = !empty($lmsHideEchangesSidebarLink);
+$canWithdrawEnrollment = !empty($canWithdrawEnrollment);
 $modules = $course['modules'] ?? [];
 $courseSlug = (string) ($course['slug'] ?? '');
 $code = (string) ($course['course_code'] ?? '');
@@ -97,6 +98,19 @@ if ($code === '') {
     <div class="mt-6 pt-4 border-t border-white/10">
         <a href="<?= htmlspecialchars($lmsBase) ?>/formations/<?= rawurlencode($courseSlug) ?>/echanges" class="block rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-emerald-300/95 border border-emerald-500/25 hover:bg-emerald-500/10">Avis &amp; échanges</a>
         <p class="text-[9px] text-white/35 mt-2 leading-snug">Note, questions et commentaires — fin de parcours</p>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($enrollment && $canWithdrawEnrollment && $courseSlug !== ''): ?>
+    <div class="mt-6 pt-4 border-t border-white/10">
+        <form method="post" action="<?= htmlspecialchars($lmsBase) ?>/formations/inscription/annuler" class="space-y-2" onsubmit="return confirm('Annuler votre inscription à ce parcours ? Vous pourrez vous réinscrire depuis le catalogue si les conditions le permettent.');">
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="enrollment_id" value="<?= (int) $enrollment['id'] ?>">
+            <input type="hidden" name="return_path" value="<?= htmlspecialchars('formations/' . $courseSlug, ENT_QUOTES, 'UTF-8') ?>">
+            <button type="submit" class="w-full rounded-xl border border-rose-500/35 bg-rose-500/10 px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-rose-200 hover:bg-rose-500/20">
+                Annuler mon inscription
+            </button>
+        </form>
     </div>
     <?php endif; ?>
 

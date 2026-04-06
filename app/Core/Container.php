@@ -308,6 +308,8 @@ class Container
                 self::get(\App\Repositories\PersonnelAdminPanelRepository::class),
                 self::get(\App\Repositories\PersonnelAdminDataRepository::class),
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
+                self::get(\App\Repositories\TrainingEnrollmentRepository::class),
+                self::get(\App\Services\Training\TrainingService::class),
                 self::get(\App\Services\Personnel\MatriculeService::class),
                 self::get(\App\Services\Personnel\PersonnelCompletenessService::class),
                 self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class),
@@ -559,7 +561,8 @@ class Container
                 self::get(\App\Repositories\TrainingQuizRepository::class),
                 self::get(\App\Repositories\TrainingEnrollmentRepository::class),
                 self::get(\App\Repositories\TrainingModuleRepository::class),
-                self::get(\App\Services\Training\TrainingAuditService::class)
+                self::get(\App\Services\Training\TrainingAuditService::class),
+                self::get(\App\Services\Training\TrainingProgressService::class)
             ),
             \App\Services\Training\TrainingCertificateService::class => new \App\Services\Training\TrainingCertificateService(
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
@@ -594,6 +597,13 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Services\Training\TrainingStaffAlertService::class)
             ),
+            \App\Services\Training\TrainingCourseSessionNotificationService::class => new \App\Services\Training\TrainingCourseSessionNotificationService(
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\TrainingEnrollmentRepository::class),
+                self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+            ),
             \App\Controllers\Web\TrainingController::class => new \App\Controllers\Web\TrainingController(
                 self::get(\App\Repositories\TrainingRepository::class),
                 self::get(\App\Repositories\DocumentLinkRepository::class),
@@ -613,6 +623,10 @@ class Container
                 self::get(\App\Services\Training\TrainingStaffAlertService::class),
                 self::get(\App\Repositories\TrainingQuizRepository::class),
                 self::get(\App\Services\Training\TrainingCertificateShareService::class),
+                self::get(\App\Services\Training\TrainingAuditService::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PersonnelAssignmentRepository::class),
+                self::get(UserRepository::class),
             ),
             \App\Controllers\Web\EquipmentController::class => new \App\Controllers\Web\EquipmentController(
                 self::get(\App\Repositories\EquipmentClassRepository::class),
@@ -715,6 +729,7 @@ class Container
                 self::get(\App\Repositories\TrainingCourseLmsSocialRepository::class),
                 self::get(\App\Repositories\TrainingResourceRepository::class),
                 self::get(UserRepository::class),
+                self::get(\App\Services\Training\TrainingCourseSessionNotificationService::class),
             ),
             \App\Controllers\Admin\AdminTrainingStudioExchangeController::class => new \App\Controllers\Admin\AdminTrainingStudioExchangeController(
                 self::get(\App\Services\Training\TrainingCourseExchangeService::class),

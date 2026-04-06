@@ -20,6 +20,7 @@ use App\Repositories\TrainingModuleRepository;
 use App\Repositories\TrainingResourceRepository;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingAuditService;
+use App\Services\Training\TrainingCourseSessionNotificationService;
 use App\Services\Training\TrainingService;
 
 class AdminTrainingStudioController
@@ -179,7 +180,8 @@ class AdminTrainingStudioController
         private GradeRepository $gradeRepository,
         private TrainingCourseLmsSocialRepository $lmsSocialRepository,
         private TrainingResourceRepository $resourceRepository,
-        private UserRepository $userRepository
+        private UserRepository $userRepository,
+        private TrainingCourseSessionNotificationService $courseSessionNotificationService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -1197,6 +1199,18 @@ class AdminTrainingStudioController
         } else {
             Session::flash('success', 'Créneau ajouté.');
             $this->markCourseSavedWithCurrentStudioVersion($courseId);
+            $actorUserId = (int) Session::get('user_id');
+            $this->courseSessionNotificationService->notifyEnrolledLearnersOfNewSession(
+                $tenantId,
+                $courseId,
+                $actorUserId,
+                [
+                    'starts_at' => $starts,
+                    'ends_at' => $ends,
+                    'label' => trim((string) $request->input('session_label', '')) ?: null,
+                    'location' => trim((string) $request->input('session_location', '')) ?: null,
+                ]
+            );
         }
 
         return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-sessions-qa');

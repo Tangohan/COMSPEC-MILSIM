@@ -200,7 +200,7 @@ class TrainingApiController
         $courseId = (int) $course['id'];
         $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId);
         $enrollment = $this->enrollmentRepository->findByCourseAndUser($courseId, $userId);
-        if ($enrollment && in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired'], true)) {
+        if ($enrollment && in_array((string) ($enrollment['status'] ?? ''), training_enrollment_inactive_for_member_ui_statuses(), true)) {
             $enrollment = null;
         }
         $progressPercent = 0;
@@ -547,7 +547,7 @@ class TrainingApiController
             return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
         }
         $enrollment = $this->enrollmentRepository->findByCourseAndUser($courseId, $userId);
-        if (!$enrollment || in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired'], true)) {
+        if (!$enrollment || in_array((string) ($enrollment['status'] ?? ''), training_enrollment_inactive_for_member_ui_statuses(), true)) {
             return (new Response())->setStatusCode(403)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Accès non autorisé.');
         }
         if (!$this->trainingService->canAccessCourse($userId, $courseId, $tenantId)) {

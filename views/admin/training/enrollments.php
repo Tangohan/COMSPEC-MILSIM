@@ -10,6 +10,7 @@ $enrollmentStatusLabels = [
     'failed' => 'Non validé',
     'expired' => 'Expiré',
     'revoked' => 'Révoqué',
+    'withdrawn' => 'Inscription annulée par le membre',
     'pending_approval' => 'En attente de validation',
 ];
 require base_path('views/admin/training/partials/command_shell_open.php');
@@ -56,7 +57,7 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                                 <td class="font-medium text-slate-900"><?= htmlspecialchars($e['display_name'] ?? $e['email'] ?? '') ?></td>
                                 <td>
                                     <?php $st = (string) ($e['status'] ?? ''); $stLab = $enrollmentStatusLabels[$st] ?? $st; ?>
-                                    <span class="inline-flex px-2 py-0.5 text-[10px] font-black uppercase rounded-full <?= $st === 'completed' ? 'bg-emerald-100 text-emerald-800' : ($st === 'revoked' || $st === 'expired' ? 'bg-slate-200 text-slate-700' : ($st === 'pending_approval' ? 'bg-violet-100 text-violet-900' : 'bg-amber-100 text-amber-900')) ?>"><?= htmlspecialchars($stLab) ?></span>
+                                    <span class="inline-flex px-2 py-0.5 text-[10px] font-black uppercase rounded-full <?= $st === 'completed' ? 'bg-emerald-100 text-emerald-800' : ($st === 'revoked' || $st === 'expired' || $st === 'withdrawn' ? 'bg-slate-200 text-slate-700' : ($st === 'pending_approval' ? 'bg-violet-100 text-violet-900' : 'bg-amber-100 text-amber-900')) ?>"><?= htmlspecialchars($stLab) ?></span>
                                 </td>
                                 <td class="text-slate-600"><?php
                                     $at = (string) ($e['assignment_type'] ?? '');

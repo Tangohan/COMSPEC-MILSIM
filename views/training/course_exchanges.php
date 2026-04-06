@@ -18,6 +18,7 @@ $userReview = $userReview ?? null;
 $viewerLoggedIn = $viewerLoggedIn ?? false;
 $firstLesson = $firstLesson ?? null;
 $canAccessLearning = $canAccessLearning ?? false;
+$canWithdrawEnrollment = $canWithdrawEnrollment ?? false;
 $lmsCommentsEnabled = $lmsCommentsEnabled ?? true;
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');

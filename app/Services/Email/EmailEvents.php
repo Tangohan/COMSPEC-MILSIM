@@ -41,6 +41,8 @@ final class EmailEvents
     public const TRAINING_SELF_ENROLL_DECLINED = 'TRAINING_SELF_ENROLL_DECLINED';
     /** Apprenant bloqué sur un module — notification aux référents formation. */
     public const TRAINING_MODULE_BLOCKED_STAFF = 'TRAINING_MODULE_BLOCKED_STAFF';
+    /** Nouveau créneau (session) sur une formation — apprenants inscrits dont le parcours n’est pas terminé. */
+    public const TRAINING_COURSE_SESSION_SCHEDULED_LEARNER = 'TRAINING_COURSE_SESSION_SCHEDULED_LEARNER';
 
     /** @var list<string> */
     public const EMAIL_EVENTS = [
@@ -68,5 +70,6 @@ final class EmailEvents
         self::TRAINING_SELF_ENROLL_APPROVED,
         self::TRAINING_SELF_ENROLL_DECLINED,
         self::TRAINING_MODULE_BLOCKED_STAFF,
+        self::TRAINING_COURSE_SESSION_SCHEDULED_LEARNER,
     ];
 }

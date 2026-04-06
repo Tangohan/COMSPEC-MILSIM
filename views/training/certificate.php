@@ -7,6 +7,8 @@ if (!$certificate) {
 }
 $title = $title ?? 'Attestation';
 $publicConsultationView = !empty($publicConsultationView);
+/** @var array{operator_display_name: string, callsign: string, unit_label: string, portrait_url: string}|null */
+$attestationSharePersonnel = $attestationSharePersonnel ?? null;
 $consultationApiUrl = $consultationApiUrl ?? '';
 $og_url = $og_url ?? null;
 $og_title = $og_title ?? null;
@@ -43,16 +45,15 @@ $isCelebration = $statusRaw === 'valid';
     <meta property="og:description" content="<?= htmlspecialchars($og_description) ?>">
     <?php endif; ?>
     <?php endif; ?>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <?php require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
-    <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
-    <?php endif; ?>
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; }
+        /* Page autonome : ne pas charger styles.css du portail (thème sombre + ::before en mix-blend),
+           sinon sans utilitaires Tailwind le texte clair hérité devient illisible sur fond clair / zones sans bordure. */
+        body { font-family: 'Inter', system-ui, sans-serif; margin: 0; }
         @keyframes cert-fade-up {
-            from { opacity: 0; transform: translateY(18px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { transform: translateY(14px); }
+            to { transform: translateY(0); }
         }
         @keyframes cert-glow {
             0%, 100% { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(251, 191, 36, 0.15); }
@@ -62,31 +63,29 @@ $isCelebration = $statusRaw === 'valid';
             0% { background-position: 200% center; }
             100% { background-position: -200% center; }
         }
-        /* Opacité initiale ici uniquement — ne pas combiner avec Tailwind opacity-0 (sinon le texte de la carte reste invisible après l’animation). */
+        /* Animation sans opacity:0 initial — évite une carte « vide » si l’animation est bloquée ou en conflit CSS. */
         .cert-animate-in {
-            opacity: 0;
+            opacity: 1;
             animation: cert-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         .cert-card-glow { animation: cert-glow 4s ease-in-out infinite; }
         .cert-title-shine {
             color: #0f172a;
-            background: linear-gradient(105deg, #0f172a 0%, #0f172a 40%, #059669 50%, #0f172a 60%, #0f172a 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: cert-shimmer 3.5s linear infinite;
         }
-        @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+        @supports ((-webkit-background-clip: text) or (background-clip: text)) {
             .cert-title-shine {
-                -webkit-text-fill-color: currentColor;
-                background: none;
-                animation: none;
+                background: linear-gradient(105deg, #0f172a 0%, #0f172a 40%, #059669 50%, #0f172a 60%, #0f172a 100%);
+                background-size: 200% auto;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                color: transparent;
+                animation: cert-shimmer 3.5s linear infinite;
             }
         }
         @media (prefers-reduced-motion: reduce) {
-            .cert-animate-in, .cert-card-glow, .cert-title-shine { animation: none !important; opacity: 1 !important; }
-            .cert-title-shine { color: #0f172a; -webkit-text-fill-color: #0f172a; background: none; }
+            .cert-animate-in, .cert-card-glow, .cert-title-shine { animation: none !important; }
+            .cert-title-shine { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; background: none !important; }
         }
     </style>
     <?php if ($isCelebration): ?>
@@ -115,6 +114,36 @@ $isCelebration = $statusRaw === 'valid';
             </div>
             <?php endif; ?>
 
+            <?php if ($publicConsultationView && is_array($attestationSharePersonnel)): ?>
+            <div class="mb-8 pb-8 border-b border-slate-200 text-left w-full">
+                <p class="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-800">Identité opérationnelle</p>
+                <p class="text-xs text-slate-500 mt-1.5 mb-5 leading-relaxed">Personnage et affectation tels qu’enregistrés sur la fiche personnelle du portail (reconstitution).</p>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
+                    <?php if (!empty($attestationSharePersonnel['portrait_url'])): ?>
+                    <div class="shrink-0 mx-auto sm:mx-0 w-28 h-28 rounded-2xl overflow-hidden border-2 border-emerald-200/90 shadow-md bg-slate-100">
+                        <img src="<?= htmlspecialchars((string) $attestationSharePersonnel['portrait_url']) ?>" alt="" class="w-full h-full object-cover" width="112" height="112" loading="lazy" decoding="async">
+                    </div>
+                    <?php endif; ?>
+                    <div class="min-w-0 flex-1 text-center sm:text-left">
+                        <?php
+                        $shareOpName = trim((string) ($attestationSharePersonnel['operator_display_name'] ?? ''));
+                        ?>
+                        <?php if ($shareOpName !== ''): ?>
+                        <p class="text-xl sm:text-2xl font-black text-slate-900 leading-tight tracking-tight"><?= htmlspecialchars($shareOpName) ?></p>
+                        <?php else: ?>
+                        <p class="text-sm text-slate-600 leading-relaxed">L’opérateur n’a pas encore renseigné de nom de personnage sur sa fiche ; les informations ci-dessous peuvent compléter la présentation.</p>
+                        <?php endif; ?>
+                        <?php if (trim((string) ($attestationSharePersonnel['callsign'] ?? '')) !== ''): ?>
+                        <p class="mt-2 text-sm font-bold text-slate-800">Indicatif <?= htmlspecialchars(trim((string) $attestationSharePersonnel['callsign'])) ?></p>
+                        <?php endif; ?>
+                        <?php if (trim((string) ($attestationSharePersonnel['unit_label'] ?? '')) !== ''): ?>
+                        <p class="mt-1.5 text-xs font-semibold text-slate-600">Unité : <?= htmlspecialchars(trim((string) $attestationSharePersonnel['unit_label'])) ?></p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <p class="text-sm font-semibold text-emerald-700 uppercase tracking-widest mb-2">Attestation de formation</p>
             <h1 class="text-2xl sm:text-3xl font-black uppercase tracking-tight leading-tight <?= $isCelebration ? 'cert-title-shine' : 'text-slate-900' ?>">
                 <?= $isCelebration ? 'Parcours validé' : 'Votre attestation' ?>
@@ -127,6 +156,26 @@ $isCelebration = $statusRaw === 'valid';
             <?php endif; ?>
             <p class="mt-4 text-slate-800 font-semibold">Score final : <?= (float)($certificate['final_score'] ?? 0) ?> %</p>
             <p class="mt-2 text-sm text-slate-500">Statut : <?= htmlspecialchars($statusFr) ?></p>
+
+            <?php if ($publicConsultationView && is_array($attestationSharePersonnel)):
+                $honorName = trim((string) ($attestationSharePersonnel['operator_display_name'] ?? ''));
+                $courseNamed = htmlspecialchars((string) ($certificate['course_title'] ?? 'Formation'));
+                ?>
+            <div class="mt-8 rounded-2xl border border-emerald-100 bg-gradient-to-b from-emerald-50/90 to-white p-6 sm:p-7 text-left shadow-sm">
+                <?php if ($honorName !== ''): ?>
+                <p class="text-sm sm:text-[15px] text-slate-800 leading-relaxed">
+                    Ce document atteste que <strong class="text-slate-900"><?= htmlspecialchars($honorName) ?></strong> a validé le parcours «&nbsp;<?= $courseNamed ?>&nbsp;» avec sérieux et rigueur. Cette réussite témoigne d’une bonne maîtrise des enseignements et d’un engagement soutenu tout au long du parcours.
+                </p>
+                <?php else: ?>
+                <p class="text-sm sm:text-[15px] text-slate-800 leading-relaxed">
+                    Ce document atteste que le titulaire a validé le parcours «&nbsp;<?= $courseNamed ?>&nbsp;» avec sérieux et rigueur. Cette réussite témoigne d’une bonne maîtrise des enseignements et d’un engagement soutenu tout au long du parcours.
+                </p>
+                <?php endif; ?>
+                <p class="mt-4 text-sm text-slate-700 leading-relaxed">
+                    Une telle démarche honore l’opérateur et renforce la confiance au sein du collectif : elle reflète à la fois le respect des exigences pédagogiques et la volonté de servir avec constance la cohésion de la communauté.
+                </p>
+            </div>
+            <?php endif; ?>
 
             <?php if (!$publicConsultationView && $pdfFull !== '' && is_file($pdfFull)): ?>
             <a href="<?= url('api/training/certificates/' . (int)$certificate['id'] . '/download') ?>" class="inline-block mt-8 px-8 py-4 bg-slate-900 text-white font-bold uppercase text-sm rounded-xl hover:bg-emerald-600 transition-colors shadow-lg">Télécharger le PDF</a>
