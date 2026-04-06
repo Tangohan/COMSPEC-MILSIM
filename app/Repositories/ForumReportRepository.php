@@ -85,6 +85,45 @@ class ForumReportRepository
         return (int) $stmt->fetchColumn();
     }
 
+    /** Signalements forum encore ouverts, toutes communautés confondues. */
+    public function countPendingAllTenants(): int
+    {
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM forum_reports WHERE status = 'pending'");
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Communautés avec le plus de signalements en attente (aperçu opérateur).
+     *
+     * @return list<array{tenant_id: int, pending: int, tenant_name: string|null}>
+     */
+    public function pendingCountTopTenants(int $limit): array
+    {
+        $limit = max(1, min(25, $limit));
+        $stmt = $this->pdo->prepare(
+            'SELECT fr.tenant_id AS tenant_id, COUNT(*) AS pending, MAX(t.name) AS tenant_name
+             FROM forum_reports fr
+             LEFT JOIN tenants t ON t.id = fr.tenant_id
+             WHERE fr.status = \'pending\'
+             GROUP BY fr.tenant_id
+             ORDER BY pending DESC
+             LIMIT ' . (int) $limit
+        );
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return array_map(static function (array $r): array {
+            return [
+                'tenant_id' => (int) ($r['tenant_id'] ?? 0),
+                'pending' => (int) ($r['pending'] ?? 0),
+                'tenant_name' => isset($r['tenant_name']) && $r['tenant_name'] !== '' && $r['tenant_name'] !== null
+                    ? (string) $r['tenant_name']
+                    : null,
+            ];
+        }, $rows);
+    }
+
     public function listPending(int $tenantId): array
     {
         $stmt = $this->pdo->prepare(

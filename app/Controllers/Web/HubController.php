@@ -13,109 +13,191 @@ class HubController
     public function index(Request $request, array $params = []): Response
     {
         $gate = Gate::getInstance();
-        $entries = [];
 
-        $entries[] = [
-            'label' => 'Dashboard',
-            'url' => url('dashboard'),
-            'description' => 'Vue d\'ensemble, modpack et accès rapides.',
-            'badge' => null,
-            'letter' => 'D',
+        $sections = [];
+
+        $sections[] = [
+            'id' => 'vue-ensemble',
+            'title' => 'Vue d’ensemble',
+            'subtitle' => 'Repères du jour et accès au tableau de bord principal.',
+            'entries' => [
+                [
+                    'label' => 'Tableau de bord',
+                    'url' => url('dashboard'),
+                    'description' => 'Synthèse personnelle, raccourcis et actualités de votre espace.',
+                    'icon' => 'dashboard',
+                    'accent' => 'emerald',
+                    'featured' => true,
+                ],
+                [
+                    'label' => 'Mon activité',
+                    'url' => url('activite'),
+                    'description' => 'Suivi des échanges : forum, courrier et notifications récentes.',
+                    'icon' => 'activity',
+                    'accent' => 'sky',
+                ],
+            ],
         ];
 
-        $entries[] = [
-            'label' => 'Briefing',
-            'url' => url('forum'),
-            'description' => 'Forum, annonces et briefings opérationnels.',
-            'badge' => null,
-            'letter' => 'B',
+        $comm = [
+            [
+                'label' => 'Briefing & forum',
+                'url' => url('forum'),
+                'description' => 'Annonces, fils de discussion et briefings de la communauté.',
+                'icon' => 'forum',
+                'accent' => 'violet',
+            ],
+            [
+                'label' => 'Messagerie',
+                'url' => url('messages'),
+                'description' => 'Messages officiels adressés à votre communauté.',
+                'icon' => 'messages',
+                'accent' => 'indigo',
+            ],
+            [
+                'label' => 'Recherche',
+                'url' => url('search'),
+                'description' => 'Trouver un membre, un contenu ou une ressource sur le portail.',
+                'icon' => 'search',
+                'accent' => 'slate',
+            ],
+        ];
+        if ($gate->allows('courrier.view')) {
+            array_splice($comm, 1, 0, [[
+                'label' => 'Bureau courrier',
+                'url' => url('courrier'),
+                'description' => 'Documents officiels, circuits de validation et signatures.',
+                'icon' => 'courrier',
+                'accent' => 'amber',
+            ]]);
+        }
+        $sections[] = [
+            'id' => 'communication',
+            'title' => 'Communication & informations',
+            'subtitle' => 'Échanger, s’informer et retrouver les canaux utiles.',
+            'entries' => $comm,
         ];
 
-        $entries[] = [
-            'label' => 'Fiche',
-            'url' => url('personnel/me'),
-            'description' => 'Ma fiche personnel et profil opérateur.',
-            'badge' => null,
-            'letter' => 'F',
+        $sections[] = [
+            'id' => 'personnel',
+            'title' => 'Personnel & organisation',
+            'subtitle' => 'Votre dossier, la présence et la structure des unités.',
+            'entries' => [
+                [
+                    'label' => 'Ma fiche personnelle',
+                    'url' => url('personnel/me'),
+                    'description' => 'Identité opérationnelle, qualifications et formations.',
+                    'icon' => 'personnel',
+                    'accent' => 'emerald',
+                ],
+                [
+                    'label' => 'Pointage & présence',
+                    'url' => url('pointage'),
+                    'description' => 'Sessions, présence et activité du jour.',
+                    'icon' => 'pointage',
+                    'accent' => 'teal',
+                ],
+                [
+                    'label' => 'ORBAT',
+                    'url' => url('orbat'),
+                    'description' => 'Organigramme et rattachement aux unités.',
+                    'icon' => 'orbat',
+                    'accent' => 'slate',
+                ],
+            ],
         ];
 
-        $entries[] = [
-            'label' => 'Pointage',
-            'url' => url('pointage'),
-            'description' => 'Présence, accès rapides et activité du jour.',
-            'badge' => null,
-            'letter' => 'P',
+        $terrain = [
+            [
+                'label' => 'ATAK / carte tactique',
+                'url' => url('atak'),
+                'description' => 'Carte, marqueurs et outils de coordination.',
+                'icon' => 'atak',
+                'accent' => 'orange',
+            ],
+            [
+                'label' => 'Équipement',
+                'url' => url('equipment'),
+                'description' => 'Classes d’équipement et fiches matériel.',
+                'icon' => 'equipment',
+                'accent' => 'stone',
+            ],
+        ];
+        $sections[] = [
+            'id' => 'terrain',
+            'title' => 'Terrain & matériel',
+            'subtitle' => 'Outils tactiques et référentiels matériels.',
+            'entries' => $terrain,
         ];
 
-        $entries[] = [
-            'label' => 'ORBAT',
-            'url' => url('orbat'),
-            'description' => 'Organisation et structure des unités.',
-            'badge' => null,
-            'letter' => 'O',
+        $docsTrain = [
+            [
+                'label' => 'Formations',
+                'url' => url('formations'),
+                'description' => 'Catalogue des parcours et suivi de progression.',
+                'icon' => 'training',
+                'accent' => 'emerald',
+            ],
         ];
-
-        $entries[] = [
-            'label' => 'ATAK / TACMAP',
-            'url' => url('atak'),
-            'description' => 'Carte tactique, marqueurs et outils C2.',
-            'badge' => null,
-            'letter' => 'A',
-        ];
-
         if ($gate->allows('documents.view')) {
-            $entries[] = [
+            $docsTrain[] = [
                 'label' => 'Documents',
                 'url' => url('documents'),
-                'description' => 'Consultation des documents et fiches.',
-                'badge' => null,
-                'letter' => 'D',
+                'description' => 'Consultation des documents publiés pour la communauté.',
+                'icon' => 'documents',
+                'accent' => 'blue',
             ];
         }
-
         if ($gate->allows('documents.upload')) {
-            $entries[] = [
-                'label' => 'Gestion documents',
+            $docsTrain[] = [
+                'label' => 'Gestion documentaire',
                 'url' => url('documents/gestion'),
-                'description' => 'Upload, arborescence et gestion documentaire.',
-                'badge' => null,
-                'letter' => 'G',
+                'description' => 'Dépôt, classement et administration des fichiers.',
+                'icon' => 'documents_admin',
+                'accent' => 'cyan',
             ];
         }
-
-        $entries[] = [
-            'label' => 'Formations',
-            'url' => url('formations'),
-            'description' => 'Catalogue et suivi des formations.',
-            'badge' => null,
-            'letter' => 'F',
+        $sections[] = [
+            'id' => 'ressources',
+            'title' => 'Documents & formations',
+            'subtitle' => 'Références, parcours pédagogiques et fichiers partagés.',
+            'entries' => $docsTrain,
         ];
 
-        $canSystem = $gate->allows('admin.system');
-        $canOrg = $gate->allows('admin.organization') || $gate->allows('admin.access');
-        if ($canSystem) {
-            $entries[] = [
-                'label' => 'Admin plateforme',
+        $adminEntries = [];
+        if ($gate->allows('admin.system')) {
+            $adminEntries[] = [
+                'label' => 'Administration plateforme',
                 'url' => url('admin'),
-                'description' => 'Super-administration : rôles site, paramètres, audit, maintenance.',
+                'description' => 'Paramètres globaux, rôles site et maintenance.',
+                'icon' => 'admin_platform',
+                'accent' => 'rose',
                 'badge' => 'Plateforme',
-                'letter' => 'A',
             ];
         }
-        if ($canOrg) {
-            $entries[] = [
-                'label' => 'Back-office',
+        if ($gate->allows('admin.organization') || $gate->allows('admin.access')) {
+            $adminEntries[] = [
+                'label' => 'Back-office communauté',
                 'url' => url('back-office'),
-                'description' => 'Gestion de la communauté : membres, invitations, structure.',
+                'description' => 'Membres, invitations, structure et réglages de la communauté.',
+                'icon' => 'admin_org',
+                'accent' => 'purple',
                 'badge' => 'Communauté',
-                'letter' => 'B',
+            ];
+        }
+        if ($adminEntries !== []) {
+            $sections[] = [
+                'id' => 'administration',
+                'title' => 'Administration',
+                'subtitle' => 'Réservé aux rôles autorisés.',
+                'entries' => $adminEntries,
             ];
         }
 
         return Response::view('layout.main', [
             'content' => 'hub.index',
-            'title' => 'Sélection du hub',
-            'entries' => $entries,
+            'title' => 'Centre opérationnel',
+            'hubSections' => $sections,
         ]);
     }
 }

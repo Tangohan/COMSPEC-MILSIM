@@ -542,9 +542,36 @@ class PersonnelJobRoleRepository
     }
 
     /**
-     * Libellés pour &lt;select&gt; : « Racine › Sous-cat › Nom du rôle ».
+     * Autorisations distinctes liées à un ensemble d’emplois (référentiel), pour la communauté donnée.
      *
-     * @return list<array{id: int, label: string, name: string, label_en?: string}>
+     * @param list<int> $jobRoleIds
+     *
+     * @return list<array{id: int, name: string, module: string}>
+     */
+    public function listDistinctPermissionsLinkedToJobRoles(int $tenantId, array $jobRoleIds): array
+    {
+        $jobRoleIds = array_values(array_unique(array_filter(array_map(static fn ($x): int => (int) $x, $jobRoleIds), static fn (int $id): bool => $id > 0)));
+        if ($jobRoleIds === [] || !$this->tablesExist()) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($jobRoleIds), '?'));
+        $sql = 'SELECT DISTINCT p.id, p.name, p.module
+                FROM personnel_job_role_permissions jrp
+                INNER JOIN personnel_job_roles r ON r.id = jrp.personnel_job_role_id AND r.tenant_id = ?
+                INNER JOIN permissions p ON p.id = jrp.permission_id AND p.tenant_id = ?
+                WHERE jrp.personnel_job_role_id IN (' . $ph . ')
+                ORDER BY p.module ASC, p.name ASC';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId, $tenantId], $jobRoleIds));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Libellés pour listes d’emplois : « Racine › Sous-cat › Nom du rôle »,
+     * plus segments pour affichage hiérarchique et chaîne de recherche normalisée.
+     *
+     * @return list<array{id: int, label: string, name: string, segments: list<string>, search: string, label_en?: string}>
      */
     public function listRoleOptionsForSelect(int $tenantId, bool $appendEnglishLabel = false, bool $useCategoryPath = true): array
     {
@@ -578,7 +605,23 @@ class PersonnelJobRoleRepository
             if ($appendEnglishLabel && $en !== '') {
                 $label .= ' — ' . $en;
             }
-            $row = ['id' => (int) $r['id'], 'label' => $label, 'name' => $name];
+            if ($useCategoryPath && $prefix !== '') {
+                $segments = array_merge(explode(' › ', $prefix), [$name]);
+            } else {
+                $segments = [$name];
+            }
+            $searchBits = $segments;
+            if ($en !== '') {
+                $searchBits[] = $en;
+            }
+            $search = mb_strtolower(implode(' ', $searchBits), 'UTF-8');
+            $row = [
+                'id' => (int) $r['id'],
+                'label' => $label,
+                'name' => $name,
+                'segments' => $segments,
+                'search' => $search,
+            ];
             if ($en !== '') {
                 $row['label_en'] = $en;
             }

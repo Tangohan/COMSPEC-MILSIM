@@ -30,6 +30,34 @@ class CommunityEventRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /** Créneaux déjà commencés (non annulés). @return list<array<string, mixed>> */
+    public function pastForTenant(int $tenantId, int $limit = 100): array
+    {
+        $lim = max(1, min(150, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM community_events
+             WHERE tenant_id = ? AND cancelled_at IS NULL AND starts_at < NOW()
+             ORDER BY starts_at DESC LIMIT {$lim}"
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function cancelledForTenant(int $tenantId, int $limit = 100): array
+    {
+        $lim = max(1, min(150, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM community_events
+             WHERE tenant_id = ? AND cancelled_at IS NOT NULL
+             ORDER BY cancelled_at DESC LIMIT {$lim}"
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /**
      * Événements à venir avec ligne RSVP et pointage pour l’utilisateur (LEFT JOIN).
      *
@@ -174,7 +202,7 @@ class CommunityEventRepository
     public function listRsvpsWithUsersForEvent(int $eventId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT r.user_id, r.status, r.checked_in_at, r.created_at AS rsvp_created_at,
+            'SELECT r.user_id, r.status, r.checked_in_at, r.reminder_sent_at, r.created_at AS rsvp_created_at,
                     u.email, u.display_name, u.callsign
              FROM community_event_rsvps r
              INNER JOIN users u ON u.id = r.user_id
@@ -184,6 +212,22 @@ class CommunityEventRepository
         $stmt->execute([$eventId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function deleteRsvp(int $eventId, int $userId): void
+    {
+        $stmt = $this->pdo->prepare(
+            'DELETE FROM community_event_rsvps WHERE event_id = ? AND user_id = ?'
+        );
+        $stmt->execute([$eventId, $userId]);
+    }
+
+    public function clearCheckIn(int $eventId, int $userId): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE community_event_rsvps SET checked_in_at = NULL, updated_at = NOW() WHERE event_id = ? AND user_id = ?'
+        );
+        $stmt->execute([$eventId, $userId]);
     }
 
     /**

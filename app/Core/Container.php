@@ -258,6 +258,7 @@ class Container
             ),
             \App\Controllers\Admin\Organization\CommunityEventsAdminController::class => new \App\Controllers\Admin\Organization\CommunityEventsAdminController(
                 self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(UserRepository::class),
                 self::get(AuthService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Services\Attendance\CommunityEventAttendanceService::class)
@@ -755,6 +756,10 @@ class Container
                 self::get(\App\Repositories\TrainingLessonRepository::class),
                 self::get(\App\Repositories\TrainingModuleRepository::class),
                 self::get(\App\Services\Training\TrainingCertificateShareService::class),
+                self::get(\App\Repositories\DocumentRepository::class),
+                self::get(\App\Services\Documents\DocumentAccessService::class),
+                self::get(\App\Repositories\ModerationArtifactRepository::class),
+                self::get(\App\Services\Audit\AuditService::class),
             ),
             \App\Controllers\Admin\AdminDocumentsController::class => new \App\Controllers\Admin\AdminDocumentsController(
                 self::get(\App\Repositories\DocumentRepository::class),
@@ -792,6 +797,9 @@ class Container
             \App\Repositories\PlatformSettingsRepository::class => new \App\Repositories\PlatformSettingsRepository(),
             \App\Repositories\InterteamMissionRepository::class => new \App\Repositories\InterteamMissionRepository(),
             \App\Controllers\Admin\System\SystemBriefSettingsController::class => new \App\Controllers\Admin\System\SystemBriefSettingsController(
+                self::get(\App\Repositories\PlatformSettingsRepository::class),
+            ),
+            \App\Controllers\Admin\System\SystemSettingsController::class => new \App\Controllers\Admin\System\SystemSettingsController(
                 self::get(\App\Repositories\PlatformSettingsRepository::class),
             ),
             \App\Controllers\Admin\PlatformBriefSettingsApiController::class => new \App\Controllers\Admin\PlatformBriefSettingsApiController(

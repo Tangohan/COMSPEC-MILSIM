@@ -29,7 +29,7 @@ class TrainingCourseExchangeService
 
     private const VISIBILITY = ['draft', 'private', 'published', 'archived'];
 
-    private const RESOURCE_TYPES = ['pdf', 'image', 'video', 'audio', 'zip', 'attachment', 'link'];
+    private const RESOURCE_TYPES = ['pdf', 'image', 'video', 'audio', 'zip', 'attachment', 'link', 'library_document'];
 
     private const QUESTION_TYPES = ['single_choice', 'multiple_choice', 'true_false'];
 
@@ -281,8 +281,8 @@ class TrainingCourseExchangeService
                 'mime_type' => $this->nullIfEmptyString($r['mime_type'] ?? null),
                 'file_size' => isset($r['file_size']) ? (int) $r['file_size'] : null,
             ];
-            $libSlug = trim((string) ($r['library_doc_slug'] ?? ''));
-            if ($libSlug !== '' && !empty($r['library_document_id'])) {
+            $libSlug = trim((string) ($r['document_slug'] ?? ''));
+            if ($libSlug !== '' && !empty($r['document_id'])) {
                 $row['library_document_slug'] = $libSlug;
             }
             $resOut[] = $row;
@@ -677,32 +677,38 @@ class TrainingCourseExchangeService
     private function importOneResource(int $lessonId, int $tenantId, array $res, array &$warnings): void
     {
         $title = trim((string) ($res['title'] ?? ''));
+        $libSlug = trim((string) ($res['library_document_slug'] ?? ''));
+        if ($libSlug !== '') {
+            $doc = $this->documentRepository->findBySlug($libSlug, $tenantId);
+            if (!$doc) {
+                $warnings[] = 'Ressource « ' . ($title !== '' ? $title : $libSlug) . ' » : document de bibliothèque « ' . $libSlug . ' » introuvable sur cette communauté — lien ignoré.';
+
+                return;
+            }
+            if ($title === '') {
+                $title = trim((string) ($doc['title'] ?? ''));
+            }
+            if ($title === '') {
+                $title = 'Document';
+            }
+            $this->resourceRepository->create($lessonId, [
+                'resource_type' => 'library_document',
+                'title' => mb_substr($title, 0, 255),
+                'external_url' => null,
+                'file_path' => null,
+                'mime_type' => null,
+                'file_size' => null,
+                'document_id' => (int) $doc['id'],
+            ]);
+
+            return;
+        }
         if ($title === '') {
             return;
         }
         $type = (string) ($res['resource_type'] ?? 'link');
         if (!in_array($type, self::RESOURCE_TYPES, true)) {
             $type = 'link';
-        }
-        $libSlug = trim((string) ($res['library_document_slug'] ?? ''));
-        if ($libSlug !== '') {
-            $doc = $this->documentRepository->findBySlug($libSlug, $tenantId);
-            if (!$doc) {
-                $warnings[] = 'Ressource « ' . $title . ' » : document de bibliothèque « ' . $libSlug . ' » introuvable sur cette communauté — lien ignoré.';
-
-                return;
-            }
-            $this->resourceRepository->create($lessonId, [
-                'resource_type' => 'attachment',
-                'title' => mb_substr($title, 0, 255),
-                'external_url' => null,
-                'file_path' => null,
-                'mime_type' => null,
-                'file_size' => null,
-                'library_document_id' => (int) $doc['id'],
-            ]);
-
-            return;
         }
         $url = $this->optionalString($res['external_url'] ?? null, 500);
         $path = $this->optionalString($res['file_path'] ?? null, 255);

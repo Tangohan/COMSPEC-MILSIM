@@ -109,7 +109,7 @@ $boNavLmsRes = $p === $lmsResPath || str_starts_with($p, $lmsResPath . '/');
         <?php $boSection('Pilotage'); ?>
         <?php $boLink('back-office/audit', 'Journal d’activité', $boNavAudit); ?>
         <?php $boLink('back-office/moderation', 'Modération', $boNavMod); ?>
-        <?php $boLink('back-office/events', 'Événements', $boNavEvents); ?>
+        <?php $boLink('back-office/events', 'RSVP & pointage', $boNavEvents); ?>
 
         <?php if ($canDocs || $canTraining || $canTenantModules): ?>
             <?php $boSection('Ressources & outils'); ?>

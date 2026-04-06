@@ -55,6 +55,34 @@ class PlatformSettingsRepository
     }
 
     /**
+     * @return array<string, string>
+     */
+    public function listAll(): array
+    {
+        if (!$this->tableExists()) {
+            return [];
+        }
+        try {
+            $st = $this->pdo->query('SELECT setting_key, value FROM platform_settings ORDER BY setting_key ASC');
+            if ($st === false) {
+                return [];
+            }
+            $out = [];
+            while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                $k = (string) ($row['setting_key'] ?? '');
+                if ($k === '') {
+                    continue;
+                }
+                $out[$k] = (string) ($row['value'] ?? '');
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * @param array<string, string> $pairs
      */
     public function setMany(array $pairs): void

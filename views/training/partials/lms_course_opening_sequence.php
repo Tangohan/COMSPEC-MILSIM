@@ -97,12 +97,12 @@ $bannerUrlCss = json_encode($lmsOpeningBannerSrc, JSON_HEX_TAG | JSON_HEX_APOS |
     var bannerSrc = <?= json_encode($lmsOpeningBannerSrc, JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE) ?>;
     var minDelayMs = reduceMotion ? 0 : 400;
     var timeoutMs = 8000;
-    var loaderDone = false;
-    var imageDone = false;
     var startTs = Date.now();
+    var readyFired = false;
 
-    function tryShowIntro() {
-        if (!loaderDone || !imageDone) return;
+    function showIntroFromLoader() {
+        if (readyFired) return;
+        readyFired = true;
         var elapsed = Date.now() - startTs;
         var wait = Math.max(0, minDelayMs - elapsed);
         function go() {
@@ -120,29 +120,17 @@ $bannerUrlCss = json_encode($lmsOpeningBannerSrc, JSON_HEX_TAG | JSON_HEX_APOS |
         else setTimeout(go, wait);
     }
 
-    function onImageReady() {
-        imageDone = true;
-        tryShowIntro();
-    }
-
     if (!bannerSrc) {
-        onImageReady();
+        showIntroFromLoader();
     } else {
         var img = new Image();
-        img.onload = onImageReady;
-        img.onerror = onImageReady;
+        img.onload = showIntroFromLoader;
+        img.onerror = showIntroFromLoader;
         img.src = bannerSrc;
+        setTimeout(showIntroFromLoader, timeoutMs);
     }
 
-    setTimeout(function () {
-        loaderDone = true;
-        tryShowIntro();
-    }, timeoutMs);
-
     function finishIntro() {
-        try {
-            sessionStorage.setItem(storageKey, '1');
-        } catch (e3) {}
         document.body.style.overflow = '';
         intro.setAttribute('aria-hidden', 'true');
         removeAll();
@@ -154,6 +142,9 @@ $bannerUrlCss = json_encode($lmsOpeningBannerSrc, JSON_HEX_TAG | JSON_HEX_APOS |
     }
 
     cta.addEventListener('click', function () {
+        try {
+            sessionStorage.setItem(storageKey, '1');
+        } catch (e4) {}
         if (ctaMode === 'lesson' && lessonUrl) {
             window.location.href = lessonUrl;
             return;

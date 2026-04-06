@@ -9,6 +9,7 @@ $filterCategory = $filterCategory ?? null;
 $filterSearch = $filterSearch ?? null;
 $filterCategories = $filterCategories ?? [];
 $filterParcours = $filterParcours ?? '';
+$catalogueSidebarEnrollments = $catalogueSidebarEnrollments ?? [];
 
 $totalModules = count($courses) + ($training_legacy_enabled ? count($legacyModules) : 0);
 $formationsUrl = rtrim($base, '/') . '/formations';
@@ -291,9 +292,53 @@ $headHtml = ob_get_clean();
                             </div>
                             <span class="px-3 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black tracking-[0.18em] uppercase text-emerald-700">Actif</span>
                         </div>
-                        <p class="text-[12px] text-slate-700 leading-relaxed font-medium mb-5">
-                            Progression, modules en cours et attestations éventuelles.
+                        <p class="text-[12px] text-slate-700 leading-relaxed font-medium mb-4">
+                            Vos parcours suivis ou validés sur cette communauté (aperçu). Les attestations disponibles sont indiquées ci-dessous.
                         </p>
+                        <?php if ($catalogueSidebarEnrollments !== []): ?>
+                        <ul class="mb-5 space-y-3 max-h-[min(22rem,50vh)] overflow-y-auto pr-0.5 -mr-0.5" aria-label="Aperçu de vos formations">
+                            <?php foreach ($catalogueSidebarEnrollments as $se):
+                                $seStatus = (string) ($se['status'] ?? '');
+                                $seSlug = trim((string) ($se['course_slug'] ?? ''));
+                                $seHref = $seSlug !== '' ? $base . '/formations/' . rawurlencode($seSlug) : $base . '/formations/mes-formations';
+                                $sePct = max(0, min(100, (int) ($se['progress_percent'] ?? 0)));
+                                $seCertId = (int) ($se['certificate_id'] ?? 0);
+                                $seCertifying = (int) ($se['is_certifying'] ?? 0) === 1;
+                                $statusLabel = match ($seStatus) {
+                                    'completed' => 'Validé',
+                                    'in_progress' => 'En cours',
+                                    'assigned' => $sePct > 0 ? 'En cours' : 'Inscrit',
+                                    'pending_approval' => 'Inscription en attente',
+                                    'failed' => 'À reprendre',
+                                    default => 'Suivi',
+                                };
+                                $statusClass = match ($seStatus) {
+                                    'completed' => 'bg-emerald-500/12 text-emerald-900 border-emerald-500/25',
+                                    'in_progress', 'assigned' => 'bg-sky-500/10 text-sky-900 border-sky-500/20',
+                                    'pending_approval' => 'bg-violet-500/10 text-violet-900 border-violet-500/25',
+                                    'failed' => 'bg-amber-500/12 text-amber-950 border-amber-500/25',
+                                    default => 'bg-slate-100 text-slate-700 border-slate-200',
+                                };
+                                ?>
+                            <li class="rounded-2xl border border-slate-200/90 bg-white/90 px-3.5 py-3 shadow-sm">
+                                <a href="<?= htmlspecialchars($seHref) ?>" class="block text-left text-[13px] font-black uppercase tracking-tight text-slate-900 leading-snug hover:text-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2 rounded-lg">
+                                    <?= htmlspecialchars((string) ($se['course_title'] ?? 'Parcours')) ?>
+                                </a>
+                                <div class="mt-2 flex flex-wrap items-center gap-2">
+                                    <span class="inline-flex items-center rounded-lg border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] <?= htmlspecialchars($statusClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabel) ?></span>
+                                    <?php if ($seStatus !== 'completed' && $seStatus !== 'pending_approval'): ?>
+                                    <span class="text-[10px] font-bold tabular-nums text-slate-500"><?= $sePct ?> %</span>
+                                    <?php endif; ?>
+                                    <?php if ($seCertifying && $seCertId > 0 && $seStatus === 'completed'): ?>
+                                    <a href="<?= htmlspecialchars($base) ?>/formations/certificate/<?= $seCertId ?>" class="inline-flex items-center rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-900 hover:bg-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50">Attestation</a>
+                                    <?php endif; ?>
+                                </div>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php else: ?>
+                        <p class="text-[11px] text-slate-500 mb-5 leading-relaxed">Vous n’avez pas encore de parcours en suivi sur cette communauté. Parcourez le catalogue ou ouvrez l’espace dédié.</p>
+                        <?php endif; ?>
                         <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-emerald-600 transition-all">
                             Ouvrir Mes formations
                         </a>

@@ -99,11 +99,7 @@ $showPlatformEnv = $gate->allows('admin.system');
 $envLabel = '';
 if ($showPlatformEnv) {
     $appEnv = function_exists('env') ? (string) env('APP_ENV', 'local') : 'local';
-    $envLabel = match ($appEnv) {
-        'production' => 'Production',
-        'staging' => 'Préproduction',
-        default => 'Développement',
-    };
+    $envLabel = app_environment_label_fr($appEnv);
 }
 ?>
 <div class="min-h-0 flex-1">

@@ -113,6 +113,28 @@ final class CommunityReportService
             $reasonPrefix = 'Image du site signalée';
             $urlForDb = $reportedUrl;
             $reasonSuffix = ($reasonSuffix !== '' ? $reasonSuffix . "\n" : '') . 'Page concernée : ' . ($pageUrl !== '' ? $pageUrl : '(non précisée)');
+        } elseif ($targetType === 'portal_help') {
+            $subject = strtolower(trim((string) ($input['help_subject'] ?? '')));
+            $allowedSubjects = ['profile', 'page_content', 'message', 'user_account', 'other'];
+            if (!in_array($subject, $allowedSubjects, true)) {
+                return ['ok' => false, 'error' => 'Indiquez de quel type de sujet il s’agit.'];
+            }
+            $subjectLabels = [
+                'profile' => 'Fiche ou profil',
+                'page_content' => 'Contenu sur une page',
+                'message' => 'Message ou discussion',
+                'user_account' => 'Compte ou personne',
+                'other' => 'Autre',
+            ];
+            $ref = trim((string) ($input['reference_note'] ?? ''));
+            if (strlen($ref) > 500) {
+                return ['ok' => false, 'error' => 'Le repère indiqué est trop long (500 caractères maximum).'];
+            }
+            $reasonPrefix = 'Demande depuis le bouton Aide — thème : ' . ($subjectLabels[$subject] ?? $subject);
+            if ($ref !== '') {
+                $reasonPrefix .= "\nRepère : " . $ref;
+            }
+            $urlForDb = $pageUrl !== '' ? $pageUrl : null;
         } else {
             return ['ok' => false, 'error' => 'Type de signalement non pris en charge.'];
         }

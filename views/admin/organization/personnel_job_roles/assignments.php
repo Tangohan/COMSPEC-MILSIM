@@ -2,6 +2,7 @@
 $assignmentRows = $assignmentRows ?? [];
 $assignmentPivot = $assignmentPivot ?? [];
 $jobRoleOptions = $jobRoleOptions ?? [];
+$jobRolePermissionCounts = $jobRolePermissionCounts ?? [];
 $pjrAssignSettings = $pjrAssignSettings ?? [];
 $pivotEnabled = !empty($pivotEnabled);
 $filters = $filters ?? [];
@@ -38,6 +39,14 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
                 Attribuez le référentiel de fonction (dossier personnel) à chaque membre. Pour activer plusieurs rôles par personne, exécutez les migrations (table de liaison).
                 <?php endif; ?>
             </p>
+            <div class="mt-4 max-w-3xl rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-xs leading-relaxed text-indigo-950">
+                <p class="font-semibold text-indigo-950">Autorisations et emplois</p>
+                <p class="mt-1 text-indigo-900/90">
+                    Dans le référentiel, chaque emploi peut être associé à des <strong class="font-semibold">autorisations</strong> (bloc « Permissions » sur la fiche de l’emploi).
+                    Lors du choix d’un emploi ci-dessous, une mention indique si des autorisations y sont liées.
+                    Pour voir la <strong class="font-semibold">liste fusionnée</strong> pour une personne (tous ses emplois attribués), utilisez le lien sous son nom.
+                </p>
+            </div>
         </div>
         <a href="<?= url('back-office/personnel-job-roles') ?>" class="text-sm font-medium text-slate-600 hover:underline">Référentiel &amp; catégories</a>
     </div>
@@ -98,14 +107,16 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
             <label class="mb-1 block text-xs font-semibold text-slate-600">Recherche</label>
             <input type="text" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Nom, email, indicatif…" class="w-full rounded border border-slate-200 px-3 py-2 text-sm">
         </div>
-        <div class="min-w-[220px]">
-            <label class="mb-1 block text-xs font-semibold text-slate-600">Emploi (au moins une affectation)</label>
-            <select name="job_role_id" class="w-full rounded border border-slate-200 px-3 py-2 text-sm">
-                <option value="0">— Tous —</option>
-                <?php foreach ($jobRoleOptions as $jo): ?>
-                <option value="<?= (int) $jo['id'] ?>" <?= (int) ($filters['job_role_id'] ?? 0) === (int) $jo['id'] ? 'selected' : '' ?>><?= htmlspecialchars($jo['label']) ?></option>
-                <?php endforeach; ?>
-            </select>
+        <div class="min-w-[240px] max-w-md flex-1">
+            <label class="mb-1 block text-xs font-semibold text-slate-600" for="pjr-filter-job-role-btn">Emploi (au moins une affectation)</label>
+            <?php
+            $pjrComboName = 'job_role_id';
+            $pjrComboSelectedId = (int) ($filters['job_role_id'] ?? 0);
+            $pjrComboEmptyValue = '0';
+            $pjrComboEmptyLabel = 'Tous les emplois';
+            $pjrComboId = 'pjr-filter-job-role';
+            require __DIR__ . '/_role_combobox.php';
+            ?>
         </div>
         <div class="flex items-center gap-2 pb-2">
             <input type="checkbox" name="unassigned" id="unassigned" value="1" <?= !empty($filters['unassigned']) ? 'checked' : '' ?>>
@@ -163,6 +174,15 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
                         <p class="text-xs font-mono text-slate-600"><?= htmlspecialchars((string) $row['callsign']) ?></p>
                         <?php endif; ?>
                         <a href="<?= htmlspecialchars($personnelUrl) ?>" class="mt-1 inline-block text-xs font-medium text-cyan-700 hover:underline">Fiche personnelle</a>
+                        <button
+                            type="button"
+                            class="pjr-open-member-perms mt-2 flex w-full max-w-[16rem] items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-left text-[11px] font-semibold text-indigo-900 shadow-sm transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                            data-user-id="<?= (int) $uid ?>"
+                            data-member-name="<?= htmlspecialchars((string) ($row['display_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                        >
+                            <svg class="h-3.5 w-3.5 shrink-0 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 0 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>
+                            <span>Autorisations liées aux emplois</span>
+                        </button>
                     </td>
                     <td class="p-3 text-xs uppercase text-slate-600"><?= htmlspecialchars((string) ($row['status'] ?? '')) ?></td>
                     <td class="p-3">
@@ -186,14 +206,16 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
                                         <input type="radio" name="primary_slot" value="<?= $si ?>" class="pjr-primary-radio text-emerald-600" <?= $isPri ? 'checked' : '' ?>>
                                         Principal
                                     </label>
-                                    <div class="min-w-[200px] flex-1">
-                                        <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Emploi</label>
-                                        <select name="slots[<?= $si ?>][role_id]" class="w-full rounded border border-slate-200 px-2 py-1.5 text-xs">
-                                            <option value="">— Aucun —</option>
-                                            <?php foreach ($jobRoleOptions as $jo): ?>
-                                            <option value="<?= (int) $jo['id'] ?>" <?= $selId === (int) $jo['id'] ? 'selected' : '' ?>><?= htmlspecialchars($jo['label']) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
+                                    <div class="min-w-[220px] flex-1">
+                                        <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500" for="pjr-slot-<?= $uid ?>-<?= $si ?>-btn">Emploi</label>
+                                        <?php
+                                        $pjrComboName = 'slots[' . $si . '][role_id]';
+                                        $pjrComboSelectedId = $selId;
+                                        $pjrComboEmptyValue = '';
+                                        $pjrComboEmptyLabel = 'Aucun choix';
+                                        $pjrComboId = 'pjr-slot-' . $uid . '-' . $si;
+                                        require __DIR__ . '/_role_combobox.php';
+                                        ?>
                                     </div>
                                     <div class="min-w-[140px] flex-1">
                                         <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Précision</label>
@@ -209,14 +231,16 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
                             </div>
                             <?php else: ?>
                             <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
-                                <div class="min-w-[200px] flex-1">
-                                    <label class="mb-1 block text-[10px] font-bold uppercase text-slate-500">Rôle métier</label>
-                                    <select name="personnel_job_role_id" class="w-full rounded border border-slate-200 px-2 py-1.5 text-xs">
-                                        <option value="">— Aucun —</option>
-                                        <?php foreach ($jobRoleOptions as $jo): ?>
-                                        <option value="<?= (int) $jo['id'] ?>" <?= $curJr === (int) $jo['id'] ? 'selected' : '' ?>><?= htmlspecialchars($jo['label']) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                <div class="min-w-[220px] flex-1">
+                                    <label class="mb-1 block text-[10px] font-bold uppercase text-slate-500" for="pjr-legacy-<?= $uid ?>-btn">Rôle métier</label>
+                                    <?php
+                                    $pjrComboName = 'personnel_job_role_id';
+                                    $pjrComboSelectedId = $curJr;
+                                    $pjrComboEmptyValue = '';
+                                    $pjrComboEmptyLabel = 'Aucun choix';
+                                    $pjrComboId = 'pjr-legacy-' . $uid;
+                                    require __DIR__ . '/_role_combobox.php';
+                                    ?>
                                 </div>
                                 <div class="min-w-[160px] flex-1">
                                     <label class="mb-1 block text-[10px] font-bold uppercase text-slate-500">Sous-rôle</label>
@@ -258,6 +282,16 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
         <?php endfor; ?>
     </div>
     <?php endif; ?>
+
+    <dialog id="pjr-member-perms-dialog" class="w-[min(100%-1.5rem,42rem)] max-w-none rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl open:flex open:max-h-[min(90vh,44rem)] open:flex-col [&::backdrop]:bg-slate-900/45">
+        <div class="flex min-h-0 flex-1 flex-col">
+            <div class="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
+                <h2 id="pjr-member-perms-title" class="pr-2 text-base font-bold leading-snug text-slate-900 sm:text-lg">Autorisations liées aux emplois</h2>
+                <button type="button" class="pjr-member-perms-close rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Fermer</button>
+            </div>
+            <div id="pjr-member-perms-body" class="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5 sm:py-4"></div>
+        </div>
+    </dialog>
 </div>
 
 <?php if ($pivotEnabled): ?>
@@ -267,14 +301,15 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
             <input type="radio" name="primary_slot" value="__IDX__" class="text-emerald-600 pjr-primary-radio">
             Principal
         </label>
-        <div class="min-w-[200px] flex-1">
-            <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Emploi</label>
-            <select name="slots[__IDX__][role_id]" class="w-full rounded border border-slate-200 px-2 py-1.5 text-xs pjr-role-select">
-                <option value="">— Aucun —</option>
-                <?php foreach ($jobRoleOptions as $jo): ?>
-                <option value="<?= (int) $jo['id'] ?>"><?= htmlspecialchars($jo['label']) ?></option>
-                <?php endforeach; ?>
-            </select>
+        <div class="min-w-[220px] flex-1">
+            <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500" for="pjr-slot-tpl-__IDX__-btn">Emploi</label>
+            <div class="pjr-role-combobox w-full min-w-0" data-pjr-role-combobox data-reset-value="" data-reset-label="Aucun choix">
+                <input type="hidden" name="slots[__IDX__][role_id]" value="" class="pjr-role-combobox-value">
+                <button type="button" class="pjr-role-combobox-trigger flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-900 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40" aria-haspopup="listbox" aria-expanded="false" id="pjr-slot-tpl-__IDX__-btn" aria-labelledby="pjr-slot-tpl-__IDX__-lbl">
+                    <span id="pjr-slot-tpl-__IDX__-lbl" class="pjr-role-combobox-label min-w-0 flex-1 truncate font-medium">Aucun choix</span>
+                    <svg class="h-4 w-4 shrink-0 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                </button>
+            </div>
         </div>
         <div class="min-w-[140px] flex-1">
             <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Précision</label>
@@ -296,6 +331,7 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
       return wrap.querySelectorAll('.pjr-slot').length;
     }
     function reindexSlots() {
+      var uid = form.getAttribute('data-user-id') || '0';
       var slots = wrap.querySelectorAll('.pjr-slot');
       slots.forEach(function (row, i) {
         row.querySelectorAll('input, select').forEach(function (el) {
@@ -308,6 +344,17 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
         if (rad) {
           rad.value = String(i);
           rad.setAttribute('name', 'primary_slot');
+        }
+        var trig = row.querySelector('.pjr-role-combobox-trigger');
+        var lbl = row.querySelector('.pjr-role-combobox-label');
+        if (trig && lbl) {
+          var base = 'pjr-slot-' + uid + '-' + i;
+          trig.id = base + '-btn';
+          lbl.id = base + '-lbl';
+          var lab = row.querySelector('label[for]');
+          if (lab) {
+            lab.setAttribute('for', base + '-btn');
+          }
         }
       });
     }
@@ -333,3 +380,27 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
 })();
 </script>
 <?php endif; ?>
+
+<?php
+$pjrComboboxPayload = array_map(static function (array $jo) use ($jobRolePermissionCounts): array {
+    $rid = (int) ($jo['id'] ?? 0);
+    $row = [
+        'id' => $rid,
+        'label' => (string) $jo['label'],
+        'segments' => array_values($jo['segments'] ?? []),
+        'search' => (string) ($jo['search'] ?? ''),
+        'permission_count' => (int) ($jobRolePermissionCounts[$rid] ?? 0),
+    ];
+    if (trim((string) ($jo['label_en'] ?? '')) !== '') {
+        $row['label_en'] = (string) $jo['label_en'];
+    }
+
+    return $row;
+}, $jobRoleOptions);
+$pjrComboboxJson = json_encode($pjrComboboxPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
+$pjrMemberPermUrlJson = json_encode(url('back-office/personnel-job-roles/assignments/member-permissions'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+?>
+<script>window.__PJR_JOB_ROLES = <?= $pjrComboboxJson !== false ? $pjrComboboxJson : '[]' ?>;</script>
+<script>window.__PJR_MEMBER_PERM_URL = <?= $pjrMemberPermUrlJson !== false ? $pjrMemberPermUrlJson : '""' ?>;</script>
+<script src="<?= htmlspecialchars(url('assets/js/pjr_role_combobox.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
+<script src="<?= htmlspecialchars(url('assets/js/pjr_member_job_permissions.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>

@@ -37,6 +37,22 @@ if (!function_exists('config')) {
     }
 }
 
+if (!function_exists('app_environment_label_fr')) {
+    /**
+     * Libellé français pour APP_ENV (cohérent admin système / paramètres).
+     */
+    function app_environment_label_fr(?string $appEnvRaw = null): string
+    {
+        $raw = $appEnvRaw ?? (function_exists('env') ? (string) env('APP_ENV', 'local') : 'local');
+
+        return match ($raw) {
+            'production' => 'Production',
+            'staging' => 'Préproduction',
+            default => 'Développement / local',
+        };
+    }
+}
+
 if (!function_exists('email_config')) {
     /**
      * @return array<string, mixed>

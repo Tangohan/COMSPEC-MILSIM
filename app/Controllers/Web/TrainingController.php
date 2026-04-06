@@ -154,6 +154,39 @@ class TrainingController
         }, $coursesForCategories))));
         sort($categories, SORT_NATURAL | SORT_FLAG_CASE);
 
+        $catalogueSidebarEnrollments = [];
+        if ($userId) {
+            foreach ($this->enrollmentRepository->listByUserId((int) $userId, $tenantId) as $e) {
+                $st = (string) ($e['status'] ?? '');
+                if (in_array($st, ['withdrawn', 'revoked', 'expired'], true)) {
+                    continue;
+                }
+                $e['progress_percent'] = $st === 'pending_approval'
+                    ? 0
+                    : (int) round($this->trainingService->getGlobalProgress((int) $e['id']));
+                $catalogueSidebarEnrollments[] = $e;
+            }
+            usort($catalogueSidebarEnrollments, static function (array $a, array $b): int {
+                $rk = static function (array $x): int {
+                    return match ((string) ($x['status'] ?? '')) {
+                        'in_progress' => 0,
+                        'assigned' => 1,
+                        'pending_approval' => 2,
+                        'failed' => 3,
+                        'completed' => 5,
+                        default => 9,
+                    };
+                };
+                $cmp = $rk($a) <=> $rk($b);
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
+
+                return strcmp((string) ($a['course_title'] ?? ''), (string) ($b['course_title'] ?? ''));
+            });
+            $catalogueSidebarEnrollments = array_slice($catalogueSidebarEnrollments, 0, 8);
+        }
+
         return Response::view('training.catalogue', [
             'title' => 'Formations',
             'courses' => $courses,
@@ -163,6 +196,7 @@ class TrainingController
             'filterSearch' => $search !== null && $search !== '' ? (string) $search : null,
             'filterCategories' => $categories,
             'filterParcours' => $filterParcours,
+            'catalogueSidebarEnrollments' => $catalogueSidebarEnrollments,
         ]);
     }
 

@@ -707,6 +707,7 @@ function training_lms_resource_type_labels_fr(): array
         'image' => 'Image',
         'zip' => 'Archive',
         'attachment' => 'Fichier joint',
+        'library_document' => 'Document du centre',
     ];
 }
 
@@ -717,8 +718,8 @@ function training_lms_resource_type_labels_fr(): array
  */
 function training_lms_studio_resource_kind_label_fr(array $row): string
 {
-    if (!empty($row['library_document_id'])) {
-        return 'Document de la bibliothèque';
+    if (!empty($row['document_id']) || ($row['resource_type'] ?? '') === 'library_document') {
+        return 'Document du centre';
     }
 
     $t = (string) ($row['resource_type'] ?? 'link');

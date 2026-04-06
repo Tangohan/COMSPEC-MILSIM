@@ -155,6 +155,7 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
     </footer>
     <?php endif; ?>
     <?php require base_path('views/partials/community_report_modal.php'); ?>
+    <?php require base_path('views/partials/portal_help_modal.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

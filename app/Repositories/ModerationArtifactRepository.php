@@ -181,6 +181,51 @@ class ModerationArtifactRepository
         return (int) $stmt->fetchColumn();
     }
 
+    /** Fichiers / pièces en attente de décision, toutes communautés. */
+    public function countPendingQueueAllTenants(): int
+    {
+        if (!$this->tableExists()) {
+            return 0;
+        }
+        $stmt = $this->pdo->query(
+            "SELECT COUNT(*) FROM moderation_artifacts WHERE state IN ('quarantined','pending_scan')"
+        );
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * @return list<array{tenant_id: int, pending: int, tenant_name: string|null}>
+     */
+    public function pendingQueueTopTenants(int $limit): array
+    {
+        if (!$this->tableExists()) {
+            return [];
+        }
+        $limit = max(1, min(25, $limit));
+        $stmt = $this->pdo->prepare(
+            'SELECT ma.tenant_id AS tenant_id, COUNT(*) AS pending, MAX(t.name) AS tenant_name
+             FROM moderation_artifacts ma
+             LEFT JOIN tenants t ON t.id = ma.tenant_id
+             WHERE ma.state IN (\'quarantined\', \'pending_scan\')
+             GROUP BY ma.tenant_id
+             ORDER BY pending DESC
+             LIMIT ' . (int) $limit
+        );
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return array_map(static function (array $r): array {
+            return [
+                'tenant_id' => (int) ($r['tenant_id'] ?? 0),
+                'pending' => (int) ($r['pending'] ?? 0),
+                'tenant_name' => isset($r['tenant_name']) && $r['tenant_name'] !== '' && $r['tenant_name'] !== null
+                    ? (string) $r['tenant_name']
+                    : null,
+            ];
+        }, $rows);
+    }
+
     /**
      * Artefacts expirés (quarantaine TTL).
      *

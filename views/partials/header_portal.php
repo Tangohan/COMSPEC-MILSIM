@@ -119,6 +119,13 @@ $defaultAccent = 'slate';
                     <?php endif; ?>
 
                     <?php if ($loggedIn): ?>
+                        <button type="button"
+                                data-portal-help-trigger
+                                class="hidden shrink-0 items-center justify-center rounded-lg border-2 border-rose-600 bg-rose-600 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-sm transition hover:bg-rose-500 hover:border-rose-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400 sm:inline-flex"
+                                title="Signaler un problème ou demander de l’aide aux modérateurs"
+                                aria-label="Aide : signalement ou demande aux modérateurs">
+                            HELP
+                        </button>
                         <div class="relative" data-portal-alerts-wrap>
                             <button type="button"
                                     class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-600 bg-slate-800/90 text-slate-300 shadow-sm transition hover:bg-slate-700 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
@@ -241,6 +248,12 @@ $defaultAccent = 'slate';
         </div>
         <div class="flex-1 overflow-y-auto px-3 py-4">
             <?php if (!empty($loggedIn)): ?>
+            <button type="button"
+                    data-portal-help-trigger
+                    class="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-rose-600 bg-rose-600 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-sm transition hover:bg-rose-500"
+                    aria-label="Aide : signalement ou demande aux modérateurs">
+                HELP — aide &amp; signalement
+            </button>
             <p class="mb-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] leading-snug text-slate-600">
                 <span class="font-bold text-slate-800">Périmètre des accès :</span>
                 seuls les modules autorisés pour votre profil sont listés ci-dessous (communauté de session).

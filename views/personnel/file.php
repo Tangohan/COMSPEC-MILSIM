@@ -146,15 +146,31 @@ if (is_array($grade)) {
                     </div>
                     <?php if (\App\Core\Session::get('user_id')): ?>
                     <?php $reportUid = (int) ($targetUser['id'] ?? 0); ?>
-                    <div class="flex flex-wrap gap-2 mt-4">
-                        <button type="button" data-community-report data-cr-type="member_profile" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant cette fiche personnelle." class="text-[10px] font-bold uppercase tracking-wide text-rose-200/90 hover:text-white border border-rose-400/40 rounded-lg px-3 py-1.5 bg-slate-900/20">Signaler la fiche</button>
-                        <?php if (!empty($avatarUrl)): ?>
-                        <button type="button" data-community-report data-cr-type="profile_picture" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant la photo de compte affichée." class="text-[10px] font-bold uppercase tracking-wide text-rose-200/90 hover:text-white border border-rose-400/40 rounded-lg px-3 py-1.5 bg-slate-900/20">Signaler la photo de compte</button>
-                        <?php endif; ?>
-                        <?php if (!empty($portraitUrl)): ?>
-                        <button type="button" data-community-report data-cr-type="operator_visual" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant le portrait opérateur affiché." class="text-[10px] font-bold uppercase tracking-wide text-rose-200/90 hover:text-white border border-rose-400/40 rounded-lg px-3 py-1.5 bg-slate-900/20">Signaler le portrait opérateur</button>
-                        <?php endif; ?>
-                    </div>
+                    <details class="relative mt-5 max-w-md group">
+                        <summary class="flex cursor-pointer list-none items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-sm backdrop-blur-sm transition hover:border-white/35 hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 [&::-webkit-details-marker]:hidden">
+                            <svg class="h-4 w-4 shrink-0 text-rose-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                            Signaler un problème
+                            <svg class="h-3.5 w-3.5 shrink-0 text-white/70 transition group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+                        </summary>
+                        <div class="absolute left-0 top-[calc(100%+0.5rem)] z-30 min-w-[min(100%,17rem)] overflow-hidden rounded-xl border border-white/15 bg-slate-950/95 py-1 shadow-2xl shadow-black/40 backdrop-blur-md ring-1 ring-white/10" role="menu">
+                            <button type="button" role="menuitem" data-community-report data-cr-type="member_profile" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant cette fiche personnelle." class="flex w-full items-center gap-2 border-b border-white/10 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
+                                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
+                                La fiche affichée
+                            </button>
+                            <?php if (!empty($avatarUrl)): ?>
+                            <button type="button" role="menuitem" data-community-report data-cr-type="profile_picture" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant la photo de compte affichée." class="flex w-full items-center gap-2 border-b border-white/10 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
+                                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
+                                La photo de compte
+                            </button>
+                            <?php endif; ?>
+                            <?php if (!empty($portraitUrl)): ?>
+                            <button type="button" role="menuitem" data-community-report data-cr-type="operator_visual" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant le portrait opérateur affiché." class="flex w-full items-center gap-2 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
+                                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
+                                Le portrait opérateur
+                            </button>
+                            <?php endif; ?>
+                        </div>
+                    </details>
                     <?php endif; ?>
                 </div>
                 <div class="flex items-center gap-4 md:gap-6">

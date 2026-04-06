@@ -20,7 +20,13 @@ use App\Repositories\TrainingModuleRepository;
 use App\Repositories\TrainingQuizRepository;
 use App\Repositories\TrainingResourceRepository;
 use App\Repositories\TrainingCourseRepository;
+use App\Repositories\DocumentRepository;
+use App\Repositories\ModerationArtifactRepository;
+use App\Services\Documents\DocumentAccessService;
+use App\Services\Audit\AuditService;
+use App\Services\Moderation\ModerationArtifactState;
 use App\Services\Platform\FeatureGateService;
+use App\Core\Gate;
 
 class TrainingApiController
 {
@@ -41,6 +47,10 @@ class TrainingApiController
         private TrainingLessonRepository $lessonRepository,
         private TrainingModuleRepository $moduleRepository,
         private TrainingCertificateShareService $certificateShareService,
+        private DocumentRepository $documentRepository,
+        private DocumentAccessService $documentAccessService,
+        private ModerationArtifactRepository $moderationArtifactRepository,
+        private AuditService $auditService,
     ) {}
 
     private function tenantId(): int
@@ -531,7 +541,7 @@ class TrainingApiController
             return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
         }
         $res = $this->resourceRepository->findById($rid);
-        if (!$res || empty($res['file_path'])) {
+        if (!$res || empty($res['file_path']) || (string) ($res['resource_type'] ?? '') === 'library_document') {
             return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
         }
         $lesson = $this->lessonRepository->findById((int) $res['lesson_id']);
@@ -573,6 +583,124 @@ class TrainingApiController
         });
 
         return $response;
+    }
+
+    /**
+     * Fichier d’un document du centre rattaché à la ressource (inscription au parcours + droits document, sans gate documents.view).
+     */
+    public function lessonResourceLinkedDocument(Request $request, array $params = []): Response
+    {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
+        $tenantId = $this->tenantId();
+        $userId = $this->userId();
+        $rid = (int) ($params['id'] ?? 0);
+        if ($rid < 1) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $res = $this->resourceRepository->findById($rid);
+        if (!$res || empty($res['document_id']) || (string) ($res['resource_type'] ?? '') !== 'library_document') {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $lesson = $this->lessonRepository->findById((int) $res['lesson_id']);
+        if (!$lesson) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $mod = $this->moduleRepository->findById((int) $lesson['module_id']);
+        if (!$mod) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $courseId = (int) $mod['course_id'];
+        if (!$this->courseRepository->findByIdForViewer($courseId, $tenantId)) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $enrollment = $this->enrollmentRepository->findByCourseAndUser($courseId, $userId);
+        if (!$enrollment || in_array((string) ($enrollment['status'] ?? ''), training_enrollment_inactive_for_member_ui_statuses(), true)) {
+            return (new Response())->setStatusCode(403)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Accès non autorisé.');
+        }
+        if (!$this->trainingService->canAccessCourse($userId, $courseId, $tenantId)) {
+            return (new Response())->setStatusCode(403)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Accès non autorisé.');
+        }
+
+        $docId = (int) $res['document_id'];
+        $doc = $this->documentRepository->findById($docId, $tenantId);
+        if (!$doc || empty($doc['file_path'])) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Document indisponible.');
+        }
+        if (($doc['status'] ?? '') !== 'published') {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Document indisponible.');
+        }
+        if (!$this->documentAccessService->canRead($doc, $userId, $tenantId)) {
+            return (new Response())->setStatusCode(403)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Accès non autorisé à ce document.');
+        }
+        if ($this->linkedDocumentFileBlockedForLearner($doc)) {
+            return (new Response())->setStatusCode(403)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Fichier non disponible.');
+        }
+
+        $fullPath = base_path('storage/documents/' . $doc['file_path']);
+        if (!is_file($fullPath)) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Fichier indisponible.');
+        }
+
+        $inline = trim((string) $request->query('inline', '')) === '1';
+        $this->auditService->logDocumentDownloaded($tenantId, $userId, $docId);
+
+        $mime = trim((string) ($doc['mime_type'] ?? '')) ?: 'application/octet-stream';
+        $disp = $inline ? 'inline' : 'attachment';
+        $fname = basename((string) $doc['file_path']);
+        $safeName = preg_replace('/[^a-zA-Z0-9._-]+/', '_', $fname) ?: 'fichier';
+
+        $response = new Response();
+        $response->header('Content-Type', $mime);
+        $response->header('Content-Disposition', $disp . '; filename="' . $safeName . '"');
+        $response->header('Content-Length', (string) filesize($fullPath));
+        $response->setBodyStream(static function () use ($fullPath): void {
+            $h = fopen($fullPath, 'rb');
+            if ($h) {
+                fpassthru($h);
+                fclose($h);
+            }
+        });
+
+        return $response;
+    }
+
+    /** @param array<string, mixed> $doc */
+    private function linkedDocumentFileBlockedForLearner(array $doc): bool
+    {
+        if (!$this->moderationArtifactRepository->tableExists()) {
+            return false;
+        }
+        $versionId = (int) ($doc['version_id'] ?? 0);
+        if ($versionId <= 0) {
+            return false;
+        }
+        if ($this->learnerMayBypassDocumentModerationBlock()) {
+            return false;
+        }
+        $row = $this->moderationArtifactRepository->findByDocumentVersionId($versionId);
+        if (!$row) {
+            return false;
+        }
+        $st = (string) ($row['state'] ?? '');
+
+        return in_array($st, [
+            ModerationArtifactState::PENDING_SCAN,
+            ModerationArtifactState::QUARANTINED,
+            ModerationArtifactState::REJECTED,
+        ], true);
+    }
+
+    private function learnerMayBypassDocumentModerationBlock(): bool
+    {
+        $gate = Gate::getInstance();
+
+        return (function_exists('can') && (can('forum.moderate') || can('forum.moderate_organization')))
+            || $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('admin.system');
     }
 
     // ---------- Admin API ----------

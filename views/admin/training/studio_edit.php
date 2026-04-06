@@ -860,13 +860,13 @@ $defaultCanvasJson = json_encode([
                                         $kindLab = function_exists('training_lms_studio_resource_kind_label_fr')
                                             ? training_lms_studio_resource_kind_label_fr($sr)
                                             : ($resourceTypeLabels[(string) ($sr['resource_type'] ?? 'link')] ?? '');
-                                        $dSt = (string) ($sr['library_doc_status'] ?? '');
+                                        $dSt = (string) ($sr['document_status'] ?? '');
                                         $dStLab = ($dSt !== '' && isset($docStatusLabels[$dSt])) ? $docStatusLabels[$dSt] : '';
                                     ?>
                                     <li class="flex flex-wrap justify-between gap-2 items-start border-b border-sky-100/80 pb-2">
                                         <span class="text-slate-800 min-w-0">
                                             <span class="font-semibold block"><?= htmlspecialchars((string) ($sr['title'] ?? '')) ?></span>
-                                            <span class="text-slate-500"><?= htmlspecialchars($kindLab) ?><?php if ($dStLab !== '' && !empty($sr['library_document_id'])): ?> · <?= htmlspecialchars($dStLab) ?><?php endif; ?></span>
+                                            <span class="text-slate-500"><?= htmlspecialchars($kindLab) ?><?php if ($dStLab !== '' && !empty($sr['document_id'])): ?> · <?= htmlspecialchars($dStLab) ?><?php endif; ?></span>
                                         </span>
                                         <form method="post" action="<?= training_studio_url($cid) ?>" class="shrink-0" onsubmit="return confirm('Retirer cette ressource de la leçon ?');">
                                             <?= \App\Core\Csrf::field() ?>
@@ -932,7 +932,7 @@ $defaultCanvasJson = json_encode([
                                     <div class="space-y-2 hidden" data-lms-res-panel="library">
                                         <div>
                                             <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Document</label>
-                                            <select name="library_document_id" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
+                                            <select name="document_id" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
                                                 <option value="">— Choisir dans la bibliothèque —</option>
                                                 <?php foreach ($libraryDocumentsForPicker as $pickDoc):
                                                     $pid = (int) ($pickDoc['id'] ?? 0);

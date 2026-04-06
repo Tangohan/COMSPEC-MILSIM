@@ -80,6 +80,8 @@ $hasOrgPath = $gate->allows('admin.organization') || $gate->allows('admin.access
             <?php require base_path('views/admin/partials/kpi_row.php'); ?>
         </section>
 
+        <?php require base_path('views/admin/partials/moderation_platform_overview.php'); ?>
+
         <?php require base_path('views/admin/partials/recent_activity.php'); ?>
 
         <?php require base_path('views/admin/partials/quick_actions_system.php'); ?>

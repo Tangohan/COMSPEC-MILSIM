@@ -129,6 +129,35 @@ final class AuditLogRepository
     }
 
     /**
+     * Dernières entrées système filtrées par liste d’actions exactes (tableau de bord plateforme).
+     *
+     * @param list<string> $actions
+     * @return list<array<string, mixed>>
+     */
+    public function recentSystemByActions(array $actions, int $limit): array
+    {
+        $actions = array_values(array_unique(array_filter(array_map(static function (mixed $a): string {
+            return trim((string) $a);
+        }, $actions), static fn (string $a): bool => $a !== '')));
+        if ($actions === []) {
+            return [];
+        }
+        $limit = max(1, min(50, $limit));
+        $placeholders = implode(',', array_fill(0, count($actions), '?'));
+        $sql = "SELECT a.*, t.name AS tenant_name, u.email AS actor_email
+             FROM audit_logs a
+             LEFT JOIN tenants t ON t.id = a.tenant_id
+             LEFT JOIN users u ON u.id = a.user_id
+             WHERE a.action IN ({$placeholders})
+             ORDER BY a.id DESC
+             LIMIT " . (int) $limit;
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($actions);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
      * Dernières entrées pour un tenant. Pour le back-office organisation : exclure les actions
      * réservées à la plateforme et les acteurs ayant un rôle site (staff).
      *

@@ -20,7 +20,7 @@ $moreUrl = $adminRecentActivityMoreUrl ?? url('admin/audit');
             <?php foreach ($rows as $row): ?>
                 <li class="py-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                     <span class="text-slate-500 whitespace-nowrap"><?= htmlspecialchars((string) ($row['created_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                    <span class="font-mono text-xs text-slate-800"><?= htmlspecialchars((string) ($row['action'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span class="font-medium text-slate-800"><?= htmlspecialchars(audit_action_label_fr((string) ($row['action'] ?? '')), ENT_QUOTES, 'UTF-8') ?></span>
                     <span class="text-slate-600"><?= htmlspecialchars((string) ($row['actor_email'] ?? ('#' . (string) ($row['user_id'] ?? ''))), ENT_QUOTES, 'UTF-8') ?></span>
                 </li>
             <?php endforeach; ?>

@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\CommunityEventRepository;
+use App\Repositories\UserRepository;
 use App\Services\Attendance\CommunityEventAttendanceService;
 use App\Services\Auth\AuthService;
 use App\Services\Platform\FeatureGateService;
@@ -17,6 +18,7 @@ final class CommunityEventsAdminController
 {
     public function __construct(
         private CommunityEventRepository $events,
+        private UserRepository $users,
         private AuthService $authService,
         private FeatureGateService $featureGate,
         private CommunityEventAttendanceService $attendance
@@ -39,13 +41,22 @@ final class CommunityEventsAdminController
             $user ? (int) $user['id'] : null,
             'events'
         );
-        $rows = $this->events->upcomingForTenant($tenantId, 100);
+        $vue = trim((string) $request->query('vue', 'a_venir'));
+        if (!in_array($vue, ['a_venir', 'passes', 'annules'], true)) {
+            $vue = 'a_venir';
+        }
+        $rows = match ($vue) {
+            'passes' => $this->events->pastForTenant($tenantId, 100),
+            'annules' => $this->events->cancelledForTenant($tenantId, 100),
+            default => $this->events->upcomingForTenant($tenantId, 100),
+        };
         $quota = $this->featureGate->quotaStatusForFeature($tenantId, 'events');
 
         return Response::view('layout.main', [
             'title' => 'Gérer les événements',
             'content' => 'admin.organization.events',
             'events' => $rows,
+            'eventsVue' => $vue,
             'eventsQuota' => $quota,
             'canCreateEvent' => $this->featureGate->allows($tenantId, 'events'),
         ]);
@@ -68,7 +79,7 @@ final class CommunityEventsAdminController
         }
         if (!$this->featureGate->allows($tenantId, 'events')) {
             $this->featureGate->recordQuotaLimitReached($tenantId, (int) $user['id'], 'events');
-            Session::flash('error', 'Quota mensuel de créations d’événements atteint. Passez à un plan supérieur pour en ajouter davantage.');
+            Session::flash('error', "Quota mensuel de créations d'événements atteint. Passez à un plan supérieur pour en ajouter davantage.");
 
             return Response::redirect(url('back-office/events'));
         }
@@ -119,13 +130,206 @@ final class CommunityEventsAdminController
             return Response::redirect(url('back-office/events'));
         }
         $rsvps = $this->events->listRsvpsWithUsersForEvent($id);
+        $lookupQ = trim((string) $request->query('q', ''));
+        $memberLookup = [];
+        if (strlen($lookupQ) >= 2) {
+            $memberLookup = $this->users->searchForPortal($tenantId, $lookupQ, 18);
+        }
+        $rsvpUserIds = [];
+        foreach ($rsvps as $row) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            if ($uid > 0) {
+                $rsvpUserIds[$uid] = true;
+            }
+        }
 
         return Response::view('layout.main', [
             'title' => 'Participants — ' . (string) ($event['title'] ?? ''),
             'content' => 'admin.organization.event_show',
             'event' => $event,
             'eventRsvps' => $rsvps,
+            'eventMemberLookup' => $memberLookup,
+            'eventMemberLookupQuery' => $lookupQ,
+            'eventRsvpUserIds' => $rsvpUserIds,
+            'eventStaffActionsEnabled' => empty($event['cancelled_at']),
         ]);
+    }
+
+    public function updateParticipantRsvp(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $this->redirectToEvent($params);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('back-office/events'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            Session::flash('error', 'Créneau introuvable.');
+
+            return Response::redirect(url('back-office/events'));
+        }
+        $targetUserId = (int) $request->input('user_id');
+        $action = trim((string) $request->input('participation', ''));
+        if (!in_array($action, ['yes', 'no', 'maybe', 'remove'], true)) {
+            Session::flash('error', 'Choix de participation invalide.');
+
+            return $this->redirectToEvent($params, $id);
+        }
+        $result = $this->attendance->adminSetParticipantRsvp($id, $tenantId, $targetUserId, $action);
+        if (!($result['ok'] ?? false)) {
+            Session::flash('error', $result['error'] ?? 'Modification impossible.');
+
+            return $this->redirectToEvent($params, $id);
+        }
+        Session::flash('success', $action === 'remove' ? 'Inscription retirée.' : 'Participation mise à jour.');
+
+        return $this->redirectToEvent($params, $id);
+    }
+
+    public function addParticipant(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $this->redirectToEvent($params);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('back-office/events'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            Session::flash('error', 'Créneau introuvable.');
+
+            return Response::redirect(url('back-office/events'));
+        }
+        $targetUserId = (int) $request->input('user_id');
+        $action = trim((string) $request->input('participation', 'yes'));
+        if (!in_array($action, ['yes', 'no', 'maybe'], true)) {
+            $action = 'yes';
+        }
+        $result = $this->attendance->adminSetParticipantRsvp($id, $tenantId, $targetUserId, $action);
+        if (!($result['ok'] ?? false)) {
+            Session::flash('error', $result['error'] ?? 'Ajout impossible.');
+
+            return $this->redirectToEvent($params, $id);
+        }
+        Session::flash('success', 'Membre ajouté à la feuille de présence.');
+
+        return $this->redirectToEvent($params, $id);
+    }
+
+    public function forceCheckIn(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $this->redirectToEvent($params);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('back-office/events'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            Session::flash('error', 'Créneau introuvable.');
+
+            return Response::redirect(url('back-office/events'));
+        }
+        $targetUserId = (int) $request->input('user_id');
+        $result = $this->attendance->adminForceCheckIn($id, $tenantId, $targetUserId);
+        if (!($result['ok'] ?? false)) {
+            Session::flash('error', $result['error'] ?? 'Pointage impossible.');
+
+            return $this->redirectToEvent($params, $id);
+        }
+        Session::flash('success', 'Présence enregistrée pour ce membre.');
+
+        return $this->redirectToEvent($params, $id);
+    }
+
+    public function clearCheckIn(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $this->redirectToEvent($params);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('back-office/events'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            Session::flash('error', 'Créneau introuvable.');
+
+            return Response::redirect(url('back-office/events'));
+        }
+        $targetUserId = (int) $request->input('user_id');
+        $result = $this->attendance->adminClearCheckIn($id, $tenantId, $targetUserId);
+        if (!($result['ok'] ?? false)) {
+            Session::flash('error', $result['error'] ?? 'Action impossible.');
+
+            return $this->redirectToEvent($params, $id);
+        }
+        Session::flash('success', 'Pointage effacé. Le membre pourra à nouveau être pointé si les règles du portail le permettent.');
+
+        return $this->redirectToEvent($params, $id);
+    }
+
+    public function exportPresences(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('back-office/events'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $event = $id > 0 ? $this->events->findByIdForTenant($id, $tenantId) : null;
+        if (!$event) {
+            Session::flash('error', 'Événement introuvable.');
+
+            return Response::redirect(url('back-office/events'));
+        }
+        $rows = $this->events->listRsvpsWithUsersForEvent($id);
+        $sep = ';';
+        $lines = [];
+        $lines[] = implode($sep, ['Nom affiché', 'Indicatif', 'Adresse e-mail', 'Participation', 'Pointage', 'Inscription', 'Rappel envoyé']);
+        $lab = static function (string $s): string {
+            return match ($s) {
+                'yes' => 'Présent',
+                'maybe' => 'Peut-être',
+                'no' => 'Absent',
+                default => $s,
+            };
+        };
+        foreach ($rows as $r) {
+            $rem = !empty($r['reminder_sent_at']) ? 'Oui' : 'Non';
+            $lines[] = implode($sep, [
+                '"' . str_replace('"', '""', (string) ($r['display_name'] ?? '')) . '"',
+                '"' . str_replace('"', '""', (string) ($r['callsign'] ?? '')) . '"',
+                '"' . str_replace('"', '""', (string) ($r['email'] ?? '')) . '"',
+                '"' . str_replace('"', '""', $lab((string) ($r['status'] ?? ''))) . '"',
+                '"' . str_replace('"', '""', (string) ($r['checked_in_at'] ?? '')) . '"',
+                '"' . str_replace('"', '""', (string) ($r['rsvp_created_at'] ?? '')) . '"',
+                '"' . $rem . '"',
+            ]);
+        }
+        $body = "\xEF\xBB\xBF" . implode("\r\n", $lines) . "\r\n";
+        $slug = preg_replace('/[^a-zA-Z0-9_-]+/u', '-', (string) ($event['title'] ?? 'creneau'));
+        $slug = trim((string) $slug, '-');
+        if ($slug === '') {
+            $slug = 'creneau';
+        }
+        $filename = 'feuille-presences-' . $slug . '-' . $id . '.csv';
+
+        return (new Response())
+            ->header('Content-Type', 'text/csv; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($body);
     }
 
     public function cancel(Request $request, array $params = []): Response
@@ -160,3 +364,15 @@ final class CommunityEventsAdminController
 
         return Response::redirect(url('back-office/events'));
     }
+
+    /** @param array<string, string> $params */
+    private function redirectToEvent(array $params, ?int $eventId = null): Response
+    {
+        $id = $eventId ?? (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::redirect(url('back-office/events'));
+        }
+
+        return Response::redirect(url('back-office/events/' . (string) $id));
+    }
+}

@@ -56,6 +56,7 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
     <?php if ($forumContextMenuEnabled): ?>
     <script src="<?= htmlspecialchars($baseUrl) ?>/assets/js/forum/forum_category_context.js" defer></script>
     <?php endif; ?>
+    <?php require base_path('views/partials/portal_help_modal.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

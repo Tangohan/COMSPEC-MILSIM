@@ -48,8 +48,8 @@ if ($footerNext !== null) {
                     <ul class="space-y-2">
                         <?php foreach ($resources as $r): ?>
                         <li>
-                            <?php if (!empty($r['library_document_id']) && !empty($r['library_doc_slug'])): ?>
-                            <a href="<?= htmlspecialchars(url('documents/' . rawurlencode((string) $r['library_doc_slug'])), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>
+                            <?php if (($r['resource_type'] ?? '') === 'library_document' && !empty($r['document_id'])): ?>
+                            <a href="<?= htmlspecialchars(url('api/training/resource/' . (int) $r['id'] . '/document?inline=1'), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>
                             <?php elseif (!empty($r['file_path'])): ?>
                             <a href="<?= url('api/training/resource/' . (int) $r['id'] . '/download') ?>" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>
                             <?php elseif (!empty($r['external_url'])): ?>

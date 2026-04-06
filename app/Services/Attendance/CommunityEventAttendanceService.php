@@ -232,4 +232,92 @@ final class CommunityEventAttendanceService
 
         return ['ok' => true, 'notified' => $notified];
     }
+
+    /**
+     * @param 'yes'|'no'|'maybe'|'remove' $status
+     *
+     * @return array{ok: bool, error?: string}
+     */
+    public function adminSetParticipantRsvp(int $eventId, int $tenantId, int $targetUserId, string $status): array
+    {
+        if ($targetUserId < 1) {
+            return ['ok' => false, 'error' => 'Membre invalide.'];
+        }
+        if (!in_array($status, ['yes', 'no', 'maybe', 'remove'], true)) {
+            return ['ok' => false, 'error' => 'Choix de participation invalide.'];
+        }
+        $event = $this->events->findByIdForTenant($eventId, $tenantId);
+        if (!$event || !empty($event['cancelled_at'])) {
+            return ['ok' => false, 'error' => 'Ce créneau est introuvable ou annulé.'];
+        }
+        $member = $this->users->findById($targetUserId, $tenantId);
+        if (!$member) {
+            return ['ok' => false, 'error' => 'Membre introuvable dans cette communauté.'];
+        }
+        if ($status === 'remove') {
+            $this->events->deleteRsvp($eventId, $targetUserId);
+
+            return ['ok' => true];
+        }
+        $this->events->setRsvp($eventId, $targetUserId, $status);
+
+        return ['ok' => true];
+    }
+
+    /**
+     * Pointage manuel par le staff (hors fenêtre horaire).
+     *
+     * @return array{ok: bool, error?: string}
+     */
+    public function adminForceCheckIn(int $eventId, int $tenantId, int $targetUserId): array
+    {
+        if ($targetUserId < 1) {
+            return ['ok' => false, 'error' => 'Membre invalide.'];
+        }
+        $event = $this->events->findByIdForTenant($eventId, $tenantId);
+        if (!$event || !empty($event['cancelled_at'])) {
+            return ['ok' => false, 'error' => 'Ce créneau est introuvable ou annulé.'];
+        }
+        if (!$this->users->findById($targetUserId, $tenantId)) {
+            return ['ok' => false, 'error' => 'Membre introuvable dans cette communauté.'];
+        }
+        $rsvp = $this->events->getRsvp($eventId, $targetUserId);
+        if (!$rsvp || !in_array((string) ($rsvp['status'] ?? ''), ['yes', 'maybe'], true)) {
+            return ['ok' => false, 'error' => 'Le pointage n’est possible que pour un membre indiqué comme présent ou « peut-être ».'];
+        }
+        if (!empty($rsvp['checked_in_at'])) {
+            return ['ok' => false, 'error' => 'La présence est déjà enregistrée pour ce membre.'];
+        }
+        $now = (new \DateTimeImmutable('now'))->format('Y-m-d H:i:s');
+        $this->events->setCheckIn($eventId, $targetUserId, $now);
+
+        return ['ok' => true];
+    }
+
+    /**
+     * @return array{ok: bool, error?: string}
+     */
+    public function adminClearCheckIn(int $eventId, int $tenantId, int $targetUserId): array
+    {
+        if ($targetUserId < 1) {
+            return ['ok' => false, 'error' => 'Membre invalide.'];
+        }
+        $event = $this->events->findByIdForTenant($eventId, $tenantId);
+        if (!$event || !empty($event['cancelled_at'])) {
+            return ['ok' => false, 'error' => 'Ce créneau est introuvable ou annulé.'];
+        }
+        if (!$this->users->findById($targetUserId, $tenantId)) {
+            return ['ok' => false, 'error' => 'Membre introuvable dans cette communauté.'];
+        }
+        $rsvp = $this->events->getRsvp($eventId, $targetUserId);
+        if (!$rsvp) {
+            return ['ok' => false, 'error' => 'Aucune inscription à modifier pour ce membre.'];
+        }
+        if (empty($rsvp['checked_in_at'])) {
+            return ['ok' => false, 'error' => 'Aucun pointage enregistré à effacer.'];
+        }
+        $this->events->clearCheckIn($eventId, $targetUserId);
+
+        return ['ok' => true];
+    }
 }

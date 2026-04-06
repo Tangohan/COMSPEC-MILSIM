@@ -992,7 +992,7 @@ class AdminTrainingStudioController
         return $this->studioRedirectAfter($request, $courseId, 'structure');
     }
 
-    private const RESOURCE_TYPES = ['pdf', 'image', 'video', 'audio', 'zip', 'attachment', 'link'];
+    private const RESOURCE_TYPES = ['pdf', 'image', 'video', 'audio', 'zip', 'attachment', 'link', 'library_document'];
 
     private function addLessonResource(Request $request, int $courseId, int $tenantId): Response
     {
@@ -1010,7 +1010,7 @@ class AdminTrainingStudioController
         }
 
         if ($mode === 'library') {
-            $docId = (int) $request->input('library_document_id', 0);
+            $docId = (int) $request->input('document_id', 0);
             $doc = $docId > 0 ? $this->documentRepository->findById($docId, $tenantId) : null;
             if (!$doc) {
                 Session::flash('error', 'Choisissez un document dans la liste ou vérifiez qu’il appartient à votre communauté.');
@@ -1022,13 +1022,13 @@ class AdminTrainingStudioController
                 $title = trim((string) ($doc['title'] ?? 'Document'));
             }
             $this->resourceRepository->create($lessonId, [
-                'resource_type' => 'attachment',
+                'resource_type' => 'library_document',
                 'title' => mb_substr($title, 0, 255),
                 'external_url' => null,
                 'file_path' => null,
                 'mime_type' => null,
                 'file_size' => null,
-                'library_document_id' => $docId,
+                'document_id' => $docId,
             ]);
             $this->markCourseSavedWithCurrentStudioVersion($courseId);
             $msg = 'Ressource ajoutée à la leçon.';

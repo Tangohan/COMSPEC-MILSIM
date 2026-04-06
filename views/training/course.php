@@ -44,6 +44,25 @@ $lmsExtraHead = '';
 ob_start();
 require base_path('views/training/partials/lms_head.php');
 $headHtml = ob_get_clean();
+
+$bp = trim((string) ($course['banner_path'] ?? ''));
+$tp = trim((string) ($course['thumbnail_path'] ?? ''));
+$bannerPick = $bp !== '' ? $bp : ($tp !== '' ? $tp : null);
+$bannerSrc = training_media_url($bannerPick);
+
+$lmsOpeningCourseId = $courseId;
+$lmsOpeningTitle = (string) $course['title'];
+$lmsOpeningBannerSrc = $bannerSrc;
+$lmsOpeningCtaMode = 'scroll_inscription';
+$lmsOpeningLessonUrl = '';
+if ($enrollment && $canAccessLearning && $firstLesson) {
+    $lmsOpeningCtaMode = 'lesson';
+    if ($continueLesson) {
+        $lmsOpeningLessonUrl = url('formations/lesson/' . (int) $continueLesson['id'] . '?enrollment_id=' . (int) $enrollment['id']);
+    } else {
+        $lmsOpeningLessonUrl = url('formations/lesson/' . (int) $firstLesson['id'] . '?enrollment_id=' . (int) $enrollment['id']);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
@@ -51,6 +70,7 @@ $headHtml = ob_get_clean();
 <?= $headHtml ?>
 </head>
 <body class="bg-slate-100 text-slate-900 overflow-x-hidden">
+    <?php require base_path('views/training/partials/lms_course_opening_sequence.php'); ?>
     <div class="lms-grain"></div>
     <div class="min-h-screen relative z-10">
         <div class="grid lg:grid-cols-[300px_1fr] min-h-screen">
@@ -99,12 +119,6 @@ $headHtml = ob_get_clean();
                     </div>
                 </section>
                 <?php endif; ?>
-                <?php
-                $bp = trim((string) ($course['banner_path'] ?? ''));
-                $tp = trim((string) ($course['thumbnail_path'] ?? ''));
-                $bannerPick = $bp !== '' ? $bp : ($tp !== '' ? $tp : null);
-                $bannerSrc = training_media_url($bannerPick);
-                ?>
                 <div class="lms-course-hero">
                     <img src="<?= htmlspecialchars($bannerSrc) ?>" alt="" class="lms-course-hero__media" loading="eager" decoding="async" fetchpriority="high">
                     <div class="lms-course-hero__veil" aria-hidden="true"></div>
@@ -115,7 +129,7 @@ $headHtml = ob_get_clean();
                     <div class="flex flex-wrap items-start justify-between gap-6">
                         <div class="min-w-0 flex-1">
                             <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-2">Fiche formation</p>
-                            <h1 class="text-2xl md:text-4xl font-black tracking-tight uppercase text-slate-900"><?= htmlspecialchars((string) $course['title']) ?></h1>
+                            <h1 id="lms-course-page-title" class="text-2xl md:text-4xl font-black tracking-tight uppercase text-slate-900"><?= htmlspecialchars((string) $course['title']) ?></h1>
                             <p class="text-sm font-mono text-emerald-600 mt-2"><?= htmlspecialchars($code) ?></p>
                             <?php if (!empty($course['short_description'])): ?>
                             <p class="text-slate-600 mt-3 max-w-3xl"><?= htmlspecialchars((string) $course['short_description']) ?></p>

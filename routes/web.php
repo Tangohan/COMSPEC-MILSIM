@@ -361,7 +361,12 @@ return function (Router $router) {
     $router->post('/back-office/conformite/export-dossier/telecharger', [ComplianceBundleExportController::class, 'download'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events', [CommunityEventsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events', [CommunityEventsAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/events/{id}/export-presences', [CommunityEventsAdminController::class, 'exportPresences'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events/{id}', [CommunityEventsAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/participant/rsvp', [CommunityEventsAdminController::class, 'updateParticipantRsvp'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/participant/add', [CommunityEventsAdminController::class, 'addParticipant'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/participant/presence', [CommunityEventsAdminController::class, 'forceCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/participant/presence/clear', [CommunityEventsAdminController::class, 'clearCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/cancel', [CommunityEventsAdminController::class, 'cancel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/graph.json', [RolesFunctionsAdminController::class, 'graphJson'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -390,6 +395,7 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/grades/{id}/deactivate', [GradeReferentielController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles', [PersonnelJobRoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles/assignments', [PersonnelJobRoleAdminController::class, 'assignments'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/personnel-job-roles/assignments/member-permissions', [PersonnelJobRoleAdminController::class, 'memberJobRolePermissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/personnel-job-roles/assignments/save', [PersonnelJobRoleAdminController::class, 'saveAssignment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/personnel-job-roles/assignments/settings', [PersonnelJobRoleAdminController::class, 'saveAssignmentsSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles/roles/create', [PersonnelJobRoleAdminController::class, 'createRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -608,6 +614,7 @@ return function (Router $router) {
     $router->get('/api/training/progress/lesson', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('formations')), $mwTraining);
     $router->post('/api/training/progress/lesson', [TrainingApiController::class, 'progressLesson'], $mwTraining);
     $router->get('/api/training/resource/{id}/download', [TrainingApiController::class, 'lessonResourceDownload'], $mwTraining);
+    $router->get('/api/training/resource/{id}/document', [TrainingApiController::class, 'lessonResourceLinkedDocument'], $mwTraining);
     $router->post('/api/training/quiz/start', [TrainingApiController::class, 'quizStart'], $mwTraining);
     $router->get('/api/training/quiz/attempts/{id}', [TrainingApiController::class, 'quizAttempt'], $mwTraining);
     $router->post('/api/training/quiz/submit', [TrainingApiController::class, 'quizSubmit'], $mwTraining);

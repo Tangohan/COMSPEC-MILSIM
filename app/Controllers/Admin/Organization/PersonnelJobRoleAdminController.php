@@ -266,6 +266,7 @@ class PersonnelJobRoleAdminController
             $pjrAssignSettings['show_english_labels'],
             $pjrAssignSettings['show_category_in_role_picklist']
         );
+        $jobRolePermissionCounts = $this->jobRoleRepository->permissionCountsForTenant($tenantId);
         $totalPages = max(1, (int) ceil($total / $perPage));
 
         return Response::view('layout.main', [
@@ -274,6 +275,7 @@ class PersonnelJobRoleAdminController
             'assignmentRows' => $rows,
             'assignmentPivot' => $assignmentPivot,
             'jobRoleOptions' => $jobRoleOptions,
+            'jobRolePermissionCounts' => $jobRolePermissionCounts,
             'pjrAssignSettings' => $pjrAssignSettings,
             'pivotEnabled' => $this->jobRoleRepository->pivotTableExists(),
             'filters' => [
@@ -287,6 +289,105 @@ class PersonnelJobRoleAdminController
             'assignmentsTotalPages' => $totalPages,
             'activeTab' => 'assignments',
         ]);
+    }
+
+    /**
+     * Aperçu des autorisations liées aux emplois attribués (référentiel), fusionnées par membre.
+     */
+    public function memberJobRolePermissions(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::json(['ok' => false, 'message' => 'Session expirée.'], 401);
+        }
+        if (!$this->jobRoleRepository->tablesExist() || !$this->jobRoleRepository->personnelProfilesHaveJobRoleColumns()) {
+            return Response::json(['ok' => false, 'message' => 'Fonction indisponible.'], 503);
+        }
+        $userId = max(0, (int) $request->query('user_id', 0));
+        if ($userId <= 0) {
+            return Response::json(['ok' => false, 'message' => 'Membre invalide.'], 400);
+        }
+        $user = $this->userRepository->findById($userId, $tenantId);
+        if (!$user) {
+            return Response::json(['ok' => false, 'message' => 'Membre introuvable dans cette communauté.'], 404);
+        }
+
+        $permCounts = $this->jobRoleRepository->permissionCountsForTenant($tenantId);
+        $assignedRoles = [];
+        $seenRole = [];
+        if ($this->jobRoleRepository->pivotTableExists()) {
+            $pivot = $this->jobRoleRepository->listPivotAssignmentsForUsers($tenantId, [$userId]);
+            foreach ($pivot[$userId] ?? [] as $row) {
+                $rid = (int) ($row['personnel_job_role_id'] ?? 0);
+                if ($rid <= 0 || isset($seenRole[$rid])) {
+                    continue;
+                }
+                $seenRole[$rid] = true;
+                $assignedRoles[] = [
+                    'id' => $rid,
+                    'name' => (string) ($row['role_name'] ?? ''),
+                    'primary' => !empty($row['is_primary']),
+                    'permission_count' => $permCounts[$rid] ?? 0,
+                ];
+            }
+        }
+        if ($assignedRoles === []) {
+            $prof = $this->personnelProfileRepository->getByUserId($userId);
+            $rid = (int) ($prof['personnel_job_role_id'] ?? 0);
+            if ($rid > 0) {
+                $role = $this->jobRoleRepository->findRoleById($rid, $tenantId);
+                $assignedRoles[] = [
+                    'id' => $rid,
+                    'name' => (string) ($role['name'] ?? ''),
+                    'primary' => true,
+                    'permission_count' => $permCounts[$rid] ?? 0,
+                ];
+            }
+        }
+
+        $roleIds = array_values(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $assignedRoles));
+        $rawPerms = $this->jobRoleRepository->listDistinctPermissionsLinkedToJobRoles($tenantId, $roleIds);
+        $permissions = [];
+        foreach ($rawPerms as $p) {
+            $mid = (string) ($p['module'] ?? '');
+            $permissions[] = [
+                'name' => (string) ($p['name'] ?? ''),
+                'module' => $mid,
+                'module_label' => self::permissionModuleLabelFr($mid),
+            ];
+        }
+
+        return Response::json([
+            'ok' => true,
+            'member' => [
+                'display_name' => (string) ($user['display_name'] ?? ''),
+            ],
+            'assigned_roles' => $assignedRoles,
+            'permissions' => $permissions,
+            'distinct_count' => count($permissions),
+            'disclaimer' => 'Cette liste regroupe les autorisations associées aux emplois dans le référentiel (onglet « Permissions » de chaque emploi). Les accès réels sur le portail dépendent aussi du rôle communauté du membre et des réglages généraux.',
+        ]);
+    }
+
+    private static function permissionModuleLabelFr(string $module): string
+    {
+        return match ($module) {
+            'admin' => 'Administration',
+            'dashboard' => 'Tableau de bord',
+            'forum' => 'Forum',
+            'documents' => 'Documents',
+            'training' => 'Formations',
+            'personnel' => 'Personnel',
+            'organization' => 'Organisation',
+            'interteam' => 'Inter-unités',
+            'courrier' => 'Courrier',
+            'atak' => 'Carte et terrain',
+            'community' => 'Communauté',
+            'messages' => 'Messagerie',
+            'equipment' => 'Équipement',
+            'pointage' => 'Présence',
+            default => $module === '' ? 'Autre' : mb_convert_case(str_replace(['_', '-'], ' ', $module), MB_CASE_TITLE, 'UTF-8'),
+        };
     }
 
     public function saveAssignmentsSettings(Request $request, array $params = []): Response

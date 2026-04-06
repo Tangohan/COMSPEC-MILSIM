@@ -131,6 +131,7 @@ $forumModerationLogsAvailable = $forumModerationLogsAvailable ?? false;
                         'operator_visual' => 'Dossier opérateur',
                         'help_page' => 'Aide intégrée',
                         'site_image' => 'Image du site',
+                        'portal_help' => 'Aide portail',
                         default => '',
                     };
                     $hasPost = !empty($r['post_id']);
