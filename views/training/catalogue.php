@@ -163,6 +163,34 @@ $headHtml = ob_get_clean();
                         <?php else: ?>
                         <div class="grid md:grid-cols-2 gap-5">
                             <?php
+                            $catalogueCardVisualState = static function (array $c): ?string {
+                                $pct = max(0, min(100, (int) ($c['progress_percent'] ?? 0)));
+                                $enr = $c['enrollment'] ?? null;
+                                $st = is_array($enr) ? (string) ($enr['status'] ?? '') : '';
+                                if (in_array($st, ['withdrawn', 'revoked', 'expired'], true)) {
+                                    $enr = null;
+                                    $st = '';
+                                    $pct = 0;
+                                }
+                                $now = time();
+                                $nouveauteJours = 21;
+                                if (!is_array($enr) || empty($enr['id'])) {
+                                    $ts = strtotime((string) ($c['created_at'] ?? '')) ?: 0;
+                                    if ($ts > 0 && ($now - $ts) <= $nouveauteJours * 86400) {
+                                        return 'nouvelle';
+                                    }
+
+                                    return null;
+                                }
+
+                                return match (true) {
+                                    $st === 'completed' => 'valide',
+                                    in_array($st, ['failed', 'expired'], true) => 'non_termine',
+                                    $st === 'in_progress' || ($pct > 0 && $pct < 100) => 'en_cours',
+                                    in_array($st, ['assigned', 'pending_approval'], true) && $pct === 0 => 'inscrit',
+                                    default => null,
+                                };
+                            };
                             $cardColorClasses = [
                                 ['bg' => 'bg-emerald-500/10', 'border' => 'border-emerald-500/20', 'text' => 'text-emerald-700'],
                                 ['bg' => 'bg-sky-500/10', 'border' => 'border-sky-500/20', 'text' => 'text-sky-700'],
@@ -175,34 +203,55 @@ $headHtml = ob_get_clean();
                                 $cat = $c['category'] ?? 'Général';
                                 $code = !empty($c['course_code']) ? (string) $c['course_code'] : ($c['code'] ?? ('F-' . (int) ($c['id'] ?? 0)));
                                 $mins = (int) ($c['estimated_minutes'] ?? 0);
-                                $duration = $mins ? $mins . ' min' : '—';
                                 $cc = $cardColorClasses[$ci % count($cardColorClasses)];
                                 $ci++;
                                 $lmsScopeRow = (string) ($c['lms_scope'] ?? 'tenant');
                                 $scopeBadge = function_exists('training_lms_course_scope_label_fr') ? training_lms_course_scope_label_fr($lmsScopeRow) : '';
+                                $cardState = $catalogueCardVisualState($c);
+                                $cardProgressPercent = ($cardState === 'en_cours')
+                                    ? max(0, min(100, (int) ($c['progress_percent'] ?? 0)))
+                                    : null;
+                                $cardStateSr = match ($cardState) {
+                                    'nouvelle' => 'Parcours récent sur le catalogue.',
+                                    'inscrit' => 'Inscrit : le parcours n’est pas encore commencé.',
+                                    'valide' => 'Parcours validé.',
+                                    'en_cours' => 'Parcours en cours'
+                                        . ($cardProgressPercent !== null ? ' — environ ' . $cardProgressPercent . ' % réalisés.' : '.'),
+                                    'non_termine' => 'Parcours à reprendre ou non validé.',
+                                    default => '',
+                                };
                             ?>
-                            <a href="<?= htmlspecialchars($base) ?>/formations/<?= htmlspecialchars($c['slug']) ?>" class="lms-course-card block bg-white rounded-3xl border border-slate-200 p-5">
+                            <a href="<?= htmlspecialchars($base) ?>/formations/<?= htmlspecialchars($c['slug']) ?>" class="lms-course-card group block bg-white rounded-3xl border border-slate-200 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100">
+                                <?php if ($cardStateSr !== ''): ?>
+                                <span class="sr-only"><?= htmlspecialchars($cardStateSr, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php endif; ?>
                                 <div class="flex items-start justify-between gap-4 mb-5">
                                     <div class="w-12 h-12 rounded-2xl <?= $cc['bg'] ?> <?= $cc['border'] ?> flex items-center justify-center">
                                         <span class="text-[11px] font-black tracking-widest <?= $cc['text'] ?>"><?= htmlspecialchars(mb_substr($code, 0, 4)) ?></span>
                                     </div>
                                     <div class="text-right space-y-1.5 max-w-[58%]">
-                                        <?php if ($lmsScopeRow === 'platform'): ?>
-                                        <span class="inline-block px-2 py-0.5 rounded-full text-[8px] font-black tracking-[0.2em] uppercase bg-violet-500/15 text-violet-800 border border-violet-500/25"><?= htmlspecialchars($scopeBadge) ?></span>
+                                        <?php if ($scopeBadge !== ''): ?>
+                                        <span class="inline-block px-2.5 py-1 rounded-full text-[8px] font-black tracking-[0.18em] uppercase leading-tight <?= $lmsScopeRow === 'platform'
+                                            ? 'bg-violet-500/12 text-violet-900 border border-violet-400/30'
+                                            : 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/25' ?>"><?= htmlspecialchars($scopeBadge) ?></span>
                                         <?php endif; ?>
                                         <span class="block text-[8px] font-black tracking-[0.25em] uppercase text-slate-400"><?= htmlspecialchars($cat) ?></span>
                                     </div>
                                 </div>
-                                <h4 class="text-lg font-black tracking-tight uppercase mb-2"><?= htmlspecialchars($c['title']) ?></h4>
-                                <p class="text-[11px] text-slate-600 font-medium leading-relaxed mb-5"><?= !empty($c['short_description']) ? htmlspecialchars($c['short_description']) : 'Parcours publié dans le catalogue.' ?></p>
-                                <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.14em]">
+                                <h4 class="text-lg font-black tracking-tight uppercase mb-2 text-slate-900 transition-colors group-hover:text-emerald-800"><?= htmlspecialchars($c['title']) ?></h4>
+                                <p class="text-[11px] text-slate-600 font-medium leading-relaxed mb-4"><?= !empty($c['short_description']) ? htmlspecialchars($c['short_description']) : 'Parcours publié dans le catalogue.' ?></p>
+                                <?php require base_path('views/training/partials/catalogue_card_status_overlay.php'); ?>
+                                <?php if ($mins > 0): ?>
+                                <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.14em] pt-1 border-t border-slate-100">
                                     <span class="text-slate-400">Durée estimée</span>
-                                    <span><?= htmlspecialchars($duration) ?></span>
+                                    <span class="text-slate-800 tabular-nums"><?= $mins ?> min</span>
                                 </div>
-                                <?php if (!empty($c['enrollment'])): ?>
-                                <div class="mt-3">
-                                    <span class="text-[10px] font-bold <?= ($c['enrollment']['status'] ?? '') === 'completed' ? 'text-emerald-600' : 'text-amber-600' ?>">
-                                        <?= ($c['enrollment']['status'] ?? '') === 'completed' ? 'Terminé' : ((int) ($c['progress_percent'] ?? 0) . ' %') ?>
+                                <?php endif; ?>
+                                <p class="mt-3 text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover:text-emerald-600 transition-colors">Consulter le parcours</p>
+                                <?php if (!empty($c['enrollment']) && $cardState === null): ?>
+                                <div class="mt-2 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
+                                    <span class="text-[10px] font-bold <?= ($c['enrollment']['status'] ?? '') === 'completed' ? 'text-emerald-700' : 'text-amber-700' ?>">
+                                        <?= ($c['enrollment']['status'] ?? '') === 'completed' ? 'Inscription : terminé' : 'Progression : ' . (int) ($c['progress_percent'] ?? 0) . ' %' ?>
                                     </span>
                                 </div>
                                 <?php endif; ?>
@@ -213,19 +262,20 @@ $headHtml = ob_get_clean();
                             <?php foreach ($legacyModules as $m):
                                 $code = $m['code'] ?? ('MOD-' . (int) $m['id']);
                             ?>
-                            <a href="<?= htmlspecialchars($base) ?>/formations/<?= htmlspecialchars($m['slug']) ?>" class="lms-course-card block bg-white rounded-3xl border border-slate-200 p-5">
+                            <a href="<?= htmlspecialchars($base) ?>/formations/<?= htmlspecialchars($m['slug']) ?>" class="lms-course-card group block bg-white rounded-3xl border border-slate-200 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100">
                                 <div class="flex items-start justify-between gap-4 mb-5">
                                     <div class="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
                                         <span class="text-[11px] font-black tracking-widest text-sky-700"><?= htmlspecialchars(mb_substr($code, 0, 4)) ?></span>
                                     </div>
-                                    <span class="text-[8px] font-black tracking-[0.25em] uppercase text-slate-400">Ancien format</span>
+                                    <span class="inline-block px-2.5 py-1 rounded-full text-[8px] font-black tracking-[0.18em] uppercase bg-slate-100 text-slate-600 border border-slate-200/80">Ancien format</span>
                                 </div>
-                                <h4 class="text-lg font-black tracking-tight uppercase mb-2"><?= htmlspecialchars($m['title']) ?></h4>
+                                <h4 class="text-lg font-black tracking-tight uppercase mb-2 text-slate-900 transition-colors group-hover:text-emerald-800"><?= htmlspecialchars($m['title']) ?></h4>
                                 <p class="text-[11px] text-slate-600 font-medium leading-relaxed mb-5"><?= htmlspecialchars($m['code'] ?? 'Module') ?></p>
-                                <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.14em]">
+                                <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.14em] pt-1 border-t border-slate-100">
                                     <span class="text-slate-400">Type</span>
-                                    <span>Module</span>
+                                    <span class="text-slate-800">Module</span>
                                 </div>
+                                <p class="mt-3 text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover:text-emerald-600 transition-colors">Consulter le parcours</p>
                             </a>
                             <?php endforeach; ?>
                             <?php endif; ?>

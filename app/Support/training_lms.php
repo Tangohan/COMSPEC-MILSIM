@@ -711,6 +711,39 @@ function training_lms_resource_type_labels_fr(): array
 }
 
 /**
+ * Libellé affiché dans le studio pour une ligne de ressource (bibliothèque vs type fichier / lien).
+ *
+ * @param array<string, mixed> $row
+ */
+function training_lms_studio_resource_kind_label_fr(array $row): string
+{
+    if (!empty($row['library_document_id'])) {
+        return 'Document de la bibliothèque';
+    }
+
+    $t = (string) ($row['resource_type'] ?? 'link');
+    $map = training_lms_resource_type_labels_fr();
+
+    return $map[$t] ?? $t;
+}
+
+/**
+ * @return array<string, string>
+ */
+function training_lms_document_status_labels_fr(): array
+{
+    return [
+        'draft' => 'Brouillon',
+        'review' => 'En relecture',
+        'approval' => 'À valider',
+        'published' => 'Publié',
+        'suspended' => 'Suspendu',
+        'archived' => 'Archivé',
+        'obsolete' => 'Obsolète',
+    ];
+}
+
+/**
  * @param array<string, mixed> $policy Décodage de enrollment_policy_json
  */
 function training_lms_policy_comments_enabled(array $policy): bool

@@ -48,7 +48,9 @@ if ($footerNext !== null) {
                     <ul class="space-y-2">
                         <?php foreach ($resources as $r): ?>
                         <li>
-                            <?php if (!empty($r['file_path'])): ?>
+                            <?php if (!empty($r['library_document_id']) && !empty($r['library_doc_slug'])): ?>
+                            <a href="<?= htmlspecialchars(url('documents/' . rawurlencode((string) $r['library_doc_slug'])), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>
+                            <?php elseif (!empty($r['file_path'])): ?>
                             <a href="<?= url('api/training/resource/' . (int) $r['id'] . '/download') ?>" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>
                             <?php elseif (!empty($r['external_url'])): ?>
                             <a href="<?= htmlspecialchars((string) $r['external_url']) ?>" target="_blank" rel="noopener" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>

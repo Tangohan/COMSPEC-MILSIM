@@ -519,6 +519,7 @@ class Container
             \App\Repositories\TrainingCertificateRepository::class => new \App\Repositories\TrainingCertificateRepository(),
             \App\Repositories\TrainingCertificateTemplateRepository::class => new \App\Repositories\TrainingCertificateTemplateRepository(),
             \App\Services\Training\TrainingCertificateAssetStorageService::class => new \App\Services\Training\TrainingCertificateAssetStorageService(),
+            \App\Services\Training\TrainingLessonResourceStorageService::class => new \App\Services\Training\TrainingLessonResourceStorageService(),
             \App\Services\Training\TrainingCertificateShareService::class => new \App\Services\Training\TrainingCertificateShareService(),
             \App\Services\Training\TrainingCertificatePdfService::class => new \App\Services\Training\TrainingCertificatePdfService(
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
@@ -542,6 +543,7 @@ class Container
                 self::get(\App\Repositories\TrainingQuizRepository::class),
                 self::get(\App\Repositories\TrainingResourceRepository::class),
                 self::get(\App\Services\Training\TrainingService::class),
+                self::get(\App\Repositories\DocumentRepository::class),
             ),
             \App\Services\Training\TrainingProgressService::class => new \App\Services\Training\TrainingProgressService(
                 self::get(\App\Repositories\TrainingEnrollmentRepository::class),
@@ -730,6 +732,8 @@ class Container
                 self::get(\App\Repositories\TrainingResourceRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Services\Training\TrainingCourseSessionNotificationService::class),
+                self::get(\App\Repositories\DocumentRepository::class),
+                self::get(\App\Services\Training\TrainingLessonResourceStorageService::class),
             ),
             \App\Controllers\Admin\AdminTrainingStudioExchangeController::class => new \App\Controllers\Admin\AdminTrainingStudioExchangeController(
                 self::get(\App\Services\Training\TrainingCourseExchangeService::class),

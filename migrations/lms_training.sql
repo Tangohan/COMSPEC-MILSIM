@@ -94,9 +94,12 @@ CREATE TABLE `training_resources` (
     `external_url` VARCHAR(500) NULL,
     `mime_type` VARCHAR(100) NULL,
     `file_size` BIGINT UNSIGNED NULL,
+    `library_document_id` INT UNSIGNED NULL DEFAULT NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX `idx_training_resources_lesson` (`lesson_id`),
-    CONSTRAINT `fk_training_resources_lesson` FOREIGN KEY (`lesson_id`) REFERENCES `training_lessons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    INDEX `idx_training_resources_library_document` (`library_document_id`),
+    CONSTRAINT `fk_training_resources_lesson` FOREIGN KEY (`lesson_id`) REFERENCES `training_lessons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_training_resources_library_document` FOREIGN KEY (`library_document_id`) REFERENCES `documents` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 2.5 Assignations / inscriptions

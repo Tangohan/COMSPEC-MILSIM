@@ -1598,6 +1598,13 @@ try {
     echo '  [ATTENTION] training_module_lesson_enrichment : ' . $e->getMessage() . "\n";
 }
 
+$trainingResourcesLibraryDocMigrate = require $root . '/bootstrap/training_resources_library_document_migration.php';
+try {
+    $trainingResourcesLibraryDocMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_resources_library_document : ' . $e->getMessage() . "\n";
+}
+
 $trainingEnrollmentMotivationMigrate = require $root . '/bootstrap/training_enrollment_motivation_migration.php';
 try {
     $trainingEnrollmentMotivationMigrate($pdo);

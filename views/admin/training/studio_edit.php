@@ -13,6 +13,7 @@ if ($curLmsScope !== 'platform' && $curLmsScope !== 'tenant') {
 $cid = (int) ($course['id'] ?? 0);
 $slug = (string) ($course['slug'] ?? '');
 $modules = $course['modules'] ?? [];
+$libraryDocumentsForPicker = $libraryDocumentsForPicker ?? [];
 
 $gateEdit = \App\Core\Gate::getInstance();
 $studioEditCanVitrine = $gateEdit->allows('admin.access') || $gateEdit->allows('training.manage')
@@ -735,6 +736,12 @@ $defaultCanvasJson = json_encode([
                     $lesObjLines = [''];
                 }
             ?>
+            <?php
+                $studioRes = $les['studio_resources'] ?? [];
+                $lessonResAnchor = 'lesson-res-' . (int) $lid;
+                $resCount = count($studioRes);
+                $docStatusLabels = function_exists('training_lms_document_status_labels_fr') ? training_lms_document_status_labels_fr() : [];
+            ?>
             <div class="studio-sort-lesson-card border border-slate-100 rounded-lg p-3 bg-slate-50/50 space-y-3" data-lesson-id="<?= (int) $lid ?>">
                 <div class="flex flex-wrap justify-between gap-2 items-center">
                     <div class="flex items-center gap-2 min-w-0">
@@ -742,158 +749,211 @@ $defaultCanvasJson = json_encode([
                         <span class="text-xs font-semibold text-slate-700 truncate">Leçon <?= (int) $li ?></span>
                     </div>
                 </div>
-                <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-2">
-                    <?= \App\Core\Csrf::field() ?>
-                    <input type="hidden" name="_action" value="update_lesson">
-                    <input type="hidden" name="lesson_id" value="<?= $lid ?>">
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Titre</label>
-                        <input type="text" name="lesson_title" required value="<?= htmlspecialchars((string) ($les['title'] ?? '')) ?>" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Résumé (apprenant, catalogue &amp; menu)</label>
-                        <input type="text" name="lesson_summary" maxlength="500" value="<?= htmlspecialchars((string) ($les['summary'] ?? '')) ?>" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Court accroche sous le titre">
-                    </div>
-                    <div data-lms-objectives-scope>
-                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Objectifs de la leçon</label>
-                        <div class="space-y-2" data-lms-objectives-list>
-                            <?php foreach ($lesObjLines as $lol): ?>
-                            <div class="flex gap-2 items-center" data-lms-objective-row>
-                                <input type="text" name="lesson_learning_objectives[]" value="<?= htmlspecialchars($lol) ?>" class="flex-1 min-w-0 border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Objectif">
-                                <button type="button" class="shrink-0 px-2 py-1 text-[11px] font-bold text-rose-600" data-lms-objective-remove>Retirer</button>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                        <button type="button" class="mt-1 px-2 py-1 text-[11px] font-black uppercase text-emerald-800 border border-dashed border-emerald-300 rounded" data-lms-objective-add>+ Ajouter</button>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Notes internes / formateur <span class="font-normal text-slate-400">(non affichées côté apprenant)</span></label>
-                        <textarea name="lesson_instructor_notes" rows="2" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm"><?= htmlspecialchars((string) ($les['instructor_notes'] ?? '')) ?></textarea>
-                    </div>
-                    <?php
-                    $isCanvasLesson = ($lt === 'canvas');
-                    $isJsonLesson = in_array($lt, ['quiz', 'modals', 'slideshow'], true);
-                    $canvasStored = trim((string) ($les['content'] ?? ''));
-                    $canvasJsonOut = ($isCanvasLesson && $canvasStored !== '') ? $canvasStored : $defaultCanvasJson;
-                    ?>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Type</label>
-                            <select name="lesson_type" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" onchange="lmsCanvasToggleLessonEditor(this)">
-                                <?php foreach ($lessonTypeOptgroups as $groupLabel => $typeIds): ?>
-                                <optgroup label="<?= htmlspecialchars($groupLabel) ?>">
-                                <?php foreach ($typeIds as $t): ?>
-                                <option value="<?= htmlspecialchars($t) ?>" <?= $lt === $t ? 'selected' : '' ?>><?= htmlspecialchars($lessonTypeLabels[$t] ?? $t) ?></option>
-                                <?php endforeach; ?>
-                                </optgroup>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Durée (min)</label>
-                            <input type="number" name="lesson_duration_minutes" min="0" step="1" value="<?= (int) ($les['duration_minutes'] ?? 0) ?>" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Difficulté</label>
-                            <select name="lesson_difficulty" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
-                                <option value="">—</option>
-                                <?php foreach ($levelLabels as $lv => $lab): ?>
-                                <option value="<?= htmlspecialchars($lv) ?>" <?= (($les['difficulty'] ?? '') === $lv) ? 'selected' : '' ?>><?= htmlspecialchars($lab) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="hidden text-[11px] text-slate-600 bg-slate-50 border border-slate-100 rounded-lg p-2 mb-1" data-lms-json-help data-template-quiz="<?= htmlspecialchars(training_lesson_default_quiz_json(), ENT_QUOTES, 'UTF-8') ?>" data-template-modals="<?= htmlspecialchars(training_lesson_default_modals_json(), ENT_QUOTES, 'UTF-8') ?>" data-template-slideshow="<?= htmlspecialchars(training_lesson_default_slideshow_json(), ENT_QUOTES, 'UTF-8') ?>">
-                        <span data-lms-json-help-text></span>
-                    </div>
-                    <div data-lms-plain-content class="<?= $isCanvasLesson ? 'hidden' : '' ?>">
-                        <label class="block text-[11px] font-bold text-slate-600 mb-0.5" data-lms-plain-label><?= $isJsonLesson ? 'Contenu de la leçon' : 'Contenu (HTML ou texte)' ?></label>
-                        <div data-lms-interactive-root class="<?= $isJsonLesson ? '' : 'hidden' ?> rounded-xl border border-emerald-100 bg-emerald-50/40 p-3 mb-2 min-h-[4rem]"></div>
-                        <textarea name="lesson_content" rows="<?= $isJsonLesson ? '6' : '4' ?>" class="w-full border border-slate-200 rounded px-2 py-1.5 <?= $isJsonLesson ? 'hidden text-xs font-mono' : 'text-sm' ?>" <?= $isCanvasLesson ? 'disabled' : '' ?> data-lms-lesson-body><?= htmlspecialchars((string) ($les['content'] ?? '')) ?></textarea>
-                    </div>
-                    <div data-lms-canvas-wrap class="<?= $isCanvasLesson ? '' : 'hidden' ?>">
-                        <label class="block text-[11px] font-bold text-violet-700 mb-1">Éditeur graphique (slides, templates, médias, actions)</label>
-                        <div data-lms-canvas-editor class="rounded-xl border border-violet-200 bg-violet-50/40 p-4">
-                            <textarea name="lesson_content" class="hidden" data-lms-canvas-json <?= !$isCanvasLesson ? 'disabled' : '' ?>><?= htmlspecialchars($canvasJsonOut) ?></textarea>
-                        </div>
-                    </div>
-                    <div data-lms-external-block>
-                        <label class="block text-[11px] font-bold text-slate-600 mb-0.5" data-lms-external-label>URL externe (optionnel)</label>
-                        <input type="text" name="lesson_external_url" value="<?= htmlspecialchars((string) ($les['external_url'] ?? '')) ?>" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" data-lms-external-input>
-                        <p class="text-[10px] text-slate-500 mt-0.5 hidden" data-lms-external-hint></p>
-                    </div>
-                    <?php
-                    $studioRes = $les['studio_resources'] ?? [];
-                    $lessonResAnchor = 'lesson-res-' . (int) $lid;
-                    ?>
-                    <div class="rounded-lg border border-sky-100 bg-sky-50/40 p-3 space-y-2" id="<?= htmlspecialchars($lessonResAnchor) ?>">
-                        <p class="text-[11px] font-black uppercase tracking-wide text-sky-800">Ressources pour l’apprenant</p>
-                        <p class="text-[10px] text-sky-900/80">Fichiers ou liens listés sur la page de la leçon (en complément du contenu principal).</p>
-                        <?php if ($studioRes !== []): ?>
-                        <ul class="text-sm space-y-2">
-                            <?php foreach ($studioRes as $sr):
-                                $srid = (int) ($sr['id'] ?? 0);
-                                $srt = (string) ($sr['resource_type'] ?? 'link');
-                                $srtl = $resourceTypeLabels[$srt] ?? $srt;
-                            ?>
-                            <li class="flex flex-wrap justify-between gap-2 items-start border-b border-sky-100/80 pb-2">
-                                <span class="text-slate-800 min-w-0"><span class="font-semibold"><?= htmlspecialchars((string) ($sr['title'] ?? '')) ?></span> <span class="text-slate-500">(<?= htmlspecialchars($srtl) ?>)</span></span>
-                                <form method="post" action="<?= training_studio_url($cid) ?>" class="shrink-0" onsubmit="return confirm('Retirer cette ressource de la leçon ?');">
-                                    <?= \App\Core\Csrf::field() ?>
-                                    <input type="hidden" name="_action" value="delete_lesson_resource">
-                                    <input type="hidden" name="resource_id" value="<?= $srid ?>">
-                                    <button type="submit" class="text-xs font-bold text-rose-600 hover:underline">Retirer</button>
-                                </form>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <?php else: ?>
-                        <p class="text-xs text-slate-600">Aucune ressource pour l’instant.</p>
-                        <?php endif; ?>
-                        <form method="post" action="<?= training_studio_url($cid) ?>" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-sky-100">
+                <div class="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_17.5rem] gap-4 lg:items-start">
+                    <div class="min-w-0 space-y-3 order-1">
+                        <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-2">
                             <?= \App\Core\Csrf::field() ?>
-                            <input type="hidden" name="_action" value="add_lesson_resource">
-                            <input type="hidden" name="lesson_id" value="<?= (int) $lid ?>">
-                            <div class="sm:col-span-2">
-                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Titre affiché</label>
-                                <input type="text" name="resource_title" required maxlength="255" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Ex. Grille d’évaluation, Vidéo complémentaire">
+                            <input type="hidden" name="_action" value="update_lesson">
+                            <input type="hidden" name="lesson_id" value="<?= $lid ?>">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Titre</label>
+                                <input type="text" name="lesson_title" required value="<?= htmlspecialchars((string) ($les['title'] ?? '')) ?>" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Type</label>
-                                <select name="resource_type" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
-                                    <?php foreach ($resourceTypeLabels as $rk => $rlab): ?>
-                                    <option value="<?= htmlspecialchars($rk) ?>"><?= htmlspecialchars($rlab) ?></option>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Résumé (apprenant, catalogue &amp; menu)</label>
+                                <input type="text" name="lesson_summary" maxlength="500" value="<?= htmlspecialchars((string) ($les['summary'] ?? '')) ?>" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Court accroche sous le titre">
+                            </div>
+                            <div data-lms-objectives-scope>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Objectifs de la leçon</label>
+                                <div class="space-y-2" data-lms-objectives-list>
+                                    <?php foreach ($lesObjLines as $lol): ?>
+                                    <div class="flex gap-2 items-center" data-lms-objective-row>
+                                        <input type="text" name="lesson_learning_objectives[]" value="<?= htmlspecialchars($lol) ?>" class="flex-1 min-w-0 border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Objectif">
+                                        <button type="button" class="shrink-0 px-2 py-1 text-[11px] font-bold text-rose-600" data-lms-objective-remove>Retirer</button>
+                                    </div>
                                     <?php endforeach; ?>
-                                </select>
+                                </div>
+                                <button type="button" class="mt-1 px-2 py-1 text-[11px] font-black uppercase text-emerald-800 border border-dashed border-emerald-300 rounded" data-lms-objective-add>+ Ajouter</button>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Adresse web (optionnel)</label>
-                                <input type="url" name="resource_external_url" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="https://…">
+                                <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Notes internes / formateur <span class="font-normal text-slate-400">(non affichées côté apprenant)</span></label>
+                                <textarea name="lesson_instructor_notes" rows="2" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm"><?= htmlspecialchars((string) ($les['instructor_notes'] ?? '')) ?></textarea>
                             </div>
-                            <div class="sm:col-span-2">
-                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Fichier sur le serveur (optionnel)</label>
-                                <input type="text" name="resource_file_path" maxlength="255" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm font-mono text-xs" placeholder="ex. uploads/…">
-                                <p class="text-[10px] text-slate-500 mt-0.5">Chemin relatif à l’application ou absolu. Les apprenants inscrits téléchargent via un lien sécurisé.</p>
+                            <?php
+                            $isCanvasLesson = ($lt === 'canvas');
+                            $isJsonLesson = in_array($lt, ['quiz', 'modals', 'slideshow'], true);
+                            $canvasStored = trim((string) ($les['content'] ?? ''));
+                            $canvasJsonOut = ($isCanvasLesson && $canvasStored !== '') ? $canvasStored : $defaultCanvasJson;
+                            ?>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Type</label>
+                                    <select name="lesson_type" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" onchange="lmsCanvasToggleLessonEditor(this)">
+                                        <?php foreach ($lessonTypeOptgroups as $groupLabel => $typeIds): ?>
+                                        <optgroup label="<?= htmlspecialchars($groupLabel) ?>">
+                                        <?php foreach ($typeIds as $t): ?>
+                                        <option value="<?= htmlspecialchars($t) ?>" <?= $lt === $t ? 'selected' : '' ?>><?= htmlspecialchars($lessonTypeLabels[$t] ?? $t) ?></option>
+                                        <?php endforeach; ?>
+                                        </optgroup>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Durée (min)</label>
+                                    <input type="number" name="lesson_duration_minutes" min="0" step="1" value="<?= (int) ($les['duration_minutes'] ?? 0) ?>" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Difficulté</label>
+                                    <select name="lesson_difficulty" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
+                                        <option value="">—</option>
+                                        <?php foreach ($levelLabels as $lv => $lab): ?>
+                                        <option value="<?= htmlspecialchars($lv) ?>" <?= (($les['difficulty'] ?? '') === $lv) ? 'selected' : '' ?>><?= htmlspecialchars($lab) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="sm:col-span-2">
-                                <button type="submit" class="px-3 py-1.5 bg-sky-700 text-white text-xs font-bold rounded-lg hover:bg-sky-800">Ajouter la ressource</button>
+                            <div class="hidden text-[11px] text-slate-600 bg-slate-50 border border-slate-100 rounded-lg p-2 mb-1" data-lms-json-help data-template-quiz="<?= htmlspecialchars(training_lesson_default_quiz_json(), ENT_QUOTES, 'UTF-8') ?>" data-template-modals="<?= htmlspecialchars(training_lesson_default_modals_json(), ENT_QUOTES, 'UTF-8') ?>" data-template-slideshow="<?= htmlspecialchars(training_lesson_default_slideshow_json(), ENT_QUOTES, 'UTF-8') ?>">
+                                <span data-lms-json-help-text></span>
+                            </div>
+                            <div data-lms-plain-content class="<?= $isCanvasLesson ? 'hidden' : '' ?>">
+                                <label class="block text-[11px] font-bold text-slate-600 mb-0.5" data-lms-plain-label><?= $isJsonLesson ? 'Contenu de la leçon' : 'Contenu (HTML ou texte)' ?></label>
+                                <div data-lms-interactive-root class="<?= $isJsonLesson ? '' : 'hidden' ?> rounded-xl border border-emerald-100 bg-emerald-50/40 p-3 mb-2 min-h-[4rem]"></div>
+                                <textarea name="lesson_content" rows="<?= $isJsonLesson ? '6' : '4' ?>" class="w-full border border-slate-200 rounded px-2 py-1.5 <?= $isJsonLesson ? 'hidden text-xs font-mono' : 'text-sm' ?>" <?= $isCanvasLesson ? 'disabled' : '' ?> data-lms-lesson-body><?= htmlspecialchars((string) ($les['content'] ?? '')) ?></textarea>
+                            </div>
+                            <div data-lms-canvas-wrap class="<?= $isCanvasLesson ? '' : 'hidden' ?>">
+                                <label class="block text-[11px] font-bold text-violet-700 mb-1">Éditeur graphique (slides, templates, médias, actions)</label>
+                                <div data-lms-canvas-editor class="rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+                                    <textarea name="lesson_content" class="hidden" data-lms-canvas-json <?= !$isCanvasLesson ? 'disabled' : '' ?>><?= htmlspecialchars($canvasJsonOut) ?></textarea>
+                                </div>
+                            </div>
+                            <div data-lms-external-block>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-0.5" data-lms-external-label>URL externe (optionnel)</label>
+                                <input type="text" name="lesson_external_url" value="<?= htmlspecialchars((string) ($les['external_url'] ?? '')) ?>" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" data-lms-external-input>
+                                <p class="text-[10px] text-slate-500 mt-0.5 hidden" data-lms-external-hint></p>
+                            </div>
+                            <label class="inline-flex items-center gap-2 text-xs text-slate-700">
+                                <input type="checkbox" name="lesson_is_required" value="1" <?= !empty($les['is_required']) ? 'checked' : '' ?>>
+                                Leçon obligatoire
+                            </label>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="submit" class="px-3 py-1.5 bg-slate-800 text-white text-xs font-bold rounded hover:bg-slate-700">Enregistrer la leçon</button>
                             </div>
                         </form>
+                        <form method="post" action="<?= training_studio_url($cid) ?>" onsubmit="return confirm('Supprimer cette leçon ?');">
+                            <?= \App\Core\Csrf::field() ?>
+                            <input type="hidden" name="_action" value="delete_lesson">
+                            <input type="hidden" name="lesson_id" value="<?= $lid ?>">
+                            <button type="submit" class="text-xs text-rose-600 underline">Supprimer la leçon</button>
+                        </form>
                     </div>
-                    <label class="inline-flex items-center gap-2 text-xs text-slate-700">
-                        <input type="checkbox" name="lesson_is_required" value="1" <?= !empty($les['is_required']) ? 'checked' : '' ?>>
-                        Leçon obligatoire
-                    </label>
-                    <div class="flex flex-wrap gap-2">
-                        <button type="submit" class="px-3 py-1.5 bg-slate-800 text-white text-xs font-bold rounded hover:bg-slate-700">Enregistrer la leçon</button>
-                    </div>
-                </form>
-                <form method="post" action="<?= training_studio_url($cid) ?>" onsubmit="return confirm('Supprimer cette leçon ?');">
-                    <?= \App\Core\Csrf::field() ?>
-                    <input type="hidden" name="_action" value="delete_lesson">
-                    <input type="hidden" name="lesson_id" value="<?= $lid ?>">
-                    <button type="submit" class="text-xs text-rose-600 underline">Supprimer la leçon</button>
-                </form>
+                    <aside class="order-2 lg:sticky lg:top-28 self-start w-full max-lg:max-w-xl">
+                        <details class="rounded-lg border border-sky-200 bg-sky-50/60 text-slate-800 shadow-sm" id="<?= htmlspecialchars($lessonResAnchor) ?>"<?= $resCount > 0 ? ' open' : '' ?>>
+                            <summary class="cursor-pointer select-none px-3 py-2.5 text-xs font-black uppercase tracking-wide text-sky-900">
+                                Ressources<?= $resCount > 0 ? ' (' . (int) $resCount . ')' : '' ?>
+                            </summary>
+                            <div class="px-3 pb-3 pt-1 border-t border-sky-100 space-y-3">
+                                <p class="text-[10px] text-sky-900/85 leading-snug">Fichiers, liens ou documents de la bibliothèque affichés en bas de page pour les apprenants inscrits.</p>
+                                <?php if ($studioRes !== []): ?>
+                                <ul class="text-xs space-y-2">
+                                    <?php foreach ($studioRes as $sr):
+                                        $srid = (int) ($sr['id'] ?? 0);
+                                        $kindLab = function_exists('training_lms_studio_resource_kind_label_fr')
+                                            ? training_lms_studio_resource_kind_label_fr($sr)
+                                            : ($resourceTypeLabels[(string) ($sr['resource_type'] ?? 'link')] ?? '');
+                                        $dSt = (string) ($sr['library_doc_status'] ?? '');
+                                        $dStLab = ($dSt !== '' && isset($docStatusLabels[$dSt])) ? $docStatusLabels[$dSt] : '';
+                                    ?>
+                                    <li class="flex flex-wrap justify-between gap-2 items-start border-b border-sky-100/80 pb-2">
+                                        <span class="text-slate-800 min-w-0">
+                                            <span class="font-semibold block"><?= htmlspecialchars((string) ($sr['title'] ?? '')) ?></span>
+                                            <span class="text-slate-500"><?= htmlspecialchars($kindLab) ?><?php if ($dStLab !== '' && !empty($sr['library_document_id'])): ?> · <?= htmlspecialchars($dStLab) ?><?php endif; ?></span>
+                                        </span>
+                                        <form method="post" action="<?= training_studio_url($cid) ?>" class="shrink-0" onsubmit="return confirm('Retirer cette ressource de la leçon ?');">
+                                            <?= \App\Core\Csrf::field() ?>
+                                            <input type="hidden" name="_action" value="delete_lesson_resource">
+                                            <input type="hidden" name="resource_id" value="<?= $srid ?>">
+                                            <button type="submit" class="text-[11px] font-bold text-rose-600 hover:underline">Retirer</button>
+                                        </form>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                                <?php else: ?>
+                                <p class="text-xs text-slate-600">Aucune ressource pour l’instant.</p>
+                                <?php endif; ?>
+                                <form method="post" action="<?= training_studio_url($cid) ?>" enctype="multipart/form-data" class="space-y-2 pt-2 border-t border-sky-100" data-lms-lesson-resource-form>
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <input type="hidden" name="_action" value="add_lesson_resource">
+                                    <input type="hidden" name="lesson_id" value="<?= (int) $lid ?>">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Titre affiché pour l’apprenant</label>
+                                        <input type="text" name="resource_title" maxlength="255" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Laisser vide pour reprendre le titre du document">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Type d’ajout</label>
+                                        <select name="resource_add_mode" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" data-lms-resource-mode>
+                                            <option value="link">Lien web</option>
+                                            <option value="file">Fichier</option>
+                                            <option value="library">Document de la bibliothèque</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2" data-lms-res-panel="link">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nature du lien</label>
+                                            <select name="resource_type" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
+                                                <?php foreach ($resourceTypeLabels as $rk => $rlab): ?>
+                                                <option value="<?= htmlspecialchars($rk) ?>"><?= htmlspecialchars($rlab) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Adresse web</label>
+                                            <input type="url" name="resource_external_url" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="https://…">
+                                        </div>
+                                    </div>
+                                    <div class="space-y-2 hidden" data-lms-res-panel="file">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Type de pièce</label>
+                                            <select name="resource_type" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
+                                                <?php foreach ($resourceTypeLabels as $rk => $rlab): ?>
+                                                <option value="<?= htmlspecialchars($rk) ?>"<?= $rk === 'attachment' ? ' selected' : '' ?>><?= htmlspecialchars($rlab) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Envoyer un fichier</label>
+                                            <input type="file" name="resource_upload" class="block w-full text-xs text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-sky-100 file:px-2 file:py-1">
+                                        </div>
+                                        <details class="text-[10px] text-slate-600">
+                                            <summary class="cursor-pointer font-bold text-slate-700">Emplacement sur le serveur (usage avancé)</summary>
+                                            <p class="mt-1 mb-1">Si vous ne pouvez pas envoyer le fichier ici, indiquez un chemin déjà présent sur le serveur.</p>
+                                            <input type="text" name="resource_file_path" maxlength="255" class="w-full border border-slate-200 rounded px-2 py-1.5 text-xs" placeholder="Chemin relatif au projet">
+                                        </details>
+                                    </div>
+                                    <div class="space-y-2 hidden" data-lms-res-panel="library">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Document</label>
+                                            <select name="library_document_id" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
+                                                <option value="">— Choisir dans la bibliothèque —</option>
+                                                <?php foreach ($libraryDocumentsForPicker as $pickDoc):
+                                                    $pid = (int) ($pickDoc['id'] ?? 0);
+                                                    if ($pid < 1) {
+                                                        continue;
+                                                    }
+                                                    $pTitle = (string) ($pickDoc['title'] ?? 'Sans titre');
+                                                    $pSt = (string) ($pickDoc['status'] ?? '');
+                                                    $pStLab = $pSt !== '' && isset($docStatusLabels[$pSt]) ? $docStatusLabels[$pSt] : $pSt;
+                                                ?>
+                                                <option value="<?= $pid ?>"><?= htmlspecialchars($pTitle) ?><?= $pStLab !== '' ? ' — ' . htmlspecialchars($pStLab) : '' ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="w-full px-3 py-1.5 bg-sky-700 text-white text-xs font-bold rounded-lg hover:bg-sky-800">Ajouter la ressource</button>
+                                </form>
+                            </div>
+                        </details>
+                    </aside>
+                </div>
             </div>
             <?php endforeach; ?>
             </div>
@@ -996,6 +1056,7 @@ $defaultCanvasJson = json_encode([
     <link rel="stylesheet" href="<?= url('assets/css/training_canvas.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
     <script src="<?= url('assets/js/training_studio_sortable.js') ?>" defer></script>
+    <script src="<?= url('assets/js/training_studio_lesson_resources.js') ?>" defer></script>
     <script src="<?= url('assets/js/training_canvas_editor.js') ?>" defer></script>
     <script src="<?= url('assets/js/training_studio_interactive_editors.js') ?>" defer></script>
     <?php endif; ?>

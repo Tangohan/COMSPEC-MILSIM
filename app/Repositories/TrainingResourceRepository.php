@@ -19,14 +19,25 @@ class TrainingResourceRepository
     /** @return list<array<string, mixed>> */
     public function listByLessonId(int $lessonId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM training_resources WHERE lesson_id = ? ORDER BY id ASC');
+        $stmt = $this->pdo->prepare(
+            'SELECT tr.*, d.slug AS library_doc_slug, d.status AS library_doc_status
+             FROM training_resources tr
+             LEFT JOIN documents d ON d.id = tr.library_document_id
+             WHERE tr.lesson_id = ?
+             ORDER BY tr.id ASC'
+        );
         $stmt->execute([$lessonId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM training_resources WHERE id = ? LIMIT 1');
+        $stmt = $this->pdo->prepare(
+            'SELECT tr.*, d.slug AS library_doc_slug, d.status AS library_doc_status
+             FROM training_resources tr
+             LEFT JOIN documents d ON d.id = tr.library_document_id
+             WHERE tr.id = ? LIMIT 1'
+        );
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -35,8 +46,8 @@ class TrainingResourceRepository
     public function create(int $lessonId, array $data): int
     {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO training_resources (lesson_id, resource_type, title, file_path, external_url, mime_type, file_size)
-             VALUES (?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO training_resources (lesson_id, resource_type, title, file_path, external_url, mime_type, file_size, library_document_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $lessonId,
@@ -46,13 +57,15 @@ class TrainingResourceRepository
             $data['external_url'] ?? null,
             $data['mime_type'] ?? null,
             isset($data['file_size']) ? (int) $data['file_size'] : null,
+            isset($data['library_document_id']) && (int) $data['library_document_id'] > 0
+                ? (int) $data['library_document_id'] : null,
         ]);
         return (int) $this->pdo->lastInsertId();
     }
 
     public function update(int $id, array $data): void
     {
-        $allowed = ['resource_type', 'title', 'file_path', 'external_url', 'mime_type', 'file_size'];
+        $allowed = ['resource_type', 'title', 'file_path', 'external_url', 'mime_type', 'file_size', 'library_document_id'];
         $fields = [];
         $params = [];
         foreach ($allowed as $k) {

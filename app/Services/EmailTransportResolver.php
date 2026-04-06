@@ -39,6 +39,16 @@ final class EmailTransportResolver
             }
         }
 
+        if (!class_exists(PHPMailer::class)) {
+            error_log('EmailTransportResolver: PHPMailer absent — exécuter `composer install` à la racine du projet (dépendance phpmailer/phpmailer).');
+
+            return [
+                'ok' => false,
+                'transport' => 'phpmailer',
+                'error' => 'Service e-mail indisponible sur le serveur (dépendances manquantes).',
+            ];
+        }
+
         $mail = new PHPMailer(true);
         $mail->CharSet = PHPMailer::CHARSET_UTF8;
         $mail->Encoding = PHPMailer::ENCODING_BASE64;

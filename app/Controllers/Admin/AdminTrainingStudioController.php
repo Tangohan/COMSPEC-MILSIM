@@ -13,6 +13,7 @@ use App\Repositories\GradeRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\DocumentRepository;
 use App\Repositories\TrainingCourseLmsSocialRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingLessonRepository;
@@ -21,6 +22,7 @@ use App\Repositories\TrainingResourceRepository;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingAuditService;
 use App\Services\Training\TrainingCourseSessionNotificationService;
+use App\Services\Training\TrainingLessonResourceStorageService;
 use App\Services\Training\TrainingService;
 
 class AdminTrainingStudioController
@@ -182,6 +184,8 @@ class AdminTrainingStudioController
         private TrainingResourceRepository $resourceRepository,
         private UserRepository $userRepository,
         private TrainingCourseSessionNotificationService $courseSessionNotificationService,
+        private DocumentRepository $documentRepository,
+        private TrainingLessonResourceStorageService $lessonResourceStorageService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -419,6 +423,17 @@ class AdminTrainingStudioController
             'studioQuestions' => $pendingQuestions,
             'studioStaffPickUsers' => $staffPickUsers,
             'studioCanSetPlatformScope' => $this->canSetPlatformLmsScope(),
+            'libraryDocumentsForPicker' => $this->documentRepository->listForTenant(
+                $tenantId,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                'title_asc'
+            ),
         ]);
     }
 
@@ -988,35 +1003,119 @@ class AdminTrainingStudioController
 
             return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
+        $hash = '#lesson-res-' . $lessonId;
+        $mode = (string) $request->input('resource_add_mode', 'link');
+        if (!in_array($mode, ['link', 'file', 'library'], true)) {
+            $mode = 'link';
+        }
+
+        if ($mode === 'library') {
+            $docId = (int) $request->input('library_document_id', 0);
+            $doc = $docId > 0 ? $this->documentRepository->findById($docId, $tenantId) : null;
+            if (!$doc) {
+                Session::flash('error', 'Choisissez un document dans la liste ou vérifiez qu’il appartient à votre communauté.');
+
+                return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+            }
+            $title = trim((string) $request->input('resource_title', ''));
+            if ($title === '') {
+                $title = trim((string) ($doc['title'] ?? 'Document'));
+            }
+            $this->resourceRepository->create($lessonId, [
+                'resource_type' => 'attachment',
+                'title' => mb_substr($title, 0, 255),
+                'external_url' => null,
+                'file_path' => null,
+                'mime_type' => null,
+                'file_size' => null,
+                'library_document_id' => $docId,
+            ]);
+            $this->markCourseSavedWithCurrentStudioVersion($courseId);
+            $msg = 'Ressource ajoutée à la leçon.';
+            if (($doc['status'] ?? '') !== 'published') {
+                $msg .= ' Ce document n’est pas encore publié : les apprenants ne verront le lien qu’après publication.';
+            }
+            Session::flash('success', $msg);
+
+            return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+        }
+
+        if ($mode === 'file') {
+            $title = trim((string) $request->input('resource_title', ''));
+            if ($title === '') {
+                Session::flash('error', 'Indiquez un titre pour la ressource.');
+
+                return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+            }
+            $type = trim((string) $request->input('resource_type', 'attachment'));
+            if (!in_array($type, self::RESOURCE_TYPES, true)) {
+                $type = 'attachment';
+            }
+            $file = isset($_FILES['resource_upload']) && is_array($_FILES['resource_upload']) ? $_FILES['resource_upload'] : null;
+            $filePath = null;
+            $mime = null;
+            $size = null;
+            if ($file !== null && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                try {
+                    $stored = $this->lessonResourceStorageService->storeUpload($tenantId, $file);
+                    $filePath = $stored['path'];
+                    $mime = $stored['mime'];
+                    $size = $stored['size'];
+                } catch (\Throwable $e) {
+                    Session::flash('error', $e->getMessage());
+
+                    return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+                }
+            } else {
+                $manual = trim((string) $request->input('resource_file_path', ''));
+                $filePath = $manual === '' ? null : substr($manual, 0, 255);
+            }
+            if ($filePath === null) {
+                Session::flash('error', 'Envoyez un fichier ou renseignez l’emplacement en mode avancé.');
+
+                return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+            }
+            $this->resourceRepository->create($lessonId, [
+                'resource_type' => $type,
+                'title' => mb_substr($title, 0, 255),
+                'external_url' => null,
+                'file_path' => $filePath,
+                'mime_type' => $mime,
+                'file_size' => $size,
+            ]);
+            $this->markCourseSavedWithCurrentStudioVersion($courseId);
+            Session::flash('success', 'Ressource ajoutée à la leçon.');
+
+            return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+        }
+
         $title = trim((string) $request->input('resource_title', ''));
         if ($title === '') {
             Session::flash('error', 'Indiquez un titre pour la ressource.');
 
-            return $this->studioRedirectAfter($request, $courseId, 'structure', '#lesson-res-' . $lessonId);
+            return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
         }
         $type = trim((string) $request->input('resource_type', 'link'));
         if (!in_array($type, self::RESOURCE_TYPES, true)) {
             $type = 'link';
         }
         $url = trim((string) $request->input('resource_external_url', ''));
-        $path = trim((string) $request->input('resource_file_path', ''));
         $extUrl = $url === '' ? null : substr($url, 0, 500);
-        $filePath = $path === '' ? null : substr($path, 0, 255);
-        if ($extUrl === null && $filePath === null) {
-            Session::flash('error', 'Renseignez une adresse web ou un emplacement de fichier sur le serveur.');
+        if ($extUrl === null) {
+            Session::flash('error', 'Renseignez une adresse web complète (https://…).');
 
-            return $this->studioRedirectAfter($request, $courseId, 'structure', '#lesson-res-' . $lessonId);
+            return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
         }
         $this->resourceRepository->create($lessonId, [
             'resource_type' => $type,
             'title' => mb_substr($title, 0, 255),
             'external_url' => $extUrl,
-            'file_path' => $filePath,
+            'file_path' => null,
         ]);
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Ressource ajoutée à la leçon.');
 
-        return $this->studioRedirectAfter($request, $courseId, 'structure', '#lesson-res-' . $lessonId);
+        return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
     }
 
     private function deleteLessonResource(Request $request, int $courseId, int $tenantId): Response
@@ -1034,6 +1133,13 @@ class AdminTrainingStudioController
             Session::flash('error', 'Ressource introuvable.');
 
             return $this->studioRedirectAfter($request, $courseId, 'structure');
+        }
+        $fp = str_replace('\\', '/', trim((string) ($res['file_path'] ?? '')));
+        if ($fp !== '' && str_starts_with($fp, 'storage/uploads/training-lesson-resources/')) {
+            $abs = base_path($fp);
+            if (is_file($abs)) {
+                @unlink($abs);
+            }
         }
         $this->resourceRepository->delete($rid);
         $this->markCourseSavedWithCurrentStudioVersion($courseId);

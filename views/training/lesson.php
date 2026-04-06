@@ -42,6 +42,10 @@ if ($lessonType === 'pdf') {
     $pdfUrl = trim((string) ($lesson['external_url'] ?? ''));
     if ($pdfUrl === '' && !empty($resources)) {
         foreach ($resources as $r) {
+            if (!empty($r['library_document_id'])) {
+                $pdfUrl = url('documents/' . (int) $r['library_document_id'] . '/file');
+                break;
+            }
             $rt = (string) ($r['resource_type'] ?? '');
             if (($rt === 'pdf' || $rt === 'attachment') && !empty($r['file_path'])) {
                 $pdfUrl = url('api/training/resource/' . (int) $r['id'] . '/download');

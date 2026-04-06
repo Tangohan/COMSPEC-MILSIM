@@ -29,3 +29,5 @@ if (is_file($vendorAutoload)) {
 
     require $root . '/app/Support/helpers.php';
 }
+
+require_once __DIR__ . '/load_phpmailer.php';

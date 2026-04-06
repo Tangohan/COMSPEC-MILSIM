@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Training;
 
 use App\Core\Database;
+use App\Repositories\DocumentRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingLessonRepository;
 use App\Repositories\TrainingModuleRepository;
@@ -43,6 +44,7 @@ class TrainingCourseExchangeService
         private TrainingQuizRepository $quizRepository,
         private TrainingResourceRepository $resourceRepository,
         private TrainingService $trainingService,
+        private DocumentRepository $documentRepository,
     ) {}
 
     /** @return array<string, mixed> */
@@ -116,7 +118,7 @@ class TrainingCourseExchangeService
                 $courseId = $this->createCourseFromPayload($tenantId, $userId, $coursePayload, $canPublishImported);
             }
 
-            $this->insertModulesTree($courseId, $modules, $warnings);
+            $this->insertModulesTree($courseId, $tenantId, $modules, $warnings);
             if (function_exists('lms_platform_version')) {
                 $this->courseRepository->update($courseId, [
                     'lms_last_saved_with_version' => lms_platform_version(),
@@ -271,7 +273,7 @@ class TrainingCourseExchangeService
         }
         $resOut = [];
         foreach ($resources as $r) {
-            $resOut[] = [
+            $row = [
                 'resource_type' => (string) ($r['resource_type'] ?? 'link'),
                 'title' => (string) ($r['title'] ?? ''),
                 'external_url' => $this->nullIfEmptyString($r['external_url'] ?? null),
@@ -279,6 +281,11 @@ class TrainingCourseExchangeService
                 'mime_type' => $this->nullIfEmptyString($r['mime_type'] ?? null),
                 'file_size' => isset($r['file_size']) ? (int) $r['file_size'] : null,
             ];
+            $libSlug = trim((string) ($r['library_doc_slug'] ?? ''));
+            if ($libSlug !== '' && !empty($r['library_document_id'])) {
+                $row['library_document_slug'] = $libSlug;
+            }
+            $resOut[] = $row;
         }
 
         return [
@@ -598,7 +605,7 @@ class TrainingCourseExchangeService
      * @param list<array<string, mixed>> $modules
      * @param list<string> $warnings
      */
-    private function insertModulesTree(int $courseId, array $modules, array &$warnings): void
+    private function insertModulesTree(int $courseId, int $tenantId, array $modules, array &$warnings): void
     {
         $pos = 0;
         foreach ($modules as $mod) {
@@ -654,7 +661,7 @@ class TrainingCourseExchangeService
                     if (!is_array($res)) {
                         continue;
                     }
-                    $this->importOneResource($lid, $res, $warnings);
+                    $this->importOneResource($lid, $tenantId, $res, $warnings);
                 }
             }
             foreach ($mod['quizzes'] ?? [] as $qz) {
@@ -667,7 +674,7 @@ class TrainingCourseExchangeService
     }
 
     /** @param array<string, mixed> $res */
-    private function importOneResource(int $lessonId, array $res, array &$warnings): void
+    private function importOneResource(int $lessonId, int $tenantId, array $res, array &$warnings): void
     {
         $title = trim((string) ($res['title'] ?? ''));
         if ($title === '') {
@@ -676,6 +683,26 @@ class TrainingCourseExchangeService
         $type = (string) ($res['resource_type'] ?? 'link');
         if (!in_array($type, self::RESOURCE_TYPES, true)) {
             $type = 'link';
+        }
+        $libSlug = trim((string) ($res['library_document_slug'] ?? ''));
+        if ($libSlug !== '') {
+            $doc = $this->documentRepository->findBySlug($libSlug, $tenantId);
+            if (!$doc) {
+                $warnings[] = 'Ressource « ' . $title . ' » : document de bibliothèque « ' . $libSlug . ' » introuvable sur cette communauté — lien ignoré.';
+
+                return;
+            }
+            $this->resourceRepository->create($lessonId, [
+                'resource_type' => 'attachment',
+                'title' => mb_substr($title, 0, 255),
+                'external_url' => null,
+                'file_path' => null,
+                'mime_type' => null,
+                'file_size' => null,
+                'library_document_id' => (int) $doc['id'],
+            ]);
+
+            return;
         }
         $url = $this->optionalString($res['external_url'] ?? null, 500);
         $path = $this->optionalString($res['file_path'] ?? null, 255);
