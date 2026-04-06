@@ -41,8 +41,14 @@ $forumCanDeleteCategoryMenu = !empty($forumCanDeleteCategoryMenu);
     <p class="text-xs md:text-sm font-semibold uppercase tracking-[0.2em] mb-3 <?= $hasHeroBg ? 'text-emerald-100/90' : 'text-slate-500' ?>"><?= htmlspecialchars($forumDisplaySubtitle, ENT_QUOTES, 'UTF-8') ?></p>
     <?php endif; ?>
     <p class="text-sm border-l-2 pl-6 italic max-w-2xl mb-6 leading-relaxed <?= $hasHeroBg ? 'border-emerald-400/45 text-slate-200' : 'border-emerald-500/35 text-slate-600' ?>"><?= htmlspecialchars($forumConfig['tagline'] ?? '') ?></p>
+    <?php
+    $newTopicHref = $baseUrl . '/forum/new-topic';
+    if ($forumViewTenantSwitcher !== [] && $forumContextTenantId !== $forumSessionTenantId && $forumContextTenantId > 1) {
+        $newTopicHref .= '?forum_tenant=' . (int) $forumContextTenantId;
+    }
+    ?>
     <div class="flex flex-wrap items-center gap-3 md:gap-4">
-      <a href="<?= $baseUrl ?>/forum/new-topic" class="inline-block bg-emerald-600 text-white px-6 py-3 md:px-8 md:py-3.5 font-black uppercase text-[10px] tracking-[0.25em] hover:bg-emerald-500 transition shadow-sm rounded-md">Nouveau Sujet</a>
+      <a href="<?= htmlspecialchars($newTopicHref, ENT_QUOTES, 'UTF-8') ?>" class="inline-block bg-emerald-600 text-white px-6 py-3 md:px-8 md:py-3.5 font-black uppercase text-[10px] tracking-[0.25em] hover:bg-emerald-500 transition shadow-sm rounded-md">Nouveau Sujet</a>
       <a href="<?= $baseUrl ?>/" class="inline-block px-5 py-2.5 md:px-6 md:py-3 text-xs font-bold uppercase tracking-wider transition rounded-md <?= $hasHeroBg ? 'border border-white/25 bg-white/10 text-white hover:bg-white/15' : 'border border-slate-300 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-400' ?>">Retour</a>
       <span class="text-[9px] font-black uppercase tracking-widest <?= $hasHeroBg ? 'text-slate-300' : 'text-slate-500' ?> ml-auto"><?= htmlspecialchars($userName) ?></span>
     </div>

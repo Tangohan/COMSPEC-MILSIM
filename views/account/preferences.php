@@ -197,6 +197,7 @@ foreach ($notifEmailCatalog as $item) {
             <h2 class="text-lg font-black text-slate-900">Notifications par e-mail</h2>
             <p class="mt-1 text-sm text-slate-600">
                 Décochez les types de messages que vous ne souhaitez plus recevoir. Les e-mails indispensables (réinitialisation de mot de passe, vérification d’adresse, liens à usage unique) peuvent toujours être envoyés.
+                Les thèmes ci-dessous couvrent la sécurité du compte, les événements, les formations, le recrutement et les alertes utiles à l’équipe (modération, nouveaux membres).
             </p>
             <div class="mt-6 space-y-8">
                 <?php foreach ($notifByGroup as $groupName => $items): ?>

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Core\Csrf;
 use App\Repositories\ForumCategoryRepository;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumAuthorIdentityRepository;
+use App\Repositories\TenantRepository;
 use App\Services\Profile\ProfilePublicIdentityService;
 
 class ForumCategoryController
@@ -18,20 +21,43 @@ class ForumCategoryController
         private ForumCategoryRepository $categoryRepository,
         private ForumTopicRepository $topicRepository,
         private ForumAuthorIdentityRepository $forumAuthorIdentityRepository,
-        private ProfilePublicIdentityService $profilePublicIdentityService
+        private ProfilePublicIdentityService $profilePublicIdentityService,
+        private TenantRepository $tenantRepository,
     ) {}
 
     public function show(Request $request, array $params = []): Response
     {
-        $tenantId = Session::get('tenant_id');
-        $userId = Session::get('user_id');
-        if (!$tenantId || !$userId) {
+        $sessionTenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$sessionTenantId || !$userId) {
             Session::flash('error', 'Authentification requise.');
             return Response::redirect(url('login'));
         }
 
+        $gate = Gate::getInstance();
+        $forumDataTenantId = $sessionTenantId;
+        if ($gate->allows('admin.system')) {
+            $reqTid = (int) $request->query('forum_tenant', 0);
+            if ($reqTid > 1) {
+                $trow = $this->tenantRepository->findById($reqTid);
+                if ($trow) {
+                    $forumDataTenantId = $reqTid;
+                }
+            }
+        }
+        $tenantId = $forumDataTenantId;
+
+        $forumTenantQuery = [];
+        if ($gate->allows('admin.system') && $forumDataTenantId > 1) {
+            $forumTenantQuery['forum_tenant'] = $forumDataTenantId;
+        }
+        $forumIndexUrl = url('forum');
+        if ($forumTenantQuery !== []) {
+            $forumIndexUrl .= '?forum_tenant=' . (int) $forumTenantQuery['forum_tenant'];
+        }
+
         if (function_exists('forum_disabled_for_member_response')) {
-            $blocked = forum_disabled_for_member_response((int) $tenantId);
+            $blocked = forum_disabled_for_member_response($tenantId);
             if ($blocked !== null) {
                 return $blocked;
             }
@@ -52,10 +78,10 @@ class ForumCategoryController
 
         $catScope = (string) ($category['scope'] ?? 'general');
         if (function_exists('forum_organization_scope_accessible_for_current_viewer')
-            && !forum_organization_scope_accessible_for_current_viewer((int) $tenantId, $catScope)) {
+            && !forum_organization_scope_accessible_for_current_viewer($tenantId, $catScope)) {
             Session::flash('error', 'Ce canal unité n’est pas ouvert aux membres pour le moment.');
 
-            return Response::redirect(url('forum'));
+            return Response::redirect($forumIndexUrl);
         }
 
         $isModo = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
@@ -112,18 +138,26 @@ class ForumCategoryController
         $subcategories = $this->categoryRepository->getSubcategories((int) $category['id'], $tenantId);
         $isSubscribed = $this->categoryRepository->isSubscribedCategory($userId, (int) $category['id']);
 
-        $buildCategoryUrl = function (array $overrides = []) use ($slug, $page, $sort, $filter, $q): string {
+        $buildCategoryUrl = function (array $overrides = []) use ($slug, $page, $sort, $filter, $q, $forumTenantQuery): string {
             $merged = array_merge(
                 ['page' => $page, 'sort' => $sort, 'filter' => $filter, 'q' => $q],
+                $forumTenantQuery,
                 $overrides
             );
             return forum_build_category_url($slug, $merged);
         };
 
+        $forumCanCreateSubcategory = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
+        $forumFullCategoryAdmin = $gate->allows('admin.access')
+            || $gate->allows('admin.system')
+            || (function_exists('can') && can('forum.categories.manage'));
+        $forumContextMenuEnabled = $forumCanCreateSubcategory || $forumFullCategoryAdmin;
+        $forumCanDeleteCategoryMenu = $forumCanCreateSubcategory || $forumFullCategoryAdmin;
+
         return Response::view('layout.forum', [
             'content' => 'forum.category',
             'title' => $category['name'],
-            'forumConfig' => forum_config_for_tenant((int) $tenantId),
+            'forumConfig' => forum_config_for_tenant($tenantId),
             'category' => $category,
             'topics' => $topics,
             'subcategories' => $subcategories,
@@ -138,6 +172,16 @@ class ForumCategoryController
             'isSubscribed' => $isSubscribed,
             'isModo' => $isModo,
             'buildCategoryUrl' => $buildCategoryUrl,
+            'forumTenantQuery' => $forumTenantQuery,
+            'forumIndexUrl' => $forumIndexUrl,
+            'forumContextMenuEnabled' => $forumContextMenuEnabled,
+            'forumFullCategoryAdmin' => $forumFullCategoryAdmin,
+            'forumCanDeleteCategoryMenu' => $forumCanDeleteCategoryMenu,
+            'forumCsrfToken' => Csrf::token(),
+            'forumCategoriesApiUrl' => url('api/admin/forum-categories'),
+            'forumAdminForumConfigUrl' => url('admin/forum-config'),
+            'forumContextTenantId' => $forumDataTenantId,
+            'forumSessionTenantId' => $sessionTenantId,
         ]);
     }
 }

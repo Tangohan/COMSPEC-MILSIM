@@ -403,13 +403,16 @@ class UserAdminController
         $setupUrl = url('reset-password') . '?token=' . rawurlencode($rawToken);
         $tenantRow = $this->tenantRepository->findById($tenantId);
         $tenantName = $tenantRow ? (string) ($tenantRow['name'] ?? 'Communauté') : 'Communauté';
-        $sent = $this->emailService->sendTenantUserSetupInvite(
-            $email,
-            $setupUrl,
-            self::SETUP_TOKEN_HOURS,
-            $tenantName,
-            $tenantId
-        );
+        $sent = false;
+        if ($this->userNotificationPreferencesRepository->isEmailEventEnabled($userId, EmailEvents::TENANT_USER_SETUP)) {
+            $sent = $this->emailService->sendTenantUserSetupInvite(
+                $email,
+                $setupUrl,
+                self::SETUP_TOKEN_HOURS,
+                $tenantName,
+                $tenantId
+            );
+        }
 
         $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, $email);
         if ($sent) {

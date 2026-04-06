@@ -11,7 +11,9 @@ use App\Core\Session;
 use App\Core\Validator;
 use App\Repositories\EmailTokenRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
+use App\Services\Email\EmailEvents;
 use App\Services\Email\EmailTokenPurpose;
 use App\Services\EmailService;
 
@@ -23,7 +25,8 @@ final class VerifyEmailController
         private EmailTokenRepository $emailTokens,
         private UserRepository $userRepository,
         private TenantRepository $tenantRepository,
-        private EmailService $emailService
+        private EmailService $emailService,
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository
     ) {}
 
     public function verify(Request $request, array $params = []): Response
@@ -55,6 +58,11 @@ final class VerifyEmailController
         $staff = $this->userRepository->listGovernanceEmailsForTenant($tenantId);
         $ip = trim($request->ip());
         foreach ($staff as $adminEmail) {
+            $em = strtolower(trim($adminEmail));
+            $adm = $em !== '' ? $this->userRepository->findByEmail($tenantId, $em) : null;
+            if ($adm && !$this->notificationPreferencesRepository->isEmailEventEnabled((int) ($adm['id'] ?? 0), EmailEvents::NEW_COMMUNITY_MEMBER)) {
+                continue;
+            }
             $this->emailService->sendNewCommunityMemberStaff(
                 $adminEmail,
                 $tenantName,

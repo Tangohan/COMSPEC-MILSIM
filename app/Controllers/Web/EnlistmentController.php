@@ -11,10 +11,12 @@ use App\Core\Csrf;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\RecruitmentPresetRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Community\EnlistmentMilsimPackService;
+use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Services\Profile\RecruitmentPresetPayloadService;
@@ -30,7 +32,8 @@ class EnlistmentController
         private RecruitmentPresetRepository $recruitmentPresetRepository,
         private RecruitmentPresetPayloadService $recruitmentPresetPayloadService,
         private EmailService $emailService,
-        private IndicatorBlocklistService $indicatorBlocklist
+        private IndicatorBlocklistService $indicatorBlocklist,
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -362,6 +365,11 @@ class EnlistmentController
 
         foreach ($recipients as $to) {
             try {
+                $em = strtolower(trim($to));
+                $u = $em !== '' ? $this->userRepository->findByEmail($tenantId, $em) : null;
+                if ($u && !$this->notificationPreferencesRepository->isEmailEventEnabled((int) ($u['id'] ?? 0), EmailEvents::ENLISTMENT_SUBMITTED_STAFF)) {
+                    continue;
+                }
                 $this->emailService->sendEnlistmentSubmittedStaffNotify(
                     $to,
                     $tenantName,

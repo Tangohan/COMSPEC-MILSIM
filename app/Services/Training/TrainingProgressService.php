@@ -11,7 +11,9 @@ use App\Repositories\TrainingLessonRepository;
 use App\Repositories\TrainingModuleRepository;
 use App\Repositories\TrainingProgressRepository;
 use App\Repositories\TrainingQuizRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
+use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 
 class TrainingProgressService
@@ -28,7 +30,8 @@ class TrainingProgressService
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
         private TrainingCourseRepository $courseRepository,
-        private TrainingStaffAlertService $staffAlertService
+        private TrainingStaffAlertService $staffAlertService,
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository
     ) {}
 
     public function startEnrollment(int $enrollmentId, int $tenantId, int $userId): void
@@ -135,15 +138,17 @@ class TrainingProgressService
             }
             $slug = trim((string) ($course['slug'] ?? ''));
             $courseUrl = $slug !== '' ? \url('formations/' . rawurlencode($slug)) : \url('formations/mes-formations');
-            $this->emailService->sendTrainingCourseCompleted(
-                $email,
-                $display,
-                $tenantName,
-                (string) ($course['title'] ?? 'Formation'),
-                $courseUrl,
-                (int) ($course['is_certifying'] ?? 0) === 1,
-                $tenantId
-            );
+            if ($this->notificationPreferencesRepository->isEmailEventEnabled($userId, EmailEvents::TRAINING_COURSE_COMPLETED)) {
+                $this->emailService->sendTrainingCourseCompleted(
+                    $email,
+                    $display,
+                    $tenantName,
+                    (string) ($course['title'] ?? 'Formation'),
+                    $courseUrl,
+                    (int) ($course['is_certifying'] ?? 0) === 1,
+                    $tenantId
+                );
+            }
         } catch (\Throwable) {
         }
         try {

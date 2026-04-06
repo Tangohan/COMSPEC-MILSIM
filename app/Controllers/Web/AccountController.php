@@ -266,6 +266,12 @@ class AccountController
                 'group' => 'Compte',
             ],
             [
+                'key' => EmailEvents::TENANT_USER_SETUP,
+                'label' => 'Invitation à définir votre mot de passe',
+                'hint' => 'Lorsque l’équipe crée votre compte ou vous ouvre un premier accès avec un lien sécurisé.',
+                'group' => 'Compte',
+            ],
+            [
                 'key' => EmailEvents::ATTENDANCE_REMINDER,
                 'label' => 'Rappels d’événements (pointage)',
                 'hint' => 'Avant les missions ou sessions auxquelles vous participez.',
@@ -314,6 +320,85 @@ class AccountController
                 'label' => 'Nouveaux signalements pour l’équipe',
                 'hint' => 'Lorsqu’un membre envoie un signalement ou une demande à traiter.',
                 'group' => 'Signalements et modération',
+            ];
+        }
+
+        $items[] = [
+            'key' => EmailEvents::NEW_COMMUNITY_MEMBER,
+            'label' => 'Nouveaux membres (équipe)',
+            'hint' => 'Résumé pour les responsables lorsqu’un membre rejoint la communauté ou confirme son inscription.',
+            'group' => 'Communauté',
+        ];
+
+        $formationItems = [
+            [
+                'key' => EmailEvents::TRAINING_ENROLLMENT_ASSIGNED,
+                'label' => 'Formation qui vous est assignée',
+                'hint' => 'Lorsque l’équipe vous inscrit à un parcours (hors simple auto-inscription).',
+            ],
+            [
+                'key' => EmailEvents::TRAINING_COURSE_COMPLETED,
+                'label' => 'Parcours de formation terminé',
+                'hint' => 'Message de synthèse lorsque vous avez validé toutes les exigences d’un parcours.',
+            ],
+            [
+                'key' => EmailEvents::TRAINING_ENROLLMENT_PENDING_APPROVAL,
+                'label' => 'Demandes d’inscription à valider (formateurs)',
+                'hint' => 'Lorsqu’un membre demande à rejoindre une formation soumise à validation.',
+            ],
+            [
+                'key' => EmailEvents::TRAINING_SELF_ENROLL_APPROVED,
+                'label' => 'Demande d’inscription acceptée',
+                'hint' => 'Lorsque les formateurs acceptent votre demande pour un parcours.',
+            ],
+            [
+                'key' => EmailEvents::TRAINING_SELF_ENROLL_DECLINED,
+                'label' => 'Demande d’inscription refusée',
+                'hint' => 'Lorsque les formateurs ne valident pas votre demande pour un parcours.',
+            ],
+            [
+                'key' => EmailEvents::TRAINING_MODULE_BLOCKED_STAFF,
+                'label' => 'Apprenant en difficulté sur un module (formateurs)',
+                'hint' => 'Lorsqu’un inscrit signale un blocage et qu’une aide peut être nécessaire.',
+            ],
+            [
+                'key' => EmailEvents::TRAINING_COURSE_SESSION_SCHEDULED_LEARNER,
+                'label' => 'Nouveau créneau sur une formation suivie',
+                'hint' => 'Lorsqu’une séance ou un créneau est ajouté sur un parcours auquel vous participez encore.',
+            ],
+        ];
+        foreach ($formationItems as $fi) {
+            $items[] = [
+                'key' => $fi['key'],
+                'label' => $fi['label'],
+                'hint' => $fi['hint'],
+                'group' => 'Formations',
+            ];
+        }
+
+        $recrutementItems = [
+            [
+                'key' => EmailEvents::ENLISTMENT_SUBMITTED_STAFF,
+                'label' => 'Nouvelle candidature (équipe recrutement)',
+                'hint' => 'Lorsqu’un dossier de candidature est déposé pour votre communauté.',
+            ],
+            [
+                'key' => EmailEvents::ENLISTMENT_ACCEPTED_CANDIDATE,
+                'label' => 'Candidature acceptée (candidat)',
+                'hint' => 'Message de confirmation lorsque votre candidature est acceptée.',
+            ],
+            [
+                'key' => EmailEvents::ENLISTMENT_ACCEPTED_STAFF,
+                'label' => 'Candidature acceptée (équipe)',
+                'hint' => 'Résumé pour les personnes habilitées au recrutement lorsqu’une candidature est acceptée.',
+            ],
+        ];
+        foreach ($recrutementItems as $ri) {
+            $items[] = [
+                'key' => $ri['key'],
+                'label' => $ri['label'],
+                'hint' => $ri['hint'],
+                'group' => 'Recrutement',
             ];
         }
 

@@ -16,9 +16,10 @@ $mode = $trainingStudioMode ?? 'index';
 
 $count = (int) ($trainingStudioCourseCount ?? 0);
 
-$course = $trainingStudioCourse ?? null;
+/** Résumé formation (id, titre, compteurs…) — ne pas utiliser le nom $course : il est réservé au tableau complet dans la vue principale. */
+$studioSidebarCourse = $trainingStudioCourse ?? null;
 
-$cid = $course ? (int) ($course['id'] ?? 0) : 0;
+$cid = $studioSidebarCourse ? (int) ($studioSidebarCourse['id'] ?? 0) : 0;
 
 
 
@@ -34,7 +35,7 @@ $visLabels = [
 
 ];
 
-$vis = $course ? ($visLabels[$course['visibility'] ?? ''] ?? (string) ($course['visibility'] ?? '')) : '';
+$vis = $studioSidebarCourse ? ($visLabels[$studioSidebarCourse['visibility'] ?? ''] ?? (string) ($studioSidebarCourse['visibility'] ?? '')) : '';
 
 $gateStudio = \App\Core\Gate::getInstance();
 $studioCanEditVitrine = $gateStudio->allows('admin.access') || $gateStudio->allows('training.manage')
@@ -101,7 +102,7 @@ $studioCanEditVitrine = $gateStudio->allows('admin.access') || $gateStudio->allo
 
         </a>
 
-        <?php if ($mode === 'edit' && $course && $cid > 0): ?>
+        <?php if ($mode === 'edit' && $studioSidebarCourse && $cid > 0): ?>
 
         <p class="training-studio-nav__label mt-4">Formation en cours</p>
 
@@ -175,7 +176,7 @@ $studioCanEditVitrine = $gateStudio->allows('admin.access') || $gateStudio->allo
 
         </a>
 
-        <a href="<?= url('formations/' . rawurlencode((string) ($course['slug'] ?? ''))) ?>"
+        <a href="<?= url('formations/' . rawurlencode((string) ($studioSidebarCourse['slug'] ?? ''))) ?>"
 
            target="_blank" rel="noopener">
 
@@ -219,19 +220,19 @@ $studioCanEditVitrine = $gateStudio->allows('admin.access') || $gateStudio->allo
 
     </div>
 
-    <?php elseif ($course && $cid > 0): ?>
+    <?php elseif ($studioSidebarCourse && $cid > 0): ?>
 
     <div class="training-studio-sidebar__card">
 
         <dl>
 
-            <dt><?= htmlspecialchars(mb_strimwidth((string) ($course['title'] ?? ''), 0, 42, '…')) ?></dt>
+            <dt><?= htmlspecialchars(mb_strimwidth((string) ($studioSidebarCourse['title'] ?? ''), 0, 42, '…')) ?></dt>
 
             <dd class="text-xs font-semibold normal-case tracking-normal text-emerald-300/95"><?= htmlspecialchars($vis) ?>
 
-                · <?= (int) ($course['module_count'] ?? 0) ?> module(s)
+                · <?= (int) ($studioSidebarCourse['module_count'] ?? 0) ?> module(s)
 
-                · <?= (int) ($course['lesson_count'] ?? 0) ?> leçon(s)</dd>
+                · <?= (int) ($studioSidebarCourse['lesson_count'] ?? 0) ?> leçon(s)</dd>
 
         </dl>
 

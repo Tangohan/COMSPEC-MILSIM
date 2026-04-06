@@ -10,8 +10,10 @@ use App\Repositories\PasswordResetRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
 use App\Services\Admin\AdminAuditService;
+use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Platform\FeatureGateService;
 use DateTimeImmutable;
@@ -36,7 +38,8 @@ final class EnlistmentAcceptanceProvisioningService
         private PasswordResetRepository $passwordResetRepository,
         private EmailService $emailService,
         private FeatureGateService $featureGateService,
-        private AdminAuditService $adminAuditService
+        private AdminAuditService $adminAuditService,
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository
     ) {}
 
     /**
@@ -490,14 +493,17 @@ final class EnlistmentAcceptanceProvisioningService
         $tenantName = trim((string) ($tenantRow['name'] ?? 'Communauté'));
 
         $setupUrl = url('reset-password') . '?token=' . rawurlencode($rawToken);
-        $setupSent = $this->emailService->sendTenantUserSetupInvite(
-            $email,
-            $setupUrl,
-            self::SETUP_TOKEN_HOURS,
-            $tenantName,
-            $tenantId,
-            'recruitment_accepted'
-        );
+        $setupSent = false;
+        if ($this->notificationPreferencesRepository->isEmailEventEnabled($userId, EmailEvents::TENANT_USER_SETUP)) {
+            $setupSent = $this->emailService->sendTenantUserSetupInvite(
+                $email,
+                $setupUrl,
+                self::SETUP_TOKEN_HOURS,
+                $tenantName,
+                $tenantId,
+                'recruitment_accepted'
+            );
+        }
 
         $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, $email);
 
@@ -574,6 +580,11 @@ final class EnlistmentAcceptanceProvisioningService
         string $accountScenario
     ): void {
         try {
+            $em = strtolower(trim($email));
+            $u = $em !== '' ? $this->userRepository->findByEmail($tenantId, $em) : null;
+            if ($u && !$this->notificationPreferencesRepository->isEmailEventEnabled((int) ($u['id'] ?? 0), EmailEvents::ENLISTMENT_ACCEPTED_CANDIDATE)) {
+                return;
+            }
             $this->emailService->sendEnlistmentAcceptedCandidate(
                 $email,
                 $tenantName,
@@ -597,6 +608,11 @@ final class EnlistmentAcceptanceProvisioningService
     ): void {
         foreach ($this->staffEmails($tenantId) as $to) {
             try {
+                $em = strtolower(trim($to));
+                $u = $em !== '' ? $this->userRepository->findByEmail($tenantId, $em) : null;
+                if ($u && !$this->notificationPreferencesRepository->isEmailEventEnabled((int) ($u['id'] ?? 0), EmailEvents::ENLISTMENT_ACCEPTED_STAFF)) {
+                    continue;
+                }
                 $this->emailService->sendEnlistmentAcceptedStaff(
                     $to,
                     $tenantName,

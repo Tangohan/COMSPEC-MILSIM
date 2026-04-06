@@ -7,7 +7,9 @@ namespace App\Services\Training;
 use App\Repositories\TenantRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingEnrollmentRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
+use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 
 class TrainingAssignmentService
@@ -20,7 +22,8 @@ class TrainingAssignmentService
         private TrainingEnrollmentPolicyService $enrollmentPolicyService,
         private EmailService $emailService,
         private TenantRepository $tenantRepository,
-        private TrainingStaffAlertService $staffAlertService
+        private TrainingStaffAlertService $staffAlertService,
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository
     ) {}
 
     public function assignUser(int $courseId, int $userId, int $tenantId, ?int $assignedBy = null, string $assignmentType = 'manual', ?string $expiresAt = null, ?string $motivationText = null): int
@@ -179,6 +182,9 @@ class TrainingAssignmentService
             }
             $slug = trim((string) ($course['slug'] ?? ''));
             $courseUrl = $slug !== '' ? \url('formations/' . rawurlencode($slug)) : \url('formations/mes-formations');
+            if (!$this->notificationPreferencesRepository->isEmailEventEnabled($userId, EmailEvents::TRAINING_ENROLLMENT_ASSIGNED)) {
+                return;
+            }
             $this->emailService->sendTrainingEnrollmentAssigned(
                 $email,
                 $display,
@@ -242,6 +248,9 @@ class TrainingAssignmentService
                 }
                 $sent[$to] = true;
                 $staffName = trim((string) ($staff['display_name'] ?? '')) ?: $to;
+                if (!$this->notificationPreferencesRepository->isEmailEventEnabled((int) $uid, EmailEvents::TRAINING_ENROLLMENT_PENDING_APPROVAL)) {
+                    continue;
+                }
                 $this->emailService->sendTrainingEnrollmentPendingApproval(
                     $to,
                     $staffName,

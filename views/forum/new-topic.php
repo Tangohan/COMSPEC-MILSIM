@@ -22,11 +22,16 @@ foreach ($categoriesWithChildren as $root) {
 }
 $agoraTitle = $labels['agora_title'] ?? 'Agora Athena';
 $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
+$forumNewTopicTenantContext = (int) ($forumNewTopicTenantContext ?? 0);
+$forumBackForumUrl = $baseUrl . '/forum';
+if ($forumNewTopicTenantContext > 1) {
+    $forumBackForumUrl .= '?forum_tenant=' . $forumNewTopicTenantContext;
+}
 ?>
 <main class="w-full px-4 sm:px-6 lg:px-8 py-10 bg-[#f8fafc]">
   <div class="max-w-6xl mx-auto">
   <nav class="text-[9px] font-black uppercase tracking-[0.25em] text-slate-600 mb-6">
-    <a href="<?= $baseUrl ?>/forum" class="hover:text-emerald-700">Forum</a>
+    <a href="<?= htmlspecialchars($forumBackForumUrl, ENT_QUOTES, 'UTF-8') ?>" class="hover:text-emerald-700">Forum</a>
     <span class="mx-2 text-slate-400">›</span>
     <?php if ($preselectedCategoryId && $preselectedName): ?>
       <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($preselectedSlug ?: $preselectedName) ?>" class="hover:text-emerald-700"><?= htmlspecialchars($preselectedName) ?></a>
@@ -55,6 +60,9 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
       <!-- Colonne formulaire -->
       <form id="new-topic-form" class="flex-1 min-w-0 space-y-6">
         <?= \App\Core\Csrf::field() ?>
+        <?php if ($forumNewTopicTenantContext > 1): ?>
+        <input type="hidden" name="forum_tenant" id="forum-new-topic-tenant-ctx" value="<?= (int) $forumNewTopicTenantContext ?>">
+        <?php endif; ?>
 
         <div>
           <label class="block text-[10px] font-black uppercase tracking-wider text-neutral-500 mb-2">Secteur de diffusion *</label>
@@ -143,7 +151,7 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
           <button type="submit" id="submit-topic-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 font-black uppercase text-[10px] tracking-[0.25em] transition flex items-center gap-2 rounded-md shadow-sm">
             <span aria-hidden="true">✈</span> Diffuser le sujet
           </button>
-          <a href="<?= $baseUrl ?>/forum" class="border border-slate-300 bg-white px-6 py-3 text-xs font-bold uppercase text-slate-600 hover:text-slate-900 hover:border-slate-400 transition rounded-md">✕ Abandonner</a>
+          <a href="<?= htmlspecialchars($forumBackForumUrl, ENT_QUOTES, 'UTF-8') ?>" class="border border-slate-300 bg-white px-6 py-3 text-xs font-bold uppercase text-slate-600 hover:text-slate-900 hover:border-slate-400 transition rounded-md">✕ Abandonner</a>
         </div>
       </form>
 
@@ -171,6 +179,7 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
   var baseUrl = '<?= $baseUrl ?>';
   var maxLen = <?= (int) $maxLen ?>;
   var csrf = '<?= \App\Core\Csrf::token() ?>';
+  var forumTenantCtx = <?= (int) $forumNewTopicTenantContext ?>;
   var tags = [];
   var MAX_TAGS = 5;
   var ntAttachmentIds = [];
@@ -372,6 +381,7 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
       if (!files || !files.length) return;
       var fd = new FormData();
       fd.append('_csrf_token', csrf);
+      if (forumTenantCtx > 1) fd.append('forum_tenant', String(forumTenantCtx));
       for (var i = 0; i < files.length; i++) fd.append('files[]', files[i]);
       fetch(baseUrl + '/api/forum-upload', { method: 'POST', body: fd, credentials: 'same-origin' })
         .then(function(r) { return r.json(); })
@@ -411,18 +421,20 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
     if ((content.length < 5 && ntAttachmentIds.length === 0) || content.length > maxLen) { showError('Le contenu doit faire au moins 5 caractères (ou joindre des fichiers), max ' + maxLen + '.'); return; }
     var submitBtn = document.getElementById('submit-topic-btn');
     if (submitBtn) submitBtn.disabled = true;
+    var createPayload = {
+      action: 'create_topic',
+      csrf_token: csrf,
+      category_id: catId,
+      title: title,
+      content: content,
+      tags: tags.join(','),
+      attachment_ids: ntAttachmentIds
+    };
+    if (forumTenantCtx > 1) createPayload.forum_tenant = forumTenantCtx;
     fetch(baseUrl + '/api/forum', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'create_topic',
-        csrf_token: csrf,
-        category_id: catId,
-        title: title,
-        content: content,
-        tags: tags.join(','),
-        attachment_ids: ntAttachmentIds
-      })
+      body: JSON.stringify(createPayload)
     }).then(function(r) { return r.json(); }).then(function(d) {
       if (submitBtn) submitBtn.disabled = false;
       if (d.success && d.topic_id) {

@@ -14,7 +14,9 @@ use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingCertificateRepository;
 use App\Repositories\TrainingCertificateTemplateRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
+use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingAuditService;
@@ -41,6 +43,7 @@ class AdminTrainingController
         private TrainingEnrollmentPolicyService $enrollmentPolicyService,
         private TrainingCourseExchangeService $courseExchangeService,
         private FeatureGateService $featureGate,
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository,
     ) {}
 
     public function dashboard(Request $request, array $params = []): Response
@@ -644,14 +647,16 @@ class AdminTrainingController
             }
             $slug = trim((string) ($course['slug'] ?? ''));
             $courseUrl = $slug !== '' ? \url('formations/' . rawurlencode($slug)) : \url('formations/mes-formations');
-            $this->emailService->sendTrainingSelfEnrollApproved(
-                $email,
-                $display,
-                $tenantName,
-                (string) ($course['title'] ?? 'Formation'),
-                $courseUrl,
-                $tenantId
-            );
+            if ($this->notificationPreferencesRepository->isEmailEventEnabled($userId, EmailEvents::TRAINING_SELF_ENROLL_APPROVED)) {
+                $this->emailService->sendTrainingSelfEnrollApproved(
+                    $email,
+                    $display,
+                    $tenantName,
+                    (string) ($course['title'] ?? 'Formation'),
+                    $courseUrl,
+                    $tenantId
+                );
+            }
         } catch (\Throwable) {
         }
     }
@@ -680,13 +685,15 @@ class AdminTrainingController
             if ($display === '') {
                 $display = $email;
             }
-            $this->emailService->sendTrainingSelfEnrollDeclined(
-                $email,
-                $display,
-                $tenantName,
-                (string) ($course['title'] ?? 'Formation'),
-                $tenantId
-            );
+            if ($this->notificationPreferencesRepository->isEmailEventEnabled($userId, EmailEvents::TRAINING_SELF_ENROLL_DECLINED)) {
+                $this->emailService->sendTrainingSelfEnrollDeclined(
+                    $email,
+                    $display,
+                    $tenantName,
+                    (string) ($course['title'] ?? 'Formation'),
+                    $tenantId
+                );
+            }
         } catch (\Throwable) {
         }
     }

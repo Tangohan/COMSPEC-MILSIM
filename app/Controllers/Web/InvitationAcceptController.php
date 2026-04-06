@@ -16,10 +16,12 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\AuthService;
+use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Rbac\RbacService;
@@ -40,7 +42,8 @@ final class InvitationAcceptController
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
         private PersonnelJobRoleRepository $personnelJobRoleRepository,
-        private IndicatorBlocklistService $indicatorBlocklist
+        private IndicatorBlocklistService $indicatorBlocklist,
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -172,6 +175,11 @@ final class InvitationAcceptController
         $staffEmails = $this->users->listGovernanceEmailsForTenant($tenantId);
         $ip = trim($request->ip());
         foreach ($staffEmails as $adminEmail) {
+            $em = strtolower(trim($adminEmail));
+            $u = $em !== '' ? $this->users->findByEmail($tenantId, $em) : null;
+            if ($u && !$this->notificationPreferencesRepository->isEmailEventEnabled((int) ($u['id'] ?? 0), EmailEvents::NEW_COMMUNITY_MEMBER)) {
+                continue;
+            }
             $this->emailService->sendNewCommunityMemberStaff(
                 $adminEmail,
                 $tenantName,

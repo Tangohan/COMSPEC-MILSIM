@@ -657,6 +657,7 @@ if (!function_exists('forum_build_category_url')) {
             'sort' => $overrides['sort'] ?? null,
             'filter' => $overrides['filter'] ?? null,
             'q' => $overrides['q'] ?? null,
+            'forum_tenant' => $overrides['forum_tenant'] ?? null,
         ], fn ($v) => $v !== null && $v !== '');
         if (empty($params)) {
             return $base;

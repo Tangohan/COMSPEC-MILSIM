@@ -12,7 +12,15 @@ if ($curLmsScope !== 'platform' && $curLmsScope !== 'tenant') {
 }
 $cid = (int) ($course['id'] ?? 0);
 $slug = (string) ($course['slug'] ?? '');
-$modules = $course['modules'] ?? [];
+$modules = is_array($course['modules'] ?? null) ? $course['modules'] : [];
+$trainingStudioCourseMeta = $trainingStudioCourse ?? [];
+$studioMetaModuleCount = (int) ($trainingStudioCourseMeta['module_count'] ?? 0);
+$studioMetaLessonCount = (int) ($trainingStudioCourseMeta['lesson_count'] ?? 0);
+$studioLessonTotal = 0;
+foreach ($modules as $sm) {
+    $studioLessonTotal += count($sm['lessons'] ?? []);
+}
+$studioStructureEmptyButMetaShowsModules = $modules === [] && $studioMetaModuleCount > 0;
 $libraryDocumentsForPicker = $libraryDocumentsForPicker ?? [];
 
 $gateEdit = \App\Core\Gate::getInstance();
@@ -633,8 +641,13 @@ $defaultCanvasJson = json_encode([
         Structure pédagogique
     </h2>
     <div id="studio-ressources-aide" class="scroll-mt-28 rounded-xl border border-sky-300/80 bg-gradient-to-br from-sky-50 to-white p-4 md:p-5 mb-6 text-sm text-slate-800 shadow-sm ring-1 ring-sky-100">
-        <p class="font-black text-xs uppercase tracking-wider text-sky-900">Où ajouter liens, fichiers et documents ?</p>
-        <p class="mt-2 text-sm leading-relaxed text-slate-700">Ouvrez une <strong class="font-semibold text-slate-900">leçon</strong> ci-dessous : à <strong class="font-semibold text-slate-900">droite</strong> du formulaire principal (sur ordinateur) ou <strong class="font-semibold text-slate-900">sous</strong> celui-ci (sur mobile), le panneau bleu <strong class="font-semibold text-sky-900">Ressources</strong> est déjà déplié — vous y choisissez une adresse web, un fichier ou un document du centre documentaire.</p>
+        <p class="font-black text-xs uppercase tracking-wider text-sky-900">Où se trouve le panneau Ressources ?</p>
+        <p class="mt-2 text-sm leading-relaxed text-slate-700">Il n’y a pas de zone « Ressources » en haut de page : pour chaque <strong class="font-semibold text-slate-900">leçon</strong>, un encart bleu <strong class="font-semibold text-sky-900">Ressources</strong> figure <strong class="font-semibold text-slate-900">dans la carte de cette leçon</strong> — à droite du formulaire sur grand écran, ou juste en dessous sur téléphone ou tablette. Ouvrez-le pour ajouter un lien, un fichier ou un document du centre.</p>
+        <?php if ($studioStructureEmptyButMetaShowsModules): ?>
+        <p class="mt-3 rounded-lg border border-amber-200/90 bg-amber-50 px-3 py-2.5 text-sm text-amber-950">Le menu indique encore des modules, mais la liste n’apparaît pas ici. <strong class="font-semibold">Actualisez la page</strong> (rechargement complet). Si rien ne s’affiche après actualisation, contactez un <strong class="font-semibold">administrateur du site</strong>.</p>
+        <?php elseif (count($modules) > 0 && $studioLessonTotal === 0): ?>
+        <p class="mt-3 rounded-lg border border-sky-200/90 bg-white/80 px-3 py-2.5 text-sm text-slate-800">Ajoutez au moins une <strong class="font-semibold">leçon</strong> dans un module ci-dessous : le panneau <strong class="font-semibold text-sky-900">Ressources</strong> apparaît alors sur cette leçon.</p>
+        <?php endif; ?>
     </div>
     <p class="text-sm text-slate-600 mb-3 max-w-2xl">Réordonnez les <strong>modules</strong> depuis la <strong>frise</strong> ci-dessous ou depuis chaque carte (poignée ⠿). Dans chaque module, réordonnez les <strong>leçons</strong> de la même façon. L’ordre est enregistré tout de suite.</p>
     <p class="text-xs text-slate-500 mb-6 max-w-2xl">Les diapositives d’un <strong>parcours visuel</strong> se déplacent dans l’éditeur de la leçon concernée, pas sur cette frise.</p>

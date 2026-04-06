@@ -7,6 +7,7 @@ namespace App\Services\Training;
 use App\Repositories\TenantCommunityFeedRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingStaffPingRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Email\EmailEvents;
@@ -40,7 +41,8 @@ class TrainingStaffAlertService
         private UserRepository $userRepository,
         private TenantRepository $tenantRepository,
         private TrainingEnrollmentPolicyService $enrollmentPolicyService,
-        private TrainingCourseRepository $courseRepository
+        private TrainingCourseRepository $courseRepository,
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository
     ) {}
 
     /** @return list<array{email: string, name: string, user_id: int}> */
@@ -162,6 +164,10 @@ class TrainingStaffAlertService
 
             $recipients = $this->resolveStaffRecipientsForCourse($course, $tenantId);
             foreach ($recipients as $r) {
+                $sid = (int) ($r['user_id'] ?? 0);
+                if ($sid < 1 || !$this->notificationPreferencesRepository->isEmailEventEnabled($sid, EmailEvents::TRAINING_MODULE_BLOCKED_STAFF)) {
+                    continue;
+                }
                 $this->emailService->sendTrainingModuleBlockedStaff(
                     $r['email'],
                     $r['name'],

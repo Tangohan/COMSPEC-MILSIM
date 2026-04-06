@@ -3,21 +3,27 @@ $labels = $forumConfig['labels'] ?? [];
 $baseUrl = url('');
 $categorySlug = $category['slug'] ?? '';
 $categoryId = (int) ($category['id'] ?? 0);
+$forumTenantQuery = is_array($forumTenantQuery ?? null) ? $forumTenantQuery : [];
+$forumIndexUrl = $forumIndexUrl ?? ($baseUrl . '/forum');
 $buildUrl = $buildCategoryUrl ?? function ($o = []) use ($baseUrl, $categorySlug) {
   return $baseUrl . '/forum/category/' . $categorySlug . (empty($o) ? '' : '?' . http_build_query(array_filter($o)));
 };
+$newTopicParams = array_merge(['category_id' => $categoryId], $forumTenantQuery);
+$newTopicHref = $baseUrl . '/forum/new-topic?' . http_build_query(array_filter($newTopicParams, fn ($v) => $v !== null && $v !== ''));
+$categoryScope = htmlspecialchars((string) ($category['scope'] ?? 'general'), ENT_QUOTES, 'UTF-8');
 $hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activity' || ($q ?? '') !== '';
 ?>
 <main class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-[#f8fafc] min-h-[60vh]">
   <!-- Fil d'Ariane -->
   <nav class="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.25em] text-slate-600 mb-10 header-anim" style="animation-delay:0ms">
-    <a href="<?= $baseUrl ?>/forum" class="hover:text-emerald-700 transition-colors">Forum</a>
+    <a href="<?= htmlspecialchars($forumIndexUrl, ENT_QUOTES, 'UTF-8') ?>" class="hover:text-emerald-700 transition-colors">Forum</a>
     <span class="text-slate-400">›</span>
     <span class="text-slate-800"><?= htmlspecialchars($category['name'] ?? '') ?></span>
   </nav>
 
-  <!-- En-tête catégorie -->
-  <div class="flex items-start justify-between gap-6 mb-10 header-anim" style="animation-delay:40ms">
+  <!-- En-tête catégorie (clic droit : sous-catégorie / modération, si autorisé) -->
+  <div class="forum-category-root rounded-xl border border-slate-200 bg-white shadow-sm p-5 sm:p-6 mb-10 header-anim transition hover:border-emerald-400/60 hover:shadow-md" style="animation-delay:40ms" data-forum-category-root="1" data-category-id="<?= $categoryId ?>" data-category-name="<?= htmlspecialchars($category['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= $categoryScope ?>">
+  <div class="flex items-start justify-between gap-6">
     <div class="flex items-start gap-5">
       <div class="shrink-0 w-14 h-14 flex items-center justify-center text-3xl bg-white border border-slate-200 rounded-lg shadow-sm">
         <?= !empty($category['icon']) ? htmlspecialchars($category['icon']) : '⚠️' ?>
@@ -47,18 +53,22 @@ $hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activit
         <span id="sub-label"><?= !empty($isSubscribed) ? 'Abonné' : 'Suivre' ?></span>
       </button>
       <?php if (!empty($canCreate)): ?>
-        <a href="<?= $baseUrl ?>/forum/new-topic?category_id=<?= $categoryId ?>" class="flex items-center gap-2.5 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black uppercase tracking-[0.25em] transition-colors rounded-md">
+        <a href="<?= htmlspecialchars($newTopicHref, ENT_QUOTES, 'UTF-8') ?>" class="flex items-center gap-2.5 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black uppercase tracking-[0.25em] transition-colors rounded-md">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
           Nouveau sujet
         </a>
       <?php endif; ?>
     </div>
   </div>
+  </div>
 
   <!-- Recherche + Filtres -->
   <div class="mb-4 border border-slate-200 bg-white rounded-lg shadow-sm p-3 md:p-4 header-anim" style="animation-delay:50ms">
     <form method="get" action="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($categorySlug) ?>" class="flex flex-col lg:flex-row gap-2 lg:items-center">
       <input type="hidden" name="category" value="<?= htmlspecialchars($categorySlug) ?>">
+      <?php if (!empty($forumTenantQuery['forum_tenant'])): ?>
+      <input type="hidden" name="forum_tenant" value="<?= (int) $forumTenantQuery['forum_tenant'] ?>">
+      <?php endif; ?>
       <input type="text" name="q" value="<?= htmlspecialchars($q ?? '') ?>" placeholder="Rechercher dans cette catégorie" class="flex-1 bg-slate-50 border border-slate-200 px-3 py-2 text-xs tracking-wide text-slate-900 rounded-md focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20">
       <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-md">Rechercher</button>
     </form>
@@ -78,7 +88,7 @@ $hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activit
     <?php if ($hasActiveFilters): ?>
       <p class="text-[10px] text-neutral-500 mt-2">
         <?php if (($q ?? '') !== ''): ?>Recherche : « <?= htmlspecialchars($q) ?> » · <?php endif; ?>
-        <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($categorySlug) ?>" class="text-rose-600 hover:text-rose-700">Réinitialiser</a>
+        <a href="<?= htmlspecialchars($buildUrl(['page' => 1, 'sort' => 'activity', 'filter' => '', 'q' => '']), ENT_QUOTES, 'UTF-8') ?>" class="text-rose-600 hover:text-rose-700">Réinitialiser</a>
       </p>
     <?php endif; ?>
   </div>
@@ -94,7 +104,7 @@ $hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activit
   <!-- Liste des sujets -->
   <div class="divide-y divide-slate-100 bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
     <?php if (empty($topics)): ?>
-      <p class="py-12 text-center text-slate-500">Aucun signal détecté dans cette zone.<?php if (!empty($canCreate)): ?> <a href="<?= $baseUrl ?>/forum/new-topic?category_id=<?= $categoryId ?>" class="text-emerald-700 hover:text-emerald-600 font-semibold">Émettre le premier signal</a><?php endif; ?></p>
+      <p class="py-12 text-center text-slate-500">Aucun signal détecté dans cette zone.<?php if (!empty($canCreate)): ?> <a href="<?= htmlspecialchars($newTopicHref, ENT_QUOTES, 'UTF-8') ?>" class="text-emerald-700 hover:text-emerald-600 font-semibold">Émettre le premier signal</a><?php endif; ?></p>
     <?php else: ?>
       <?php foreach ($topics as $index => $t): ?>
         <?php
@@ -174,7 +184,7 @@ $hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activit
       </div>
       <div class="grid gap-4 md:grid-cols-2">
         <?php foreach ($subcategories as $sub): ?>
-          <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($sub['slug']) ?>" class="border border-slate-200 bg-white p-4 hover:border-emerald-300 transition flex items-center justify-between group rounded-lg shadow-sm">
+          <a href="<?= htmlspecialchars(forum_build_category_url((string) ($sub['slug'] ?? ''), array_merge($forumTenantQuery, ['page' => 1])), ENT_QUOTES, 'UTF-8') ?>" class="border border-slate-200 bg-white p-4 hover:border-emerald-300 transition flex items-center justify-between group rounded-lg shadow-sm">
             <div class="flex items-center gap-3 min-w-0">
               <span class="w-10 h-10 bg-slate-100 border border-slate-200 flex items-center justify-center text-lg flex-shrink-0 rounded-md"><?= !empty($sub['icon']) ? htmlspecialchars($sub['icon']) : '📁' ?></span>
               <div class="min-w-0">
@@ -219,3 +229,44 @@ $hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activit
   });
 })();
 </script>
+
+<?php
+$forumContextMenuEnabled = !empty($forumContextMenuEnabled);
+$forumFullCategoryAdmin = !empty($forumFullCategoryAdmin);
+$forumCanDeleteCategoryMenu = !empty($forumCanDeleteCategoryMenu);
+$forumCsrfToken = $forumCsrfToken ?? \App\Core\Csrf::token();
+$forumCategoriesApiUrl = $forumCategoriesApiUrl ?? url('api/admin/forum-categories');
+$forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('admin/forum-config');
+$forumContextTenantId = (int) ($forumContextTenantId ?? \App\Core\Session::get('tenant_id') ?? 0);
+?>
+<?php if ($forumContextMenuEnabled): ?>
+<div id="forum-context-menu-config" class="hidden" data-enabled="1" data-api-url="<?= htmlspecialchars($forumCategoriesApiUrl, ENT_QUOTES, 'UTF-8') ?>" data-csrf="<?= htmlspecialchars($forumCsrfToken, ENT_QUOTES, 'UTF-8') ?>" data-full-admin="<?= $forumFullCategoryAdmin ? '1' : '0' ?>" data-admin-url="<?= htmlspecialchars($forumAdminForumConfigUrl, ENT_QUOTES, 'UTF-8') ?>" data-context-tenant-id="<?= (int) $forumContextTenantId ?>" data-delete-menu="<?= $forumCanDeleteCategoryMenu ? '1' : '0' ?>"></div>
+
+<div id="forum-subcategory-modal" class="forum-modal-backdrop fixed inset-0 z-[10000] hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" aria-hidden="true">
+  <div class="forum-modal-panel w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="forum-subcat-modal-title">
+    <div class="border-b border-slate-100 px-5 py-4 bg-gradient-to-r from-emerald-50 to-white">
+      <h2 id="forum-subcat-modal-title" class="text-sm font-black uppercase tracking-[0.15em] text-slate-900">Nouvelle sous-catégorie</h2>
+      <p id="forum-subcat-modal-parent" class="text-xs text-slate-600 mt-1"></p>
+    </div>
+    <form id="forum-subcategory-form" class="p-5 space-y-4">
+      <div>
+        <label for="forum-subcat-name" class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Nom <span class="text-rose-600">*</span></label>
+        <input type="text" id="forum-subcat-name" name="name" required maxlength="120" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30" placeholder="Ex. Briefings équipe Alpha">
+      </div>
+      <div>
+        <label for="forum-subcat-slug" class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Slug URL <span class="text-slate-400 font-normal normal-case">(optionnel)</span></label>
+        <input type="text" id="forum-subcat-slug" name="slug" maxlength="80" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30" placeholder="auto depuis le nom si vide">
+      </div>
+      <div>
+        <label for="forum-subcat-desc" class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Description <span class="text-slate-400 font-normal normal-case">(optionnel)</span></label>
+        <textarea id="forum-subcat-desc" name="description" rows="2" maxlength="2000" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 resize-y min-h-[4rem]" placeholder="Une ligne pour situer le canal"></textarea>
+      </div>
+      <p id="forum-subcat-error" class="hidden text-xs text-rose-700 font-semibold"></p>
+      <div class="flex flex-wrap gap-2 justify-end pt-1">
+        <button type="button" id="forum-subcat-cancel" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-50">Annuler</button>
+        <button type="submit" id="forum-subcat-submit" class="rounded-lg bg-emerald-600 px-5 py-2 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-500 shadow-sm">Créer</button>
+      </div>
+    </form>
+  </div>
+</div>
+<?php endif; ?>
