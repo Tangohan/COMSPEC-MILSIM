@@ -17,7 +17,15 @@
     return d.innerHTML;
   }
 
-  function parseStartedAtMs(startedAt) {
+  /** Préfère started_at_rfc3339 (UTC explicite) pour éviter tout décalage navigateur / serveur. */
+  function parseStartedAtMs(startedAt, startedAtRfc3339Utc) {
+    if (startedAtRfc3339Utc) {
+      var u = String(startedAtRfc3339Utc).trim();
+      if (u) {
+        var msUtc = Date.parse(u);
+        if (!isNaN(msUtc)) return msUtc;
+      }
+    }
     if (!startedAt) return NaN;
     var s = String(startedAt).trim();
     if (!s) return NaN;
@@ -194,7 +202,7 @@
     var quiz = attempt.quiz || {};
     var limitMin = attempt.time_limit_minutes != null ? parseInt(String(attempt.time_limit_minutes), 10) : 0;
     if (isNaN(limitMin) || limitMin < 1) limitMin = 0;
-    var startedMs = parseStartedAtMs(attempt.started_at);
+    var startedMs = parseStartedAtMs(attempt.started_at, attempt.started_at_rfc3339);
     var deadlineMs = limitMin > 0 && !isNaN(startedMs) ? startedMs + limitMin * 60 * 1000 : null;
 
     var timerState = { timerId: null };

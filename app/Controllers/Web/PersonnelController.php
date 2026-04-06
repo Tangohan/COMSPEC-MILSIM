@@ -344,7 +344,8 @@ class PersonnelController
         $tid = (int) $tenantId;
         $rosterData = OrbatRosterPayload::buildForTenant($this->unitRepository, $tid);
         $gate = Gate::getInstance();
-        $orbatCanManage = $gate->allows('admin.organization') || $gate->allows('admin.access');
+        $orbatCanManage = $gate->allows('admin.organization') || $gate->allows('admin.access')
+            || $gate->allows('organization.orbat.manage');
         $orbatCommanderOptions = [];
         if ($orbatCanManage) {
             foreach ($this->userRepository->allForTenant($tid) as $u) {
@@ -581,6 +582,21 @@ class PersonnelController
             $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
         }
         $this->personnelProfileRepository->update((int) $target['id'], $data);
+
+        if ($jobRolesEnabled && $this->personnelJobRoleRepository->pivotTableExists()) {
+            try {
+                if ($jobRoleId !== null && $jobRoleId > 0) {
+                    $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, (int) $target['id'], [[
+                        'personnel_job_role_id' => $jobRoleId,
+                        'role_detail' => $roleSubLabel,
+                        'is_primary' => true,
+                    ]]);
+                } else {
+                    $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, (int) $target['id'], []);
+                }
+            } catch (\Throwable) {
+            }
+        }
 
         $assignmentRole = $primaryRoleStr;
         try {

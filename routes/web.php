@@ -277,6 +277,7 @@ return function (Router $router) {
     $router->get('/formations/lesson/{id}', [TrainingController::class, 'lesson'], $mwTraining);
     $router->post('/formations/quiz/start', [TrainingController::class, 'startQuiz'], $mwTraining);
     $router->get('/formations/quiz/{id}', [TrainingController::class, 'quiz'], $mwTraining);
+    $router->get('/formations/attestation/{id}', [TrainingController::class, 'certificatePublic'], [TrainingModuleSanctionMiddleware::class]);
     $router->get('/formations/certificate/{id}', [TrainingController::class, 'certificate'], $mwTraining);
     $router->get('/formations/{slug}', [TrainingController::class, 'showBySlug'], $mwTraining);
     $router->get('/atak', [AtakController::class, 'index'], $mwAtakWeb);
@@ -362,6 +363,7 @@ return function (Router $router) {
     $router->get('/back-office/roles-functions/graph.json', [RolesFunctionsAdminController::class, 'graphJson'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles', [RoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets', [RoleAdminController::class, 'presets'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/roles/presets/preview', [RoleAdminController::class, 'presetsPreview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles/presets/apply', [RoleAdminController::class, 'presetsApply'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/{id}/edit-presentation', [RoleAdminController::class, 'editPresentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles/{id}/edit-presentation', [RoleAdminController::class, 'updatePresentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -459,6 +461,7 @@ return function (Router $router) {
     $router->post('/admin/training/enrollments/{id}/decline', [AdminTrainingController::class, 'declineEnrollment'], $lmsAdminMw);
     $router->get('/admin/training/reports', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'reports'), $lmsAdminMw);
     $router->get('/admin/training/certificates', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'certificates'), $lmsAdminMw);
+    $router->get('/admin/training/certificates/gabarit', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'certificates/gabarit'), $lmsAdminMw);
     $router->get('/admin/training/audit', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'audit'), $lmsAdminMw);
     // Studio LMS : canonique = back-office (formatteurs, instructeurs, etc.). Anciennes URL admin → redirection.
     $studioMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
@@ -521,6 +524,8 @@ return function (Router $router) {
     $router->get('/back-office/ressources/training/enrollments', [AdminTrainingController::class, 'enrollments'], $trainingResMw);
     $router->get('/back-office/ressources/training/reports', [AdminTrainingController::class, 'reports'], $trainingResMw);
     $router->get('/back-office/ressources/training/certificates', [AdminTrainingController::class, 'certificates'], $trainingResMw);
+    $router->get('/back-office/ressources/training/certificates/gabarit', [AdminTrainingController::class, 'certificateGabarit'], $trainingResMw);
+    $router->post('/back-office/ressources/training/certificates/gabarit', [AdminTrainingController::class, 'certificateGabaritSave'], $trainingResMw);
     $router->get('/back-office/ressources/training/audit', [AdminTrainingController::class, 'audit'], $trainingResMw);
     $router->get('/back-office/ressources/training', [AdminTrainingController::class, 'dashboard'], $trainingResMw);
 
@@ -598,6 +603,7 @@ return function (Router $router) {
     $router->post('/api/training/quiz/submit', [TrainingApiController::class, 'quizSubmit'], $mwTraining);
     $router->get('/api/training/certificates/enrollment/{id}', [TrainingApiController::class, 'certificateByEnrollment'], $mwTraining);
     $router->get('/api/training/certificates/{id}/download', [TrainingApiController::class, 'certificateDownload'], $mwTraining);
+    $router->get('/api/training/certificates/{id}/consultation-lien', [TrainingApiController::class, 'certificateConsultationLink'], $mwTraining);
     $router->get('/api/training/admin/courses', [TrainingApiController::class, 'adminCourses'], $mwTraining);
     $router->post('/api/training/admin/courses', [TrainingApiController::class, 'adminCourseSave'], $mwTraining);
     $router->post('/api/training/admin/courses/{id}', [TrainingApiController::class, 'adminCourseSave'], $mwTraining);

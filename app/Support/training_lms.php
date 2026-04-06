@@ -430,6 +430,9 @@ function training_audit_detail_summary_fr(array $logRow): string
         ];
         $st = $statusMap[(string) ($new['status'] ?? '')] ?? '';
         $mot = !empty($new['motivation_provided']) ? 'Motivation transmise.' : '';
+        if (!empty($new['declined_from_pending'])) {
+            return 'Demande d’inscription refusée.';
+        }
 
         return trim($type . ($st !== '' ? ' — ' . $st : '') . ($mot !== '' ? ' ' . $mot : ''));
     }

@@ -228,7 +228,21 @@ final class InvitationAcceptController
                 $jr = $this->personnelJobRoleRepository->findRoleById($jobRoleId, $tenantId);
                 if ($jr) {
                     $this->personnelProfileRepository->ensureRecord($userId);
-                    $this->personnelProfileRepository->update($userId, ['personnel_job_role_id' => $jobRoleId]);
+                    $roleName = trim((string) ($jr['name'] ?? ''));
+                    $this->personnelProfileRepository->update($userId, [
+                        'personnel_job_role_id' => $jobRoleId,
+                        'primary_role' => function_exists('mb_substr') ? mb_substr($roleName, 0, 100) : substr($roleName, 0, 100),
+                    ]);
+                    if ($this->personnelJobRoleRepository->pivotTableExists()) {
+                        try {
+                            $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, $userId, [[
+                                'personnel_job_role_id' => $jobRoleId,
+                                'role_detail' => '',
+                                'is_primary' => true,
+                            ]]);
+                        } catch (\Throwable) {
+                        }
+                    }
                 }
             }
             if ($unitId > 0) {

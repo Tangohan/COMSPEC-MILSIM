@@ -2,6 +2,35 @@
  * Training Studio — shell type « créateur » (sidebar sombre + zone principale claire).
  */
 
+/* Secours sans JS : masque l’écran d’accueil si des scripts defer restent bloqués (pages studio lourdes). */
+@keyframes training-studio-bootsplash-failsafe {
+  0%,
+  94% {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+@keyframes training-studio-bootsplash-failsafe-reduced {
+  0%,
+  88% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
 /* Plein écran — sortie par glissement vers le haut */
 .training-studio-bootsplash {
   position: fixed;
@@ -15,9 +44,12 @@
     transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.55s ease 0.08s;
   will-change: transform, opacity;
+  /* ~5.5 s puis disparition (~0,35 s) — annulée par le JS dès que la fermeture normale s’exécute */
+  animation: training-studio-bootsplash-failsafe 5.85s linear forwards;
 }
 
 .training-studio-bootsplash--exit {
+  animation: none;
   transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
@@ -111,6 +143,12 @@
 @media (prefers-reduced-motion: reduce) {
   .training-studio-bootsplash {
     transition-duration: 0.2s;
+    animation: training-studio-bootsplash-failsafe-reduced 3s linear forwards;
+  }
+
+  .training-studio-bootsplash--exit {
+    transform: translateY(0);
+    transition-duration: 0.15s;
   }
 
   .training-studio-bootsplash__shine,

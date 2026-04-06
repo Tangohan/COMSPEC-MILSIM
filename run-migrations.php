@@ -235,6 +235,12 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_course_lms_platform_version : ' . $e->getMessage() . "\n";
 }
+$trainingCertificateTemplatesMigrate = require $root . '/bootstrap/training_certificate_templates_migration.php';
+try {
+    $trainingCertificateTemplatesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_certificate_templates : ' . $e->getMessage() . "\n";
+}
 echo "Migrations LMS formation (première passe) OK.\n";
 $migrationFlush();
 

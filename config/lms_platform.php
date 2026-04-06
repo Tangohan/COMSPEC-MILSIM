@@ -13,9 +13,18 @@ declare(strict_types=1);
  * }
  */
 return [
-    'version' => '1.1.0',
+    'version' => '1.1.1',
     'label' => 'Studio & parcours formation',
     'changelog' => [
+        [
+            'version' => '1.1.1',
+            'date' => '2026-04-06',
+            'title' => 'Liens admin formation & segment d’adresse /public',
+            'items' => [
+                'Lorsque le site est servi depuis le dossier public, les adresses qui contiennent encore « /public/ » (ex. export depuis l’ancien chemin admin) ne renvoient plus une page introuvable : le chemin est reconnu comme pour le reste de l’application.',
+                'La détection des pages back-office utilise le même calcul d’adresse, pour un menu latéral cohérent dans ce cas.',
+            ],
+        ],
         [
             'version' => '1.1.0',
             'date' => '2026-04-06',

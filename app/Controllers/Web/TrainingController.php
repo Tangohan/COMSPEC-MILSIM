@@ -24,6 +24,7 @@ use App\Services\Training\TrainingEnrollmentPolicyService;
 use App\Services\Training\TrainingStaffAlertService;
 use App\Repositories\TrainingCourseLmsSocialRepository;
 use App\Services\Platform\FeatureGateService;
+use App\Services\Training\TrainingCertificateShareService;
 use App\Core\Csrf;
 
 class TrainingController
@@ -45,7 +46,8 @@ class TrainingController
         private TrainingCourseLmsSocialRepository $lmsSocialRepository,
         private TrainingCourseRepository $trainingCourseRepository,
         private TrainingStaffAlertService $trainingStaffAlertService,
-        private TrainingQuizRepository $trainingQuizRepository
+        private TrainingQuizRepository $trainingQuizRepository,
+        private TrainingCertificateShareService $certificateShareService,
     ) {}
 
     private function trainingQuizHasPassingAttempt(int $enrollmentId, int $quizId): bool
@@ -880,9 +882,41 @@ class TrainingController
         if (!$cert || (int) $cert['user_id'] !== (int) $userId) {
             return (new Response())->setStatusCode(404)->setBody('Certificat non trouvé.');
         }
+
         return Response::view('training.certificate', [
             'title' => 'Attestation',
             'certificate' => $cert,
+            'publicConsultationView' => false,
+            'consultationApiUrl' => url('api/training/certificates/' . $id . '/consultation-lien'),
+        ]);
+    }
+
+    /** Consultation publique signée (sans compte), pour partage contrôlé. */
+    public function certificatePublic(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $token = (string) $request->query('t', '');
+        $exp = (int) $request->query('e', 0);
+        if (!$this->certificateShareService->verify($id, $token, $exp)) {
+            return (new Response())->setStatusCode(403)->setBody('Ce lien de consultation n’est plus valide ou a expiré.');
+        }
+        $cert = $this->certificateService->getById($id, null);
+        if (!$cert || ($cert['status'] ?? '') !== 'valid') {
+            return (new Response())->setStatusCode(404)->setBody('Document introuvable.');
+        }
+        $canonical = $this->certificateShareService->buildConsultationUrl($id, $token, $exp);
+        $courseTitle = (string) ($cert['course_title'] ?? 'Formation');
+        $ogTitle = 'Attestation — ' . $courseTitle;
+        $issued = !empty($cert['issued_at']) ? date('d/m/Y', strtotime((string) $cert['issued_at'])) : '';
+        $ogDesc = $issued !== '' ? ('Délivrée le ' . $issued . ' — référence ' . (string) ($cert['certificate_number'] ?? '') . '.') : 'Attestation de formation.';
+
+        return Response::view('training.certificate', [
+            'title' => 'Attestation',
+            'certificate' => $cert,
+            'publicConsultationView' => true,
+            'og_url' => $canonical,
+            'og_title' => $ogTitle,
+            'og_description' => $ogDesc,
         ]);
     }
 

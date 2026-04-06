@@ -49,7 +49,7 @@ final class OrbatApiController
         }
 
         $gate = Gate::getInstance();
-        if (!$gate->allows('admin.organization') && !$gate->allows('admin.access')) {
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.access') && !$gate->allows('organization.orbat.manage')) {
             return Response::json(['success' => false, 'message' => 'Droits insuffisants'], 403);
         }
 

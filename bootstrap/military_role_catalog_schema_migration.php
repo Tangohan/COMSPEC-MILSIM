@@ -29,7 +29,7 @@ function run_military_role_catalog_schema_migration(PDO $pdo): void
     if ($hasColumn('roles', 'semantic_tier')) {
         try {
             $pdo->exec(
-                "ALTER TABLE roles MODIFY COLUMN semantic_tier ENUM('authority','function','specialty','status') NOT NULL DEFAULT 'function'"
+                "ALTER TABLE roles MODIFY COLUMN semantic_tier ENUM('authority','function','specialty','status','support','liaison') NOT NULL DEFAULT 'function'"
             );
         } catch (Throwable $e) {
             echo '  [ATTENTION] roles.semantic_tier (specialty) : ' . $e->getMessage() . "\n";

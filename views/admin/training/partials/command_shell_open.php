@@ -4,6 +4,7 @@ declare(strict_types=1);
 $active = $trainingAdminNav ?? 'dashboard';
 $is = fn (string $k): string => $active === $k ? ' is-active' : '';
 $coursesNavActive = ($active === 'courses' || $active === 'showcase') ? ' is-active' : '';
+$certNavActive = ($active === 'certificates' || $active === 'certificates_gabarit') ? ' is-active' : '';
 ?>
 <link rel="stylesheet" href="<?= htmlspecialchars(url('assets/css/training_admin_command.css')) ?>">
 <div class="training-cmd relative overflow-hidden rounded-2xl border border-slate-200/90 shadow-xl shadow-slate-900/[0.06] mb-10">
@@ -36,9 +37,13 @@ $coursesNavActive = ($active === 'courses' || $active === 'showcase') ? ' is-act
                     <span>Rapports</span>
                     <span class="tc-nav-meta">05</span>
                 </a>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('certificates')) ?>" class="<?= trim($is('certificates')) ?>">
+                <a href="<?= htmlspecialchars(training_lms_admin_url('certificates')) ?>" class="<?= trim($certNavActive) ?>">
                     <span>Certificats</span>
                     <span class="tc-nav-meta">06</span>
+                </a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('certificates/gabarit')) ?>" class="<?= trim($is('certificates_gabarit')) ?>">
+                    <span>Gabarit PDF</span>
+                    <span class="tc-nav-meta">06b</span>
                 </a>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('audit')) ?>" class="<?= trim($is('audit')) ?>">
                     <span>Audit</span>

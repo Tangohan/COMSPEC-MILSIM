@@ -512,6 +512,15 @@ class Container
             \App\Repositories\TrainingProgressRepository::class => new \App\Repositories\TrainingProgressRepository(),
             \App\Repositories\TrainingQuizRepository::class => new \App\Repositories\TrainingQuizRepository(),
             \App\Repositories\TrainingCertificateRepository::class => new \App\Repositories\TrainingCertificateRepository(),
+            \App\Repositories\TrainingCertificateTemplateRepository::class => new \App\Repositories\TrainingCertificateTemplateRepository(),
+            \App\Services\Training\TrainingCertificateAssetStorageService::class => new \App\Services\Training\TrainingCertificateAssetStorageService(),
+            \App\Services\Training\TrainingCertificateShareService::class => new \App\Services\Training\TrainingCertificateShareService(),
+            \App\Services\Training\TrainingCertificatePdfService::class => new \App\Services\Training\TrainingCertificatePdfService(
+                self::get(\App\Repositories\TrainingCertificateRepository::class),
+                self::get(\App\Repositories\TrainingCertificateTemplateRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Services\Training\TrainingCertificateAssetStorageService::class),
+            ),
             \App\Services\Training\TrainingAuditService::class => new \App\Services\Training\TrainingAuditService(),
             \App\Services\Training\TrainingService::class => new \App\Services\Training\TrainingService(
                 self::get(\App\Repositories\TrainingCourseRepository::class),
@@ -554,7 +563,8 @@ class Container
                 self::get(\App\Repositories\TrainingEnrollmentRepository::class),
                 self::get(\App\Repositories\TrainingCourseRepository::class),
                 self::get(\App\Services\Training\TrainingProgressService::class),
-                self::get(\App\Services\Training\TrainingAuditService::class)
+                self::get(\App\Services\Training\TrainingAuditService::class),
+                self::get(\App\Services\Training\TrainingCertificatePdfService::class),
             ),
             \App\Services\Training\TrainingEnrollmentPolicyService::class => new \App\Services\Training\TrainingEnrollmentPolicyService(
                 self::get(\App\Repositories\TrainingEnrollmentRepository::class),
@@ -599,6 +609,7 @@ class Container
                 self::get(\App\Repositories\TrainingCourseRepository::class),
                 self::get(\App\Services\Training\TrainingStaffAlertService::class),
                 self::get(\App\Repositories\TrainingQuizRepository::class),
+                self::get(\App\Services\Training\TrainingCertificateShareService::class),
             ),
             \App\Controllers\Web\EquipmentController::class => new \App\Controllers\Web\EquipmentController(
                 self::get(\App\Repositories\EquipmentClassRepository::class),
@@ -676,6 +687,8 @@ class Container
                 self::get(\App\Repositories\TrainingCourseRepository::class),
                 self::get(\App\Repositories\TrainingEnrollmentRepository::class),
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
+                self::get(\App\Repositories\TrainingCertificateTemplateRepository::class),
+                self::get(\App\Services\Training\TrainingCertificateAssetStorageService::class),
                 self::get(\App\Services\Training\TrainingAssignmentService::class),
                 self::get(\App\Services\Training\TrainingAuditService::class),
                 self::get(TenantRepository::class),
@@ -718,7 +731,8 @@ class Container
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Repositories\TrainingResourceRepository::class),
                 self::get(\App\Repositories\TrainingLessonRepository::class),
-                self::get(\App\Repositories\TrainingModuleRepository::class)
+                self::get(\App\Repositories\TrainingModuleRepository::class),
+                self::get(\App\Services\Training\TrainingCertificateShareService::class),
             ),
             \App\Controllers\Admin\AdminDocumentsController::class => new \App\Controllers\Admin\AdminDocumentsController(
                 self::get(\App\Repositories\DocumentRepository::class),

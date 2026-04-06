@@ -39,6 +39,76 @@ $trainingStudioShowIntro = $trainingStudioShowIntro ?? true;
             </div>
         </div>
     </div>
+    <?php /* Fermeture du voile : placée ici pour s’exécuter avant le gros HTML du studio (évite de dépendre uniquement du script en fin de document). */ ?>
+    <script>
+    (function () {
+        var el = document.getElementById('training-studio-bootsplash');
+        if (!el) {
+            return;
+        }
+        var dismissed = false;
+        function dismiss() {
+            if (dismissed) {
+                return;
+            }
+            dismissed = true;
+            el.setAttribute('aria-hidden', 'true');
+            el.style.animation = 'none';
+            el.style.pointerEvents = 'none';
+            el.style.visibility = 'hidden';
+            el.style.opacity = '0';
+            el.classList.add('training-studio-bootsplash--exit');
+            var finalized = false;
+            function done() {
+                if (finalized) {
+                    return;
+                }
+                finalized = true;
+                el.removeEventListener('transitionend', onEnd);
+                if (el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            }
+            function onEnd(e) {
+                if (e.target !== el) {
+                    return;
+                }
+                var p = e.propertyName || '';
+                if (p === 'transform' || p === 'opacity' || p === 'webkitTransform') {
+                    done();
+                }
+            }
+            el.addEventListener('transitionend', onEnd);
+            window.setTimeout(done, 1200);
+        }
+        function dismissAfterPaint() {
+            window.requestAnimationFrame(function () {
+                window.requestAnimationFrame(dismiss);
+            });
+        }
+        function arm() {
+            window.setTimeout(dismissAfterPaint, 0);
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function () {
+                    window.setTimeout(dismissAfterPaint, 80);
+                });
+            } else {
+                window.setTimeout(dismissAfterPaint, 80);
+            }
+            document.addEventListener('readystatechange', function onRs() {
+                if (document.readyState !== 'loading') {
+                    document.removeEventListener('readystatechange', onRs);
+                    window.setTimeout(dismissAfterPaint, 40);
+                }
+            });
+            window.addEventListener('load', function () {
+                window.setTimeout(dismiss, 60);
+            });
+            window.setTimeout(dismiss, 6500);
+        }
+        arm();
+    })();
+    </script>
 
     <div class="training-studio-app training-studio-app--sidebar-open">
         <div class="training-studio-banner">
@@ -70,47 +140,6 @@ $trainingStudioShowIntro = $trainingStudioShowIntro ?? true;
         </div>
     </div>
 
-    <script>
-    (function () {
-        var el = document.getElementById('training-studio-bootsplash');
-        if (!el) return;
-        var dismissed = false;
-        function dismiss() {
-            if (dismissed) return;
-            dismissed = true;
-            el.classList.add('training-studio-bootsplash--exit');
-            var finalized = false;
-            function done() {
-                if (finalized) return;
-                finalized = true;
-                el.removeEventListener('transitionend', onEnd);
-                if (el.parentNode) el.parentNode.removeChild(el);
-            }
-            function onEnd(e) {
-                if (e.target === el && e.propertyName === 'transform') done();
-            }
-            el.addEventListener('transitionend', onEnd);
-            window.setTimeout(done, 950);
-        }
-        function dismissAfterPaint() {
-            window.requestAnimationFrame(function () {
-                window.requestAnimationFrame(dismiss);
-            });
-        }
-        /* Ne pas attendre uniquement « load » : polices / CDN bloqués = load jamais reçu = écran figé. */
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function () {
-                window.setTimeout(dismissAfterPaint, 120);
-            });
-        } else {
-            window.setTimeout(dismissAfterPaint, 120);
-        }
-        window.addEventListener('load', function () {
-            window.setTimeout(dismiss, 80);
-        });
-        window.setTimeout(dismiss, 5000);
-    })();
-    </script>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

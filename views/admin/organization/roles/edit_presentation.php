@@ -14,6 +14,10 @@ $readonlyName = $critical || $slug === 'community_owner';
 $tier = (string) ($role['semantic_tier'] ?? 'function');
 $tierLabel = match ($tier) {
     'authority' => 'Autorité (pouvoir effectif)',
+    'function' => 'Emploi opérationnel',
+    'liaison' => 'Liaison et coordination',
+    'support' => 'Soutien et appui',
+    'specialty' => 'Spécialité technique',
     'status' => 'Statut affiché',
     default => 'Fonction opérationnelle',
 };

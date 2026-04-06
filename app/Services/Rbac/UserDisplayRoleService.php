@@ -83,8 +83,10 @@ final class UserDisplayRoleService
         return match ($tier) {
             'authority' => 1,
             'function' => 2,
-            'specialty' => 3,
-            'status' => 4,
+            'liaison' => 3,
+            'support' => 4,
+            'specialty' => 5,
+            'status' => 6,
             default => 2,
         };
     }

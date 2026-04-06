@@ -36,6 +36,9 @@
       btn.classList.remove('hover:bg-emerald-700');
     }
     updateProgressBars(percent);
+    if (typeof window.lmsTrainingToastShow === 'function') {
+      window.lmsTrainingToastShow('Leçon validée — vous pouvez poursuivre le parcours.', 'success');
+    }
   }
 
   var posted = false;
@@ -82,12 +85,15 @@
         })
         .catch(function (err) {
           posted = false;
+          var msg =
+            err && err.message
+              ? err.message
+              : 'La validation automatique a échoué. Rechargez la page ou réessayez dans un instant.';
+          if (typeof window.lmsTrainingToastShow === 'function') {
+            window.lmsTrainingToastShow(msg, 'error');
+          }
           var hint = document.getElementById('lms-progress-status');
           if (hint) {
-            var msg =
-              err && err.message
-                ? err.message
-                : 'La validation automatique a échoué. Rechargez la page ou réessayez dans un instant.';
             hint.textContent = msg;
             hint.classList.remove('text-slate-600', 'text-emerald-700');
             hint.classList.add('text-rose-600', 'font-semibold');

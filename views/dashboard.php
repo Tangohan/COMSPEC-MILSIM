@@ -440,71 +440,112 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
             $mbMod = $mission_briefing['modpack'] ?? null;
             $mbExcerpt = $mission_briefing['consigne_excerpt'] ?? null;
             $mbPinsA = $mission_briefing['pins_anchor_href'] ?? url('dashboard');
+            $dashOrdreJourTenantId = (int) $currentTid;
         ?>
-        <section class="border-b border-slate-200 bg-gradient-to-b from-slate-900 to-slate-800 text-white" aria-label="Préparation opérationnelle">
-            <div class="mx-auto max-w-5xl px-4 py-6 sm:px-8">
-                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <div>
-                        <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-400/90">Aujourd’hui</p>
-                        <h2 class="text-lg font-black uppercase italic tracking-tight text-white">Préparer la mission</h2>
+        <div class="dash-ordre-du-jour-root border-b border-slate-200/80">
+            <div id="dashboard-mission-briefing-collapsed" class="hidden bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
+                <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-8">
+                    <p class="text-xs font-medium text-slate-400">L’ordre du jour et les rappels du jour sont masqués sur cet appareil.</p>
+                    <button type="button" id="btn-show-ordre-jour" class="shrink-0 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-200 transition hover:border-emerald-400/60 hover:bg-emerald-500/20 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50">
+                        Afficher l’ordre du jour
+                    </button>
+                </div>
+            </div>
+        <section id="dashboard-mission-briefing" class="relative overflow-hidden border-b border-emerald-950/30 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white" aria-label="Préparation opérationnelle">
+            <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(16,185,129,0.12),transparent_50%),radial-gradient(ellipse_80%_50%_at_100%_50%,rgba(59,130,246,0.06),transparent_45%)]" aria-hidden="true"></div>
+            <div class="relative mx-auto max-w-5xl px-4 py-7 sm:px-8 sm:py-8">
+                <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-black uppercase tracking-[0.38em] text-emerald-400/95">Aujourd’hui</p>
+                        <h2 class="mt-1 text-xl font-black uppercase italic tracking-tight text-white sm:text-2xl">Préparer la mission</h2>
+                        <p class="mt-2 max-w-xl text-xs leading-relaxed text-slate-400">Vue synthèse : prochaine séance, matériel et formations en attente.</p>
                     </div>
-                    <?php if ($mbOp): ?>
-                        <a href="<?= htmlspecialchars($mbOp['list_href'], ENT_QUOTES, 'UTF-8') ?>" class="text-[10px] font-black uppercase tracking-wider text-emerald-300 hover:text-white">Calendrier des opérations</a>
-                    <?php endif; ?>
+                    <div class="flex shrink-0 flex-wrap items-center gap-2">
+                        <?php if ($mbOp): ?>
+                            <a href="<?= htmlspecialchars($mbOp['list_href'], ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-200 transition hover:border-emerald-400/40 hover:bg-emerald-500/10 hover:text-white">Calendrier</a>
+                        <?php endif; ?>
+                        <button type="button" id="btn-hide-ordre-jour" class="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-slate-800/60 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-300 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20" title="Masquer cette zone sur ce navigateur">
+                            <svg class="h-3.5 w-3.5 opacity-70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
+                            Masquer
+                        </button>
+                    </div>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                        <p class="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Prochaine opération</p>
-                        <?php if ($mbOp): ?>
-                            <?php
-                            $mbStart = $mbOp['starts_at'] ?? '';
-                            $mbStartFmt = '';
-                            if ($mbStart !== '') {
-                                $tsOp = strtotime($mbStart);
-                                $mbStartFmt = $tsOp !== false ? date('d/m/Y à H\hi', $tsOp) : '';
-                            }
-                            ?>
-                            <p class="text-base font-bold text-white leading-snug"><?= htmlspecialchars($mbOp['title'], ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php if ($mbStartFmt !== ''): ?>
-                                <p class="mt-1 text-sm text-slate-300"><?= htmlspecialchars($mbStartFmt, ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php endif; ?>
-                            <?php if (!empty($mbOp['rsvp_label'])): ?>
-                                <p class="mt-2 text-xs text-emerald-200/90"><?= htmlspecialchars((string) $mbOp['rsvp_label'], ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php endif; ?>
-                        <?php else: ?>
-                            <p class="text-sm text-slate-400">Aucune opération planifiée pour l’instant.</p>
-                        <?php endif; ?>
+                    <div class="group relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-slate-950 p-5 shadow-[0_22px_50px_-12px_rgba(0,0,0,0.55)] ring-1 ring-white/10 transition duration-300 hover:border-emerald-400/35 hover:shadow-[0_28px_60px_-12px_rgba(6,78,59,0.35)]">
+                        <div class="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl transition group-hover:bg-emerald-400/15" aria-hidden="true"></div>
+                        <div class="relative flex items-start gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/20" aria-hidden="true">
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5"/></svg>
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300/90">Prochaine opération</p>
+                                <?php if ($mbOp): ?>
+                                    <?php
+                                    $mbStart = $mbOp['starts_at'] ?? '';
+                                    $mbStartFmt = '';
+                                    if ($mbStart !== '') {
+                                        $tsOp = strtotime($mbStart);
+                                        $mbStartFmt = $tsOp !== false ? date('d/m/Y à H\hi', $tsOp) : '';
+                                    }
+                                    ?>
+                                    <p class="mt-2 text-base font-bold leading-snug text-white"><?= htmlspecialchars($mbOp['title'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php if ($mbStartFmt !== ''): ?>
+                                        <p class="mt-1.5 text-sm text-slate-300"><?= htmlspecialchars($mbStartFmt, ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php endif; ?>
+                                    <?php if (!empty($mbOp['rsvp_label'])): ?>
+                                        <p class="mt-2 inline-flex rounded-lg border border-emerald-400/25 bg-emerald-500/10 px-2 py-1 text-xs font-semibold text-emerald-200"><?= htmlspecialchars((string) $mbOp['rsvp_label'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <p class="mt-2 text-sm leading-relaxed text-slate-400">Aucune opération planifiée pour l’instant.</p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
-                    <div class="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                        <p class="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Modpack & outils</p>
-                        <?php if (is_array($mbMod)): ?>
-                            <a href="<?= htmlspecialchars($mbMod['detail_href'], ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-bold text-white hover:text-emerald-300 transition"><?= htmlspecialchars($mbMod['title'], ENT_QUOTES, 'UTF-8') ?></a>
-                            <p class="mt-1 text-xs text-slate-400"><?= !empty($mbMod['has_pack']) ? 'Voir la fiche et le téléchargement.' : 'Consultez les packs disponibles pour votre unité.' ?></p>
-                        <?php endif; ?>
-                        <?php if (!empty($atakModDownloadUrl)): ?>
-                            <a href="<?= htmlspecialchars((string) $atakModDownloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex text-xs font-bold uppercase tracking-wider text-emerald-300 hover:text-white">Télécharger le module ATAK</a>
-                        <?php endif; ?>
+                    <div class="group relative overflow-hidden rounded-2xl border border-sky-500/20 bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-slate-950 p-5 shadow-[0_22px_50px_-12px_rgba(0,0,0,0.55)] ring-1 ring-white/10 transition duration-300 hover:border-sky-400/35 hover:shadow-[0_28px_60px_-12px_rgba(30,58,138,0.25)]">
+                        <div class="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-sky-500/10 blur-2xl transition group-hover:bg-sky-400/15" aria-hidden="true"></div>
+                        <div class="relative flex items-start gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-200 ring-1 ring-sky-400/25" aria-hidden="true">
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-sky-300/90">Modpack &amp; outils</p>
+                                <?php if (is_array($mbMod)): ?>
+                                    <a href="<?= htmlspecialchars($mbMod['detail_href'], ENT_QUOTES, 'UTF-8') ?>" class="mt-2 block text-sm font-bold text-white transition hover:text-sky-200"><?= htmlspecialchars($mbMod['title'], ENT_QUOTES, 'UTF-8') ?></a>
+                                    <p class="mt-1.5 text-xs leading-relaxed text-slate-400"><?= !empty($mbMod['has_pack']) ? 'Fiche et téléchargement du pack communautaire.' : 'Parcourez les packs proposés pour votre unité.' ?></p>
+                                <?php else: ?>
+                                    <p class="mt-2 text-sm text-slate-400">Aucun modpack principal renseigné.</p>
+                                <?php endif; ?>
+                                <?php if (!empty($atakModDownloadUrl)): ?>
+                                    <a href="<?= htmlspecialchars((string) $atakModDownloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-sky-300 transition hover:text-white">Télécharger le module ATAK <span aria-hidden="true">→</span></a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <?php if ($mbExcerpt !== null && $mbExcerpt !== ''): ?>
-                    <div class="mt-4 rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4">
-                        <p class="text-[10px] font-black uppercase tracking-wider text-amber-200/90 mb-1">Consigne communautaire</p>
-                        <p class="text-sm text-amber-50/95 leading-relaxed"><?= htmlspecialchars($mbExcerpt, ENT_QUOTES, 'UTF-8') ?></p>
-                        <a href="<?= htmlspecialchars($mbPinsA, ENT_QUOTES, 'UTF-8') ?>" class="mt-2 inline-block text-xs font-bold text-amber-200 hover:text-white">Voir les raccourcis</a>
+                    <div class="mt-4 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-950/40 via-amber-900/20 to-slate-900/80 p-5 shadow-lg shadow-amber-950/20 ring-1 ring-amber-400/15">
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/95">Consigne communautaire</p>
+                        <p class="mt-2 text-sm leading-relaxed text-amber-50/95"><?= htmlspecialchars($mbExcerpt, ENT_QUOTES, 'UTF-8') ?></p>
+                        <a href="<?= htmlspecialchars($mbPinsA, ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex text-xs font-bold text-amber-200 transition hover:text-white">Voir les raccourcis →</a>
                     </div>
                 <?php endif; ?>
                 <?php if ($mbTrain !== []): ?>
-                    <div class="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
-                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Formations à finaliser</p>
-                            <a href="<?= htmlspecialchars(url('formations/mes-formations'), ENT_QUOTES, 'UTF-8') ?>" class="text-[10px] font-black uppercase tracking-wider text-emerald-300 hover:text-white">Mes formations</a>
+                    <div class="mt-4 rounded-2xl border border-violet-500/20 bg-gradient-to-br from-slate-900/95 via-slate-950 to-black/40 p-5 shadow-[0_20px_45px_-12px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
+                        <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/30" aria-hidden="true">
+                                    <svg class="h-[1.125rem] w-[1.125rem]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5"/></svg>
+                                </span>
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-violet-200/90">Formations à finaliser</p>
+                            </div>
+                            <a href="<?= htmlspecialchars(url('formations/mes-formations'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-violet-400/30 bg-violet-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-violet-200 transition hover:border-violet-300/50 hover:bg-violet-500/20 hover:text-white">Mes formations</a>
                         </div>
                         <ul class="space-y-2">
                             <?php foreach ($mbTrain as $t): ?>
                                 <li>
-                                    <a href="<?= htmlspecialchars($t['href'], ENT_QUOTES, 'UTF-8') ?>" class="flex flex-wrap items-baseline justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-white/5 transition <?= !empty($t['urgent']) ? 'border border-rose-400/30 bg-rose-500/10' : '' ?>">
+                                    <a href="<?= htmlspecialchars($t['href'], ENT_QUOTES, 'UTF-8') ?>" class="flex flex-col gap-1 rounded-xl border border-white/5 bg-slate-800/40 px-4 py-3 transition hover:border-emerald-500/30 hover:bg-slate-800/70 sm:flex-row sm:items-center sm:justify-between <?= !empty($t['urgent']) ? 'border-rose-500/40 bg-rose-950/30 hover:border-rose-400/50' : '' ?>">
                                         <span class="text-sm font-semibold text-white"><?= htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8') ?></span>
-                                        <span class="text-xs text-slate-400"><?= htmlspecialchars($t['subtitle'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="text-xs font-medium text-slate-400"><?= htmlspecialchars($t['subtitle'], ENT_QUOTES, 'UTF-8') ?></span>
                                     </a>
                                 </li>
                             <?php endforeach; ?>
@@ -513,6 +554,26 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                 <?php endif; ?>
             </div>
         </section>
+        </div>
+        <script>
+        (function () {
+            var tid = <?= (int) $dashOrdreJourTenantId ?>;
+            var sec = document.getElementById('dashboard-mission-briefing');
+            var col = document.getElementById('dashboard-mission-briefing-collapsed');
+            var btnHide = document.getElementById('btn-hide-ordre-jour');
+            var btnShow = document.getElementById('btn-show-ordre-jour');
+            if (!tid || tid <= 1 || !sec || !col) return;
+            var key = 'athena_dash_ordre_jour_masque_' + String(tid);
+            function apply() {
+                var hidden = localStorage.getItem(key) === '1';
+                sec.classList.toggle('hidden', hidden);
+                col.classList.toggle('hidden', !hidden);
+            }
+            apply();
+            if (btnHide) btnHide.addEventListener('click', function () { localStorage.setItem(key, '1'); apply(); });
+            if (btnShow) btnShow.addEventListener('click', function () { localStorage.removeItem(key); apply(); });
+        })();
+        </script>
         <?php endif; ?>
 
         <?php

@@ -37,6 +37,7 @@ final class TenantPermissionCatalog
             self::documentsDefinitions(),
             self::trainingDefinitions(),
             self::personnelDefinitions(),
+            self::organizationDefinitions(),
             self::commsDefinitions(),
             self::courrierDefinitions(),
             self::legacyDefinitions(),
@@ -121,9 +122,6 @@ final class TenantPermissionCatalog
         ];
     }
 
-    /**
-     * @return list<array{slug: string, module: string, action: string|null, name: string}>
-     */
     /**
      * @return list<array{slug: string, module: string, action: string|null, name: string}>
      */
@@ -219,6 +217,22 @@ final class TenantPermissionCatalog
             ['slug' => 'personnel.status.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer les statuts'],
             ['slug' => 'personnel.badges.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer badges / qualifications'],
             ['slug' => 'personnel.directory.export', 'module' => 'personnel', 'action' => 'export', 'name' => 'Exporter l’annuaire'],
+        ];
+    }
+
+    /**
+     * Habilitations fines pour l’organisation (tenant), sans droits « site ».
+     *
+     * @return list<array{slug: string, module: string, action: string|null, name: string}>
+     */
+    private static function organizationDefinitions(): array
+    {
+        return [
+            ['slug' => 'organization.orbat.view', 'module' => 'organization', 'action' => 'view', 'name' => 'Consulter l’ORBAT'],
+            ['slug' => 'organization.orbat.manage', 'module' => 'organization', 'action' => 'manage', 'name' => 'Gérer la structure ORBAT (unités, rattachements)'],
+            ['slug' => 'organization.effectifs.hub.view', 'module' => 'organization', 'action' => 'view', 'name' => 'Accéder au hub effectifs'],
+            ['slug' => 'organization.recruitment.manage', 'module' => 'organization', 'action' => 'manage', 'name' => 'Gérer le recrutement (dossiers, décisions)'],
+            ['slug' => 'organization.job_roles.referential.manage', 'module' => 'organization', 'action' => 'manage', 'name' => 'Gérer le référentiel des emplois métier'],
         ];
     }
 

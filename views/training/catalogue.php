@@ -37,6 +37,10 @@ $headHtml = ob_get_clean();
 <?= $headHtml ?>
 </head>
 <body class="bg-slate-100 text-slate-900 overflow-x-hidden">
+    <?php
+    $lmsBootMessage = 'Chargement des formations…';
+    require base_path('views/training/partials/lms_page_boot_overlay.php');
+    ?>
     <div class="lms-grain"></div>
 
     <div class="min-h-screen relative z-10">
@@ -47,6 +51,12 @@ $headHtml = ob_get_clean();
             ?>
 
             <main class="p-5 md:p-8 lg:p-10 space-y-8">
+                <div class="lms-infobanner" role="note">
+                    <span class="lms-infobanner__icon" aria-hidden="true">
+                        <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </span>
+                    <p><strong>Repère.</strong> Parcours publiés dans votre espace — recherche et filtres ci-dessous. Pour reprendre un parcours déjà commencé ou vos attestations, ouvrez <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="text-emerald-700 font-semibold hover:underline">Mes formations</a>.</p>
+                </div>
 
                 <header id="overview" class="lms-panel rounded-[2rem] p-6 md:p-8 overflow-hidden relative">
                     <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500/80 via-emerald-500/20 to-transparent"></div>

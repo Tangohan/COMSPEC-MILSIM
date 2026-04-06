@@ -16,11 +16,17 @@ class TrainingCertificateService
         private TrainingEnrollmentRepository $enrollmentRepository,
         private TrainingCourseRepository $courseRepository,
         private TrainingProgressService $progressService,
-        private TrainingAuditService $auditService
+        private TrainingAuditService $auditService,
+        private TrainingCertificatePdfService $pdfService,
     ) {}
 
-    /** Émet un certificat si les conditions sont remplies (formation complétée, score, etc.). */
-    public function issueCertificate(int $enrollmentId, int $tenantId, int $userId): ?array
+    /**
+     * Émet un certificat si les conditions sont remplies (formation complétée, score, etc.).
+     *
+     * @param int      $userId              utilisateur concerné (souvent l’apprenant)
+     * @param int|null $issuedByStaffUserId si une action staff déclenche l’émission ; null pour une complétion par l’apprenant
+     */
+    public function issueCertificate(int $enrollmentId, int $tenantId, int $userId, ?int $issuedByStaffUserId = null): ?array
     {
         $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
@@ -35,6 +41,13 @@ class TrainingCertificateService
         }
         $existing = $this->certificateRepository->findByEnrollmentId($enrollmentId);
         if ($existing && ($existing['status'] ?? '') === 'valid') {
+            $eid = (int) ($existing['id'] ?? 0);
+            if ($eid > 0 && empty($existing['pdf_path'])) {
+                $this->pdfService->generateAndStore($eid, $tenantId);
+
+                return $this->certificateRepository->findById($eid, $tenantId);
+            }
+
             return $existing;
         }
 
@@ -51,17 +64,20 @@ class TrainingCertificateService
 
         $id = $this->certificateRepository->create($tenantId, [
             'enrollment_id' => $enrollmentId,
+            'issued_by_user_id' => $issuedByStaffUserId,
             'certificate_number' => $certificateNumber,
             'issued_at' => $issuedAt,
             'expires_at' => $expiresAt,
             'final_score' => $finalScore,
             'status' => 'valid',
         ]);
+        $this->pdfService->generateAndStore($id, $tenantId);
         $cert = $this->certificateRepository->findById($id, $tenantId);
         $this->auditService->logCertificateIssued($tenantId, $userId, $id, [
             'certificate_number' => $certificateNumber,
             'enrollment_id' => $enrollmentId,
         ]);
+
         return $cert;
     }
 

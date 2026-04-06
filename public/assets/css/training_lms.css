@@ -6,7 +6,40 @@
   --lms-accent: #10b981;
   --lms-accent-rgb: 16, 185, 129;
   --lms-font: "Inter", system-ui, sans-serif;
+  --lms-heading-font: "Source Serif 4", Georgia, "Times New Roman", serif;
   --lms-radius: 2rem;
+}
+
+/* Bandeau d’information compact (catalogue, fiches…) */
+.lms-infobanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: #475569;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.lms-infobanner__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.05rem;
+  border-radius: 0.375rem;
+  background: rgba(var(--lms-accent-rgb), 0.12);
+  color: #059669;
+}
+.lms-infobanner strong {
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .lms-grain {
@@ -125,21 +158,108 @@
   letter-spacing: 0.05em;
 }
 
+/* Surtitre discret (ex. « Contenu ») — casse naturelle, sans tracking excessif */
 .module-shell .kicker {
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: rgb(var(--lms-accent-rgb));
-  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: #64748b;
+  margin-bottom: 0.375rem;
 }
 
+/* Titre principal de page leçon */
 .module-shell .page-title {
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 800;
+  font-family: var(--lms-heading-font);
+  font-size: clamp(1.5rem, 3vw, 2.125rem);
+  font-weight: 600;
   letter-spacing: -0.02em;
-  text-transform: uppercase;
-  line-height: 1.1;
+  text-transform: none;
+  line-height: 1.15;
+  color: #0f172a;
+}
+
+/* Titre de section dans le bloc pédagogique (ex. Étapes du parcours) */
+.module-shell .lms-heading-section {
+  font-family: var(--lms-heading-font);
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+/* Libellé de contexte sur une diapositive canvas (ex. étape · thème du slide) */
+.lms-canvas-context-kicker {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #475569;
+  line-height: 1.45;
+}
+
+/* Métadonnées lecteur canvas (progression module / étapes) — casse naturelle */
+.lms-canvas-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: #64748b;
+}
+
+/* Micro-libellés de gabarit de slide (Déroulé type, Frise…) */
+.lms-canvas-template-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: none;
+  color: #94a3b8;
+}
+
+/* Colonne latérale repères */
+.module-shell .lms-sidebar-heading {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: #94a3b8;
+}
+
+.module-shell .lms-sidebar-sublabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: #94a3b8;
+}
+
+.module-shell .lms-stat-number {
+  font-family: var(--lms-heading-font);
+}
+
+.module-shell .lms-module-crumb {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #64748b;
+}
+
+/* Titres dans les slides canvas */
+.lms-canvas-slide > h2 {
+  font-family: var(--lms-heading-font);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Titre bloc synthèse fin de parcours canvas */
+.lms-synthesis-title {
+  font-family: var(--lms-heading-font);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  text-transform: none;
 }
 
 .module-shell .section-copy {
@@ -179,11 +299,11 @@
 }
 
 .module-shell .module-header {
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: #94a3b8;
   margin-bottom: 0.75rem;
 }
 
@@ -259,12 +379,270 @@
   flex-wrap: wrap;
   gap: 0.35rem 0.75rem;
   align-items: center;
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
   color: #64748b;
 }
 .lms-scorm-strip span {
   color: var(--lms-accent);
+}
+
+/* —— Page leçon : carte méta unifiée —— */
+.lms-lesson-meta-board {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  border-radius: var(--lms-radius);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .lms-lesson-meta-board {
+    grid-template-columns: 1.15fr 0.85fr 1fr;
+  }
+}
+.lms-lesson-meta-cell {
+  padding: 1.25rem 1.35rem;
+  min-height: 9.5rem;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+@media (min-width: 768px) {
+  .lms-lesson-meta-cell {
+    border-bottom: none;
+    border-right: 1px solid rgba(15, 23, 42, 0.06);
+    min-height: 11rem;
+  }
+  .lms-lesson-meta-cell:last-child {
+    border-right: none;
+  }
+}
+.lms-lesson-meta-cell--stat {
+  justify-content: center;
+  background: linear-gradient(165deg, #f8fafc 0%, #fff 55%);
+}
+.lms-lesson-meta-cell__title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  margin: 0 0 0.75rem;
+  letter-spacing: 0.02em;
+}
+.lms-lesson-meta-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.875rem;
+  color: #334155;
+}
+.lms-lesson-meta-list__k {
+  color: #64748b;
+  font-weight: 500;
+  margin-right: 0.35rem;
+}
+.lms-lesson-meta-list__v {
+  font-weight: 600;
+  color: #0f172a;
+}
+.lms-lesson-meta-module-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+.lms-lesson-meta-progress-label {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+.lms-lesson-progress-track {
+  height: 0.55rem;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.15rem;
+}
+.lms-lesson-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--lms-accent), #34d399);
+  transition: width 0.35s ease;
+}
+.lms-lesson-meta-stat {
+  font-family: var(--lms-heading-font);
+  font-size: 2.25rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+.lms-lesson-meta-stat__unit {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-left: 0.1rem;
+}
+.lms-lesson-meta-stat-caption {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+.lms-lesson-meta-sequence-copy {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: #475569;
+  flex: 1;
+}
+
+/* Surtitre au-dessus du panneau contenu */
+.lms-lesson-content-eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.01em;
+}
+.module-shell .lms-lesson-content-panel {
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+}
+
+/* Barre d’actions en tête du panneau */
+.lms-lesson-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+@media (min-width: 640px) {
+  .lms-lesson-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+.lms-lesson-toolbar__main {
+  min-height: 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.lms-lesson-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+.lms-lesson-badge-validated {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(var(--lms-accent-rgb), 0.12);
+  color: #047857;
+  border: 1px solid rgba(var(--lms-accent-rgb), 0.22);
+}
+
+/* Boutons leçon (cohérence emerald / slate) */
+.lms-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  font-family: inherit;
+}
+.lms-btn--compact {
+  padding: 0.55rem 1rem;
+  font-size: 0.8125rem;
+}
+.lms-btn--secondary {
+  background: #fff;
+  border-color: #e2e8f0;
+  color: #334155;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.lms-btn--secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+.lms-btn--emerald {
+  background: rgba(var(--lms-accent-rgb), 0.1);
+  border-color: rgba(var(--lms-accent-rgb), 0.28);
+  color: #065f46;
+}
+.lms-btn--emerald:hover {
+  background: rgba(var(--lms-accent-rgb), 0.16);
+  border-color: rgba(var(--lms-accent-rgb), 0.4);
+  color: #064e3b;
+}
+.lms-btn--primary {
+  background: var(--lms-accent);
+  border-color: #059669;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(var(--lms-accent-rgb), 0.35);
+}
+.lms-btn--primary:hover {
+  background: #059669;
+  border-color: #047857;
+  color: #fff;
+}
+.lms-btn--violet {
+  background: #6d28d9;
+  border-color: #5b21b6;
+  color: #fff;
+}
+.lms-btn--violet:hover {
+  background: #5b21b6;
+  color: #fff;
+}
+.lms-btn--dark {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #fff;
+}
+.lms-btn--dark:hover {
+  background: #1e293b;
+  border-color: #1e293b;
+  color: #fff;
+}
+.lms-btn--disabled,
+.lms-btn--disabled:hover {
+  cursor: default;
+  opacity: 0.75;
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #64748b;
+  box-shadow: none;
+}
+
+.lms-lesson-nav-footer a {
+  text-decoration: none;
+}
+.lms-lesson-nav-next .lms-btn {
+  text-decoration: none;
 }

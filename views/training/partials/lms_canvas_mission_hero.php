@@ -42,8 +42,8 @@ if (!is_array($stats) || $stats === []) {
     <div class="pointer-events-none absolute inset-0 opacity-[0.06] lms-canvas-hero-grid"></div>
     <div class="relative z-10 grid items-end gap-8 lg:grid-cols-[1.2fr_0.8fr]">
         <div>
-            <p class="mb-3 text-[10px] font-black uppercase tracking-[0.38em] text-emerald-300"><?= htmlspecialchars($eyebrow) ?></p>
-            <h1 class="text-3xl font-black leading-none tracking-tight md:text-5xl"><?= htmlspecialchars($heroTitle) ?></h1>
+            <p class="mb-3 text-xs font-semibold tracking-wide text-emerald-200/90"><?= htmlspecialchars($eyebrow) ?></p>
+            <h1 class="text-3xl font-semibold leading-tight tracking-tight md:text-5xl"><?= htmlspecialchars($heroTitle) ?></h1>
             <div class="my-6 h-px w-24 bg-white/20"></div>
             <p class="max-w-2xl text-sm leading-relaxed text-white/75 md:text-base"><?= htmlspecialchars($heroLead) ?></p>
         </div>
@@ -63,10 +63,10 @@ if (!is_array($stats) || $stats === []) {
                 $cellClass = $emph
                     ? 'rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4'
                     : 'rounded-2xl border border-white/10 bg-white/[0.05] p-4';
-                $valClass = $emph ? 'text-lg font-black text-emerald-200' : 'text-lg font-black text-white';
+                $valClass = $emph ? 'text-lg font-semibold text-emerald-100' : 'text-lg font-semibold text-white';
                 ?>
             <div class="<?= htmlspecialchars($cellClass) ?>">
-                <p class="mb-2 text-[8px] font-black uppercase tracking-[0.24em] <?= $emph ? 'text-emerald-300' : 'text-white/35' ?>"><?= htmlspecialchars($slab !== '' ? $slab : '—') ?></p>
+                <p class="mb-2 text-[10px] font-semibold tracking-wide <?= $emph ? 'text-emerald-200/90' : 'text-white/40' ?>"><?= htmlspecialchars($slab !== '' ? $slab : '—') ?></p>
                 <p class="<?= htmlspecialchars($valClass) ?>"><?= htmlspecialchars($sval !== '' ? $sval : '—') ?></p>
             </div>
                 <?php

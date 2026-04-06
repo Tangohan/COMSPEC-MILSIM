@@ -185,7 +185,7 @@ $headHtml = ob_get_clean();
                     ?>
                     <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
                         <div class="mb-3 flex flex-wrap items-center justify-between gap-4">
-                            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Progression dans le module</p>
+                            <p class="lms-canvas-label">Progression dans le module</p>
                             <p class="text-sm font-bold text-slate-900">Leçon <?= $mcur ?> sur <?= $mtot ?></p>
                         </div>
                         <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100">
@@ -196,16 +196,12 @@ $headHtml = ob_get_clean();
                     <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_minmax(260px,320px)]">
                         <div class="min-w-0 space-y-6">
                             <?php if ($lessonStep): ?>
-                            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Étape <?= (int) $lessonStep['current'] ?> / <?= (int) $lessonStep['total'] ?> sur l’ensemble du parcours</p>
+                            <p class="text-sm font-medium text-slate-600">Étape <?= (int) $lessonStep['current'] ?> / <?= (int) $lessonStep['total'] ?> sur l’ensemble du parcours</p>
                             <?php endif; ?>
                             <section class="mb-10">
-                                <div class="mb-4 flex flex-wrap items-end justify-between gap-4">
-                                    <div>
-                                        <div class="kicker">Contenu</div>
-                                        <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Étapes du parcours</h2>
-                                    </div>
-                                </div>
-                                <article class="module-panel p-6 sm:p-8">
+                                <p class="lms-lesson-content-eyebrow mb-3">Parcours interactif</p>
+                                <article class="module-panel p-6 sm:p-8 lms-lesson-content-panel">
+                <?php require base_path('views/training/partials/lms_lesson_actions_bar.php'); ?>
                 <?php
                 $deck = $canvasDeck;
                 require base_path('views/training/partials/canvas_lesson_player.php');
@@ -217,10 +213,10 @@ $headHtml = ob_get_clean();
                             </section>
                         </div>
                         <aside class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-24 lg:self-start" aria-label="Repères de la leçon">
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Repères</h3>
+                            <h3 class="lms-sidebar-heading">Repères</h3>
                             <?php if ($moduleObjectives !== []): ?>
                             <div>
-                                <p class="mb-2 text-[9px] font-black uppercase tracking-wider text-slate-500">Objectifs du module</p>
+                                <p class="mb-2 lms-sidebar-sublabel">Objectifs du module</p>
                                 <ul class="list-inside list-disc space-y-1.5 text-sm text-slate-700">
                                     <?php foreach ($moduleObjectives as $mo): ?>
                                     <li><?= htmlspecialchars($mo) ?></li>
@@ -230,7 +226,7 @@ $headHtml = ob_get_clean();
                             <?php endif; ?>
                             <?php if ($lessonObjectives !== []): ?>
                             <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-                                <p class="mb-2 text-[9px] font-black uppercase tracking-wider text-emerald-800">À l’issue de cette leçon</p>
+                                <p class="mb-2 lms-sidebar-sublabel text-emerald-800">À l’issue de cette leçon</p>
                                 <ul class="list-inside list-disc space-y-1 text-sm text-slate-800">
                                     <?php foreach ($lessonObjectives as $lo): ?>
                                     <li><?= htmlspecialchars($lo) ?></li>
@@ -239,24 +235,24 @@ $headHtml = ob_get_clean();
                             </div>
                             <?php elseif ($lessonSummary !== ''): ?>
                             <div>
-                                <p class="mb-2 text-[9px] font-black uppercase tracking-wider text-slate-500">Résumé</p>
+                                <p class="mb-2 lms-sidebar-sublabel">Résumé</p>
                                 <p class="text-sm leading-relaxed text-slate-700"><?= htmlspecialchars($lessonSummary) ?></p>
                             </div>
                             <?php endif; ?>
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="mb-2 text-[9px] font-black uppercase tracking-wider text-slate-500">Durée indicative</p>
+                                <p class="mb-2 lms-sidebar-sublabel">Durée indicative</p>
                                 <p class="text-sm font-bold text-slate-900"><?= !empty($lesson['duration_minutes']) ? (int) $lesson['duration_minutes'] . ' min' : '—' ?></p>
                                 <?php if ($currentModule && (int) ($currentModule['estimated_minutes'] ?? 0) > 0): ?>
                                 <p class="mt-2 text-xs text-slate-500">Module (estimation) : <?= (int) $currentModule['estimated_minutes'] ?> min</p>
                                 <?php endif; ?>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="mb-2 text-[9px] font-black uppercase tracking-wider text-slate-500">État</p>
+                                <p class="mb-2 lms-sidebar-sublabel">État</p>
                                 <p class="text-sm font-bold <?= $lessonAlreadyCompleted ? 'text-emerald-700' : 'text-amber-800' ?>"><?= $lessonAlreadyCompleted ? 'Terminée' : 'En cours' ?></p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="mb-2 text-[9px] font-black uppercase tracking-wider text-slate-500">Avancement du parcours</p>
-                                <p class="text-2xl font-black text-slate-900"><?= (int) round((float) ($progress['percent'] ?? 0)) ?> %</p>
+                                <p class="mb-2 lms-sidebar-sublabel">Avancement du parcours</p>
+                                <p class="lms-stat-number text-2xl font-semibold text-slate-900"><?= (int) round((float) ($progress['percent'] ?? 0)) ?> %</p>
                             </div>
                         </aside>
                     </div>
@@ -264,7 +260,7 @@ $headHtml = ob_get_clean();
                 <?php else: ?>
                 <div class="mx-auto max-w-4xl">
                     <?php if ($currentModule): ?>
-                    <p class="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400"><?= htmlspecialchars((string) ($currentModule['title'] ?? '')) ?></p>
+                    <p class="lms-module-crumb mb-1"><?= htmlspecialchars((string) ($currentModule['title'] ?? '')) ?></p>
                     <?php if (!empty($currentModule['subtitle'])): ?>
                     <p class="mb-2 text-sm text-slate-600"><?= htmlspecialchars((string) $currentModule['subtitle']) ?></p>
                     <?php endif; ?>
@@ -272,7 +268,7 @@ $headHtml = ob_get_clean();
                     <div class="kicker">Leçon</div>
                     <?php endif; ?>
                     <?php if ($lessonStep): ?>
-                    <p class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Étape <?= (int) $lessonStep['current'] ?> / <?= (int) $lessonStep['total'] ?></p>
+                    <p class="mb-2 text-sm font-medium text-slate-600">Étape <?= (int) $lessonStep['current'] ?> / <?= (int) $lessonStep['total'] ?></p>
                     <?php endif; ?>
                     <h1 class="page-title mb-2"><?= htmlspecialchars((string) $lesson['title']) ?></h1>
                     <?php if ($lessonSummary !== ''): ?>
@@ -283,7 +279,7 @@ $headHtml = ob_get_clean();
 
                     <?php if ($moduleObjectives !== []): ?>
                     <div class="mb-6 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                        <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Objectifs du module</p>
+                        <p class="mb-2 lms-sidebar-sublabel">Objectifs du module</p>
                         <ul class="list-inside list-disc space-y-1 text-sm text-slate-700">
                             <?php foreach ($moduleObjectives as $mo): ?>
                             <li><?= htmlspecialchars($mo) ?></li>
@@ -294,7 +290,7 @@ $headHtml = ob_get_clean();
 
                     <?php if ($lessonObjectives !== []): ?>
                     <div class="mb-8 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
-                        <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-emerald-900">À l’issue de cette leçon</p>
+                        <p class="mb-2 lms-sidebar-sublabel text-emerald-900">À l’issue de cette leçon</p>
                         <ul class="list-inside list-disc space-y-1.5 text-sm text-slate-800">
                             <?php foreach ($lessonObjectives as $lo): ?>
                             <li><?= htmlspecialchars($lo) ?></li>
@@ -303,40 +299,44 @@ $headHtml = ob_get_clean();
                     </div>
                     <?php endif; ?>
 
-                    <div class="mb-10 grid-3">
-                        <article class="module-panel">
-                            <h2 class="module-header">Fiche leçon</h2>
-                            <p class="text-sm text-slate-600">
-                                Type : <strong><?= htmlspecialchars($lessonTypeLabel) ?></strong>
-                                <?php if (!empty($lesson['duration_minutes'])): ?><br>Durée : <?= (int) $lesson['duration_minutes'] ?> min<?php endif; ?>
-                                <?php if ($diffLabel !== ''): ?><br>Niveau : <strong><?= htmlspecialchars($diffLabel) ?></strong><?php endif; ?>
-                            </p>
+                    <div class="lms-lesson-meta-board mb-10">
+                        <div class="lms-lesson-meta-cell">
+                            <h2 class="lms-lesson-meta-cell__title">Fiche leçon</h2>
+                            <ul class="lms-lesson-meta-list">
+                                <li><span class="lms-lesson-meta-list__k">Type</span> <span class="lms-lesson-meta-list__v"><?= htmlspecialchars($lessonTypeLabel) ?></span></li>
+                                <?php if (!empty($lesson['duration_minutes'])): ?>
+                                <li><span class="lms-lesson-meta-list__k">Durée</span> <span class="lms-lesson-meta-list__v"><?= (int) $lesson['duration_minutes'] ?> min</span></li>
+                                <?php endif; ?>
+                                <?php if ($diffLabel !== ''): ?>
+                                <li><span class="lms-lesson-meta-list__k">Niveau</span> <span class="lms-lesson-meta-list__v"><?= htmlspecialchars($diffLabel) ?></span></li>
+                                <?php endif; ?>
+                            </ul>
                             <?php if ($currentModule && (int) ($currentModule['estimated_minutes'] ?? 0) > 0): ?>
-                            <p class="mt-2 text-xs text-slate-500">Durée indicative du module : <?= (int) $currentModule['estimated_minutes'] ?> min</p>
+                            <p class="lms-lesson-meta-module-hint">Durée indicative du module : <?= (int) $currentModule['estimated_minutes'] ?> min</p>
                             <?php endif; ?>
-                            <div class="progress mt-3"><span style="width:<?= min(100, (float) ($progress['percent'] ?? 0)) ?>%"></span></div>
-                        </article>
-                        <article class="module-panel">
-                            <h2 class="module-header">Progression</h2>
-                            <p class="text-sm text-slate-600">Parcours : <?= (float) ($progress['percent'] ?? 0) ?> %</p>
-                        </article>
-                        <article class="module-panel" id="parcours-sequence">
-                            <h2 class="module-header">Séquence</h2>
-                            <p class="text-xs leading-relaxed text-slate-600"><?= $autoLessonComplete
-                                ? 'Parcourez chaque étape du bloc pédagogique : la leçon se valide dès que le parcours est complété (ou le quiz réussi, selon le type de contenu).'
-                                : 'Suivez le contenu puis indiquez manuellement que la leçon est terminée lorsque c’est pertinent.' ?></p>
-                        </article>
+                            <p class="lms-lesson-meta-progress-label">Avancement du parcours</p>
+                            <div class="lms-lesson-progress-track">
+                                <span class="lms-lesson-progress-fill" style="width:<?= min(100, (float) ($progress['percent'] ?? 0)) ?>%"></span>
+                            </div>
+                        </div>
+                        <div class="lms-lesson-meta-cell lms-lesson-meta-cell--stat">
+                            <h2 class="lms-lesson-meta-cell__title">Progression</h2>
+                            <p class="lms-lesson-meta-stat"><?= htmlspecialchars((string) round((float) ($progress['percent'] ?? 0), 1)) ?><span class="lms-lesson-meta-stat__unit">%</span></p>
+                            <p class="lms-lesson-meta-stat-caption">du parcours complété</p>
+                        </div>
+                        <div class="lms-lesson-meta-cell" id="parcours-sequence">
+                            <h2 class="lms-lesson-meta-cell__title">Séquence</h2>
+                            <p class="lms-lesson-meta-sequence-copy"><?= $autoLessonComplete
+                                ? 'Parcourez le contenu ci-dessous : la leçon se valide lorsque le parcours est terminé (ou le quiz réussi, selon le type de contenu).'
+                                : 'Lisez le contenu, puis indiquez que la leçon est terminée lorsque c’est pertinent pour vous.' ?></p>
+                        </div>
                     </div>
 
                     <section class="mb-10">
-                        <div class="mb-4 flex flex-wrap items-end justify-between gap-4">
-                            <div>
-                                <div class="kicker">Contenu</div>
-                                <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">Bloc pédagogique</h2>
-                            </div>
-                        </div>
+                        <p class="lms-lesson-content-eyebrow mb-3">Contenu à parcourir</p>
 
-                        <article class="module-panel p-6 sm:p-8">
+                        <article class="module-panel p-6 sm:p-8 lms-lesson-content-panel">
+                <?php require base_path('views/training/partials/lms_lesson_actions_bar.php'); ?>
                 <?php
                 $embedSrc = ($lessonType === 'video_embed' && !empty($lesson['external_url']) && function_exists('training_video_embed_iframe_src'))
                     ? training_video_embed_iframe_src((string) $lesson['external_url'])
@@ -450,6 +450,7 @@ window.__LMS_LESSON_PROGRESS__ = <?= json_encode([
     'lessonType' => $lessonType,
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 </script>
+<script src="<?= htmlspecialchars($base) ?>/assets/js/lms_training_toast.js"></script>
 <script src="<?= htmlspecialchars($base) ?>/assets/js/training_lesson_progress.js" defer></script>
 <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>

@@ -72,53 +72,55 @@ $statusBand = match ($statusRaw) {
                 <div class="border-b border-stone-200 bg-[#f4f1ea] px-6 py-3">
                     <h2 class="text-[10px] font-bold uppercase tracking-[0.25em] text-stone-500">Rubrique 1 — Identité &amp; réception</h2>
                 </div>
-                <dl class="grid gap-0 sm:grid-cols-2 divide-y divide-stone-100 sm:divide-y-0 sm:divide-x sm:divide-stone-100">
-                    <div class="px-6 py-4 sm:col-span-2 sm:grid sm:grid-cols-[minmax(8rem,1fr)_2fr] sm:gap-4 sm:border-b sm:border-stone-100">
-                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Nom complet</dt>
-                        <dd class="mt-1 font-semibold text-stone-900 sm:mt-0"><?= htmlspecialchars(trim(($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? '')) ?: '—') ?></dd>
+                <div class="divide-y divide-stone-100">
+                    <div class="px-6 py-4">
+                        <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Nom complet</p>
+                        <p class="mt-1 text-lg font-semibold text-stone-900"><?= htmlspecialchars(trim(($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? '')) ?: '—') ?></p>
+                    </div>
+                    <div class="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-stone-100">
+                        <div class="px-6 py-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Courriel</p>
+                            <p class="mt-1 break-all text-stone-800"><?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></p>
+                        </div>
+                        <div class="px-6 py-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Indicatif</p>
+                            <p class="mt-1 text-stone-800"><?= htmlspecialchars((string) ($e['callsign'] ?? '—')) ?></p>
+                        </div>
                     </div>
                     <div class="px-6 py-4">
-                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Courriel</dt>
-                        <dd class="mt-1 break-all text-stone-800"><?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></dd>
-                    </div>
-                    <div class="px-6 py-4">
-                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Indicatif</dt>
-                        <dd class="mt-1 text-stone-800"><?= htmlspecialchars((string) ($e['callsign'] ?? '—')) ?></dd>
-                    </div>
-                    <div class="px-6 py-4 sm:col-span-2 sm:grid sm:grid-cols-[minmax(8rem,1fr)_2fr] sm:gap-4 sm:border-t sm:border-stone-100">
-                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Compte portail</dt>
-                        <dd class="mt-1 sm:mt-0">
+                        <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Compte portail</p>
+                        <div class="mt-1">
                             <?php if (!empty($e['submitter_user_id'])): ?>
                                 <a href="<?= htmlspecialchars(url('personnel/' . (int) $e['submitter_user_id'])) ?>" class="font-semibold text-[#1c4d6e] underline decoration-[#1c4d6e]/30 underline-offset-2 hover:decoration-[#1c4d6e]">Ouvrir la fiche membre liée</a>
                                 <span class="mt-1 block text-xs text-stone-500">Canal de soumission : <?= htmlspecialchars((string) ($e['submitted_via'] ?? '—')) ?></span>
                             <?php else: ?>
                                 <span class="text-stone-500">Candidature invitée (sans compte au dépôt)</span>
                             <?php endif; ?>
-                        </dd>
+                        </div>
                     </div>
                     <?php if (!empty($e['reviewed_at']) || !empty($e['reviewer_comment']) || !empty($e['reviewed_by'])): ?>
-                    <div class="px-6 py-4 sm:col-span-2 border-t border-stone-100 bg-[#faf8f3]/50">
-                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Instruction du dossier</dt>
-                        <dd class="mt-2 text-sm text-stone-800">
+                    <div class="border-t border-stone-200 bg-[#faf8f3]/60 px-6 py-4">
+                        <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Instruction du dossier</p>
+                        <div class="mt-2 text-sm text-stone-800">
                             <?php if (!empty($e['reviewed_at'])): ?>
                                 <p class="tabular-nums font-medium"><?= htmlspecialchars(date('d/m/Y H:i', strtotime((string) $e['reviewed_at']))) ?></p>
                             <?php endif; ?>
                             <?php if (!empty($e['reviewed_by'])): ?>
-                                <p class="mt-1 text-xs text-stone-500">Agent référent (compte interne n°<?= (int) $e['reviewed_by'] ?>)</p>
+                                <p class="mt-1 text-xs text-stone-500">Traité par le compte interne n°<?= (int) $e['reviewed_by'] ?></p>
                             <?php endif; ?>
                             <?php if (!empty($e['reviewer_comment'])): ?>
                                 <div class="mt-3 rounded-xl border border-stone-200 bg-white p-4 text-stone-800 shadow-inner whitespace-pre-wrap"><?= htmlspecialchars((string) $e['reviewer_comment']) ?></div>
                             <?php endif; ?>
-                        </dd>
+                        </div>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($e['recruitment_preset_id'])): ?>
-                    <div class="px-6 py-4 sm:col-span-2 border-t border-stone-100">
-                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Modèle de formulaire utilisé</dt>
-                        <dd class="mt-1 text-stone-700">Référence interne n°<?= (int) $e['recruitment_preset_id'] ?></dd>
+                    <div class="px-6 py-4">
+                        <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Modèle de formulaire utilisé</p>
+                        <p class="mt-1 text-stone-700">Référence interne n°<?= (int) $e['recruitment_preset_id'] ?></p>
                     </div>
                     <?php endif; ?>
-                </dl>
+                </div>
             </section>
 
             <?php if ($statusRaw === 'reviewed'): ?>

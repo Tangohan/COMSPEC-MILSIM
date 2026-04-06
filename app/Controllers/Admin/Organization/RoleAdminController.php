@@ -39,7 +39,7 @@ class RoleAdminController
         };
 
         $tierFilter = trim((string) $request->query('tier', ''));
-        $validTiers = ['authority', 'function', 'specialty', 'status'];
+        $validTiers = ['authority', 'function', 'specialty', 'status', 'support', 'liaison'];
         if ($tierFilter !== '' && !in_array($tierFilter, $validTiers, true)) {
             $tierFilter = '';
         }
@@ -176,6 +176,64 @@ class RoleAdminController
             'title' => 'Profils de permissions',
             'presetMeta' => $this->presetService->listPresetMeta(),
             'roles' => $roles,
+            'presetsPreviewUrl' => url('back-office/roles/presets/preview'),
+        ]);
+    }
+
+    /**
+     * Aperçu JSON : ajouts / retraits si l’on applique un profil à un rôle (sans modification).
+     */
+    public function presetsPreview(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée. Reconnectez-vous.'], 401);
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
+            return Response::json(['ok' => false, 'error' => 'Permission refusée.'], 403);
+        }
+
+        $roleId = (int) $request->query('role_id', 0);
+        $presetId = trim((string) $request->query('preset_id', ''));
+        if ($roleId < 1 || $presetId === '') {
+            return Response::json(['ok' => false, 'error' => 'Choisissez un rôle et un profil pour afficher le récapitulatif.'], 400);
+        }
+
+        $role = $this->roleRepository->findById($roleId, $tenantId);
+        if (!$role || !in_array((string) ($role['role_layer'] ?? ''), ['community', 'intra'], true)) {
+            return Response::json(['ok' => false, 'error' => 'Rôle introuvable ou hors périmètre de votre communauté.'], 404);
+        }
+        if ($this->rolePermissionService->isRoleLocked($roleId)) {
+            return Response::json(['ok' => false, 'error' => 'Ce rôle est verrouillé : un profil automatique ne peut pas s’y appliquer.'], 403);
+        }
+
+        $rows = $this->permissionRepository->allForTenant($tenantId);
+        $current = $this->rolePermissionService->getPermissionIdsForRole($roleId);
+        $diff = $this->presetService->buildApplyDiff($presetId, $current, $rows);
+        if (!$diff['ok']) {
+            return Response::json(['ok' => false, 'error' => $diff['error']], 400);
+        }
+
+        $presetLabel = $presetId;
+        $presetDescription = '';
+        foreach ($this->presetService->listPresetMeta() as $m) {
+            if (($m['id'] ?? '') === $presetId) {
+                $presetLabel = (string) ($m['label'] ?? $presetId);
+                $presetDescription = (string) ($m['description'] ?? '');
+
+                break;
+            }
+        }
+
+        return Response::json([
+            'ok' => true,
+            'role_name' => (string) ($role['name'] ?? ''),
+            'preset_id' => $presetId,
+            'preset_label' => $presetLabel,
+            'preset_description' => $presetDescription,
+            'module_labels' => TenantRolePermissionPresetService::permissionModuleLabelsFr(),
+            'diff' => $diff,
         ]);
     }
 
@@ -223,9 +281,18 @@ class RoleAdminController
             return Response::redirect(url('back-office/roles/presets'));
         }
 
-        $ids = $this->presetService->getPermissionIdsForPreset($tenantId, $presetId);
+        $rows = $this->permissionRepository->allForTenant($tenantId);
+        $currentIds = $this->rolePermissionService->getPermissionIdsForRole($roleId);
+        $diff = $this->presetService->buildApplyDiff($presetId, $currentIds, $rows);
+        if (!$diff['ok']) {
+            Session::flash('error', $diff['error']);
+
+            return Response::redirect(url('back-office/roles/presets'));
+        }
+
+        $ids = $this->presetService->permissionIdsForPresetFromTenantRows($presetId, $rows);
         if ($ids === []) {
-            Session::flash('error', 'Aucune permission correspondante dans cette communauté (migrations ou catalogue à jour ?).');
+            Session::flash('error', 'Aucune habilitation correspondante dans cette communauté (migrations ou catalogue à jour ?).');
 
             return Response::redirect(url('back-office/roles/presets'));
         }
@@ -237,7 +304,26 @@ class RoleAdminController
 
             return Response::redirect(url('back-office/roles/presets'));
         }
-        Session::flash('success', 'Permissions du rôle « ' . (string) ($role['name'] ?? '') . ' » mises à jour selon le profil sélectionné (' . count($ids) . ' droits).');
+
+        $presetLabel = $presetId;
+        foreach ($this->presetService->listPresetMeta() as $m) {
+            if (($m['id'] ?? '') === $presetId) {
+                $presetLabel = (string) ($m['label'] ?? $presetId);
+
+                break;
+            }
+        }
+
+        $roleName = (string) ($role['name'] ?? '');
+        $msg = 'Rôle « ' . $roleName . ' » mis à jour avec le profil « ' . $presetLabel . ' ». ';
+        $msg .= $diff['added_count'] . ' habilitation(s) ajoutée(s), '
+            . $diff['removed_count'] . ' retirée(s), '
+            . $diff['unchanged_count'] . ' inchangée(s). '
+            . 'Total après application : ' . $diff['preset_total'] . '.';
+        if ($diff['removed_count'] > 0) {
+            $msg .= ' Les droits retirés ne sont plus actifs pour ce rôle.';
+        }
+        Session::flash('success', $msg);
 
         return Response::redirect(url('back-office/roles/' . $roleId));
     }

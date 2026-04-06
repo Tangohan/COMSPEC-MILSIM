@@ -13,6 +13,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingCertificateRepository;
+use App\Repositories\TrainingCertificateTemplateRepository;
 use App\Repositories\UserRepository;
 use App\Services\EmailService;
 use App\Services\Platform\FeatureGateService;
@@ -21,6 +22,7 @@ use App\Services\Training\TrainingAssignmentService;
 use App\Services\Training\TrainingCourseExchangeService;
 use App\Services\Training\TrainingEnrollmentPolicyService;
 use App\Services\Training\TrainingProgressService;
+use App\Services\Training\TrainingCertificateAssetStorageService;
 
 class AdminTrainingController
 {
@@ -28,6 +30,8 @@ class AdminTrainingController
         private TrainingCourseRepository $courseRepository,
         private TrainingEnrollmentRepository $enrollmentRepository,
         private TrainingCertificateRepository $certificateRepository,
+        private TrainingCertificateTemplateRepository $certificateTemplateRepository,
+        private TrainingCertificateAssetStorageService $certificateAssetStorage,
         private TrainingAssignmentService $assignmentService,
         private TrainingAuditService $auditService,
         private TenantRepository $tenantRepository,
@@ -271,20 +275,92 @@ class AdminTrainingController
     {
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
-        $stmt = \App\Core\Database::getPdo()->prepare(
-            'SELECT c.*, e.user_id, e.course_id, cr.title AS course_title FROM training_certificates c
-             JOIN training_enrollments e ON e.id = c.enrollment_id
-             JOIN training_courses cr ON cr.id = e.course_id
-             WHERE c.tenant_id = ? ORDER BY c.issued_at DESC LIMIT 200'
-        );
-        $stmt->execute([$tenantId]);
-        $certificates = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $certificates = $this->certificateRepository->listForTenantAdmin($tenantId, 200);
+
         return Response::view('layout.main', [
             'content' => 'admin.training.certificates',
             'title' => 'Certificats',
             'trainingAdminNav' => 'certificates',
             'certificates' => $certificates,
         ]);
+    }
+
+    public function certificateGabarit(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        $tenantId = (int) Session::get('tenant_id');
+        $tpl = $this->certificateTemplateRepository->findByTenantId($tenantId) ?? [];
+
+        return Response::view('layout.main', [
+            'content' => 'admin.training.certificates_gabarit',
+            'title' => 'Gabarit des attestations',
+            'trainingAdminNav' => 'certificates_gabarit',
+            'tpl' => $tpl,
+        ]);
+    }
+
+    public function certificateGabaritSave(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        $redirect = Response::redirect(training_lms_admin_url('certificates/gabarit'));
+        if ($request->method() !== 'POST') {
+            return $redirect;
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée, réessayez.');
+
+            return $redirect;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $existing = $this->certificateTemplateRepository->findByTenantId($tenantId);
+        $logoRel = $existing['logo_relative_path'] ?? null;
+        $bgRel = $existing['background_relative_path'] ?? null;
+
+        try {
+            $logoFile = $_FILES['logo'] ?? null;
+            if (is_array($logoFile) && ($logoFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $stored = $this->certificateAssetStorage->storeUpload($tenantId, $logoFile, 'logo');
+                if ($stored !== null) {
+                    $this->certificateAssetStorage->deleteRelative(is_string($logoRel) ? $logoRel : null);
+                    $logoRel = $stored;
+                }
+            }
+            if ($request->input('remove_logo')) {
+                $this->certificateAssetStorage->deleteRelative(is_string($logoRel) ? $logoRel : null);
+                $logoRel = null;
+            }
+
+            $bgFile = $_FILES['background'] ?? null;
+            if (is_array($bgFile) && ($bgFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $stored = $this->certificateAssetStorage->storeUpload($tenantId, $bgFile, 'fond');
+                if ($stored !== null) {
+                    $this->certificateAssetStorage->deleteRelative(is_string($bgRel) ? $bgRel : null);
+                    $bgRel = $stored;
+                }
+            }
+            if ($request->input('remove_background')) {
+                $this->certificateAssetStorage->deleteRelative(is_string($bgRel) ? $bgRel : null);
+                $bgRel = null;
+            }
+
+            $this->certificateTemplateRepository->upsertForTenant($tenantId, [
+                'name' => (string) $request->input('name', 'Modèle par défaut'),
+                'headline' => (string) $request->input('headline', 'Attestation de formation'),
+                'subtitle' => (string) $request->input('subtitle', ''),
+                'footer_legal' => (string) $request->input('footer_legal', ''),
+                'primary_hex' => (string) $request->input('primary_hex', '#0f172a'),
+                'accent_hex' => (string) $request->input('accent_hex', '#059669'),
+                'logo_relative_path' => is_string($logoRel) ? $logoRel : null,
+                'background_relative_path' => is_string($bgRel) ? $bgRel : null,
+            ]);
+            Session::flash('success', 'Le gabarit a été enregistré. Les prochaines attestations générées utiliseront ces réglages.');
+        } catch (\InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+        } catch (\Throwable) {
+            Session::flash('error', 'Impossible d’enregistrer le gabarit. Réessayez plus tard.');
+        }
+
+        return $redirect;
     }
 
     public function audit(Request $request, array $params = []): Response

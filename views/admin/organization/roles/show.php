@@ -15,6 +15,8 @@
     $tierHuman = match ($tier) {
         'authority' => 'Commandement',
         'function' => 'Emploi',
+        'liaison' => 'Liaison',
+        'support' => 'Soutien',
         'specialty' => 'Spécialité',
         'status' => 'Statut affiché',
         default => 'Emploi',

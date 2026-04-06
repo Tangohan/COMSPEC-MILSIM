@@ -12,6 +12,7 @@ use App\Services\Training\TrainingService;
 use App\Services\Training\TrainingProgressService;
 use App\Services\Training\TrainingQuizService;
 use App\Services\Training\TrainingCertificateService;
+use App\Services\Training\TrainingCertificateShareService;
 use App\Services\Training\TrainingAssignmentService;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingLessonRepository;
@@ -38,7 +39,8 @@ class TrainingApiController
         private FeatureGateService $featureGate,
         private TrainingResourceRepository $resourceRepository,
         private TrainingLessonRepository $lessonRepository,
-        private TrainingModuleRepository $moduleRepository
+        private TrainingModuleRepository $moduleRepository,
+        private TrainingCertificateShareService $certificateShareService,
     ) {}
 
     private function tenantId(): int
@@ -353,8 +355,15 @@ class TrainingApiController
                 $questionsWithAnswers[] = $q;
             }
             $questionsWithAnswers = $this->sanitizeQuizQuestionsForLearner($questionsWithAnswers);
+            $attemptOut = $attempt;
+            if (is_array($attemptOut)) {
+                $attemptOut['started_at_rfc3339'] = $this->quizService->startedAtToRfc3339Utc(
+                    isset($attemptOut['started_at']) ? (string) $attemptOut['started_at'] : null
+                );
+            }
+
             return Response::json([
-                'attempt' => $attempt,
+                'attempt' => $attemptOut,
                 'questions' => $questionsWithAnswers,
                 'time_limit_minutes' => $quiz['time_limit_minutes'] ?? null,
             ]);
@@ -375,6 +384,11 @@ class TrainingApiController
         if (!$attempt) {
             return Response::json(['error' => 'Tentative non trouvée.'], 404);
         }
+        $this->quizService->markAttemptExpiredIfTimeElapsed($attemptId);
+        $attempt = $this->quizService->getAttempt($attemptId, $this->tenantId(), $userId);
+        if (!$attempt) {
+            return Response::json(['error' => 'Tentative non trouvée.'], 404);
+        }
         if (($attempt['status'] ?? '') === 'in_progress') {
             $quiz = $this->quizRepository->findQuizById((int) ($attempt['quiz_id'] ?? 0));
             if ($quiz) {
@@ -388,6 +402,9 @@ class TrainingApiController
                 $attempt['questions'] = $this->sanitizeQuizQuestionsForLearner($questionsWithAnswers);
                 $attempt['time_limit_minutes'] = $quiz['time_limit_minutes'] ?? null;
                 $attempt['passing_score'] = $quiz['passing_score'] ?? null;
+                $attempt['started_at_rfc3339'] = $this->quizService->startedAtToRfc3339Utc(
+                    isset($attempt['started_at']) ? (string) $attempt['started_at'] : null
+                );
             }
         }
         return Response::json($attempt);
@@ -471,6 +488,31 @@ class TrainingApiController
             readfile($pdfPath);
         });
         return $response;
+    }
+
+    /** Lien de consultation publique (signé, durée limitée) pour le titulaire de l’attestation. */
+    public function certificateConsultationLink(Request $request, array $params = []): Response
+    {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
+        $userId = $this->userId();
+        $id = (int) ($params['id'] ?? 0);
+        $cert = $this->certificateService->getById($id, $this->tenantId());
+        if (!$cert || (int) ($cert['user_id'] ?? 0) !== $userId) {
+            return Response::json(['error' => 'Non autorisé.'], 403);
+        }
+        if (($cert['status'] ?? '') !== 'valid') {
+            return Response::json(['error' => 'Document indisponible.'], 404);
+        }
+        $mint = $this->certificateShareService->mint($id);
+        $url = $this->certificateShareService->buildConsultationUrl($id, $mint['token'], $mint['expires_at']);
+
+        return Response::json([
+            'consultation_url' => $url,
+            'expires_at' => $mint['expires_at'],
+        ]);
     }
 
     /** Téléchargement sécurisé d’une ressource de leçon (fichier sur serveur). */

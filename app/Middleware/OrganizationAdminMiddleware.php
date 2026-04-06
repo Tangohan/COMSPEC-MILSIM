@@ -18,7 +18,18 @@ class OrganizationAdminMiddleware
             return Response::redirect(url('login'));
         }
         $gate = \App\Core\Gate::getInstance();
-        if ($gate->deny('admin.organization') && $gate->deny('admin.access')) {
+        $path = $request->path();
+        $scopedOrgAccess = $gate->allows('admin.organization') || $gate->allows('admin.access');
+        if (!$scopedOrgAccess) {
+            if (str_starts_with($path, '/back-office/recruitments') && $gate->allows('organization.recruitment.manage')) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/organisation-effectifs') && $gate->allows('organization.effectifs.hub.view')) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/positions') && $gate->allows('organization.job_roles.referential.manage')) {
+                $scopedOrgAccess = true;
+            }
+        }
+        if (!$scopedOrgAccess) {
             Session::flash('error', 'Accès réservé aux administrateurs organisationnels.');
             if ($gate->allows('admin.system')) {
                 return Response::redirect(url('admin'));

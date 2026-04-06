@@ -91,12 +91,13 @@ class TrainingCertificateRepository
     public function create(int $tenantId, array $data): int
     {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO training_certificates (tenant_id, enrollment_id, certificate_number, issued_at, expires_at, final_score, pdf_path, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO training_certificates (tenant_id, enrollment_id, issued_by_user_id, certificate_number, issued_at, expires_at, final_score, pdf_path, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $tenantId,
             $data['enrollment_id'],
+            $data['issued_by_user_id'] ?? null,
             $data['certificate_number'],
             $data['issued_at'] ?? date('Y-m-d H:i:s'),
             $data['expires_at'] ?? null,
@@ -133,6 +134,28 @@ class TrainingCertificateRepository
         );
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listForTenantAdmin(int $tenantId, int $limit = 200): array
+    {
+        $limit = max(1, min(500, $limit));
+        $sql = 'SELECT c.*, cr.title AS course_title, cr.slug AS course_slug,
+                       e.user_id AS learner_user_id,
+                       lu.display_name AS learner_display_name, lu.email AS learner_email,
+                       iu.display_name AS issued_by_display_name, iu.email AS issued_by_email
+                FROM training_certificates c
+                JOIN training_enrollments e ON e.id = c.enrollment_id
+                JOIN training_courses cr ON cr.id = e.course_id
+                LEFT JOIN users lu ON lu.id = e.user_id
+                LEFT JOIN users iu ON iu.id = c.issued_by_user_id
+                WHERE c.tenant_id = ?
+                ORDER BY c.issued_at DESC
+                LIMIT ' . $limit;
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /** @return list<array<string, mixed>> */

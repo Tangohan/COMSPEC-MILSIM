@@ -38,7 +38,12 @@ class TrainingQuizService
 
         $inProgress = $this->quizRepository->getInProgressAttempt($enrollmentId, $quizId);
         if ($inProgress) {
-            return $inProgress;
+            $quizForLimit = $this->quizRepository->findQuizById($quizId);
+            if ($quizForLimit !== null && $this->attemptExceedsTimeLimit($inProgress, $quizForLimit)) {
+                $this->quizRepository->updateAttempt((int) $inProgress['id'], ['status' => 'expired']);
+            } else {
+                return $inProgress;
+            }
         }
         $attempts = $this->quizRepository->listAttemptsByEnrollmentAndQuiz($enrollmentId, $quizId);
         $submitted = 0;
@@ -82,12 +87,9 @@ class TrainingQuizService
         if (!$quiz) {
             throw new \InvalidArgumentException('Questionnaire introuvable.');
         }
-        if ($quiz['time_limit_minutes']) {
-            $start = strtotime($attempt['started_at']);
-            if ($start + (int) $quiz['time_limit_minutes'] * 60 < time()) {
-                $this->quizRepository->updateAttempt($attemptId, ['status' => 'expired']);
-                throw new \RuntimeException('Le temps imparti pour ce questionnaire est écoulé.');
-            }
+        if ($this->attemptExceedsTimeLimit($attempt, $quiz)) {
+            $this->quizRepository->updateAttempt($attemptId, ['status' => 'expired']);
+            throw new \RuntimeException('Le temps imparti pour ce questionnaire est écoulé.');
         }
 
         $questions = $this->quizRepository->listQuestionsByQuizId((int) $attempt['quiz_id'], false);
@@ -196,10 +198,68 @@ class TrainingQuizService
             return true;
         }
         $quiz = $this->quizRepository->findQuizById((int) $attempt['quiz_id']);
-        if (!$quiz || !$quiz['time_limit_minutes']) {
+        if (!$quiz) {
             return false;
         }
-        $start = strtotime($attempt['started_at']);
-        return $start + (int) $quiz['time_limit_minutes'] * 60 < time();
+
+        return $this->attemptExceedsTimeLimit($attempt, $quiz);
+    }
+
+    /**
+     * Si la limite de temps est dépassée, passe la tentative en « expired » (idempotent).
+     * À appeler au chargement de la page / API pour éviter de réutiliser une session trop ancienne.
+     */
+    public function markAttemptExpiredIfTimeElapsed(int $attemptId): void
+    {
+        $attempt = $this->quizRepository->findAttemptById($attemptId);
+        if (!$attempt || ($attempt['status'] ?? '') !== 'in_progress') {
+            return;
+        }
+        $quiz = $this->quizRepository->findQuizById((int) $attempt['quiz_id']);
+        if (!$quiz || !$this->attemptExceedsTimeLimit($attempt, $quiz)) {
+            return;
+        }
+        $this->quizRepository->updateAttempt($attemptId, ['status' => 'expired']);
+    }
+
+    /**
+     * Interprète started_at comme heure locale PHP (alignée sur la BDD / serveur) et renvoie l’instant en UTC pour le navigateur.
+     */
+    public function startedAtToRfc3339Utc(?string $naiveDbDatetime): ?string
+    {
+        if ($naiveDbDatetime === null || trim($naiveDbDatetime) === '') {
+            return null;
+        }
+        $raw = trim($naiveDbDatetime);
+        try {
+            $tzName = @date_default_timezone_get();
+            $tzLocal = new \DateTimeZone($tzName !== false && $tzName !== '' ? $tzName : 'UTC');
+            $dt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $raw, $tzLocal);
+            if ($dt === false) {
+                $dt = new \DateTimeImmutable($raw, $tzLocal);
+            }
+
+            return $dt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $attempt
+     * @param array<string, mixed> $quiz
+     */
+    private function attemptExceedsTimeLimit(array $attempt, array $quiz): bool
+    {
+        $minutes = (int) ($quiz['time_limit_minutes'] ?? 0);
+        if ($minutes < 1) {
+            return false;
+        }
+        $start = strtotime((string) ($attempt['started_at'] ?? ''));
+        if ($start === false) {
+            return true;
+        }
+
+        return ($start + $minutes * 60) < time();
     }
 }
