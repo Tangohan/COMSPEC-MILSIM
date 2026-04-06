@@ -60,11 +60,16 @@ if (!function_exists('forum_viewer_is_moderator')) {
 if (!function_exists('forum_can_read')) {
     /**
      * Vérifie si l'utilisateur peut lire la catégorie (tenant + min_role_id si défini).
+     * scope = moderation : réservé aux membres avec pouvoirs de modération forum.
      */
     function forum_can_read(?int $userId, array $category): bool
     {
         if ($userId === null) {
             return false;
+        }
+        $scope = $category['scope'] ?? 'general';
+        if ($scope === 'moderation') {
+            return function_exists('forum_user_can_moderate') && forum_user_can_moderate();
         }
         $minRoleId = $category['min_role_id'] ?? null;
         if ($minRoleId === null) {
@@ -146,6 +151,84 @@ if (!function_exists('forum_is_enabled')) {
     }
 }
 
+if (!function_exists('forum_forum_resolve_href_for_http_url')) {
+    /**
+     * URL http(s) déjà validée : lien interne direct ou interstitiel /leave signé si externe.
+     *
+     * @param list<string> $extraInternalHosts
+     */
+    function forum_forum_resolve_href_for_http_url(string $sanitizedUrl, array $extraInternalHosts = []): string
+    {
+        $svc = new \App\Services\Forum\ExternalLeaveService();
+        $href = $sanitizedUrl;
+        if (!$svc->isInternalUrl($sanitizedUrl, $extraInternalHosts)) {
+            $leave = $svc->buildSignedLeaveUrl($sanitizedUrl);
+            if ($leave !== null) {
+                $href = $leave;
+            }
+        }
+
+        return $href;
+    }
+}
+
+if (!function_exists('forum_linkify_plain_http_urls')) {
+    /**
+     * Transforme les URL http(s) saisies en texte brut en liens (hors &lt;pre&gt;, &lt;code&gt;, &lt;a&gt;).
+     * Réutilise le même interstitiel /leave que le Markdown [libellé](url).
+     */
+    function forum_linkify_plain_http_urls(string $html): string
+    {
+        $placeholders = [];
+        $n = 0;
+        $stash = static function (array $m) use (&$placeholders, &$n): string {
+            $chunk = $m[0] ?? '';
+            $key = '@@FURLP' . ($n++) . '@@';
+            $placeholders[$key] = $chunk;
+
+            return $key;
+        };
+
+        $html = preg_replace_callback('#<pre\b[^>]*>.*?</pre>#is', $stash, $html) ?? $html;
+        $html = preg_replace_callback('#<a\b[^>]*>.*?</a>#is', $stash, $html) ?? $html;
+        $html = preg_replace_callback('#<code\b[^>]*>.*?</code>#is', $stash, $html) ?? $html;
+
+        $svc = new \App\Services\Forum\ExternalLeaveService();
+        $extra = forum_get_setting('internal_link_hosts', []);
+        $extraHosts = is_array($extra) ? $extra : [];
+
+        $html = preg_replace_callback(
+            '#\bhttps?://[^\s<>"\'\[\]]+#iu',
+            static function (array $m) use ($svc, $extraHosts): string {
+                $matched = $m[0];
+                $trail = '';
+                if (preg_match('#([.,;:!?]+)$#u', $matched, $tm)) {
+                    $trail = $tm[1];
+                    $matched = substr($matched, 0, -strlen($trail));
+                }
+                $decoded = html_entity_decode($matched, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $sanitized = $svc->sanitizeHttpUrl($decoded);
+                if ($sanitized === null) {
+                    return $m[0];
+                }
+                $href = forum_forum_resolve_href_for_http_url($sanitized, $extraHosts);
+                $safeHref = htmlspecialchars($href, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $safeLabel = htmlspecialchars($sanitized, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $class = 'text-orange-400 hover:text-orange-300 underline break-all';
+
+                return '<a href="' . $safeHref . '" rel="noopener noreferrer" class="' . $class . '">' . $safeLabel . '</a>' . $trail;
+            },
+            $html
+        );
+
+        foreach ($placeholders as $key => $chunk) {
+            $html = str_replace($key, $chunk, $html);
+        }
+
+        return $html;
+    }
+}
+
 if (!function_exists('forum_markdown_to_html')) {
     /**
      * Convertit du Markdown simple en HTML (sécurisé).
@@ -213,18 +296,14 @@ if (!function_exists('forum_markdown_to_html')) {
             }
             $extra = forum_get_setting('internal_link_hosts', []);
             $extraHosts = is_array($extra) ? $extra : [];
-            $href = $sanitized;
-            $class = 'text-orange-400 hover:text-orange-300 underline';
-            if (!$svc->isInternalUrl($sanitized, $extraHosts)) {
-                $leave = $svc->buildSignedLeaveUrl($sanitized);
-                if ($leave !== null) {
-                    $href = $leave;
-                }
-            }
+            $href = forum_forum_resolve_href_for_http_url($sanitized, $extraHosts);
             $safeHref = htmlspecialchars($href, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $class = 'text-orange-400 hover:text-orange-300 underline';
 
             return '<a href="' . $safeHref . '" rel="noopener noreferrer" class="' . $class . '">' . $label . '</a>';
         }, $content);
+        $content = forum_linkify_plain_http_urls($content);
+
         return nl2br($content);
     }
 }
@@ -247,17 +326,22 @@ if (!function_exists('forum_forum_role_display')) {
     {
         $slugNorm = $slug !== null && trim((string) $slug) !== '' ? strtolower(trim((string) $slug)) : '';
         $bySlug = [
-            'member' => 'Membre',
+            'member' => 'Opérateur',
             'forum_moderator' => 'Modérateur forum',
-            'tenant_admin' => 'Admin organisation',
+            'tenant_admin' => 'État-major',
             'community_owner' => 'Fondateur',
-            'officer' => 'Instructeur',
+            'officer' => 'Cadre',
             'administrator' => 'Administrateur',
             'site_admin' => 'Admin plateforme',
             'recruiter' => 'Recruteur',
             'guest' => 'Invité',
-            'hr' => 'RH',
+            'hr' => 'RH (S1)',
+            'invite' => 'Visiteur',
             'instructor' => 'Instructeur',
+            'medic' => 'OPSAN',
+            'logistics' => 'Logistique',
+            'rto' => 'R2',
+            'probation' => 'Période d’essai',
         ];
         if ($slugNorm !== '' && isset($bySlug[$slugNorm])) {
             return $bySlug[$slugNorm];
@@ -322,5 +406,101 @@ if (!function_exists('forum_build_category_url')) {
             return $base;
         }
         return $base . '?' . http_build_query($params);
+    }
+}
+
+if (!function_exists('forum_user_can_moderate_for_user_id')) {
+    /**
+     * Indique si un autre membre (ex. auteur du sujet) dispose des mêmes pouvoirs « modération forum »
+     * que forum_user_can_moderate() pour la session courante (badges staff).
+     */
+    function forum_user_can_moderate_for_user_id(int $userId, int $tenantId): bool
+    {
+        static $cache = [];
+        $k = $userId . ':' . $tenantId;
+        if (array_key_exists($k, $cache)) {
+            return $cache[$k];
+        }
+        try {
+            $users = \App\Core\Container::get(\App\Repositories\UserRepository::class);
+            $rbac = \App\Core\Container::get(\App\Services\Rbac\RbacService::class);
+            $user = $users->findById($userId, $tenantId);
+            if (!$user || (int) ($user['tenant_id'] ?? 0) !== $tenantId) {
+                return $cache[$k] = false;
+            }
+            $legacy = isset($user['role_id']) && $user['role_id'] !== null && $user['role_id'] !== ''
+                ? (int) $user['role_id'] : null;
+            $ids = $users->tenantRoleIdsForRbac($userId, $legacy);
+            $tenantPerms = $rbac->loadPermissionsForRoles($ids);
+            $sitePerms = $rbac->loadSitePermissionsForEmail((string) ($user['email'] ?? ''));
+            $granted = array_values(array_unique([...$tenantPerms, ...$sitePerms]));
+            $pi = \App\Authorization\PermissionImplication::class;
+            if ($pi::isGranted($granted, 'forum.moderate') || $pi::isGranted($granted, 'forum.moderate_organization')) {
+                return $cache[$k] = true;
+            }
+            if ($pi::isGranted($granted, 'admin.organization') || $pi::isGranted($granted, 'admin.access')) {
+                return $cache[$k] = true;
+            }
+            foreach (\App\Authorization\TenantPermissionCatalog::forumModerateGranularSlugs() as $slug) {
+                if ($pi::isGranted($granted, $slug)) {
+                    return $cache[$k] = true;
+                }
+            }
+            if ($pi::isGranted($granted, 'forum.categories.manage') || $pi::isGranted($granted, 'forum.manage_categories')) {
+                return $cache[$k] = true;
+            }
+
+            return $cache[$k] = false;
+        } catch (\Throwable) {
+            return $cache[$k] = false;
+        }
+    }
+}
+
+if (!function_exists('forum_filter_category_tree_for_user')) {
+    /**
+     * Filtre l’arbre catégories (racines + enfants) selon forum_can_read().
+     *
+     * @param list<array<string,mixed>> $tree
+     * @return list<array<string,mixed>>
+     */
+    function forum_filter_category_tree_for_user(array $tree, int $userId): array
+    {
+        $out = [];
+        foreach ($tree as $root) {
+            if (!function_exists('forum_can_read') || !forum_can_read($userId, $root)) {
+                continue;
+            }
+            $kids = [];
+            foreach ($root['children'] ?? [] as $ch) {
+                if (forum_can_read($userId, $ch)) {
+                    $kids[] = $ch;
+                }
+            }
+            $root['children'] = $kids;
+            $out[] = $root;
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('forum_topic_trend_level')) {
+    /**
+     * @return 'hot'|'active'|null
+     */
+    function forum_topic_trend_level(array $topicRow): ?string
+    {
+        $posts7d = (int) ($topicRow['posts_7d'] ?? 0);
+        $pc = (int) ($topicRow['post_count'] ?? 0);
+        $vc = (int) ($topicRow['view_count'] ?? 0);
+        if ($posts7d >= 8 || ($posts7d >= 4 && $vc >= 120)) {
+            return 'hot';
+        }
+        if ($posts7d >= 3 || $vc >= 200 || $pc >= 25) {
+            return 'active';
+        }
+
+        return null;
     }
 }

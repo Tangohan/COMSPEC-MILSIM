@@ -69,9 +69,6 @@ final class RegisterController
         $confirm = (string) $request->input('password_confirmation');
         $displayName = trim((string) $request->input('display_name'));
         $characterName = trim((string) $request->input('character_name'));
-        $callsign = trim((string) $request->input('callsign'));
-        $primaryRole = trim((string) $request->input('primary_role'));
-        $secondaryRole = trim((string) $request->input('secondary_role'));
 
         $v = new Validator(
             [
@@ -80,9 +77,6 @@ final class RegisterController
                 'password_confirmation' => $confirm,
                 'display_name' => $displayName,
                 'character_name' => $characterName,
-                'callsign' => $callsign,
-                'primary_role' => $primaryRole,
-                'secondary_role' => $secondaryRole,
             ],
             [
                 'email' => 'required|email',
@@ -90,15 +84,12 @@ final class RegisterController
                 'password_confirmation' => 'required',
                 'display_name' => 'required|min:2|max:100',
                 'character_name' => 'required|min:2|max:150',
-                'callsign' => 'required|min:2|max:50',
-                'primary_role' => 'required|min:2|max:100',
-                'secondary_role' => 'max:100',
             ]
         );
         if (!$v->validate() || $password !== $confirm) {
             Session::flash(
                 'error',
-                'Vérifiez les champs : email valide, mot de passe 8+ caractères, confirmation identique, nom affiché et identité RP (nom RP, callsign, rôle principal) correctement renseignés.'
+                'Vérifiez les champs : email valide, mot de passe 8+ caractères, confirmation identique, nom affiché et nom opérateur / RP.'
             );
 
             return Response::redirect(url('register'));
@@ -131,11 +122,6 @@ final class RegisterController
 
             return Response::redirect(url('register'));
         }
-        if ($this->userRepository->callsignExistsInTenant($tenantId, $callsign)) {
-            Session::flash('error', 'Ce callsign est déjà utilisé dans cette communauté.');
-
-            return Response::redirect(url('register'));
-        }
 
         $roleId = $this->roleRepository->getIdBySlug($tenantId, 'member');
         $hash = password_hash($password, PASSWORD_ARGON2ID);
@@ -147,20 +133,17 @@ final class RegisterController
                 'email' => $email,
                 'password_hash' => $hash,
                 'display_name' => $displayName,
-                'callsign' => $callsign,
+                'callsign' => null,
                 'role_id' => $roleId,
                 'status' => 'pending_verification',
             ]);
-            $this->personnelProfileRepository->ensureRecord($userId);
-            $profileData = [
-                'character_name' => $characterName,
-                'callsign' => $callsign,
-                'primary_role' => $primaryRole,
-            ];
-            if ($secondaryRole !== '') {
-                $profileData['secondary_role'] = $secondaryRole;
+            if ($roleId > 0) {
+                $this->userRepository->syncOrganizationRoles($userId, $tenantId, [$roleId]);
             }
-            $this->personnelProfileRepository->update($userId, $profileData);
+            $this->personnelProfileRepository->ensureRecord($userId);
+            $this->personnelProfileRepository->update($userId, [
+                'character_name' => $characterName,
+            ]);
             $pdo->commit();
         } catch (Throwable) {
             $pdo->rollBack();
@@ -173,8 +156,34 @@ final class RegisterController
 
         $rawToken = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $rawToken);
-        $this->emailTokens->deletePendingForUserPurpose($userId, EmailTokenPurpose::REGISTER_CONFIRM);
         $expires = new \DateTimeImmutable('+15 minutes');
+        $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
+        $tenantName = (string) ($tenant['name'] ?? 'Communauté');
+        $emailNorm = strtolower(trim($email));
+        $sentOk = $this->emailService->sendUserRegisterConfirmation(
+            $emailNorm,
+            $displayName,
+            $tenantName,
+            $verifyUrl,
+            15,
+            $tenantId
+        );
+
+        Session::set('register_pending_email', $emailNorm);
+
+        if (!$sentOk) {
+            $detail = trim((string) ($this->emailService->getLastSendError() ?? ''));
+            Session::flash(
+                'error',
+                'Compte créé, mais l’e-mail de confirmation n’a pas pu être envoyé'
+                    . ($detail !== '' ? ' : ' . $detail : '')
+                    . '. Vous pouvez utiliser « Renvoyer le lien » ci-dessous une fois la configuration corrigée.'
+            );
+
+            return Response::redirect(url('register/check-email'));
+        }
+
+        $this->emailTokens->deletePendingForUserPurpose($userId, EmailTokenPurpose::REGISTER_CONFIRM);
         $this->emailTokens->create(
             $tenantId,
             $userId,
@@ -183,18 +192,6 @@ final class RegisterController
             bin2hex(random_bytes(16)),
             $expires
         );
-        $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
-        $tenantName = (string) ($tenant['name'] ?? 'Communauté');
-        $this->emailService->sendUserRegisterConfirmation(
-            strtolower(trim($email)),
-            $displayName,
-            $tenantName,
-            $verifyUrl,
-            15,
-            $tenantId
-        );
-
-        Session::set('register_pending_email', strtolower(trim($email)));
 
         return Response::redirect(url('register/check-email'));
     }

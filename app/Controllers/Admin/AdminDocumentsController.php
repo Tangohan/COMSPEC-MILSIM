@@ -23,6 +23,7 @@ use App\Repositories\DocumentRelationRepository;
 use App\Repositories\DocumentRepository;
 use App\Repositories\EquipmentClassRepository;
 use App\Repositories\RoleRepository;
+use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
@@ -45,6 +46,7 @@ class AdminDocumentsController
         private DocumentAccessService $documentAccessService,
         private EquipmentClassRepository $equipmentRepository,
         private TrainingRepository $trainingRepository,
+        private TrainingCourseRepository $trainingCourseRepository,
         private UnitRepository $unitRepository,
         private UserRepository $userRepository,
         private DocumentUploadService $uploadService,
@@ -121,7 +123,7 @@ class AdminDocumentsController
             'content' => 'admin.documents.upload',
             'title' => 'Upload document',
             'categories' => $this->categoryRepository->listForTenant($tenantId),
-            'trainings' => $this->trainingRepository->listPublishedForTenant($tenantId),
+            'trainings' => $this->trainingLinkSelectOptions($tenantId),
             'equipmentClasses' => $this->equipmentRepository->listForTenant($tenantId),
             'units' => $this->unitRepository->allForTenant($tenantId),
             'users' => $this->userRepository->allForTenant($tenantId),
@@ -318,7 +320,7 @@ class AdminDocumentsController
             'children' => $children,
             'allDocuments' => $allDocuments,
             'categories' => $this->categoryRepository->listForTenant($tenantId),
-            'trainings' => $this->trainingRepository->listPublishedForTenant($tenantId),
+            'trainings' => $this->trainingLinkSelectOptions($tenantId),
             'equipmentClasses' => $this->equipmentRepository->listForTenant($tenantId),
             'units' => $this->unitRepository->allForTenant($tenantId),
             'users' => $this->userRepository->allForTenant($tenantId),
@@ -605,8 +607,9 @@ class AdminDocumentsController
     private function saveLinksFromRequest(int $documentId, int $tenantId, Request $request): void
     {
         $links = [];
-        if ($request->input('link_training')) {
-            $links[] = ['entity_type' => 'training', 'entity_id' => (int) $request->input('link_training')];
+        $trainingParsed = $this->parseTrainingLinkInput(trim((string) $request->input('link_training')));
+        if ($trainingParsed !== null) {
+            $links[] = ['entity_type' => $trainingParsed['entity_type'], 'entity_id' => $trainingParsed['entity_id']];
         }
         if ($request->input('link_equipment_class')) {
             $links[] = ['entity_type' => 'equipment_class', 'entity_id' => (int) $request->input('link_equipment_class')];
@@ -623,6 +626,7 @@ class AdminDocumentsController
     /** @return array<string, mixed> Données document étendues depuis la requête (champs optionnels). */
     private function documentDataFromRequest(Request $request, int $tenantId, int $userId): array
     {
+        $trainingParsed = $this->parseTrainingLinkInput(trim((string) $request->input('link_training')));
         $data = [
             'short_description' => trim((string) $request->input('short_description')) ?: null,
             'document_type' => trim((string) $request->input('document_type')) ?: null,
@@ -634,7 +638,7 @@ class AdminDocumentsController
             'relation_type' => trim((string) $request->input('relation_type')) ?: null,
             'version_label' => trim((string) $request->input('version_label')) ?: null,
             'sort_order' => $request->input('sort_order') !== null && $request->input('sort_order') !== '' ? (int) $request->input('sort_order') : 0,
-            'formation_id' => $request->input('link_training') ? (int) $request->input('link_training') : null,
+            'formation_id' => $trainingParsed !== null && $trainingParsed['entity_type'] === 'training' ? $trainingParsed['entity_id'] : null,
             'equipment_class_id' => $request->input('link_equipment_class') ? (int) $request->input('link_equipment_class') : null,
             'unit_id' => $request->input('link_unit') ? (int) $request->input('link_unit') : null,
             'operator_id' => $request->input('link_user') ? (int) $request->input('link_user') : null,
@@ -749,5 +753,60 @@ class AdminDocumentsController
         }
 
         return $deduped;
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private function trainingLinkSelectOptions(int $tenantId): array
+    {
+        $out = [];
+        foreach ($this->trainingCourseRepository->listForTenant($tenantId, 'published', null, null) as $c) {
+            $out[] = [
+                'value' => 'training_course:' . (int) ($c['id'] ?? 0),
+                'label' => '[LMS] ' . (string) ($c['title'] ?? ''),
+            ];
+        }
+        if (training_legacy_enabled()) {
+            foreach ($this->trainingRepository->listPublishedForTenant($tenantId) as $m) {
+                $out[] = [
+                    'value' => 'training:' . (int) ($m['id'] ?? 0),
+                    'label' => '[Legacy] ' . (string) ($m['title'] ?? ''),
+                ];
+            }
+        }
+
+        return $out;
+    }
+
+    /** @return array{entity_type: string, entity_id: int}|null */
+    private function parseTrainingLinkInput(?string $raw): ?array
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+        $raw = trim($raw);
+        if (str_contains($raw, ':')) {
+            [$type, $id] = explode(':', $raw, 2);
+            $id = (int) trim($id);
+            if ($id <= 0) {
+                return null;
+            }
+            $type = trim($type);
+            if ($type === 'training_course') {
+                return ['entity_type' => 'training_course', 'entity_id' => $id];
+            }
+            if ($type === 'training') {
+                return ['entity_type' => 'training', 'entity_id' => $id];
+            }
+
+            return null;
+        }
+        $id = (int) $raw;
+        if ($id <= 0) {
+            return null;
+        }
+
+        return ['entity_type' => 'training', 'entity_id' => $id];
     }
 }

@@ -83,6 +83,38 @@ class TrainingCourseRepository
         return $row ?: null;
     }
 
+    /** Code de partage (unique sur la plateforme, une formation par code). */
+    public function findByShareCode(string $raw): ?array
+    {
+        $code = function_exists('training_lms_normalize_share_code') ? training_lms_normalize_share_code($raw) : strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $raw) ?? '');
+        if ($code === '') {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM training_courses WHERE enrollment_share_code = ? LIMIT 1');
+        $stmt->execute([$code]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function isEnrollmentShareCodeTaken(string $code, ?int $excludeCourseId = null): bool
+    {
+        $c = function_exists('training_lms_normalize_share_code') ? training_lms_normalize_share_code($code) : '';
+        if ($c === '') {
+            return true;
+        }
+        $sql = 'SELECT 1 FROM training_courses WHERE enrollment_share_code = ?';
+        $params = [$c];
+        if ($excludeCourseId !== null) {
+            $sql .= ' AND id != ?';
+            $params[] = $excludeCourseId;
+        }
+        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute($params);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
     public function findByUuid(string $uuid, ?int $tenantId = null): ?array
     {
         $sql = 'SELECT * FROM training_courses WHERE uuid = ?';
@@ -114,16 +146,19 @@ class TrainingCourseRepository
     {
         $uuid = $data['uuid'] ?? $this->generateUuid();
         $stmt = $this->pdo->prepare(
-            'INSERT INTO training_courses (tenant_id, uuid, title, slug, short_description, description, thumbnail_path, banner_path, category, level, language_code, estimated_minutes, passing_score, is_mandatory, is_certifying, validity_days, visibility, created_by, updated_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO training_courses (tenant_id, uuid, title, slug, course_code, short_description, description, learning_objectives, theme_json, thumbnail_path, banner_path, category, level, language_code, estimated_minutes, passing_score, is_mandatory, is_certifying, validity_days, visibility, created_by, updated_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $tenantId,
             $uuid,
             $data['title'],
             $data['slug'],
+            $data['course_code'] ?? null,
             $data['short_description'] ?? null,
             $data['description'] ?? null,
+            $data['learning_objectives'] ?? null,
+            $data['theme_json'] ?? null,
             $data['thumbnail_path'] ?? null,
             $data['banner_path'] ?? null,
             $data['category'] ?? null,
@@ -145,7 +180,7 @@ class TrainingCourseRepository
     {
         $fields = [];
         $params = [];
-        $allowed = ['title', 'slug', 'short_description', 'description', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by'];
+        $allowed = ['title', 'slug', 'course_code', 'short_description', 'description', 'learning_objectives', 'theme_json', 'enrollment_policy_json', 'enrollment_share_code', 'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by'];
         foreach ($allowed as $k) {
             if (array_key_exists($k, $data)) {
                 $fields[] = "`$k` = ?";

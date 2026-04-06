@@ -42,6 +42,9 @@ $communityShowcasePage = !empty($communityShowcasePage);
     <?php if (is_file(base_path('public/assets/css/portal-nav.css'))): ?>
     <link href="<?= $baseUrl ?>/assets/css/portal-nav.css" rel="stylesheet">
     <?php endif; ?>
+    <?php if (!empty($siteDocsPage) && is_file(base_path('public/assets/css/site-docs.css'))): ?>
+    <link href="<?= $baseUrl ?>/assets/css/site-docs.css" rel="stylesheet">
+    <?php endif; ?>
     <?php
     $alpineLocal = base_path('public/assets/js/alpine.min.js');
     $alpineSrc = is_file($alpineLocal) ? $baseUrl . '/assets/js/alpine.min.js' : 'https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js';
@@ -65,9 +68,17 @@ $communityShowcasePage = !empty($communityShowcasePage);
         ?>
     </main>
     <footer class="border-t border-slate-200 py-6 mt-12">
-        <div class="max-w-5xl mx-auto px-6 text-center text-xs text-slate-500">
-            Athena — SaaS RH tactique MILSIM Arma 3
+        <div class="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-center text-xs text-slate-500">
+            <span>Athena — SaaS RH tactique MILSIM Arma 3</span>
+            <span class="hidden sm:inline text-slate-300" aria-hidden="true">|</span>
+            <span class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 max-w-full">
+                <?php
+                $legal_link_class = 'text-slate-600 hover:text-emerald-700 font-medium';
+                require base_path('views/partials/legal_site_links.php');
+                ?>
+            </span>
         </div>
     </footer>
+    <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

@@ -1,6 +1,8 @@
 <?php
 $user = $user ?? null;
 $userProfile = $userProfile ?? null;
+$userRoleIds = $userRoleIds ?? [];
+$roles = $roles ?? [];
 $completenessAccount = $completenessAccount ?? ($completeness ?? ['score' => 0, 'missing' => [], 'sections_critiques' => []]);
 $completenessPersonnel = $completenessPersonnel ?? null;
 $isServiceAccount = $isServiceAccount ?? false;
@@ -76,8 +78,18 @@ $personnelEditUrl = url('personnel/' . $uid . '/edit');
                 <dd><?= htmlspecialchars($userProfile['first_name'] ?? '—') ?></dd>
                 <dt class="text-slate-500">Nom</dt>
                 <dd><?= htmlspecialchars($userProfile['last_name'] ?? '—') ?></dd>
-                <dt class="text-slate-500">Rôle</dt>
-                <dd><?= htmlspecialchars($user['role_name'] ?? '—') ?></dd>
+            <dt class="text-slate-500">Rôles</dt>
+            <dd>
+                <?php
+                $roleNames = [];
+                foreach ($roles as $rr) {
+                    if (in_array((int) ($rr['id'] ?? 0), $userRoleIds, true)) {
+                        $roleNames[] = (string) ($rr['name'] ?? '');
+                    }
+                }
+                echo $roleNames !== [] ? htmlspecialchars(implode(', ', $roleNames)) : '—';
+                ?>
+            </dd>
                 <dt class="text-slate-500">Statut</dt>
                 <dd><span class="px-2 py-0.5 text-xs rounded <?= ($user['status'] ?? '') === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600' ?>"><?= htmlspecialchars($user['status'] ?? '—') ?></span></dd>
             </dl>

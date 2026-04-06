@@ -213,10 +213,7 @@ class CommunityController
         }
         $user = $this->authService->user();
         if ($user) {
-            $this->rbacService->setPermissionsForGate(
-                !empty($user['role_id']) ? (int) $user['role_id'] : null,
-                (string) ($user['email'] ?? '')
-            );
+            $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
         return Response::redirect(url('forum'));
     }
@@ -242,10 +239,7 @@ class CommunityController
         }
         $user = $this->authService->user();
         if ($user) {
-            $this->rbacService->setPermissionsForGate(
-                !empty($user['role_id']) ? (int) $user['role_id'] : null,
-                (string) ($user['email'] ?? '')
-            );
+            $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
 
         return Response::redirect(url('c/' . $slug . '/enlistment'));
@@ -583,10 +577,7 @@ class CommunityController
             return Response::redirect(url('communities/create'));
         }
         $this->authService->loginUser($u);
-        $this->rbacService->setPermissionsForGate(
-            !empty($u['role_id']) ? (int) $u['role_id'] : null,
-            (string) ($u['email'] ?? '')
-        );
+        $this->rbacService->setPermissionsForGateFromUserRow($u, $this->userRepository);
         $this->pendingCommunityRepository->deleteById((int) $pending['id']);
         Session::forget('pending_referrer_code');
         Session::flash('success', 'Paiement confirmé. Votre communauté est prête.');
@@ -606,10 +597,7 @@ class CommunityController
         $u = $this->userRepository->findById($newUserId, $tenantId);
         if ($u) {
             $this->authService->loginUser($u);
-            $this->rbacService->setPermissionsForGate(
-                !empty($u['role_id']) ? (int) $u['role_id'] : null,
-                (string) ($u['email'] ?? '')
-            );
+            $this->rbacService->setPermissionsForGateFromUserRow($u, $this->userRepository);
         }
         $audit = \App\Core\Container::get(AuditService::class);
         $audit->log(AuditAction::TENANT_CREATED, $tenantId, $newUserId, 'tenant', $tenantId, null, (string) $name);
@@ -701,10 +689,7 @@ class CommunityController
         }
         $user = $this->authService->user();
         if ($user) {
-            $this->rbacService->setPermissionsForGate(
-                !empty($user['role_id']) ? (int) $user['role_id'] : null,
-                (string) ($user['email'] ?? '')
-            );
+            $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
         Session::flash('success', 'Communauté active mise à jour.');
         return Response::redirect(url('dashboard'));
@@ -730,10 +715,7 @@ class CommunityController
         }
         $user = $this->authService->user();
         if ($user) {
-            $this->rbacService->setPermissionsForGate(
-                !empty($user['role_id']) ? (int) $user['role_id'] : null,
-                (string) ($user['email'] ?? '')
-            );
+            $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
         $settings = [];
         if (!empty($tenant['settings'])) {

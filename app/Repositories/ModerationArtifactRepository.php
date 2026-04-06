@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\Moderation\ModerationSourceType;
 use PDO;
 
 class ModerationArtifactRepository
@@ -92,6 +93,33 @@ class ModerationArtifactRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
+    }
+
+    /**
+     * Fichier téléversé forum prêt à être rattaché à un message (même utilisateur / tenant).
+     */
+    public function findForumUploadByUserKey(int $tenantId, int $userId, string $sourceKey): ?array
+    {
+        if (!$this->tableExists()) {
+            return null;
+        }
+        $sourceKey = basename($sourceKey);
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM moderation_artifacts WHERE tenant_id = ? AND user_id = ? AND source_type = ? AND source_key = ? AND state IN ('clean','approved_override') LIMIT 1"
+        );
+        $stmt->execute([$tenantId, $userId, ModerationSourceType::FORUM_UPLOAD, $sourceKey]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function updateForumUploadSourcePostId(int $artifactId, int $tenantId, int $postId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE moderation_artifacts SET source_id = ? WHERE id = ? AND tenant_id = ? AND source_type = ?'
+        );
+
+        return $stmt->execute([$postId, $artifactId, $tenantId, ModerationSourceType::FORUM_UPLOAD]);
     }
 
     public function findByDocumentVersionId(int $versionId): ?array

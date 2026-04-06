@@ -6,6 +6,7 @@ use App\Core\Container;
 use App\Core\Session;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Alerts\AccountProfileAlertsBuilder;
 use App\Services\Alerts\AlertPresentationService;
 
 /**
@@ -51,6 +52,18 @@ function portal_header_context(): array
         $alerts = [];
     }
 
+    $uid = (int) (Session::get('user_id') ?? 0);
+    if ($uid > 0 && $tid > 0) {
+        try {
+            $accountAlerts = Container::get(AccountProfileAlertsBuilder::class)->build($uid, $tid);
+            if ($accountAlerts !== []) {
+                $alerts = array_merge($alerts, $accountAlerts);
+            }
+        } catch (\Throwable) {
+            // ignore
+        }
+    }
+
     $severity = 'info';
     foreach ($alerts as $a) {
         $k = (string) ($a['kind'] ?? '');
@@ -59,6 +72,9 @@ function portal_header_context(): array
             break;
         }
         if ($k === 'discount' && $severity !== 'urgent') {
+            $severity = 'discount';
+        }
+        if (($a['scope'] ?? '') === 'Compte' && $k === 'novelty' && ! in_array($severity, ['urgent', 'discount'], true)) {
             $severity = 'discount';
         }
     }

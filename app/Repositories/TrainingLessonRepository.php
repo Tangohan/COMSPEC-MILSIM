@@ -43,16 +43,20 @@ class TrainingLessonRepository
     {
         $position = $data['position'] ?? $this->getMaxPosition($moduleId) + 1;
         $stmt = $this->pdo->prepare(
-            'INSERT INTO training_lessons (module_id, title, lesson_type, content, external_url, duration_minutes, position, is_required)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO training_lessons (module_id, title, summary, learning_objectives, instructor_notes, lesson_type, content, external_url, duration_minutes, difficulty, position, is_required)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $moduleId,
             $data['title'],
+            $data['summary'] ?? null,
+            $data['learning_objectives'] ?? null,
+            $data['instructor_notes'] ?? null,
             $data['lesson_type'] ?? 'richtext',
             $data['content'] ?? null,
             $data['external_url'] ?? null,
             (int) ($data['duration_minutes'] ?? 0),
+            $data['difficulty'] ?? null,
             $position,
             (int) ($data['is_required'] ?? 1),
         ]);
@@ -61,7 +65,7 @@ class TrainingLessonRepository
 
     public function update(int $id, array $data): void
     {
-        $allowed = ['title', 'lesson_type', 'content', 'external_url', 'duration_minutes', 'position', 'is_required'];
+        $allowed = ['title', 'summary', 'learning_objectives', 'instructor_notes', 'lesson_type', 'content', 'external_url', 'duration_minutes', 'difficulty', 'position', 'is_required'];
         $fields = [];
         $params = [];
         foreach ($allowed as $k) {
@@ -82,6 +86,15 @@ class TrainingLessonRepository
     {
         $stmt = $this->pdo->prepare('DELETE FROM training_lessons WHERE id = ?');
         $stmt->execute([$id]);
+    }
+
+    /** @param list<int> $idOrder IDs dans l’ordre souhaité */
+    public function reorder(int $moduleId, array $idOrder): void
+    {
+        foreach ($idOrder as $pos => $id) {
+            $stmt = $this->pdo->prepare('UPDATE training_lessons SET position = ? WHERE id = ? AND module_id = ?');
+            $stmt->execute([$pos + 1, $id, $moduleId]);
+        }
     }
 
     /** Retourne la leçon précédente dans le même module (position < current). */

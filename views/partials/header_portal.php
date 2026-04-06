@@ -19,10 +19,7 @@ $ctx = $loggedIn ? portal_header_context() : [
     'display_name' => '',
 ];
 
-$brandTagline = trim((string) ($nav['brand']['tagline'] ?? ''));
 $alertsSeverity = (string) ($ctx['alerts_severity'] ?? 'info');
-$brandName = trim((string) ($nav['brand']['name'] ?? 'Athena'));
-$brandMonogram = mb_strtoupper(mb_substr($brandName !== '' ? $brandName : 'A', 0, 1));
 
 $defaultAccent = 'slate';
 ?>
@@ -32,26 +29,10 @@ $defaultAccent = 'slate';
     <div class="portal-nav__shell">
         <div class="mx-auto max-w-[1800px] px-4 sm:px-6">
             <div class="flex flex-col gap-2 py-2 lg:flex-row lg:items-center lg:gap-4 lg:py-3 xl:grid xl:min-h-[4.5rem] xl:grid-cols-[minmax(0,19.5rem)_minmax(0,1fr)_auto] xl:items-center xl:gap-5 xl:py-3">
-                <div class="flex min-w-0 max-w-[19rem] shrink-0 items-center overflow-hidden" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
+                <div class="flex min-w-0 shrink-0 items-center overflow-hidden" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
                     <a href="<?= htmlspecialchars($nav['brand']['href']) ?>"
-                       class="portal-nav__brand-link group flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50/95 px-2.5 py-2 shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-200 hover:border-emerald-300/60 hover:from-white hover:to-emerald-50/30 hover:shadow-md hover:ring-emerald-600/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">
-                        <span class="portal-nav__brand-monogram flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[15px] font-black tabular-nums tracking-tight text-white"
-                              aria-hidden="true"><?= htmlspecialchars($brandMonogram) ?></span>
-                        <span class="min-w-0 flex flex-col text-left leading-tight">
-                            <span class="text-[0.8125rem] font-black uppercase tracking-[0.14em] text-slate-900 transition-colors group-hover:text-emerald-950">
-                                <?= htmlspecialchars($brandName) ?>
-                            </span>
-                            <?php if (trim((string) ($nav['brand']['subtitle'] ?? '')) !== ''): ?>
-                                <span class="mt-0.5 line-clamp-2 text-[11px] font-medium leading-snug text-slate-500 group-hover:text-slate-600">
-                                    <?= htmlspecialchars((string) $nav['brand']['subtitle']) ?>
-                                </span>
-                            <?php endif; ?>
-                            <?php if ($brandTagline !== ''): ?>
-                                <span class="mt-1 line-clamp-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-700/80">
-                                    <?= htmlspecialchars($brandTagline) ?>
-                                </span>
-                            <?php endif; ?>
-                        </span>
+                       class="text-xl font-black tracking-tight text-slate-900 transition-colors hover:text-sky-700 focus:outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:ring-offset-2">
+                        ATHENA <span class="text-sky-600">SI</span>
                     </a>
                 </div>
 
@@ -69,9 +50,13 @@ $defaultAccent = 'slate';
                             <?php if (($item['type'] ?? '') === 'link'): ?>
                                 <li class="flex items-center" data-accent="<?= htmlspecialchars($accent) ?>">
                                     <a href="<?= htmlspecialchars((string) $item['href']) ?>"
-                                       class="portal-nav__link--simple inline-flex min-h-[2.75rem] items-center rounded-lg px-3 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:text-slate-950"
-                                       data-active="<?= $active ? '1' : '0' ?>">
+                                       class="portal-nav__link--simple inline-flex min-h-[2.5rem] items-center rounded-lg px-2.5 py-2 text-[12px] font-semibold text-slate-800 transition-colors hover:text-slate-950 sm:px-3 sm:text-[13px]"
+                                       data-active="<?= $active ? '1' : '0' ?>"
+                                       <?php if (!empty($item['description'])): ?>title="<?= htmlspecialchars((string) $item['description']) ?>"<?php endif; ?>>
                                         <?= htmlspecialchars((string) $item['label']) ?>
+                                        <?php if (!empty($item['badge'])): ?>
+                                        <span class="ml-1.5 inline-flex items-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white"><?= htmlspecialchars((string) $item['badge']) ?></span>
+                                        <?php endif; ?>
                                     </a>
                                 </li>
                             <?php else: ?>
@@ -86,24 +71,28 @@ $defaultAccent = 'slate';
                                     data-accent="<?= htmlspecialchars($accent) ?>">
                                     <button type="button"
                                             id="<?= $triggerId ?>"
-                                            class="portal-nav__link--mega inline-flex items-center gap-0 rounded-lg border-0 bg-transparent p-0 text-[13px] font-semibold text-slate-600 transition-colors hover:text-slate-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+                                            class="portal-nav__link--mega inline-flex items-center gap-0 rounded-lg border-0 bg-transparent p-0 text-[12px] font-semibold text-slate-800 transition-colors hover:text-slate-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/45 sm:text-[13px]"
                                             aria-expanded="false"
                                             aria-haspopup="true"
                                             aria-controls="<?= $panelId ?>"
                                             data-nav-trigger
                                             data-active="<?= $active ? '1' : '0' ?>">
-                                        <span class="portal-nav__trigger-inner relative flex items-center gap-1.5 rounded-lg px-2.5 py-2">
+                                        <span class="portal-nav__trigger-inner relative flex items-center gap-1.5 rounded-lg px-2 py-1.5 sm:px-2.5 sm:py-2">
                                             <?php if ($iconName !== ''): ?>
-                                                <span class="text-slate-500 [&>svg]:opacity-90" style="color: var(--nav-accent, #64748b);"><?= nav_icon_svg($iconName, 'h-4 w-4') ?></span>
+                                                <span class="text-slate-400 [&>svg]:opacity-90" style="color: var(--nav-accent, #94a3b8);"><?= nav_icon_svg($iconName, 'h-4 w-4') ?></span>
                                             <?php endif; ?>
-                                            <span><?= htmlspecialchars((string) $item['label']) ?></span>
-                                            <svg class="h-4 w-4 shrink-0 text-slate-400 transition group-hover/nav:text-slate-700 group-[.nav-mega-is-open]/nav:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <span class="inline-flex items-center gap-1.5"><?= htmlspecialchars((string) $item['label']) ?>
+                                            <?php if (!empty($item['badge'])): ?>
+                                            <span class="inline-flex items-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white"><?= htmlspecialchars((string) $item['badge']) ?></span>
+                                            <?php endif; ?>
+                                            </span>
+                                            <svg class="h-4 w-4 shrink-0 text-slate-600 transition group-hover/nav:text-slate-900 group-[.nav-mega-is-open]/nav:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.51a.75.75 0 01-1.08 0l-4.25-4.51a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
                                             </svg>
                                         </span>
                                     </button>
                                     <div id="<?= $panelId ?>"
-                                         class="nav-mega-panel pointer-events-none invisible absolute left-0 top-full z-50 mt-1.5 w-[min(1080px,calc(100vw-1.5rem))] max-w-[1080px] translate-y-1 opacity-0 transition-all duration-200 ease-out group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:translate-y-0 group-hover/nav:opacity-100 group-focus-within/nav:pointer-events-auto group-focus-within/nav:visible group-focus-within/nav:translate-y-0 group-focus-within/nav:opacity-100 group-[.nav-mega-is-open]/nav:pointer-events-auto group-[.nav-mega-is-open]/nav:visible group-[.nav-mega-is-open]/nav:translate-y-0 group-[.nav-mega-is-open]/nav:opacity-100"
+                                         class="nav-mega-panel pointer-events-none invisible absolute left-1/2 top-full z-50 mt-1.5 w-[min(60rem,calc(100vw-1.25rem))] max-w-[calc(100vw-1rem)] -translate-x-1/2 translate-y-1 opacity-0 transition-all duration-200 ease-out group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:-translate-x-1/2 group-hover/nav:translate-y-0 group-hover/nav:opacity-100 group-focus-within/nav:pointer-events-auto group-focus-within/nav:visible group-focus-within/nav:-translate-x-1/2 group-focus-within/nav:translate-y-0 group-focus-within/nav:opacity-100 group-[.nav-mega-is-open]/nav:pointer-events-auto group-[.nav-mega-is-open]/nav:visible group-[.nav-mega-is-open]/nav:-translate-x-1/2 group-[.nav-mega-is-open]/nav:translate-y-0 group-[.nav-mega-is-open]/nav:opacity-100"
                                          data-nav-panel
                                          data-accent="<?= htmlspecialchars($accent) ?>"
                                          role="region"
@@ -116,35 +105,23 @@ $defaultAccent = 'slate';
                     </ul>
                 </nav>
 
-                <div class="flex w-full min-w-0 shrink-0 items-center justify-end justify-self-end gap-2 sm:gap-3 lg:ml-auto lg:w-auto xl:ml-0">
-                    <?php if (!empty($nav['search']['enabled'])): ?>
-                        <form method="<?= htmlspecialchars(strtoupper($nav['search']['method'])) ?>"
-                              action="<?= htmlspecialchars($nav['search']['action']) ?>"
-                              class="hidden min-w-0 max-w-[14rem] flex-1 md:flex lg:max-w-xs"
-                              role="search">
-                            <div class="flex w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition focus-within:border-sky-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-sky-100">
-                                <input type="search"
-                                       name="<?= htmlspecialchars($nav['search']['param']) ?>"
-                                       value="<?= htmlspecialchars((string) ($_GET[$nav['search']['param']] ?? '')) ?>"
-                                       placeholder="<?= htmlspecialchars($nav['search']['placeholder']) ?>"
-                                       class="h-10 w-full min-w-0 border-0 bg-transparent px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                                       autocomplete="off"
-                                       aria-label="Recherche portail">
-                                <button type="submit"
-                                        class="inline-flex w-10 shrink-0 items-center justify-center border-l border-slate-200 text-slate-500 transition hover:bg-sky-600 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-sky-600"
-                                        aria-label="Lancer la recherche">
-                                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                        <path fill-rule="evenodd" d="M8.5 3a5.5 5.5 0 104.24 9.01l3.62 3.62a.75.75 0 101.06-1.06l-3.62-3.62A5.5 5.5 0 008.5 3zm-4 5.5a4 4 0 118 0 4 4 0 01-8 0z" clip-rule="evenodd"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </form>
+                <div class="flex w-full min-w-0 shrink-0 items-center justify-end justify-self-end gap-2.5 sm:gap-4 lg:ml-auto lg:w-auto xl:ml-0">
+                    <?php if (!empty($nav['search']['shortcut'])): ?>
+                        <a href="<?= htmlspecialchars($nav['search']['action']) ?>"
+                           class="hidden shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 md:inline-flex"
+                           data-portal-search-url
+                           title="Recherche portail"
+                           aria-label="Ouvrir la recherche portail (Ctrl+K)">
+                            <kbd class="pointer-events-none inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded border border-slate-200 bg-slate-100 px-1 font-mono text-[9px] font-bold tracking-wide text-slate-800">Ctrl</kbd>
+                            <span class="text-[10px] font-medium text-slate-400" aria-hidden="true">+</span>
+                            <kbd class="pointer-events-none inline-flex h-6 min-w-[1.25rem] items-center justify-center rounded border border-slate-200 bg-slate-100 px-1 font-mono text-[9px] font-bold text-slate-800">K</kbd>
+                        </a>
                     <?php endif; ?>
 
                     <?php if ($loggedIn): ?>
                         <div class="relative" data-portal-alerts-wrap>
                             <button type="button"
-                                    class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+                                    class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-600 bg-slate-800/90 text-slate-300 shadow-sm transition hover:bg-slate-700 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
                                     data-portal-alerts-trigger
                                     aria-expanded="false"
                                     aria-controls="portal-alerts-dropdown"
@@ -194,12 +171,12 @@ $defaultAccent = 'slate';
                         <a href="<?= htmlspecialchars($baseUrl) ?>/account"
                            class="group hidden items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 transition hover:border-slate-200 hover:bg-slate-50 sm:flex">
                             <div class="max-w-[140px] text-right">
-                                <p class="truncate text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Session</p>
+                                <p class="truncate text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Session</p>
                                 <p class="truncate text-xs font-semibold text-slate-900" title="<?= htmlspecialchars($ctx['display_name']) ?>">
                                     <?= htmlspecialchars($ctx['display_name'] !== '' ? $ctx['display_name'] : 'Compte') ?>
                                 </p>
                             </div>
-                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition group-hover:border-sky-200 group-hover:text-sky-800">
+                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 transition group-hover:border-sky-400 group-hover:bg-white group-hover:text-sky-700">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                 </svg>
@@ -209,7 +186,7 @@ $defaultAccent = 'slate';
                         <form method="post" action="<?= htmlspecialchars($baseUrl) ?>/logout" class="flex items-center">
                             <?= \App\Core\Csrf::field() ?>
                             <button type="submit"
-                                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400"
+                                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400"
                                     aria-label="Déconnexion">
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -218,13 +195,13 @@ $defaultAccent = 'slate';
                         </form>
                     <?php else: ?>
                         <a href="<?= htmlspecialchars($baseUrl) ?>/login"
-                           class="rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600">
+                           class="rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">
                             Connexion
                         </a>
                     <?php endif; ?>
 
                     <button type="button"
-                            class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 shadow-sm transition hover:bg-slate-50 xl:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+                            class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 shadow-sm transition hover:bg-slate-50 xl:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
                             data-mobile-nav-toggle
                             aria-expanded="false"
                             aria-controls="portal-nav-drawer"
@@ -263,24 +240,33 @@ $defaultAccent = 'slate';
             </button>
         </div>
         <div class="flex-1 overflow-y-auto px-3 py-4">
+            <?php if (!empty($loggedIn)): ?>
+            <p class="mb-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] leading-snug text-slate-600">
+                <span class="font-bold text-slate-800">Périmètre des accès :</span>
+                seuls les modules autorisés pour votre profil sont listés ci-dessous (communauté de session).
+            </p>
+            <?php endif; ?>
             <?php foreach ($nav['menu'] as $item): ?>
                 <?php
                 $mAccent = ($item['type'] ?? '') === 'mega' ? (string) ($item['accent'] ?? 'slate') : 'slate';
                 ?>
                 <?php if (($item['type'] ?? '') === 'link'): ?>
                     <a href="<?= htmlspecialchars((string) $item['href']) ?>"
-                       class="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">
+                       class="flex flex-wrap items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-50">
                         <?= htmlspecialchars((string) $item['label']) ?>
+                        <?php if (!empty($item['badge'])): ?>
+                        <span class="inline-flex items-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white"><?= htmlspecialchars((string) $item['badge']) ?></span>
+                        <?php endif; ?>
                     </a>
                 <?php else: ?>
                     <?php $accId = htmlspecialchars((string) ($item['id'] ?? '') . '-acc'); ?>
                     <div class="border-b border-slate-100 py-1" data-mobile-accordion data-accent="<?= htmlspecialchars($mAccent) ?>">
                         <button type="button"
-                                class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                                class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-slate-900 hover:bg-slate-50"
                                 aria-expanded="false"
                                 aria-controls="<?= $accId ?>"
                                 data-mobile-accordion-trigger>
-                            <span class="flex items-center gap-2">
+                            <span class="flex flex-wrap items-center gap-2">
                                 <?php
                                 $mi = (string) ($item['icon'] ?? '');
                                 if ($mi !== '') {
@@ -288,6 +274,9 @@ $defaultAccent = 'slate';
                                 }
                                 ?>
                                 <?= htmlspecialchars((string) $item['label']) ?>
+                                <?php if (!empty($item['badge'])): ?>
+                                <span class="inline-flex items-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white"><?= htmlspecialchars((string) $item['badge']) ?></span>
+                                <?php endif; ?>
                             </span>
                             <svg class="h-4 w-4 text-slate-400 transition" data-mobile-accordion-icon viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.51a.75.75 0 01-1.08 0l-4.25-4.51a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>

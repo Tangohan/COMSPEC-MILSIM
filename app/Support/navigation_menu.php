@@ -241,7 +241,7 @@ function navigation_image_file_exists(string $relativePath): bool
 }
 
 /**
- * @return array{brand: array{name: string, subtitle: string, href: string}, search: array{enabled: bool, placeholder: string, action: string, method: string, param: string}, menu: list<array<string, mixed>>}
+ * @return array{brand: array{name: string, subtitle: string, href: string}, search: array{enabled: bool, shortcut: bool, placeholder: string, action: string, method: string, param: string}, menu: list<array<string, mixed>>}
  */
 function build_navigation_menu(): array
 {
@@ -259,8 +259,10 @@ function build_navigation_menu(): array
 
     $searchRaw = $raw['search'] ?? [];
     $searchPath = (string) ($searchRaw['path'] ?? 'search');
+    $searchOn = !empty($searchRaw['enabled']) && $loggedIn;
     $builtSearch = [
-        'enabled' => !empty($searchRaw['enabled']) && $loggedIn,
+        'enabled' => $searchOn,
+        'shortcut' => $searchOn && !empty($searchRaw['shortcut']),
         'placeholder' => (string) ($searchRaw['placeholder'] ?? ''),
         'action' => url($searchPath),
         'method' => strtolower((string) ($searchRaw['method'] ?? 'get')),
@@ -287,12 +289,13 @@ function build_navigation_menu(): array
                     'active_match' => $item['active_match'] ?? null,
                     'permission' => $item['permission'] ?? null,
                     'any_permissions' => $item['any_permissions'] ?? null,
+                    'description' => $item['description'] ?? null,
                 ], static fn ($v) => $v !== null)
             ));
             if ($link === null) {
                 continue;
             }
-            $menuOut[] = [
+            $linkItem = [
                 'type' => 'link',
                 'label' => (string) ($item['label'] ?? ''),
                 'href' => $link['href'],
@@ -300,6 +303,14 @@ function build_navigation_menu(): array
                 'active_match' => $link['active_match'],
                 'id' => 'nav-top-' . $idx,
             ];
+            if (!empty($link['description'])) {
+                $linkItem['description'] = (string) $link['description'];
+            }
+            $badge = trim((string) ($item['badge'] ?? ''));
+            if ($badge !== '') {
+                $linkItem['badge'] = $badge;
+            }
+            $menuOut[] = $linkItem;
             continue;
         }
 
@@ -347,7 +358,7 @@ function build_navigation_menu(): array
                 continue;
             }
 
-            $menuOut[] = [
+            $megaItem = [
                 'type' => 'mega',
                 'label' => (string) ($item['label'] ?? ''),
                 'icon' => (string) ($item['icon'] ?? ''),
@@ -358,6 +369,11 @@ function build_navigation_menu(): array
                 'featured' => $featured,
                 'id' => 'nav-mega-' . $idx,
             ];
+            $badge = trim((string) ($item['badge'] ?? ''));
+            if ($badge !== '') {
+                $megaItem['badge'] = $badge;
+            }
+            $menuOut[] = $megaItem;
         }
     }
 
@@ -366,6 +382,95 @@ function build_navigation_menu(): array
         'search' => $builtSearch,
         'menu' => $menuOut,
     ];
+}
+
+/**
+ * Liens du menu portail effectivement autorisés pour l’utilisateur courant (Gate),
+ * pour affichage « périmètre des accès » (tiroir accueil, synthèses, etc.).
+ *
+ * @return list<array{label: string, href: string, routePath: string, group: string}>
+ */
+function navigation_scope_drawer_entries(): array
+{
+    $nav = build_navigation_menu();
+    $seen = [];
+    $out = [];
+
+    foreach ($nav['menu'] ?? [] as $item) {
+        $type = (string) ($item['type'] ?? 'link');
+        if ($type === 'link') {
+            $rp = (string) ($item['path'] ?? '');
+            if ($rp === '') {
+                $rp = '/';
+            }
+            if (isset($seen[$rp])) {
+                continue;
+            }
+            $seen[$rp] = true;
+            $out[] = [
+                'label' => (string) ($item['label'] ?? ''),
+                'href' => (string) ($item['href'] ?? ''),
+                'routePath' => $rp,
+                'group' => 'Accès directs',
+            ];
+
+            continue;
+        }
+
+        if ($type !== 'mega') {
+            continue;
+        }
+
+        $megaLabel = (string) ($item['label'] ?? '');
+        foreach ($item['sections'] ?? [] as $section) {
+            if (!is_array($section)) {
+                continue;
+            }
+            $secTitle = (string) ($section['title'] ?? '');
+            foreach ($section['links'] ?? [] as $link) {
+                if (!is_array($link)) {
+                    continue;
+                }
+                $rp = (string) ($link['path'] ?? '');
+                if ($rp === '') {
+                    continue;
+                }
+                $dedupe = preg_replace('/#.*$/', '', $rp) ?: $rp;
+                if (isset($seen[$dedupe])) {
+                    continue;
+                }
+                $seen[$dedupe] = true;
+                $group = trim($megaLabel . ($secTitle !== '' ? ' · ' . $secTitle : ''));
+
+                $out[] = [
+                    'label' => (string) ($link['label'] ?? ''),
+                    'href' => (string) ($link['href'] ?? ''),
+                    'routePath' => $rp,
+                    'group' => $group !== '' ? $group : $megaLabel,
+                ];
+            }
+        }
+    }
+
+    return $out;
+}
+
+/**
+ * @param list<array{label: string, href: string, routePath: string, group: string}> $entries
+ * @return array<string, list<array{label: string, href: string, routePath: string, group: string}>>
+ */
+function navigation_scope_group_entries(array $entries): array
+{
+    $groups = [];
+    foreach ($entries as $e) {
+        $g = (string) ($e['group'] ?? 'Autres');
+        if (!isset($groups[$g])) {
+            $groups[$g] = [];
+        }
+        $groups[$g][] = $e;
+    }
+
+    return $groups;
 }
 
 /**

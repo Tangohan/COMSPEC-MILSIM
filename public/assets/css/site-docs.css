@@ -1,0 +1,254 @@
+/**
+ * Guide utilisateur du portail — lecture confortable, style “documentation”.
+ * Préfixe .site-docs pour éviter les collisions avec le reste du site.
+ */
+.site-docs {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  color: rgb(15 23 42);
+}
+
+.site-docs .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.site-docs__shell {
+  max-width: 88rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 4rem;
+}
+
+@media (min-width: 1024px) {
+  .site-docs__shell {
+    display: grid;
+    grid-template-columns: minmax(0, 16.5rem) minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: start;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.site-docs__hero {
+  grid-column: 1 / -1;
+  margin-bottom: 0.5rem;
+  padding-top: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgb(226 232 240);
+}
+
+.site-docs__hero h1 {
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: rgb(15 23 42);
+}
+
+.site-docs__hero p {
+  margin-top: 0.75rem;
+  max-width: 42rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: rgb(71 85 105);
+}
+
+.site-docs__search {
+  margin-top: 1rem;
+  max-width: 28rem;
+}
+
+.site-docs__search input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.875rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.site-docs__search input::placeholder {
+  color: rgb(148 163 184);
+}
+
+.site-docs__sidebar {
+  position: sticky;
+  top: 5rem;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  padding: 1rem 0 2rem;
+  border-radius: 1rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+@media (max-width: 1023px) {
+  .site-docs__sidebar {
+    position: relative;
+    top: 0;
+    max-height: none;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.site-docs__sidebar-title {
+  padding: 0 1rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(100 116 139);
+}
+
+.site-docs__toc {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+}
+
+.site-docs__toc li {
+  margin: 0;
+}
+
+.site-docs__toc a {
+  display: block;
+  padding: 0.4rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(71 85 105);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.site-docs__toc a:hover,
+.site-docs__toc a:focus-visible {
+  background: rgb(248 250 252);
+  color: rgb(2 132 199);
+  outline: none;
+}
+
+.site-docs__toc a.site-docs__toc--hidden {
+  display: none;
+}
+
+.site-docs__toc a[aria-current='true'] {
+  border-left-color: rgb(14 165 233);
+  color: rgb(3 105 161);
+  background: rgb(240 249 255);
+}
+
+.site-docs__ref-link {
+  margin-top: 1rem;
+  padding: 0 1rem 0.5rem;
+  font-size: 0.75rem;
+  color: rgb(100 116 139);
+}
+
+.site-docs__ref-link a {
+  color: rgb(2 132 199);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-docs__main {
+  min-width: 0;
+  padding-bottom: 3rem;
+}
+
+.site-docs__section {
+  scroll-margin-top: 6rem;
+  padding-top: 2.5rem;
+  margin-top: 0;
+}
+
+.site-docs__section:first-of-type {
+  padding-top: 0;
+}
+
+.site-docs__section h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: rgb(15 23 42);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgb(241 245 249);
+}
+
+.site-docs__section h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: rgb(30 41 59);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.site-docs__section p {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: rgb(51 65 85);
+  margin-bottom: 0.85rem;
+}
+
+.site-docs__section ul,
+.site-docs__section ol {
+  margin: 0.5rem 0 1rem 1.15rem;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: rgb(51 65 85);
+}
+
+.site-docs__section li {
+  margin-bottom: 0.35rem;
+}
+
+.site-docs__callout {
+  margin: 1.25rem 0;
+  padding: 1rem 1.1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(248 250 252);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgb(71 85 105);
+}
+
+.site-docs__callout--tip {
+  border-color: rgb(165 243 252);
+  background: rgb(236 254 255);
+  color: rgb(22 78 99);
+}
+
+.site-docs__callout strong {
+  font-weight: 700;
+  color: rgb(15 23 42);
+}
+
+.site-docs__kbd {
+  display: inline-block;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+  font-family: ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgb(71 85 105);
+}

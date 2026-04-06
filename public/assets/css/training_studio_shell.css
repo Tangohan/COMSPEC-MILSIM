@@ -1,0 +1,451 @@
+/**
+ * Training Studio — shell type « créateur » (sidebar sombre + zone principale claire).
+ */
+
+.training-studio-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 55;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.training-studio-topbar__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 90rem;
+  margin: 0 auto;
+  padding: 0.65rem 1rem;
+}
+
+.training-studio-topbar__toggle {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #0f172a;
+  font-weight: 900;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.training-studio-topbar__toggle:hover {
+  background: #f1f5f9;
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+.training-studio-topbar__titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.training-studio-topbar__kicker {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.training-studio-topbar__title {
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.training-studio-topbar__portal {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #059669;
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.06);
+  transition: background 0.15s, color 0.15s;
+}
+
+.training-studio-topbar__portal:hover {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.training-studio-intro {
+  padding: 1.25rem 1.35rem;
+}
+
+/* Aperçu caviardé (Studio) */
+.training-preview-redact-block {
+  min-height: 4.5rem;
+  filter: grayscale(0.15);
+}
+
+.training-preview-redact-block p {
+  letter-spacing: 0.02em;
+}
+
+.training-studio-app {
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Mobile : sidebar en overlay (fixed), une seule colonne pour le contenu */
+.training-studio-app__grid {
+  display: block;
+  min-height: inherit;
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  .training-studio-app__grid {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .training-studio-app:not(.training-studio-app--sidebar-open) .training-studio-app__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Sans ceci, la zone principale reste en « colonne 2 » (lg:col-start-2) : la 1re colonne reste vide. */
+  .training-studio-app:not(.training-studio-app--sidebar-open) .training-studio-main {
+    grid-column: 1 / -1;
+  }
+
+  .training-studio-app:not(.training-studio-app--sidebar-open) .training-studio-sidebar-host {
+    display: none;
+  }
+
+  .training-studio-app:not(.training-studio-app--sidebar-open) .training-studio-sidebar--drawer {
+    display: none;
+  }
+}
+
+/* Sidebar */
+.training-studio-sidebar {
+  background: linear-gradient(180deg, #0b1220 0%, #050810 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  z-index: 45;
+}
+
+.training-studio-sidebar__brand {
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.training-studio-sidebar__kicker {
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #34d399;
+  margin-bottom: 0.5rem;
+}
+
+.training-studio-sidebar__title {
+  font-size: 1.125rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.training-studio-sidebar__sub {
+  font-size: 0.6875rem;
+  color: rgba(248, 250, 252, 0.45);
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+.training-studio-nav {
+  padding: 1rem 0.75rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.training-studio-nav__label {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.35);
+  padding: 0 0.75rem 0.5rem;
+}
+
+.training-studio-nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 0.35rem;
+  border-radius: 0.75rem;
+  border: 1px solid transparent;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: rgba(248, 250, 252, 0.82);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.training-studio-nav a:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.training-studio-nav a.is-active {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.18), rgba(16, 185, 129, 0.04));
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #fff;
+}
+
+.training-studio-nav a .ts-meta {
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.35);
+}
+
+.training-studio-nav a.is-active .ts-meta {
+  color: #6ee7b7;
+}
+
+.training-studio-sidebar__card {
+  margin: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.875rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.training-studio-sidebar__card dt {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.35);
+  margin-bottom: 0.35rem;
+}
+
+.training-studio-sidebar__card dd {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.training-studio-sidebar__footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.28);
+}
+
+/* Main column */
+.training-studio-main {
+  background: #f1f5f9;
+  min-width: 0;
+}
+
+.training-studio-page-inner {
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1.5rem 1.25rem 2.5rem;
+}
+
+@media (min-width: 768px) {
+  .training-studio-page-inner {
+    padding: 2rem 1.75rem 3rem;
+  }
+}
+
+.training-studio-panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 1.25rem;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
+}
+
+.training-studio-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: #fff;
+  padding: 1.5rem 1.5rem 1.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.training-studio-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #10b981, rgba(16, 185, 129, 0.2), transparent);
+}
+
+.training-studio-stat {
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 0.85rem 1rem;
+}
+
+.training-studio-stat__k {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 0.25rem;
+}
+
+.training-studio-stat__v {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+}
+
+/* Course rows (index) */
+.training-studio-course-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.12s;
+}
+
+.training-studio-course-row:last-child {
+  border-bottom: none;
+}
+
+.training-studio-course-row:hover {
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.training-studio-thumb {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+/* Bouton flottant : réouvrir le menu quand la barre latérale est fermée */
+.training-studio-drawer-toggle--fab {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 50;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.1rem;
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.45);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.training-studio-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(2, 6, 23, 0.55);
+}
+
+.training-studio-sidebar--drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(300px, 92vw);
+  transform: translateX(-102%);
+  transition: transform 0.22s ease;
+  box-shadow: 8px 0 40px rgba(0, 0, 0, 0.35);
+}
+
+.training-studio-sidebar--drawer.is-open {
+  transform: translateX(0);
+}
+
+@media (min-width: 1024px) {
+  .training-studio-sidebar--drawer {
+    position: relative;
+    transform: none !important;
+    width: auto;
+    box-shadow: none;
+  }
+
+  .training-studio-sidebar {
+    position: sticky;
+    top: 4.75rem;
+    align-self: start;
+    max-height: calc(100vh - 5.25rem);
+    overflow-y: auto;
+  }
+}
+
+.training-studio-close-drawer {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (min-width: 1024px) {
+  .training-studio-close-drawer {
+    display: none;
+  }
+}

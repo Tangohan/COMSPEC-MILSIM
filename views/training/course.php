@@ -9,116 +9,395 @@ if (!$course) {
     return;
 }
 $courseId = (int) $course['id'];
+$slugForForms = (string) ($course['slug'] ?? '');
+$policyEval = $policyEval ?? ['allowed' => true, 'messages' => []];
+$policyDisplay = $policyDisplay ?? ['prerequisite_courses' => [], 'certificate_courses' => [], 'policy_flags' => []];
+$preCourses = $policyDisplay['prerequisite_courses'] ?? [];
+$certCourses = $policyDisplay['certificate_courses'] ?? [];
+$policyFlags = $policyDisplay['policy_flags'] ?? [];
+$hasPolicyInfo = $preCourses !== [] || $certCourses !== [] || $policyFlags !== [];
+$isFavorite = $isFavorite ?? false;
+$courseSessions = $courseSessions ?? [];
+$viewerLoggedIn = $viewerLoggedIn ?? false;
+$continueLesson = $continueLesson ?? null;
+$firstLesson = $firstLesson ?? null;
+$lessonDone = $lessonDone ?? [];
+$hasCompletedAnyLesson = $lessonDone !== [];
+$canAccessLearning = $canAccessLearning ?? false;
+$lmsCommentsEnabled = $lmsCommentsEnabled ?? true;
+$flashOk = \App\Core\Session::getFlash('success');
+$flashErr = \App\Core\Session::getFlash('error');
 $modules = $course['modules'] ?? [];
+$theme = function_exists('training_lms_parse_theme') ? training_lms_parse_theme((string) ($course['theme_json'] ?? '')) : [];
+$objectives = function_exists('training_lms_learning_objectives') ? training_lms_learning_objectives($course) : [];
+$code = (string) ($course['course_code'] ?? '');
+if ($code === '') {
+    $code = 'F-' . $courseId;
+}
+$lmsTitle = (string) $course['title'];
+$lmsBase = $base;
+$lmsThemeVars = function_exists('training_lms_theme_css_vars') ? training_lms_theme_css_vars($theme) : '';
+$lmsExtraHead = '';
+ob_start();
+require base_path('views/training/partials/lms_head.php');
+$headHtml = ob_get_clean();
 ?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($course['title']) ?> — Athena</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
-    <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
-    <?php endif; ?>
-    <style> body { font-family: 'Inter', sans-serif; } </style>
+<?= $headHtml ?>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
+<body class="bg-slate-100 text-slate-900 overflow-x-hidden">
+    <div class="lms-grain"></div>
+    <div class="min-h-screen relative z-10">
+        <div class="grid lg:grid-cols-[300px_1fr] min-h-screen">
+            <?php
+            $lmsBase = $base;
+            $currentLessonId = null;
+            require base_path('views/training/partials/lms_course_sidebar.php');
+            ?>
 
-    <nav class="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <a href="<?= $base ?>/" class="text-[11px] font-black tracking-[0.5em] uppercase hover:text-emerald-600">ATHENA</a>
-            <div class="flex items-center gap-6">
-                <a href="<?= url('formations') ?>" class="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900">Catalogue</a>
-                <a href="<?= url('formations/mes-formations') ?>" class="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900">Mes formations</a>
-                <a href="<?= url('dashboard') ?>" class="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900">Dashboard</a>
-            </div>
-        </div>
-    </nav>
-
-    <main class="max-w-7xl mx-auto px-6 py-12">
-        <?php if (!empty($course['banner_path'])): ?>
-        <div class="rounded-2xl overflow-hidden mb-8 aspect-[3/1] bg-slate-800">
-            <img src="<?= htmlspecialchars($base . '/' . $course['banner_path']) ?>" alt="" class="w-full h-full object-cover">
-        </div>
-        <?php endif; ?>
-
-        <div class="flex flex-wrap items-start justify-between gap-6 mb-8">
-            <div>
-                <h1 class="text-3xl font-black uppercase tracking-tight text-slate-900"><?= htmlspecialchars($course['title']) ?></h1>
-                <?php if (!empty($course['short_description'])): ?>
-                <p class="text-slate-600 mt-2"><?= htmlspecialchars($course['short_description']) ?></p>
+            <main class="p-5 md:p-8 lg:p-10 space-y-8">
+                <?php if ($flashOk): ?>
+                <div class="lms-panel rounded-2xl p-4 bg-emerald-50 border border-emerald-200 text-emerald-950 text-sm font-medium"><?= htmlspecialchars((string) $flashOk) ?></div>
                 <?php endif; ?>
-                <p class="text-sm text-slate-500 mt-2"><?= (int)($course['estimated_minutes'] ?? 0) ?> min — <?= htmlspecialchars($course['category'] ?? '') ?></p>
-            </div>
-            <?php if ($enrollment): ?>
-            <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <p class="text-2xl font-black text-slate-900"><?= (int) $progressPercent ?> %</p>
-                    <p class="text-xs text-slate-500 uppercase tracking-wider">Progression</p>
+                <?php if ($flashErr): ?>
+                <div class="lms-panel rounded-2xl p-4 bg-rose-50 border border-rose-200 text-rose-950 text-sm font-medium"><?= htmlspecialchars((string) $flashErr) ?></div>
+                <?php endif; ?>
+                <?php
+                $bp = trim((string) ($course['banner_path'] ?? ''));
+                $tp = trim((string) ($course['thumbnail_path'] ?? ''));
+                $bannerPick = $bp !== '' ? $bp : ($tp !== '' ? $tp : null);
+                $bannerSrc = training_media_url($bannerPick);
+                ?>
+                <div class="lms-panel rounded-[2rem] overflow-hidden aspect-[3/1] max-h-72 bg-slate-800">
+                    <img src="<?= htmlspecialchars($bannerSrc) ?>" alt="" class="w-full h-full object-cover">
                 </div>
-                <?php if ($certificate): ?>
-                <a href="<?= url('formations/certificate/' . (int) $certificate['id']) ?>" class="px-6 py-3 bg-emerald-600 text-white text-xs font-bold uppercase rounded-xl hover:bg-emerald-700">Attestation</a>
-                <?php elseif (($enrollment['status'] ?? '') === 'completed'): ?>
-                <span class="text-sm font-bold text-emerald-600">Formation validée</span>
-                <?php else: ?>
-                <a href="#" data-start-course="<?= (int) $enrollment['id'] ?>" class="px-6 py-3 bg-slate-900 text-white text-xs font-bold uppercase rounded-xl hover:bg-emerald-600">Reprendre</a>
-                <?php endif; ?>
-            </div>
-            <?php endif; ?>
-        </div>
 
-        <?php if ($enrollment && (int) $progressPercent < 100): ?>
-        <div class="mb-8">
-            <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div class="h-full bg-emerald-600 rounded-full transition-all" style="width: <?= (int) $progressPercent ?>%"></div>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 space-y-6">
-                <?php foreach ($modules as $mod): ?>
-                <section class="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-                    <div class="p-5 border-b border-slate-100">
-                        <h2 class="text-lg font-bold text-slate-900"><?= htmlspecialchars($mod['title']) ?></h2>
-                        <?php if (!empty($mod['description'])): ?>
-                        <p class="text-sm text-slate-600 mt-1"><?= htmlspecialchars($mod['description']) ?></p>
-                        <?php endif; ?>
+                <header class="lms-panel rounded-[2rem] p-6 md:p-8 relative">
+                    <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500/80 via-emerald-500/20 to-transparent rounded-t-[2rem]"></div>
+                    <div class="flex flex-wrap items-start justify-between gap-6">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-2">Fiche formation</p>
+                            <h1 class="text-2xl md:text-4xl font-black tracking-tight uppercase text-slate-900"><?= htmlspecialchars((string) $course['title']) ?></h1>
+                            <p class="text-sm font-mono text-emerald-600 mt-2"><?= htmlspecialchars($code) ?></p>
+                            <?php if (!empty($course['short_description'])): ?>
+                            <p class="text-slate-600 mt-3 max-w-3xl"><?= htmlspecialchars((string) $course['short_description']) ?></p>
+                            <?php endif; ?>
+                            <p class="text-sm text-slate-500 mt-2"><?= (int)($course['estimated_minutes'] ?? 0) ?> min — <?= htmlspecialchars((string)($course['category'] ?? '')) ?> — <?= htmlspecialchars((string)($course['level'] ?? '')) ?></p>
+                        </div>
+                        <div class="flex flex-col items-stretch sm:items-end gap-3 shrink-0">
+                            <?php if ($viewerLoggedIn): ?>
+                            <form method="post" action="<?= url('formations/favorite') ?>" class="inline">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="course_id" value="<?= $courseId ?>">
+                                <input type="hidden" name="course_slug" value="<?= htmlspecialchars($slugForForms) ?>">
+                                <input type="hidden" name="favorite" value="<?= $isFavorite ? '0' : '1' ?>">
+                                <button type="submit" class="w-full sm:w-auto px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-wider <?= $isFavorite ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-slate-200 bg-white text-slate-600' ?>"><?= $isFavorite ? '★ Favori' : '☆ Favori' ?></button>
+                            </form>
+                            <?php endif; ?>
+                            <?php if ($enrollment && $canAccessLearning): ?>
+                            <div class="text-left sm:text-right rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
+                                <p class="text-3xl font-black text-slate-900 leading-none"><?= (int) $progressPercent ?> %</p>
+                                <p class="text-[10px] text-slate-500 uppercase tracking-wider mt-1">Progression</p>
+                            </div>
+                            <?php if ($certificate): ?>
+                            <a href="<?= url('formations/certificate/' . (int) $certificate['id']) ?>" class="inline-flex justify-center px-6 py-3 bg-emerald-600 text-white text-xs font-bold uppercase rounded-xl hover:bg-emerald-700">Attestation</a>
+                            <?php elseif (($enrollment['status'] ?? '') === 'completed'): ?>
+                            <span class="text-sm font-bold text-emerald-600 text-center sm:text-right">Formation validée</span>
+                            <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                    <ul class="divide-y divide-slate-100">
-                        <?php foreach ($mod['lessons'] ?? [] as $lesson): ?>
-                        <li class="flex items-center justify-between px-5 py-3">
-                            <span class="text-sm text-slate-700"><?= htmlspecialchars($lesson['title']) ?></span>
+                    <?php if ($enrollment && $canAccessLearning && (int) $progressPercent < 100): ?>
+                    <div class="mt-8">
+                        <div class="lms-progress-bar h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <span style="width: <?= (int) $progressPercent ?>%"></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </header>
+
+                <?php if ($enrollment && $canAccessLearning && $firstLesson): ?>
+                <section class="lms-panel rounded-[2rem] p-6 md:p-8 border border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50/40">
+                    <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <p class="text-[9px] font-black tracking-[0.35em] uppercase text-emerald-700/80 mb-2">Parcours</p>
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Votre progression</h2>
+                            <p class="text-sm text-slate-600 mt-1 max-w-xl">Chaque leçon s’ouvre sur une page dédiée. Utilisez le bouton principal pour enchaîner dans l’ordre du parcours.</p>
+                        </div>
+                        <div class="flex flex-col sm:items-end gap-2 shrink-0">
+                            <?php if ($continueLesson): ?>
+                            <?php
+                            $ctaPrimary = $hasCompletedAnyLesson ? 'Continuer la formation' : 'Commencer le parcours';
+                            ?>
+                            <a href="<?= url('formations/lesson/' . (int) $continueLesson['id'] . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="inline-flex items-center justify-center px-8 py-3.5 bg-emerald-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-emerald-700 shadow-sm text-center"><?= htmlspecialchars($ctaPrimary) ?></a>
+                            <p class="text-[11px] text-slate-500 text-center sm:text-right">Prochaine étape : <strong class="text-slate-800"><?= htmlspecialchars((string) ($continueLesson['title'] ?? '')) ?></strong></p>
+                            <?php else: ?>
+                            <p class="text-sm font-bold text-emerald-800">Toutes les leçons du parcours sont terminées.</p>
+                            <a href="<?= url('formations/lesson/' . (int) $firstLesson['id'] . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="inline-flex items-center justify-center px-6 py-2.5 border border-emerald-300 text-emerald-900 text-xs font-bold uppercase rounded-xl hover:bg-emerald-50">Revoir depuis le début</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </section>
+                <?php endif; ?>
+
+                <section class="lms-panel rounded-[2rem] p-6 md:p-10 border border-slate-200/90">
+                    <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-6">Prérequis &amp; inscription</p>
+                    <div class="grid lg:grid-cols-2 gap-8 lg:gap-12">
+                        <div class="space-y-5 min-w-0">
+                            <h2 class="text-sm font-black uppercase tracking-wide text-slate-900">Prérequis</h2>
+                            <?php if (!$hasPolicyInfo): ?>
+                            <p class="text-sm text-slate-500 leading-relaxed">Aucun prérequis de parcours ni condition supplémentaire n’est renseigné pour cette formation.</p>
+                            <?php else: ?>
+                            <?php if ($preCourses !== []): ?>
+                            <div>
+                                <p class="text-xs font-bold text-slate-600 mb-2">Formations à avoir validées avant</p>
+                                <ul class="space-y-2">
+                                    <?php foreach ($preCourses as $pc): ?>
+                                    <li class="flex flex-wrap items-center gap-2 text-sm text-slate-800">
+                                        <?php if ($pc['completed'] === true): ?>
+                                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs font-black" title="Validé">✓</span>
+                                        <?php elseif ($pc['completed'] === false): ?>
+                                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-800 text-xs font-black" title="À valider">!</span>
+                                        <?php else: ?>
+                                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-500 text-xs">?</span>
+                                        <?php endif; ?>
+                                        <span><?= htmlspecialchars((string) ($pc['title'] ?? '')) ?></span>
+                                        <?php if (!empty($pc['slug'])): ?>
+                                        <a href="<?= url('formations/' . rawurlencode((string) $pc['slug'])) ?>" class="text-xs font-semibold text-emerald-700 hover:underline">Voir la formation</a>
+                                        <?php endif; ?>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                                <?php if (!$viewerLoggedIn): ?>
+                                <p class="text-xs text-slate-500 mt-2">Connectez-vous pour voir si vos validations sont prises en compte.</p>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
+                            <?php if ($certCourses !== []): ?>
+                            <div>
+                                <p class="text-xs font-bold text-slate-600 mb-2">Attestation ou validation attendue pour</p>
+                                <ul class="space-y-2">
+                                    <?php foreach ($certCourses as $cc): ?>
+                                    <li class="flex flex-wrap items-center gap-2 text-sm text-slate-800">
+                                        <?php if ($cc['completed'] === true): ?>
+                                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs font-black">✓</span>
+                                        <?php elseif ($cc['completed'] === false): ?>
+                                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-800 text-xs font-black">!</span>
+                                        <?php else: ?>
+                                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-500 text-xs">?</span>
+                                        <?php endif; ?>
+                                        <span><?= htmlspecialchars((string) ($cc['title'] ?? '')) ?></span>
+                                        <?php if (!empty($cc['slug'])): ?>
+                                        <a href="<?= url('formations/' . rawurlencode((string) $cc['slug'])) ?>" class="text-xs font-semibold text-emerald-700 hover:underline">Voir la formation</a>
+                                        <?php endif; ?>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                            <?php endif; ?>
+                            <?php foreach ($policyFlags as $pf): ?>
+                            <p class="text-sm text-slate-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2"><?= htmlspecialchars($pf) ?></p>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                        <div id="lms-inscription" class="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 to-white p-6 min-w-0 scroll-mt-24">
+                            <h2 class="text-sm font-black uppercase tracking-wide text-emerald-950 mb-3">Inscription au parcours</h2>
                             <?php if ($enrollment): ?>
-                            <a href="<?= url('formations/lesson/' . (int) $lesson['id'] . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="text-xs font-bold text-emerald-600 hover:underline">Voir</a>
+                            <?php if (($enrollment['status'] ?? '') === 'pending_approval'): ?>
+                            <p class="text-sm text-slate-700 leading-relaxed">Votre demande d’inscription a bien été enregistrée. Un formateur doit la valider avant que vous puissiez ouvrir les leçons.</p>
+                            <p class="text-xs text-amber-800 mt-3 font-bold bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">En attente de validation</p>
+                            <?php else: ?>
+                            <p class="text-sm text-slate-700 leading-relaxed">Vous suivez cette formation. Utilisez les modules ci-dessous pour poursuivre le parcours.</p>
+                            <?php
+                            $st = (string) ($enrollment['status'] ?? '');
+                            $stLab = match ($st) {
+                                'assigned' => 'Assigné',
+                                'in_progress' => 'En cours',
+                                'completed' => 'Terminé',
+                                'failed' => 'Non validé',
+                                'expired' => 'Expiré',
+                                'revoked' => 'Révoqué',
+                                default => $st,
+                            };
+                            ?>
+                            <p class="text-xs text-slate-500 mt-3">Statut : <strong class="text-slate-800"><?= htmlspecialchars($stLab) ?></strong></p>
+                            <?php endif; ?>
+                            <?php elseif (!$viewerLoggedIn): ?>
+                            <p class="text-sm text-slate-700 mb-4">Connectez-vous pour vous inscrire et accéder au contenu.</p>
+                            <a href="<?= url('login') ?>" class="inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-slate-900 text-white text-xs font-black uppercase rounded-xl hover:bg-slate-800">Se connecter</a>
+                            <?php elseif (!empty($policyEval['allowed'])): ?>
+                            <form method="post" action="<?= url('formations/enroll') ?>" class="space-y-4">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="course_id" value="<?= $courseId ?>">
+                                <input type="hidden" name="course_slug" value="<?= htmlspecialchars($slugForForms) ?>">
+                                <label class="block">
+                                    <span class="text-xs font-bold text-slate-600">Message de motivation <span class="font-normal text-slate-400">(optionnel)</span></span>
+                                    <textarea name="enrollment_motivation" rows="4" maxlength="4000" class="mt-1.5 w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400" placeholder="Pourquoi souhaitez-vous suivre cette formation ?"></textarea>
+                                </label>
+                                <button type="submit" class="w-full px-6 py-3.5 bg-emerald-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-emerald-700 shadow-sm">Confirmer mon inscription</button>
+                            </form>
+                            <?php else: ?>
+                            <div class="space-y-2">
+                                <span class="inline-flex px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-200 text-[10px] font-black uppercase text-rose-900">Inscription indisponible</span>
+                                <?php foreach (($policyEval['messages'] ?? []) as $pm): ?>
+                                <p class="text-sm text-rose-800"><?= htmlspecialchars((string) $pm) ?></p>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </section>
+
+                <?php if (!empty($course['instruction_audio_url'])):
+                    $au = (string) $course['instruction_audio_url'];
+                ?>
+                <section class="lms-panel rounded-[2rem] p-6 md:p-8">
+                    <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-3">Consignes audio</p>
+                    <?php if (!empty($course['instruction_audio_notes'])): ?>
+                    <p class="text-sm text-slate-600 mb-3"><?= htmlspecialchars((string) $course['instruction_audio_notes']) ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($course['instruction_audio_instructor_optional'])): ?>
+                    <p class="text-xs text-slate-500 mb-3">Écoute possible sans instructeur présent.</p>
+                    <?php endif; ?>
+                    <audio controls class="w-full max-w-xl" src="<?= htmlspecialchars($au) ?>">Audio</audio>
+                </section>
+                <?php endif; ?>
+
+                <?php if ($courseSessions !== []): ?>
+                <section class="lms-panel rounded-[2rem] p-6 md:p-8">
+                    <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-4">Créneaux</p>
+                    <ul class="space-y-3 text-sm">
+                        <?php foreach ($courseSessions as $cs): ?>
+                        <li class="border border-slate-100 rounded-xl p-4 bg-white">
+                            <p class="font-bold text-slate-900"><?= htmlspecialchars((string) ($cs['label'] ?? 'Session')) ?></p>
+                            <p class="text-slate-600"><?= htmlspecialchars((string) ($cs['starts_at'] ?? '')) ?> → <?= htmlspecialchars((string) ($cs['ends_at'] ?? '')) ?></p>
+                            <?php if (!empty($cs['location'])): ?><p class="text-slate-500"><?= htmlspecialchars((string) $cs['location']) ?></p><?php endif; ?>
+                            <?php if (!empty($cs['audio_briefing_url'])): ?>
+                            <audio controls class="w-full max-w-md mt-2" src="<?= htmlspecialchars((string) $cs['audio_briefing_url']) ?>"></audio>
                             <?php endif; ?>
                         </li>
                         <?php endforeach; ?>
                     </ul>
                 </section>
-                <?php endforeach; ?>
-            </div>
-            <div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-5 sticky top-24">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Résumé</h3>
-                    <p class="text-sm text-slate-600"><?= (int)($course['estimated_minutes'] ?? 0) ?> min</p>
-                    <p class="text-sm text-slate-600 mt-1"><?= count($modules) ?> module(s)</p>
-                    <?php if (!$enrollment): ?>
-                    <p class="text-sm text-slate-500 mt-4">Inscrivez-vous pour suivre cette formation.</p>
-                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php if ($objectives !== []): ?>
+                <section class="lms-panel rounded-[2rem] p-6 md:p-8">
+                    <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-4">Objectifs pédagogiques</p>
+                    <ul class="space-y-3 text-[13px] text-slate-700 font-medium max-w-3xl">
+                        <?php $oi = 1; foreach ($objectives as $obj): ?>
+                        <li class="flex gap-3"><span class="text-emerald-600 font-black"><?= str_pad((string) $oi, 2, '0', STR_PAD_LEFT) ?></span><span><?= htmlspecialchars($obj) ?></span></li>
+                        <?php $oi++; endforeach; ?>
+                    </ul>
+                </section>
+                <?php endif; ?>
+
+                <section class="grid grid-cols-1 gap-6">
+                    <?php foreach ($modules as $mod):
+                        $mLessons = $mod['lessons'] ?? [];
+                        $mQuizzes = $mod['quizzes'] ?? [];
+                    ?>
+                    <div class="lms-panel rounded-[2rem] p-6 border border-slate-200/80">
+                        <h2 class="text-lg font-black uppercase text-slate-900 mb-1"><?= htmlspecialchars((string) ($mod['title'] ?? '')) ?></h2>
+                        <?php if (!empty($mod['subtitle'])): ?>
+                        <p class="text-sm font-semibold text-slate-700 mb-2"><?= htmlspecialchars((string) $mod['subtitle']) ?></p>
+                        <?php endif; ?>
+                        <?php if (!empty($mod['description'])): ?>
+                        <p class="text-sm text-slate-600 mb-3"><?= htmlspecialchars((string) $mod['description']) ?></p>
+                        <?php endif; ?>
+                        <?php
+                        $modObjs = function_exists('training_lms_learning_objectives')
+                            ? training_lms_learning_objectives(['learning_objectives' => $mod['learning_objectives'] ?? ''])
+                            : [];
+                        ?>
+                        <?php if ($modObjs !== []): ?>
+                        <ul class="text-xs text-slate-600 mb-4 space-y-1 list-disc list-inside">
+                            <?php foreach (array_slice($modObjs, 0, 4) as $mo): ?>
+                            <li><?= htmlspecialchars($mo) ?></li>
+                            <?php endforeach; ?>
+                            <?php if (count($modObjs) > 4): ?>
+                            <li class="list-none text-slate-400">…</li>
+                            <?php endif; ?>
+                        </ul>
+                        <?php endif; ?>
+                        <?php if ((int) ($mod['estimated_minutes'] ?? 0) > 0): ?>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">≈ <?= (int) $mod['estimated_minutes'] ?> min (module)</p>
+                        <?php endif; ?>
+                        <ul class="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                            <?php foreach ($mLessons as $lesson): ?>
+                            <li class="flex items-center justify-between gap-2 px-4 py-3 bg-white">
+                                <span class="min-w-0">
+                                    <span class="block text-sm text-slate-800 font-medium"><?= htmlspecialchars((string) ($lesson['title'] ?? '')) ?></span>
+                                    <?php if (!empty($lesson['summary'])): ?>
+                                    <span class="block text-xs text-slate-500 mt-0.5 line-clamp-2"><?= htmlspecialchars((string) $lesson['summary']) ?></span>
+                                    <?php endif; ?>
+                                </span>
+                                <?php if ($enrollment && $canAccessLearning):
+                                    $lid = (int) ($lesson['id'] ?? 0);
+                                    $isDone = !empty($lessonDone[$lid]);
+                                    $isNext = $continueLesson && (int) ($continueLesson['id'] ?? 0) === $lid;
+                                    if ($isNext && !$isDone) {
+                                        $lessonLinkLabel = $hasCompletedAnyLesson ? 'Continuer' : 'Commencer';
+                                        $lessonLinkClass = 'text-xs font-black uppercase tracking-wide text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg shrink-0';
+                                    } elseif ($isDone) {
+                                        $lessonLinkLabel = 'Revoir';
+                                        $lessonLinkClass = 'text-xs font-bold text-slate-600 hover:underline shrink-0';
+                                    } else {
+                                        $lessonLinkLabel = 'Ouvrir';
+                                        $lessonLinkClass = 'text-xs font-bold text-emerald-600 hover:underline shrink-0';
+                                    }
+                                ?>
+                                <a href="<?= url('formations/lesson/' . $lid . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="<?= htmlspecialchars($lessonLinkClass) ?>"><?= htmlspecialchars($lessonLinkLabel) ?></a>
+                                <?php elseif ($enrollment && !$canAccessLearning): ?>
+                                <span class="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg shrink-0">Accès après validation</span>
+                                <?php elseif ($viewerLoggedIn): ?>
+                                <a href="#lms-inscription" class="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg shrink-0 hover:bg-amber-50">Inscription requise</a>
+                                <?php else: ?>
+                                <a href="<?= url('login') ?>" class="text-xs font-semibold text-emerald-700 hover:underline shrink-0">Connexion</a>
+                                <?php endif; ?>
+                            </li>
+                            <?php endforeach; ?>
+                            <?php foreach ($mQuizzes as $qz): ?>
+                            <li class="flex items-center justify-between gap-2 px-4 py-3 bg-slate-50">
+                                <span class="text-sm font-semibold text-slate-800"><?= htmlspecialchars((string) ($qz['title'] ?? 'Quiz')) ?></span>
+                                <?php if ($enrollment && $canAccessLearning && (int) ($qz['id'] ?? 0) > 0): ?>
+                                <form method="post" action="<?= url('formations/quiz/start') ?>" class="inline">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <input type="hidden" name="quiz_id" value="<?= (int) $qz['id'] ?>">
+                                    <input type="hidden" name="enrollment_id" value="<?= (int) $enrollment['id'] ?>">
+                                    <button type="submit" class="text-xs font-bold text-violet-700 hover:underline">Démarrer</button>
+                                </form>
+                                <?php elseif ($enrollment && !$canAccessLearning): ?>
+                                <span class="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg shrink-0">Accès après validation</span>
+                                <?php elseif ($viewerLoggedIn): ?>
+                                <a href="#lms-inscription" class="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg shrink-0 hover:bg-amber-50">Inscription requise</a>
+                                <?php else: ?>
+                                <a href="<?= url('login') ?>" class="text-xs font-semibold text-emerald-700 hover:underline shrink-0">Connexion</a>
+                                <?php endif; ?>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <?php endforeach; ?>
+                </section>
+
+                <section class="lms-panel rounded-[2rem] p-6 md:p-8 border border-slate-200/80 bg-gradient-to-br from-slate-50 to-white">
+                    <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-2">Après le parcours</p>
+                    <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 mb-2">Avis, questions et commentaires</h2>
+                    <p class="text-sm text-slate-600 max-w-2xl mb-4"><?= $lmsCommentsEnabled
+                        ? 'La note, les questions au staff et les commentaires sont regroupés sur une page dédiée, à la fin du parcours — pas sur chaque leçon ni en bas de cette fiche.'
+                        : 'Les avis et les questions au staff restent disponibles sur la page dédiée ; les commentaires libres entre participants sont désactivés pour cette formation.' ?></p>
+                    <a href="<?= url('formations/' . rawurlencode($slugForForms) . '/echanges') ?>" class="inline-flex items-center justify-center px-6 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-800">Ouvrir la page « Avis &amp; échanges »</a>
+                </section>
+
+                <div class="pt-4">
+                    <a href="<?= url('formations') ?>" class="text-sm font-bold text-slate-600 hover:text-slate-900">← Retour au catalogue</a>
                 </div>
-            </div>
+            </main>
         </div>
-
-        <div class="mt-12">
-            <a href="<?= url('formations') ?>" class="text-sm font-bold text-slate-600 hover:text-slate-900">← Retour au catalogue</a>
-        </div>
-    </main>
-
-    <footer class="border-t border-slate-200 py-8 mt-12">
-        <div class="max-w-7xl mx-auto px-6 text-center text-xs text-slate-500">Athena — Formations</div>
-    </footer>
+    </div>
+    <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

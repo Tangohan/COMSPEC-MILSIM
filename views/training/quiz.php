@@ -1,55 +1,78 @@
 <?php
+declare(strict_types=1);
 $base = url('');
 $attemptId = $attemptId ?? 0;
-$title = $title ?? 'Quiz';
+$course = $course ?? [];
+$enrollment = $enrollment ?? null;
+$progressPercent = $progressPercent ?? 0;
+$quizTitle = trim((string) ($quizTitle ?? 'Quiz'));
+$timeLimitMinutes = $timeLimitMinutes ?? null;
+$passingScore = $passingScore ?? null;
+$title = $title ?? $quizTitle;
+$csrfToken = \App\Core\Csrf::token();
+$lmsTitle = (string) $title;
+$lmsBase = $base;
+$theme = function_exists('training_lms_parse_theme') ? training_lms_parse_theme((string) ($course['theme_json'] ?? '')) : [];
+$lmsThemeVars = function_exists('training_lms_theme_css_vars') ? training_lms_theme_css_vars($theme) : '';
+$lmsExtraHead = '';
+ob_start();
+require base_path('views/training/partials/lms_head.php');
+$headHtml = ob_get_clean();
+$currentLessonId = null;
 ?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="scroll-smooth module-shell">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($title) ?> — Athena</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
-    <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
-    <?php endif; ?>
-    <style> body { font-family: 'Inter', sans-serif; } </style>
+<?= $headHtml ?>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
-    <nav class="sticky top-0 z-[100] w-full bg-white border-b border-slate-200 px-6 h-14 flex items-center">
-        <a href="<?= url('formations') ?>" class="text-[11px] font-black uppercase tracking-wider hover:text-emerald-600">← Formations</a>
-    </nav>
-    <main class="max-w-3xl mx-auto px-6 py-10">
-        <div id="quiz-app" data-attempt-id="<?= (int) $attemptId ?>" data-base="<?= htmlspecialchars($base) ?>" data-csrf="<?= htmlspecialchars(\App\Core\Csrf::field()) ?>">
-            <p class="text-slate-500">Chargement du quiz…</p>
+<body class="bg-slate-100 text-slate-900 min-h-screen overflow-x-hidden">
+    <div class="lms-grain"></div>
+    <div class="min-h-screen relative z-10 grid lg:grid-cols-[300px_1fr]">
+        <?php
+        $lmsBase = $base;
+        require base_path('views/training/partials/lms_course_sidebar.php');
+        ?>
+
+        <div class="flex flex-col min-w-0">
+            <header class="topbar sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+                <div class="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-600 mb-1">Évaluation</p>
+                        <h1 class="text-lg sm:text-xl font-black uppercase tracking-tight text-slate-900"><?= htmlspecialchars($quizTitle) ?></h1>
+                        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px] text-slate-500">
+                            <?php if ($timeLimitMinutes !== null && (int) $timeLimitMinutes > 0): ?>
+                            <span>Temps indicatif : <strong class="text-slate-700"><?= (int) $timeLimitMinutes ?> min</strong></span>
+                            <?php endif; ?>
+                            <?php if ($passingScore !== null && $passingScore !== ''): ?>
+                            <span>Seuil de réussite : <strong class="text-slate-700"><?= htmlspecialchars((string) $passingScore) ?> %</strong></span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <a href="<?= htmlspecialchars(url('formations/' . rawurlencode((string) ($course['slug'] ?? '')))) ?>" class="shrink-0 text-[11px] font-black uppercase tracking-wider text-slate-600 hover:text-emerald-700 border border-slate-200 rounded-xl px-4 py-2 hover:bg-slate-50">← Fiche formation</a>
+                </div>
+            </header>
+
+            <main class="flex-1 px-4 sm:px-8 py-8 lg:py-10">
+                <div
+                    id="lms-quiz-app"
+                    class="max-w-3xl mx-auto w-full"
+                    data-attempt-id="<?= (int) $attemptId ?>"
+                    data-base="<?= htmlspecialchars($base) ?>"
+                    data-csrf="<?= htmlspecialchars($csrfToken) ?>"
+                    data-formations-url="<?= htmlspecialchars(url('formations')) ?>"
+                    data-course-url="<?= htmlspecialchars(url('formations/' . rawurlencode((string) ($course['slug'] ?? '')))) ?>"
+                >
+                    <div class="lms-panel rounded-2xl p-8 md:p-10 text-center">
+                        <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 mb-4" aria-hidden="true">
+                            <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <p class="text-slate-600 text-sm font-medium">Préparation du questionnaire…</p>
+                    </div>
+                </div>
+            </main>
         </div>
-    </main>
-    <script>
-    (function() {
-        const el = document.getElementById('quiz-app');
-        if (!el) return;
-        const attemptId = el.dataset.attemptId;
-        const base = el.dataset.base || '';
-        const csrf = (el.dataset.csrf || '').match(/value="([^"]+)"/);
-        const csrfToken = csrf ? csrf[1] : '';
-        fetch(base + '/api/training/quiz/attempts/' + attemptId, { credentials: 'same-origin' })
-            .then(r => r.json())
-            .then(data => {
-                if (data.error) {
-                    el.innerHTML = '<p class="text-rose-600">' + (data.error || 'Erreur') + '</p>';
-                    return;
-                }
-                const attempt = data;
-                if (attempt.status !== 'in_progress') {
-                    el.innerHTML = '<div class="rounded-2xl border border-slate-200 bg-white p-8"><h2 class="text-xl font-bold text-slate-900">Résultat</h2><p class="mt-4">Score : ' + (attempt.score || 0) + ' %</p><p class="mt-2">' + (attempt.passed ? 'Réussi' : 'Non réussi') + '</p><a href="' + base + '/formations" class="inline-block mt-6 px-6 py-3 bg-slate-900 text-white rounded-xl">Retour</a></div>';
-                    return;
-                }
-                const questions = (attempt.responses || []).map(r => r.question_id);
-                el.innerHTML = '<p class="text-slate-600">Quiz en cours. Utilisez l’API pour soumettre les réponses (attempt_id: ' + attemptId + ').</p><a href="' + base + '/formations" class="inline-block mt-4 text-emerald-600 font-bold">Retour aux formations</a>';
-            })
-            .catch(() => { el.innerHTML = '<p class="text-rose-600">Impossible de charger le quiz.</p>'; });
-    })();
-    </script>
+    </div>
+    <script src="<?= htmlspecialchars($base) ?>/assets/js/training_quiz_player.js" defer></script>
+    <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

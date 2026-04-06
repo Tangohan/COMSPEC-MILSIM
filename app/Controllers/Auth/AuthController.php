@@ -26,6 +26,9 @@ class AuthController
     /** Sélection de communauté après mot de passe (multi-tenant). */
     private const PENDING_COMMUNITY_TTL_SEC = 600;
 
+    /** Tenants techniques non proposés à l’utilisateur (ex. tenant « par défaut » plateforme). */
+    private const HIDDEN_COMMUNITY_SLUGS = ['default'];
+
     public function __construct(
         private AuthService $authService,
         private RbacService $rbacService,
@@ -36,6 +39,38 @@ class AuthController
         private EmailService $emailService,
         private LoginSecurityNotificationService $loginSecurityNotifications
     ) {}
+
+    /**
+     * @param list<array{tenant_id: int, user_id: int, tenant_name: string, tenant_slug: string}> $candidates
+     * @return list<array{tenant_id: int, user_id: int, tenant_name: string, tenant_slug: string}>
+     */
+    private function filterCommunityCandidates(array $candidates): array
+    {
+        $hidden = array_map('strtolower', self::HIDDEN_COMMUNITY_SLUGS);
+
+        return array_values(array_filter($candidates, static function (array $c) use ($hidden): bool {
+            $slug = strtolower(trim((string) ($c['tenant_slug'] ?? '')));
+
+            return $slug === '' || !in_array($slug, $hidden, true);
+        }));
+    }
+
+    private function redirectToDashboardAfterLogin(array $user, Request $request): Response
+    {
+        Session::forget('pending_verification_email');
+        $this->authService->loginUser($user);
+        $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
+        $this->auditService->log(
+            AuditAction::AUTH_LOGIN_SUCCESS,
+            (int) $user['tenant_id'],
+            (int) $user['id'],
+            'auth',
+            (int) $user['id']
+        );
+        $this->loginSecurityNotifications->onSuccessfulLogin($request, $user);
+
+        return Response::redirect(url('dashboard'));
+    }
 
     public function showLogin(Request $request, array $params = []): Response
     {
@@ -83,6 +118,7 @@ class AuthController
         }
 
         if ($matches === []) {
+            Session::forget('pending_verification_email');
             $auditTenantId = null;
             if ($candidates !== []) {
                 $auditTenantId = (int) $candidates[0]['tenant_id'];
@@ -107,29 +143,17 @@ class AuthController
         if (count($matches) === 1) {
             $row = $matches[0];
             if (($row['status'] ?? '') === 'pending_verification') {
+                Session::set('pending_verification_email', $email);
                 Session::flash('error', 'Confirmez votre adresse e-mail avant de vous connecter (lien envoyé à l’inscription).');
                 return Response::redirect(url('login'));
             }
+            Session::forget('pending_verification_email');
             $user = $this->userRepository->findById((int) $row['id'], (int) $row['tenant_id']);
             if (!$user) {
                 Session::flash('error', 'Compte introuvable.');
                 return Response::redirect(url('login'));
             }
-            $this->authService->loginUser($user);
-            $this->rbacService->setPermissionsForGate(
-                !empty($user['role_id']) ? (int) $user['role_id'] : null,
-                (string) ($user['email'] ?? '')
-            );
-            $this->auditService->log(
-                AuditAction::AUTH_LOGIN_SUCCESS,
-                (int) $user['tenant_id'],
-                (int) $user['id'],
-                'auth',
-                (int) $user['id']
-            );
-            $this->loginSecurityNotifications->onSuccessfulLogin($request, $user);
-
-            return Response::redirect(url('dashboard'));
+            return $this->redirectToDashboardAfterLogin($user, $request);
         }
 
         $pick = [];
@@ -141,6 +165,33 @@ class AuthController
                 'tenant_slug' => (string) ($row['tenant_slug'] ?? ''),
             ];
         }
+        $pick = $this->filterCommunityCandidates($pick);
+
+        if ($pick === []) {
+            Session::flash('error', 'Aucune communauté disponible pour cette connexion. Si le problème persiste, contactez un administrateur.');
+            return Response::redirect(url('login'));
+        }
+
+        if (count($pick) === 1) {
+            $only = $pick[0];
+            $user = $this->userRepository->findById((int) $only['user_id'], (int) $only['tenant_id']);
+            if (!$user) {
+                Session::flash('error', 'Compte introuvable.');
+                return Response::redirect(url('login'));
+            }
+            if (($user['status'] ?? '') === 'pending_verification') {
+                Session::flash('error', 'Confirmez votre adresse e-mail avant de vous connecter (lien envoyé à l’inscription).');
+                return Response::redirect(url('login'));
+            }
+            if (!in_array(($user['status'] ?? ''), ['active', 'pending_verification'], true)) {
+                Session::flash('error', 'Compte indisponible.');
+                return Response::redirect(url('login'));
+            }
+
+            return $this->redirectToDashboardAfterLogin($user, $request);
+        }
+
+        Session::forget('pending_verification_email');
         Session::set('pending_community_selection', [
             'email' => $email,
             'candidates' => $pick,
@@ -166,10 +217,19 @@ class AuthController
             return Response::redirect(url('login'));
         }
 
+        $candidates = $this->filterCommunityCandidates($pending['candidates']);
+        if ($candidates === []) {
+            Session::forget('pending_community_selection');
+            Session::flash('error', 'Aucune communauté à afficher. Reconnectez-vous.');
+            return Response::redirect(url('login'));
+        }
+        $pending['candidates'] = $candidates;
+        Session::set('pending_community_selection', $pending);
+
         return Response::view('auth.select-community', [
             'title' => 'Choisir une communauté',
             'email' => (string) ($pending['email'] ?? ''),
-            'candidates' => $pending['candidates'],
+            'candidates' => $candidates,
         ]);
     }
 
@@ -196,9 +256,16 @@ class AuthController
             return Response::redirect(url('login'));
         }
 
+        $allowed = $this->filterCommunityCandidates($pending['candidates']);
+        if ($allowed === []) {
+            Session::forget('pending_community_selection');
+            Session::flash('error', 'Session invalide. Reconnectez-vous.');
+            return Response::redirect(url('login'));
+        }
+
         $tenantId = (int) $request->input('tenant_id');
         $chosen = null;
-        foreach ($pending['candidates'] as $c) {
+        foreach ($allowed as $c) {
             if ((int) ($c['tenant_id'] ?? 0) === $tenantId) {
                 $chosen = $c;
                 break;
@@ -216,26 +283,15 @@ class AuthController
         }
         if (($user['status'] ?? '') === 'pending_verification') {
             Session::forget('pending_community_selection');
+            Session::set('pending_verification_email', strtolower(trim((string) ($pending['email'] ?? ''))));
             Session::flash('error', 'Confirmez votre adresse e-mail avant de vous connecter.');
             return Response::redirect(url('login'));
         }
 
         Session::forget('pending_community_selection');
-        $this->authService->loginUser($user);
-        $this->rbacService->setPermissionsForGate(
-            !empty($user['role_id']) ? (int) $user['role_id'] : null,
-            (string) ($user['email'] ?? '')
-        );
-        $this->auditService->log(
-            AuditAction::AUTH_LOGIN_SUCCESS,
-            (int) $user['tenant_id'],
-            (int) $user['id'],
-            'auth',
-            (int) $user['id']
-        );
-        $this->loginSecurityNotifications->onSuccessfulLogin($request, $user);
+        Session::forget('pending_verification_email');
 
-        return Response::redirect(url('dashboard'));
+        return $this->redirectToDashboardAfterLogin($user, $request);
     }
 
     public function logout(Request $request, array $params = []): Response
@@ -359,6 +415,9 @@ class AuthController
         $user = $this->userRepository->findById((int) $reset['user_id']);
         $tenantId = $user ? (int) $user['tenant_id'] : 0;
         $this->userRepository->update((int) $reset['user_id'], $tenantId, ['password_hash' => $passwordHash]);
+        if ($user !== null && ($user['status'] ?? '') === 'pending_verification') {
+            $this->userRepository->markEmailVerified((int) $reset['user_id'], $tenantId);
+        }
         $this->passwordResetRepository->deleteByToken($hash);
         $this->auditService->log(
             AuditAction::AUTH_PASSWORD_RESET_COMPLETED,

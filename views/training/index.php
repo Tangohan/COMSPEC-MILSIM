@@ -83,7 +83,7 @@ foreach ($modules as $m) {
         'badge_position' => 'right',
         'badge_style' => 'slate',
         'badge_class' => 'text-emerald-400',
-        'image' => 'https://media.defense.gov/2019/Sep/12/2002181666/2000/2000/0/190905-F-BT441-0001.JPG',
+        'image' => function_exists('training_course_default_cover_url') ? training_course_default_cover_url() : 'https://www.armytimes.com/resizer/v2/RAZQ3MLRIBFRLBIO4MWPXAB6XM.jpg?width=1200&auth=45ae6a1e3391a70c6e9e748d98ade72e1ed3f43ae5d0a5441a65e1d8a4a93e00',
         'from_db' => true,
         'description' => $m['description'] ?? '',
         'objectives' => $m['description'] ? array_filter(array_map('trim', explode("\n", $m['description']))) : ['Voir le module pour le détail.'],
@@ -117,7 +117,7 @@ $categories = ['all' => 'Tous les modules', 'tactique' => 'tactique', 'technique
 
     <nav class="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <a href="<?= $base ?>/" class="text-[11px] font-black tracking-[0.5em] uppercase hover:text-emerald-600 transition-colors">FORWARD</a>
+            <a href="<?= $base ?>/" class="text-[11px] font-black tracking-[0.28em] uppercase hover:text-emerald-600 transition-colors">Athena Compsec</a>
             <div class="flex items-center gap-6">
                 <a href="<?= url('dashboard') ?>" class="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900">Dashboard</a>
                 <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Training_Protocol_v4.0</span>

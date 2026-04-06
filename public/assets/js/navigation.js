@@ -1,6 +1,7 @@
 /**
  * Navigation portail : drawer mobile, accordéons, piège de focus, Escape.
  * Desktop xl+ : méga menus CSS (hover / focus-within) + bascule au clic (tactile / ouverture explicite).
+ * Raccourci global : Ctrl+K / Cmd+K → page recherche portail (si lien présent).
  */
 (function () {
     var XL = 1280;
@@ -245,6 +246,32 @@
     if (overlay) {
         overlay.setAttribute('aria-hidden', 'true');
     }
+})();
+
+/** Recherche portail : Ctrl+K (Windows/Linux) ou Cmd+K (macOS). */
+(function () {
+    document.addEventListener('keydown', function (e) {
+        if (!e.ctrlKey && !e.metaKey) {
+            return;
+        }
+        if (e.key !== 'k' && e.key !== 'K') {
+            return;
+        }
+        var t = e.target;
+        if (t && t.closest && t.closest('input, textarea, select, [contenteditable="true"]')) {
+            return;
+        }
+        var link = document.querySelector('[data-portal-search-url]');
+        if (!link) {
+            return;
+        }
+        var href = link.getAttribute('href');
+        if (!href) {
+            return;
+        }
+        e.preventDefault();
+        window.location.href = href;
+    });
 })();
 
 /** Copie code communauté (registre /communities) — pas d’Alpine dans les attributs HTML. */

@@ -8,7 +8,9 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\PasswordResetRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\PersonnelProfileRepository;
@@ -18,12 +20,15 @@ use App\Repositories\GradeCategoryRepository;
 use App\Repositories\GradeRepository;
 use App\Services\Admin\ProfileCompletenessService;
 use App\Services\Admin\AdminAuditService;
+use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\GradeValidationService;
 use App\Services\Personnel\PersonnelCompletenessService;
 
 class UserAdminController
 {
+    private const SETUP_TOKEN_HOURS = 72;
+
     public function __construct(
         private UserRepository $userRepository,
         private UserProfileRepository $userProfileRepository,
@@ -37,7 +42,9 @@ class UserAdminController
         private AdminAuditService $adminAuditService,
         private GradeValidationService $gradeValidationService,
         private EmailService $emailService,
-        private TenantRepository $tenantRepository
+        private TenantRepository $tenantRepository,
+        private PasswordResetRepository $passwordResetRepository,
+        private UserNotificationPreferencesRepository $userNotificationPreferencesRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -69,7 +76,7 @@ class UserAdminController
                 $up = $this->userProfileRepository->getByUserId($uid);
                 $pp = $this->profileCompletenessService->getCompleteness($uid, $u, $up, null);
                 $completenessByUser[$uid] = $pp;
-                $personnelCompletenessByUser[$uid] = $this->buildPersonnelCompletenessForList($uid, $u);
+                $personnelCompletenessByUser[$uid] = $this->buildPersonnelCompletenessForList($uid, $u, $tenantId);
             }
             $filtered = array_values(array_filter($allUsers, function ($u) use ($completenessByUser, $personnelCompletenessByUser) {
                 $uid = (int) $u['id'];
@@ -95,7 +102,7 @@ class UserAdminController
                 $uid = (int) $u['id'];
                 $up = $this->userProfileRepository->getByUserId($uid);
                 $completenessByUser[$uid] = $this->profileCompletenessService->getCompleteness($uid, $u, $up, null);
-                $personnelCompletenessByUser[$uid] = $this->buildPersonnelCompletenessForList($uid, $u);
+                $personnelCompletenessByUser[$uid] = $this->buildPersonnelCompletenessForList($uid, $u, $tenantId);
             }
         }
 
@@ -160,14 +167,19 @@ class UserAdminController
         $civilProfile = $this->personnelExtrasRepository->getProfileByUserId($id);
         $completenessPersonnel = $isService
             ? null
-            : $this->personnelCompletenessService->getScoreWithMissingLabels($id, $user, $civilProfile, $extras);
+            : $this->personnelCompletenessService->getScoreWithMissingLabels($id, $user, $civilProfile, $extras, $tenantId);
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
+        $userRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
+        if ($userRoleIds === [] && !empty($user['role_id'])) {
+            $userRoleIds = [(int) $user['role_id']];
+        }
         $grades = $this->gradeRepository->listForTenant($tenantId);
         $gradeCategories = $this->gradeCategoryRepository->listActive();
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.show',
             'title' => 'Fiche utilisateur',
             'user' => $user,
+            'userRoleIds' => $userRoleIds,
             'userProfile' => $userProfile,
             'personnelProfile' => $personnelProfile,
             'completeness' => $completenessAccount,
@@ -181,9 +193,29 @@ class UserAdminController
     }
 
     /**
+     * @return list<int>
+     */
+    private function parseRoleIdsFromRequest(Request $request): array
+    {
+        $raw = $request->input('role_ids', []);
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $rid) {
+            $r = (int) $rid;
+            if ($r > 0) {
+                $out[] = $r;
+            }
+        }
+
+        return array_values(array_unique($out));
+    }
+
+    /**
      * @return array{score: int, sections_critiques: list<string>, missing_labels?: list<string>}
      */
-    private function buildPersonnelCompletenessForList(int $userId, array $userRow): array
+    private function buildPersonnelCompletenessForList(int $userId, array $userRow, int $tenantId): array
     {
         if ($this->userRepository->isServiceAccount($userId)) {
             return ['score' => 100, 'sections_critiques' => [], 'missing_labels' => []];
@@ -191,7 +223,7 @@ class UserAdminController
         $extras = $this->personnelExtrasRepository->getByUserId($userId);
         $civil = $this->personnelExtrasRepository->getProfileByUserId($userId);
 
-        return $this->personnelCompletenessService->getScoreWithMissingLabels($userId, $userRow, $civil, $extras);
+        return $this->personnelCompletenessService->getScoreWithMissingLabels($userId, $userRow, $civil, $extras, $tenantId);
     }
 
     public function notifyProfileIncomplete(Request $request, array $params = []): Response
@@ -232,6 +264,11 @@ class UserAdminController
         if ($displayName === '') {
             $displayName = (string) ($user['email'] ?? 'membre');
         }
+        if (!$this->userNotificationPreferencesRepository->isEmailEventEnabled($id, EmailEvents::PROFILE_INCOMPLETE_REMINDER)) {
+            Session::flash('error', 'Ce membre a désactivé les e-mails de rappel de profil dans ses préférences compte.');
+
+            return Response::redirect(url('back-office/users/' . $id));
+        }
         $editUrl = url('personnel/' . $id . '/edit');
         $ok = $this->emailService->sendProfileIncompleteReminder(
             (string) $user['email'],
@@ -241,9 +278,22 @@ class UserAdminController
             $tenantId,
             ['target_user_id' => $id]
         );
-        Session::flash($ok ? 'success' : 'error', $ok
-            ? 'Courriel de rappel envoyé.'
-            : 'Envoi impossible (vérifiez la configuration e-mail ou l’adresse du destinataire).');
+        if ($ok) {
+            Session::flash('success', 'Courriel de rappel envoyé.');
+        } else {
+            $base = 'Envoi impossible (vérifiez la configuration e-mail ou l’adresse du destinataire).';
+            $detail = $this->emailService->getLastSendError();
+            if ($detail !== null && $detail !== '') {
+                $clean = preg_replace('/\s+/u', ' ', $detail) ?? $detail;
+                if (function_exists('mb_substr')) {
+                    $clean = mb_substr($clean, 0, 400);
+                } else {
+                    $clean = substr($clean, 0, 400);
+                }
+                $base .= ' Détail : ' . $clean;
+            }
+            Session::flash('error', $base);
+        }
 
         return Response::redirect(url('back-office/users/' . $id));
     }
@@ -255,12 +305,14 @@ class UserAdminController
             return Response::redirect(url('login'));
         }
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
+        $roleMatrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
         $grades = $this->gradeRepository->listForTenant($tenantId);
         $gradeCategories = $this->gradeCategoryRepository->listActive();
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.create',
             'title' => 'Nouvel utilisateur',
             'roles' => $roles,
+            'roleMatrix' => $roleMatrix,
             'grades' => $grades,
             'gradeCategories' => $gradeCategories,
         ]);
@@ -274,12 +326,18 @@ class UserAdminController
             return Response::redirect(url('login'));
         }
         $email = trim((string) $request->input('email'));
-        $password = $request->input('password');
         $displayName = trim((string) $request->input('display_name'));
         $callsign = trim((string) $request->input('callsign'));
-        $roleId = $request->input('role_id') ? (int) $request->input('role_id') : null;
+        $roleIds = $this->parseRoleIdsFromRequest($request);
+        foreach ($roleIds as $rid) {
+            if (!$this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
+                Session::flash('error', 'Un rôle sélectionné ne peut pas être attribué depuis l’administration communauté.');
+
+                return Response::redirect(url('back-office/users/create'));
+            }
+        }
+        $primaryRoleId = $this->userRepository->peekPrimaryRoleIdForTenant($tenantId, $roleIds);
         $gradeId = $request->input('grade_id') ? (int) $request->input('grade_id') : null;
-        $status = trim((string) ($request->input('status') ?: 'pending'));
         $nationalityCode = trim((string) $request->input('nationality_code')) ?: null;
         $preferredGradeFormat = trim((string) $request->input('preferred_grade_format'));
         if (!in_array($preferredGradeFormat, ['classic', 'otan', 'hybrid'], true)) {
@@ -287,8 +345,8 @@ class UserAdminController
         }
         $professionalCategoryCode = trim((string) $request->input('professional_category_code')) ?: null;
 
-        if ($email === '' || $password === '' || strlen($password) < 6) {
-            Session::flash('error', 'Email et mot de passe (min. 6 caractères) requis.');
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Session::flash('error', 'Une adresse e-mail valide est requise.');
             return Response::redirect(url('back-office/users/create'));
         }
         if ($this->userRepository->emailExistsInTenant($tenantId, $email)) {
@@ -301,29 +359,54 @@ class UserAdminController
             Session::flash('error', 'Limite de membres du plan atteinte.');
             return Response::redirect(url('back-office/users/create'));
         }
-        if ($roleId !== null && !$this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
-            Session::flash('error', 'Ce rôle ne peut pas être attribué depuis l’administration communauté.');
-
-            return Response::redirect(url('back-office/users/create'));
-        }
-
-        $passwordHash = password_hash($password, PASSWORD_ARGON2ID);
+        $passwordPlaceholder = password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID);
         $userId = $this->userRepository->create($tenantId, [
             'email' => $email,
-            'password_hash' => $passwordHash,
+            'password_hash' => $passwordPlaceholder,
             'display_name' => $displayName ?: null,
             'callsign' => $callsign ?: null,
-            'role_id' => $roleId,
+            'role_id' => $primaryRoleId,
             'grade_id' => $gradeId,
-            'status' => $status ?: 'pending',
+            'status' => 'pending_verification',
             'nationality_code' => $nationalityCode,
             'preferred_grade_format' => $preferredGradeFormat,
             'professional_category_code' => $professionalCategoryCode,
         ]);
+        $this->userRepository->syncOrganizationRoles($userId, $tenantId, $roleIds);
 
-        $this->userRepository->markEmailVerifiedWithoutStatusChange($userId, $tenantId);
+        $this->passwordResetRepository->deleteExpired();
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $expires = new \DateTimeImmutable('+' . self::SETUP_TOKEN_HOURS . ' hours');
+        $this->passwordResetRepository->create($userId, $tokenHash, $expires);
+
+        $setupUrl = url('reset-password') . '?token=' . rawurlencode($rawToken);
+        $tenantRow = $this->tenantRepository->findById($tenantId);
+        $tenantName = $tenantRow ? (string) ($tenantRow['name'] ?? 'Communauté') : 'Communauté';
+        $sent = $this->emailService->sendTenantUserSetupInvite(
+            $email,
+            $setupUrl,
+            self::SETUP_TOKEN_HOURS,
+            $tenantName,
+            $tenantId
+        );
+
         $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, $email);
-        Session::flash('success', 'Utilisateur créé.');
+        if ($sent) {
+            Session::flash(
+                'success',
+                'Compte créé. Un e-mail a été envoyé à ' . $email . ' avec un lien pour définir le mot de passe (valide ' . self::SETUP_TOKEN_HOURS . ' h). Le compte sera actif après cette étape.'
+            );
+        } else {
+            $msg = 'Compte créé, mais l’e-mail d’invitation n’a pas pu être envoyé. Vous pouvez utiliser « Mot de passe oublié » sur la page de connexion pour régénérer un lien, ou vérifier la configuration e-mail.';
+            $detail = $this->emailService->getLastSendError();
+            if ($detail !== null && $detail !== '') {
+                $clean = preg_replace('/\s+/u', ' ', $detail) ?? $detail;
+                $msg .= ' Détail : ' . (function_exists('mb_substr') ? mb_substr($clean, 0, 300) : substr($clean, 0, 300));
+            }
+            Session::flash('error', $msg);
+        }
+
         return Response::redirect(url('back-office/users/' . $userId));
     }
 
@@ -341,6 +424,11 @@ class UserAdminController
         }
         $userProfile = $this->userProfileRepository->getByUserId($id);
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
+        $roleMatrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
+        $selectedRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
+        if ($selectedRoleIds === [] && !empty($user['role_id'])) {
+            $selectedRoleIds = [(int) $user['role_id']];
+        }
         $grades = $this->gradeRepository->listForTenant($tenantId);
         $gradeCategories = $this->gradeCategoryRepository->listActive();
         $gradeValidationIssues = $this->gradeValidationService->validateUserProfile($user);
@@ -351,6 +439,8 @@ class UserAdminController
             'userProfile' => $userProfile,
             'isServiceAccount' => $this->userRepository->isServiceAccount($id),
             'roles' => $roles,
+            'roleMatrix' => $roleMatrix,
+            'selectedRoleIds' => $selectedRoleIds,
             'grades' => $grades,
             'gradeCategories' => $gradeCategories,
             'gradeValidationIssues' => $gradeValidationIssues,
@@ -371,6 +461,7 @@ class UserAdminController
             return Response::redirect(url('back-office/users'));
         }
 
+        $rolesSynced = false;
         $data = [];
         if ($request->input('display_name') !== null) {
             $data['display_name'] = trim((string) $request->input('display_name'));
@@ -386,24 +477,41 @@ class UserAdminController
             }
             $data['email'] = $email;
         }
-        if ($request->input('role_id') !== null) {
-            $newRoleId = $request->input('role_id') ? (int) $request->input('role_id') : null;
-            $oldRoleId = $user['role_id'] !== null ? (int) $user['role_id'] : null;
-            $ownerRoleId = $this->roleRepository->getIdBySlug($tenantId, 'community_owner');
-            if ($ownerRoleId !== null && $oldRoleId === $ownerRoleId && $newRoleId !== $ownerRoleId) {
-                $count = $this->userRepository->countUsersWithRole($ownerRoleId);
-                if ($count <= 1) {
-                    Session::flash('error', 'Impossible de retirer le rôle propriétaire communauté au dernier titulaire.');
+        if ($request->input('user_roles_form') === '1') {
+            $roleIds = $this->parseRoleIdsFromRequest($request);
+            $oldRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
+            if ($oldRoleIds === [] && !empty($user['role_id'])) {
+                $oldRoleIds = [(int) $user['role_id']];
+            }
+            foreach ($roleIds as $rid) {
+                if (!$this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
+                    Session::flash('error', 'Un rôle sélectionné ne peut pas être attribué depuis l’administration communauté.');
+
                     return Response::redirect(url('back-office/users/' . $id . '/edit'));
                 }
             }
-            if ($newRoleId !== null && !$this->roleRepository->canAssignInTenantAdminContext($newRoleId, $tenantId)) {
-                Session::flash('error', 'Ce rôle ne peut pas être attribué depuis l’administration communauté.');
+            $ownerRoleId = $this->roleRepository->getIdBySlug($tenantId, 'community_owner');
+            if ($ownerRoleId !== null) {
+                $hadOwner = in_array($ownerRoleId, $oldRoleIds, true);
+                $hasOwnerNew = in_array($ownerRoleId, $roleIds, true);
+                if ($hadOwner && !$hasOwnerNew) {
+                    $count = $this->userRepository->countUsersWithRole($ownerRoleId);
+                    if ($count <= 1) {
+                        Session::flash('error', 'Impossible de retirer le rôle propriétaire communauté au dernier titulaire.');
 
-                return Response::redirect(url('back-office/users/' . $id . '/edit'));
+                        return Response::redirect(url('back-office/users/' . $id . '/edit'));
+                    }
+                }
             }
-            $data['role_id'] = $newRoleId;
-            $this->adminAuditService->logRoleAssigned($tenantId, $actorUserId, $id, $oldRoleId !== null ? (string) $oldRoleId : null, $newRoleId !== null ? (string) $newRoleId : null);
+            $this->userRepository->syncOrganizationRoles($id, $tenantId, $roleIds);
+            $this->adminAuditService->logRoleAssigned(
+                $tenantId,
+                $actorUserId,
+                $id,
+                $oldRoleIds !== [] ? implode(',', $oldRoleIds) : null,
+                $roleIds !== [] ? implode(',', $roleIds) : null
+            );
+            $rolesSynced = true;
         }
         if ($request->input('grade_id') !== null) {
             $data['grade_id'] = $request->input('grade_id') ? (int) $request->input('grade_id') : null;
@@ -445,6 +553,8 @@ class UserAdminController
             $this->userRepository->update($id, $tenantId, $data);
             $this->adminAuditService->logUserUpdated($tenantId, $actorUserId, $id);
             Session::flash('success', 'Utilisateur mis à jour.');
+        } elseif ($rolesSynced) {
+            Session::flash('success', 'Rôles mis à jour.');
         }
 
         return Response::redirect(url('back-office/users/' . $id));
@@ -464,7 +574,7 @@ class UserAdminController
             return Response::redirect(url('back-office/users'));
         }
         $ownerRoleId = $this->roleRepository->getIdBySlug($tenantId, 'community_owner');
-        if ($ownerRoleId !== null && (int) ($user['role_id'] ?? 0) === $ownerRoleId) {
+        if ($ownerRoleId !== null && $this->userRepository->userHasTenantRole($id, $ownerRoleId)) {
             $count = $this->userRepository->countUsersWithRole($ownerRoleId);
             if ($count <= 1) {
                 Session::flash('error', 'Impossible de désactiver le dernier propriétaire communauté.');

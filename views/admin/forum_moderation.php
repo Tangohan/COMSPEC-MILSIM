@@ -122,7 +122,22 @@ $forumModerationLogsAvailable = $forumModerationLogsAvailable ?? false;
                     <?php if (!empty($r['report_type'])): ?>
                       <span class="text-[10px] font-bold uppercase tracking-wide text-slate-500"><?= htmlspecialchars($r['report_type']) ?></span>
                     <?php endif; ?>
+                    <?php
+                    $hasPost = !empty($r['post_id']);
+                    $hasUrl = !empty($r['reported_url']);
+                    if ($hasUrl): ?>
+                      <span class="inline-flex rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-black uppercase text-amber-900">URL</span>
+                    <?php elseif ($hasPost): ?>
+                      <span class="inline-flex rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-black uppercase text-slate-600">Message</span>
+                    <?php else: ?>
+                      <span class="inline-flex rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-black uppercase text-indigo-900">Sujet</span>
+                    <?php endif; ?>
                   </div>
+                  <?php if ($hasUrl): ?>
+                    <p class="mt-2 text-xs font-semibold text-amber-900 break-all">
+                      <a href="<?= htmlspecialchars((string) $r['reported_url']) ?>" target="_blank" rel="noopener noreferrer" class="underline-offset-2 hover:underline"><?= htmlspecialchars((string) $r['reported_url']) ?></a>
+                    </p>
+                  <?php endif; ?>
                   <p class="mt-2 text-sm text-slate-800 leading-relaxed"><?= nl2br(htmlspecialchars($r['reason'] ?? '—')) ?></p>
                   <?php if (!empty($r['comment'])): ?>
                     <p class="mt-2 text-xs text-slate-600 border-l-2 border-slate-200 pl-3"><?= nl2br(htmlspecialchars($r['comment'])) ?></p>

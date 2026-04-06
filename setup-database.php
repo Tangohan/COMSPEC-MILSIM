@@ -22,7 +22,9 @@ declare(strict_types=1);
  *  6. `run_rbac_three_layer_migration()` — RBAC 3 couches (rôles site globaux, `role_layer` / `scope`,
  *     table `site_role_assignments`, migration `super_admin` tenant → `community_owner` + rôles site), défini dans
  *     `bootstrap/rbac_three_layer_migration.php` (appelé depuis `run-migrations.php`).
- *  7. ALTERs et tables conditionnelles (enlistments Olympus, ATAK, courrier, …)
+ *  7. ALTERs et tables conditionnelles (enlistments Olympus, ATAK, courrier, …) ; juste après le bootstrap,
+ *     migrations LMS sur `training_courses` (thème, vitrine, `enrollment_policy_json`, audio, tables sociales)
+ *     pour que les colonnes existent même si la suite du script est longue ou interrompue.
  *  8. Seed : tenant `default`, compte admin, forum, rôles, permissions…
  *
  * Idempotent : relancer met à jour ce qui manque sans tout casser.

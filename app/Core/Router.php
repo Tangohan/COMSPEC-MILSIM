@@ -81,7 +81,13 @@ class Router
                         [$class, $action] = $handler;
                         try {
                             $controller = \App\Core\Container::get($class);
-                        } catch (\InvalidArgumentException) {
+                        } catch (\InvalidArgumentException $e) {
+                            // Ne pas confondre « contrôleur absent du Container » avec « dépendance manquante » :
+                            // dans le second cas, new $class() masque l'erreur (constructeur avec injection).
+                            $unknownController = 'Unknown service: ' . $class;
+                            if ($e->getMessage() !== $unknownController) {
+                                throw $e;
+                            }
                             $controller = new $class();
                         }
                         $response = $controller->$action($req, $params);

@@ -30,14 +30,24 @@ class SystemDashboardController
             $recentError = 'Activité récente indisponible.';
         }
 
+        $appEnv = function_exists('env') ? (string) env('APP_ENV', 'local') : 'local';
+        $adminPlatformEnvLabel = match ($appEnv) {
+            'production' => 'Production',
+            'staging' => 'Préproduction',
+            default => 'Développement / local',
+        };
+
         return Response::view('layout.main', [
             'content' => 'admin.system.dashboard',
-            'title' => 'Administration système',
+            'title' => 'Administration plateforme',
             'adminKpis' => $metrics['kpis'],
             'adminKpiBlockError' => $metrics['blockError'],
             'adminRecentActivity' => $recent,
             'adminRecentActivityError' => $recentError,
             'adminRecentActivityMoreUrl' => url('admin/audit'),
+            'adminPlatformEnvRaw' => $appEnv,
+            'adminPlatformEnvLabel' => $adminPlatformEnvLabel,
+            'adminHealthCheckUrl' => url('api/health'),
         ]);
     }
 }

@@ -1,0 +1,34 @@
+/**
+ * Thème « jour » pour les pages publiques inscription / code communauté.
+ * Surcharge styles.css (fond tactique global sur body) — charger après tailwind + styles.css.
+ */
+html.public-portal-day {
+  color-scheme: light;
+}
+
+body.public-portal-day {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+  letter-spacing: normal;
+  min-height: 100vh;
+}
+
+body.public-portal-day::before {
+  display: none !important;
+}
+
+/* Les liens sans classe utilisaient color: inherit (texte clair du thème sombre) */
+body.public-portal-day a {
+  color: inherit;
+}
+
+/* Champs : styles globaux peuvent forcer apparence sombre */
+body.public-portal-day input,
+body.public-portal-day textarea,
+body.public-portal-day select,
+body.public-portal-day button {
+  color: inherit;
+}

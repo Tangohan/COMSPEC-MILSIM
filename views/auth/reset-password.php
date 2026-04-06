@@ -97,7 +97,17 @@ $title = $title ?? 'Nouveau mot de passe';
     </main>
 
     <footer class="border-t border-slate-200 py-6 mt-12">
-        <div class="max-w-5xl mx-auto px-6 text-center text-[10px] text-slate-400 tracking-widest uppercase">Athena — SaaS RH tactique MILSIM Arma 3</div>
+        <div class="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-center text-[10px] text-slate-400">
+            <span class="tracking-widest uppercase">Athena — SaaS RH tactique MILSIM Arma 3</span>
+            <span class="hidden sm:inline text-slate-300" aria-hidden="true">|</span>
+            <span class="flex flex-wrap justify-center gap-x-3 gap-y-1 normal-case tracking-normal font-semibold text-slate-600 max-w-full">
+                <?php
+                $legal_link_class = 'hover:text-emerald-700';
+                require base_path('views/partials/legal_site_links.php');
+                ?>
+            </span>
+        </div>
     </footer>
+    <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

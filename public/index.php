@@ -1,24 +1,41 @@
 <?php
 declare(strict_types=1);
 
-// Afficher les erreurs en cas de 500 (désactiver en production une fois stable)
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
 $root = dirname(__DIR__);
-// Erreur fatale : l’afficher au lieu d’une page 500 vide
-register_shutdown_function(function () {
+require_once $root . '/bootstrap/env.php';
+load_env($root);
+
+$appDebug = filter_var($_ENV['APP_DEBUG'] ?? getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN);
+$showErrors = $appDebug;
+
+if ($showErrors) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
+} else {
+    error_reporting(E_ALL);
+    ini_set('display_errors', '0');
+    ini_set('display_startup_errors', '0');
+}
+
+// Erreur fatale : journaliser ; afficher le détail seulement en mode debug
+register_shutdown_function(function () use ($showErrors) {
     $err = error_get_last();
-    if ($err !== null && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
-        if (!headers_sent()) {
-            header('Content-Type: text/html; charset=utf-8');
-        }
-        echo '<pre style="background:#fdd;padding:1em;white-space:pre-wrap;">';
-        echo 'ERREUR FATALE: ' . htmlspecialchars($err['message'] ?? '') . "\n";
-        echo "Fichier: " . htmlspecialchars($err['file'] ?? '') . "\nLigne: " . ($err['line'] ?? '');
-        echo '</pre>';
+    if ($err === null || !in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        return;
     }
+    $msg = 'ERREUR FATALE: ' . ($err['message'] ?? '') . ' — ' . ($err['file'] ?? '') . ':' . ($err['line'] ?? '');
+    error_log($msg);
+    if (!$showErrors) {
+        return;
+    }
+    if (!headers_sent()) {
+        header('Content-Type: text/html; charset=utf-8');
+    }
+    echo '<pre style="background:#fdd;padding:1em;white-space:pre-wrap;">';
+    echo 'ERREUR FATALE: ' . htmlspecialchars($err['message'] ?? '') . "\n";
+    echo 'Fichier: ' . htmlspecialchars($err['file'] ?? '') . "\nLigne: " . ($err['line'] ?? '');
+    echo '</pre>';
 });
 
 require $root . '/bootstrap/app.php';
@@ -37,15 +54,14 @@ if (!in_array($requestPath, $maintenanceSafelist, true)) {
             $userContext = null;
             if (\App\Core\Session::get('user_id')) {
                 $rbac = \App\Core\Container::get(\App\Services\Rbac\RbacService::class);
-                $roleId = \App\Core\Session::get('role_id');
-                $email = \App\Core\Session::get('email');
-                $rbac->setPermissionsForGate(
-                    $roleId ? (int) $roleId : null,
-                    $email !== null && $email !== '' ? (string) $email : null
-                );
                 $userRepo = \App\Core\Container::get(\App\Repositories\UserRepository::class);
-                $slug = $userRepo->getRoleSlugForUser((int) \App\Core\Session::get('user_id'));
-                $userContext = ['role_slug' => $slug];
+                $uid = (int) \App\Core\Session::get('user_id');
+                $u = $userRepo->findById($uid, null);
+                if ($u) {
+                    $rbac->setPermissionsForGateFromUserRow($u, $userRepo);
+                    $slug = $userRepo->getRoleSlugForUser($uid);
+                    $userContext = ['role_slug' => $slug];
+                }
             }
             $module = detect_current_module($requestPath);
             $guard = new \App\Support\MaintenanceGuard(new \App\Support\MaintenanceService($pdo));
@@ -64,11 +80,17 @@ try {
     $routes($app->router());
     $app->run();
 } catch (Throwable $e) {
+    error_log($e->getMessage() . ' — ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
     if (!headers_sent()) {
         header('Content-Type: text/html; charset=utf-8');
     }
-    echo '<pre style="background:#fdd;padding:1em;white-space:pre-wrap;">';
-    echo 'ERREUR: ' . htmlspecialchars($e->getMessage()) . "\n\n";
-    echo htmlspecialchars($e->getFile() . ':' . $e->getLine() . "\n\n" . $e->getTraceAsString());
-    echo '</pre>';
+    if ($showErrors) {
+        echo '<pre style="background:#fdd;padding:1em;white-space:pre-wrap;">';
+        echo 'ERREUR: ' . htmlspecialchars($e->getMessage()) . "\n\n";
+        echo htmlspecialchars($e->getFile() . ':' . $e->getLine() . "\n\n" . $e->getTraceAsString());
+        echo '</pre>';
+    } else {
+        http_response_code(500);
+        echo '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Erreur</title></head><body><p>Une erreur est survenue. Réessayez plus tard.</p></body></html>';
+    }
 }

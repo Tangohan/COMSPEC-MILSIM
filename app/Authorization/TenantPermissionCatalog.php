@@ -31,6 +31,7 @@ final class TenantPermissionCatalog
     {
         return array_merge(
             self::adminDefinitions(),
+            self::dashboardDefinitions(),
             self::forumDefinitions(),
             self::documentsDefinitions(),
             self::trainingDefinitions(),
@@ -105,6 +106,16 @@ final class TenantPermissionCatalog
             ['slug' => 'admin.branding.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer l’identité visuelle / branding'],
             ['slug' => 'admin.integrations.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer les intégrations / API / webhooks'],
             ['slug' => 'invitations.send', 'module' => 'admin', 'action' => 'create', 'name' => 'Envoyer des invitations'],
+        ];
+    }
+
+    /**
+     * @return list<array{slug: string, module: string, action: string|null, name: string}>
+     */
+    private static function dashboardDefinitions(): array
+    {
+        return [
+            ['slug' => 'dashboard.pins.manage', 'module' => 'dashboard', 'action' => 'manage', 'name' => 'Gérer les raccourcis du tableau de bord'],
         ];
     }
 

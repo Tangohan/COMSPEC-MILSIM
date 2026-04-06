@@ -58,6 +58,11 @@ class ForumCategoryController
                 $this->forumAuthorIdentityRepository,
                 (int) $tenantId
             );
+            foreach ($topics as $ti => $tr) {
+                $topics[$ti]['topic_author_is_staff'] = function_exists('forum_user_can_moderate_for_user_id')
+                    && forum_user_can_moderate_for_user_id((int) ($tr['user_id'] ?? 0), (int) $tenantId);
+                $topics[$ti]['topic_trend_level'] = function_exists('forum_topic_trend_level') ? forum_topic_trend_level($tr) : null;
+            }
             $totalTopics = count($topics);
             $totalPages = 1;
             $topics = array_slice($topics, ($page - 1) * $perPage, $perPage);
@@ -79,6 +84,11 @@ class ForumCategoryController
                 $this->forumAuthorIdentityRepository,
                 (int) $tenantId
             );
+            foreach ($topics as $ti => $tr) {
+                $topics[$ti]['topic_author_is_staff'] = function_exists('forum_user_can_moderate_for_user_id')
+                    && forum_user_can_moderate_for_user_id((int) ($tr['user_id'] ?? 0), (int) $tenantId);
+                $topics[$ti]['topic_trend_level'] = function_exists('forum_topic_trend_level') ? forum_topic_trend_level($tr) : null;
+            }
         }
 
         $subcategories = $this->categoryRepository->getSubcategories((int) $category['id'], $tenantId);

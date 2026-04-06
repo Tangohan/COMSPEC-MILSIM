@@ -10,8 +10,10 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\CommunityInvitationRepository;
+use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UnitRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\AuthService;
@@ -25,6 +27,8 @@ final class InvitationAdminController
         private TenantRepository $tenantRepository,
         private CommunityInvitationRepository $invitations,
         private RoleRepository $roleRepository,
+        private UnitRepository $unitRepository,
+        private PersonnelJobRoleRepository $personnelJobRoleRepository,
         private FeatureGateService $featureGate,
         private AuditService $auditService,
         private EmailService $emailService
@@ -36,13 +40,19 @@ final class InvitationAdminController
         $this->invitations->expireStale();
         $statusFilter = trim((string) $request->query('status', ''));
         $rows = $this->invitations->listForTenant($tenantId, $statusFilter !== '' ? $statusFilter : null);
-        $rolesCommunity = $this->roleRepository->forTenantByLayer($tenantId, 'community');
+        $rolesOrganization = $this->roleRepository->forTenantOrganization($tenantId);
+        $units = $this->unitRepository->allForTenant($tenantId);
+        $jobRoleOptions = $this->personnelJobRoleRepository->tablesExist()
+            ? $this->personnelJobRoleRepository->listRoleOptionsForSelect($tenantId)
+            : [];
 
         return Response::view('layout.main', [
             'title' => 'Invitations',
             'content' => 'admin.organization.invitations',
             'invitations' => $rows,
-            'rolesCommunity' => $rolesCommunity,
+            'rolesOrganization' => $rolesOrganization,
+            'inviteUnits' => $units,
+            'inviteJobRoleOptions' => $jobRoleOptions,
             'canAdd' => $this->featureGate->canAddMember($tenantId),
             'inviteFilterStatus' => $statusFilter,
         ]);
@@ -72,20 +82,44 @@ final class InvitationAdminController
 
             return Response::redirect(url('back-office/invitations'));
         }
+        if ($roleId < 1) {
+            Session::flash('error', 'Sélectionnez un rôle organisation.');
+
+            return Response::redirect(url('back-office/invitations'));
+        }
         $roleRow = $this->roleRepository->findById($roleId, $tenantId);
         $roleIdFinal = null;
-        if ($roleRow && ($roleRow['role_layer'] ?? '') === 'community' && $this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
+        if ($roleRow && $this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
             $roleIdFinal = $roleId;
         } elseif ($roleId > 0) {
-            Session::flash('error', 'Seul un rôle de gouvernance communauté peut être choisi à l’invitation.');
+            Session::flash('error', 'Rôle non autorisé pour une invitation (choisir un rôle communauté ou intra-communauté du tenant, pas un rôle site/plateforme).');
 
             return Response::redirect(url('back-office/invitations'));
         }
 
+        $unitId = (int) $request->input('unit_id', 0);
+        $assignmentLabel = trim((string) $request->input('assignment_label', ''));
+        $jobRoleId = (int) $request->input('personnel_job_role_id', 0);
+        $payload = [];
+        if ($unitId > 0) {
+            $uRow = $this->unitRepository->findById($unitId, $tenantId);
+            if ($uRow) {
+                $payload['unit_id'] = $unitId;
+                $payload['assignment_label'] = $assignmentLabel !== '' ? mb_substr($assignmentLabel, 0, 120) : 'Membre';
+            }
+        }
+        if ($jobRoleId > 0 && $this->personnelJobRoleRepository->tablesExist()) {
+            $jr = $this->personnelJobRoleRepository->findRoleById($jobRoleId, $tenantId);
+            if ($jr) {
+                $payload['personnel_job_role_id'] = $jobRoleId;
+            }
+        }
+        $payloadJson = $payload !== [] ? json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+
         $token = bin2hex(random_bytes(32));
         $hash = hash('sha256', $token);
         $expires = new \DateTimeImmutable('+7 days');
-        $this->invitations->create($tenantId, $email, $hash, (int) $user['id'], $roleIdFinal, $expires);
+        $this->invitations->create($tenantId, $email, $hash, (int) $user['id'], $roleIdFinal, $expires, $payloadJson);
 
         $tenant = $this->tenantRepository->findById($tenantId);
         $acceptUrl = url('invitations/accept') . '?token=' . rawurlencode($token);

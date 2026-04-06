@@ -26,19 +26,20 @@ $classificationLevels = [
     'confidentiel' => 'Confidentiel opérationnel',
     'operationnel' => 'Accès commandement',
 ];
+/** Ordre : du plus courant au plus expert (évite « publication contrôlée » en premier regard). */
 $visibilityScopes = [
-    'private' => 'Privé (propriétaire & collaborateurs)',
-    'collaborators' => 'Collaborateurs uniquement',
-    'unit' => 'Membres de l’unité liée',
-    'role' => 'Rôles autorisés (liste ci-dessous)',
-    'organization' => 'Toute l’organisation',
-    'controlled' => 'Publication contrôlée (règles fines)',
+    'private' => 'Privé — vous & les collaborateurs du document',
+    'organization' => 'Toute la communauté (selon classification)',
+    'role' => 'Certains rôles seulement (cases ci-dessous)',
+    'unit' => 'Une unité (choisie dans « Liaisons métier »)',
+    'collaborators' => 'Collaborateurs listés sur la fiche',
+    'controlled' => 'Règles sur mesure — expert',
 ];
 $visibilityHelp = [
     'private' => 'Réservé au propriétaire et aux collaborateurs explicitement ajoutés sur ce document (une fois publié).',
     'collaborators' => 'Seuls les collaborateurs listés sur la fiche document pourront lire après publication.',
     'unit' => 'Les membres de l’unité sélectionnée dans « Liaisons métier » pourront lire ; l’unité est obligatoire.',
-    'role' => 'Cochez les rôles autorisés ; le système enregistre des permissions par rôle (slug). Au moins un rôle requis.',
+    'role' => 'Seuls les rôles cochés (intra-tenant). État-major / fondateur / modération voient tout (sous réserve de la classification).',
     'organization' => 'Tout membre de la communauté peut lire si son profil autorise le niveau de classification du document.',
     'controlled' => 'Vous remplissez le tableau ligne par ligne : chaque règle cible un rôle, une unité, un utilisateur ou un groupe.',
 ];
@@ -46,7 +47,7 @@ $visibilityHelpLong = [
     'private' => '<p><strong>Privé</strong> limite la diffusion aux personnes qui travaillent sur le document : le <em>propriétaire</em>, l’<em>auteur</em> et les <em>collaborateurs</em> que vous ajouterez ensuite (éditeur, lecteur, etc.). Tant que le statut reste « Brouillon » ou « En relecture », les autres utilisateurs ne voient pas le fichier même s’ils ont d’autres droits.</p>',
     'collaborators' => '<p>Identique au mode privé sur le principe, mais l’accent est mis sur la <strong>liste de collaborateurs</strong> : seuls ces comptes auront accès une fois le document <em>publié</em>. Pensez à compléter les collaborateurs après création si besoin.</p>',
     'unit' => '<p>Le document est rattaché à <strong>une unité</strong> (liste « Unité » dans la section Liaisons métier). Les utilisateurs qui appartiennent à cette unité dans l’ORBAT / annuaire pourront le consulter lorsqu’il est publié. <strong>Obligatoire :</strong> choisir une unité, sinon la création est refusée.</p>',
-    'role' => '<p>Vous cochez un ou plusieurs <strong>rôles communauté</strong> (ex. officier, membre). Le moteur crée des entrées de permission par rôle. Seuls les utilisateurs qui ont <em>au moins un</em> de ces rôles pourront lire, et encore : leur <strong>niveau de classification</strong> doit être suffisant (règle métier Athena). Le menu « Niveau d’accès » fixe la profondeur (lecture seule, commentaire, etc.).</p>',
+    'role' => '<p>Vous cochez un ou plusieurs <strong>rôles communauté</strong> du <em>tenant courant</em> (ex. cadre, opérateur). Seuls ces profils pourront lire une fois publié, si leur <strong>niveau de classification</strong> le permet. <strong>État-major</strong> (<code>tenant_admin</code>) et <strong>fondateur</strong> (<code>community_owner</code>) ne sont pas limités par cette liste (accès complet). Les <strong>modérateurs forum</strong> (<code>forum_moderator</code>) voient tout en lecture et commentaires. Le menu « Niveau d’accès » s’applique aux rôles cochés.</p>',
     'organization' => '<p>Diffusion large au sein de la <strong>communauté courante</strong> : tout compte actif peut lire le document publié, sauf s’il est bloqué par le <strong>niveau de classification</strong> (un utilisateur ne voit pas un document classé au-dessus de son plafond). À utiliser pour les notices générales non sensibles.</p>',
     'controlled' => '<p>Mode le plus fin : chaque ligne du tableau est une <strong>règle d’accès</strong>. Colonne « Type » : rôle (slug exact), unité (identifiant numérique), utilisateur (ID), ou groupe. Colonne « Valeur » : l’identifiant correspondant. Colonne « Accès » : jusqu’où va le droit (lecture, modification…). Les lignes vides sont ignorées. Combinez plusieurs règles si des profils différents doivent coexister.</p>',
 ];
@@ -244,14 +245,25 @@ $permTypeLabels = [
                             </details>
                         </div>
                         <div>
-                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-600" for="visibility-scope">Visibilité</label>
+                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-600" for="visibility-scope">Qui peut lire une fois le document publié ?</label>
+                            <p class="mb-2 text-[11px] leading-snug text-slate-500">Astuce : en brouillon, seuls vous et les collaborateurs voyez le document — choisissez surtout <strong>Privé</strong> ou <strong>Toute la communauté</strong>.</p>
+                            <div class="mb-3 flex flex-wrap gap-2">
+                                <button type="button" class="doc-vis-preset rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-800 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50" data-vis="private">Privé</button>
+                                <button type="button" class="doc-vis-preset rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-800 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50" data-vis="organization">Toute la communauté</button>
+                                <button type="button" class="doc-vis-preset rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-800 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50" data-vis="role">Par rôles</button>
+                                <button type="button" class="doc-vis-preset rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-800 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50" data-vis="unit">Par unité</button>
+                                <button type="button" class="doc-vis-preset rounded-lg border border-dashed border-amber-300 bg-amber-50/80 px-3 py-1.5 text-[11px] font-semibold text-amber-950 transition hover:bg-amber-100" data-vis="controlled">Mode expert</button>
+                            </div>
                             <select name="visibility_scope" id="visibility-scope" class="w-full rounded-xl border-2 border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/25">
                                 <?php foreach ($visibilityScopes as $k => $v): ?>
                                 <option value="<?= htmlspecialchars($k) ?>" <?= $k === 'private' ? 'selected' : '' ?>><?= htmlspecialchars($v) ?></option>
                                 <?php endforeach; ?>
                             </select>
                             <p id="visibility-help" class="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-600"><?= htmlspecialchars($visibilityHelp['private']) ?></p>
-                            <div id="visibility-help-long" class="doc-visibility-long mt-2 rounded-lg border border-emerald-100/80 bg-emerald-50/40 px-3 py-2.5 text-[12px] leading-relaxed text-slate-700"><?= $visibilityHelpLong['private'] ?></div>
+                            <details class="doc-help-details mt-2 rounded-lg border border-slate-200 bg-white">
+                                <summary class="cursor-pointer px-3 py-2 text-[11px] font-semibold text-slate-600">Aide détaillée sur ce mode</summary>
+                                <div id="visibility-help-long" class="doc-visibility-long border-t border-slate-100 px-3 py-2.5 text-[12px] leading-relaxed text-slate-700"><?= $visibilityHelpLong['private'] ?></div>
+                            </details>
                         </div>
 
                         <div id="panel-visibility-role" class="hidden rounded-xl border border-violet-200 bg-violet-50/50 p-4">
@@ -264,7 +276,7 @@ $permTypeLabels = [
                                 </div>
                               </details>
                             </div>
-                            <p class="mt-1 text-[11px] text-violet-800/90">Cochez les rôles communauté concernés (alignés sur l’annuaire du tenant).</p>
+                            <p class="mt-1 text-[11px] leading-relaxed text-violet-900/85">Ces cases s’appliquent aux <strong>membres de cette communauté</strong> uniquement. <strong>État-major</strong> et <strong>fondateur</strong> : accès complet. <strong>Modérateurs forum</strong> : lecture (et commentaires) sur tout document publié. La classification s’applique toujours.</p>
                             <?php if (empty($tenantRoles)): ?>
                                 <p class="mt-3 text-sm text-amber-800">Aucun rôle communauté trouvé. Créez des rôles dans l’admin organisation.</p>
                             <?php else: ?>
@@ -309,17 +321,17 @@ $permTypeLabels = [
                         </div>
 
                         <div id="panel-visibility-controlled" class="hidden rounded-xl border border-amber-200 bg-amber-50/50 p-4">
-                            <div class="flex flex-wrap items-start justify-between gap-2">
-                              <p class="text-xs font-bold uppercase tracking-wide text-amber-900">Règles explicites</p>
-                              <details class="doc-help-details text-right">
-                                <summary class="inline-flex cursor-pointer list-none items-center gap-1 rounded-full border border-amber-300 bg-white px-2 py-0.5 text-[10px] font-black uppercase text-amber-950"><span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-600 text-[10px] text-white">?</span> Aide</summary>
-                                <div class="mt-2 rounded-lg border border-amber-100 bg-white p-3 text-left text-[11px] leading-relaxed text-amber-950/95">
-                                  <strong>Rôle</strong> : indiquez le <em>slug</em> exact du rôle (comme dans l’admin). <strong>Unité / Utilisateur</strong> : l’ID numérique interne (comme affiché dans les URLs ou listes admin). <strong>Groupe</strong> : identifiant de groupe si votre tenant en utilise. Colonne Accès : droit maximal accordé par cette ligne. Les lignes vides sont ignorées à l’enregistrement.
-                                </div>
-                              </details>
-                            </div>
-                            <p class="mt-1 text-[11px] text-amber-900/85">Une ligne = une cible (rôle par slug, unité ou utilisateur par identifiant numérique). Laisser vide les lignes inutilisées.</p>
-                            <div class="mt-3 overflow-x-auto rounded-lg border border-amber-100 bg-white">
+                            <p class="text-[12px] font-semibold text-amber-950">Mode expert — à n’utiliser que si les autres modes ne suffisent pas.</p>
+                            <p class="mt-1 text-[11px] leading-relaxed text-amber-900/90">Pour la plupart des documents, <strong>« Par rôles »</strong> ou <strong>« Toute la communauté »</strong> est plus simple que ce tableau.</p>
+                            <details class="doc-help-details mt-2 rounded-lg border border-amber-200 bg-white">
+                              <summary class="cursor-pointer px-3 py-2 text-[11px] font-semibold text-amber-900">Comment remplir le tableau ?</summary>
+                              <div class="border-t border-amber-100 px-3 py-2 text-[11px] leading-relaxed text-amber-950/95">
+                                <strong>Rôle</strong> : slug exact (comme dans l’admin). <strong>Unité / Utilisateur</strong> : numéro interne (ID). <strong>Groupe</strong> : identifiant métier si utilisé. Colonne <em>Accès</em> : droit max pour la ligne. Les lignes vides sont ignorées.
+                              </div>
+                            </details>
+                            <details id="controlled-fine-rules-details" class="mt-3 overflow-x-auto rounded-lg border border-amber-100 bg-white shadow-sm">
+                              <summary class="cursor-pointer px-3 py-2.5 text-[12px] font-bold text-amber-950">Afficher le tableau des règles fines</summary>
+                              <div class="border-t border-amber-100 p-2">
                                 <table class="min-w-full divide-y divide-amber-100 text-left text-[12px]">
                                     <thead class="bg-amber-50/80 text-[10px] font-black uppercase tracking-wider text-amber-900/80">
                                         <tr>
@@ -340,7 +352,7 @@ $permTypeLabels = [
                                                 </select>
                                             </td>
                                             <td class="px-2 py-2 align-top">
-                                                <input type="text" name="permissions[<?= $pi ?>][permission_value]" class="w-full min-w-[8rem] rounded border border-slate-200 px-2 py-1.5 font-mono text-[12px]" placeholder="slug ou ID" />
+                                                <input type="text" name="permissions[<?= $pi ?>][permission_value]" class="w-full min-w-[8rem] rounded border border-slate-200 px-2 py-1.5 font-mono text-[12px]" placeholder="ex. slug rôle ou ID" title="Slug du rôle, ou identifiant numérique unité/utilisateur" />
                                             </td>
                                             <td class="px-2 py-2 align-top">
                                                 <select name="permissions[<?= $pi ?>][access_level]" class="w-full rounded border border-slate-200 px-2 py-1.5 text-[12px]">
@@ -353,30 +365,31 @@ $permTypeLabels = [
                                         <?php endfor; ?>
                                     </tbody>
                                 </table>
-                            </div>
+                              </div>
+                            </details>
                         </div>
 
-                        <details class="doc-help-details rounded-xl border border-slate-200 bg-slate-50/90 p-3">
-                          <summary class="cursor-pointer text-[11px] font-black uppercase tracking-wide text-slate-700"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[10px] text-white">?</span> Options techniques (téléchargement, impression, verrouillage)</summary>
-                          <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                            <label class="flex cursor-pointer items-center gap-2 text-sm text-slate-800">
-                                <input type="checkbox" name="download_allowed" value="1" checked class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                                <span><strong>Téléchargement autorisé</strong> — les lecteurs peuvent enregistrer le fichier localement s’ils ont le droit de lecture.</span>
+                        <div class="rounded-xl border border-slate-200 bg-slate-50/90 p-4">
+                          <p class="mb-3 text-[11px] font-bold uppercase tracking-wide text-slate-600">Options courantes</p>
+                          <div class="grid gap-3 sm:grid-cols-2">
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800">
+                                <input type="checkbox" name="download_allowed" value="1" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                <span><strong>Téléchargement</strong> <span class="text-[11px] text-slate-500">(décocher pour lecture seule à l’écran)</span></span>
                             </label>
-                            <label class="flex cursor-pointer items-center gap-2 text-sm text-slate-800">
-                                <input type="checkbox" name="print_allowed" value="1" checked class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                                <span><strong>Impression autorisée</strong> — utile pour désactiver l’impression sur certaines notices.</span>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800">
+                                <input type="checkbox" name="print_allowed" value="1" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                <span><strong>Impression</strong></span>
                             </label>
-                            <label class="flex cursor-pointer items-center gap-2 text-sm text-slate-800">
-                                <input type="checkbox" name="locked" value="1" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                                <span><strong>Document verrouillé</strong> — limite les modifications (selon règles applicatives côté consultation).</span>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800">
+                                <input type="checkbox" name="locked" value="1" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                <span><strong>Verrouillé</strong> <span class="text-[11px] text-slate-500">(modifs limitées)</span></span>
                             </label>
-                            <label class="flex cursor-pointer items-center gap-2 text-sm text-slate-800">
-                                <input type="checkbox" name="inherit_parent_security" value="1" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                                <span><strong>Hériter du parent</strong> — si vous liez un document parent, reprendre ses contraintes de sécurité.</span>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800">
+                                <input type="checkbox" name="inherit_parent_security" value="1" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                <span><strong>Hériter sécurité du parent</strong></span>
                             </label>
                           </div>
-                        </details>
+                        </div>
                     </div>
                 </section>
 
@@ -404,7 +417,7 @@ $permTypeLabels = [
                             <select name="link_training" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
                                 <option value="">—</option>
                                 <?php foreach ($trainings as $t): ?>
-                                <option value="<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['title']) ?></option>
+                                <option value="<?= htmlspecialchars($t['value'] ?? '') ?>"><?= htmlspecialchars($t['label'] ?? ($t['title'] ?? '')) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -594,6 +607,15 @@ $permTypeLabels = [
     panelCtrl.classList.toggle('hidden', v !== 'controlled');
   }
   sel.addEventListener('change', refresh);
+  document.querySelectorAll('.doc-vis-preset').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var vis = btn.getAttribute('data-vis');
+      if (vis && sel.querySelector('option[value="' + vis + '"]')) {
+        sel.value = vis;
+        refresh();
+      }
+    });
+  });
   refresh();
 })();
 document.getElementById('doc-without-file').addEventListener('change', function() {

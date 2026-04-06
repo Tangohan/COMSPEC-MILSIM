@@ -115,9 +115,16 @@ $hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activit
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap mb-1.5">
-                <?php if (!empty($t['is_pinned'])): ?><span class="text-[7px] font-black px-1.5 py-0.5 uppercase tracking-tighter bg-emerald-600 text-white rounded">Épinglé</span><?php endif; ?>
-                <?php if (!empty($t['is_locked'])): ?><span class="text-[7px] font-black px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-tighter">Verrouillé</span><?php endif; ?>
-                <?php if (empty($t['is_locked'])): ?><span class="text-[7px] font-black px-1.5 py-0.5 bg-green-500/10 text-green-500 border border-green-500/20 uppercase tracking-tighter">Ouvert</span><?php endif; ?>
+                <?php if (($t['topic_trend_level'] ?? null) === 'hot'): ?>
+                  <span class="text-[7px] font-black px-1.5 py-0.5 uppercase tracking-tighter bg-orange-100 text-orange-800 border border-orange-200 rounded">🔥 Tendance</span>
+                <?php elseif (($t['topic_trend_level'] ?? null) === 'active'): ?>
+                  <span class="text-[7px] font-black px-1.5 py-0.5 uppercase tracking-tighter bg-sky-50 text-sky-800 border border-sky-200 rounded">Actif</span>
+                <?php endif; ?>
+                <?php if (!empty($t['is_official'])): ?><span class="text-[7px] font-black px-1.5 py-0.5 uppercase tracking-tighter bg-indigo-600 text-white rounded">Officiel</span><?php endif; ?>
+                <?php if (!empty($t['topic_author_is_staff'])): ?><span class="text-[7px] font-black px-1.5 py-0.5 uppercase tracking-tighter bg-slate-800 text-white rounded">Équipe</span><?php endif; ?>
+                <?php if (!empty($t['is_pinned'])): ?><span class="text-[7px] font-black px-1.5 py-0.5 uppercase tracking-tighter bg-emerald-600 text-white rounded">À la une</span><?php endif; ?>
+                <?php if (!empty($t['is_locked'])): ?><span class="text-[7px] font-black px-1.5 py-0.5 bg-amber-500/10 text-amber-800 border border-amber-500/30 uppercase tracking-tighter rounded">Clos</span><?php endif; ?>
+                <?php if (empty($t['is_locked'])): ?><span class="text-[7px] font-black px-1.5 py-0.5 bg-emerald-500/10 text-emerald-700 border border-emerald-500/25 uppercase tracking-tighter rounded">Ouvert</span><?php endif; ?>
                 <h3 class="w-full md:w-auto font-black italic uppercase tracking-tight text-slate-800 group-hover:text-emerald-700 transition-colors text-sm leading-tight mt-1 md:mt-0">
                   <?= htmlspecialchars($t['title']) ?>
                 </h3>

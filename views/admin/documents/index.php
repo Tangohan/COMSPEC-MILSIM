@@ -20,6 +20,10 @@ $resultCount = count($documents);
 $latestAt = $documentStats['latest_activity_at'] ?? null;
 $latestLabel = $latestAt ? date('d.m.Y', strtotime($latestAt)) : '—';
 ?>
+<style>
+  .doc-row-actions a,
+  .doc-row-actions button { min-height: 2.25rem; }
+</style>
 <div class="min-h-screen bg-slate-100">
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
@@ -226,16 +230,25 @@ $latestLabel = $latestAt ? date('d.m.Y', strtotime($latestAt)) : '—';
             </div>
             <?php else: ?>
             <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead class="border-b border-slate-200 bg-slate-50">
+                <table class="w-full min-w-[72rem] table-fixed border-collapse">
+                    <colgroup>
+                        <col class="w-[28%]" />
+                        <col class="w-[14%]" />
+                        <col class="w-[8%]" />
+                        <col class="w-[11%]" />
+                        <col class="w-[13%]" />
+                        <col class="w-[10%]" />
+                        <col class="w-[16%]" />
+                    </colgroup>
+                    <thead class="sticky top-0 z-[1] border-b border-slate-200/90 bg-slate-50/95 shadow-[0_1px_0_rgba(15,23,42,0.06)] backdrop-blur-sm">
                         <tr>
-                            <th class="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Titre</th>
-                            <th class="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Catégorie</th>
-                            <th class="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Version</th>
-                            <th class="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Statut</th>
-                            <th class="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Auteur</th>
-                            <th class="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Date</th>
-                            <th class="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Actions</th>
+                            <th scope="col" class="px-5 py-3.5 text-left align-middle text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Document</th>
+                            <th scope="col" class="px-5 py-3.5 text-left align-middle text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Catégorie</th>
+                            <th scope="col" class="px-5 py-3.5 text-left align-middle text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Ver.</th>
+                            <th scope="col" class="px-5 py-3.5 text-left align-middle text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Statut</th>
+                            <th scope="col" class="px-5 py-3.5 text-left align-middle text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Auteur</th>
+                            <th scope="col" class="px-5 py-3.5 text-left align-middle text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Maj</th>
+                            <th scope="col" class="px-5 py-3.5 text-right align-middle text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Actions</th>
                         </tr>
                     </thead>
 
@@ -256,70 +269,78 @@ $latestLabel = $latestAt ? date('d.m.Y', strtotime($latestAt)) : '—';
                                 }
                             }
                             $dateStr = !empty($d['updated_at']) ? date('d.m.Y', strtotime($d['updated_at'])) : (!empty($d['created_at']) ? date('d.m.Y', strtotime($d['created_at'])) : '—');
+                            $dateIso = !empty($d['updated_at']) ? date('c', strtotime($d['updated_at'])) : (!empty($d['created_at']) ? date('c', strtotime($d['created_at'])) : '');
                             ?>
-                        <tr class="align-top transition hover:bg-slate-50/80">
-                            <td class="px-5 py-5">
-                                <div class="min-w-[220px]">
-                                    <p class="font-bold text-slate-950"><?= htmlspecialchars((string)($d['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                                    <?php if ($rawDesc !== ''): ?>
-                                    <p class="mt-1 text-sm leading-6 text-slate-500">
-                                        <?= htmlspecialchars($rawDesc, ENT_QUOTES, 'UTF-8') ?>
-                                    </p>
-                                    <?php endif; ?>
+                        <tr class="group align-middle transition-colors duration-150 hover:bg-gradient-to-r hover:from-emerald-50/[0.45] hover:to-slate-50/90">
+                            <td class="border-l-[3px] border-l-transparent px-5 py-4 align-top transition-[border-color] group-hover:border-l-emerald-500">
+                                <div class="flex min-w-0 gap-3.5">
+                                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/15 via-white to-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] ring-1 ring-slate-200/80" aria-hidden="true">
+                                        <svg class="h-6 w-6 text-emerald-700/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 8.25H4.875c-.621 0-1.125.504-1.125 1.125v9.75c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V12M10.5 8.25L19.5 3" /></svg>
+                                    </div>
+                                    <div class="min-w-0 flex-1 pt-0.5">
+                                        <p class="line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight text-slate-900"><?= htmlspecialchars((string)($d['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                        <?php if ($rawDesc !== ''): ?>
+                                        <p class="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-500">
+                                            <?= htmlspecialchars($rawDesc, ENT_QUOTES, 'UTF-8') ?>
+                                        </p>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </td>
 
-                            <td class="px-5 py-5 text-sm text-slate-700">
-                                <?= htmlspecialchars((string)($d['category_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
+                            <td class="px-5 py-4 align-middle">
+                                <span class="inline-flex max-w-full truncate rounded-lg bg-slate-100/90 px-2.5 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200/60" title="<?= htmlspecialchars((string)($d['category_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                    <?= htmlspecialchars((string)($d['category_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
+                                </span>
                             </td>
 
-                            <td class="px-5 py-5">
-                                <span class="inline-flex rounded-xl bg-slate-100 px-3 py-1 text-xs font-mono font-bold text-slate-700">
+                            <td class="px-5 py-4 align-middle">
+                                <span class="inline-flex rounded-lg border border-slate-200/90 bg-white px-2.5 py-1 font-mono text-xs font-bold tabular-nums text-slate-800 shadow-sm">
                                     <?= isset($d['version_number']) ? 'v' . (int) $d['version_number'] : '—' ?>
                                 </span>
                             </td>
 
-                            <td class="px-5 py-5">
-                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold <?= $badgeClass ?>">
+                            <td class="px-5 py-4 align-middle">
+                                <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold leading-none <?= $badgeClass ?>">
                                     <?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?>
                                 </span>
                             </td>
 
-                            <td class="px-5 py-5 text-sm text-slate-700">
-                                <?= htmlspecialchars((string)($users[$d['owner_user_id'] ?? $d['created_by'] ?? 0] ?? '#' . ($d['owner_user_id'] ?? $d['created_by'] ?? '')), ENT_QUOTES, 'UTF-8') ?>
+                            <td class="px-5 py-4 align-middle">
+                                <span class="block truncate text-sm font-medium text-slate-800" title="<?= htmlspecialchars((string)($users[$d['owner_user_id'] ?? $d['created_by'] ?? 0] ?? '#' . ($d['owner_user_id'] ?? $d['created_by'] ?? '')), ENT_QUOTES, 'UTF-8') ?>">
+                                    <?= htmlspecialchars((string)($users[$d['owner_user_id'] ?? $d['created_by'] ?? 0] ?? '#' . ($d['owner_user_id'] ?? $d['created_by'] ?? '')), ENT_QUOTES, 'UTF-8') ?>
+                                </span>
                             </td>
 
-                            <td class="px-5 py-5 text-sm text-slate-700">
-                                <?= htmlspecialchars($dateStr) ?>
+                            <td class="px-5 py-4 align-middle">
+                                <time class="text-sm tabular-nums text-slate-600"<?= $dateIso !== '' ? ' datetime="' . htmlspecialchars($dateIso, ENT_QUOTES, 'UTF-8') . '"' : '' ?>><?= htmlspecialchars($dateStr) ?></time>
                             </td>
 
-                            <td class="px-5 py-5">
-                                <div class="flex min-w-[220px] flex-wrap gap-2">
-                                    <a href="<?= url('documents/gestion/' . $d['id']) ?>"
-                                       class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-                                        Détail
-                                    </a>
-
-                                    <?php if ($d['status'] === 'published' && !empty($d['slug'])): ?>
-                                    <a href="<?= url('documents/' . (string) $d['slug']) ?>"
-                                       class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-                                        Voir public
-                                    </a>
-                                    <?php endif; ?>
-
+                            <td class="px-5 py-4 align-middle">
+                                <div class="doc-row-actions flex flex-col items-stretch justify-end gap-1.5 sm:flex-row sm:flex-wrap sm:justify-end">
                                     <a href="<?= url('documents/gestion/' . $d['id'] . '/modifier') ?>"
-                                       class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                                       class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-center text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800">
+                                        <svg class="h-3.5 w-3.5 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
                                         Modifier
                                     </a>
-
+                                    <a href="<?= url('documents/gestion/' . $d['id']) ?>"
+                                       class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-center text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+                                        Détail
+                                    </a>
+                                    <?php if ($d['status'] === 'published' && !empty($d['slug'])): ?>
+                                    <a href="<?= url('documents/' . (string) $d['slug']) ?>"
+                                       class="inline-flex items-center justify-center rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-3 py-2 text-center text-xs font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100">
+                                        Public
+                                    </a>
+                                    <?php endif; ?>
                                     <?php if ($d['status'] !== 'archived' && \App\Core\Gate::getInstance()->allows('documents.archive')): ?>
                                     <form action="<?= url('documents/gestion/' . $d['id'] . '/archiver') ?>"
                                           method="post"
-                                          class="inline"
+                                          class="m-0 inline w-full max-w-full sm:w-auto"
                                           onsubmit="return confirm('Archiver ce document ?');">
                                         <?= \App\Core\Csrf::field() ?>
                                         <button type="submit"
-                                                class="inline-flex items-center rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">
+                                                class="inline-flex w-full items-center justify-center rounded-xl border border-amber-200/90 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 sm:w-auto">
                                             Archiver
                                         </button>
                                     </form>

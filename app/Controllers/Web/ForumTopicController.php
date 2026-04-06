@@ -8,7 +8,6 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\Csrf;
-use App\Core\Validator;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumPostRepository;
 use App\Repositories\ForumCategoryRepository;
@@ -17,6 +16,11 @@ use App\Repositories\ForumAttachmentRepository;
 use App\Repositories\ForumNotificationRepository;
 use App\Repositories\UserForumStatsRepository;
 use App\Repositories\ForumAuthorIdentityRepository;
+use App\Repositories\TenantRepository;
+use App\Repositories\UserRepository;
+use App\Repositories\RoleRepository;
+use App\Repositories\UserProfileDisplaySettingsRepository;
+use App\Services\Forum\ForumPostAttachmentService;
 use App\Services\Profile\ProfilePublicIdentityService;
 
 class ForumTopicController
@@ -30,7 +34,12 @@ class ForumTopicController
         private ForumVoteRepository $voteRepository,
         private ForumAttachmentRepository $forumAttachmentRepository,
         private ForumNotificationRepository $forumNotificationRepository,
-        private UserForumStatsRepository $userForumStatsRepository
+        private UserForumStatsRepository $userForumStatsRepository,
+        private TenantRepository $tenantRepository,
+        private ForumPostAttachmentService $forumPostAttachmentService,
+        private UserRepository $userRepository,
+        private RoleRepository $roleRepository,
+        private UserProfileDisplaySettingsRepository $userProfileDisplaySettingsRepository
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -49,6 +58,12 @@ class ForumTopicController
         $topic = $this->topicRepository->findById($id, $tenantId);
         if (!$topic) {
             return (new Response())->setStatusCode(404)->setBody('Sujet non trouvé.');
+        }
+        if ($this->topicRepository->applyAutoLockIfStale($id, (int) $tenantId)) {
+            $topic = $this->topicRepository->findById($id, $tenantId);
+            if (!$topic) {
+                return (new Response())->setStatusCode(404)->setBody('Sujet non trouvé.');
+            }
         }
         $topicEnriched = $this->profilePublicIdentityService->enrichTopicRowsWithPublicNames(
             [$topic],
@@ -78,7 +93,9 @@ class ForumTopicController
         $totalPages = max(1, (int) ceil($postCount / $perPage));
         $posts = $this->postRepository->listByTopicPaginated($id, $page, $perPage, $isModo);
         foreach ($posts as $i => $p) {
-            if ($categoryScope === 'platform' && !$isModo) {
+            // Forum global (scope=platform) : carte auteur allégée pour tout le monde, y compris modérateurs.
+            // L’identité sensible reste visible dans le panneau « Modération — identité réelle ».
+            if ($categoryScope === 'platform') {
                 $p = $this->profilePublicIdentityService->filterAuthorCardForPlatformForum($p);
             }
             $p = $this->profilePublicIdentityService->filterAuthorFieldsForForumViewer($p, $isModo);
@@ -102,12 +119,39 @@ class ForumTopicController
         $forumCfg = forum_config_for_tenant((int) $tenantId);
         $moderationTutorialHtml = (string) ($forumCfg['moderation_tutorial_html'] ?? '');
         $csrfToken = \App\Core\Csrf::token();
+        $tenantRow = $this->tenantRepository->findById((int) $tenantId);
+        $tenantDisplayName = $tenantRow ? trim((string) ($tenantRow['name'] ?? '')) : '';
+        $forumMaxPostLen = (int) ($forumCfg['forum_max_post_length'] ?? forum_get_setting('forum_max_post_length', 10000));
+
+        $topicAuthorIsStaff = function_exists('forum_user_can_moderate_for_user_id')
+            && forum_user_can_moderate_for_user_id((int) ($topic['user_id'] ?? 0), (int) $tenantId);
+        $topicTrendLevel = function_exists('forum_topic_trend_level') ? forum_topic_trend_level($topic + ['post_count' => $postCount]) : null;
+        $topicCreatedTs = strtotime((string) ($topic['created_at'] ?? ''));
+        $topicStaleNotice = $topicCreatedTs !== false && $topicCreatedTs < strtotime('-3 months');
+        $topicAutoLockedNotice = !empty($topic['auto_locked_at']);
+
+        $forumOrgRoleChoices = [];
+        foreach ($this->userRepository->listOrganizationRoleIdsForUser((int) $userId) as $rid) {
+            $rrow = $this->roleRepository->findById($rid, (int) $tenantId);
+            if ($rrow !== null) {
+                $forumOrgRoleChoices[] = [
+                    'id' => $rid,
+                    'name' => trim((string) ($rrow['name'] ?? '')),
+                ];
+            }
+        }
+        usort($forumOrgRoleChoices, static fn (array $a, array $b): int => strcmp($a['name'], $b['name']));
+        $displaySettings = $this->userProfileDisplaySettingsRepository->getOrDefaults((int) $userId);
+        $forumVisibleRoleCurrent = isset($displaySettings['forum_visible_role_id']) && $displaySettings['forum_visible_role_id'] !== null && $displaySettings['forum_visible_role_id'] !== ''
+            ? (int) $displaySettings['forum_visible_role_id'] : 0;
 
         return Response::view('layout.forum', [
             'content' => 'forum.topic',
             'title' => $topic['title'],
             'forumConfig' => $forumCfg,
             'categoryScope' => $categoryScope,
+            'tenantDisplayName' => $tenantDisplayName,
+            'forumMaxPostLen' => $forumMaxPostLen,
             'topic' => $topic,
             'posts' => $posts,
             'page' => $page,
@@ -119,6 +163,12 @@ class ForumTopicController
             'firstPostId' => $firstPostId,
             'moderationTutorialHtml' => $moderationTutorialHtml,
             'csrfToken' => $csrfToken,
+            'topicAuthorIsStaff' => $topicAuthorIsStaff,
+            'topicTrendLevel' => $topicTrendLevel,
+            'topicStaleNotice' => $topicStaleNotice,
+            'topicAutoLockedNotice' => $topicAutoLockedNotice,
+            'forumOrgRoleChoices' => $forumOrgRoleChoices,
+            'forumVisibleRoleCurrent' => $forumVisibleRoleCurrent,
         ]);
     }
 
@@ -158,15 +208,27 @@ class ForumTopicController
         }
 
         $body = trim((string) $request->input('body', ''));
-        $validator = new Validator(['body' => $body], ['body' => 'required']);
-        if (!$validator->validate()) {
-            Session::flash('error', $validator->errors()['body'][0] ?? 'Contenu invalide.');
+        $attachmentRaw = $request->input('attachment_ids', '[]');
+        if (is_string($attachmentRaw)) {
+            $attachmentIds = json_decode($attachmentRaw, true);
+            if (!is_array($attachmentIds)) {
+                $attachmentIds = [];
+            }
+        } else {
+            $attachmentIds = is_array($attachmentRaw) ? $attachmentRaw : [];
+        }
+        $maxLen = (int) forum_get_setting('forum_max_post_length', 10000);
+        $hasBody = strlen($body) >= 1;
+        $hasFiles = $attachmentIds !== [];
+        if ((!$hasBody && !$hasFiles) || strlen($body) > $maxLen) {
+            Session::flash('error', 'Message vide ou trop long.');
             return Response::redirect(url('forum/topic/' . $id));
         }
 
-        $this->postRepository->create($tenantId, $id, $userId, $body);
+        $postId = $this->postRepository->create($tenantId, $id, $userId, $body);
         $this->topicRepository->touchUpdatedAt($id);
         $this->userForumStatsRepository->incrementPostCount((int) $tenantId, (int) $userId);
+        $this->forumPostAttachmentService->attachToPost((int) $tenantId, $postId, (int) $userId, $attachmentIds);
         $this->notifyTopicParticipants((int) $tenantId, $id, (int) $userId, $topic);
 
         Session::flash('success', 'Réponse publiée.');

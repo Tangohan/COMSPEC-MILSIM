@@ -12,6 +12,8 @@ $statusFilter = $statusFilter ?? null;
             <a href="<?= url('back-office/invitations') ?>" class="text-amber-800 hover:text-amber-950 text-sm font-medium">Inviter des membres</a>
             <?php endif; ?>
             <span class="text-slate-300">|</span>
+            <a href="<?= url('back-office/recruitments/messages-prefaits') ?>" class="text-emerald-800 hover:text-emerald-950 text-sm font-medium">Messages préfaits</a>
+            <span class="text-slate-300">|</span>
             <a href="<?= url('back-office') ?>" class="text-slate-600 hover:text-slate-900 text-sm">Back-office</a>
         </div>
     </div>
@@ -22,6 +24,7 @@ $statusFilter = $statusFilter ?? null;
         <a href="<?= url('back-office/recruitments') ?>?status=submitted" class="px-3 py-1 rounded text-sm <?= $statusFilter === 'submitted' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' ?>">Soumis</a>
         <a href="<?= url('back-office/recruitments') ?>?status=reviewed" class="px-3 py-1 rounded text-sm <?= $statusFilter === 'reviewed' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' ?>">Traitées</a>
         <a href="<?= url('back-office/recruitments') ?>?status=rejected" class="px-3 py-1 rounded text-sm <?= $statusFilter === 'rejected' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' ?>">Rejetées</a>
+        <a href="<?= url('back-office/recruitments') ?>?status=blocked" class="px-3 py-1 rounded text-sm <?= $statusFilter === 'blocked' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' ?>">Interdits</a>
     </div>
 
     <?php if (\App\Core\Session::get('success')): ?>
@@ -66,9 +69,25 @@ $statusFilter = $statusFilter ?? null;
                         <?php endif; ?>
                     </td>
                     <td class="p-3">
-                        <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium
-                            <?= ($e['status'] ?? '') === 'submitted' ? 'bg-amber-100 text-amber-800' : (($e['status'] ?? '') === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700') ?>">
-                            <?= htmlspecialchars($e['status'] ?? '—') ?>
+                        <?php
+                        $st = (string) ($e['status'] ?? '');
+                        $stClass = match ($st) {
+                            'submitted' => 'bg-amber-100 text-amber-800',
+                            'rejected' => 'bg-red-100 text-red-800',
+                            'blocked' => 'bg-red-950 text-red-100',
+                            'reviewed' => 'bg-emerald-100 text-emerald-900',
+                            default => 'bg-slate-100 text-slate-700',
+                        };
+                        $stLabel = match ($st) {
+                            'submitted' => 'Soumis',
+                            'reviewed' => 'Acceptée',
+                            'rejected' => 'Refusée',
+                            'blocked' => 'Interdit',
+                            default => $st !== '' ? $st : '—',
+                        };
+                        ?>
+                        <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium <?= $stClass ?>">
+                            <?= htmlspecialchars($stLabel) ?>
                         </span>
                     </td>
                     <td class="p-3">

@@ -9,11 +9,19 @@ use App\Services\Email\EmailEvents;
 
 final class EmailService
 {
+    private ?string $lastSendError = null;
+
     public function __construct(
         private EmailTransportResolver $transportResolver,
         private EmailTemplateEngine $templateEngine,
         private EmailDeliveryRepository $deliveryRepository
     ) {}
+
+    /** Dernier message d’erreur après un envoi échoué (même requête HTTP). */
+    public function getLastSendError(): ?string
+    {
+        return $this->lastSendError;
+    }
 
     /**
      * @param array<string, mixed> $payloadSummary
@@ -28,8 +36,11 @@ final class EmailService
         ?string $replyTo = null,
         ?array $payloadSummary = null
     ): bool {
+        $this->lastSendError = null;
         $to = trim($to);
         if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            $this->lastSendError = 'Adresse e-mail du destinataire invalide.';
+
             return false;
         }
 
@@ -57,6 +68,10 @@ final class EmailService
             $payloadSummary
         );
 
+        if (!$result['ok']) {
+            $this->lastSendError = $result['error'] ?? 'Échec du transport e-mail.';
+        }
+
         return $result['ok'];
     }
 
@@ -74,8 +89,11 @@ final class EmailService
         ?string $replyTo = null,
         ?array $payloadSummary = null
     ): bool {
+        $this->lastSendError = null;
         $parts = $this->templateEngine->render($templateName, $templateVars);
         if ($parts['html'] === '' && $parts['text'] === '') {
+            $this->lastSendError = 'Modèle e-mail introuvable ou vide.';
+
             return false;
         }
 
@@ -131,6 +149,41 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'password_reset']
+        );
+    }
+
+    /**
+     * Compte créé par l’administrateur d’une communauté : le membre définit son mot de passe via la même page que la réinitialisation.
+     *
+     * @param 'admin_created'|'recruitment_accepted' $inviteSource admin_created : libellé générique ; recruitment_accepted : premier accès suite candidature (évite « finaliser » ambigu).
+     */
+    public function sendTenantUserSetupInvite(
+        string $to,
+        string $setupUrl,
+        int $hoursValid,
+        string $tenantName,
+        int $tenantId,
+        string $inviteSource = 'admin_created'
+    ): bool {
+        $isRecruitment = $inviteSource === 'recruitment_accepted';
+        $subject = $isRecruitment
+            ? 'Premier accès — choisissez votre mot de passe — ' . $tenantName
+            : 'Finalisez votre compte — ' . $tenantName;
+
+        return $this->sendTemplated(
+            EmailEvents::TENANT_USER_SETUP,
+            'tenant_user_setup',
+            $to,
+            $subject,
+            [
+                'setupUrl' => $setupUrl,
+                'hoursValid' => $hoursValid,
+                'tenantName' => $tenantName,
+                'inviteSource' => $isRecruitment ? 'recruitment_accepted' : 'admin_created',
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'tenant_user_setup', 'invite_source' => $inviteSource]
         );
     }
 
@@ -207,6 +260,102 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'staff_notify']
+        );
+    }
+
+    /**
+     * Notification recrutement / fondateur / RH : nouvelle candidature enregistrée.
+     */
+    public function sendEnlistmentSubmittedStaffNotify(
+        string $to,
+        string $tenantName,
+        string $candidateFullName,
+        string $candidateEmail,
+        ?string $availability,
+        ?string $motivation,
+        int $enlistmentId,
+        string $reviewUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::ENLISTMENT_SUBMITTED_STAFF,
+            'enlistment_submitted_staff',
+            $to,
+            'Nouvelle candidature — ' . $tenantName,
+            [
+                'tenantName' => $tenantName,
+                'candidateFullName' => $candidateFullName,
+                'candidateEmail' => $candidateEmail,
+                'availability' => $availability,
+                'motivation' => $motivation,
+                'enlistmentId' => $enlistmentId,
+                'reviewUrl' => $reviewUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'enlistment_submitted', 'enlistment_id' => $enlistmentId]
+        );
+    }
+
+    /**
+     * Candidature acceptée — message au candidat (message du recruteur + lien espace).
+     *
+     * @param 'existing'|'new_password_pending' $accountScenario existing : compte déjà présent sur la communauté ; new_password_pending : compte tout juste créé, autre mail pour le mot de passe.
+     */
+    public function sendEnlistmentAcceptedCandidate(
+        string $to,
+        string $tenantName,
+        ?string $reviewerComment,
+        string $dashboardUrl,
+        string $accountScenario,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::ENLISTMENT_ACCEPTED_CANDIDATE,
+            'enlistment_accepted_candidate',
+            $to,
+            'Candidature acceptée — ' . $tenantName,
+            [
+                'tenantName' => $tenantName,
+                'reviewerComment' => $reviewerComment,
+                'dashboardUrl' => $dashboardUrl,
+                'accountScenario' => $accountScenario,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'enlistment_accepted_candidate', 'account_scenario' => $accountScenario]
+        );
+    }
+
+    /**
+     * Candidature acceptée — notification recrutement / RH.
+     */
+    public function sendEnlistmentAcceptedStaff(
+        string $to,
+        string $tenantName,
+        int $enlistmentId,
+        string $candidateFullName,
+        string $candidateEmail,
+        string $summaryLine,
+        string $reviewUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::ENLISTMENT_ACCEPTED_STAFF,
+            'enlistment_accepted_staff',
+            $to,
+            'Candidature acceptée — ' . $tenantName . ' — #' . $enlistmentId,
+            [
+                'tenantName' => $tenantName,
+                'enlistmentId' => $enlistmentId,
+                'candidateFullName' => $candidateFullName,
+                'candidateEmail' => $candidateEmail,
+                'summaryLine' => $summaryLine,
+                'reviewUrl' => $reviewUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'enlistment_accepted', 'enlistment_id' => $enlistmentId]
         );
     }
 
@@ -407,6 +556,149 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'attendance_checkin', 'event_id' => $eventId]
+        );
+    }
+
+    public function sendTrainingEnrollmentAssigned(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $courseTitle,
+        string $courseUrl,
+        int $tenantId
+    ): bool {
+        $myTrainingUrl = \url('formations/mes-formations');
+
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_ENROLLMENT_ASSIGNED,
+            'training_enrollment_assigned',
+            $to,
+            'Formation assignée — ' . $courseTitle,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'courseTitle' => $courseTitle,
+                'courseUrl' => $courseUrl,
+                'myTrainingUrl' => $myTrainingUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_assigned', 'course_title' => $courseTitle]
+        );
+    }
+
+    public function sendTrainingCourseCompleted(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $courseTitle,
+        string $courseUrl,
+        bool $isCertifying,
+        int $tenantId
+    ): bool {
+        $myTrainingUrl = \url('formations/mes-formations');
+
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_COURSE_COMPLETED,
+            'training_course_completed',
+            $to,
+            'Parcours terminé — ' . $courseTitle,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'courseTitle' => $courseTitle,
+                'courseUrl' => $courseUrl,
+                'myTrainingUrl' => $myTrainingUrl,
+                'isCertifying' => $isCertifying,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_completed', 'course_title' => $courseTitle]
+        );
+    }
+
+    public function sendTrainingEnrollmentPendingApproval(
+        string $to,
+        string $staffDisplayName,
+        string $learnerDisplayName,
+        string $learnerEmail,
+        string $tenantName,
+        string $courseTitle,
+        string $reviewUrl,
+        int $enrollmentId,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_ENROLLMENT_PENDING_APPROVAL,
+            'training_enrollment_pending_approval',
+            $to,
+            'À valider : inscription — ' . $courseTitle,
+            [
+                'staffDisplayName' => $staffDisplayName,
+                'learnerDisplayName' => $learnerDisplayName,
+                'learnerEmail' => $learnerEmail,
+                'tenantName' => $tenantName,
+                'courseTitle' => $courseTitle,
+                'reviewUrl' => $reviewUrl,
+                'enrollmentId' => $enrollmentId,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_pending_approval', 'enrollment_id' => $enrollmentId]
+        );
+    }
+
+    public function sendTrainingSelfEnrollApproved(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $courseTitle,
+        string $courseUrl,
+        int $tenantId
+    ): bool {
+        $myTrainingUrl = \url('formations/mes-formations');
+
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_SELF_ENROLL_APPROVED,
+            'training_self_enroll_approved',
+            $to,
+            'Inscription acceptée — ' . $courseTitle,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'courseTitle' => $courseTitle,
+                'courseUrl' => $courseUrl,
+                'myTrainingUrl' => $myTrainingUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_self_enroll_approved', 'course_title' => $courseTitle]
+        );
+    }
+
+    public function sendTrainingSelfEnrollDeclined(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $courseTitle,
+        int $tenantId
+    ): bool {
+        $catalogUrl = \url('formations');
+
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_SELF_ENROLL_DECLINED,
+            'training_self_enroll_declined',
+            $to,
+            'Inscription non retenue — ' . $courseTitle,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'courseTitle' => $courseTitle,
+                'catalogUrl' => $catalogUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_self_enroll_declined', 'course_title' => $courseTitle]
         );
     }
 }

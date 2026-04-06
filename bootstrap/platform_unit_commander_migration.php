@@ -227,6 +227,14 @@ function run_platform_unit_commander_migration(PDO $pdo): void
         CONSTRAINT fk_referral_attr_referrer FOREIGN KEY (referrer_user_id) REFERENCES users (id) ON DELETE CASCADE,
         CONSTRAINT fk_referral_attr_tenant FOREIGN KEY (referred_tenant_id) REFERENCES tenants (id) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    try {
+        $st = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_invitations' AND COLUMN_NAME = 'invitation_payload' LIMIT 1");
+        if ($st && !$st->fetchColumn()) {
+            $pdo->exec("ALTER TABLE community_invitations ADD COLUMN invitation_payload JSON DEFAULT NULL COMMENT 'Unite et role metier prevus a l acceptation' AFTER role_id");
+        }
+    } catch (\Throwable) {
+    }
 }
 
 /**

@@ -6,7 +6,9 @@ namespace App\Services\Attendance;
 
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
+use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 
 /**
@@ -24,7 +26,8 @@ final class CommunityEventAttendanceService
         private CommunityEventRepository $events,
         private EmailService $emailService,
         private TenantRepository $tenants,
-        private UserRepository $users
+        private UserRepository $users,
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository
     ) {}
 
     /**
@@ -54,7 +57,7 @@ final class CommunityEventAttendanceService
         $u = $this->users->findById($userId, $tenantId);
         $email = (string) ($u['email'] ?? '');
         $displayName = (string) ($u['display_name'] ?? 'Membre');
-        if ($email !== '') {
+        if ($email !== '' && $this->notificationPreferencesRepository->isEmailEventEnabled($userId, EmailEvents::ATTENDANCE_CHECKIN_CONFIRM)) {
             $this->emailService->sendAttendanceCheckInConfirm(
                 $email,
                 $displayName,
@@ -171,7 +174,7 @@ final class CommunityEventAttendanceService
         $u = $this->users->findById($userId, $tenantId);
         $email = $u ? (string) ($u['email'] ?? '') : '';
         $displayName = $u ? (string) ($u['display_name'] ?? 'Membre') : 'Membre';
-        if ($email !== null && $email !== '') {
+        if ($email !== null && $email !== '' && $this->notificationPreferencesRepository->isEmailEventEnabled($userId, EmailEvents::ATTENDANCE_RSVP_CONFIRM)) {
             $this->emailService->sendAttendanceRsvpConfirmation(
                 $email,
                 $displayName,
@@ -205,8 +208,12 @@ final class CommunityEventAttendanceService
         $tenantName = (string) ($tenant['name'] ?? 'Communauté');
         $notified = 0;
         foreach ($recipients as $row) {
+            $recipientUserId = (int) ($row['user_id'] ?? 0);
             $to = (string) ($row['email'] ?? '');
             if ($to === '') {
+                continue;
+            }
+            if ($recipientUserId > 0 && !$this->notificationPreferencesRepository->isEmailEventEnabled($recipientUserId, EmailEvents::ATTENDANCE_EVENT_CANCELLED)) {
                 continue;
             }
             if ($this->emailService->sendAttendanceEventCancelled(

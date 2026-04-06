@@ -18,6 +18,9 @@ return [
         'username' => env('MAIL_USERNAME', ''),
         'password' => env('MAIL_PASSWORD', ''),
         'encryption' => env('MAIL_ENCRYPTION', 'tls'),
+        'timeout' => (int) env('MAIL_SMTP_TIMEOUT', 30),
+        /** true = vérif TLS stricte ; false = dépannage uniquement (certificat auto-signé / chaîne incomplète). */
+        'ssl_verify_peer' => filter_var(env('MAIL_SSL_VERIFY_PEER', 'true'), FILTER_VALIDATE_BOOLEAN),
     ],
     'file_path' => dirname(__DIR__) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'mail-outbox',
     'login_attempt_threshold' => (int) env('MAIL_LOGIN_BRUTE_THRESHOLD', 8),

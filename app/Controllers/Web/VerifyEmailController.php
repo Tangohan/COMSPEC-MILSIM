@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Core\Validator;
 use App\Repositories\EmailTokenRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
@@ -15,6 +17,8 @@ use App\Services\EmailService;
 
 final class VerifyEmailController
 {
+    private const RESEND_COOLDOWN_SEC = 90;
+
     public function __construct(
         private EmailTokenRepository $emailTokens,
         private UserRepository $userRepository,
@@ -61,6 +65,7 @@ final class VerifyEmailController
             );
         }
 
+        Session::forget('pending_verification_email');
         Session::flash('success', 'Adresse e-mail confirmée. Vous pouvez vous connecter.');
         return Response::redirect(url('login'));
     }
@@ -75,6 +80,135 @@ final class VerifyEmailController
         return Response::view('auth.register-check-email', [
             'title' => 'Confirmez votre e-mail',
             'email' => (string) $email,
+            'error' => Session::getFlash('error'),
         ]);
+    }
+
+    public function resendVerification(Request $request, array $params = []): Response
+    {
+        if (!$request->isPost()) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('login'));
+        }
+
+        $raw = Session::get('pending_verification_email') ?? Session::get('register_pending_email');
+        $email = strtolower(trim((string) (($raw !== null && $raw !== '') ? $raw : $request->input('email'))));
+        if ($email === '') {
+            Session::flash('error', 'Saisissez d’abord votre identifiant sur la page de connexion, puis réessayez.');
+
+            return Response::redirect(url('login'));
+        }
+
+        $v = new Validator(['email' => $email], ['email' => 'required|email']);
+        if (!$v->validate()) {
+            Session::flash('error', 'Adresse e-mail invalide.');
+
+            return Response::redirect(url('login'));
+        }
+
+        $candidates = $this->userRepository->listUsersForLoginByEmail($email);
+        $pending = array_values(array_filter(
+            $candidates,
+            static fn (array $r): bool => ($r['status'] ?? '') === 'pending_verification'
+        ));
+
+        if ($pending === []) {
+            Session::flash(
+                'success',
+                'Si un compte en attente de confirmation existe pour cette adresse, un nouveau lien vient d’être envoyé.'
+            );
+
+            return Response::redirect(url('login'));
+        }
+
+        $sent = 0;
+        $rateLimited = false;
+        $lastMailError = null;
+        $attemptedSend = false;
+
+        foreach ($pending as $row) {
+            $uid = (int) $row['id'];
+            $last = $this->emailTokens->getLatestTokenCreatedAtForUserPurpose($uid, EmailTokenPurpose::REGISTER_CONFIRM);
+            if ($last !== null && (time() - $last->getTimestamp()) < self::RESEND_COOLDOWN_SEC) {
+                $rateLimited = true;
+
+                continue;
+            }
+
+            $tenantId = (int) $row['tenant_id'];
+            $tenant = $this->tenantRepository->findById($tenantId);
+            $tenantName = (string) ($tenant['name'] ?? 'Communauté');
+            $rawToken = bin2hex(random_bytes(32));
+            $tokenHash = hash('sha256', $rawToken);
+            $expires = new \DateTimeImmutable('+15 minutes');
+            $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
+            $attemptedSend = true;
+            $ok = $this->emailService->sendUserRegisterConfirmation(
+                $email,
+                (string) ($row['display_name'] ?? 'Membre'),
+                $tenantName,
+                $verifyUrl,
+                15,
+                $tenantId
+            );
+            if (!$ok) {
+                $lastMailError = trim((string) ($this->emailService->getLastSendError() ?? ''));
+
+                continue;
+            }
+
+            $this->emailTokens->deletePendingForUserPurpose($uid, EmailTokenPurpose::REGISTER_CONFIRM);
+            $this->emailTokens->create(
+                $tenantId,
+                $uid,
+                EmailTokenPurpose::REGISTER_CONFIRM,
+                $tokenHash,
+                bin2hex(random_bytes(16)),
+                $expires
+            );
+            $sent++;
+        }
+
+        if ($sent > 0) {
+            $notice = \email_file_mailer_notice();
+            if ($notice !== '') {
+                Session::flash('warning', $notice);
+            }
+            Session::flash(
+                'success',
+                'Un nouveau lien de confirmation a été envoyé. Vérifiez votre boîte e-mail (et les courriers indésirables).'
+            );
+
+            return Response::redirect(url('login'));
+        }
+
+        if ($attemptedSend && $lastMailError !== null && $lastMailError !== '') {
+            Session::flash('error', 'L’e-mail n’a pas pu être envoyé : ' . $lastMailError);
+
+            return Response::redirect(url('login'));
+        }
+
+        if ($attemptedSend) {
+            Session::flash('error', 'L’e-mail n’a pas pu être envoyé. Vérifiez la configuration SMTP dans .env ou contactez un administrateur.');
+
+            return Response::redirect(url('login'));
+        }
+
+        if ($rateLimited) {
+            Session::flash('error', 'Veuillez patienter une minute avant de redemander un lien.');
+
+            return Response::redirect(url('login'));
+        }
+
+        Session::flash(
+            'success',
+            'Si un compte en attente de confirmation existe pour cette adresse, un nouveau lien vient d’être envoyé.'
+        );
+
+        return Response::redirect(url('login'));
     }
 }

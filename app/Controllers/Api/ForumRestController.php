@@ -14,6 +14,7 @@ use App\Repositories\ForumReportRepository;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumVoteRepository;
 use App\Services\Profile\ProfilePublicIdentityService;
+use App\Support\ForumReportReason;
 
 /**
  * API REST structurée (/api/forum/topics, /api/forum/posts, …) — JSON + CSRF sur mutations.
@@ -166,13 +167,23 @@ final class ForumRestController
         }
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
-        $targetType = (string) ($input['target_type'] ?? 'post');
+        $targetType = strtolower(trim((string) ($input['target_type'] ?? 'post')));
         $targetId = (int) ($input['target_id'] ?? 0);
-        $reportType = preg_match('/^(spam|abuse|illegal|other)$/', (string) ($input['report_type'] ?? 'other')) ? $input['report_type'] : 'other';
-        $comment = trim((string) ($input['comment'] ?? ''));
-        $reason = trim((string) ($input['reason'] ?? 'Signalement'));
+        $topicContext = (int) ($input['topic_id'] ?? 0);
+        $postContext = (int) ($input['post_id'] ?? 0);
+        $reportedUrl = trim((string) ($input['reported_url'] ?? ''));
+        $category = trim((string) ($input['reason'] ?? $input['reason_category'] ?? 'other'));
+        $details = trim((string) ($input['details'] ?? $input['comment'] ?? ''));
+
+        $normalized = ForumReportReason::fromCategory($category !== '' ? $category : 'other', $details);
+        $reportType = $normalized['report_type'];
+        $reasonText = $normalized['reason'];
+        $comment = $normalized['comment'];
+
         $postId = null;
         $topicId = null;
+        $urlForDb = null;
+
         if ($targetType === 'post' && $targetId > 0) {
             $post = $this->postRepository->findById($targetId, $tenantId);
             if ($post) {
@@ -184,11 +195,40 @@ final class ForumRestController
             if ($topic) {
                 $topicId = $targetId;
             }
+        } elseif ($targetType === 'url') {
+            if ($reportedUrl === '' || strlen($reportedUrl) > 2048) {
+                return Response::json(['success' => false, 'error' => 'URL invalide ou trop longue'], 400);
+            }
+            $schemeTest = parse_url($reportedUrl, PHP_URL_SCHEME);
+            if (!is_string($schemeTest) || !in_array(strtolower($schemeTest), ['http', 'https'], true)) {
+                return Response::json(['success' => false, 'error' => 'URL invalide (http ou https uniquement)'], 400);
+            }
+            $tid = $topicContext > 0 ? $topicContext : $targetId;
+            if ($tid <= 0) {
+                return Response::json(['success' => false, 'error' => 'Sujet de référence manquant'], 400);
+            }
+            $topic = $this->topicRepository->findById($tid, $tenantId);
+            if (!$topic) {
+                return Response::json(['success' => false, 'error' => 'Sujet introuvable'], 404);
+            }
+            $topicId = $tid;
+            if ($postContext > 0) {
+                $post = $this->postRepository->findById($postContext, $tenantId);
+                if ($post && (int) $post['topic_id'] === $topicId) {
+                    $postId = $postContext;
+                }
+            }
+            $urlForDb = $reportedUrl;
+            $reasonText = 'Lien signalé : ' . $reportedUrl . "\n" . $reasonText;
+        } else {
+            return Response::json(['success' => false, 'error' => 'Type de cible invalide'], 400);
         }
-        if ($postId === null && $topicId === null) {
+
+        if ($topicId === null) {
             return Response::json(['success' => false, 'error' => 'Cible invalide'], 400);
         }
-        $this->reportRepository->create($tenantId, $userId, $postId, $topicId, $reason !== '' ? $reason : 'Signalement', $reportType, $comment !== '' ? $comment : null);
+
+        $this->reportRepository->create($tenantId, $userId, $postId, $topicId, $reasonText !== '' ? $reasonText : 'Signalement', $reportType, $comment, $urlForDb);
 
         return Response::json(['success' => true]);
     }

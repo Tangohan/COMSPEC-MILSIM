@@ -49,6 +49,11 @@
   --portal-bar-h: 4rem;
 }
 
+/* Onglet Administration : actif un peu plus discret que les autres accents */
+[data-accent='rose'] .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner {
+  background: rgba(244, 63, 94, 0.09);
+}
+
 .portal-nav__shell {
   border-bottom: 1px solid rgb(226 232 240);
   background: rgba(255, 255, 255, 0.94);
@@ -61,6 +66,35 @@
   .portal-nav__shell {
     background: rgba(255, 255, 255, 0.88);
   }
+}
+
+/* Barre principale sombre (marque ATHENA SI) */
+.portal-nav__shell--dark {
+  border-bottom: 1px solid rgb(51 65 85);
+  background: rgb(15 23 42);
+}
+
+@supports (backdrop-filter: blur(10px)) {
+  .portal-nav__shell--dark {
+    background: rgba(15, 23, 42, 0.97);
+    backdrop-filter: blur(12px);
+  }
+}
+
+.portal-nav__shell--dark .portal-nav__link--simple:hover,
+.portal-nav__shell--dark .portal-nav__link--mega:hover .portal-nav__trigger-inner {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.portal-nav__shell--dark .portal-nav__link--simple[data-active='1'],
+.portal-nav__shell--dark .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner {
+  color: rgb(255 255 255);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.portal-nav__shell--dark .portal-nav__link--simple[data-active='1']::after,
+.portal-nav__shell--dark .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner::after {
+  background: rgb(96 165 250);
 }
 
 .portal-nav__brand-mark {
@@ -118,7 +152,20 @@
 }
 
 /* Méga panneau */
+/*
+ * Largeur du conteneur : à définir ici — les utilitaires Tailwind du type w-[min(60rem,...)]
+ * sont souvent absents du tailwind.css compilé (purge / build), ce qui laissait le panneau
+ * sans largeur réelle → bande verticale illisible.
+ */
+.nav-mega-panel {
+  box-sizing: border-box;
+  width: min(60rem, calc(100vw - 1.25rem));
+  max-width: calc(100vw - 1rem);
+}
+
 .nav-mega-surface {
+  width: 100%;
+  max-width: 100%;
   background: linear-gradient(165deg, rgb(255 255 255) 0%, rgb(248 250 252) 48%, rgb(255 255 255) 100%);
   box-shadow:
     0 32px 100px -32px rgba(15, 23, 42, 0.28),
@@ -166,28 +213,50 @@
 .nav-mega-layout {
   display: grid;
   gap: 0;
-  min-height: 260px;
+  min-height: 220px;
+  min-width: 0;
+  width: 100%;
+}
+
+/*
+ * Colonne latérale (aside) : ne jamais utiliser minmax(0, …) sur la 3e piste — un minimum à 0
+ * permet au track de se réduire à quelques px (texte empilé caractère par caractère).
+ * Les deux premières colonnes restent en fr avec min-width:0 sur les enfants pour absorber l’espace.
+ */
+.nav-mega-layout > .nav-mega-col {
+  min-width: 0;
 }
 
 @media (min-width: 1024px) {
+  /*
+   * Pistes 1–2 : plancher (~11rem) pour éviter que les colonnes de liens ne soient écrasées
+   * quand le conteneur est contraint ; piste 3 : bandeau latéral lisible.
+   */
   .nav-mega-layout--operations {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(240px, 300px);
+    grid-template-columns: minmax(11rem, 1fr) minmax(11rem, 1.05fr) minmax(200px, min(280px, 32vw));
   }
 
   .nav-mega-layout--resources {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(240px, 280px);
+    grid-template-columns: minmax(11rem, 1fr) minmax(11rem, 1.05fr) minmax(200px, min(280px, 32vw));
   }
 
   .nav-mega-layout--personnel {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(240px, 300px);
+    grid-template-columns: minmax(11rem, 1fr) minmax(11rem, 1.05fr) minmax(200px, min(280px, 32vw));
   }
 
   .nav-mega-layout--training {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(240px, 290px);
+    grid-template-columns: minmax(11rem, 1fr) minmax(11rem, 1.05fr) minmax(200px, min(280px, 32vw));
   }
 
   .nav-mega-layout--admin {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.2fr) minmax(260px, 320px);
+    grid-template-columns: minmax(11rem, 1fr) minmax(11rem, 1.05fr) minmax(200px, min(300px, 34vw));
+  }
+
+  .nav-mega-layout > .nav-mega-aside {
+    width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }
 

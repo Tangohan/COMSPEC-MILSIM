@@ -118,4 +118,75 @@ class PersonnelAssignmentRepository
 
         return $stmt->rowCount();
     }
+
+    public function personnelAssignmentsTableExists(): bool
+    {
+        try {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_assignments' LIMIT 1");
+
+            return (bool) ($stmt && $stmt->fetchColumn());
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function userUnitsTableExists(): bool
+    {
+        try {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_units' LIMIT 1");
+
+            return (bool) ($stmt && $stmt->fetchColumn());
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Aligne personnel_assignments et user_units sur le dossier (unité principale + rôle d’affectation).
+     * Indispensable pour la fiche personnelle, l’ORBAT et les indicateurs « sans unité » (user_units).
+     */
+    public function syncPrimaryAssignmentFromDossier(int $userId, ?int $unitId, string $roleName): void
+    {
+        $roleName = trim($roleName) !== '' ? trim($roleName) : 'Membre';
+        $hasPa = $this->personnelAssignmentsTableExists();
+        $hasUu = $this->userUnitsTableExists();
+        if (!$hasPa && !$hasUu) {
+            return;
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            if ($hasUu) {
+                $this->pdo->prepare(
+                    'UPDATE user_units SET ended_at = NOW() WHERE user_id = ? AND (ended_at IS NULL OR ended_at > NOW())'
+                )->execute([$userId]);
+            }
+            if ($hasPa) {
+                $this->pdo->prepare(
+                    "UPDATE personnel_assignments SET status = 'inactive', ended_at = CURDATE(), is_primary = 0, updated_at = NOW()
+                     WHERE user_id = ? AND status = 'active'"
+                )->execute([$userId]);
+            }
+            if ($unitId === null || $unitId <= 0) {
+                $this->pdo->commit();
+
+                return;
+            }
+            if ($hasPa) {
+                $this->pdo->prepare(
+                    'INSERT INTO personnel_assignments (user_id, unit_id, role_name, is_primary, started_at, ended_at, status, created_at)
+                     VALUES (?, ?, ?, 1, CURDATE(), NULL, \'active\', NOW())'
+                )->execute([$userId, $unitId, $roleName]);
+            }
+            if ($hasUu) {
+                $this->pdo->prepare(
+                    'INSERT INTO user_units (user_id, unit_id, is_primary, assigned_at, ended_at, assignment_type) VALUES (?, ?, 1, NOW(), NULL, ?)'
+                )->execute([$userId, $unitId, $roleName]);
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
 }

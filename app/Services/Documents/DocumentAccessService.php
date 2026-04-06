@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Documents;
 
+use App\Core\Gate;
 use App\Repositories\DocumentCollaboratorRepository;
 use App\Repositories\DocumentPermissionRepository;
 use App\Repositories\UserRepository;
@@ -11,12 +12,25 @@ use App\Repositories\UserRepository;
 /**
  * Règle d'autorisation centralisée pour les documents.
  * Ordre de décision : owner → collaborateur → classification → permission explicite → visibilité → statut.
- * (Pas de bypass "admin global" : même les admins passent par les règles métier.)
+ *
+ * Visibilité « par rôles » : uniquement les slugs cochés (intra-tenant) ;
+ * commandement et modération forum voient toujours les documents publiés (lecture/commentaire), sous réserve de la classification.
  */
 class DocumentAccessService
 {
     /** Niveaux de classification du plus bas au plus élevé (indice = force). */
     private const CLASSIFICATION_ORDER = ['public', 'interne', 'restreint', 'sensible', 'confidentiel', 'operationnel'];
+
+    /** Commandement / gouvernance : pas limités par la liste « Rôles autorisés » (tous niveaux d’accès gérés ici). */
+    private const TENANT_DOCUMENT_VISIBILITY_FULL_BYPASS_ROLE_SLUGS = [
+        'tenant_admin',
+        'community_owner',
+    ];
+
+    /** Modération : lecture & commentaire sur tout document publié, sans être dans la liste des cases à cocher. */
+    private const TENANT_DOCUMENT_VISIBILITY_READ_BYPASS_ROLE_SLUGS = [
+        'forum_moderator',
+    ];
 
     /** Plafond de classification par rôle (slug => niveau max autorisé). À étendre selon les rôles du tenant. */
     private const ROLE_CLASSIFICATION_MAX = [
@@ -98,10 +112,24 @@ class DocumentAccessService
             return false;
         }
 
+        // 4b. Pilote RBAC multi-périmètre : droits liés à l’unité du document (permissions `rbac_scope` = unit)
+        if ($docUnitId !== null && $docUnitId > 0
+            && Gate::getInstance()->allowsWithUnitContext('documents.view', $docUnitId)
+            && $this->accessLevelGrants('read', $requiredLevel)) {
+            return true;
+        }
+
         // 5. Permission explicite (document_permissions)
         $permissions = $this->permissionRepository->getByDocument($docId);
         $userRoleSlug = $this->userRepository->getRoleSlugForUser($userId);
         $userUnitIds = $this->userRepository->getUnitIdsForUser($userId);
+        $roleSlugsGranted = [];
+        foreach ($permissions as $p) {
+            if (($p['permission_type'] ?? '') === 'role' && ($p['permission_value'] ?? '') !== '') {
+                $roleSlugsGranted[] = (string) $p['permission_value'];
+            }
+        }
+        $roleSlugsGranted = array_values(array_unique($roleSlugsGranted));
         foreach ($permissions as $p) {
             $match = false;
             if ($p['permission_type'] === 'user' && (int) $p['permission_value'] === $userId) {
@@ -112,14 +140,26 @@ class DocumentAccessService
                 $match = true;
             }
             if ($match && $this->accessLevelGrants($p['access_level'] ?? 'read', $requiredLevel)) {
-                if ($this->visibilityAndStatusAllow($visibility, $status, $document, $userId, $tenantId, $docUnitId, $userUnitIds, $userRoleSlug, true)) {
+                if ($this->visibilityAndStatusAllow($visibility, $status, $document, $userId, $tenantId, $docUnitId, $userUnitIds, $userRoleSlug, true, $roleSlugsGranted, $requiredLevel)) {
                     return true;
                 }
             }
         }
 
         // 6. Visibilité et statut (sans permission explicite)
-        return $this->visibilityAndStatusAllow($visibility, $status, $document, $userId, $tenantId, $docUnitId, $userUnitIds, $userRoleSlug, false);
+        return $this->visibilityAndStatusAllow($visibility, $status, $document, $userId, $tenantId, $docUnitId, $userUnitIds, $userRoleSlug, false, $roleSlugsGranted, $requiredLevel);
+    }
+
+    private function hasTenantDocumentFullVisibilityBypass(?string $userRoleSlug): bool
+    {
+        return $userRoleSlug !== null
+            && in_array($userRoleSlug, self::TENANT_DOCUMENT_VISIBILITY_FULL_BYPASS_ROLE_SLUGS, true);
+    }
+
+    private function hasTenantDocumentReadVisibilityBypass(?string $userRoleSlug): bool
+    {
+        return $userRoleSlug !== null
+            && in_array($userRoleSlug, self::TENANT_DOCUMENT_VISIBILITY_READ_BYPASS_ROLE_SLUGS, true);
     }
 
     private function classificationAllows(int $userId, string $documentLevel): bool
@@ -157,6 +197,10 @@ class DocumentAccessService
     /**
      * @param array<string, mixed> $document
      */
+    /**
+     * @param list<string> $roleSlugsGranted Slugs issus de document_permissions (type = role), p.ex. cases « Rôles autorisés ».
+     * @param 'read'|'comment'|'edit'|'approve'|'manage' $requiredLevel
+     */
     private function visibilityAndStatusAllow(
         string $visibility,
         string $status,
@@ -166,7 +210,9 @@ class DocumentAccessService
         ?int $docUnitId,
         array $userUnitIds,
         ?string $userRoleSlug,
-        bool $hasExplicitPermission
+        bool $hasExplicitPermission,
+        array $roleSlugsGranted,
+        string $requiredLevel
     ): bool {
         // Brouillon / en relecture / à valider : seulement owner et collaborateurs (déjà traités au-dessus). Ici on est dans "visibility/status" pour les autres.
         if (in_array($status, ['draft', 'review', 'approval'], true)) {
@@ -182,8 +228,24 @@ class DocumentAccessService
             case 'unit':
                 return $docUnitId !== null && in_array($docUnitId, $userUnitIds, true);
             case 'role':
-                // Document peut avoir un champ "min_role" ou on considère tout le tenant avec le bon rôle
-                return $userRoleSlug !== null;
+                if ($hasExplicitPermission) {
+                    return true;
+                }
+                if ($this->hasTenantDocumentFullVisibilityBypass($userRoleSlug)) {
+                    return true;
+                }
+                if ($this->hasTenantDocumentReadVisibilityBypass($userRoleSlug)
+                    && in_array($requiredLevel, ['read', 'comment'], true)) {
+                    return true;
+                }
+                if ($userRoleSlug === null) {
+                    return false;
+                }
+                if ($roleSlugsGranted === []) {
+                    return false;
+                }
+
+                return in_array($userRoleSlug, $roleSlugsGranted, true);
             case 'organization':
                 return true; // tout le tenant
             case 'controlled':

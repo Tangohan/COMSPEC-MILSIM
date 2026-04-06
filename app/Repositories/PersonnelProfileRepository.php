@@ -42,6 +42,7 @@ class PersonnelProfileRepository
     {
         $allowed = [
             'character_name', 'callsign', 'rank_display', 'rank_display_override', 'primary_role', 'secondary_role',
+            'personnel_job_role_id', 'role_sub_label',
             'primary_unit_id', 'clearance_level', 'character_portrait_path', 'character_banner_path',
             'blood_type', 'nationality', 'languages', 'enlistment_date', 'motto',
             'readiness_score', 'command_notes', 'matricule_internal', 'clearance_reviewed_at',

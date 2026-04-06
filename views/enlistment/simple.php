@@ -7,9 +7,11 @@ $requireAiAck = array_key_exists('require_ai_ack', $communityConfig) ? (bool) $c
 $ctx = $enlistmentContext ?? [];
 $canUseAccount = !empty($ctx['canUseAccount']);
 $prefill = array_merge(
-    ['full_name' => '', 'email' => '', 'callsign' => ''],
+    ['full_name' => '', 'email' => ''],
     is_array($ctx['prefill'] ?? null) ? $ctx['prefill'] : []
 );
+$platformEmail = trim((string) ($ctx['platform_email'] ?? ''));
+$showPlatformEmailOption = $platformEmail !== '';
 $recruitmentPresets = $ctx['recruitmentPresets'] ?? [];
 $hasMembershipOnTarget = !empty($ctx['hasMembershipOnTarget']);
 $switchToTargetUrl = $ctx['switchToTargetUrl'] ?? null;
@@ -21,15 +23,21 @@ $simpleEnlistmentUrl = $simpleEnlistmentUrl ?? $formAction;
     x-data="{
         flow: <?= $canUseAccount ? "'account'" : "'guest'" ?>,
         showConsentModal: false,
+        usePlatformEmail: false,
+        platformEmail: <?= json_encode($platformEmail, JSON_UNESCAPED_UNICODE) ?>,
+        prefillEmail: <?= json_encode($prefill['email'] ?? '', JSON_UNESCAPED_UNICODE) ?>,
+        syncGuestEmail() {
+            const el = document.querySelector('#simple-enlist-email');
+            if (!el) return;
+            el.value = this.usePlatformEmail ? this.platformEmail : this.prefillEmail;
+        },
         applyPreset(ev) {
             const opt = ev.target.selectedOptions[0];
             if (!opt || !opt.dataset.payload) return;
             try {
                 const p = JSON.parse(opt.dataset.payload);
-                const cs = document.querySelector('input[name=callsign]');
                 const av = document.querySelector('input[name=availability]');
                 const mo = document.querySelector('textarea[name=motivation_why_join]');
-                if (cs && p.callsign) cs.value = p.callsign;
                 if (av && p.availability) av.value = p.availability;
                 if (mo && p.motivation_why_join) mo.value = p.motivation_why_join;
             } catch (e) {}
@@ -84,9 +92,20 @@ $simpleEnlistmentUrl = $simpleEnlistmentUrl ?? $formAction;
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-600 mb-1">Email</label>
-                <input type="email" name="email" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm guest-req" placeholder="email@exemple.com"
+                <input type="email" name="email" id="simple-enlist-email" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm guest-req" placeholder="email@exemple.com"
                     value="<?= htmlspecialchars($prefill['email'] ?? '') ?>"
-                    x-bind:disabled="flow !== 'guest'">
+                    x-bind:disabled="flow !== 'guest'"
+                    x-bind:readonly="flow === 'guest' && usePlatformEmail"
+                    autocomplete="email">
+                <?php if ($showPlatformEmailOption): ?>
+                <label class="mt-3 flex items-start gap-2.5 text-sm text-slate-700 cursor-pointer">
+                    <input type="checkbox" name="use_platform_email" value="1" class="mt-0.5 rounded border-slate-300"
+                        x-bind:disabled="flow !== 'guest'"
+                        x-model="usePlatformEmail"
+                        @change="syncGuestEmail()">
+                    <span>Utiliser l’e-mail enregistré sur la plateforme (<span class="font-mono text-xs"><?= htmlspecialchars($platformEmail, ENT_QUOTES, 'UTF-8') ?></span>)</span>
+                </label>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -101,10 +120,6 @@ $simpleEnlistmentUrl = $simpleEnlistmentUrl ?? $formAction;
                     <label class="flex items-center gap-2 mb-2">
                         <input type="checkbox" name="share_name" value="1" checked class="rounded border-slate-300" x-bind:disabled="flow !== 'account'">
                         <span>Partager mon <strong>nom</strong> (affichage / dossier)</span>
-                    </label>
-                    <label class="flex items-center gap-2">
-                        <input type="checkbox" name="share_callsign" value="1" class="rounded border-slate-300" x-bind:disabled="flow !== 'account'">
-                        <span>Partager mon <strong>indicatif</strong> du profil</span>
                     </label>
                 </div>
 
@@ -148,10 +163,6 @@ $simpleEnlistmentUrl = $simpleEnlistmentUrl ?? $formAction;
         </div>
 
         <div class="space-y-5">
-            <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">Callsign (optionnel)</label>
-                <input type="text" name="callsign" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="<?= $canUseAccount ? 'Saisie ou profil' : 'Ghost-21' ?>" value="<?= htmlspecialchars($prefill['callsign'] ?? '') ?>">
-            </div>
             <div>
                 <label class="block text-xs font-bold text-slate-600 mb-1">Disponibilité</label>
                 <input type="text" name="availability" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="Soirs, week-end...">

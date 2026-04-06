@@ -105,8 +105,8 @@ final class EmailTransportResolver
         $smtp = $this->config['smtp'] ?? [];
         $host = trim((string) ($smtp['host'] ?? ''));
         $port = (int) ($smtp['port'] ?? 587);
-        $user = (string) ($smtp['username'] ?? '');
-        $pass = (string) ($smtp['password'] ?? '');
+        $user = trim((string) ($smtp['username'] ?? ''));
+        $pass = trim((string) ($smtp['password'] ?? ''));
         $enc = strtolower((string) ($smtp['encryption'] ?? 'tls'));
 
         if ($host === '' && in_array($mailerType, ['sendgrid', 'mailgun', 'ses'], true)) {
@@ -123,6 +123,8 @@ final class EmailTransportResolver
 
         $mail->Host = $host;
         $mail->Port = $port > 0 ? $port : 587;
+        $timeout = (int) ($smtp['timeout'] ?? 30);
+        $mail->Timeout = $timeout > 0 ? $timeout : 30;
         $mail->SMTPAuth = ($user !== '' || $pass !== '');
         $mail->Username = $user;
         $mail->Password = $pass;
@@ -135,11 +137,12 @@ final class EmailTransportResolver
             $mail->SMTPSecure = '';
         }
 
+        $verifyPeer = (bool) ($smtp['ssl_verify_peer'] ?? true);
         $mail->SMTPOptions = [
             'ssl' => [
-                'verify_peer' => true,
-                'verify_peer_name' => true,
-                'allow_self_signed' => false,
+                'verify_peer' => $verifyPeer,
+                'verify_peer_name' => $verifyPeer,
+                'allow_self_signed' => !$verifyPeer,
             ],
         ];
     }

@@ -18,7 +18,7 @@ class ForumUploadController
 {
     private const MAX_FILES = 5;
     private const MAX_SIZE = 5 * 1024 * 1024; // 5 Mo
-    private const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    private const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
 
     public function __construct(
         private ContentModerationOrchestrator $moderationOrchestrator,
@@ -83,13 +83,14 @@ class ForumUploadController
             $finfo = new \finfo(FILEINFO_MIME_TYPE);
             $detected = $finfo->file($tmp);
             if (!is_string($detected) || !in_array($detected, self::ALLOWED_TYPES, true)) {
-                return Response::json(['success' => false, 'error' => 'Type MIME non autorisé (JPEG, PNG, GIF, WebP uniquement)'], 400);
+                return Response::json(['success' => false, 'error' => 'Type non autorisé (images JPEG, PNG, GIF, WebP ou PDF)'], 400);
             }
             $ext = match ($detected) {
                 'image/jpeg' => 'jpg',
                 'image/png' => 'png',
                 'image/gif' => 'gif',
                 'image/webp' => 'webp',
+                'application/pdf' => 'pdf',
                 default => 'bin',
             };
             $publicId = uniqid('forum_', true) . '.' . $ext;

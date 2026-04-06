@@ -45,6 +45,9 @@ class ForumNewTopicController
         }
 
         $categoriesWithChildren = $this->categoryRepository->listForTenantWithChildren($tenantId);
+        if (function_exists('forum_filter_category_tree_for_user')) {
+            $categoriesWithChildren = forum_filter_category_tree_for_user($categoriesWithChildren, (int) $userId);
+        }
         $preselectedCategoryId = 0;
         $categoryIdFromQuery = (int) $request->query('category_id', 0);
         if ($categoryIdFromQuery > 0) {

@@ -29,6 +29,7 @@ foreach ($kpis as $k) {
 $gate = \App\Core\Gate::getInstance();
 $canDocs = $gate->allows('documents.upload') || $gate->allows('admin.access');
 $canTraining = $gate->allows('training.manage') || $gate->allows('training.assign') || $gate->allows('admin.access');
+$canTenantTechModules = $gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access');
 
 $orgFormatDt = static function (?string $raw): string {
     if ($raw === null || $raw === '') {
@@ -111,13 +112,19 @@ if ($showPlatformEnv) {
             <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/80 via-transparent to-transparent pointer-events-none" aria-hidden="true"></div>
             <div class="relative px-5 sm:px-8 py-7 lg:py-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                 <div class="min-w-0 flex-1">
-                    <p class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-3">
-                        <span class="h-px w-6 bg-slate-300" aria-hidden="true"></span>
-                        Administration organisationnelle
+                    <p class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800/90 mb-3">
+                        <span class="h-px w-6 bg-emerald-400" aria-hidden="true"></span>
+                        Back-office communauté
                     </p>
                     <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Centre de pilotage</h1>
                     <p class="mt-2 text-sm sm:text-base text-slate-600 max-w-2xl leading-relaxed">
-                        Supervisez l’état de votre organisation, les files d’attente et les actions prioritaires. Vue consolidée pour le commandement administratif.
+                        Pilotage <strong class="font-semibold text-slate-800">de votre organisation</strong> (membres, structure, recrutement, modération locale).
+                        L’administration <strong class="font-semibold text-slate-800">globale du site</strong> (tous tenants, rôles système, maintenance) est sur
+                        <?php if ($gate->allows('admin.system')): ?>
+                            <a href="<?= url('admin') ?>" class="font-semibold text-amber-900 underline decoration-amber-300 hover:text-amber-950">/admin</a>.
+                        <?php else: ?>
+                            <span class="font-mono text-xs bg-slate-100 px-1 rounded">/admin</span> (réservé aux opérateurs plateforme).
+                        <?php endif; ?>
                     </p>
                     <div class="mt-5 flex flex-wrap items-center gap-3">
                         <a href="<?= url('dashboard') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-colors">
@@ -208,6 +215,139 @@ if ($showPlatformEnv) {
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
+        </section>
+
+        <?php
+        $orgEnlistmentCounts = $orgEnlistmentCounts ?? [];
+        $orgEnlistmentRecent = $orgEnlistmentRecent ?? [];
+        $orgEnlistmentErr = $orgEnlistmentError ?? null;
+        $rhRows = $orgRhRecent ?? [];
+        $rhErr = $orgRhRecentError ?? null;
+        $ecSubmitted = (int) ($orgEnlistmentCounts['submitted'] ?? 0);
+        $ecReviewed = (int) ($orgEnlistmentCounts['reviewed'] ?? 0);
+        $ecRejected = (int) ($orgEnlistmentCounts['rejected'] ?? 0);
+        $enlistStatusBadge = static function (string $status): array {
+            return match ($status) {
+                'submitted' => ['En attente', 'bg-amber-100 text-amber-950 ring-1 ring-amber-200/80'],
+                'reviewed' => ['Traitée', 'bg-emerald-100 text-emerald-950 ring-1 ring-emerald-200/80'],
+                'rejected' => ['Rejetée', 'bg-rose-100 text-rose-950 ring-1 ring-rose-200/80'],
+                default => [$status, 'bg-slate-100 text-slate-800 ring-1 ring-slate-200/80'],
+            };
+        };
+        ?>
+        <section aria-labelledby="org-recruitment-rh-heading" class="space-y-4">
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <h2 id="org-recruitment-rh-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Recrutement &amp; traçabilité RH</h2>
+                    <p class="mt-1 text-sm text-slate-600">États des candidatures, dernières soumissions et mouvements de comptes, rôles, groupes et invitations.</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-5">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-[280px]">
+                    <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">Candidatures</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Répartition par état · dernières mises à jour</p>
+                        </div>
+                        <a href="<?= url('back-office/recruitments') ?>" class="inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:text-blue-900">Liste complète →</a>
+                    </div>
+                    <?php if ($orgEnlistmentErr): ?>
+                        <div class="p-5 flex-1 flex items-center">
+                            <p class="text-sm text-rose-600"><?= htmlspecialchars($orgEnlistmentErr, ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                    <?php else: ?>
+                        <div class="px-5 pt-4 flex flex-wrap gap-2">
+                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-950 ring-1 ring-amber-200/70" title="En attente de décision">
+                                <span class="tabular-nums text-base font-black"><?= $ecSubmitted ?></span> en attente
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-950 ring-1 ring-emerald-200/70">
+                                <span class="tabular-nums text-base font-black"><?= $ecReviewed ?></span> traitées
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-950 ring-1 ring-rose-200/70">
+                                <span class="tabular-nums text-base font-black"><?= $ecRejected ?></span> rejetées
+                            </span>
+                        </div>
+                        <?php if (empty($orgEnlistmentRecent)): ?>
+                            <div class="p-8 text-center flex-1 flex flex-col justify-center">
+                                <p class="text-sm font-medium text-slate-700">Aucune candidature enregistrée</p>
+                                <p class="text-xs text-slate-500 mt-1">Les dossiers soumis via le formulaire de recrutement apparaîtront ici.</p>
+                            </div>
+                        <?php else: ?>
+                            <ul class="divide-y divide-slate-100 mt-2 flex-1">
+                                <?php foreach ($orgEnlistmentRecent as $erow): ?>
+                                    <?php
+                                    $st = (string) ($erow['status'] ?? '');
+                                    [$stLabel, $stClass] = $enlistStatusBadge($st);
+                                    $eid = (int) ($erow['id'] ?? 0);
+                                    $name = trim((string) ($erow['first_name'] ?? '') . ' ' . (string) ($erow['last_name'] ?? ''));
+                                    if ($name === '') {
+                                        $name = (string) ($erow['email'] ?? '—');
+                                    }
+                                    ?>
+                                    <li class="px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 hover:bg-slate-50/80">
+                                        <div class="min-w-0">
+                                            <a href="<?= url('back-office/recruitments/' . $eid) ?>" class="font-semibold text-slate-900 hover:text-blue-800 hover:underline truncate block"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
+                                            <span class="text-xs text-slate-500 truncate block"><?= htmlspecialchars((string) ($erow['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                        </div>
+                                        <div class="flex shrink-0 items-center gap-2">
+                                            <span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-bold <?= htmlspecialchars($stClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($stLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="text-[11px] text-slate-400 tabular-nums whitespace-nowrap"><?= htmlspecialchars($orgFormatDt(isset($erow['updated_at']) ? (string) $erow['updated_at'] : (isset($erow['created_at']) ? (string) $erow['created_at'] : null)), ENT_QUOTES, 'UTF-8') ?></span>
+                                        </div>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+
+                <div class="rounded-2xl border border-indigo-200/70 bg-white shadow-sm overflow-hidden flex flex-col min-h-[280px]">
+                    <div class="px-5 py-4 border-b border-indigo-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-indigo-50/80 to-white">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">Fil RH &amp; affectations</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Rôles, comptes, groupes, invitations — hors actions plateforme pure.</p>
+                        </div>
+                        <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1 text-sm font-semibold text-indigo-800 hover:text-indigo-950">Journal complet →</a>
+                    </div>
+                    <?php if ($rhErr): ?>
+                        <div class="p-5 flex-1 flex items-center">
+                            <p class="text-sm text-rose-600"><?= htmlspecialchars($rhErr, ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                    <?php elseif (empty($rhRows)): ?>
+                        <div class="p-8 text-center flex-1 flex flex-col justify-center">
+                            <p class="text-sm font-medium text-slate-700">Aucun mouvement RH récent</p>
+                            <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Les changements de rôle, d’affectation à un groupe ou les invitations apparaissent ici lorsqu’ils sont journalisés.</p>
+                        </div>
+                    <?php else: ?>
+                        <ul class="divide-y divide-slate-100">
+                            <?php foreach ($rhRows as $rrow): ?>
+                                <li class="px-5 py-3 hover:bg-indigo-50/40 transition-colors">
+                                    <div class="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+                                        <div class="shrink-0 w-36 text-xs font-medium text-slate-500 tabular-nums">
+                                            <?= htmlspecialchars($orgFormatDt(isset($rrow['created_at']) ? (string) $rrow['created_at'] : null), ENT_QUOTES, 'UTF-8') ?>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <?php $rhAction = (string) ($rrow['action'] ?? ''); ?>
+                                            <span class="inline-flex items-center rounded-md bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-950 mb-1" title="<?= htmlspecialchars($rhAction, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(audit_action_label_fr($rhAction), ENT_QUOTES, 'UTF-8') ?></span>
+                                            <p class="text-sm text-slate-700">
+                                                <span class="text-slate-500">Acteur ·</span>
+                                                <?= htmlspecialchars((string) ($rrow['actor_email'] ?? ('#' . (string) ($rrow['user_id'] ?? ''))), ENT_QUOTES, 'UTF-8') ?>
+                                            </p>
+                                            <?php
+                                            $ov = trim((string) ($rrow['old_value'] ?? ''));
+                                            $nv = trim((string) ($rrow['new_value'] ?? ''));
+                                            if ($rhAction === 'role_assigned' && ($ov !== '' || $nv !== '')): ?>
+                                                <p class="text-xs text-slate-600 mt-1 font-mono"><?= htmlspecialchars($ov === '' ? $nv : ($nv === '' ? $ov : $ov . ' → ' . $nv), ENT_QUOTES, 'UTF-8') ?></p>
+                                            <?php elseif (($rhAction === 'group_member_added' || $rhAction === 'group_member_removed') && ($nv !== '' || $ov !== '')): ?>
+                                                <p class="text-xs text-slate-600 mt-1">Unité / groupe · #<?= htmlspecialchars($nv !== '' ? $nv : $ov, ENT_QUOTES, 'UTF-8') ?></p>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                </div>
+            </div>
         </section>
 
         <section aria-labelledby="org-personnel-alerts-heading" class="space-y-4">
@@ -384,7 +524,7 @@ if ($showPlatformEnv) {
                                 </a>
                                 <?php endif; ?>
                                 <?php if ($canTraining): ?>
-                                <a href="<?= url('admin/training') ?>" class="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:border-sky-300 hover:bg-sky-50/50 transition-colors">
+                                <a href="<?= url('back-office/ressources/training') ?>" class="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:border-sky-300 hover:bg-sky-50/50 transition-colors">
                                     <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-sky-700"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm6 0a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm6 0a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" /></svg></span>
                                     Formations (LMS)
                                 </a>
@@ -465,7 +605,7 @@ if ($showPlatformEnv) {
                                 </li>
                             <?php endforeach; ?>
                         </ul>
-                        <a href="<?= url('admin/training') ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-sky-800 hover:text-sky-950">Formations admin →</a>
+                        <a href="<?= url('back-office/ressources/training') ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-sky-800 hover:text-sky-950">Formations (LMS) →</a>
                     <?php endif; ?>
                 </div>
 
@@ -515,7 +655,7 @@ if ($showPlatformEnv) {
                 <h2 id="org-domains-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Domaines d’administration</h2>
                 <p class="mt-1 text-sm text-slate-600">Accès structurés par famille fonctionnelle.</p>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
                     <h3 class="text-sm font-bold text-slate-900">Communauté</h3>
                     <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">Identité, configuration et mesures d’usage.</p>
@@ -556,16 +696,22 @@ if ($showPlatformEnv) {
                     </ul>
                 </div>
                 <div class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-                    <h3 class="text-sm font-bold text-slate-900">Modules transverses</h3>
-                    <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">Ressources documentaires et parcours pédagogiques.</p>
+                    <h3 class="text-sm font-bold text-slate-900">Modules &amp; intégrations</h3>
+                    <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">Ressources et outils <strong class="font-semibold text-slate-700">scopés à cette communauté</strong> (URL canonique <span class="font-mono text-[10px]">/back-office/ressources/…</span>).</p>
                     <ul class="space-y-1">
                         <?php if ($canDocs): ?>
                         <li><a href="<?= url('documents/gestion') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Documents</a></li>
                         <?php endif; ?>
                         <?php if ($canTraining): ?>
-                        <li><a href="<?= url('admin/training') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Formations (LMS)</a></li>
+                        <li><a href="<?= url('back-office/ressources/training') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Formations (LMS)</a></li>
+                        <li><a href="<?= url('back-office/ressources/training/studio') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Studio LMS</a></li>
                         <?php endif; ?>
-                        <?php if (!$canDocs && !$canTraining): ?>
+                        <?php if ($canTenantTechModules): ?>
+                        <li><a href="<?= url('back-office/ressources/modpacks') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Modpacks</a></li>
+                        <li><a href="<?= url('back-office/ressources/forum-config') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Configuration forum</a></li>
+                        <li><a href="<?= url('back-office/ressources/atak-config') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">ATAK / Tacmap</a></li>
+                        <?php endif; ?>
+                        <?php if (!$canDocs && !$canTraining && !$canTenantTechModules): ?>
                         <li class="text-xs text-slate-400">Aucun module transverse accessible avec vos droits actuels.</li>
                         <?php endif; ?>
                     </ul>

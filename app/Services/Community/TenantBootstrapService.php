@@ -55,12 +55,15 @@ final class TenantBootstrapService
             $planSlug = $this->normalizePlanSlug((string) ($options['plan_slug'] ?? 'free'));
             $tenantId = $this->tenantRepository->create($name, $slug, $planSlug);
 
+            $gov = \App\Services\Community\TenantDefaultRoleDefinitions::governanceRoles();
+            $co = $gov[0];
+            $ta = $gov[1];
             $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, 1, 1, \'community\', NOW())')
-                ->execute([$tenantId, 'Propriétaire communauté', 'community_owner', '']);
+                ->execute([$tenantId, $co['name'], $co['slug'], $co['description']]);
             $communityOwnerRoleId = (int) $pdo->lastInsertId();
 
             $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, 1, 0, \'community\', NOW())')
-                ->execute([$tenantId, 'Administrator', 'tenant_admin', '']);
+                ->execute([$tenantId, $ta['name'], $ta['slug'], $ta['description']]);
             $tenantAdminRoleId = (int) $pdo->lastInsertId();
 
             $wizard = is_array($options['wizard_normalized'] ?? null) ? $options['wizard_normalized'] : null;
@@ -83,11 +86,16 @@ final class TenantBootstrapService
                 }
             }
             TenantSeedHelper::ensurePersonnelPanelsAndMatricule($pdo, $tenantId);
+            (new \App\Services\Personnel\PersonnelJobRoleBootstrapService(
+                new \App\Repositories\PersonnelJobRoleRepository()
+            ))->ensureDefaultsForTenant($pdo, $tenantId);
 
             $st = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) SELECT ?, permission_id FROM role_permissions WHERE role_id = ?');
             $st->execute([$communityOwnerRoleId, $tenantAdminRoleId]);
 
             $newUserId = $this->userRepository->cloneUserToTenant($creatorUserId, $tenantId, $communityOwnerRoleId, $gradeId);
+
+            TenantSeedHelper::ensureOnboardingPortalCourse($pdo, $tenantId, $newUserId);
 
             $this->tenantRepository->setOwner($tenantId, $newUserId);
             $communitySettings = [

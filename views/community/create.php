@@ -243,7 +243,7 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                         </div>
                         <p class="mt-4 text-sm leading-6 text-slate-600">
                             Choisissez un <strong>modèle de départ</strong> pour les rôles et droits d’accès de votre communauté. Vous pourrez tout ajuster ensuite dans le back-office.
-                            <strong>Rapide</strong> : profils types (Fondateur, Commandement, RH, Instructeur, Membre, Invité) avec droits de base.
+                            <strong>Rapide</strong> : profils types (Fondateur, État-major, RH, cadre, opérateur, visiteur) avec droits de base.
                             <strong>Standard</strong> : identique, avec une modération forum plus large pour le rôle « Modérateur forum ».
                         </p>
                         <div class="mt-5 space-y-3">
@@ -268,7 +268,7 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 text-slate-700">
                                     <tr><td class="px-3 py-2 font-semibold">Fondateur</td><td class="px-3 py-2">Complet</td><td class="px-3 py-2">Complet</td><td class="px-3 py-2">—</td></tr>
-                                    <tr><td class="px-3 py-2 font-semibold">Commandement</td><td class="px-3 py-2">Complet</td><td class="px-3 py-2">Complet</td><td class="px-3 py-2">—</td></tr>
+                                    <tr><td class="px-3 py-2 font-semibold">État-major</td><td class="px-3 py-2">Complet</td><td class="px-3 py-2">Complet</td><td class="px-3 py-2">—</td></tr>
                                     <tr><td class="px-3 py-2 font-semibold">RH</td><td class="px-3 py-2">Lecture / sujets</td><td class="px-3 py-2">Lecture</td><td class="px-3 py-2">—</td></tr>
                                     <tr><td class="px-3 py-2 font-semibold">Instructeur</td><td class="px-3 py-2">Membre</td><td class="px-3 py-2">Formations</td><td class="px-3 py-2">—</td></tr>
                                     <tr><td class="px-3 py-2 font-semibold">Membre</td><td class="px-3 py-2">Standard</td><td class="px-3 py-2">—</td><td class="px-3 py-2">—</td></tr>

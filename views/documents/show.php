@@ -51,9 +51,13 @@ $downloadUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/download';
         <div class="p-4 overflow-auto bg-slate-100 min-h-[70vh] flex justify-center" id="doc-viewer"></div>
     </div>
     <script type="module">
-      /** pdfjs-dist : entrée ESM jsDelivr (+esm) — évite cdnjs / pdf.min.mjs introuvable */
-      import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/+esm';
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+      /**
+       * Build ESM officiel (pdfjs-dist ≥ 4 expose GlobalWorkerOptions en import nommé).
+       * L’entrée npm/+esm pour la v3 ne mappe pas GlobalWorkerOptions → workerSrc plantait.
+       */
+      import { getDocument, GlobalWorkerOptions } from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.mjs';
+      const PDFJS_BUILD = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build';
+      GlobalWorkerOptions.workerSrc = PDFJS_BUILD + '/pdf.worker.min.mjs';
       const url = <?= json_encode($fileUrl) ?>;
       const container = document.getElementById('doc-viewer');
       const pageNumEl = document.getElementById('doc-page-num');
@@ -73,12 +77,14 @@ $downloadUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/download';
           canvas.width = viewport.width;
           container.innerHTML = '';
           container.appendChild(canvas);
-          page.render({ canvasContext: ctx, viewport });
-          pageNumEl.textContent = num;
+          const task = page.render({ canvasContext: ctx, viewport });
+          (task.promise || Promise.resolve()).then(function() {
+            pageNumEl.textContent = num;
+          });
         });
       }
 
-      pdfjsLib.getDocument(url).promise.then(function(pdf) {
+      getDocument(url).promise.then(function(pdf) {
         pdfDoc = pdf;
         pageCountEl.textContent = pdf.numPages;
         renderPage(pageNum);

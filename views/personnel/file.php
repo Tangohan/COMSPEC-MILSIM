@@ -18,19 +18,39 @@ $adminDataByPanel = $adminDataByPanel ?? [];
 $canEditNotes = $canEditNotes ?? false;
 $canEditProfile = $canEditProfile ?? false;
 $canViewCivil = $canViewCivil ?? false;
+$canViewCivilSection = $canViewCivilSection ?? $canViewCivil;
+$redactPersonalPresentation = $redactPersonalPresentation ?? false;
 $canViewCommandNotes = $canViewCommandNotes ?? true;
 $displaySettings = $displaySettings ?? [];
 $showEmailInContact = $showEmailInContact ?? true;
 $showMatriculePublic = $showMatriculePublic ?? true;
+$civilIdentity = $civilIdentity ?? ['first_name' => '', 'last_name' => '', 'source' => null];
+$civilSourceLabel = $civilSourceLabel ?? '';
+$primaryUnitFallbackName = $primaryUnitFallbackName ?? null;
+$rpDossierNeedsAttention = $rpDossierNeedsAttention ?? false;
+$latestEnlistment = $latestEnlistment ?? null;
 
 if (!$targetUser) {
     echo '<p>Utilisateur non trouvé.</p>';
     return;
 }
 
+$userProfile = is_array($userProfile ?? null) ? $userProfile : [];
+$personnelProfile = is_array($personnelProfile ?? null) ? $personnelProfile : [];
+$personnelExtras = is_array($personnelExtras ?? null) ? $personnelExtras : [];
+
 $matricule = $personnelProfile['matricule_internal'] ?? $personnelExtras['service_number'] ?? null;
 $callsign = $personnelProfile['callsign'] ?? $targetUser['callsign'] ?? null;
-$displayName = trim((string)($personnelProfile['character_name'] ?? '')) ?: ($targetUser['display_name'] ?: $targetUser['email']);
+$rpCharacterName = trim((string) ($personnelProfile['character_name'] ?? ''));
+if ($rpCharacterName !== '') {
+    $displayName = $rpCharacterName;
+} elseif (!empty($redactPersonalPresentation)) {
+    $dn = trim((string) ($targetUser['display_name'] ?? ''));
+    $displayName = $dn !== '' ? $dn : (string) ($targetUser['email'] ?? '—');
+} else {
+    $civilFull = trim(($civilIdentity['first_name'] ?? '') . ' ' . ($civilIdentity['last_name'] ?? ''));
+    $displayName = $civilFull !== '' ? $civilFull : ($targetUser['display_name'] ?: $targetUser['email']);
+}
 $readiness = isset($personnelProfile['readiness_score']) ? (int)$personnelProfile['readiness_score'] : (isset($personnelExtras['readiness_percent']) ? (int)$personnelExtras['readiness_percent'] : null);
 $adminNotes = trim((string)($personnelProfile['command_notes'] ?? '')) ?: ($personnelExtras['admin_notes'] ?? null);
 $clearanceLevel = trim((string)($personnelProfile['clearance_level'] ?? '')) ?: trim((string)($personnelExtras['clearance_level'] ?? ''));
@@ -44,7 +64,7 @@ if (!empty($personnelProfile['character_portrait_path'])) {
     $portraitUrl = $baseUrl . '/' . ltrim($personnelProfile['character_portrait_path'], '/');
 }
 
-$unitName = $primaryAssignment['unit_name'] ?? $personnelExtras['squadron'] ?? null;
+$unitName = $primaryAssignment['unit_name'] ?? $primaryUnitFallbackName ?? ($personnelExtras['squadron'] ?? null);
 $roleName = $primaryAssignment['role_name'] ?? null;
 $enlistmentDate = $personnelProfile['enlistment_date'] ?? $personnelExtras['date_of_enlistment'] ?? null;
 $enlistmentFormatted = null;
@@ -57,6 +77,14 @@ $specializations = $personnelExtras['specializations'] ?? null;
 
 $completenessScore = (int)($completeness['score'] ?? 0);
 $sectionsCritiques = $completeness['sections_critiques'] ?? [];
+
+$gradeLabel = '';
+if (is_array($grade)) {
+    $gradeLabel = trim((string) ($grade['label_long'] ?? ''));
+    if ($gradeLabel === '') {
+        $gradeLabel = trim((string) ($grade['label_short'] ?? ''));
+    }
+}
 ?>
 <main class="min-h-screen pt-20 pb-24">
     <!-- Hero -->
@@ -137,7 +165,7 @@ $sectionsCritiques = $completeness['sections_critiques'] ?? [];
             <div class="flex flex-wrap gap-6 md:gap-10">
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Rang</p>
-                    <p class="text-sm font-black text-slate-900 italic"><?= $grade ? htmlspecialchars($grade['label_short'] ?? $grade['short_name'] ?? $grade['label_long'] ?? $grade['name'] ?? '') : '—' ?></p>
+                    <p class="text-sm font-black text-slate-900 italic"><?= $gradeLabel !== '' ? htmlspecialchars($gradeLabel) : '—' ?></p>
                 </div>
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Unité</p>
@@ -240,6 +268,32 @@ $sectionsCritiques = $completeness['sections_critiques'] ?? [];
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef direct</p><p class="text-sm font-black text-slate-900"><?= $commander ? htmlspecialchars($commander['display_name'] ?? $commander['callsign'] ?? '') : '—' ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date d'incorporation</p><p class="text-sm font-black text-slate-900"><?= $enlistmentFormatted ?? '—' ?></p></div>
                     </div>
+                    <?php
+                    $rpMotto = trim((string) ($personnelProfile['motto'] ?? ''));
+                    $rpBlood = trim((string) ($personnelProfile['blood_type'] ?? ''));
+                    $rpLangs = trim((string) ($personnelProfile['languages'] ?? ''));
+                    $rpNat = trim((string) ($personnelProfile['nationality'] ?? ''));
+                    $rpExtra = $rpMotto !== '' || $rpBlood !== '' || $rpLangs !== '' || $rpNat !== '';
+                    ?>
+                    <?php if ($rpExtra): ?>
+                    <div class="mt-8 border-t border-slate-100 pt-6">
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mb-4">Détails RP (dossier opérationnel)</h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <?php if ($rpMotto !== ''): ?>
+                            <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Devise / motto</p><p class="text-sm font-semibold text-slate-800 italic"><?= htmlspecialchars($rpMotto) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($rpBlood !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Groupe sanguin</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($rpBlood) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($rpLangs !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Langues (RP)</p><p class="text-sm text-slate-800"><?= htmlspecialchars($rpLangs) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($rpNat !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nationalité (RP)</p><p class="text-sm text-slate-800"><?= htmlspecialchars($rpNat) ?></p></div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </section>
 
                 <!-- Affectation -->
@@ -364,14 +418,37 @@ $sectionsCritiques = $completeness['sections_critiques'] ?? [];
                 <?php endif; ?>
 
                 <!-- Identité civile / administrative -->
-                <?php if ($canViewCivil): ?>
+                <?php if ($canViewCivilSection): ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Identité civile / administrative</h2>
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Identité civile / administrative</h2>
+                    <?php if ($civilSourceLabel): ?>
+                    <p class="text-[10px] text-slate-500 mb-6">Source prénom / nom : <span class="font-semibold text-slate-700"><?= htmlspecialchars($civilSourceLabel) ?></span><?php if (($civilIdentity['source'] ?? null) === 'enlistment' && $latestEnlistment): ?> (candidature #<?= (int) ($latestEnlistment['id'] ?? 0) ?>, <?= htmlspecialchars((string) ($latestEnlistment['status'] ?? '')) ?>)<?php endif; ?>.</p>
+                    <?php else: ?>
+                    <p class="text-[10px] text-slate-500 mb-6">Renseignez le prénom et le nom dans <a href="<?= url('account/preferences') ?>" class="font-semibold text-emerald-700 underline">Compte → Préférences</a> pour alimenter la fiche.</p>
+                    <?php endif; ?>
                     <div class="grid md:grid-cols-2 gap-6">
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($userProfile['first_name'] ?? '—') ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($userProfile['last_name'] ?? '—') ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($civilIdentity['first_name'] !== '' ? $civilIdentity['first_name'] : '—') ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($civilIdentity['last_name'] !== '' ? $civilIdentity['last_name'] : '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-bold text-slate-900"><?= htmlspecialchars($targetUser['email']) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut compte</p><p class="text-sm font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?>"><?= htmlspecialchars($targetUser['status'] ?? '—') ?></p></div>
+                        <?php if (!empty($userProfile['birth_date'])): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date de naissance</p><p class="text-sm text-slate-800"><?= htmlspecialchars((string) $userProfile['birth_date']) ?></p></div>
+                        <?php endif; ?>
+                        <?php if (!empty(trim((string) ($userProfile['nationality'] ?? '')))): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nationalité (dossier)</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['nationality'])) ?></p></div>
+                        <?php endif; ?>
+                        <?php if (!empty(trim((string) ($userProfile['phone'] ?? '')))): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Téléphone</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['phone'])) ?></p></div>
+                        <?php endif; ?>
+                        <?php if (!empty(trim((string) ($userProfile['timezone'] ?? '')))): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Fuseau</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['timezone'])) ?></p></div>
+                        <?php endif; ?>
+                        <?php if (!empty(trim((string) ($userProfile['language'] ?? '')))): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Langue</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['language'])) ?></p></div>
+                        <?php endif; ?>
+                        <?php if (!empty(trim((string) ($userProfile['bio'] ?? '')))): ?>
+                        <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Bio (compte)</p><p class="text-sm text-slate-700 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $userProfile['bio']))) ?></p></div>
+                        <?php endif; ?>
                         <?php if (!empty($targetUser['last_login_at'])): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Dernière connexion</p><p class="text-sm text-slate-700"><?= date('d/m/Y H:i', strtotime($targetUser['last_login_at'])) ?></p></div>
                         <?php endif; ?>

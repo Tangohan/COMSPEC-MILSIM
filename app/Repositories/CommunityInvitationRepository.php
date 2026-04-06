@@ -11,9 +11,26 @@ class CommunityInvitationRepository
 {
     private PDO $pdo;
 
+    private static ?bool $hasInvitationPayloadColumn = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    private function hasInvitationPayloadColumn(): bool
+    {
+        if (self::$hasInvitationPayloadColumn !== null) {
+            return self::$hasInvitationPayloadColumn;
+        }
+        try {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_invitations' AND COLUMN_NAME = 'invitation_payload' LIMIT 1");
+            self::$hasInvitationPayloadColumn = (bool) ($stmt && $stmt->fetchColumn());
+        } catch (\Throwable) {
+            self::$hasInvitationPayloadColumn = false;
+        }
+
+        return self::$hasInvitationPayloadColumn;
     }
 
     public function create(
@@ -22,20 +39,37 @@ class CommunityInvitationRepository
         string $tokenHash,
         int $invitedByUserId,
         ?int $roleId,
-        \DateTimeInterface $expiresAt
+        \DateTimeInterface $expiresAt,
+        ?string $invitationPayloadJson = null
     ): int {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO community_invitations (tenant_id, email, token_hash, role_id, invited_by_user_id, status, expires_at, created_at)
-             VALUES (?, ?, ?, ?, ?, \'pending\', ?, NOW())'
-        );
-        $stmt->execute([
-            $tenantId,
-            strtolower(trim($email)),
-            $tokenHash,
-            $roleId,
-            $invitedByUserId,
-            $expiresAt->format('Y-m-d H:i:s'),
-        ]);
+        if ($this->hasInvitationPayloadColumn()) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO community_invitations (tenant_id, email, token_hash, role_id, invitation_payload, invited_by_user_id, status, expires_at, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, \'pending\', ?, NOW())'
+            );
+            $stmt->execute([
+                $tenantId,
+                strtolower(trim($email)),
+                $tokenHash,
+                $roleId,
+                $invitationPayloadJson !== null && $invitationPayloadJson !== '' ? $invitationPayloadJson : null,
+                $invitedByUserId,
+                $expiresAt->format('Y-m-d H:i:s'),
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO community_invitations (tenant_id, email, token_hash, role_id, invited_by_user_id, status, expires_at, created_at)
+                 VALUES (?, ?, ?, ?, ?, \'pending\', ?, NOW())'
+            );
+            $stmt->execute([
+                $tenantId,
+                strtolower(trim($email)),
+                $tokenHash,
+                $roleId,
+                $invitedByUserId,
+                $expiresAt->format('Y-m-d H:i:s'),
+            ]);
+        }
 
         return (int) $this->pdo->lastInsertId();
     }

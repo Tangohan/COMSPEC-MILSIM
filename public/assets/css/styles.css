@@ -809,3 +809,43 @@ body.layout-light::before {
         grid-template-columns: 1fr;
     }
 }
+
+/* Back-office candidatures : boutons décision (fonds explicites — évite fond transparent si classes utilitaires absentes du build Tailwind) */
+body.layout-light .enlist-decision-actions .enlist-decision-btn {
+  text-decoration: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+body.layout-light .enlist-decision-actions .enlist-decision-btn--accept {
+  background-color: #047857 !important;
+  color: #ffffff !important;
+  border-color: rgba(6, 95, 70, 0.45) !important;
+  -webkit-text-fill-color: #ffffff;
+}
+body.layout-light .enlist-decision-actions .enlist-decision-btn--accept:hover {
+  background-color: #065f46 !important;
+  color: #ffffff !important;
+}
+body.layout-light .enlist-decision-actions .enlist-decision-btn--accept:focus-visible {
+  --tw-ring-color: rgb(5 150 105 / 0.55);
+}
+body.layout-light .enlist-decision-actions .enlist-decision-btn--reject {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: rgba(148, 163, 184, 0.9) !important;
+  -webkit-text-fill-color: #0f172a;
+}
+body.layout-light .enlist-decision-actions .enlist-decision-btn--reject:hover {
+  background-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+body.layout-light .enlist-decision-actions .enlist-decision-btn--block {
+  background-color: #7f1d1d !important;
+  color: #ffffff !important;
+  border-color: rgba(69, 10, 10, 0.5) !important;
+  -webkit-text-fill-color: #ffffff;
+}
+body.layout-light .enlist-decision-actions .enlist-decision-btn--block:hover {
+  background-color: #450a0a !important;
+  color: #ffffff !important;
+}

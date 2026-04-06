@@ -1,0 +1,173 @@
+<?php
+$roleDefinitions = $roleDefinitions ?? [];
+$definitionRelations = $definitionRelations ?? [];
+$tenantRoles = $tenantRoles ?? [];
+$roleRelations = $roleRelations ?? [];
+$units = $units ?? [];
+$rolePresetMeta = $rolePresetMeta ?? [];
+$graphJsonUrl = url('back-office/roles-functions/graph.json');
+?>
+<div class="max-w-6xl mx-auto px-6 py-10 space-y-10">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Gestion des rôles et fonctions</h1>
+            <p class="text-sm text-slate-600 mt-2 max-w-2xl">
+                Catalogue global (FR / US), graphe des relations, unités du tenant et liens vers l’attribution multi-rôles par utilisateur.
+                Les droits effectifs combinent le pivot <code class="text-xs bg-slate-100 px-1 rounded">tenant_user_roles</code>, les permissions et les overrides.
+            </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="<?= url('back-office/users') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Utilisateurs</a>
+            <a href="<?= url('back-office/roles') ?>" class="inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800">Rôles &amp; permissions</a>
+            <a href="<?= url('back-office/roles/presets') ?>" class="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-100">Profils prédéfinis</a>
+        </div>
+    </div>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-bold text-slate-900 mb-3">A. Attribution multi-rôles</h2>
+        <p class="text-sm text-slate-600 mb-4">Sélectionnez un compte pour attribuer ou retirer des rôles (tags multiples, union des permissions).</p>
+        <a href="<?= url('back-office/users') ?>" class="text-blue-700 font-semibold underline text-sm">Ouvrir la liste des utilisateurs →</a>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-bold text-slate-900 mb-3">B. Contexte tenant &amp; unité</h2>
+        <p class="text-sm text-slate-600 mb-4">Unités ORBAT du tenant (affectations contextualisées via <code class="text-xs bg-slate-100 px-1 rounded">tenant_user_roles.org_unit_id</code>).</p>
+        <?php if ($units === []): ?>
+            <p class="text-sm text-amber-800 bg-amber-50 rounded-lg px-3 py-2">Aucune unité définie. Créez des groupes dans l’ORBAT.</p>
+        <?php else: ?>
+            <ul class="flex flex-wrap gap-2">
+                <?php foreach ($units as $u): ?>
+                    <li class="text-xs font-semibold uppercase tracking-wide bg-slate-100 text-slate-800 px-2 py-1 rounded-md"><?= htmlspecialchars((string) ($u['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-bold text-slate-900 mb-3">C. Hiérarchie &amp; graphe des rôles (tenant)</h2>
+        <p class="text-sm text-slate-600 mb-4">Arêtes issues des relations configurées pour ce tenant (rapports, transversal, etc.).</p>
+        <?php if ($roleRelations === []): ?>
+            <p class="text-sm text-slate-500">Aucune relation pour ce tenant (les correspondances de slug avec le catalogue permettent de remplir le graphe après migration).</p>
+        <?php else: ?>
+            <ul class="space-y-2 text-sm">
+                <?php foreach ($roleRelations as $rr): ?>
+                    <li class="flex flex-wrap items-center gap-2">
+                        <span class="font-medium text-slate-900"><?= htmlspecialchars((string) ($rr['from_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                        <span class="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded"><?= htmlspecialchars((string) ($rr['relation_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                        <span class="font-medium text-slate-900"><?= htmlspecialchars((string) ($rr['to_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
+        <div class="mt-6 rounded-xl border border-slate-100 bg-slate-50/80 p-4 min-h-[220px]" id="roles-graph-host" data-graph-url="<?= htmlspecialchars($graphJsonUrl, ENT_QUOTES, 'UTF-8') ?>">
+            <p class="text-xs text-slate-500 mb-2">Visualisation (aperçu)</p>
+            <canvas id="roles-graph-canvas" class="w-full max-h-64 border border-slate-200 rounded-lg bg-white" width="800" height="240"></canvas>
+        </div>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-bold text-slate-900 mb-3">D. Catalogue global (définitions)</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-200">
+                        <th class="py-2 pr-4">Slug</th>
+                        <th class="py-2 pr-4">FR</th>
+                        <th class="py-2 pr-4">US</th>
+                        <th class="py-2">Famille</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($roleDefinitions as $d): ?>
+                        <tr class="border-b border-slate-100">
+                            <td class="py-2 pr-4 font-mono text-xs"><?= htmlspecialchars((string) ($d['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="py-2 pr-4"><?= htmlspecialchars((string) ($d['name_fr'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="py-2 pr-4"><?= htmlspecialchars((string) ($d['name_us'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="py-2 text-slate-600"><?= htmlspecialchars((string) ($d['family'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php if ($definitionRelations !== []): ?>
+            <h3 class="text-sm font-bold text-slate-800 mt-6 mb-2">Graphe catalogue (définitions)</h3>
+            <ul class="text-xs text-slate-600 space-y-1">
+                <?php foreach ($definitionRelations as $dr): ?>
+                    <li><?= htmlspecialchars((string) ($dr['from_slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                        <span class="text-slate-400">→</span> <?= htmlspecialchars((string) ($dr['to_slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                        <span class="text-slate-400">(<?= htmlspecialchars((string) ($dr['relation_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)</span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-bold text-slate-900 mb-3">E. Templates (packs)</h2>
+        <p class="text-sm text-slate-600 mb-4">Appliquer un jeu de permissions à un rôle depuis la page des profils.</p>
+        <ul class="grid sm:grid-cols-2 gap-3">
+            <?php foreach ($rolePresetMeta as $pm): ?>
+                <li class="rounded-lg border border-slate-200 p-3">
+                    <p class="font-semibold text-slate-900"><?= htmlspecialchars((string) ($pm['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                    <p class="text-xs text-slate-600 mt-1"><?= htmlspecialchars((string) ($pm['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                    <p class="text-[10px] text-slate-400 mt-2 font-mono"><?= htmlspecialchars((string) ($pm['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <a href="<?= url('back-office/roles/presets') ?>" class="inline-flex mt-4 text-sm font-semibold text-blue-700 underline">Appliquer un profil →</a>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+        <h2 class="text-sm font-bold text-slate-800 mb-2">Rôles tenant (aperçu)</h2>
+        <ul class="text-sm text-slate-700 space-y-1">
+            <?php foreach ($tenantRoles as $tr): ?>
+                <li><span class="font-medium"><?= htmlspecialchars((string) ($tr['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span class="text-slate-400 text-xs">(<?= htmlspecialchars((string) ($tr['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)</span></li>
+            <?php endforeach; ?>
+        </ul>
+    </section>
+</div>
+<script>
+(function () {
+  var host = document.getElementById('roles-graph-host');
+  var canvas = document.getElementById('roles-graph-canvas');
+  if (!host || !canvas) return;
+  var url = host.getAttribute('data-graph-url');
+  if (!url) return;
+  fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (data) {
+    var nodes = data.nodes || [];
+    var edges = data.edges || [];
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width;
+    var h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = '#94a3b8';
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '11px system-ui,sans-serif';
+    var pos = {};
+    nodes.forEach(function (n, i) {
+      var angle = (2 * Math.PI * i) / Math.max(nodes.length, 1);
+      pos[n.id] = { x: w / 2 + Math.cos(angle) * (w * 0.35), y: h / 2 + Math.sin(angle) * (h * 0.35) };
+    });
+    edges.forEach(function (e) {
+      var a = pos[e.from], b = pos[e.to];
+      if (!a || !b) return;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    });
+    nodes.forEach(function (n) {
+      var p = pos[n.id];
+      if (!p) return;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 6, 0, 2 * Math.PI);
+      ctx.fillStyle = '#2563eb';
+      ctx.fill();
+      ctx.fillStyle = '#334155';
+      ctx.fillText((n.label || n.slug || '').slice(0, 24), p.x + 10, p.y + 4);
+    });
+  }).catch(function () {});
+})();
+</script>

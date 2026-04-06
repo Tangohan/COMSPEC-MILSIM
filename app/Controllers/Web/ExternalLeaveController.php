@@ -30,7 +30,7 @@ final class ExternalLeaveController
         $tid = Session::get('tenant_id');
         $forumCfg = forum_config_for_tenant($tid ? (int) $tid : null);
         if ($verified === null) {
-            return Response::view('layout.forum', [
+            return Response::view('layout.leave', [
                 'content' => 'forum.leave_invalid',
                 'title' => 'Lien invalide',
                 'forumConfig' => $forumCfg,
@@ -48,7 +48,7 @@ final class ExternalLeaveController
             $displayName = trim((string) Session::get('email', ''));
         }
 
-        return Response::view('layout.forum', [
+        return Response::view('layout.leave', [
             'content' => 'forum.leave',
             'title' => 'Lien externe',
             'forumConfig' => $forumCfg,

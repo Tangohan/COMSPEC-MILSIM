@@ -45,6 +45,13 @@ $title = $title ?? 'Communauté';
         <p class="mt-6 text-center text-xs text-slate-500">
             <a href="<?= url('login') ?>" class="text-emerald-700 font-semibold hover:underline">Autre compte</a>
         </p>
+        <div class="mt-6 flex flex-wrap justify-center gap-x-3 gap-y-1 text-center text-[10px] text-slate-400 max-w-lg mx-auto px-2">
+            <?php
+            $legal_link_class = 'font-semibold hover:text-emerald-700';
+            require base_path('views/partials/legal_site_links.php');
+            ?>
+        </div>
     </div>
+<?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

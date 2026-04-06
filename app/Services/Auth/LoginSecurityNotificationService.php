@@ -9,7 +9,9 @@ use App\Repositories\EmailDeliveryRepository;
 use App\Repositories\EmailTokenRepository;
 use App\Repositories\LoginAttemptRepository;
 use App\Repositories\UserLoginDeviceRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
+use App\Services\Email\EmailEvents;
 use App\Services\Email\EmailTokenPurpose;
 use App\Services\Email\GeoIpLookupService;
 use App\Services\EmailService;
@@ -26,7 +28,8 @@ final class LoginSecurityNotificationService
         private UserLoginDeviceRepository $devices,
         private EmailTokenRepository $emailTokens,
         private UserRepository $userRepository,
-        private GeoIpLookupService $geoIp
+        private GeoIpLookupService $geoIp,
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository
     ) {}
 
     public function onFailedLogin(Request $request, string $email): void
@@ -46,6 +49,11 @@ final class LoginSecurityNotificationService
             3600
         ) > 0) {
             return;
+        }
+        foreach ($this->userRepository->listIdsByEmailNormalized($email) as $uid) {
+            if (!$this->notificationPreferencesRepository->isEmailEventEnabled($uid, EmailEvents::MULTIPLE_LOGIN_ATTEMPTS)) {
+                return;
+            }
         }
         $forgotUrl = \url('forgot-password');
         $this->emailService->sendMultipleLoginAttempts(
@@ -100,14 +108,16 @@ final class LoginSecurityNotificationService
         $denyUrl = \url('security/device-deny') . '?token=' . rawurlencode($raw);
         $to = (string) ($user['email'] ?? '');
         $display = (string) ($user['display_name'] ?? $to);
-        $this->emailService->sendNewDeviceLogin(
-            $to,
-            $display,
-            $ip,
-            $ua,
-            $geoLabel,
-            $denyUrl,
-            $tenantId
-        );
+        if ($this->notificationPreferencesRepository->isEmailEventEnabled($userId, EmailEvents::NEW_DEVICE_LOGIN)) {
+            $this->emailService->sendNewDeviceLogin(
+                $to,
+                $display,
+                $ip,
+                $ua,
+                $geoLabel,
+                $denyUrl,
+                $tenantId
+            );
+        }
     }
 }

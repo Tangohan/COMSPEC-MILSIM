@@ -11,6 +11,7 @@ $statusLabel = static function (string $s): string {
         'in_progress' => 'En cours',
         'completed' => 'Terminé',
         'revoked' => 'Révoqué',
+        'pending_approval' => 'En attente de validation',
         default => $s,
     };
 };
@@ -29,19 +30,17 @@ $statusStyles = static function (string $s): string {
         'assigned' => 'bg-amber-50 text-amber-900 ring-amber-200',
         'completed' => 'bg-emerald-100 text-emerald-900 ring-emerald-200',
         'revoked' => 'bg-slate-200 text-slate-700 ring-slate-300',
+        'pending_approval' => 'bg-violet-50 text-violet-900 ring-violet-200',
         default => 'bg-slate-100 text-slate-800 ring-slate-200',
     };
 };
-$coverUrl = static function (array $e) use ($base): ?string {
+$coverUrl = static function (array $e): string {
     $p = trim((string) ($e['thumbnail_path'] ?? ''));
     if ($p === '') {
         $p = trim((string) ($e['banner_path'] ?? ''));
     }
-    if ($p === '') {
-        return null;
-    }
 
-    return $base . '/' . ltrim($p, '/');
+    return training_media_url($p !== '' ? $p : null);
 };
 ?>
 <div class="relative overflow-hidden bg-gradient-to-b from-emerald-950 via-slate-900 to-slate-950">
@@ -160,13 +159,7 @@ $coverUrl = static function (array $e) use ($base): ?string {
         <li class="group overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm transition hover:shadow-md hover:border-emerald-200/80">
           <div class="flex flex-col lg:flex-row">
             <div class="relative h-44 shrink-0 overflow-hidden bg-slate-100 lg:h-auto lg:w-[min(100%,280px)]">
-              <?php if ($img): ?>
-                <img src="<?= htmlspecialchars($img) ?>" alt="" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" loading="lazy" />
-              <?php else: ?>
-                <div class="flex h-full min-h-[11rem] w-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
-                  <span class="text-4xl font-black text-white/25"><?= htmlspecialchars(mb_strtoupper(mb_substr((string) ($e['course_title'] ?? 'F'), 0, 1))) ?></span>
-                </div>
-              <?php endif; ?>
+              <img src="<?= htmlspecialchars($img) ?>" alt="" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" loading="lazy" />
               <div class="absolute left-3 top-3 flex flex-wrap gap-2">
                 <?php if (!empty($e['is_mandatory'])): ?>
                   <span class="rounded-lg bg-rose-600/95 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-white shadow">Obligatoire</span>

@@ -276,7 +276,7 @@ $userInitials = static function (string $displayName, string $email): string {
                                 </td>
 
                                 <td class="px-6 py-5 align-top">
-                                    <?php $rn = trim((string) ($u['role_name'] ?? '')); ?>
+                                    <?php $rn = trim((string) ($u['roles_display'] ?? $u['role_name'] ?? '')); ?>
                                     <?php if ($rn === ''): ?>
                                     <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
                                         Aucun rôle

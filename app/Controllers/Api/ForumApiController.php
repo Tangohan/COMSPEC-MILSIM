@@ -15,7 +15,11 @@ use App\Repositories\ForumReportRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\ForumVoteRepository;
 use App\Repositories\ForumNotificationRepository;
+use App\Repositories\UserForumStatsRepository;
+use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Services\Forum\ForumModerationEngine;
+use App\Services\Forum\ForumPostAttachmentService;
+use App\Support\ForumReportReason;
 
 class ForumApiController
 {
@@ -27,7 +31,10 @@ class ForumApiController
         private UserRepository $userRepository,
         private ForumVoteRepository $voteRepository,
         private ForumModerationEngine $moderationEngine,
-        private ForumNotificationRepository $notificationRepository
+        private ForumNotificationRepository $notificationRepository,
+        private ForumPostAttachmentService $postAttachmentService,
+        private UserForumStatsRepository $userForumStatsRepository,
+        private UserProfileDisplaySettingsRepository $userProfileDisplaySettingsRepository
     ) {}
 
     public function handle(Request $request, array $params = []): Response
@@ -141,14 +148,20 @@ class ForumApiController
             return Response::json(['success' => false, 'error' => 'Titre entre 3 et 255 caractères'], 400);
         }
         $maxLen = (int) forum_get_setting('forum_max_post_length', 10000);
-        if (strlen($content) < 5 || strlen($content) > $maxLen) {
-            return Response::json(['success' => false, 'error' => 'Contenu entre 5 et ' . $maxLen . ' caractères'], 400);
+        $attachmentIds = $input['attachment_ids'] ?? [];
+        if (!is_array($attachmentIds)) {
+            $attachmentIds = [];
+        }
+        if ((strlen($content) < 5 && $attachmentIds === []) || strlen($content) > $maxLen) {
+            return Response::json(['success' => false, 'error' => 'Contenu entre 5 et ' . $maxLen . ' caractères (ou joindre des fichiers)'], 400);
         }
         $slug = $this->slugify($title) ?: 'sujet-' . time();
         $slug = $slug . '-' . substr(uniqid('', true), -6);
         $topicId = $this->topicRepository->create($tenantId, $categoryId, $userId, $title, $slug);
         $firstPostId = $this->postRepository->create($tenantId, $topicId, $userId, $content);
         $this->topicRepository->touchUpdatedAt($topicId);
+        $this->userForumStatsRepository->incrementPostCount((int) $tenantId, (int) $userId);
+        $this->postAttachmentService->attachToPost((int) $tenantId, $firstPostId, (int) $userId, $attachmentIds);
         $this->moderationEngine->analyze($tenantId, $userId, $firstPostId, $content);
 
         return Response::json(['success' => true, 'topic_id' => $topicId]);
@@ -169,8 +182,14 @@ class ForumApiController
             return Response::json(['success' => false, 'error' => 'Sujet verrouillé'], 400);
         }
         $maxLen = (int) forum_get_setting('forum_max_post_length', 10000);
-        if (strlen($content) < 1 || strlen($content) > $maxLen) {
-            return Response::json(['success' => false, 'error' => 'Contenu invalide'], 400);
+        $attachmentIds = $input['attachment_ids'] ?? [];
+        if (!is_array($attachmentIds)) {
+            $attachmentIds = [];
+        }
+        $hasBody = strlen($content) >= 1;
+        $hasFiles = $attachmentIds !== [];
+        if ((!$hasBody && !$hasFiles) || strlen($content) > $maxLen) {
+            return Response::json(['success' => false, 'error' => 'Message vide ou trop long (texte ou pièces jointes requis)'], 400);
         }
         $parentPostId = isset($input['parent_post_id']) ? (int) $input['parent_post_id'] : null;
         if ($parentPostId !== null && $parentPostId <= 0) {
@@ -178,13 +197,10 @@ class ForumApiController
         }
         $postId = $this->postRepository->create($tenantId, $topicId, $userId, $content, $parentPostId);
         $this->topicRepository->touchUpdatedAt($topicId);
+        $this->userForumStatsRepository->incrementPostCount((int) $tenantId, (int) $userId);
+        $this->postAttachmentService->attachToPost((int) $tenantId, $postId, (int) $userId, $attachmentIds);
         $this->moderationEngine->analyze($tenantId, $userId, $postId, $content);
-        if ((int) ($topic['user_id'] ?? 0) !== $userId) {
-            $this->notificationRepository->create($tenantId, (int) $topic['user_id'], 'forum.reply', [
-                'topic_id' => $topicId,
-                'post_id' => $postId,
-            ]);
-        }
+        $this->notifyTopicParticipantsApi($tenantId, $topicId, $userId, (string) ($topic['title'] ?? 'Sujet'));
 
         return Response::json(['success' => true, 'post_id' => $postId]);
     }
@@ -279,17 +295,23 @@ class ForumApiController
 
     private function report(array $input, int $userId, int $tenantId): Response
     {
-        $targetType = $input['target_type'] ?? '';
+        $targetType = strtolower(trim((string) ($input['target_type'] ?? '')));
         $targetId = (int) ($input['target_id'] ?? 0);
-        $reason = trim((string) ($input['reason'] ?? ''));
-        $details = trim((string) ($input['details'] ?? ''));
-        $reportType = preg_match('/^(spam|abuse|illegal|other)$/', (string) ($input['report_type'] ?? 'other')) ? (string) $input['report_type'] : 'other';
-        $comment = trim((string) ($input['comment'] ?? ''));
-        if ($reason !== '') {
-            $reason = $details !== '' ? $reason . "\n" . $details : $reason;
-        }
+        $topicContext = (int) ($input['topic_id'] ?? 0);
+        $postContext = (int) ($input['post_id'] ?? 0);
+        $reportedUrl = trim((string) ($input['reported_url'] ?? ''));
+        $category = trim((string) ($input['reason'] ?? $input['reason_category'] ?? 'other'));
+        $details = trim((string) ($input['details'] ?? $input['comment'] ?? ''));
+
+        $normalized = ForumReportReason::fromCategory($category !== '' ? $category : 'other', $details);
+        $reportType = $normalized['report_type'];
+        $reasonText = $normalized['reason'];
+        $comment = $normalized['comment'];
+
         $postId = null;
         $topicId = null;
+        $urlForDb = null;
+
         if ($targetType === 'post' && $targetId > 0) {
             $post = $this->postRepository->findById($targetId, $tenantId);
             if ($post) {
@@ -301,17 +323,74 @@ class ForumApiController
             if ($topic) {
                 $topicId = $targetId;
             }
+        } elseif ($targetType === 'url') {
+            if ($reportedUrl === '' || strlen($reportedUrl) > 2048) {
+                return Response::json(['success' => false, 'error' => 'URL invalide ou trop longue'], 400);
+            }
+            $schemeTest = parse_url($reportedUrl, PHP_URL_SCHEME);
+            if (!is_string($schemeTest) || !in_array(strtolower($schemeTest), ['http', 'https'], true)) {
+                return Response::json(['success' => false, 'error' => 'URL invalide (http ou https uniquement)'], 400);
+            }
+            $tid = $topicContext > 0 ? $topicContext : $targetId;
+            if ($tid <= 0) {
+                return Response::json(['success' => false, 'error' => 'Sujet de référence manquant'], 400);
+            }
+            $topic = $this->topicRepository->findById($tid, $tenantId);
+            if (!$topic) {
+                return Response::json(['success' => false, 'error' => 'Sujet introuvable'], 404);
+            }
+            $topicId = $tid;
+            if ($postContext > 0) {
+                $post = $this->postRepository->findById($postContext, $tenantId);
+                if ($post && (int) $post['topic_id'] === $topicId) {
+                    $postId = $postContext;
+                }
+            }
+            $urlForDb = $reportedUrl;
+            $reasonText = 'Lien signalé : ' . $reportedUrl . "\n" . $reasonText;
+        } else {
+            return Response::json(['success' => false, 'error' => 'Type de cible invalide'], 400);
         }
-        if ($postId === null && $topicId === null) {
+
+        if ($topicId === null) {
             return Response::json(['success' => false, 'error' => 'Cible invalide'], 400);
         }
-        $this->reportRepository->create($tenantId, $userId, $postId, $topicId, $reason ?: 'Signalement', $reportType, $comment !== '' ? $comment : null);
+
+        $this->reportRepository->create($tenantId, $userId, $postId, $topicId, $reasonText !== '' ? $reasonText : 'Signalement', $reportType, $comment, $urlForDb);
+
         return Response::json(['success' => true]);
     }
 
     private function saveProfileSettings(array $input, int $userId): Response
     {
-        // Paramètres forum utilisateur (table/settings non créés en minimal) ; on renvoie success.
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId <= 0) {
+            return Response::json(['success' => false, 'error' => 'Session invalide'], 400);
+        }
+        if (!$this->userProfileDisplaySettingsRepository->tableExists()) {
+            return Response::json(['success' => true]);
+        }
+        $raw = $input['forum_visible_role_id'] ?? null;
+        $forumVisibleRoleId = null;
+        if ($raw !== null && $raw !== '' && (string) $raw !== '0') {
+            $forumVisibleRoleId = (int) $raw;
+            if ($forumVisibleRoleId < 1) {
+                $forumVisibleRoleId = null;
+            } else {
+                $allowed = false;
+                foreach ($this->userRepository->listOrganizationRoleIdsForUser($userId) as $rid) {
+                    if ((int) $rid === $forumVisibleRoleId) {
+                        $allowed = true;
+                        break;
+                    }
+                }
+                if (!$allowed) {
+                    return Response::json(['success' => false, 'error' => 'Rôle non autorisé pour votre compte'], 400);
+                }
+            }
+        }
+        $this->userProfileDisplaySettingsRepository->upsert($userId, ['forum_visible_role_id' => $forumVisibleRoleId]);
+
         return Response::json(['success' => true]);
     }
 
@@ -320,5 +399,37 @@ class ForumApiController
         $text = preg_replace('/[^\p{L}\p{N}\s-]/u', '', $text);
         $text = preg_replace('/[\s-]+/', '-', trim($text));
         return strtolower($text);
+    }
+
+    private function notifyTopicParticipantsApi(int $tenantId, int $topicId, int $authorUserId, string $title): void
+    {
+        if (!$this->notificationRepository->tableExists()) {
+            return;
+        }
+        try {
+            $pdo = \App\Core\Database::getPdo();
+            $stmt = $pdo->prepare(
+                'SELECT DISTINCT user_id FROM forum_posts WHERE topic_id = ? AND user_id IS NOT NULL AND user_id != ?'
+            );
+            $stmt->execute([$topicId, $authorUserId]);
+            $ids = array_column($stmt->fetchAll(\PDO::FETCH_ASSOC), 'user_id');
+            $subStmt = $pdo->prepare('SELECT user_id FROM forum_topic_subscriptions WHERE topic_id = ? AND user_id != ?');
+            $subStmt->execute([$topicId, $authorUserId]);
+            foreach ($subStmt->fetchAll(\PDO::FETCH_ASSOC) as $r) {
+                $ids[] = (int) $r['user_id'];
+            }
+            $ids = array_unique(array_map('intval', $ids));
+            foreach ($ids as $uid) {
+                if ($uid <= 0) {
+                    continue;
+                }
+                $this->notificationRepository->create($tenantId, $uid, 'topic_reply', [
+                    'topic_id' => $topicId,
+                    'title' => $title,
+                ]);
+            }
+        } catch (\Throwable) {
+            // ignore
+        }
     }
 }

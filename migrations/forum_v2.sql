@@ -48,6 +48,9 @@ ALTER TABLE forum_reports
   ADD COLUMN report_type varchar(32) NOT NULL DEFAULT 'other' AFTER reason,
   ADD COLUMN comment text AFTER report_type;
 
+ALTER TABLE forum_reports
+  ADD COLUMN reported_url varchar(2048) DEFAULT NULL;
+
 -- forum_post_votes
 CREATE TABLE IF NOT EXISTS forum_post_votes (
   id int unsigned NOT NULL AUTO_INCREMENT,

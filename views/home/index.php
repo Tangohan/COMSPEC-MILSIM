@@ -1,6 +1,6 @@
 <?php
 $base = url('');
-$title = $title ?? 'Athena — Commandement Aérien MILSIM';
+$title = $title ?? 'Athena Compsec — Portail MILSIM';
 $loggedIn = (bool) \App\Core\Session::get('user_id');
 ?>
 <!DOCTYPE html>
@@ -13,61 +13,81 @@ $loggedIn = (bool) \App\Core\Session::get('user_id');
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
 </head>
-<body class="bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
+<body class="layout-light text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
 
     <div class="grain"></div>
 
     <div id="bodyOverlay" class="overlay fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110]" onclick="toggleMenu()"></div>
 
-    <div id="navDrawer" class="drawer-translate fixed top-0 left-0 w-[300px] h-full bg-slate-50 z-[120] shadow-2xl p-6 flex flex-col">
-        <div class="flex justify-between items-center mb-10">
-            <span class="text-[10px] font-black tracking-[0.3em] uppercase opacity-50">Menu</span>
-            <button onclick="toggleMenu()" class="hover:rotate-90 transition-transform">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    <div id="navDrawer" class="drawer-translate fixed top-0 left-0 z-[120] flex h-full w-[min(100%,320px)] flex-col overflow-hidden border-r border-slate-200/80 bg-slate-50 shadow-2xl">
+        <div class="flex shrink-0 items-center justify-between border-b border-slate-200/80 px-5 py-4">
+            <span class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Menu</span>
+            <button type="button" onclick="toggleMenu()" class="rounded-xl p-2 text-slate-500 transition hover:bg-slate-200/80 hover:text-slate-900" aria-label="Fermer le menu">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        
-        <nav class="flex flex-col gap-5">
-            <a href="<?= $base ?>/" class="text-xs font-bold tracking-[0.2em] uppercase">ACCUEIL</a>
+
+        <nav class="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 py-3" aria-label="Navigation du portail">
+            <?php
+            $homeNavLink = 'flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-white hover:shadow-sm';
+            $homeNavAccent = 'flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50';
+            ?>
             <?php if ($loggedIn): ?>
-            <a href="<?= url('dashboard') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">DASHBOARD</a>
-            <a href="<?= url('hub') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">HUB</a>
-            <a href="<?= url('pointage') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-emerald-800">POINTAGE</a>
-            <a href="<?= url('communities') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">COMMUNAUTÉS</a>
-            <a href="<?= url('forum') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">FORUM</a>
-            <a href="<?= url('orbat') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">ORBAT</a>
-            <a href="<?= url('atak') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">ATAK</a>
-            <a href="<?= url('documents') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">DOCUMENTS</a>
-            <a href="<?= url('formations') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">FORMATIONS</a>
-            <a href="<?= url('modpacks') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">MODPACKS</a>
-            <a href="<?= url('account') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">COMPTE</a>
+                <?php
+                $scopeEntries = navigation_scope_drawer_entries();
+                $scopeGroups = navigation_scope_group_entries($scopeEntries);
+                $scopeCount = count($scopeEntries);
+                $navCurrentPath = navigation_current_path();
+                ?>
+                <div class="mb-3 rounded-xl border border-slate-200/90 bg-white/90 px-3 py-2.5 shadow-sm">
+                    <p class="text-[9px] font-black uppercase tracking-[0.28em] text-slate-400">Périmètre des accès</p>
+                    <p class="mt-1 text-[11px] leading-snug text-slate-600">
+                        Liste alignée sur votre rôle et la communauté active — seules les pages autorisées apparaissent.
+                        <?php if ($scopeCount > 0): ?>
+                            <span class="mt-1 block text-[10px] font-semibold text-emerald-800"><?= (int) $scopeCount ?> raccourci<?= $scopeCount > 1 ? 's' : '' ?></span>
+                        <?php endif; ?>
+                    </p>
+                </div>
+                <?php foreach ($scopeGroups as $groupName => $links): ?>
+                    <p class="px-3 pt-3 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 first:pt-2"><?= htmlspecialchars($groupName) ?></p>
+                    <?php foreach ($links as $entry): ?>
+                        <?php
+                        $rp = (string) ($entry['routePath'] ?? '/');
+                        $pathActive = preg_replace('/#.*$/', '', $rp) ?: '/';
+                        $match = navigation_infer_active_match($pathActive);
+                        $isActive = nav_path_matches($pathActive, $navCurrentPath, $match);
+                        $rowClass = $isActive ? $homeNavAccent : $homeNavLink;
+                        ?>
+                        <a href="<?= htmlspecialchars((string) $entry['href']) ?>" onclick="toggleMenu()" class="<?= $rowClass ?>"><?= htmlspecialchars((string) $entry['label']) ?></a>
+                    <?php endforeach; ?>
+                <?php endforeach; ?>
             <?php else: ?>
-            <a href="<?= url('login') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">CONNEXION</a>
-            <a href="<?= url('register') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">INSCRIPTION</a>
-            <a href="<?= url('join') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-500">REJOINDRE PAR CODE</a>
+                <div class="mb-3 rounded-xl border border-slate-200/90 bg-white/90 px-3 py-2.5 shadow-sm">
+                    <p class="text-[9px] font-black uppercase tracking-[0.28em] text-slate-400">Périmètre des accès</p>
+                    <p class="mt-1 text-[11px] leading-snug text-slate-600">Une fois connecté, ce menu listera uniquement les modules et pages auxquels vous avez droit.</p>
+                </div>
+                <a href="<?= $base ?>/" onclick="toggleMenu()" class="<?= $homeNavLink ?>">Accueil</a>
+                <a href="<?= url('login') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>">Connexion</a>
+                <a href="<?= url('register') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>">Inscription</a>
+                <a href="<?= url('join') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?> text-slate-600">Rejoindre avec un code</a>
             <?php endif; ?>
         </nav>
 
-        <div class="mt-auto pt-10 border-t border-slate-100">
-            <div class="flex flex-col gap-4 mb-8">
-                <?php if (!$loggedIn): ?>
-                <a href="<?= url('login') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">Connexion</a>
-                <a href="<?= url('register') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-400">Créer un compte</a>
-                <?php else: ?>
-                <form method="post" action="<?= url('logout') ?>">
-                    <?= \App\Core\Csrf::field() ?>
-                    <button type="submit" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-400 hover:text-slate-900">Déconnexion</button>
-                </form>
-                <?php endif; ?>
+        <div class="shrink-0 border-t border-slate-200/80 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-950 p-4 text-white">
+            <p class="mb-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400/90">Athena Compsec</p>
+            <?php if (!$loggedIn): ?>
+            <p class="mb-3 text-center text-[11px] leading-snug text-white/60">Accédez à tout le portail avec un compte.</p>
+            <div class="flex flex-col gap-2">
+                <a href="<?= url('register') ?>" onclick="toggleMenu()" class="flex min-h-[2.75rem] items-center justify-center rounded-xl bg-emerald-500 text-center text-[10px] font-black uppercase tracking-wider text-slate-950 transition hover:bg-emerald-400">Créer un compte</a>
+                <a href="<?= url('login') ?>" onclick="toggleMenu()" class="flex min-h-[2.5rem] items-center justify-center rounded-xl border border-white/20 bg-white/5 text-center text-[10px] font-black uppercase tracking-wider text-white transition hover:bg-white/10">Connexion</a>
             </div>
-            <div class="flex gap-4">
-                <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                    <span class="text-[10px] font-bold">IG</span>
-                </div>
-                <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                    <span class="text-[10px] font-bold">YT</span>
-                </div>
-            </div>
+            <?php else: ?>
+            <a href="<?= url('dashboard') ?>" onclick="toggleMenu()" class="mb-2 flex min-h-[2.75rem] items-center justify-center rounded-xl bg-emerald-500 text-center text-[10px] font-black uppercase tracking-wider text-slate-950 transition hover:bg-emerald-400">Ouvrir le tableau de bord</a>
+            <form method="post" action="<?= url('logout') ?>" class="mt-1">
+                <?= \App\Core\Csrf::field() ?>
+                <button type="submit" class="w-full rounded-xl py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-white/50 transition hover:bg-white/5 hover:text-white">Déconnexion</button>
+            </form>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -83,26 +103,24 @@ $loggedIn = (bool) \App\Core\Session::get('user_id');
                 </button>
             </div>
 
-            <div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <a href="<?= $base ?>/" class="text-[11px] font-black tracking-[0.35em] -mr-[0.35em]">
-                    ATHENA
+            <div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center text-center">
+                <a href="<?= $base ?>/" class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-900 sm:tracking-[0.26em]">
+                    Athena Compsec
                 </a>
-                <div class="flex items-center gap-2 mt-1">
-                    <span class="h-[1px] w-4 bg-slate-200"></span>
-                    <span class="text-[6px] font-black tracking-[0.35em] text-slate-400">PORTAIL MILSIM</span>
-                    <span class="h-[1px] w-4 bg-slate-200"></span>
-                </div>
+                <span class="mt-0.5 text-[6px] font-semibold uppercase tracking-[0.32em] text-slate-400">Portail MILSIM</span>
             </div>
 
-            <div class="flex-1 flex justify-end items-center gap-10">
-                <div class="hidden lg:flex flex-col items-end leading-none font-black">
-                    <span class="text-[7px] tracking-[0.3em] text-slate-400 mb-1">LAT / LONG</span>
-                    <span class="text-[9px] tracking-widest italic">38.89°N 77.03°W</span>
+            <div class="flex flex-1 justify-end items-center gap-6">
+                <div class="hidden sm:flex flex-col items-end leading-none">
+                    <span class="text-[7px] font-black tracking-[0.28em] text-slate-400">Heure locale</span>
+                    <span id="home-header-clock" class="text-[10px] font-mono font-semibold tracking-wide text-slate-700 tabular-nums">--:--:--</span>
                 </div>
-                
-                <div class="flex items-center gap-3 border-l border-slate-200 pl-8 h-4">
-                    <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                    <span class="text-[8px] font-black tracking-[0.2em] text-slate-400">RÉSEAU ACTIF</span>
+                <div class="flex items-center gap-2 border-l border-slate-200 pl-6">
+                    <span class="relative flex h-2 w-2">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-30"></span>
+                        <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                    </span>
+                    <span class="text-[8px] font-black uppercase tracking-[0.18em] text-slate-500">Service en ligne</span>
                 </div>
             </div>
         </div>
@@ -126,28 +144,40 @@ $loggedIn = (bool) \App\Core\Session::get('user_id');
             </div>
 
             <div class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-10 md:p-16">
-                <div class="flex justify-between items-start">
+                <div class="flex justify-between items-start pointer-events-auto">
                     <div class="flex flex-col gap-2">
                         <div class="flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></span>
-                            <span class="text-[9px] font-black tracking-[0.4em] text-white uppercase">Mode REC : Actif</span>
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.6)]"></span>
+                            <span class="text-[9px] font-black uppercase tracking-[0.28em] text-white/90">Athena Compsec</span>
                         </div>
-                        <span class="text-[7px] font-bold text-white/30 tracking-[0.3em] uppercase">Autorisation : Niveau_04 // Chiffré</span>
+                        <span class="max-w-xs text-[7px] font-semibold uppercase leading-relaxed tracking-[0.2em] text-white/35">Portail communautaire pour unités Arma 3 — organisation, présence et formation au même endroit.</span>
                     </div>
-                    <div class="text-right flex flex-col items-end">
-                        <span id="timestamp" class="text-[9px] font-mono text-white/40 tracking-widest uppercase mb-1"></span>
-                        <span class="text-[7px] font-bold text-white/20 tracking-[0.5em] uppercase">Secteur 7-G</span>
+                    <div class="flex flex-col items-end text-right">
+                        <span id="timestamp" class="mb-1 font-mono text-[9px] uppercase tracking-widest text-white/45"></span>
+                        <span class="text-[7px] font-bold uppercase tracking-[0.35em] text-white/25">Heure locale</span>
                     </div>
                 </div>
 
-                <div class="max-w-2xl">
-                    <h1 class="text-white text-5xl md:text-8xl font-black tracking-tighter leading-none mb-6">
-                        J.T.A.C <br> OPERATEURS
+                <div class="max-w-3xl pointer-events-auto">
+                    <p class="mb-4 text-[10px] font-black uppercase tracking-[0.4em] text-emerald-400/90">Ce que le portail fait pour vous</p>
+                    <h1 class="mb-6 text-4xl font-black leading-[0.95] tracking-tight text-white md:text-6xl lg:text-7xl">
+                        Une base pour votre unité,<br class="hidden sm:block"> du recrutement au terrain.
                     </h1>
-                    <div class="h-[1px] w-24 bg-white/20 mb-6"></div>
-                    <p class="text-white/40 text-[10px] font-bold tracking-[0.3em] uppercase leading-relaxed max-w-sm">
-                        Les JTAC (Joint Terminal Attack Controllers) sont des opérateurs spécialisés, formés pour coordonner les frappes aériennes.
+                    <div class="mb-6 h-px w-24 bg-white/20"></div>
+                    <p class="max-w-xl text-sm font-medium leading-relaxed text-white/55 md:text-base">
+                        Rattachez vos joueurs à une communauté, suivez les présences et les événements, diffusez documents et modpacks,
+                        structurez l’ORBAT et formez vos équipes avec des parcours suivis — le tout avec des rôles et des droits adaptés au staff et aux membres.
                     </p>
+                    <div class="mt-8 flex flex-wrap gap-3">
+                        <?php if (!$loggedIn): ?>
+                        <a href="<?= url('register') ?>" class="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-6 py-3 text-[10px] font-black uppercase tracking-wider text-slate-950 transition hover:bg-emerald-400">Créer un compte</a>
+                        <a href="<?= url('login') ?>" class="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-[10px] font-black uppercase tracking-wider text-white transition hover:bg-white/10">Connexion</a>
+                        <a href="<?= url('join') ?>" class="inline-flex items-center justify-center rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white/70 underline decoration-white/30 underline-offset-4 transition hover:text-white">J’ai un code communauté</a>
+                        <?php else: ?>
+                        <a href="<?= url('dashboard') ?>" class="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-6 py-3 text-[10px] font-black uppercase tracking-wider text-slate-950 transition hover:bg-emerald-400">Ouvrir le tableau de bord</a>
+                        <a href="<?= url('hub') ?>" class="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-[10px] font-black uppercase tracking-wider text-white transition hover:bg-white/10">Centre opérationnel</a>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
 
@@ -201,13 +231,18 @@ $loggedIn = (bool) \App\Core\Session::get('user_id');
             function nextSlide() { updateSlide(current + 1); }
             function prevSlide() { updateSlide(current - 1); }
 
-            setInterval(() => {
+            function tickClocks() {
                 const now = new Date();
-                document.getElementById('timestamp').innerText =
-                    now.getHours().toString().padStart(2, '0') + ':' +
+                const t = now.getHours().toString().padStart(2, '0') + ':' +
                     now.getMinutes().toString().padStart(2, '0') + ':' +
-                    now.getSeconds().toString().padStart(2, '0') + ' Z';
-            }, 1000);
+                    now.getSeconds().toString().padStart(2, '0');
+                const ts = document.getElementById('timestamp');
+                if (ts) ts.innerText = t;
+                const hc = document.getElementById('home-header-clock');
+                if (hc) hc.innerText = t;
+            }
+            tickClocks();
+            setInterval(tickClocks, 1000);
 
             setInterval(nextSlide, 6000);
             updateSlide(0);
@@ -263,6 +298,14 @@ $loggedIn = (bool) \App\Core\Session::get('user_id');
                         <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">C2</span>
                         <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">ATAK</span>
                     </a>
+                    <a href="<?= url('tacmap') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Carte</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">TACMAP</span>
+                    </a>
+                    <a href="<?= url('overwatch') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Vue</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">OVERWATCH</span>
+                    </a>
 
                     <a href="<?= url('documents') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
                         <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Docs</span>
@@ -273,6 +316,18 @@ $loggedIn = (bool) \App\Core\Session::get('user_id');
                         <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">LMS</span>
                         <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">FORMATIONS</span>
                     </a>
+                    <a href="<?= url('evenements') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Agenda</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">ÉVÉNEMENTS</span>
+                    </a>
+                    <a href="<?= url('messages') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Fil</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">MESSAGES</span>
+                    </a>
+                    <a href="<?= url('equipment') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center">
+                        <span class="text-[7px] font-black tracking-[0.25em] text-slate-500 uppercase group-hover:text-emerald-500 transition-colors">Tenue</span>
+                        <span class="text-white text-[10px] font-bold tracking-[0.15em] uppercase transition-all group-hover:text-emerald-400">MATÉRIEL</span>
+                    </a>
 
                     <a href="<?= url('enlistment') ?>" class="group flex flex-col items-center gap-1 max-w-[140px] text-center relative px-2">
                         <span class="text-[7px] font-black tracking-[0.25em] text-emerald-500 uppercase">RH</span>
@@ -280,377 +335,312 @@ $loggedIn = (bool) \App\Core\Session::get('user_id');
                     </a>
                 </div>
 
-                <div class="mt-8 flex justify-between items-center border-t border-white/[0.03] pt-4">
-                    <span class="text-[6px] font-mono text-slate-600 tracking-[0.5em] uppercase text-left">Système : V.2.0.4 // COMSPEC</span>
-                    <div class="h-[1px] flex-1 mx-8 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-                    <span class="text-[6px] font-mono text-slate-600 tracking-[0.5em] uppercase text-right italic">En attente d’ordres...</span>
+                <div class="mt-8 flex flex-col items-center justify-between gap-2 border-t border-white/[0.03] pt-4 text-center sm:flex-row sm:text-left">
+                    <span class="text-[6px] font-mono uppercase tracking-[0.35em] text-slate-600">Athena Compsec — accès aux modules après connexion</span>
+                    <div class="hidden h-px flex-1 bg-gradient-to-r from-transparent via-white/5 to-transparent sm:mx-8 sm:block"></div>
+                    <span class="text-[6px] font-semibold uppercase tracking-[0.3em] text-slate-500">Créer une communauté ou rejoindre avec un code</span>
                 </div>
             </div>
         </nav>
 
-        <section class="who-we-are">
-            <div class="who-inner">
-
-                <div class="who-title">
-                    <h2>Qui sommes-nous</h2>
+        <section class="relative overflow-hidden border-y border-slate-200 bg-white">
+            <div class="relative mx-auto max-w-6xl px-6 py-16 md:py-20">
+                <div class="mx-auto max-w-3xl text-center">
+                    <p class="mb-3 text-[9px] font-black uppercase tracking-[0.4em] text-emerald-600">Pourquoi Athena Compsec</p>
+                    <h2 class="mb-4 text-3xl font-black uppercase tracking-tight text-slate-900 md:text-4xl">Un portail pour toute la chaîne</h2>
+                    <p class="text-sm leading-relaxed text-slate-600 md:text-base">De l’arrivée d’un nouveau membre au briefing du soir : regroupez communautés, présence, documents, formation et cartographie dans un espace unique, avec des droits adaptés au rôle de chacun.</p>
                 </div>
-
-                <div class="who-icons">
-                    <div class="who-item">
-                        <img src="<?= $base ?>/assets/images/index3.png" alt="75th Ranger Regiment">
-                        <h4>75th Ranger Regiment</h4>
-                        <span>Army Rangers</span>
+                <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 text-left transition hover:border-emerald-200 hover:shadow-sm">
+                        <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-700">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </div>
+                        <h3 class="mb-2 text-sm font-black uppercase tracking-wide text-slate-900">Plusieurs communautés</h3>
+                        <p class="text-xs leading-relaxed text-slate-600">Registre des unités, création d’espace, invitation par code et bascule rapide entre organisations.</p>
                     </div>
-
-                    <div class="who-item">
-                        <img src="<?= $base ?>/assets/images/index2.png" alt="AFSOC">
-                        <h4>AFSOC</h4>
-                        <span>Global Access</span>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 text-left transition hover:border-emerald-200 hover:shadow-sm">
+                        <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/10 text-sky-700">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        </div>
+                        <h3 class="mb-2 text-sm font-black uppercase tracking-wide text-slate-900">Rôles et accès</h3>
+                        <p class="text-xs leading-relaxed text-slate-600">Le staff pilote l’organisation ; chaque membre ne voit que ce qui lui est utile, selon les permissions définies.</p>
                     </div>
-
-                    <div class="who-item">
-                        <img src="<?= $base ?>/assets/images/index1.png" alt="USASOC">
-                        <h4>USASOC</h4>
-                        <span>National Mission Force</span>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 text-left transition hover:border-emerald-200 hover:shadow-sm">
+                        <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-800">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                        </div>
+                        <h3 class="mb-2 text-sm font-black uppercase tracking-wide text-slate-900">Formation suivie</h3>
+                        <p class="text-xs leading-relaxed text-slate-600">Catalogue de parcours, leçons, évaluations et attestations lorsque votre offre l’active pour la communauté.</p>
                     </div>
-
-                    <div class="who-item">
-                        <img src="<?= $base ?>/assets/images/index5.png" alt="JSOAC">
-                        <h4>JSOAC</h4>
-                        <span>Aviation</span>
-                    </div>
-
-                    <div class="who-item">
-                        <img src="<?= $base ?>/assets/images/index4.png" alt="CIA">
-                        <h4>CIA</h4>
-                        <span>Intelligence Experts</span>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 text-left transition hover:border-emerald-200 hover:shadow-sm">
+                        <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/10 text-violet-700">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                        </div>
+                        <h3 class="mb-2 text-sm font-black uppercase tracking-wide text-slate-900">Carte et jeu</h3>
+                        <p class="text-xs leading-relaxed text-slate-600">Tacmap, vue Overwatch et liaison ATAK pour aligner le portail avec ce qui se passe sur le terrain virtuel.</p>
                     </div>
                 </div>
             </div>
         </section>
-        <section class="relative bg-[#050810] text-white overflow-hidden border-y border-white/5">
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.08),transparent_40%)]"></div>
-    <div class="absolute inset-0 opacity-[0.035] pointer-events-none" style="background-image:linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 48px 48px;"></div>
 
-    <div class="relative max-w-6xl mx-auto px-6 py-20">
-        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-14">
-            <div class="max-w-2xl">
-                <p class="text-[9px] font-black tracking-[0.45em] text-emerald-500 uppercase mb-4">Situation actuelle</p>
-                <h2 class="text-3xl md:text-5xl font-black tracking-tight uppercase leading-none mb-5">
-                    Opérations déployées à travers différents secteurs
-                </h2>
-                <div class="h-[1px] w-20 bg-white/15 mb-5"></div>
-                <p class="text-white/45 text-[11px] font-bold tracking-[0.18em] uppercase leading-relaxed max-w-xl">
-                    Visualisez la disponibilité réelle des unités, l’état de préparation et la coordination entre les équipes suivant la mission en cours.
-                </p>
-            </div>
+        <section class="relative overflow-hidden border-y border-white/5 bg-[#050810] text-white">
+            <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.08),transparent_40%)]"></div>
+            <div class="pointer-events-none absolute inset-0 opacity-[0.035]" style="background-image:linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 48px 48px;"></div>
 
-            <div class="grid grid-cols-2 gap-3 min-w-[280px]">
-                <div class="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
-                    <p class="text-[8px] font-black tracking-[0.28em] text-white/30 uppercase mb-2">Unités actives</p>
-                    <p class="text-2xl font-black tracking-tight">04</p>
-                </div>
-                <div class="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
-                    <p class="text-[8px] font-black tracking-[0.28em] text-white/30 uppercase mb-2">Préparation</p>
-                    <p class="text-2xl font-black tracking-tight text-emerald-400">Optimale</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid lg:grid-cols-3 gap-6">
-            <article class="group relative bg-white/[0.03] border border-white/[0.06] rounded-3xl p-6 hover:border-emerald-500/30 transition-colors overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500/70 via-emerald-500/20 to-transparent"></div>
-
-                <div class="flex items-start justify-between gap-4 mb-6">
-                    <div>
-                        <p class="text-[8px] font-black tracking-[0.35em] text-white/30 uppercase mb-2">Zone 01</p>
-                        <h3 class="text-xl font-black tracking-tight uppercase">Secteur Est</h3>
+            <div class="relative mx-auto max-w-6xl px-6 py-20">
+                <div class="mb-14 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+                    <div class="max-w-2xl">
+                        <p class="mb-4 text-[9px] font-black uppercase tracking-[0.45em] text-emerald-500">Trois grands usages</p>
+                        <h2 class="mb-5 text-3xl font-black uppercase leading-none tracking-tight md:text-5xl">Ce que vos équipes font sur le portail</h2>
+                        <div class="mb-5 h-px w-20 bg-white/15"></div>
+                        <p class="max-w-xl text-sm font-medium leading-relaxed text-white/55">Chaque bloc correspond à des écrans déjà disponibles : pas de démonstration fictive, les liens mènent aux modules réels (connexion requise selon les droits).</p>
                     </div>
-                    <span class="inline-flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase text-emerald-400">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        Opérationnel
-                    </span>
+                    <div class="grid min-w-[260px] grid-cols-2 gap-3">
+                        <div class="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+                            <p class="mb-1 text-[8px] font-black uppercase tracking-[0.28em] text-white/35">Organisation</p>
+                            <p class="text-lg font-black tracking-tight text-emerald-400">Communautés</p>
+                        </div>
+                        <div class="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+                            <p class="mb-1 text-[8px] font-black uppercase tracking-[0.28em] text-white/35">Quotidien</p>
+                            <p class="text-lg font-black tracking-tight text-white">Hub &amp; présence</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-3">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">Mission</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">Reconnaissance</span>
-                    </div>
-                    <div class="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-3">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">Appui aérien</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">Prêt</span>
-                    </div>
-                    <div class="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-3">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">Fenêtre</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">2200Z–0100Z</span>
-                    </div>
-                    <div class="flex items-center justify-between gap-4">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">Équipe</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">Aviation / Recon</span>
-                    </div>
-                </div>
-            </article>
+                <div class="grid gap-6 lg:grid-cols-3">
+                    <article class="group relative overflow-hidden rounded-3xl border border-white/[0.06] bg-white/[0.03] p-6 transition-colors hover:border-emerald-500/35">
+                        <div class="absolute left-0 top-0 h-0.5 w-full bg-gradient-to-r from-emerald-500/80 via-emerald-500/20 to-transparent"></div>
+                        <h3 class="mb-2 text-xl font-black uppercase tracking-tight">Structurer l’unité</h3>
+                        <p class="mb-6 text-xs leading-relaxed text-white/50">Créer ou rejoindre une communauté, inviter avec un code, gérer les rattachements et préparer le recrutement.</p>
+                        <dl class="space-y-3 border-t border-white/[0.06] pt-4 text-[11px]">
+                            <div class="flex justify-between gap-3 border-b border-white/[0.06] pb-3">
+                                <dt class="font-bold uppercase tracking-wide text-white/35">Registre</dt>
+                                <dd class="text-right font-semibold text-white/90">Parcourir les communautés</dd>
+                            </div>
+                            <div class="flex justify-between gap-3 border-b border-white/[0.06] pb-3">
+                                <dt class="font-bold uppercase tracking-wide text-white/35">Adhésion</dt>
+                                <dd class="text-right font-semibold text-white/90">Code ou formulaire d’enrôlement</dd>
+                            </div>
+                            <div class="flex justify-between gap-3">
+                                <dt class="font-bold uppercase tracking-wide text-white/35">Staff</dt>
+                                <dd class="text-right font-semibold text-white/90">Administration de l’unité</dd>
+                            </div>
+                        </dl>
+                        <div class="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-wide text-emerald-400">
+                            <a href="<?= url('communities') ?>" class="transition hover:text-white">Communautés</a>
+                            <a href="<?= url('join') ?>" class="transition hover:text-white">Rejoindre</a>
+                            <a href="<?= url('enlistment') ?>" class="transition hover:text-white">Enrôlement</a>
+                        </div>
+                    </article>
 
-            <article class="group relative bg-white/[0.03] border border-white/[0.06] rounded-3xl p-6 hover:border-amber-400/30 transition-colors overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-400/70 via-amber-400/20 to-transparent"></div>
+                    <article class="group relative overflow-hidden rounded-3xl border border-white/[0.06] bg-white/[0.03] p-6 transition-colors hover:border-amber-400/35">
+                        <div class="absolute left-0 top-0 h-0.5 w-full bg-gradient-to-r from-amber-400/80 via-amber-400/20 to-transparent"></div>
+                        <h3 class="mb-2 text-xl font-black uppercase tracking-tight">Coordonner le quotidien</h3>
+                        <p class="mb-6 text-xs leading-relaxed text-white/50">Vue d’ensemble, point de présence, agenda des événements et fil de messages internes à la communauté.</p>
+                        <dl class="space-y-3 border-t border-white/[0.06] pt-4 text-[11px]">
+                            <div class="flex justify-between gap-3 border-b border-white/[0.06] pb-3">
+                                <dt class="font-bold uppercase tracking-wide text-white/35">Synthèse</dt>
+                                <dd class="text-right font-semibold text-white/90">Tableau de bord personnel</dd>
+                            </div>
+                            <div class="flex justify-between gap-3 border-b border-white/[0.06] pb-3">
+                                <dt class="font-bold uppercase tracking-wide text-white/35">Ops</dt>
+                                <dd class="text-right font-semibold text-white/90">Hub et pointage</dd>
+                            </div>
+                            <div class="flex justify-between gap-3">
+                                <dt class="font-bold uppercase tracking-wide text-white/35">Échanges</dt>
+                                <dd class="text-right font-semibold text-white/90">Événements &amp; messages</dd>
+                            </div>
+                        </dl>
+                        <div class="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-wide text-amber-300">
+                            <a href="<?= url('dashboard') ?>" class="transition hover:text-white">Tableau de bord</a>
+                            <a href="<?= url('hub') ?>" class="transition hover:text-white">Hub</a>
+                            <a href="<?= url('pointage') ?>" class="transition hover:text-white">Pointage</a>
+                            <a href="<?= url('evenements') ?>" class="transition hover:text-white">Événements</a>
+                            <a href="<?= url('messages') ?>" class="transition hover:text-white">Messages</a>
+                        </div>
+                    </article>
 
-                <div class="flex items-start justify-between gap-4 mb-6">
-                    <div>
-                        <p class="text-[8px] font-black tracking-[0.35em] text-white/30 uppercase mb-2">Zone 02</p>
-                        <h3 class="text-xl font-black tracking-tight uppercase">Secteur Sud</h3>
-                    </div>
-                    <span class="inline-flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase text-amber-300">
-                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                        Prêt Alerte
-                    </span>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-3">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">Mission</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">Assaut</span>
-                    </div>
-                    <div class="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-3">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">QRF</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">Déploiement 30min</span>
-                    </div>
-                    <div class="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-3">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">Mobilité aérienne</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">En attente</span>
-                    </div>
-                    <div class="flex items-center justify-between gap-4">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">Équipe</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">Unité d’assaut</span>
-                    </div>
-                </div>
-            </article>
-
-            <article class="group relative bg-white/[0.03] border border-white/[0.06] rounded-3xl p-6 hover:border-sky-400/30 transition-colors overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-sky-400/70 via-sky-400/20 to-transparent"></div>
-
-                <div class="flex items-start justify-between gap-4 mb-6">
-                    <div>
-                        <p class="text-[8px] font-black tracking-[0.35em] text-white/30 uppercase mb-2">Théâtre 03</p>
-                        <h3 class="text-xl font-black tracking-tight uppercase">Quadrant Nord</h3>
-                    </div>
-                    <span class="inline-flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase text-sky-300">
-                        <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                        Sous surveillance
-                    </span>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-3">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">Mission principale</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">Signaux / Renseignement</span>
-                    </div>
-                    <div class="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-3">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">Mode de collecte</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">Passif</span>
-                    </div>
-                    <div class="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-3">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">État réseau</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">Stable</span>
-                    </div>
-                    <div class="flex items-center justify-between gap-4">
-                        <span class="text-[10px] font-bold tracking-[0.16em] uppercase text-white/35">Cellule assignée</span>
-                        <span class="text-[10px] font-black tracking-[0.14em] uppercase text-white">Cellule renseignement</span>
-                    </div>
-                </div>
-            </article>
-        </div>
-    </div>
-</section>
-<section class="relative bg-white text-slate-900 overflow-hidden border-y border-slate-900/[0.04]">
-    <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image:linear-gradient(rgba(15,23,42,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.08) 1px, transparent 1px); background-size: 56px 56px;"></div>
-
-    <div class="relative max-w-6xl mx-auto px-6 py-20">
-        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-14">
-            <div class="max-w-2xl">
-                <p class="text-[9px] font-black tracking-[0.45em] text-emerald-600 uppercase mb-4">Capacités</p>
-                <h2 class="text-3xl md:text-5xl font-black tracking-tight uppercase leading-none mb-5">
-                    Missions conçues pour<br>la précision et la continuité
-                </h2>
-                <div class="h-[1px] w-20 bg-slate-900/10 mb-5"></div>
-                <p class="text-slate-500 text-[11px] font-bold tracking-[0.18em] uppercase leading-relaxed max-w-xl">
-                    Reconnaissance intégrée, appui aux frappes, soutien aérien et planification guidée par le renseignement en environnement contesté.
-                </p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 min-w-[280px]">
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                    <p class="text-[8px] font-black tracking-[0.28em] text-slate-400 uppercase mb-2">Fonctions clés</p>
-                    <p class="text-2xl font-black tracking-tight">06</p>
-                </div>
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                    <p class="text-[8px] font-black tracking-[0.28em] text-slate-400 uppercase mb-2">Posture opérationnelle</p>
-                    <p class="text-2xl font-black tracking-tight text-emerald-600">Intégrée</p>
+                    <article class="group relative overflow-hidden rounded-3xl border border-white/[0.06] bg-white/[0.03] p-6 transition-colors hover:border-sky-400/35">
+                        <div class="absolute left-0 top-0 h-0.5 w-full bg-gradient-to-r from-sky-400/80 via-sky-400/20 to-transparent"></div>
+                        <h3 class="mb-2 text-xl font-black uppercase tracking-tight">Préparer le terrain</h3>
+                        <p class="mb-6 text-xs leading-relaxed text-white/50">ORBAT, documents, formation, packs de mods, matériel référencé et cartographie pour la partie.</p>
+                        <dl class="space-y-3 border-t border-white/[0.06] pt-4 text-[11px]">
+                            <div class="flex justify-between gap-3 border-b border-white/[0.06] pb-3">
+                                <dt class="font-bold uppercase tracking-wide text-white/35">Structure</dt>
+                                <dd class="text-right font-semibold text-white/90">ORBAT &amp; fiches</dd>
+                            </div>
+                            <div class="flex justify-between gap-3 border-b border-white/[0.06] pb-3">
+                                <dt class="font-bold uppercase tracking-wide text-white/35">Doctrine</dt>
+                                <dd class="text-right font-semibold text-white/90">Bibliothèque documentaire</dd>
+                            </div>
+                            <div class="flex justify-between gap-3">
+                                <dt class="font-bold uppercase tracking-wide text-white/35">Accréditation</dt>
+                                <dd class="text-right font-semibold text-white/90">Dossier opérateur</dd>
+                            </div>
+                        </dl>
+                        <div class="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-wide text-sky-300">
+                            <a href="<?= url('orbat') ?>" class="transition hover:text-white">ORBAT</a>
+                            <a href="<?= url('forum') ?>" class="transition hover:text-white">Forum</a>
+                            <a href="<?= url('documents') ?>" class="transition hover:text-white">Documents</a>
+                            <a href="<?= url('formations') ?>" class="transition hover:text-white">Formations</a>
+                            <a href="<?= url('modpacks') ?>" class="transition hover:text-white">Modpacks</a>
+                            <a href="<?= url('equipment') ?>" class="transition hover:text-white">Matériel</a>
+                            <a href="<?= url('atak') ?>" class="transition hover:text-white">ATAK</a>
+                            <a href="<?= url('tacmap') ?>" class="transition hover:text-white">Tacmap</a>
+                            <a href="<?= url('overwatch') ?>" class="transition hover:text-white">Overwatch</a>
+                            <a href="<?= url('dossier-operateur/accreditation') ?>" class="transition hover:text-white">Dossier opérateur</a>
+                        </div>
+                    </article>
                 </div>
             </div>
-        </div>
+        </section>
+        <section class="relative overflow-hidden border-y border-slate-900/[0.04] bg-white text-slate-900">
+            <div class="pointer-events-none absolute inset-0 opacity-[0.03]" style="background-image:linear-gradient(rgba(15,23,42,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.08) 1px, transparent 1px); background-size: 56px 56px;"></div>
 
-        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-            <article class="group bg-white border border-slate-200 rounded-3xl p-6 hover:border-emerald-500/30 hover:shadow-[0_20px_50px_rgba(15,23,42,0.06)] transition-all">
-                <div class="flex items-start justify-between gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 11l9-7 9 7M5 10v9h14v-9"></path>
-                        </svg>
-                    </div>
-                    <span class="text-[8px] font-black tracking-[0.25em] text-slate-400 uppercase">01</span>
+            <div class="relative mx-auto max-w-6xl px-6 py-20">
+                <div class="mb-14 max-w-3xl">
+                    <p class="mb-4 text-[9px] font-black uppercase tracking-[0.45em] text-emerald-600">Modules du portail</p>
+                    <h2 class="mb-5 text-3xl font-black uppercase leading-none tracking-tight md:text-5xl">Fonctions livrées dans Athena Compsec</h2>
+                    <div class="mb-5 h-px w-20 bg-slate-900/10"></div>
+                    <p class="text-sm font-medium leading-relaxed text-slate-600 md:text-base">Chaque carte résume ce que vous trouverez après connexion. L’activation précise peut dépendre de l’offre de votre communauté et des rôles attribués.</p>
                 </div>
 
-                <h3 class="text-lg font-black tracking-tight uppercase mb-3">Reconnaissance</h3>
-                <p class="text-[11px] text-slate-600 leading-relaxed font-medium mb-5">
-                    Ouverture d’itinéraires, familiarisation de zone, lecture du terrain et observation des objectifs avant engagement de la force principale.
-                </p>
+                <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    <article class="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
+                        <h3 class="mb-2 text-lg font-black uppercase tracking-tight text-slate-900">Tableau de bord</h3>
+                        <p class="mb-4 flex-1 text-sm leading-relaxed text-slate-600">Vue d’entrée après connexion : raccourcis de la communauté, rappels et accès rapides vers les modules utiles.</p>
+                        <ul class="mb-5 space-y-1.5 border-t border-slate-100 pt-4 text-xs text-slate-500">
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Synthèse personnelle et messages de la communauté</li>
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Liens épinglés par le staff</li>
+                        </ul>
+                        <a href="<?= url('dashboard') ?>" class="inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 transition hover:text-slate-900">Ouvrir le tableau de bord →</a>
+                    </article>
 
-                <div class="space-y-3 pt-4 border-t border-slate-100">
-                    <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.14em] font-bold">
-                        <span class="text-slate-400">Préparation</span>
-                        <span class="text-slate-900">Élevée</span>
-                    </div>
-                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full w-[88%] bg-emerald-500 rounded-full"></div>
-                    </div>
-                </div>
-            </article>
+                    <article class="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
+                        <h3 class="mb-2 text-lg font-black uppercase tracking-tight text-slate-900">Forum</h3>
+                        <p class="mb-4 flex-1 text-sm leading-relaxed text-slate-600">Espace de publication par catégories : briefings, annonces et discussions, avec modération côté organisation.</p>
+                        <ul class="mb-5 space-y-1.5 border-t border-slate-100 pt-4 text-xs text-slate-500">
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Fils structurés par thème</li>
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Pièces jointes selon les règles de la communauté</li>
+                        </ul>
+                        <a href="<?= url('forum') ?>" class="inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 transition hover:text-slate-900">Accéder au forum →</a>
+                    </article>
 
-            <article class="group bg-white border border-slate-200 rounded-3xl p-6 hover:border-emerald-500/30 hover:shadow-[0_20px_50px_rgba(15,23,42,0.06)] transition-all">
-                <div class="flex items-start justify-between gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.868v4.264a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"></path>
-                        </svg>
-                    </div>
-                    <span class="text-[8px] font-black tracking-[0.25em] text-slate-400 uppercase">02</span>
-                </div>
+                    <article class="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
+                        <h3 class="mb-2 text-lg font-black uppercase tracking-tight text-slate-900">ORBAT &amp; personnel</h3>
+                        <p class="mb-4 flex-1 text-sm leading-relaxed text-slate-600">Organigramme de l’unité et fiches des membres pour aligner les rôles jeu et les responsabilités.</p>
+                        <ul class="mb-5 space-y-1.5 border-t border-slate-100 pt-4 text-xs text-slate-500">
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Vue hiérarchique des détachements</li>
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Fiche opérateur et complétude du profil</li>
+                        </ul>
+                        <a href="<?= url('orbat') ?>" class="inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 transition hover:text-slate-900">Voir l’ORBAT →</a>
+                    </article>
 
-                <h3 class="text-lg font-black tracking-tight uppercase mb-3">Action directe</h3>
-                <p class="text-[11px] text-slate-600 leading-relaxed font-medium mb-5">
-                    Actions offensives de courte durée axées sur la capture, la perturbation ou la neutralisation d’objectifs de haute valeur.
-                </p>
+                    <article class="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
+                        <h3 class="mb-2 text-lg font-black uppercase tracking-tight text-slate-900">Événements &amp; présence</h3>
+                        <p class="mb-4 flex-1 text-sm leading-relaxed text-slate-600">Agenda des activités, réponses de présence et rappels pour les séances collectives.</p>
+                        <ul class="mb-5 space-y-1.5 border-t border-slate-100 pt-4 text-xs text-slate-500">
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Inscription et suivi par événement</li>
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Complément avec le pointage dédié</li>
+                        </ul>
+                        <a href="<?= url('evenements') ?>" class="inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 transition hover:text-slate-900">Consulter l’agenda →</a>
+                    </article>
 
-                <div class="space-y-3 pt-4 border-t border-slate-100">
-                    <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.14em] font-bold">
-                        <span class="text-slate-400">Préparation</span>
-                        <span class="text-slate-900">Qualifiée</span>
-                    </div>
-                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full w-[82%] bg-emerald-500 rounded-full"></div>
-                    </div>
-                </div>
-            </article>
+                    <article class="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
+                        <h3 class="mb-2 text-lg font-black uppercase tracking-tight text-slate-900">Documents &amp; formation</h3>
+                        <p class="mb-4 flex-1 text-sm leading-relaxed text-slate-600">Bibliothèque classée et parcours pédagogiques avec progression, évaluations et attestations lorsque l’offre le permet.</p>
+                        <ul class="mb-5 space-y-1.5 border-t border-slate-100 pt-4 text-xs text-slate-500">
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Dossiers et droits de lecture par profil</li>
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Catalogue de formations et inscriptions</li>
+                        </ul>
+                        <div class="flex flex-wrap gap-x-4 gap-y-2">
+                            <a href="<?= url('documents') ?>" class="inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 transition hover:text-slate-900">Documents →</a>
+                            <a href="<?= url('formations') ?>" class="inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 transition hover:text-slate-900">Formations →</a>
+                        </div>
+                    </article>
 
-            <article class="group bg-white border border-slate-200 rounded-3xl p-6 hover:border-emerald-500/30 hover:shadow-[0_20px_50px_rgba(15,23,42,0.06)] transition-all">
-                <div class="flex items-start justify-between gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 14l11-2-9-9-2 11zm0 0l-2 7-2-5-5-2 9-2z"></path>
-                        </svg>
-                    </div>
-                    <span class="text-[8px] font-black tracking-[0.25em] text-slate-400 uppercase">03</span>
-                </div>
-
-                <h3 class="text-lg font-black tracking-tight uppercase mb-3">Mobilité aérienne</h3>
-                <p class="text-[11px] text-slate-600 leading-relaxed font-medium mb-5">
-                    Insertion, extraction et redéploiement rapide par voilure tournante dans des fenêtres opérationnelles contraintes.
-                </p>
-
-                <div class="space-y-3 pt-4 border-t border-slate-100">
-                    <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.14em] font-bold">
-                        <span class="text-slate-400">Préparation</span>
-                        <span class="text-slate-900">Disponible</span>
-                    </div>
-                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full w-[85%] bg-emerald-500 rounded-full"></div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="group bg-white border border-slate-200 rounded-3xl p-6 hover:border-emerald-500/30 hover:shadow-[0_20px_50px_rgba(15,23,42,0.06)] transition-all">
-                <div class="flex items-start justify-between gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 17v-6m3 6V7m3 10v-3m3 3V5M5 19h14"></path>
-                        </svg>
-                    </div>
-                    <span class="text-[8px] font-black tracking-[0.25em] text-slate-400 uppercase">04</span>
+                    <article class="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
+                        <h3 class="mb-2 text-lg font-black uppercase tracking-tight text-slate-900">Cartographie &amp; jeu</h3>
+                        <p class="mb-4 flex-1 text-sm leading-relaxed text-slate-600">Tacmap et vue Overwatch pour suivre la situation ; liaison ATAK pour relier le jeu au portail ; modpacks et fiches matériel pour préparer la séance.</p>
+                        <ul class="mb-5 space-y-1.5 border-t border-slate-100 pt-4 text-xs text-slate-500">
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Cartes Arma et superposition des repères</li>
+                            <li class="flex gap-2"><span class="text-emerald-600">•</span> Téléchargement des packs et consignes matériel</li>
+                        </ul>
+                        <div class="flex flex-wrap gap-x-3 gap-y-2">
+                            <a href="<?= url('atak') ?>" class="inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 transition hover:text-slate-900">ATAK →</a>
+                            <a href="<?= url('tacmap') ?>" class="inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 transition hover:text-slate-900">Tacmap →</a>
+                            <a href="<?= url('overwatch') ?>" class="inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 transition hover:text-slate-900">Overwatch →</a>
+                            <a href="<?= url('modpacks') ?>" class="inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 transition hover:text-slate-900">Modpacks →</a>
+                            <a href="<?= url('equipment') ?>" class="inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 transition hover:text-slate-900">Matériel →</a>
+                        </div>
+                    </article>
                 </div>
 
-                <h3 class="text-lg font-black tracking-tight uppercase mb-3">Intégration ISR</h3>
-                <p class="text-[11px] text-slate-600 leading-relaxed font-medium mb-5">
-                    Collecte, fusion et diffusion d’un renseignement exploitable pour appuyer la décision en temps réel.
-                </p>
-
-                <div class="space-y-3 pt-4 border-t border-slate-100">
-                    <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.14em] font-bold">
-                        <span class="text-slate-400">Préparation</span>
-                        <span class="text-slate-900">Stable</span>
+                <div class="mt-12 rounded-3xl border border-slate-200 bg-slate-50 p-8 md:flex md:items-center md:justify-between md:gap-8">
+                    <div class="mb-6 md:mb-0">
+                        <p class="mb-2 text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">Recrutement &amp; accès</p>
+                        <p class="max-w-xl text-sm text-slate-700">Parcours d’enrôlement configurable, messages préparés pour le staff et dossier opérateur pour structurer l’accréditation au sein de l’unité.</p>
                     </div>
-                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full w-[91%] bg-emerald-500 rounded-full"></div>
+                    <div class="flex flex-shrink-0 flex-wrap gap-3">
+                        <a href="<?= url('enlistment') ?>" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-[10px] font-black uppercase tracking-wider text-white transition hover:bg-slate-800">Enrôlement</a>
+                        <a href="<?= url('dossier-operateur/accreditation') ?>" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-[10px] font-black uppercase tracking-wider text-slate-800 transition hover:border-slate-400">Dossier opérateur</a>
                     </div>
                 </div>
-            </article>
-
-            <article class="group bg-white border border-slate-200 rounded-3xl p-6 hover:border-emerald-500/30 hover:shadow-[0_20px_50px_rgba(15,23,42,0.06)] transition-all">
-                <div class="flex items-start justify-between gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6v12m6-6H6"></path>
-                        </svg>
-                    </div>
-                    <span class="text-[8px] font-black tracking-[0.25em] text-slate-400 uppercase">05</span>
-                </div>
-
-                <h3 class="text-lg font-black tracking-tight uppercase mb-3">Soutien médical</h3>
-                <p class="text-[11px] text-slate-600 leading-relaxed font-medium mb-5">
-                    Stabilisation des blessés, appui à l’extraction et soins prolongés sur le terrain lors d’opérations étendues.
-                </p>
-
-                <div class="space-y-3 pt-4 border-t border-slate-100">
-                    <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.14em] font-bold">
-                        <span class="text-slate-400">Préparation</span>
-                        <span class="text-slate-900">Prête</span>
-                    </div>
-                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full w-[78%] bg-emerald-500 rounded-full"></div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="group bg-white border border-slate-200 rounded-3xl p-6 hover:border-emerald-500/30 hover:shadow-[0_20px_50px_rgba(15,23,42,0.06)] transition-all">
-                <div class="flex items-start justify-between gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 9h8M8 13h6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H9l-4 4v8a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
-                    <span class="text-[8px] font-black tracking-[0.25em] text-slate-400 uppercase">06</span>
-                </div>
-
-                <h3 class="text-lg font-black tracking-tight uppercase mb-3">Planification de mission</h3>
-                <p class="text-[11px] text-slate-600 leading-relaxed font-medium mb-5">
-                    Cycles de planification structurés, organisation des tâches et supports de briefing conçus pour une exécution reproductible.
-                </p>
-
-                <div class="space-y-3 pt-4 border-t border-slate-100">
-                    <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.14em] font-bold">
-                        <span class="text-slate-400">Préparation</span>
-                        <span class="text-slate-900">Constante</span>
-                    </div>
-                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full w-[89%] bg-emerald-500 rounded-full"></div>
-                    </div>
-                </div>
-            </article>
-        </div>
-    </div>
-</section>
+            </div>
+        </section>
     </main>
+
+    <footer class="relative mt-0">
+        <div class="relative overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950/95 to-slate-900 text-white">
+            <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(52,211,153,0.22),transparent_50%)]"></div>
+            <div class="pointer-events-none absolute inset-0 opacity-[0.06]" style="background-image:linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px); background-size: 64px 64px;"></div>
+            <div class="relative mx-auto max-w-4xl px-6 py-16 text-center md:py-20 lg:py-24">
+                <p class="mb-4 text-[10px] font-black uppercase tracking-[0.4em] text-emerald-400/90">Athena Compsec</p>
+                <h2 class="mb-5 text-3xl font-black leading-tight tracking-tight text-white md:text-4xl lg:text-5xl">
+                    Donnez à votre unité un portail digne de vos opérations
+                </h2>
+                <p class="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-white/65 md:text-lg">
+                    Créez votre espace, invitez vos membres et centralisez présence, documents, formation et cartographie — sans multiplier les outils.
+                </p>
+                <div class="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+                    <?php if (!$loggedIn): ?>
+                    <a href="<?= url('register') ?>" class="inline-flex min-h-[3rem] items-center justify-center rounded-2xl bg-emerald-500 px-8 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-400">
+                        Créer un compte gratuitement
+                    </a>
+                    <a href="<?= url('login') ?>" class="inline-flex min-h-[3rem] items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-8 text-xs font-black uppercase tracking-wider text-white backdrop-blur-sm transition hover:border-white/35 hover:bg-white/10">
+                        J’ai déjà un compte
+                    </a>
+                    <a href="<?= url('join') ?>" class="inline-flex min-h-[3rem] items-center justify-center rounded-2xl px-6 text-xs font-bold uppercase tracking-wide text-emerald-200/90 underline decoration-emerald-500/40 underline-offset-4 transition hover:text-white">
+                        Rejoindre avec un code communauté
+                    </a>
+                    <?php else: ?>
+                    <a href="<?= url('dashboard') ?>" class="inline-flex min-h-[3rem] items-center justify-center rounded-2xl bg-emerald-500 px-8 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-400">
+                        Retour au tableau de bord
+                    </a>
+                    <a href="<?= url('communities') ?>" class="inline-flex min-h-[3rem] items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-8 text-xs font-black uppercase tracking-wider text-white backdrop-blur-sm transition hover:border-white/35 hover:bg-white/10">
+                        Voir les communautés
+                    </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t border-white/10 bg-slate-950 py-8">
+            <div class="mx-auto flex max-w-6xl flex-col items-center gap-8 px-6 md:flex-row md:items-start md:justify-between md:gap-12">
+                <div class="text-center md:text-left">
+                    <p class="text-sm font-black uppercase tracking-[0.2em] text-white">Athena Compsec</p>
+                    <p class="mt-2 max-w-xs text-xs leading-relaxed text-slate-500">Portail communautaire pour unités MILSIM Arma 3 — organisation, présence et formation.</p>
+                </div>
+                <nav class="flex max-w-xl flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-xs md:justify-end" aria-label="Informations légales">
+                    <?php
+                    $legal_link_class = 'text-slate-400 transition-colors hover:text-emerald-400 font-medium';
+                    require base_path('views/partials/legal_site_links.php');
+                    ?>
+                </nav>
+            </div>
+        </div>
+    </footer>
+    <?php require base_path('views/partials/cookie_banner.php'); ?>
 
     <script>
         function toggleMenu() {

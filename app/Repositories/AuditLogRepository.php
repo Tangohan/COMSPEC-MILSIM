@@ -173,6 +173,54 @@ final class AuditLogRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Dernières actions « RH / effectifs » : comptes, rôles, groupes, invitations, inscriptions.
+     * Mêmes exclusions que le journal organisation (acteurs rôle site).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function recentForTenantRhFocus(int $tenantId, int $limit): array
+    {
+        $limit = max(1, min(40, $limit));
+        $focusActions = [
+            'user_created',
+            'user_updated',
+            'user_deactivated',
+            'role_assigned',
+            'role.permissions_updated',
+            'group_member_added',
+            'group_member_removed',
+            'invitation.sent',
+            'invitation.accepted',
+            'invitation.revoked',
+            'auth.register',
+            'tenant.setup_completed',
+        ];
+        $placeholders = implode(',', array_fill(0, count($focusActions), '?'));
+        $excludedActions = ['site_role.assigned', 'site_role.revoked', 'permission.scope_migration'];
+        $exPh = implode(',', array_fill(0, count($excludedActions), '?'));
+
+        $sql = "SELECT a.*, u.email AS actor_email
+             FROM audit_logs a
+             LEFT JOIN users u ON u.id = a.user_id
+             WHERE a.tenant_id = ?
+             AND a.action IN ({$placeholders})
+             AND a.action NOT IN ({$exPh})
+             AND (a.user_id IS NULL OR NOT EXISTS (
+                SELECT 1 FROM users u_pf
+                INNER JOIN site_role_assignments sra
+                    ON sra.email_normalized = LOWER(TRIM(u_pf.email))
+                    AND sra.revoked_at IS NULL
+                WHERE u_pf.id = a.user_id
+             ))
+             ORDER BY a.id DESC
+             LIMIT " . (int) $limit;
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId], $focusActions, $excludedActions));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     private function likeEscape(string $s): string
     {
         return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $s);

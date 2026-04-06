@@ -41,11 +41,28 @@ class DocumentsController
         $tenantId = (int) $tenantId;
         $categoryId = $request->input('category') ? (int) $request->input('category') : null;
         $search = $request->input('q') ? trim((string) $request->input('q')) : null;
+        $documentType = $request->input('document_type') ? trim((string) $request->input('document_type')) : null;
+        if ($documentType === '') {
+            $documentType = null;
+        }
+        $sortRaw = $request->input('sort') ? trim((string) $request->input('sort')) : '';
+        $allowedSort = ['title_asc', 'title_desc', 'updated_desc', 'updated_asc'];
+        $sort = in_array($sortRaw, $allowedSort, true) ? $sortRaw : 'title_asc';
         $entityType = $request->input('entity_type') ? trim((string) $request->input('entity_type')) : null;
         $entityId = $request->input('entity_id') ? (int) $request->input('entity_id') : null;
-        $docs = $this->documentRepository->listForTenant($tenantId, $categoryId, 'published', $search, $entityType, $entityId);
+        $docs = $this->documentRepository->listForTenant(
+            $tenantId,
+            $categoryId,
+            'published',
+            $search,
+            $entityType,
+            $entityId,
+            $documentType,
+            null,
+            $sort
+        );
         $userId = (int) Session::get('user_id');
-        $docs = array_filter($docs, fn ($d) => $this->documentAccessService->canRead($d, $userId, $tenantId));
+        $docs = array_values(array_filter($docs, fn ($d) => $this->documentAccessService->canRead($d, $userId, $tenantId)));
         $categoriesList = $this->categoryRepository->listForTenant($tenantId);
         return Response::view('layout.main', [
             'content' => 'documents.index',
@@ -53,7 +70,11 @@ class DocumentsController
             'documents' => $docs,
             'categories' => $categoriesList,
             'currentCategoryId' => $categoryId,
-            'search' => $search,
+            'search' => $search ?? '',
+            'documentType' => $documentType ?? '',
+            'sort' => $sort,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
         ]);
     }
 

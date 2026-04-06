@@ -15,7 +15,11 @@ use App\Repositories\UserRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RecruitmentPresetRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
+use App\Repositories\UserUiPreferencesRepository;
+use App\Services\Email\EmailEvents;
 use App\Services\Profile\RecruitmentPresetPayloadService;
+use App\Services\Profile\UserUiPreferencesValidationService;
 use App\Services\User\UserProfileSlugService;
 use PDO;
 
@@ -27,7 +31,10 @@ class AccountController
         private UserProfileRepository $userProfileRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
         private RecruitmentPresetRepository $recruitmentPresetRepository,
-        private RecruitmentPresetPayloadService $recruitmentPresetPayloadService
+        private RecruitmentPresetPayloadService $recruitmentPresetPayloadService,
+        private UserUiPreferencesRepository $userUiPreferencesRepository,
+        private UserNotificationPreferencesRepository $userNotificationPreferencesRepository,
+        private UserUiPreferencesValidationService $userUiPreferencesValidationService
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -104,10 +111,20 @@ class AccountController
         if (!$user) {
             return Response::redirect(url('login'));
         }
-        $profile = $this->userProfileRepository->getByUserId((int) $user['id']);
+        $uid = (int) $user['id'];
+        $tenantId = (int) $user['tenant_id'];
+        $profile = $this->userProfileRepository->getByUserId($uid);
         $errors = [];
         $success = Session::getFlash('success');
         $error = Session::getFlash('error');
+
+        $uiPrefs = $this->userUiPreferencesRepository->getOrDefaults($uid, $tenantId);
+        $notifRows = $this->userNotificationPreferencesRepository->listForUser($uid);
+        $notifEmailCatalog = $this->notificationEmailCatalog();
+        $notifEmailState = [];
+        foreach ($notifEmailCatalog as $item) {
+            $notifEmailState[$item['key']] = $this->isEmailNotificationEnabled($notifRows, $item['key']);
+        }
 
         if ($request->isPost()) {
             if (!Csrf::validate($request->input('_csrf_token'))) {
@@ -122,9 +139,17 @@ class AccountController
                 'language' => 'max:10',
                 'profile_slug' => 'max:40',
             ]);
-            if ($v->validate()) {
-                $tenantId = (int) $user['tenant_id'];
-                $uid = (int) $user['id'];
+            $uiPatch = [
+                'theme' => (string) $request->input('ui_theme'),
+                'density' => (string) $request->input('ui_density'),
+                'sidebar_collapsed' => (string) $request->input('ui_sidebar_collapsed') === '1',
+            ];
+            $vUi = $this->userUiPreferencesValidationService->validatePatch($uiPatch);
+            if (!$v->validate()) {
+                $errors = $v->errors();
+            } elseif (!$vUi['ok']) {
+                Session::flash('error', implode(' ', $vUi['errors']));
+            } else {
                 $updateUser = [
                     'display_name' => trim((string) $request->input('display_name')),
                     'callsign' => trim((string) $request->input('callsign')),
@@ -150,30 +175,182 @@ class AccountController
                     $updateUser['profile_slug'] = $ps;
                 }
                 $this->userRepository->update($uid, $tenantId, $updateUser);
-                $this->userProfileRepository->upsert((int) $user['id'], [
+                $this->userProfileRepository->upsert($uid, [
                     'timezone' => trim((string) $request->input('timezone')),
                     'language' => trim((string) $request->input('language')),
                     'first_name' => trim((string) $request->input('first_name')),
                     'last_name' => trim((string) $request->input('last_name')),
                     'phone' => trim((string) $request->input('phone')),
                 ]);
+                if (!empty($vUi['normalized'])) {
+                    $this->userUiPreferencesRepository->upsert($uid, $tenantId, $vUi['normalized']);
+                }
+                $rawNotif = $request->input('notif_email');
+                $notifInput = is_array($rawNotif) ? $rawNotif : [];
+                foreach ($notifEmailCatalog as $item) {
+                    $key = $item['key'];
+                    $enabled = isset($notifInput[$key]);
+                    $this->userNotificationPreferencesRepository->setEnabled($uid, $tenantId, 'email', $key, $enabled);
+                }
                 Session::set('display_name', trim((string) $request->input('display_name')));
                 Session::set('callsign', trim((string) $request->input('callsign')));
                 Session::flash('success', 'Préférences enregistrées.');
                 return Response::redirect(url('account/preferences'));
             }
-            $errors = $v->errors();
         }
+
+        $accountSnapshot = $this->buildAccountSnapshot($user, $profile);
 
         return Response::view('layout.main', [
             'content' => 'account.preferences',
             'title' => 'Préférences',
             'user' => $user,
             'profile' => $profile,
+            'uiPrefs' => $uiPrefs,
+            'notifEmailCatalog' => $notifEmailCatalog,
+            'notifEmailState' => $notifEmailState,
+            'accountSnapshot' => $accountSnapshot,
+            'timezoneSuggestions' => $this->timezoneSuggestions(),
             'errors' => $errors,
             'success' => $success,
             'error' => $error,
         ]);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private function isEmailNotificationEnabled(array $rows, string $eventKey): bool
+    {
+        foreach ($rows as $r) {
+            if (($r['channel'] ?? '') === 'email' && ($r['event_key'] ?? '') === $eventKey) {
+                return (bool) ((int) ($r['enabled'] ?? 0));
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return list<array{key: string, label: string, hint: string, group: string}>
+     */
+    private function notificationEmailCatalog(): array
+    {
+        return [
+            [
+                'key' => EmailEvents::NEW_DEVICE_LOGIN,
+                'label' => 'Nouvel appareil ou navigateur',
+                'hint' => 'Lorsqu’une connexion est détectée depuis un équipement inconnu.',
+                'group' => 'Sécurité',
+            ],
+            [
+                'key' => EmailEvents::MULTIPLE_LOGIN_ATTEMPTS,
+                'label' => 'Tentatives de connexion multiples',
+                'hint' => 'Alerter en cas d’échecs répétés sur votre identifiant.',
+                'group' => 'Sécurité',
+            ],
+            [
+                'key' => EmailEvents::PROFILE_INCOMPLETE_REMINDER,
+                'label' => 'Rappel profil incomplet',
+                'hint' => 'Relances pour finaliser votre dossier ou votre profil.',
+                'group' => 'Compte',
+            ],
+            [
+                'key' => EmailEvents::ATTENDANCE_REMINDER,
+                'label' => 'Rappels d’événements (pointage)',
+                'hint' => 'Avant les missions ou sessions auxquelles vous participez.',
+                'group' => 'Événements',
+            ],
+            [
+                'key' => EmailEvents::ATTENDANCE_RSVP_CONFIRM,
+                'label' => 'Confirmation de participation (RSVP)',
+                'hint' => 'Accusés de réception de vos inscriptions.',
+                'group' => 'Événements',
+            ],
+            [
+                'key' => EmailEvents::ATTENDANCE_EVENT_CANCELLED,
+                'label' => 'Annulation d’événement',
+                'hint' => 'Lorsqu’une activité à laquelle vous étiez inscrit est annulée.',
+                'group' => 'Événements',
+            ],
+            [
+                'key' => EmailEvents::ATTENDANCE_CHECKIN_CONFIRM,
+                'label' => 'Confirmation de pointage',
+                'hint' => 'Validation de votre présence enregistrée.',
+                'group' => 'Événements',
+            ],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $user
+     * @param array<string, mixed>|null $profile
+     * @return array{email_masked: string, email_verified: bool, last_login_label: string|null}
+     */
+    private function buildAccountSnapshot(array $user, ?array $profile): array
+    {
+        $email = (string) ($user['email'] ?? '');
+        $masked = $this->maskEmailForDisplay($email);
+        $verifiedAt = $user['email_verified_at'] ?? null;
+        $verified = $verifiedAt !== null && $verifiedAt !== '' && $verifiedAt !== '0000-00-00 00:00:00';
+
+        $tz = trim((string) ($profile['timezone'] ?? 'Europe/Paris'));
+        if ($tz === '') {
+            $tz = 'Europe/Paris';
+        }
+        $lastLabel = null;
+        $rawLast = $user['last_login_at'] ?? null;
+        if (is_string($rawLast) && $rawLast !== '' && $rawLast !== '0000-00-00 00:00:00') {
+            try {
+                $dt = new \DateTimeImmutable($rawLast);
+                $dt = $dt->setTimezone(new \DateTimeZone($tz));
+                $lastLabel = $dt->format('d/m/Y H:i') . ' (' . $tz . ')';
+            } catch (\Throwable) {
+                $lastLabel = (string) $rawLast;
+            }
+        }
+
+        return [
+            'email_masked' => $masked,
+            'email_verified' => $verified,
+            'last_login_label' => $lastLabel,
+        ];
+    }
+
+    private function maskEmailForDisplay(string $email): string
+    {
+        $email = trim($email);
+        $at = strpos($email, '@');
+        if ($at === false || $at < 1) {
+            return $email === '' ? '—' : $email;
+        }
+        $local = substr($email, 0, $at);
+        $domain = substr($email, $at + 1);
+        $n = strlen($local);
+        $keep = min(2, $n);
+        $prefix = $keep > 0 ? substr($local, 0, $keep) : '';
+
+        return $prefix . '•••@' . $domain;
+    }
+
+    /** @return list<string> */
+    private function timezoneSuggestions(): array
+    {
+        return [
+            'UTC',
+            'Europe/Paris',
+            'Europe/Brussels',
+            'Europe/Zurich',
+            'Europe/Berlin',
+            'Europe/London',
+            'Europe/Madrid',
+            'America/Montreal',
+            'America/New_York',
+            'America/Los_Angeles',
+            'Pacific/Tahiti',
+            'Asia/Tokyo',
+            'Australia/Sydney',
+        ];
     }
 
     public function mail(Request $request, array $params = []): Response

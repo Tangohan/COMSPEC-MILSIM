@@ -57,6 +57,7 @@ class ForumModerationApiController
             'unlock_topic' => $this->setTopicLock($topicId, $tenantId, false),
             'pin_topic' => $this->setTopicPin($topicId, $tenantId, true),
             'unpin_topic' => $this->setTopicPin($topicId, $tenantId, false),
+            'toggle_official' => $this->toggleOfficial($topicId, $tenantId),
             'hide_topic' => $this->setTopicHidden($topicId, $tenantId, true),
             'unhide_topic' => $this->setTopicHidden($topicId, $tenantId, false),
             'hide_post' => $this->setPostHidden($postId, $tenantId, true),
@@ -84,8 +85,31 @@ class ForumModerationApiController
         if (!$topic) {
             return Response::json(['success' => false, 'error' => 'Sujet introuvable'], 404);
         }
-        $this->topicRepository->update($topicId, $tenantId, ['is_locked' => $locked ? 1 : 0]);
+        if ($locked) {
+            $this->topicRepository->update($topicId, $tenantId, ['is_locked' => 1]);
+        } else {
+            try {
+                $this->topicRepository->update($topicId, $tenantId, ['is_locked' => 0, 'suppress_auto_lock' => 1]);
+            } catch (\Throwable) {
+                $this->topicRepository->update($topicId, $tenantId, ['is_locked' => 0]);
+            }
+        }
         return Response::json(['success' => true]);
+    }
+
+    private function toggleOfficial(int $topicId, int $tenantId): Response
+    {
+        if ($topicId <= 0) {
+            return Response::json(['success' => false, 'error' => 'topic_id requis'], 400);
+        }
+        $topic = $this->topicRepository->findById($topicId, $tenantId);
+        if (!$topic) {
+            return Response::json(['success' => false, 'error' => 'Sujet introuvable'], 404);
+        }
+        $next = empty($topic['is_official']) ? 1 : 0;
+        $this->topicRepository->update($topicId, $tenantId, ['is_official' => $next]);
+
+        return Response::json(['success' => true, 'is_official' => $next]);
     }
 
     private function setTopicPin(int $topicId, int $tenantId, bool $pinned): Response

@@ -18,6 +18,8 @@ class UserRepository
 
     private static ?bool $hasUserUnitsTable = null;
 
+    private static ?bool $hasUserRolesTable = null;
+
     /** Email réservé au compte technique par tenant (modération auto, cron, futurs tickets / webhooks). */
     public const SYSTEM_MODERATOR_EMAIL = 'system.moderation@internal.local';
 
@@ -58,6 +60,217 @@ class UserRepository
         }
 
         return self::$hasUserUnitsTable;
+    }
+
+    private function hasUserRolesTable(): bool
+    {
+        if (self::$hasUserRolesTable === null) {
+            try {
+                $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_roles' LIMIT 1");
+                self::$hasUserRolesTable = $stmt && (bool) $stmt->fetchColumn();
+            } catch (\Throwable) {
+                self::$hasUserRolesTable = false;
+            }
+        }
+
+        return self::$hasUserRolesTable;
+    }
+
+    private static ?bool $hasTenantUserRolesTable = null;
+
+    public function hasTenantUserRolesTable(): bool
+    {
+        if (self::$hasTenantUserRolesTable === null) {
+            try {
+                $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_user_roles' LIMIT 1");
+                self::$hasTenantUserRolesTable = $stmt && (bool) $stmt->fetchColumn();
+            } catch (\Throwable) {
+                self::$hasTenantUserRolesTable = false;
+            }
+        }
+
+        return self::$hasTenantUserRolesTable;
+    }
+
+    /**
+     * Rôles organisation (communauté / intra) attribués à l’utilisateur.
+     *
+     * @return list<int>
+     */
+    public function listOrganizationRoleIdsForUser(int $userId): array
+    {
+        if ($this->hasTenantUserRolesTable()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT DISTINCT tur.role_id FROM tenant_user_roles tur
+                 INNER JOIN users u ON u.id = tur.user_id AND u.tenant_id = tur.tenant_id
+                 WHERE tur.user_id = ? AND tur.org_unit_id IS NULL
+                 ORDER BY tur.role_id ASC'
+            );
+            $stmt->execute([$userId]);
+            $ids = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+            if ($ids !== []) {
+                return $ids;
+            }
+        }
+        if (!$this->hasUserRolesTable()) {
+            $u = $this->findById($userId, null);
+
+            return $u && !empty($u['role_id']) ? [(int) $u['role_id']] : [];
+        }
+        $stmt = $this->pdo->prepare('SELECT role_id FROM user_roles WHERE user_id = ? ORDER BY role_id ASC');
+        $stmt->execute([$userId]);
+        $ids = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+        if ($ids === []) {
+            $u = $this->findById($userId, null);
+            if ($u && !empty($u['role_id'])) {
+                return [(int) $u['role_id']];
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Identifiants de rôles tenant pour RBAC (union multi-rôles + repli sur users.role_id).
+     *
+     * @return list<int>
+     */
+    public function tenantRoleIdsForRbac(int $userId, ?int $legacyRoleId): array
+    {
+        $ids = $this->listOrganizationRoleIdsForUser($userId);
+        if ($ids === [] && $legacyRoleId !== null && $legacyRoleId > 0) {
+            return [$legacyRoleId];
+        }
+
+        return $ids;
+    }
+
+    public function userHasTenantRole(int $userId, int $roleId): bool
+    {
+        if ($roleId < 1) {
+            return false;
+        }
+        if ($this->hasTenantUserRolesTable()) {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM tenant_user_roles WHERE user_id = ? AND role_id = ? AND org_unit_id IS NULL LIMIT 1'
+            );
+            $st->execute([$userId, $roleId]);
+            if ($st->fetchColumn()) {
+                return true;
+            }
+        }
+        if ($this->hasUserRolesTable()) {
+            $st = $this->pdo->prepare('SELECT 1 FROM user_roles WHERE user_id = ? AND role_id = ? LIMIT 1');
+            $st->execute([$userId, $roleId]);
+            if ($st->fetchColumn()) {
+                return true;
+            }
+        }
+        $u = $this->findById($userId, null);
+
+        return $u !== null && (int) ($u['role_id'] ?? 0) === $roleId;
+    }
+
+    /**
+     * Remplace les rôles organisation de l’utilisateur et synchronise users.role_id (rôle « principal » affichage).
+     *
+     * @param list<int> $roleIds
+     */
+    public function syncOrganizationRoles(int $userId, int $tenantId, array $roleIds): void
+    {
+        $roleIds = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $x) => $x > 0)));
+        if (!$this->hasUserRolesTable()) {
+            $primary = $roleIds[0] ?? null;
+            $this->pdo->prepare('UPDATE users SET role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')->execute([$primary, $userId, $tenantId]);
+
+            return;
+        }
+        $this->pdo->prepare('DELETE FROM user_roles WHERE user_id = ?')->execute([$userId]);
+        $valid = [];
+        if ($roleIds !== []) {
+            $ph = implode(',', array_fill(0, count($roleIds), '?'));
+            $stmt = $this->pdo->prepare(
+                "SELECT id FROM roles WHERE tenant_id = ? AND role_layer IN ('community','intra') AND id IN ({$ph})"
+            );
+            $stmt->execute(array_merge([$tenantId], $roleIds));
+            $valid = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+            $ins = $this->pdo->prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)');
+            foreach ($valid as $rid) {
+                $ins->execute([$userId, $rid]);
+            }
+        }
+        if ($this->hasTenantUserRolesTable()) {
+            $this->pdo->prepare(
+                'DELETE FROM tenant_user_roles WHERE user_id = ? AND tenant_id = ? AND org_unit_id IS NULL'
+            )->execute([$userId, $tenantId]);
+            if ($valid !== []) {
+                $insTur = $this->pdo->prepare(
+                    'INSERT INTO tenant_user_roles (tenant_id, user_id, role_id, org_unit_id, co_unit_id, created_at) VALUES (?, ?, ?, NULL, 0, NOW())'
+                );
+                foreach ($valid as $rid) {
+                    try {
+                        $insTur->execute([$tenantId, $userId, $rid]);
+                    } catch (\PDOException) {
+                    }
+                }
+            }
+        }
+        $primary = $this->computePrimaryRoleIdForTenant($tenantId, $valid);
+        $this->pdo->prepare('UPDATE users SET role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
+            ->execute([$primary, $userId, $tenantId]);
+    }
+
+    /**
+     * Rôle « principal » (affichage / session) pour un ensemble de rôles valides tenant.
+     *
+     * @param list<int> $roleIds
+     */
+    public function peekPrimaryRoleIdForTenant(int $tenantId, array $roleIds): ?int
+    {
+        $roleIds = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $x): bool => $x > 0)));
+        if ($roleIds === []) {
+            return null;
+        }
+        $ph = implode(',', array_fill(0, count($roleIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT id FROM roles WHERE tenant_id = ? AND role_layer IN ('community','intra') AND id IN ({$ph})"
+        );
+        $stmt->execute(array_merge([$tenantId], $roleIds));
+        $valid = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+
+        return $this->computePrimaryRoleIdForTenant($tenantId, $valid);
+    }
+
+    /**
+     * @param list<int> $validRoleIds
+     */
+    private function computePrimaryRoleIdForTenant(int $tenantId, array $validRoleIds): ?int
+    {
+        if ($validRoleIds === []) {
+            return null;
+        }
+        $validRoleIds = array_values(array_unique($validRoleIds));
+        $ph = implode(',', array_fill(0, count($validRoleIds), '?'));
+        $stmt = $this->pdo->prepare("SELECT id, slug, role_layer FROM roles WHERE tenant_id = ? AND id IN ({$ph})");
+        $stmt->execute(array_merge([$tenantId], $validRoleIds));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        if ($rows === []) {
+            return null;
+        }
+        foreach (['community_owner', 'tenant_admin'] as $slug) {
+            foreach ($rows as $r) {
+                if (($r['slug'] ?? '') === $slug) {
+                    return (int) $r['id'];
+                }
+            }
+        }
+        foreach ($rows as $r) {
+            if (($r['role_layer'] ?? '') === 'community') {
+                return (int) $r['id'];
+            }
+        }
+
+        return (int) $rows[0]['id'];
     }
 
     /**
@@ -138,6 +351,30 @@ class UserRepository
         $stmt->execute([$tenantId, $email]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
+    }
+
+    /**
+     * Tous les comptes partageant exactement la même adresse (multi-communautés).
+     *
+     * @return list<int>
+     */
+    public function listIdsByEmailNormalized(string $email): array
+    {
+        $email = trim($email);
+        if ($email === '') {
+            return [];
+        }
+        $stmt = $this->pdo->prepare('SELECT id FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $id = (int) ($r['id'] ?? 0);
+            if ($id > 0) {
+                $out[] = $id;
+            }
+        }
+
+        return $out;
     }
 
     public function findById(int $id, ?int $tenantId = null): ?array
@@ -306,14 +543,24 @@ class UserRepository
             $params[] = $status;
         }
         if ($roleId !== null && $roleId > 0) {
-            $parts[] = 'u.role_id = ?';
-            $params[] = $roleId;
+            if ($this->hasUserRolesTable()) {
+                $parts[] = '(u.role_id = ? OR EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = ?))';
+                $params[] = $roleId;
+                $params[] = $roleId;
+            } else {
+                $parts[] = 'u.role_id = ?';
+                $params[] = $roleId;
+            }
         }
         if ($excludeServiceAccounts && $this->hasServiceAccountColumn()) {
             $parts[] = '(u.is_service_account IS NULL OR u.is_service_account = 0)';
         }
         if ($onlyWithoutRole === true) {
-            $parts[] = 'u.role_id IS NULL';
+            if ($this->hasUserRolesTable()) {
+                $parts[] = '(u.role_id IS NULL AND NOT EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id))';
+            } else {
+                $parts[] = 'u.role_id IS NULL';
+            }
         }
         if ($onlyWithoutUnit === true) {
             if ($this->hasUserUnitsTable()) {
@@ -332,7 +579,17 @@ class UserRepository
     private function buildUserListQuery(int $tenantId, ?string $search, ?string $status, ?int $roleId, bool $excludeServiceAccounts = true, ?bool $onlyWithoutUnit = null, ?bool $onlyWithoutRole = null): array
     {
         [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId, $excludeServiceAccounts, $onlyWithoutUnit, $onlyWithoutRole);
-        $sql = 'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE ' . $whereSql;
+        $extra = '';
+        if ($this->hasUserRolesTable()) {
+            $extra = ', COALESCE(
+                (SELECT GROUP_CONCAT(DISTINCT r2.name ORDER BY r2.role_layer DESC, r2.name SEPARATOR \', \')
+                 FROM user_roles ur
+                 INNER JOIN roles r2 ON r2.id = ur.role_id AND r2.tenant_id = u.tenant_id
+                 WHERE ur.user_id = u.id),
+                r.name
+            ) AS roles_display';
+        }
+        $sql = 'SELECT u.*, r.name as role_name' . $extra . ' FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE ' . $whereSql;
 
         return [$sql, $params];
     }
@@ -405,11 +662,49 @@ class UserRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Recherche annuaire portail (nom d’affichage, indicatif, slug de profil public).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function searchForPortal(int $tenantId, string $query, int $limit = 12): array
+    {
+        $q = trim($query);
+        if ($q === '') {
+            return [];
+        }
+        $term = '%' . $q . '%';
+        $stmt = $this->pdo->prepare(
+            'SELECT id, display_name, callsign, profile_slug FROM users
+             WHERE tenant_id = ?
+             AND (
+                 display_name LIKE ?
+                 OR (callsign IS NOT NULL AND TRIM(callsign) <> \'\' AND callsign LIKE ?)
+                 OR (profile_slug IS NOT NULL AND TRIM(profile_slug) <> \'\' AND profile_slug LIKE ?)
+             )
+             ORDER BY display_name ASC
+             LIMIT ?'
+        );
+        $stmt->execute([$tenantId, $term, $term, $term, $limit]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /** @return list<int> User IDs ayant le rôle donné (pour assignation formation par rôle). */
     public function getIdsByRole(int $tenantId, int $roleId): array
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM users WHERE tenant_id = ? AND role_id = ?');
-        $stmt->execute([$tenantId, $roleId]);
+        if ($this->hasUserRolesTable()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT DISTINCT u.id FROM users u
+                 WHERE u.tenant_id = ?
+                 AND (u.role_id = ? OR EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = ?))'
+            );
+            $stmt->execute([$tenantId, $roleId, $roleId]);
+        } else {
+            $stmt = $this->pdo->prepare('SELECT id FROM users WHERE tenant_id = ? AND role_id = ?');
+            $stmt->execute([$tenantId, $roleId]);
+        }
+
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
@@ -445,8 +740,17 @@ class UserRepository
     /** Nombre d'utilisateurs ayant le rôle donné (pour garde-fou dernier super-admin). */
     public function countUsersWithRole(int $roleId): int
     {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM users WHERE role_id = ?');
-        $stmt->execute([$roleId]);
+        if ($this->hasUserRolesTable()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT COUNT(DISTINCT u.id) FROM users u
+                 WHERE (u.role_id = ? OR EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = ?))'
+            );
+            $stmt->execute([$roleId, $roleId]);
+        } else {
+            $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM users WHERE role_id = ?');
+            $stmt->execute([$roleId]);
+        }
+
         return (int) $stmt->fetchColumn();
     }
 
@@ -602,6 +906,9 @@ class UserRepository
                 $this->pdo->prepare('UPDATE users SET email_verified_at = NOW() WHERE id = ?')->execute([$newId]);
             }
         }
+        if ($roleId > 0) {
+            $this->syncOrganizationRoles($newId, $newTenantId, [$roleId]);
+        }
 
         return $newId;
     }
@@ -742,6 +1049,30 @@ class UserRepository
         $stmt->execute([$tenantId]);
         $emails = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $e = strtolower(trim((string) ($row['email'] ?? '')));
+            if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                $emails[] = $e;
+            }
+        }
+
+        return array_values(array_unique($emails));
+    }
+
+    /**
+     * Emails des rôles recrutement : recruteur, fondateur (propriétaire communauté), RH.
+     *
+     * @return list<string>
+     */
+    public function listRecruitmentNotificationEmailsForTenant(int $tenantId): array
+    {
+        $sql = "SELECT DISTINCT u.email FROM users u
+            INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
+            WHERE u.tenant_id = ? AND u.status = 'active'
+            AND r.slug IN ('recruiter', 'community_owner', 'hr')";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$tenantId]);
+        $emails = [];
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $e = strtolower(trim((string) ($row['email'] ?? '')));
             if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
                 $emails[] = $e;

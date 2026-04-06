@@ -1,0 +1,12 @@
+---
+description: RBAC multi-rôles contextualisé (tenant, unité, graphe)
+globs: "**/*.php","**/migrations/**/*.sql"
+---
+
+# RBAC « toile d’araignée » (COMSPEC-MILSIM)
+
+- Ne pas utiliser un seul `users.role_id` comme **source de vérité** des droits : c’est un cache d’affichage / rôle principal éventuel. Les droits viennent du **pivot** `tenant_user_roles` (et rôles site via `site_role_assignments`).
+- Toute nouvelle attribution de rôle métier doit passer par **`tenant_user_roles`** (avec `tenant_id`, `user_id`, `role_id`, `org_unit_id` optionnel).
+- Les permissions ont un **`rbac_scope`** (`global` | `tenant` | `unit`) : les droits « unité » ne s’appliquent que dans le contexte unitaire (`Gate::allowsWithUnitContext`).
+- L’ORBAT reste un **arbre** (`units` / `user_units`) ; les relations de **fonction** entre rôles sont un **graphe** (`role_relations`, `role_definition_relations`), pas une hiérarchie unique.
+- Séparer **rôle**, **grade** (`grades` / `users.grade_id`) et **permission** (`permissions` / `role_permissions`).

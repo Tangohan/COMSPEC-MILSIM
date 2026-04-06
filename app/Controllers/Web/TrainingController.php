@@ -10,13 +10,19 @@ use App\Core\Session;
 use App\Repositories\DocumentLinkRepository;
 use App\Repositories\DocumentRepository;
 use App\Repositories\TrainingRepository;
+use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingLessonRepository;
 use App\Repositories\TrainingResourceRepository;
 use App\Services\Training\TrainingService;
 use App\Services\Training\TrainingProgressService;
 use App\Services\Training\TrainingCertificateService;
+use App\Services\Training\TrainingQuizService;
+use App\Services\Training\TrainingAssignmentService;
+use App\Services\Training\TrainingEnrollmentPolicyService;
+use App\Repositories\TrainingCourseLmsSocialRepository;
 use App\Services\Platform\FeatureGateService;
+use App\Core\Csrf;
 
 class TrainingController
 {
@@ -30,7 +36,12 @@ class TrainingController
         private TrainingCertificateService $certificateService,
         private TrainingLessonRepository $lessonRepository,
         private TrainingResourceRepository $resourceRepository,
-        private FeatureGateService $featureGate
+        private TrainingQuizService $quizService,
+        private FeatureGateService $featureGate,
+        private TrainingAssignmentService $assignmentService,
+        private TrainingEnrollmentPolicyService $enrollmentPolicyService,
+        private TrainingCourseLmsSocialRepository $lmsSocialRepository,
+        private TrainingCourseRepository $trainingCourseRepository
     ) {}
 
     /** Catalogue des formations (nouveau LMS + legacy). */
@@ -53,11 +64,22 @@ class TrainingController
         $category = $request->query('category');
         $search = $request->query('search');
         $courses = $this->trainingService->getCatalogue($tenantId, $userId ? (int) $userId : null, $category, $search);
-        $legacyModules = $this->trainingRepository->listPublishedForTenant($tenantId);
+        $coursesForCategories = $this->trainingService->getCatalogue($tenantId, $userId ? (int) $userId : null, null, null);
+        $legacyEnabled = training_legacy_enabled();
+        $legacyModules = $legacyEnabled ? $this->trainingRepository->listPublishedForTenant($tenantId) : [];
+        $categories = array_values(array_unique(array_filter(array_map(static function ($c) {
+            return isset($c['category']) && (string) $c['category'] !== '' ? (string) $c['category'] : null;
+        }, $coursesForCategories))));
+        sort($categories, SORT_NATURAL | SORT_FLAG_CASE);
+
         return Response::view('training.catalogue', [
-            'title' => 'Catalogue Formations',
+            'title' => 'Formations',
             'courses' => $courses,
             'legacyModules' => $legacyModules,
+            'training_legacy_enabled' => $legacyEnabled,
+            'filterCategory' => $category !== null && $category !== '' ? (string) $category : null,
+            'filterSearch' => $search !== null && $search !== '' ? (string) $search : null,
+            'filterCategories' => $categories,
         ]);
     }
 
@@ -72,16 +94,20 @@ class TrainingController
         $enrollments = $this->enrollmentRepository->listByUserId((int) $userId, (int) $tenantId);
         $withProgress = [];
         foreach ($enrollments as $e) {
-            $e['progress_percent'] = $this->trainingService->getGlobalProgress((int) $e['id']);
+            $st = (string) ($e['status'] ?? '');
+            $e['progress_percent'] = $st === 'pending_approval'
+                ? 0.0
+                : $this->trainingService->getGlobalProgress((int) $e['id']);
             $withProgress[] = $e;
         }
         usort($withProgress, static function (array $a, array $b): int {
             $rank = static function (array $x): int {
                 return match ($x['status'] ?? '') {
                     'in_progress' => 0,
-                    'assigned' => 1,
-                    'completed' => 2,
-                    'revoked' => 3,
+                    'pending_approval' => 1,
+                    'assigned' => 2,
+                    'completed' => 3,
+                    'revoked' => 4,
                     default => 9,
                 };
             };
@@ -126,6 +152,77 @@ class TrainingController
         ]);
     }
 
+    /** Saisie d’un code court pour ouvrir une formation publiée du même espace. */
+    public function accessCodeForm(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) $tenantId;
+        if (!$this->featureGate->allows($tenantId, 'training')) {
+            return Response::view('layout.main', [
+                'title' => 'Formations',
+                'content' => 'platform.upgrade',
+                'feature' => 'training',
+                'planName' => 'standard',
+            ]);
+        }
+
+        return Response::view('layout.main', [
+            'title' => 'Trouver une formation par code',
+            'content' => 'training.access_code',
+        ]);
+    }
+
+    public function accessCodeSubmit(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) $tenantId;
+        if (!$this->featureGate->allows($tenantId, 'training')) {
+            return Response::redirect(url('formations'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée, réessayez.');
+
+            return Response::redirect(url('formations/code-acces'));
+        }
+        $raw = trim((string) $request->input('access_code', ''));
+        $code = function_exists('training_lms_normalize_share_code') ? training_lms_normalize_share_code($raw) : strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $raw) ?? '');
+        if ($code === '') {
+            Session::flash('error', 'Indiquez le code reçu.');
+
+            return Response::redirect(url('formations/code-acces'));
+        }
+        $row = $this->trainingCourseRepository->findByShareCode($code);
+        if (!$row) {
+            Session::flash('error', 'Aucune formation ne correspond à ce code. Vérifiez la saisie ou demandez un code à jour.');
+
+            return Response::redirect(url('formations/code-acces'));
+        }
+        if ((string) ($row['visibility'] ?? '') !== 'published') {
+            Session::flash('error', 'Cette formation n’est pas disponible dans le catalogue pour le moment.');
+
+            return Response::redirect(url('formations/code-acces'));
+        }
+        if ((int) ($row['tenant_id'] ?? 0) === $tenantId) {
+            $slug = trim((string) ($row['slug'] ?? ''));
+
+            return Response::redirect($slug !== '' ? url('formations/' . rawurlencode($slug)) : url('formations'));
+        }
+        Session::flash(
+            'error',
+            'Ce code correspond à une formation d’une autre communauté. Connectez-vous à l’espace de cette communauté pour y accéder, ou demandez à votre référent de vous y inviter.'
+        );
+
+        return Response::redirect(url('formations/code-acces'));
+    }
+
     /** Détail d'une formation (par slug ou id). */
     public function course(Request $request, array $params = []): Response
     {
@@ -138,22 +235,283 @@ class TrainingController
         $slugOrId = $params['slug'] ?? $params['id'] ?? '';
         $course = $this->trainingService->getCourseBySlugOrId($tenantId, $slugOrId);
         if (!$course) {
-            return (new Response())->setStatusCode(404)->setBody('Formation non trouvée.');
+            return Response::view('training.formation_introuvable', [
+                'slug' => (string) $slugOrId,
+                'context' => 'fiche',
+            ])->setStatusCode(404);
         }
         $courseId = (int) $course['id'];
         $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId);
         $enrollment = $userId ? $this->enrollmentRepository->findByCourseAndUser($courseId, (int) $userId) : null;
-        if ($enrollment && !$this->trainingService->canAccessCourse((int) $userId, $courseId, $tenantId)) {
+        if ($enrollment && in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired'], true)) {
             $enrollment = null;
         }
-        $progressPercent = $enrollment ? $this->trainingService->getGlobalProgress((int) $enrollment['id']) : 0;
-        $certificate = $enrollment ? $this->certificateService->getByEnrollment((int) $enrollment['id']) : null;
+        $canAccessLearning = $userId && $enrollment
+            ? $this->trainingService->canAccessCourse((int) $userId, $courseId, $tenantId)
+            : false;
+        $progressPercent = ($enrollment && $canAccessLearning) ? $this->trainingService->getGlobalProgress((int) $enrollment['id']) : 0;
+        $certificate = ($enrollment && $canAccessLearning) ? $this->certificateService->getByEnrollment((int) $enrollment['id']) : null;
+        $policyEval = $userId
+            ? $this->enrollmentPolicyService->evaluateSelfEnroll((int) $userId, $tenantId, $course)
+            : ['allowed' => false, 'messages' => []];
+        $policyDisplay = $this->enrollmentPolicyService->getPublicPolicyDisplay($tenantId, $course, $userId ? (int) $userId : null);
+        $policyDecoded = $this->enrollmentPolicyService->decodePolicy($course['enrollment_policy_json'] ?? null);
+        $lmsCommentsEnabled = function_exists('training_lms_policy_comments_enabled')
+            ? \training_lms_policy_comments_enabled($policyDecoded)
+            : true;
+        $isFavorite = $userId ? $this->lmsSocialRepository->isFavorite((int) $userId, $courseId) : false;
+        $sessions = $this->lmsSocialRepository->listSessionsForCourse($courseId);
+
+        $orderedLessons = function_exists('training_lms_ordered_lessons') ? training_lms_ordered_lessons($course) : [];
+        $continueLesson = null;
+        $firstLesson = $orderedLessons !== [] ? $orderedLessons[0] : null;
+        $lessonDone = [];
+        if ($canAccessLearning && $enrollment && $orderedLessons !== [] && function_exists('training_lms_next_incomplete_lesson')) {
+            $enrollmentProgressDetail = $this->progressService->getProgressForEnrollment((int) $enrollment['id']);
+            foreach ($enrollmentProgressDetail['progress'] ?? [] as $p) {
+                if (($p['status'] ?? '') === 'completed') {
+                    $lessonDone[(int) ($p['lesson_id'] ?? 0)] = true;
+                }
+            }
+            $continueLesson = training_lms_next_incomplete_lesson($orderedLessons, $enrollmentProgressDetail['progress'] ?? []);
+        }
+
         return Response::view('training.course', [
             'title' => $course['title'],
             'course' => $course,
             'enrollment' => $enrollment,
             'progressPercent' => $progressPercent,
             'certificate' => $certificate,
+            'policyEval' => $policyEval,
+            'policyDisplay' => $policyDisplay,
+            'isFavorite' => $isFavorite,
+            'courseSessions' => $sessions,
+            'viewerLoggedIn' => (bool) $userId,
+            'continueLesson' => $continueLesson,
+            'firstLesson' => $firstLesson,
+            'lessonDone' => $lessonDone,
+            'canAccessLearning' => $canAccessLearning,
+            'lmsCommentsEnabled' => $lmsCommentsEnabled,
+        ]);
+    }
+
+    public function postEnroll(Request $request, array $params = []): Response
+    {
+        return $this->redirectCourseAfter($request, function () use ($request): void {
+            $tenantId = (int) Session::get('tenant_id');
+            $userId = (int) Session::get('user_id');
+            $courseId = (int) $request->input('course_id', 0);
+            if ($courseId < 1 || $tenantId < 1 || $userId < 1) {
+                Session::flash('error', 'Données invalides.');
+
+                return;
+            }
+            if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+
+                return;
+            }
+            try {
+                $motivation = trim((string) $request->input('enrollment_motivation', ''));
+                $motivation = $motivation === '' ? null : mb_substr($motivation, 0, 4000);
+                $eid = $this->assignmentService->assignUser($courseId, $userId, $tenantId, $userId, 'self_enroll', null, $motivation);
+                $enr = $this->enrollmentRepository->findById($eid, $tenantId);
+                if ($enr && (($enr['status'] ?? '') === 'assigned')) {
+                    $this->progressService->startEnrollment($eid, $tenantId, $userId);
+                }
+                $st = $enr ? (string) ($enr['status'] ?? '') : '';
+                Session::flash(
+                    'success',
+                    $st === 'pending_approval'
+                        ? 'Demande enregistrée. Un formateur doit valider votre inscription avant l’accès au parcours.'
+                        : 'Inscription confirmée.'
+                );
+            } catch (\Throwable $e) {
+                Session::flash('error', $e->getMessage());
+            }
+        });
+    }
+
+    public function postFavorite(Request $request, array $params = []): Response
+    {
+        return $this->redirectCourseAfter($request, function () use ($request): void {
+            $tenantId = (int) Session::get('tenant_id');
+            $userId = (int) Session::get('user_id');
+            $courseId = (int) $request->input('course_id', 0);
+            $on = (int) $request->input('favorite', 1) === 1;
+            if ($courseId < 1 || !$tenantId || !$userId) {
+                Session::flash('error', 'Données invalides.');
+
+                return;
+            }
+            if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+
+                return;
+            }
+            $this->lmsSocialRepository->setFavorite($tenantId, $userId, $courseId, $on);
+            Session::flash('success', $on ? 'Ajouté aux favoris.' : 'Retiré des favoris.');
+        });
+    }
+
+    public function postReview(Request $request, array $params = []): Response
+    {
+        return $this->redirectCourseAfter($request, function () use ($request): void {
+            $tenantId = (int) Session::get('tenant_id');
+            $userId = (int) Session::get('user_id');
+            $courseId = (int) $request->input('course_id', 0);
+            $rating = max(1, min(5, (int) $request->input('rating', 5)));
+            $body = trim((string) $request->input('review_body', ''));
+            $kind = ((string) $request->input('review_kind', 'rating')) === 'review' ? 'review' : 'rating';
+            if ($courseId < 1 || !$tenantId || !$userId) {
+                Session::flash('error', 'Données invalides.');
+
+                return;
+            }
+            if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+
+                return;
+            }
+            $this->lmsSocialRepository->upsertReview($tenantId, $userId, $courseId, $rating, null, $body === '' ? null : $body, $kind);
+            Session::flash('success', $kind === 'review' ? 'Revue enregistrée.' : 'Avis enregistré.');
+        });
+    }
+
+    public function postQuestion(Request $request, array $params = []): Response
+    {
+        return $this->redirectCourseAfter($request, function () use ($request): void {
+            $tenantId = (int) Session::get('tenant_id');
+            $userId = (int) Session::get('user_id');
+            $courseId = (int) $request->input('course_id', 0);
+            $text = trim((string) $request->input('question_text', ''));
+            if ($courseId < 1 || !$tenantId || !$userId || $text === '') {
+                Session::flash('error', 'Question vide ou invalide.');
+
+                return;
+            }
+            if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+
+                return;
+            }
+            $id = $this->lmsSocialRepository->addQuestion($tenantId, $userId, $courseId, $text);
+            Session::flash('success', $id > 0 ? 'Question envoyée.' : 'Question non enregistrée (migration ?).');
+        });
+    }
+
+    public function postComment(Request $request, array $params = []): Response
+    {
+        return $this->redirectCourseAfter($request, function () use ($request): void {
+            $tenantId = (int) Session::get('tenant_id');
+            $userId = (int) Session::get('user_id');
+            $courseId = (int) $request->input('course_id', 0);
+            $body = trim((string) $request->input('comment_body', ''));
+            $parentId = (int) $request->input('parent_id', 0);
+
+            if ($courseId < 1 || !$tenantId || !$userId || $body === '') {
+                Session::flash('error', 'Commentaire vide ou invalide.');
+
+                return;
+            }
+            if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+
+                return;
+            }
+            $courseRow = $this->trainingService->getCourseBySlugOrId($tenantId, (string) $request->input('course_slug', ''));
+            if (!$courseRow || (int) ($courseRow['id'] ?? 0) !== $courseId) {
+                $courseRow = $this->trainingCourseRepository->findById($courseId, $tenantId);
+            }
+            $pol = $courseRow ? $this->enrollmentPolicyService->decodePolicy($courseRow['enrollment_policy_json'] ?? null) : [];
+            if (!function_exists('training_lms_policy_comments_enabled') || !\training_lms_policy_comments_enabled($pol)) {
+                Session::flash('error', 'Les commentaires sont désactivés pour cette formation.');
+
+                return;
+            }
+            $id = $this->lmsSocialRepository->addComment($tenantId, $userId, $courseId, $body, $parentId > 0 ? $parentId : null);
+            Session::flash('success', $id > 0 ? 'Commentaire publié.' : 'Non enregistré (migration ?).');
+        });
+    }
+
+    /** @param callable(): void $fn */
+    private function redirectCourseAfter(Request $request, callable $fn): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $slug = trim((string) $request->input('course_slug', ''));
+        $fn();
+        if ($slug !== '') {
+            if (trim((string) $request->input('social_return', '')) === 'echanges') {
+                return Response::redirect(url('formations/' . rawurlencode($slug) . '/echanges'));
+            }
+
+            return Response::redirect(url('formations/' . rawurlencode($slug)));
+        }
+
+        return Response::redirect(url('formations'));
+    }
+
+    /** Page dédiée : avis, note, questions et commentaires (hors fiche formation / leçons). */
+    public function courseExchanges(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) $tenantId;
+        $slug = trim((string) ($params['slug'] ?? ''));
+        if ($slug === '') {
+            return Response::redirect(url('formations'));
+        }
+        $course = $this->trainingService->getCourseBySlugOrId($tenantId, $slug);
+        if (!$course) {
+            return Response::view('training.formation_introuvable', [
+                'slug' => $slug,
+                'context' => 'echanges',
+            ])->setStatusCode(404);
+        }
+        $courseId = (int) $course['id'];
+        $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId);
+        $enrollment = $userId ? $this->enrollmentRepository->findByCourseAndUser($courseId, (int) $userId) : null;
+        if ($enrollment && in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired'], true)) {
+            $enrollment = null;
+        }
+        $canAccessLearning = $userId && $enrollment
+            ? $this->trainingService->canAccessCourse((int) $userId, $courseId, $tenantId)
+            : false;
+        $progressPercent = ($enrollment && $canAccessLearning) ? $this->trainingService->getGlobalProgress((int) $enrollment['id']) : 0;
+        $policyDecoded = $this->enrollmentPolicyService->decodePolicy($course['enrollment_policy_json'] ?? null);
+        $lmsCommentsEnabled = function_exists('training_lms_policy_comments_enabled')
+            ? \training_lms_policy_comments_enabled($policyDecoded)
+            : true;
+
+        $reviews = $this->lmsSocialRepository->listPublishedReviews($courseId);
+        $avgRating = $this->lmsSocialRepository->averageRating($courseId);
+        $questions = $this->lmsSocialRepository->listQuestionsForCourse($courseId);
+        $comments = $this->lmsSocialRepository->listCommentsForCourse($courseId);
+        $userReview = $userId ? $this->lmsSocialRepository->findUserReview((int) $userId, $courseId, 'rating') : null;
+
+        $orderedLessons = function_exists('training_lms_ordered_lessons') ? training_lms_ordered_lessons($course) : [];
+        $firstLesson = $orderedLessons !== [] ? $orderedLessons[0] : null;
+
+        return Response::view('training.course_exchanges', [
+            'title' => 'Avis et échanges — ' . (string) ($course['title'] ?? ''),
+            'course' => $course,
+            'enrollment' => $enrollment,
+            'progressPercent' => $progressPercent,
+            'courseReviews' => $reviews,
+            'courseAvgRating' => $avgRating,
+            'courseQuestions' => $questions,
+            'courseComments' => $comments,
+            'userReview' => $userReview,
+            'viewerLoggedIn' => (bool) $userId,
+            'firstLesson' => $firstLesson,
+            'canAccessLearning' => $canAccessLearning,
+            'lmsCommentsEnabled' => $lmsCommentsEnabled,
         ]);
     }
 
@@ -174,7 +532,14 @@ class TrainingController
             $params['id'] = $slug;
             return $this->course($request, $params);
         }
-        return $this->show($request, $params);
+        if (training_legacy_enabled()) {
+            return $this->show($request, $params);
+        }
+
+        return Response::view('training.formation_introuvable', [
+            'slug' => (string) $slug,
+            'context' => 'fiche',
+        ])->setStatusCode(404);
     }
 
     /** Lecture d'une leçon. */
@@ -196,19 +561,104 @@ class TrainingController
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
             return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
         }
+        $courseId = (int) $enrollment['course_id'];
+        if (!$this->trainingService->canAccessCourse($userId, $courseId, $tenantId)) {
+            $slug = trim((string) ($enrollment['course_slug'] ?? ''));
+            Session::flash('error', 'Votre accès à cette formation n’est pas encore actif ou a été retiré.');
+
+            return Response::redirect($slug !== '' ? url('formations/' . rawurlencode($slug)) : url('formations/mes-formations'));
+        }
         $lesson = $this->lessonRepository->findById($lessonId);
         if (!$lesson) {
             return (new Response())->setStatusCode(404)->setBody('Leçon non trouvée.');
         }
         $resources = $this->resourceRepository->listByLessonId($lessonId);
         $progress = $this->progressService->getProgressForEnrollment($enrollmentId);
+        $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId);
+        $currentModule = null;
+        foreach ($course['modules'] ?? [] as $mod) {
+            foreach ($mod['lessons'] ?? [] as $l) {
+                if ((int) ($l['id'] ?? 0) === $lessonId) {
+                    $currentModule = $mod;
+                    break 2;
+                }
+            }
+        }
+
+        $orderedLessons = function_exists('training_lms_ordered_lessons') ? training_lms_ordered_lessons($course) : [];
+        $prevLesson = null;
+        $nextLesson = null;
+        $lessonStep = null;
+        $idx = null;
+        foreach ($orderedLessons as $i => $l) {
+            if ((int) ($l['id'] ?? 0) === $lessonId) {
+                $idx = $i;
+                break;
+            }
+        }
+        if ($idx !== null) {
+            if ($idx > 0) {
+                $prevLesson = $orderedLessons[$idx - 1];
+            }
+            if ($idx < count($orderedLessons) - 1) {
+                $nextLesson = $orderedLessons[$idx + 1];
+            }
+            $lessonStep = ['current' => $idx + 1, 'total' => count($orderedLessons)];
+        }
+
         return Response::view('training.lesson', [
             'title' => $lesson['title'],
             'lesson' => $lesson,
             'enrollment' => $enrollment,
             'resources' => $resources,
             'progress' => $progress,
+            'course' => $course,
+            'currentLessonId' => $lessonId,
+            'currentModule' => $currentModule,
+            'prevLesson' => $prevLesson,
+            'nextLesson' => $nextLesson,
+            'lessonStep' => $lessonStep,
         ]);
+    }
+
+    /** Démarre une tentative quiz (formulaire web) et redirige vers la page de passage. */
+    public function startQuiz(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée, réessayez.');
+
+            return Response::redirect(url('formations'));
+        }
+        $tenantId = (int) $tenantId;
+        $userId = (int) $userId;
+        if (!$this->featureGate->allows($tenantId, 'training')) {
+            return Response::redirect(url('formations'));
+        }
+        $quizId = (int) $request->input('quiz_id', 0);
+        $enrollmentId = (int) $request->input('enrollment_id', 0);
+        if (!$quizId || !$enrollmentId) {
+            Session::flash('error', 'Paramètres quiz invalides.');
+
+            return Response::redirect(url('formations'));
+        }
+        try {
+            $attempt = $this->quizService->startAttempt($quizId, $enrollmentId, $tenantId, $userId);
+            $aid = (int) ($attempt['id'] ?? 0);
+            if ($aid <= 0) {
+                throw new \RuntimeException('Tentative invalide.');
+            }
+
+            return Response::redirect(url('formations/quiz/' . $aid));
+        } catch (\Throwable $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect(url('formations'));
+        }
     }
 
     /** Page quiz (tentative). */
@@ -219,13 +669,35 @@ class TrainingController
         if (!$tenantId || !$userId) {
             return Response::redirect(url('login'));
         }
+        $tenantId = (int) $tenantId;
+        $userId = (int) $userId;
         $attemptId = (int) ($params['id'] ?? 0);
-        if (!$attemptId) {
-            return (new Response())->setStatusCode(404)->setBody('Tentative non trouvée.');
+        if ($attemptId < 1) {
+            return Response::view('training.quiz_not_found', [])->setStatusCode(404);
         }
+        $attempt = $this->quizService->getAttempt($attemptId, $tenantId, $userId);
+        if (!$attempt) {
+            return Response::view('training.quiz_not_found', [])->setStatusCode(404);
+        }
+        $enrollment = $this->enrollmentRepository->findById((int) $attempt['enrollment_id'], $tenantId);
+        $courseId = $enrollment ? (int) $enrollment['course_id'] : 0;
+        $course = $courseId > 0 ? $this->trainingService->getCourseWithStructure($courseId, $tenantId) : null;
+        if (!$course || !$enrollment) {
+            return Response::view('training.quiz_not_found', [])->setStatusCode(404);
+        }
+        $progressPercent = $this->trainingService->getGlobalProgress((int) $enrollment['id']);
+        $quizMeta = $attempt['quiz'] ?? [];
+        $quizTitle = trim((string) ($quizMeta['title'] ?? '')) ?: 'Quiz';
+
         return Response::view('training.quiz', [
-            'title' => 'Quiz',
+            'title' => $quizTitle,
             'attemptId' => $attemptId,
+            'course' => $course,
+            'enrollment' => $enrollment,
+            'progressPercent' => $progressPercent,
+            'quizTitle' => $quizTitle,
+            'timeLimitMinutes' => $quizMeta['time_limit_minutes'] ?? null,
+            'passingScore' => $quizMeta['passing_score'] ?? null,
         ]);
     }
 

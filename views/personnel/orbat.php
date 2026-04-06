@@ -1,25 +1,41 @@
 <?php
 $unitsTree = $unitsTree ?? [];
+$unitMemberCounts = $unitMemberCounts ?? [];
+$unitCommanderLabels = $unitCommanderLabels ?? [];
+$unitRosterByUnit = $unitRosterByUnit ?? [];
+$baseUrl = rtrim(url(''), '/');
 
 /**
- * Normalise un nœud unité (DB) vers le format attendu par le JS orbat (label, role, type, status, strength, leader, mission, children).
+ * Normalise un nœud unité (DB) vers le format attendu par le JS orbat (label, role, type, status, strength, leader, mission, children, members).
+ *
+ * @param array<int, int> $unitMemberCounts
+ * @param array<int, string> $unitCommanderLabels
+ * @param array<int, list<array{user_id: int, label: string}>> $unitRosterByUnit
  */
-function normalizeOrbatNode(array $u): array {
+function normalizeOrbatNode(array $u, array $unitMemberCounts, array $unitCommanderLabels, array $unitRosterByUnit): array {
     $type = isset($u['type']) && in_array((string)$u['type'], ['command', 'alpha', 'bravo', 'support', 'special'], true)
         ? (string) $u['type'] : 'command';
+    $uid = (int) ($u['id'] ?? 0);
     $children = [];
     foreach ($u['children'] ?? [] as $c) {
-        $children[] = normalizeOrbatNode($c);
+        $children[] = normalizeOrbatNode($c, $unitMemberCounts, $unitCommanderLabels, $unitRosterByUnit);
     }
+    $mission = '—';
+    if (!empty(trim((string) ($u['public_blurb'] ?? '')))) {
+        $mission = trim((string) $u['public_blurb']);
+    }
+
     return [
-        'id' => 'unit-' . (int) $u['id'],
+        'id' => 'unit-' . $uid,
+        'unitId' => $uid,
         'label' => $u['name'] ?? 'Unité',
         'role' => !empty($u['code']) ? (string) $u['code'] : 'Unité',
         'type' => $type,
         'status' => 'active',
-        'strength' => 0,
-        'leader' => '—',
-        'mission' => '—',
+        'strength' => (int) ($unitMemberCounts[$uid] ?? 0),
+        'leader' => $unitCommanderLabels[$uid] ?? '—',
+        'mission' => $mission,
+        'members' => $unitRosterByUnit[$uid] ?? [],
         'children' => $children,
     ];
 }
@@ -27,14 +43,15 @@ function normalizeOrbatNode(array $u): array {
 $rosterData = null;
 if (!empty($unitsTree)) {
     if (count($unitsTree) === 1) {
-        $rosterData = normalizeOrbatNode($unitsTree[0]);
+        $rosterData = normalizeOrbatNode($unitsTree[0], $unitMemberCounts, $unitCommanderLabels, $unitRosterByUnit);
     } else {
         $children = [];
         foreach ($unitsTree as $root) {
-            $children[] = normalizeOrbatNode($root);
+            $children[] = normalizeOrbatNode($root, $unitMemberCounts, $unitCommanderLabels, $unitRosterByUnit);
         }
         $rosterData = [
             'id' => 'command',
+            'unitId' => 0,
             'label' => 'Command',
             'role' => 'Structure organique',
             'type' => 'command',
@@ -42,6 +59,7 @@ if (!empty($unitsTree)) {
             'strength' => 0,
             'leader' => '—',
             'mission' => 'Direction des unités et coordination.',
+            'members' => [],
             'children' => $children,
         ];
     }
@@ -221,6 +239,11 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
                         <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Composition</p>
                         <div id="detail-children" class="mt-3 space-y-2 text-sm font-medium text-slate-700"></div>
                     </div>
+                    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                        <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Membres rattachés</p>
+                        <p class="mt-1 text-[10px] text-slate-500 leading-snug">Affectations actives, dossier personnel ou unité principale.</p>
+                        <div id="detail-members" class="mt-3 space-y-1.5 max-h-52 overflow-y-auto text-sm"></div>
+                    </div>
                 </div>
             </aside>
         </div>
@@ -230,6 +253,7 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
 <?php if ($rosterData !== null): ?>
 <script>
 (function() {
+    const appBaseUrl = <?= json_encode($baseUrl, JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE) ?>;
     const rosterData = <?= $rosterJson ?>;
 
     const collapsedState = new Map();
@@ -351,6 +375,32 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
         if (el = document.getElementById("detail-strength")) el.textContent = (node.strength || 0) + " personnels";
         if (el = document.getElementById("detail-lead")) el.textContent = node.leader || "—";
         if (el = document.getElementById("detail-mission")) el.textContent = node.mission || "—";
+        var membersBox = document.getElementById("detail-members");
+        if (membersBox) {
+            membersBox.innerHTML = "";
+            var mems = node.members || [];
+            var uu = node.unitId || 0;
+            if (uu === 0) {
+                membersBox.innerHTML = "<p class=\"text-xs text-slate-500\">Vue racine — sélectionnez une unité dans l’arbre.</p>";
+            } else if (mems.length === 0) {
+                membersBox.innerHTML = "<p class=\"text-xs text-slate-500\">Aucun membre actif rattaché à cette unité.</p>";
+            } else {
+                mems.forEach(function(mem) {
+                    var row = document.createElement("a");
+                    row.href = appBaseUrl + "/personnel/" + encodeURIComponent(String(mem.user_id));
+                    row.className = "flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:border-emerald-300 hover:bg-emerald-50/50";
+                    var sp = document.createElement("span");
+                    sp.className = "truncate";
+                    sp.textContent = mem.label || "";
+                    var ar = document.createElement("span");
+                    ar.className = "text-[10px] text-slate-400 shrink-0";
+                    ar.textContent = "→";
+                    row.appendChild(sp);
+                    row.appendChild(ar);
+                    membersBox.appendChild(row);
+                });
+            }
+        }
         const childrenBox = document.getElementById("detail-children");
         if (childrenBox) {
             childrenBox.innerHTML = "";
@@ -375,7 +425,7 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
 
     function filterNode(node, term) {
         var children = (node.children || []).map(function(c) { return filterNode(c, term); }).filter(Boolean);
-        if (nodeMatches(node, term) || children.length > 0) return { id: node.id, label: node.label, role: node.role, type: node.type, status: node.status, strength: node.strength, leader: node.leader, mission: node.mission, children: children };
+        if (nodeMatches(node, term) || children.length > 0) return { id: node.id, unitId: node.unitId, label: node.label, role: node.role, type: node.type, status: node.status, strength: node.strength, leader: node.leader, mission: node.mission, members: node.members || [], children: children };
         return null;
     }
 

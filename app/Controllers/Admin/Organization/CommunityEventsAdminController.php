@@ -154,7 +154,7 @@ final class CommunityEventsAdminController
         if (!($result['ok'] ?? false)) {
             Session::flash('error', $result['error'] ?? 'Annulation impossible.');
 
-            return Response::redirect(url('back-office/events/' . $id));
+            return Response::redirect(url('back-office/events/' . (string) $id));
         }
         Session::flash('success', 'Événement annulé. Notifications envoyées : ' . (int) ($result['notified'] ?? 0) . '.');
 

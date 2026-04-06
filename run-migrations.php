@@ -72,6 +72,9 @@ require_once $root . '/bootstrap/community_platform_migration.php';
 require_once $root . '/bootstrap/platform_unit_commander_migration.php';
 require_once $root . '/bootstrap/prod_import_gaps.php';
 require_once $root . '/bootstrap/rbac_three_layer_migration.php';
+require_once $root . '/bootstrap/user_roles_migration.php';
+require_once $root . '/bootstrap/tenant_user_roles_graph_catalog_migration.php';
+require_once $root . '/bootstrap/co_unit_rbac_triggers_migration.php';
 require_once $root . '/bootstrap/permissions_action_migration.php';
 
 // ----- Schéma (exécution statement par statement : PDO::exec ne gère qu'une requête) -----
@@ -130,10 +133,49 @@ run_community_platform_migration($pdo);
 run_platform_unit_commander_migration($pdo);
 run_production_import_gap_migrations($pdo, $root);
 run_rbac_three_layer_migration($pdo);
+run_user_roles_migration($pdo);
+run_tenant_user_roles_graph_catalog_migration($pdo);
+try {
+    run_co_unit_rbac_triggers_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] co_unit_rbac_triggers : ' . $e->getMessage() . "\n";
+}
 run_permissions_action_migration($pdo);
 echo "Bootstrap plateforme OK (subscription_plans, tenants.*, RBAC 3 couches, community_invitations, moderation_*, security_*, community_code, referral_*…).\n";
 @flush();
 @ob_flush();
+
+// LMS formations : colonnes training_courses + tables engagement — exécuté tôt (idempotent). Anciennement en fin de fichier :
+// si le script s’arrêtait avant (timeout, erreur), colonnes comme enrollment_policy_json manquaient en prod.
+echo "Migrations LMS formation (training_courses, politique d’inscription, vitrine)...\n";
+@flush();
+@ob_flush();
+$trainingCourseLmsThemeMigrateEarly = require $root . '/bootstrap/training_course_lms_theme_migration.php';
+$trainingCourseLmsThemeMigrateEarly($pdo);
+$trainingShowcaseMigrateEarly = require $root . '/bootstrap/training_showcase_migration.php';
+$trainingShowcaseMigrateEarly($pdo);
+$trainingLmsEngagementMigrateEarly = require $root . '/bootstrap/training_lms_engagement_migration.php';
+try {
+    $trainingLmsEngagementMigrateEarly($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_lms_engagement : ' . $e->getMessage() . "\n";
+}
+$trainingEnrollmentFeaturesMigrate = require $root . '/bootstrap/training_enrollment_features_migration.php';
+try {
+    $trainingEnrollmentFeaturesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_enrollment_features : ' . $e->getMessage() . "\n";
+}
+echo "Migrations LMS formation (première passe) OK.\n";
+@flush();
+@ob_flush();
+
+require_once $root . '/bootstrap/training_onboarding_course_seed.php';
+try {
+    run_training_onboarding_course_seed($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_onboarding_course : ' . $e->getMessage() . "\n";
+}
 
 // Pointage / RSVP : colonnes community_events + community_event_rsvps (idempotent si bootstrap déjà passé)
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_events' AND COLUMN_NAME = 'cancelled_at'");
@@ -617,6 +659,53 @@ $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TA
 if ($stmt && !$stmt->fetch()) {
     echo "Migration public_roster_opt_in (user_profile_display_settings)...\n";
     $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN public_roster_opt_in tinyint(1) NOT NULL DEFAULT 0 AFTER fiche_show_matricule_to_others");
+}
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'hide_personal_info'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Migration hide_personal_info (user_profile_display_settings)...\n";
+    try {
+        $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN hide_personal_info tinyint(1) NOT NULL DEFAULT 0 AFTER public_roster_opt_in");
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] hide_personal_info : ' . $e->getMessage() . "\n";
+    }
+}
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'hide_forum_level'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Migration hide_forum_level (user_profile_display_settings)...\n";
+    try {
+        $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN hide_forum_level tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = masquer LVL sur carte forum' AFTER show_bio_forum");
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] hide_forum_level : ' . $e->getMessage() . "\n";
+    }
+}
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'forum_visible_role_id'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Migration forum_visible_role_id (user_profile_display_settings)...\n";
+    try {
+        $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN forum_visible_role_id int unsigned DEFAULT NULL COMMENT 'Rôle org affiché sur carte forum (NULL = rôle principal du compte)' AFTER forum_label_mode");
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] forum_visible_role_id : ' . $e->getMessage() . "\n";
+    }
+}
+
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_topics' AND COLUMN_NAME = 'is_official'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Migration forum_topics is_official / auto_locked_at / suppress_auto_lock...\n";
+    try {
+        $pdo->exec("ALTER TABLE forum_topics ADD COLUMN is_official tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Communiqué officiel (modo)' AFTER is_hidden");
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] is_official : ' . $e->getMessage() . "\n";
+    }
+    try {
+        $pdo->exec("ALTER TABLE forum_topics ADD COLUMN auto_locked_at datetime DEFAULT NULL COMMENT 'Verrouillage auto 6 mois' AFTER updated_at");
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] auto_locked_at : ' . $e->getMessage() . "\n";
+    }
+    try {
+        $pdo->exec("ALTER TABLE forum_topics ADD COLUMN suppress_auto_lock tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = déverrouillage manuel, ne pas reverrouiller auto' AFTER auto_locked_at");
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] suppress_auto_lock : ' . $e->getMessage() . "\n";
+    }
 }
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'units' AND COLUMN_NAME = 'public_blurb'");
 if ($stmt && !$stmt->fetch()) {
@@ -1332,10 +1421,47 @@ run_transactional_email_migration($pdo);
 $systemModeratorMigrate = require $root . '/bootstrap/system_moderator_account_migration.php';
 $systemModeratorMigrate($pdo);
 
-$trainingShowcaseMigrate = require $root . '/bootstrap/training_showcase_migration.php';
-$trainingShowcaseMigrate($pdo);
+// training_showcase + training_course_lms_theme + training_lms_engagement : déjà exécutés après le bootstrap (début de fichier).
+
+$trainingModuleLessonEnrichmentMigrate = require $root . '/bootstrap/training_module_lesson_enrichment_migration.php';
+try {
+    $trainingModuleLessonEnrichmentMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_module_lesson_enrichment : ' . $e->getMessage() . "\n";
+}
+
+$trainingEnrollmentMotivationMigrate = require $root . '/bootstrap/training_enrollment_motivation_migration.php';
+try {
+    $trainingEnrollmentMotivationMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_enrollment_motivation : ' . $e->getMessage() . "\n";
+}
+
+$personnelJobRolesMigrate = require $root . '/bootstrap/personnel_job_roles_migration.php';
+$personnelJobRolesMigrate($pdo);
+
+$enlistmentCannedMessagesMigrate = require $root . '/bootstrap/enlistment_canned_messages_migration.php';
+$enlistmentCannedMessagesMigrate($pdo);
+
+$tenantDashboardPinsMigrate = require $root . '/bootstrap/tenant_dashboard_pins_migration.php';
+try {
+    $tenantDashboardPinsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_dashboard_pins : ' . $e->getMessage() . "\n";
+}
 
 require_once $root . '/bootstrap/autoload.php';
+
+$trainingOnboardingBulk = $root . '/bootstrap/training_onboarding_bulk_assign.php';
+if (is_file($trainingOnboardingBulk)) {
+    require_once $trainingOnboardingBulk;
+    try {
+        run_training_onboarding_bulk_assign($pdo);
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] training_onboarding_bulk_assign : ' . $e->getMessage() . "\n";
+    }
+}
+
 try {
     $userRepoSeed = new \App\Repositories\UserRepository();
     $tList = $pdo->query('SELECT id FROM tenants');
@@ -1806,6 +1932,36 @@ if ($stmt && $stmt->fetch()) {
         echo '  [ATTENTION] Catalogue permissions : ' . $e->getMessage() . "\n";
     }
 
+    // LMS : type de leçon canvas (slides / modales)
+    try {
+        $tc = $pdo->query("SHOW TABLES LIKE 'training_lessons'");
+        if ($tc && $tc->fetch()) {
+            $col = $pdo->query("SHOW COLUMNS FROM training_lessons LIKE 'lesson_type'");
+            $row = $col ? $col->fetch(PDO::FETCH_ASSOC) : null;
+            if ($row && is_string($row['Type'] ?? null) && stripos($row['Type'], 'canvas') === false) {
+                $pdo->exec(
+                    "ALTER TABLE training_lessons MODIFY COLUMN lesson_type ENUM("
+                    . "'richtext','video','pdf','audio','scorm_like','checklist','external_link','canvas'"
+                    . ") NOT NULL DEFAULT 'richtext'"
+                );
+                echo "training_lessons.lesson_type : valeur « canvas » ajoutée.\n";
+            }
+            $col2 = $pdo->query("SHOW COLUMNS FROM training_lessons LIKE 'lesson_type'");
+            $row2 = $col2 ? $col2->fetch(PDO::FETCH_ASSOC) : null;
+            if ($row2 && is_string($row2['Type'] ?? null) && stripos($row2['Type'], 'quiz') === false) {
+                $pdo->exec(
+                    "ALTER TABLE training_lessons MODIFY COLUMN lesson_type ENUM("
+                    . "'richtext','video','pdf','audio','scorm_like','checklist','external_link','canvas',"
+                    . "'quiz','modals','video_embed','video_integrated','slideshow'"
+                    . ") NOT NULL DEFAULT 'richtext'"
+                );
+                echo "training_lessons.lesson_type : quiz, modals, video_embed, video_integrated, slideshow ajoutés.\n";
+            }
+        }
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] training_lessons canvas : ' . $e->getMessage() . "\n";
+    }
+
     echo "Migrations terminées.\n";
     exit(0);
 }
@@ -1863,4 +2019,9 @@ try {
 }
 
 echo "Seed OK. Compte : admin@athena.local / admin\n";
+
+echo "\n--- Pipeline exécuté (résumé) ---\n";
+echo "Schéma SQL (migrations/schema.sql) ; bootstrap : community_platform, unit_commander, prod_import_gaps, rbac_three_layer, user_roles, tenant_user_roles_graph + co_unit triggers, permissions_action ;\n";
+echo "LMS (thème, vitrine, engagement, parcours portail) ; migrations forum/alerts/modération/e-mail/modo système ; training enrichments ; personnel job roles ; messages enrôlement ; dashboard pins ;\n";
+echo "autoload (modération système) ; option TRAINING_ONBOARDING_ASSIGN_ALL ; seeds tenant default (forum, documents, permissions) si applicable.\n";
 echo "Migrations terminées.\n";

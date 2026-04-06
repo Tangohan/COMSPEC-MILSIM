@@ -119,6 +119,16 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
           <div id="tag-pills" class="flex flex-wrap gap-2 mt-2"></div>
         </div>
 
+        <div>
+          <label class="block text-[10px] font-black uppercase tracking-wider text-neutral-500 mb-2">Pièces jointes (optionnel)</label>
+          <label class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-emerald-300 bg-emerald-50/50 text-[10px] font-bold text-emerald-900 cursor-pointer hover:bg-emerald-50 transition-colors">
+            <input type="file" id="nt-file-input" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" multiple>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+            Joindre des fichiers (images / PDF, max 5 × 5 Mo)
+          </label>
+          <div id="nt-upload-preview" class="flex flex-wrap gap-2 mt-2 min-h-0"></div>
+        </div>
+
         <div class="border-l-4 border-emerald-500/60 pl-4 py-2 text-[11px] text-slate-600 bg-emerald-50/50 rounded-r-md">
           <p class="font-black text-slate-800 mb-1">Protocole de conduite</p>
           <ul class="list-disc list-inside space-y-0.5">
@@ -163,6 +173,7 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
   var csrf = '<?= \App\Core\Csrf::token() ?>';
   var tags = [];
   var MAX_TAGS = 5;
+  var ntAttachmentIds = [];
 
   function escapeHtml(s) {
     var d = document.createElement('div');
@@ -190,6 +201,14 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
     s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
     // Links
     s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" rel="noopener noreferrer" class="text-emerald-700 hover:text-emerald-600 underline">$1</a>');
+    // URLs brutes (aperçu : ouverture directe ; le message publié utilise /leave pour les externes)
+    s = s.replace(/\bhttps?:\/\/[^\s<>"'\[\]]+/gi, function(raw) {
+      var trail = '';
+      var u = raw;
+      var pm = raw.match(/([.,;:!?]+)$/);
+      if (pm) { trail = pm[1]; u = raw.slice(0, -trail.length); }
+      return '<a href="' + u + '" target="_blank" rel="noopener noreferrer" class="text-orange-400 hover:text-orange-300 underline break-all">' + u + '</a>' + trail;
+    });
     // Blockquote
     s = s.replace(/^&gt;\s?(.*)$/gm, '<blockquote class="border-l-2 border-emerald-400 pl-4 my-1.5 text-slate-600">$1</blockquote>');
     // Unordered list
@@ -345,6 +364,42 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
     tagInput.addEventListener('blur', function() { if (tagInput.value.trim()) addTag(tagInput.value); });
   }
 
+  var ntFileInput = document.getElementById('nt-file-input');
+  var ntUploadPreview = document.getElementById('nt-upload-preview');
+  if (ntFileInput && ntUploadPreview) {
+    ntFileInput.addEventListener('change', function() {
+      var files = ntFileInput.files;
+      if (!files || !files.length) return;
+      var fd = new FormData();
+      fd.append('_csrf_token', csrf);
+      for (var i = 0; i < files.length; i++) fd.append('files[]', files[i]);
+      fetch(baseUrl + '/api/forum-upload', { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          ntFileInput.value = '';
+          if (!d.success || !d.files || !d.files.length) {
+            showError(d.error || 'Envoi fichier impossible');
+            return;
+          }
+          d.files.forEach(function(f) {
+            if (ntAttachmentIds.length >= 5) return;
+            ntAttachmentIds.push(f.id);
+            var wrap = document.createElement('span');
+            wrap.className = 'inline-flex items-center gap-1 text-[9px] font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 rounded px-2 py-1';
+            var id = f.id;
+            wrap.innerHTML = '<span class="truncate max-w-[140px]">' + id.replace(/</g, '') + '</span><button type="button" class="text-rose-600" data-nt-rm="' + id.replace(/"/g, '') + '">×</button>';
+            wrap.querySelector('button').addEventListener('click', function() {
+              var rm = this.getAttribute('data-nt-rm');
+              ntAttachmentIds = ntAttachmentIds.filter(function(x) { return x !== rm; });
+              wrap.remove();
+            });
+            ntUploadPreview.appendChild(wrap);
+          });
+          if (d.warnings && d.warnings.length) toast(d.warnings.join(' '));
+        });
+    });
+  }
+
   document.getElementById('new-topic-form').addEventListener('submit', function(e) {
     e.preventDefault();
     hideError();
@@ -353,7 +408,7 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
     var content = (contentEl && contentEl.value) ? contentEl.value.trim() : '';
     if (!catId) { showError('Choisissez un secteur.'); return; }
     if (title.length < 3 || title.length > 255) { showError('Le titre doit faire entre 3 et 255 caractères.'); return; }
-    if (content.length < 5 || content.length > maxLen) { showError('Le contenu doit faire entre 5 et ' + maxLen + ' caractères.'); return; }
+    if ((content.length < 5 && ntAttachmentIds.length === 0) || content.length > maxLen) { showError('Le contenu doit faire au moins 5 caractères (ou joindre des fichiers), max ' + maxLen + '.'); return; }
     var submitBtn = document.getElementById('submit-topic-btn');
     if (submitBtn) submitBtn.disabled = true;
     fetch(baseUrl + '/api/forum', {
@@ -365,7 +420,8 @@ $agoraSubtitle = $labels['agora_subtitle'] ?? 'Publier dans l\'Agora';
         category_id: catId,
         title: title,
         content: content,
-        tags: tags.join(',')
+        tags: tags.join(','),
+        attachment_ids: ntAttachmentIds
       })
     }).then(function(r) { return r.json(); }).then(function(d) {
       if (submitBtn) submitBtn.disabled = false;

@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantMessageRepository;
+use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Rbac\RbacService;
 
@@ -17,6 +18,7 @@ final class TenantMessagesController
     public function __construct(
         private AuthService $authService,
         private RbacService $rbacService,
+        private UserRepository $userRepository,
         private TenantMessageRepository $messageRepository
     ) {}
 
@@ -32,10 +34,7 @@ final class TenantMessagesController
         }
         $user = $this->authService->user();
         if ($user) {
-            $this->rbacService->setPermissionsForGate(
-                !empty($user['role_id']) ? (int) $user['role_id'] : null,
-                (string) ($user['email'] ?? '')
-            );
+            $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
         $threads = $this->messageRepository->listThreadsForUser($tenantId, $userId);
 
@@ -59,10 +58,7 @@ final class TenantMessagesController
         }
         $user = $this->authService->user();
         if ($user) {
-            $this->rbacService->setPermissionsForGate(
-                !empty($user['role_id']) ? (int) $user['role_id'] : null,
-                (string) ($user['email'] ?? '')
-            );
+            $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
         $thread = $this->messageRepository->findThread($threadId, $tenantId);
         if (!$thread || !$this->messageRepository->userInThread($threadId, $userId)) {

@@ -19,7 +19,12 @@ $linkEquipment = null;
 $linkUnit = null;
 $linkUser = null;
 foreach ($links as $l) {
-    if ($l['entity_type'] === 'training') $linkTraining = (int)$l['entity_id'];
+    if (($l['entity_type'] ?? '') === 'training') {
+        $linkTraining = 'training:' . (int) $l['entity_id'];
+    }
+    if (($l['entity_type'] ?? '') === 'training_course') {
+        $linkTraining = 'training_course:' . (int) $l['entity_id'];
+    }
     if ($l['entity_type'] === 'equipment_class') $linkEquipment = (int)$l['entity_id'];
     if ($l['entity_type'] === 'unit') $linkUnit = (int)$l['entity_id'];
     if ($l['entity_type'] === 'user') $linkUser = (int)$l['entity_id'];
@@ -27,7 +32,14 @@ foreach ($links as $l) {
 $parentRelation = $document['parent_document_id'] ?? null;
 $documentTypes = ['manuel' => 'Manuel', 'procedure' => 'Procédure', 'note' => 'Note', 'compte_rendu' => 'Compte rendu', 'directive' => 'Directive', 'annexe' => 'Annexe', 'support_formation' => 'Support de formation', 'fiche_equipement' => 'Fiche équipement', 'document_operationnel' => 'Document opérationnel', 'piece_jointe' => 'Pièce jointe'];
 $classificationLevels = ['public' => 'Public', 'interne' => 'Interne service', 'restreint' => 'Diffusion restreinte', 'sensible' => 'Donnée sensible', 'confidentiel' => 'Confidentiel opérationnel', 'operationnel' => 'Accès commandement'];
-$visibilityScopes = ['private' => 'Privé', 'collaborators' => 'Collaborateurs', 'unit' => 'Unité', 'role' => 'Rôle autorisé', 'organization' => 'Organisation', 'controlled' => 'Publication contrôlée'];
+$visibilityScopes = [
+    'private' => 'Privé — vous & les collaborateurs du document',
+    'organization' => 'Toute la communauté (selon classification)',
+    'role' => 'Certains rôles seulement (cases ci-dessous)',
+    'unit' => 'Une unité (liste « Liaisons métier »)',
+    'collaborators' => 'Collaborateurs listés sur la fiche',
+    'controlled' => 'Règles sur mesure — expert',
+];
 $statuses = ['draft' => 'Brouillon', 'review' => 'En relecture', 'approval' => 'À valider', 'published' => 'Publié', 'suspended' => 'Suspendu', 'archived' => 'Archivé', 'obsolete' => 'Obsolète'];
 $relationTypes = ['annexe' => 'Annexe', 'piece_jointe' => 'Pièce jointe', 'reference' => 'Référence', 'support_formation' => 'Support formation', 'procedure_associee' => 'Procédure associée', 'document_lie' => 'Document lié'];
 $allDocuments = $allDocuments ?? [];
@@ -45,22 +57,27 @@ $roleSlugsGranted = array_values(array_unique($roleSlugsGranted));
 $accessLevelLabels = ['read' => 'Lecture', 'comment' => 'Commenter', 'edit' => 'Modifier', 'approve' => 'Valider', 'manage' => 'Gérer'];
 $permTypeLabels = ['role' => 'Rôle (slug)', 'unit' => 'Unité (ID)', 'user' => 'Utilisateur (ID)', 'group' => 'Groupe'];
 $visibilityHelp = [
-    'private' => 'Seuls le propriétaire et les collaborateurs une fois publié.',
-    'collaborators' => 'Réservé aux collaborateurs désignés.',
-    'unit' => 'Choisissez l’unité dans les liaisons métier.',
-    'role' => 'Cochez les rôles autorisés.',
-    'organization' => 'Tout le tenant.',
-    'controlled' => 'Règles fines dans le tableau.',
+    'private' => 'Réservé au propriétaire et aux collaborateurs du document une fois publié.',
+    'collaborators' => 'Seuls les collaborateurs listés sur la fiche pourront lire.',
+    'unit' => 'Les membres de l’unité choisie dans Liaisons métier pourront lire.',
+    'role' => 'Uniquement les rôles cochés (intra-tenant). Commandement / modération voient tout (sous réserve de la classification).',
+    'organization' => 'Tout membre de la communauté peut lire si sa classification le permet.',
+    'controlled' => 'Tableau ligne par ligne (mode expert) — dépliez-le pour modifier.',
 ];
 $controlledRows = array_values(array_filter($permissions, static function ($p): bool {
     return ($p['permission_type'] ?? '') !== 'role';
 }));
+$openControlledFineTable = (($document['visibility_scope'] ?? '') === 'controlled' && count($controlledRows) > 0);
 $docTags = $document['tags'] ?? null;
 if (is_string($docTags)) {
     $docTags = json_decode($docTags, true);
 }
 $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
 ?>
+<style>
+  .doc-help-details > summary { list-style: none; }
+  .doc-help-details > summary::-webkit-details-marker { display: none; }
+</style>
 <div class="max-w-6xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 mb-6">Modifier le document</h1>
     <?php if (\App\Core\Session::get('success')): ?>
@@ -133,7 +150,15 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                             </select>
                         </div>
                         <div>
-                            <label class="mb-1 block text-xs font-bold text-slate-600" for="edit-visibility-scope">Visibilité</label>
+                            <label class="mb-1 block text-xs font-bold text-slate-600" for="edit-visibility-scope">Qui peut lire une fois le document publié ?</label>
+                            <p class="mb-2 text-[11px] leading-snug text-slate-500">En brouillon, la visibilité ne s’applique pas encore aux lecteurs externes — privilégiez <strong>Privé</strong> ou <strong>Toute la communauté</strong>.</p>
+                            <div class="mb-3 flex flex-wrap gap-2">
+                                <button type="button" class="doc-vis-preset rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-800 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50" data-vis="private">Privé</button>
+                                <button type="button" class="doc-vis-preset rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-800 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50" data-vis="organization">Toute la communauté</button>
+                                <button type="button" class="doc-vis-preset rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-800 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50" data-vis="role">Par rôles</button>
+                                <button type="button" class="doc-vis-preset rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-800 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50" data-vis="unit">Par unité</button>
+                                <button type="button" class="doc-vis-preset rounded-lg border border-dashed border-amber-300 bg-amber-50/80 px-3 py-1.5 text-[11px] font-semibold text-amber-950 transition hover:bg-amber-100" data-vis="controlled">Mode expert</button>
+                            </div>
                             <select name="visibility_scope" id="edit-visibility-scope" class="w-full rounded-xl border-2 border-slate-300 px-3 py-2 text-sm">
                                 <?php foreach ($visibilityScopes as $k => $v): ?>
                                 <option value="<?= htmlspecialchars($k) ?>" <?= ($document['visibility_scope'] ?? 'private') === $k ? 'selected' : '' ?>><?= htmlspecialchars($v) ?></option>
@@ -143,7 +168,8 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                         </div>
 
                         <div id="edit-panel-role" class="hidden rounded-xl border border-violet-200 bg-violet-50/50 p-3">
-                            <p class="text-xs font-bold text-violet-900">Rôles autorisés</p>
+                            <p class="text-xs font-bold text-violet-900">Rôles autorisés (intra-tenant)</p>
+                            <p class="mt-1 text-[11px] leading-relaxed text-violet-900/85">Seuls les membres dont le <strong>rôle communauté</strong> est coché pourront lire le document publié (intra-tenant). Le <strong>commandement</strong> et le <strong>propriétaire communauté</strong> gardent l’accès complet (y compris édition). Les <strong>modérateurs forum</strong> voient tout en lecture ; la classification s’applique toujours.</p>
                             <div class="mt-2 max-h-40 space-y-1 overflow-y-auto rounded border border-violet-100 bg-white p-2">
                                 <?php foreach ($tenantRoles as $role): ?>
                                 <?php $slug = (string) ($role['slug'] ?? ''); ?>
@@ -165,7 +191,18 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                             Indiquez l’unité dans <strong>Liaisons métier</strong> ci-dessous (liste Unité).
                         </div>
 
-                        <div id="edit-panel-controlled" class="hidden overflow-x-auto rounded-xl border border-amber-200 bg-amber-50/50 p-2">
+                        <div id="edit-panel-controlled" class="hidden rounded-xl border border-amber-200 bg-amber-50/50 p-3">
+                            <p class="text-[12px] font-semibold text-amber-950">Mode expert</p>
+                            <p class="mt-1 text-[11px] leading-relaxed text-amber-900/90">À utiliser seulement si <strong>Par rôles</strong> ou <strong>Toute la communauté</strong> ne suffit pas.</p>
+                            <details class="doc-help-details mt-2 rounded-lg border border-amber-200 bg-white">
+                              <summary class="cursor-pointer px-2 py-2 text-[11px] font-semibold text-amber-900">Comment remplir le tableau ?</summary>
+                              <div class="border-t border-amber-100 px-2 py-2 text-[11px] leading-relaxed text-amber-950/95">
+                                <strong>Rôle</strong> : slug exact. <strong>Unité / Utilisateur</strong> : ID numérique. Les lignes vides sont ignorées.
+                              </div>
+                            </details>
+                            <details id="edit-controlled-fine-rules-details" class="mt-2 overflow-x-auto rounded-lg border border-amber-100 bg-white shadow-sm"<?= $openControlledFineTable ? ' open' : '' ?>>
+                              <summary class="cursor-pointer px-2 py-2 text-[12px] font-bold text-amber-950">Afficher le tableau des règles fines</summary>
+                              <div class="border-t border-amber-100 p-1">
                             <table class="min-w-full text-left text-[11px]">
                                 <thead><tr class="text-[10px] font-black uppercase text-amber-900"><th class="px-1 py-1">Type</th><th class="px-1 py-1">Valeur</th><th class="px-1 py-1">Accès</th></tr></thead>
                                 <tbody>
@@ -180,7 +217,7 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                                             <?php endforeach; ?>
                                         </select>
                                     </td>
-                                    <td class="p-1"><input type="text" name="permissions[<?= $pi ?>][permission_value]" value="<?= $row ? htmlspecialchars((string) ($row['permission_value'] ?? '')) : '' ?>" class="w-full rounded border border-slate-200 px-1 py-1 font-mono" /></td>
+                                    <td class="p-1"><input type="text" name="permissions[<?= $pi ?>][permission_value]" value="<?= $row ? htmlspecialchars((string) ($row['permission_value'] ?? '')) : '' ?>" class="w-full rounded border border-slate-200 px-1 py-1 font-mono" placeholder="slug ou ID" title="Slug du rôle ou ID unité/utilisateur" /></td>
                                     <td class="p-1">
                                         <select name="permissions[<?= $pi ?>][access_level]" class="w-full rounded border border-slate-200 px-1 py-1">
                                             <?php foreach ($permissionAccessLevels as $lvl): ?>
@@ -192,12 +229,19 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                                 <?php endfor; ?>
                                 </tbody>
                             </table>
+                              </div>
+                            </details>
                         </div>
 
-                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="download_allowed" value="1" <?= !empty($document['download_allowed']) ? 'checked' : '' ?> /> Téléchargement autorisé</label>
-                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="print_allowed" value="1" <?= !empty($document['print_allowed']) ? 'checked' : '' ?> /> Impression autorisée</label>
-                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="locked" value="1" <?= !empty($document['locked']) ? 'checked' : '' ?> /> Document verrouillé</label>
-                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="inherit_parent_security" value="1" <?= !empty($document['inherit_parent_security']) ? 'checked' : '' ?> /> Hériter du parent</label>
+                        <div class="rounded-xl border border-slate-200 bg-slate-50/90 p-3">
+                          <p class="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-600">Options courantes</p>
+                          <div class="grid gap-2 sm:grid-cols-2">
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800"><input type="checkbox" name="download_allowed" value="1" class="mt-0.5" <?= !empty($document['download_allowed']) ? 'checked' : '' ?> /><span><strong>Téléchargement</strong> <span class="text-[11px] text-slate-500">(décocher = lecture à l’écran)</span></span></label>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800"><input type="checkbox" name="print_allowed" value="1" class="mt-0.5" <?= !empty($document['print_allowed']) ? 'checked' : '' ?> /><span><strong>Impression</strong></span></label>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800"><input type="checkbox" name="locked" value="1" class="mt-0.5" <?= !empty($document['locked']) ? 'checked' : '' ?> /><span><strong>Verrouillé</strong></span></label>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800"><input type="checkbox" name="inherit_parent_security" value="1" class="mt-0.5" <?= !empty($document['inherit_parent_security']) ? 'checked' : '' ?> /><span><strong>Hériter sécurité du parent</strong></span></label>
+                          </div>
+                        </div>
                     </div>
                 </section>
                 <script>
@@ -209,7 +253,14 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                   var pu = document.getElementById('edit-panel-unit');
                   var pc = document.getElementById('edit-panel-controlled');
                   function r(){ var v = sel.value; if (h && help[v]) h.textContent = help[v]; pr.classList.toggle('hidden', v !== 'role'); pu.classList.toggle('hidden', v !== 'unit'); pc.classList.toggle('hidden', v !== 'controlled'); }
-                  sel.addEventListener('change', r); r();
+                  sel.addEventListener('change', r);
+                  document.querySelectorAll('.doc-vis-preset').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                      var vis = btn.getAttribute('data-vis');
+                      if (vis && sel.querySelector('option[value="' + vis + '"]')) { sel.value = vis; r(); }
+                    });
+                  });
+                  r();
                 })();
                 </script>
                 <section class="bg-white border border-slate-200 rounded-lg p-4">
@@ -250,7 +301,7 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                             <select name="link_training" class="w-full border border-slate-200 rounded px-3 py-2 text-sm">
                                 <option value="">—</option>
                                 <?php foreach ($trainings as $t): ?>
-                                <option value="<?= (int)$t['id'] ?>" <?= $linkTraining === (int)$t['id'] ? 'selected' : '' ?>><?= htmlspecialchars($t['title']) ?></option>
+                                <option value="<?= htmlspecialchars($t['value'] ?? '') ?>" <?= ($linkTraining !== null && ($t['value'] ?? '') === $linkTraining) ? 'selected' : '' ?>><?= htmlspecialchars($t['label'] ?? ($t['title'] ?? '')) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>

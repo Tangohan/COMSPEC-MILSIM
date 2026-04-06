@@ -38,98 +38,177 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
     <?php endif; ?>
 </head>
 <body class="bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
+    <?php $__dashGate = \App\Core\Gate::getInstance(); ?>
+    <style>
+        #dashDrawerTrack { will-change: transform; }
+    </style>
     <script>
+        function dashDrawerGoRoot() {
+            var tr = document.getElementById('dashDrawerTrack');
+            if (tr) tr.style.transform = 'translateX(0)';
+        }
         function toggleMenu() {
             document.body.classList.toggle('drawer-open');
             if (document.body.classList.contains('drawer-open')) {
                 document.body.style.overflow = 'hidden';
             } else {
                 document.body.style.overflow = '';
+                dashDrawerGoRoot();
             }
         }
+        function dashOpenSubmenu(title, templateId) {
+            var tpl = document.getElementById(templateId);
+            var host = document.getElementById('dashDrawerSubLinks');
+            var subTitle = document.getElementById('dashDrawerSubTitle');
+            var tr = document.getElementById('dashDrawerTrack');
+            if (!tpl || !host || !subTitle || !tr) return;
+            subTitle.textContent = title;
+            host.innerHTML = tpl.innerHTML;
+            tr.style.transform = 'translateX(-50%)';
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var back = document.getElementById('dashDrawerBack');
+            if (back) back.addEventListener('click', dashDrawerGoRoot);
+        });
     </script>
     <div id="bodyOverlay" class="overlay fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110]" onclick="toggleMenu()"></div>
 
-    <div id="navDrawer" class="drawer-translate fixed top-0 left-0 w-[300px] h-full bg-slate-50 z-[120] shadow-2xl p-6 flex flex-col">
-        <div class="flex justify-between items-center mb-10">
-            <span class="text-[10px] font-black tracking-[0.3em] uppercase opacity-50">Menu</span>
-            <button onclick="toggleMenu()" class="hover:rotate-90 transition-transform">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
+    <aside id="navDrawer"
+           class="drawer-translate fixed top-0 left-0 z-[120] flex h-full w-[min(100%,340px)] flex-col border-r border-slate-200/80 bg-gradient-to-b from-slate-50 to-slate-100/90 shadow-[8px_0_40px_-12px_rgba(15,23,42,0.35)]"
+           aria-label="Menu latéral">
+        <div class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div id="dashDrawerTrack" class="flex h-full w-[200%] transition-transform duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]" style="transform:translateX(0)">
+                <div class="flex w-1/2 flex-col overflow-hidden">
+                    <div class="flex shrink-0 items-center justify-between border-b border-slate-200/60 px-5 pb-4 pt-5">
+                        <span class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Menu</span>
+                        <button type="button" onclick="toggleMenu()" class="rounded-xl p-2 text-slate-500 transition hover:bg-slate-200/80 hover:text-slate-900" aria-label="Fermer le menu">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <nav class="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 py-4" aria-label="Navigation du tableau de bord">
+                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-800 transition hover:border-slate-200/80 hover:bg-white/90 hover:shadow-sm"
+                                onclick="dashOpenSubmenu('Accès rapide', 'dashTplQuick')">
+                            <span>Accès rapide</span>
+                            <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                        </button>
+                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-800 transition hover:border-slate-200/80 hover:bg-white/90 hover:shadow-sm"
+                                onclick="dashOpenSubmenu('Mission et unité', 'dashTplOps')">
+                            <span>Mission et unité</span>
+                            <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                        </button>
+                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-800 transition hover:border-slate-200/80 hover:bg-white/90 hover:shadow-sm"
+                                onclick="dashOpenSubmenu('Ressources', 'dashTplRes')">
+                            <span>Ressources</span>
+                            <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                        </button>
+                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-800 transition hover:border-slate-200/80 hover:bg-white/90 hover:shadow-sm"
+                                onclick="dashOpenSubmenu('Compte', 'dashTplAccount')">
+                            <span>Compte</span>
+                            <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                        </button>
+                        <?php if ($__dashGate->allows('admin.system') || $__dashGate->allows('admin.organization') || $__dashGate->allows('admin.access')): ?>
+                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 transition hover:border-slate-200/80 hover:bg-white/90 hover:text-slate-800 hover:shadow-sm"
+                                onclick="dashOpenSubmenu('Administration', 'dashTplAdmin')">
+                            <span>Administration</span>
+                            <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                        </button>
+                        <?php endif; ?>
+                    </nav>
+                    <div class="shrink-0 space-y-4 border-t border-slate-200/60 bg-slate-50/80 px-5 py-5">
+                        <form method="post" action="<?= url('logout') ?>">
+                            <?= \App\Core\Csrf::field() ?>
+                            <button type="submit" class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 transition hover:text-slate-900">Déconnexion</button>
+                        </form>
+                        <div class="flex gap-3">
+                            <button type="button" class="flex h-9 w-9 cursor-default items-center justify-center rounded-full border border-dashed border-slate-200 bg-white text-[10px] font-black text-slate-400" disabled title="Bientôt disponible">IG</button>
+                            <button type="button" class="flex h-9 w-9 cursor-default items-center justify-center rounded-full border border-dashed border-slate-200 bg-white text-[10px] font-black text-slate-400" disabled title="Bientôt disponible">YT</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex w-1/2 flex-col overflow-hidden bg-white">
+                    <div class="flex shrink-0 items-center gap-2 border-b border-slate-100 px-3 py-4">
+                        <button type="button" id="dashDrawerBack" class="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/></svg>
+                            Retour
+                        </button>
+                    </div>
+                    <p id="dashDrawerSubTitle" class="shrink-0 px-5 pb-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400"></p>
+                    <div id="dashDrawerSubLinks" class="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 pb-6"></div>
+                </div>
+            </div>
         </div>
-        
-        <nav class="flex flex-col gap-6">
-            <a href="<?= $base ?>/" class="text-xs font-bold tracking-[0.2em] uppercase">ACCUEIL</a>
-            <a href="<?= url('dashboard') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">DASHBOARD</a>
-            <a href="<?= url('personnel/me') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">MA FICHE</a>
-            <a href="<?= url('atak') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">ATAK / TACMAP</a>
-            <a href="<?= url('orbat') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">ORBAT / UNITÉ</a>
-            <a href="<?= url('documents') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">DOCUMENTS</a>
-            <a href="<?= url('modpacks') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">MODPACKS</a>
-            <a href="<?= url('formations') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">FORMATIONS</a>
-            <a href="<?= url('equipement') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">ÉQUIPEMENT</a>
-            <a href="<?= url('account') ?>" class="text-xs font-bold tracking-[0.2em] uppercase">PARAMÈTRES</a>
-            <?php
-            $__g = \App\Core\Gate::getInstance();
-            if ($__g->allows('admin.system')): ?>
-            <a href="<?= url('admin') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-500">ADMIN</a>
-            <?php endif; ?>
-            <?php if ($__g->allows('admin.organization') || $__g->allows('admin.access')): ?>
-            <a href="<?= url('back-office') ?>" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-500">BACK-OFFICE</a>
-            <?php endif; ?>
-        </nav>
+    </aside>
 
-        <div class="mt-auto pt-10 border-t border-slate-100">
-            <form method="post" action="<?= url('logout') ?>" class="mb-6">
-                <?= \App\Core\Csrf::field() ?>
-                <button type="submit" class="text-xs font-bold tracking-[0.2em] uppercase text-slate-500 hover:text-slate-900 transition-colors">Déconnexion</button>
-            </form>
-            <div class="flex gap-4">
-                <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                    <span class="text-[10px] font-bold">IG</span>
+    <template id="dashTplQuick">
+        <a href="<?= htmlspecialchars($base) ?>/" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Accueil</a>
+        <a href="<?= htmlspecialchars(url('dashboard')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Tableau de bord</a>
+        <a href="<?= htmlspecialchars(url('personnel/me')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Ma fiche</a>
+    </template>
+    <template id="dashTplOps">
+        <a href="<?= htmlspecialchars(url('atak')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">ATAK / Tacmap</a>
+        <a href="<?= htmlspecialchars(url('orbat')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">ORBAT / Unité</a>
+    </template>
+    <template id="dashTplRes">
+        <a href="<?= htmlspecialchars(url('documents')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Documents</a>
+        <a href="<?= htmlspecialchars(url('modpacks')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Modpacks</a>
+        <a href="<?= htmlspecialchars(url('formations')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Formations</a>
+        <a href="<?= htmlspecialchars(url('equipement')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Équipement</a>
+    </template>
+    <template id="dashTplAccount">
+        <a href="<?= htmlspecialchars(url('account')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Paramètres</a>
+    </template>
+    <template id="dashTplAdmin">
+        <?php if ($__dashGate->allows('admin.system')): ?>
+        <a href="<?= htmlspecialchars(url('admin')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50" onclick="toggleMenu()">Administration système</a>
+        <?php endif; ?>
+        <?php if ($__dashGate->allows('admin.organization') || $__dashGate->allows('admin.access')): ?>
+        <a href="<?= htmlspecialchars(url('back-office')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50" onclick="toggleMenu()">Back-office</a>
+        <?php endif; ?>
+    </template>
+
+    <div class="w-full border-b border-white/5 bg-slate-900 text-white/30 select-none">
+        <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 sm:px-8">
+            <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[8px] uppercase tracking-[0.15em]">
+                <div class="flex items-center gap-2">
+                    <span class="font-black tracking-[0.28em] text-emerald-500">ZULU</span>
+                    <span id="t-zulu" class="text-[10px] font-medium tracking-normal text-white w-[4.25rem] tabular-nums">00:00:00</span>
                 </div>
-                <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                    <span class="text-[10px] font-bold">YT</span>
+                <span class="text-white/15" aria-hidden="true">|</span>
+                <div class="hidden items-center gap-2 sm:flex sm:opacity-70">
+                    <span>PST</span>
+                    <span id="t-pst" class="text-[10px] tracking-normal text-white/85 w-[4.25rem] tabular-nums">00:00:00</span>
+                    <span class="text-white/15" aria-hidden="true">|</span>
+                    <span>MTN</span>
+                    <span id="t-mtn" class="text-[10px] tracking-normal text-white/85 w-[4.25rem] tabular-nums">00:00:00</span>
+                    <span class="text-white/15" aria-hidden="true">|</span>
+                    <span>EST</span>
+                    <span id="t-est" class="text-[10px] tracking-normal text-white/85 w-[4.25rem] tabular-nums">00:00:00</span>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-end gap-3 sm:gap-4 text-[8px] font-black uppercase tracking-[0.2em]">
+                <div class="flex items-center gap-2 text-white/90">
+                    <span class="hidden text-white/45 sm:inline">Heure locale</span>
+                    <span id="clock-local" class="text-[10px] tracking-wider text-white tabular-nums sm:text-[11px]">00:00:00</span>
+                </div>
+                <span class="hidden h-3 w-px bg-white/15 sm:block" aria-hidden="true"></span>
+                <div class="flex items-center gap-2 text-white/50">
+                    <span class="relative flex h-1.5 w-1.5">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-25"></span>
+                        <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400/90"></span>
+                    </span>
+                    <span>Réseau actif</span>
+                </div>
+                <span class="hidden h-3 w-px bg-white/15 sm:block" aria-hidden="true"></span>
+                <div class="flex items-center gap-2 text-white/40">
+                    <span class="relative flex h-1.5 w-1.5">
+                        <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500/90"></span>
+                    </span>
+                    <span class="italic">Actif</span>
                 </div>
             </div>
         </div>
     </div>
-    <div class="w-full bg-slate-900 text-white/30 h-8 flex items-center border-b border-white/5 overflow-hidden select-none">
-        <div class="max-w-5xl mx-auto px-8 w-full flex justify-between items-center font-mono text-[8px] tracking-[0.15em] uppercase">
-            
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2 group">
-                    <span class="text-emerald-500 font-black tracking-[0.3em]">ZULU</span>
-                    <span id="t-zulu" class="text-white text-[10px] font-medium tracking-normal w-[65px]">00:00:00</span>
-                </div>
-                
-                <span class="text-white/10 text-[10px]">|</span>
-                
-                <div class="hidden sm:flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity">
-                    <span class="label">PST</span>
-                    <span id="t-pst" class="text-white/80 tracking-normal w-[65px]">00:00:00</span>
-                    <span class="text-white/10">|</span>
-                    <span class="label">MTN</span>
-                    <span id="t-mtn" class="text-white/80 tracking-normal w-[65px]">00:00:00</span>
-                    <span class="text-white/10">|</span>
-                    <span class="label">EST</span>
-                    <span id="t-est" class="text-white/80 tracking-normal w-[65px]">00:00:00</span>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-3 text-[7px] tracking-[0.25em]">
-                <span class="flex h-1.5 w-1.5 relative">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-20"></span>
-                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500/80"></span>
-                </span>
-                <span class="opacity-40 italic">ACTIF</span>
-            </div>
-        </div>
-    </div>
-    
-    <header class="sticky top-0 z-[100] w-full bg-slate-50/95 backdrop-blur-md border-b border-slate-900/[0.03]">
-        </header>
-    
+
     <script>
         function formatClock(date, timeZone = 'UTC') {
             return new Intl.DateTimeFormat('en-GB', { // en-GB pour le format 24h naturel
@@ -161,40 +240,21 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         updateOperationalClocks();
     </script>
     
-    <header class="sticky top-0 z-[100] w-full bg-slate-50/95 backdrop-blur-md border-b border-slate-900/[0.03]">
-        <div class="max-w-5xl mx-auto px-8 h-16 flex items-center justify-between relative text-slate-900 uppercase">
-            
-            <div class="flex-1">
-                <button onclick="toggleMenu()" class="group flex flex-col gap-2 outline-none w-6 h-6 justify-center">
-                    <span class="h-[1px] w-full bg-slate-900 transition-all duration-500 group-hover:translate-x-1"></span>
-                    <div class="flex justify-end">
-                        <span class="h-[1px] w-3 bg-slate-900 transition-all duration-500 group-hover:w-full group-hover:translate-x-0"></span>
-                    </div>
+    <header class="sticky top-0 z-[100] w-full border-b border-slate-200/80 bg-slate-50/95 backdrop-blur-md">
+        <div class="relative mx-auto flex h-[3.75rem] max-w-5xl items-center justify-between px-4 text-slate-900 sm:px-8">
+            <div class="flex flex-1 items-center">
+                <button type="button" onclick="toggleMenu()" class="group flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-xl outline-none transition hover:bg-slate-200/60" aria-label="Ouvrir le menu">
+                    <span class="h-0.5 w-5 rounded-full bg-slate-900 transition group-hover:translate-x-0.5"></span>
+                    <span class="h-0.5 w-3 self-end rounded-full bg-slate-900 transition group-hover:w-5"></span>
                 </button>
             </div>
-    
-            <div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <a href="<?= $base ?>/" class="text-[11px] font-black tracking-[0.7em] -mr-[0.7em] hover:text-emerald-600 transition-colors">
-                    FORWARD
+            <div class="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center">
+                <a href="<?= htmlspecialchars($base) ?>/" class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 transition hover:text-emerald-700 sm:text-[11px] sm:tracking-[0.26em]">
+                    Athena Compsec
                 </a>
-                <div class="flex items-center gap-2 mt-1">
-                    <span class="h-[1px] w-4 bg-slate-200"></span>
-                    <span class="text-[6px] font-black tracking-[0.4em] text-slate-400">OBS. GROUP</span>
-                    <span class="h-[1px] w-4 bg-slate-200"></span>
-                </div>
+                <span class="mt-0.5 text-[6px] font-semibold uppercase tracking-[0.35em] text-slate-400">Portail opérationnel</span>
             </div>
-    
-            <div class="flex-1 flex justify-end items-center gap-8">
-                <div class="hidden lg:flex flex-col items-end leading-none font-black">
-                    <span class="text-[7px] tracking-[0.3em] text-slate-400 mb-1">LOCAL_TIME</span>
-                    <span id="clock-local" class="text-[10px] tracking-widest italic">00:00:00</span>
-                </div>
-                
-                <div class="flex items-center gap-3 border-l border-slate-200 pl-8 h-4">
-                    <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                    <span class="text-[8px] font-black tracking-[0.2em] text-slate-400">RÉSEAU ACTIF</span>
-                </div>
-            </div>
+            <div class="flex-1" aria-hidden="true"></div>
         </div>
     </header>
     
@@ -245,38 +305,100 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         </section>
         <?php endif; ?>
 
-        <?php if (count($communityMemberships) > 0): ?>
-        <section class="border-b border-slate-200 bg-slate-100/90">
-            <div class="max-w-5xl mx-auto px-8 py-3 flex flex-wrap items-center gap-3 text-[11px]">
-                <span class="font-black uppercase tracking-widest text-slate-500">Communauté active</span>
-                <?php foreach ($communityMemberships as $m): ?>
-                    <?php if ((int) $m['tenant_id'] === $currentTid): ?>
-                        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-lg font-bold"><?= htmlspecialchars(community_display_name($m)) ?></span>
-                    <?php else: ?>
-                        <form method="post" action="<?= url('community/switch') ?>" class="inline" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.setAttribute('aria-busy','true');b.textContent='Chargement…';}">
-                            <?= \App\Core\Csrf::field() ?>
-                            <input type="hidden" name="tenant_id" value="<?= (int) $m['tenant_id'] ?>">
-                            <button type="submit" class="text-slate-600 hover:text-emerald-700 underline font-semibold"><?= htmlspecialchars(community_display_name($m)) ?></button>
-                        </form>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-                <a href="<?= url('platform/invite-unit') ?>" class="text-slate-600 hover:text-emerald-700 font-semibold text-[11px]">Inviter une unité</a>
-                <a href="<?= url('communities/create') ?>" class="ml-auto font-black uppercase tracking-wider text-emerald-700 hover:text-slate-900">+ Nouvelle communauté</a>
+        <?php
+        $showFounderTrialBanner = $show_founder_trial_banner ?? false;
+        $founderTrialEndsAt = $founder_trial_ends_at ?? null;
+        $dashCtxCommunity = count($communityMemberships) > 0;
+        $dashCtxTrial = $showFounderTrialBanner && is_string($founderTrialEndsAt) && $founderTrialEndsAt !== '';
+        ?>
+        <?php if ($dashCtxCommunity || $dashCtxTrial): ?>
+        <section class="border-b border-slate-200/90 bg-gradient-to-r from-slate-50 via-white to-slate-50" aria-label="Contexte de session">
+            <div class="mx-auto flex max-w-5xl flex-col gap-2.5 px-4 py-2.5 text-[11px] leading-snug sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-6 sm:gap-y-2 sm:px-8">
+                <?php if ($dashCtxCommunity): ?>
+                <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
+                    <span class="shrink-0 text-[10px] font-black uppercase tracking-wider text-slate-500">Communauté</span>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <?php foreach ($communityMemberships as $m): ?>
+                            <?php if ((int) $m['tenant_id'] === $currentTid): ?>
+                                <span class="rounded-lg bg-emerald-100 px-2.5 py-1 font-bold text-emerald-900"><?= htmlspecialchars(community_display_name($m)) ?></span>
+                            <?php else: ?>
+                                <form method="post" action="<?= url('community/switch') ?>" class="inline" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.setAttribute('aria-busy','true');b.textContent='Chargement…';}">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <input type="hidden" name="tenant_id" value="<?= (int) $m['tenant_id'] ?>">
+                                    <button type="submit" class="font-semibold text-slate-600 underline decoration-slate-300 underline-offset-2 hover:text-emerald-700"><?= htmlspecialchars(community_display_name($m)) ?></button>
+                                </form>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <span class="hidden text-slate-300 sm:inline" aria-hidden="true">·</span>
+                    <a href="<?= url('platform/invite-unit') ?>" class="font-semibold text-slate-600 hover:text-emerald-700">Inviter une unité</a>
+                    <a href="<?= url('communities/create') ?>" class="font-black uppercase tracking-wide text-emerald-700 hover:text-slate-900 sm:ml-1">Nouvelle communauté</a>
+                </div>
+                <?php endif; ?>
+                <?php if ($dashCtxTrial): ?>
+                <div class="flex flex-wrap items-center gap-2 rounded-lg border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-slate-800 sm:max-w-xl sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 <?= $dashCtxCommunity ? 'sm:border-l sm:border-slate-200 sm:pl-5' : '' ?>">
+                    <span class="shrink-0 rounded-md bg-amber-200/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-950">Essai étendu</span>
+                    <span class="min-w-0">Offre fondateur · fonctions avancées jusqu’au <strong class="font-bold text-slate-900"><?= htmlspecialchars(date('d/m/Y', strtotime($founderTrialEndsAt))) ?></strong>.</span>
+                    <a href="<?= url('platform/upgrade') ?>" class="shrink-0 font-bold text-amber-900 underline decoration-amber-600/40 underline-offset-2 hover:text-slate-900">Voir les offres</a>
+                </div>
+                <?php endif; ?>
             </div>
         </section>
         <?php endif; ?>
 
         <?php
-        $showFounderTrialBanner = $show_founder_trial_banner ?? false;
-        $founderTrialEndsAt = $founder_trial_ends_at ?? null;
+        $my_enlistments_pending = $my_enlistments_pending ?? [];
+        $staff_enlistments_pending = $staff_enlistments_pending ?? [];
+        $show_staff_enlistments = $show_staff_enlistments ?? false;
+        require base_path('views/partials/dashboard_enlistments.php');
         ?>
-        <?php if ($showFounderTrialBanner && is_string($founderTrialEndsAt) && $founderTrialEndsAt !== ''): ?>
-        <section class="border-b border-amber-200 bg-amber-50">
-            <div class="max-w-5xl mx-auto px-8 py-3 text-sm text-amber-950">
-                <strong class="font-black uppercase tracking-wide">Fondateur</strong>
-                — essai Pro (ATAK, événements, analytics) jusqu’au
-                <?= htmlspecialchars(date('d/m/Y', strtotime($founderTrialEndsAt))) ?>.
-                <a href="<?= url('platform/upgrade') ?>" class="underline font-semibold ml-2">Voir les offres</a>
+
+        <?php
+        $dashboard_pins = $dashboard_pins ?? [];
+        if (!empty($dashboard_pins)):
+        ?>
+        <section class="border-b border-slate-200 bg-white">
+            <div class="max-w-7xl mx-auto px-6 md:px-10 py-8">
+                <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-1">Communauté</p>
+                        <h2 class="text-lg font-black uppercase italic tracking-tight text-[#001529]">Raccourcis</h2>
+                    </div>
+                    <?php if (\App\Core\Gate::getInstance()->allows('dashboard.pins.manage')): ?>
+                        <a href="<?= url('back-office/dashboard-pins') ?>" class="text-[10px] font-black uppercase tracking-wider text-emerald-700 hover:text-slate-900">Gérer</a>
+                    <?php endif; ?>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                    <?php foreach ($dashboard_pins as $pin): ?>
+                        <?php
+                        $pk = (string) ($pin['kind'] ?? '');
+                        $icon = match ($pk) {
+                            'document_category' => 'M',
+                            'document' => 'D',
+                            'courrier_document' => 'C',
+                            'external_url' => '↗',
+                            'notice' => 'i',
+                            default => '•',
+                        };
+                        ?>
+                        <?php if ($pk === 'notice' && !empty($pin['notice_text'])): ?>
+                            <div class="rounded-xl border border-amber-200/90 bg-amber-50/40 p-4 sm:col-span-2 xl:col-span-3">
+                                <div class="flex items-start gap-3">
+                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-[10px] font-black text-amber-900"><?= htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <div class="min-w-0">
+                                        <p class="text-[10px] font-black uppercase tracking-wider text-amber-900/80 mb-1"><?= htmlspecialchars((string) ($pin['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                        <div class="text-sm text-slate-800 whitespace-pre-wrap"><?= nl2br(htmlspecialchars((string) ($pin['notice_text'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <a href="<?= htmlspecialchars((string) ($pin['href'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="group flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4 hover:border-emerald-300 hover:bg-white hover:shadow-sm transition-all">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 text-[11px] font-black text-slate-500 group-hover:border-emerald-200 group-hover:text-emerald-700"><?= htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="min-w-0 text-sm font-bold text-slate-800 truncate group-hover:text-slate-900"><?= htmlspecialchars((string) ($pin['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                            </a>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </section>
         <?php endif; ?>
@@ -490,7 +612,7 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                 <div class="flex flex-wrap gap-3">
                     <a href="<?= url('formations') ?>" class="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-blue-700 transition-colors">Ouvrir le catalogue</a>
                     <?php if (function_exists('can') && (can('training.update') || can('training.publish') || can('admin.access') || can('training.manage'))): ?>
-                    <a href="<?= url('admin/training/courses') ?>" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-800 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white">Admin formations</a>
+                    <a href="<?= url('back-office/ressources/training/courses') ?>" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-800 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white">Admin formations</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -583,7 +705,7 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                                 </p>
                             </a>
         
-                            <a href="/dossier-operateur/accreditation" class="p-8 hover:bg-slate-50 transition-all group text-balance">
+                            <a href="<?= url('dossier-operateur/accreditation') ?>" class="p-8 hover:bg-slate-50 transition-all group text-balance">
                                 <span class="text-[10px] font-mono font-bold text-slate-300 group-hover:text-blue-600 transition-colors">02</span>
                                 <h3 class="mt-4 text-[13px] font-black uppercase tracking-[0.1em] text-slate-900 leading-snug">Mettre à jour l’accréditation</h3>
                                 <p class="mt-4 text-[13px] text-slate-500 leading-relaxed font-medium">

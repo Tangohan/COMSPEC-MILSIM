@@ -11,7 +11,11 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\Validator;
 use App\Repositories\CommunityInvitationRepository;
+use App\Repositories\PersonnelAssignmentRepository;
+use App\Repositories\PersonnelJobRoleRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
@@ -30,7 +34,11 @@ final class InvitationAcceptController
         private RbacService $rbacService,
         private AuditService $auditService,
         private FeatureGateService $featureGate,
-        private EmailService $emailService
+        private EmailService $emailService,
+        private UnitRepository $unitRepository,
+        private PersonnelAssignmentRepository $personnelAssignmentRepository,
+        private PersonnelProfileRepository $personnelProfileRepository,
+        private PersonnelJobRoleRepository $personnelJobRoleRepository
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -136,6 +144,11 @@ final class InvitationAcceptController
                 'status' => 'active',
             ]);
         }
+        if (!$existingGlobal) {
+            $this->users->syncOrganizationRoles($newId, $tenantId, [$roleId]);
+        }
+
+        $this->applyInvitationPayload($tenantId, $newId, $inv);
 
         $this->invitations->markAccepted((int) $inv['id'], $newId);
         $this->auditService->log(AuditAction::INVITATION_ACCEPTED, $tenantId, $newId, 'invitation', (int) $inv['id']);
@@ -158,13 +171,64 @@ final class InvitationAcceptController
         $u = $this->users->findById($newId, $tenantId);
         if ($u) {
             $this->authService->loginUser($u);
-            $this->rbacService->setPermissionsForGate(
-                !empty($u['role_id']) ? (int) $u['role_id'] : null,
-                (string) ($u['email'] ?? '')
-            );
+            $this->rbacService->setPermissionsForGateFromUserRow($u, $this->users);
         }
         Session::flash('success', 'Bienvenue dans la communauté.');
 
         return Response::redirect(url('dashboard'));
+    }
+
+    /**
+     * Unité ORBAT + libellé d’affectation + rôle métier dossier, prévus sur l’invitation.
+     *
+     * @param array<string, mixed> $inv
+     */
+    private function applyInvitationPayload(int $tenantId, int $userId, array $inv): void
+    {
+        $raw = $inv['invitation_payload'] ?? null;
+        if ($raw === null || $raw === '') {
+            return;
+        }
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+        } else {
+            $decoded = is_array($raw) ? $raw : null;
+        }
+        if (!is_array($decoded)) {
+            return;
+        }
+
+        $unitId = isset($decoded['unit_id']) ? (int) $decoded['unit_id'] : 0;
+        $assignmentLabel = isset($decoded['assignment_label']) ? trim((string) $decoded['assignment_label']) : '';
+        if ($assignmentLabel === '') {
+            $assignmentLabel = 'Membre';
+        }
+        $jobRoleId = isset($decoded['personnel_job_role_id']) ? (int) $decoded['personnel_job_role_id'] : 0;
+
+        try {
+            if (
+                $jobRoleId > 0
+                && $this->personnelJobRoleRepository->tablesExist()
+                && $this->personnelJobRoleRepository->personnelProfilesHaveJobRoleColumns()
+            ) {
+                $jr = $this->personnelJobRoleRepository->findRoleById($jobRoleId, $tenantId);
+                if ($jr) {
+                    $this->personnelProfileRepository->ensureRecord($userId);
+                    $this->personnelProfileRepository->update($userId, ['personnel_job_role_id' => $jobRoleId]);
+                }
+            }
+            if ($unitId > 0) {
+                $u = $this->unitRepository->findById($unitId, $tenantId);
+                if ($u) {
+                    $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier(
+                        $userId,
+                        $unitId,
+                        mb_substr($assignmentLabel, 0, 120)
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('InvitationAcceptController::applyInvitationPayload: ' . $e->getMessage());
+        }
     }
 }

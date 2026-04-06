@@ -107,24 +107,100 @@ class ForumCategoryRepository
         $stmt->execute([$userId, $categoryId]);
     }
 
+    public function countChildren(int $categoryId, int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM forum_categories WHERE tenant_id = ? AND parent_id = ?');
+        $stmt->execute([$tenantId, $categoryId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countTopicsInCategory(int $categoryId, int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM forum_topics WHERE tenant_id = ? AND category_id = ?');
+        $stmt->execute([$tenantId, $categoryId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    private function hasScopeColumn(): bool
+    {
+        static $v = null;
+        if ($v === null) {
+            $s = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_categories' AND COLUMN_NAME = 'scope' LIMIT 1");
+            $v = $s && (bool) $s->fetchColumn();
+        }
+
+        return $v;
+    }
+
     public function create(int $tenantId, array $data): int
     {
-        $slug = $data['slug'] ?? $this->slugify((string) ($data['name'] ?? ''));
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO forum_categories (tenant_id, parent_id, name, slug, description, icon, color_theme, display_order, is_locked, min_role_id, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())'
-        );
-        $stmt->execute([
-            $tenantId,
-            isset($data['parent_id']) ? (int) $data['parent_id'] : null,
-            $data['name'] ?? '',
-            $slug,
-            $data['description'] ?? null,
-            $data['icon'] ?? null,
-            $data['color_theme'] ?? 'slate',
-            (int) ($data['display_order'] ?? 0),
-            isset($data['min_role_id']) ? (int) $data['min_role_id'] : null,
-        ]);
+        $name = trim((string) ($data['name'] ?? ''));
+        $slug = trim((string) ($data['slug'] ?? ''));
+        if ($slug === '') {
+            $slug = $this->slugify($name);
+        }
+        $parentId = isset($data['parent_id']) ? (int) $data['parent_id'] : 0;
+        $parentId = $parentId > 0 ? $parentId : null;
+
+        $scope = isset($data['scope']) ? trim((string) $data['scope']) : 'general';
+        if (!in_array($scope, ['general', 'organization', 'platform', 'moderation'], true)) {
+            $scope = 'general';
+        }
+
+        $ownerTenantId = null;
+        if ($parentId !== null) {
+            $parent = $this->findById($parentId, $tenantId);
+            if (!$parent || !empty($parent['parent_id'])) {
+                throw new \InvalidArgumentException('parent_id doit référencer une catégorie racine.');
+            }
+            $scope = (string) ($parent['scope'] ?? $scope);
+            if ($this->hasScopeColumn() === false) {
+                $scope = 'general';
+            }
+        } else {
+            if ($scope === 'organization') {
+                $ownerTenantId = isset($data['owner_tenant_id']) ? (int) $data['owner_tenant_id'] : $tenantId;
+            }
+        }
+
+        if ($this->hasScopeColumn()) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO forum_categories (tenant_id, parent_id, scope, owner_tenant_id, name, slug, description, icon, color_theme, display_order, is_locked, min_role_id, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())'
+            );
+            $stmt->execute([
+                $tenantId,
+                $parentId,
+                $scope,
+                $ownerTenantId,
+                $name,
+                $slug,
+                $data['description'] ?? null,
+                $data['icon'] ?? null,
+                $data['color_theme'] ?? 'slate',
+                (int) ($data['display_order'] ?? 0),
+                isset($data['min_role_id']) ? (int) $data['min_role_id'] : null,
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO forum_categories (tenant_id, parent_id, name, slug, description, icon, color_theme, display_order, is_locked, min_role_id, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())'
+            );
+            $stmt->execute([
+                $tenantId,
+                $parentId,
+                $name,
+                $slug,
+                $data['description'] ?? null,
+                $data['icon'] ?? null,
+                $data['color_theme'] ?? 'slate',
+                (int) ($data['display_order'] ?? 0),
+                isset($data['min_role_id']) ? (int) $data['min_role_id'] : null,
+            ]);
+        }
+
         return (int) $this->pdo->lastInsertId();
     }
 
@@ -135,7 +211,54 @@ class ForumCategoryRepository
             return false;
         }
         $name = $data['name'] ?? $cat['name'];
-        $slug = $data['slug'] ?? $cat['slug'] ?? $this->slugify($name);
+        $slug = $data['slug'] ?? $cat['slug'] ?? $this->slugify((string) $name);
+
+        if ($this->hasScopeColumn()) {
+            $scope = isset($data['scope']) ? trim((string) $data['scope']) : (string) ($cat['scope'] ?? 'general');
+            if (!in_array($scope, ['general', 'organization', 'platform', 'moderation'], true)) {
+                $scope = 'general';
+            }
+            $parentId = array_key_exists('parent_id', $data)
+                ? ((int) $data['parent_id'] > 0 ? (int) $data['parent_id'] : null)
+                : (isset($cat['parent_id']) && $cat['parent_id'] !== null && $cat['parent_id'] !== '' ? (int) $cat['parent_id'] : null);
+            if ($parentId !== null) {
+                if ($parentId === $id) {
+                    return false;
+                }
+                $parent = $this->findById($parentId, $tenantId);
+                if (!$parent || !empty($parent['parent_id'])) {
+                    return false;
+                }
+                $scope = (string) ($parent['scope'] ?? $scope);
+            }
+            $ownerTenantId = $cat['owner_tenant_id'] ?? null;
+            if ($parentId === null && $scope === 'organization') {
+                $ownerTenantId = isset($data['owner_tenant_id']) ? (int) $data['owner_tenant_id'] : $ownerTenantId;
+            }
+            if ($parentId !== null) {
+                $ownerTenantId = null;
+            }
+            $stmt = $this->pdo->prepare(
+                'UPDATE forum_categories SET parent_id = ?, scope = ?, owner_tenant_id = ?, name = ?, slug = ?, description = ?, icon = ?, color_theme = ?, display_order = ?, updated_at = NOW()
+                 WHERE id = ? AND tenant_id = ?'
+            );
+            $stmt->execute([
+                $parentId,
+                $scope,
+                $ownerTenantId,
+                $name,
+                $slug,
+                $data['description'] ?? $cat['description'],
+                $data['icon'] ?? $cat['icon'],
+                $data['color_theme'] ?? $cat['color_theme'] ?? 'slate',
+                isset($data['display_order']) ? (int) $data['display_order'] : (int) $cat['display_order'],
+                $id,
+                $tenantId,
+            ]);
+
+            return true;
+        }
+
         $stmt = $this->pdo->prepare(
             'UPDATE forum_categories SET name = ?, slug = ?, description = ?, icon = ?, color_theme = ?, display_order = ?, updated_at = NOW()
              WHERE id = ? AND tenant_id = ?'

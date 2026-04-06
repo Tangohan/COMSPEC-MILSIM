@@ -3,6 +3,7 @@ $title = $title ?? (config('forum.name') ?? 'Forum');
 $content = $content ?? 'forum.index';
 $baseUrl = url('');
 $forumConfig = $forumConfig ?? config('forum') ?? [];
+$forumContextMenuEnabled = !empty($forumContextMenuEnabled);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -27,6 +28,7 @@ $forumConfig = $forumConfig ?? config('forum') ?? [];
     <?php require base_path('views/partials/header_portal.php'); ?>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>
     <?php require base_path('views/partials/alert_banners.php'); ?>
+    <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <main class="min-h-[80vh] bg-[#f8fafc]">
         <?php
         $contentPath = str_replace('.', '/', $content);
@@ -39,10 +41,21 @@ $forumConfig = $forumConfig ?? config('forum') ?? [];
         ?>
     </main>
     <footer class="border-t border-slate-200 py-6 mt-12 bg-slate-50">
-        <div class="w-full px-4 sm:px-6 lg:px-8 text-center text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
-            <?= htmlspecialchars($forumConfig['name'] ?? 'Forum') ?> — <?= htmlspecialchars($forumConfig['subtitle'] ?? 'Athena') ?>
+        <div class="w-full px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-center gap-3 text-center text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
+            <span><?= htmlspecialchars($forumConfig['name'] ?? 'Forum') ?> — <?= htmlspecialchars($forumConfig['subtitle'] ?? 'Athena') ?></span>
+            <span class="hidden sm:inline text-slate-300 normal-case tracking-normal font-normal text-xs" aria-hidden="true">|</span>
+            <span class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 normal-case tracking-normal font-semibold text-[11px] max-w-full">
+                <?php
+                $legal_link_class = 'text-slate-600 hover:text-emerald-700';
+                require base_path('views/partials/legal_site_links.php');
+                ?>
+            </span>
         </div>
     </footer>
     <script src="<?= $baseUrl ?>/assets/js/forum/forum-app.js" defer></script>
+    <?php if ($forumContextMenuEnabled): ?>
+    <script src="<?= htmlspecialchars($baseUrl) ?>/assets/js/forum/forum_category_context.js" defer></script>
+    <?php endif; ?>
+    <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

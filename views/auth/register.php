@@ -1,248 +1,192 @@
+<?php
+$base = url('');
+$title = $title ?? 'Inscription';
+$active = 'register';
+?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="public-portal-day">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= htmlspecialchars($title ?? 'Inscription') ?> — Athena</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title><?= htmlspecialchars($title) ?> — Athena</title>
+    <?php $tailwindBaseUrl = $base; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/styles.css" rel="stylesheet">
+    <?php endif; ?>
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/public-portal-day.css" rel="stylesheet">
+    <style>
+        body.public-portal-day { font-family: Inter, system-ui, sans-serif; }
+    </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-white">
-    <div class="relative isolate flex min-h-screen items-center justify-center px-4 py-10">
+<body class="public-portal-day min-h-screen bg-white text-slate-900 antialiased flex flex-col">
 
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.18),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.12),transparent_28%)]"></div>
-        <div class="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,6,23,0.6),rgba(2,6,23,0.95))]"></div>
+<div class="absolute top-0 left-0 w-full h-1 bg-emerald-600 z-30" aria-hidden="true"></div>
+<div class="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_100%_55%_at_50%_-15%,rgba(16,185,129,0.07),transparent_52%)]" aria-hidden="true"></div>
 
-        <div class="relative z-10 w-full max-w-2xl">
-            <div class="mb-8 text-center">
-                <div class="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-300">
-                    Nouveau compte
-                </div>
+<?php require base_path('views/partials/public_portal_auth_frame.php'); ?>
 
-                <h1 class="mt-6 text-3xl font-black tracking-tight text-white">
-                    Créer un compte
-                </h1>
+<main class="relative z-10 flex-1 w-full px-4 py-10 sm:py-14 flex justify-center">
+    <div class="w-full max-w-2xl">
 
-                <p class="mt-3 text-sm text-slate-400 leading-6">
-                    Indiquez votre identité sur la plateforme et les informations de votre personnage role play. Le code d’unité ci-dessous ne sert que si vous en avez reçu un pour rejoindre une communauté sur Athena.
+        <div class="text-center mb-10">
+            <p class="text-[11px] font-black tracking-[0.45em] text-emerald-700/80 uppercase mb-3">Nouveau compte</p>
+            <div class="flex items-center justify-center gap-4 mb-4">
+                <span class="h-px w-10 bg-slate-200"></span>
+                <span class="text-2xl font-black italic tracking-tight uppercase text-slate-900">Forward</span>
+                <span class="h-px w-10 bg-slate-200"></span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Créer un compte opérateur</h1>
+            <p class="mt-3 text-sm text-slate-700 leading-relaxed max-w-lg mx-auto">
+                Identité affichée sur la plateforme et personnage RP de départ. Le code ci-dessous ne se remplit que si un responsable vous a invité à rejoindre une communauté.
+            </p>
+        </div>
+
+        <?php $err = \App\Core\Session::getFlash('error'); $ok = \App\Core\Session::getFlash('success'); ?>
+        <?php if ($err): ?>
+            <?php $flash_variant = 'error'; $flash_message = $err; $flash_margin_class = 'mb-8'; require base_path('views/partials/flash_message.php'); ?>
+        <?php endif; ?>
+        <?php if ($ok): ?>
+            <?php $flash_variant = 'success'; $flash_message = $ok; $flash_margin_class = 'mb-8'; require base_path('views/partials/flash_message.php'); ?>
+        <?php endif; ?>
+
+        <?php
+        $prefillCc = $prefill_community_code ?? '';
+        $prefillSlug = $prefill_tenant_slug ?? '';
+        ?>
+
+        <div class="bg-white border border-slate-200/90 rounded-[1.75rem] shadow-[0_20px_50px_-12px_rgba(15,23,42,0.12)] overflow-hidden ring-1 ring-slate-100">
+            <div class="px-6 sm:px-8 py-6 border-b border-slate-100 bg-emerald-50/35">
+                <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">Invitation (facultatif)</p>
+                <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                    <?php if ($prefillSlug !== ''): ?>
+                        Espace ciblé : <span class="font-semibold text-emerald-700"><?= htmlspecialchars($prefillSlug) ?></span>
+                        — le champ est prérempli si un code vous a été transmis.
+                    <?php else: ?>
+                        <strong class="text-slate-800">Sans code</strong>, laissez vide : le compte se crée normalement. Vous pourrez rejoindre une unité plus tard (invitation, lien, etc.).
+                    <?php endif; ?>
                 </p>
             </div>
 
-            <?php $err = \App\Core\Session::getFlash('error'); $ok = \App\Core\Session::getFlash('success'); ?>
-            <?php if ($err): ?>
-                <?php $flash_variant = 'error'; $flash_message = $err; $flash_surface = 'dark'; $flash_margin_class = 'mb-6'; require base_path('views/partials/flash_message.php'); ?>
-            <?php endif; ?>
-            <?php if ($ok): ?>
-                <?php $flash_variant = 'success'; $flash_message = $ok; $flash_surface = 'dark'; $flash_margin_class = 'mb-6'; require base_path('views/partials/flash_message.php'); ?>
-            <?php endif; ?>
+            <form method="post" action="<?= htmlspecialchars(url('register'), ENT_QUOTES, 'UTF-8') ?>" class="px-6 sm:px-8 py-8 space-y-6">
+                <?= \App\Core\Csrf::field() ?>
 
-            <?php
-            $prefillCc = $prefill_community_code ?? '';
-            $prefillSlug = $prefill_tenant_slug ?? '';
-            ?>
-
-            <div class="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.06] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-
-                <div class="border-b border-white/10 px-6 py-5">
-                    <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">
-                        Code d’unité ou d’invitation <span class="font-semibold normal-case tracking-normal text-slate-500">(facultatif)</span>
-                    </p>
-                    <div class="mt-3 space-y-2 text-sm text-slate-400 leading-relaxed">
-                        <?php if ($prefillSlug !== ''): ?>
-                            <p>
-                                Inscription associée à l’espace <span class="font-mono font-semibold text-emerald-300"><?= htmlspecialchars($prefillSlug) ?></span>
-                                — le champ ci-dessous est prérempli si un code vous a été transmis.
-                            </p>
-                        <?php else: ?>
-                            <p>
-                                Remplissez ce champ <strong class="font-semibold text-slate-300">uniquement</strong> si un responsable ou un lien vous a fourni un code pour rejoindre <em class="not-italic text-slate-300">leur</em> groupe sur Athena.
-                            </p>
-                            <p>
-                                <strong class="font-semibold text-slate-300">Pas de code ?</strong> Laissez vide : le compte se crée quand même. Vous pourrez rejoindre une unité plus tard (invitation, nouveau code, etc.).
-                            </p>
-                            <p class="text-xs text-slate-500">
-                                Exemple de format souvent utilisé :
-                                <span class="inline-flex items-center rounded-md bg-emerald-400/10 px-2 py-0.5 font-mono text-emerald-300 ring-1 ring-emerald-400/20">UNIT-ALPHA</span>
-                            </p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <form method="post" action="<?= htmlspecialchars(url('register'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-5 px-6 py-6">
-                    <?= \App\Core\Csrf::field() ?>
-
-                    <div class="space-y-2">
-                        <label class="block text-[11px] font-black uppercase tracking-[0.22em] text-slate-400" for="community_code">Code reçu (si applicable)</label>
-                        <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-2 ring-1 ring-white/5 focus-within:border-emerald-400/40 focus-within:ring-emerald-400/20 transition">
-                            <input
-                                id="community_code"
-                                type="text"
-                                name="community_code"
-                                value="<?= htmlspecialchars((string) $prefillCc, ENT_QUOTES, 'UTF-8') ?>"
-                                maxlength="64"
-                                placeholder="UNIT-ALPHA"
-                                autocomplete="off"
-                                class="w-full bg-transparent px-3 py-3 text-sm font-mono font-semibold tracking-wide uppercase text-white outline-none placeholder:text-slate-500"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="block text-[11px] font-black uppercase tracking-[0.22em] text-slate-400" for="email">E-mail</label>
-                        <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-2 ring-1 ring-white/5 focus-within:border-emerald-400/40 focus-within:ring-emerald-400/20 transition">
-                            <input
-                                id="email"
-                                type="email"
-                                name="email"
-                                required
-                                autocomplete="email"
-                                placeholder="operateur@exemple.fr"
-                                class="w-full bg-transparent px-3 py-3 text-sm font-semibold text-white outline-none placeholder:text-slate-500"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="block text-[11px] font-black uppercase tracking-[0.22em] text-slate-400" for="display_name">Nom affiché (compte)</label>
-                        <p class="text-xs text-slate-500">Nom public visible sur la plateforme (2 à 100 caractères).</p>
-                        <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-2 ring-1 ring-white/5 focus-within:border-emerald-400/40 focus-within:ring-emerald-400/20 transition">
-                            <input
-                                id="display_name"
-                                type="text"
-                                name="display_name"
-                                required
-                                minlength="2"
-                                maxlength="100"
-                                autocomplete="nickname"
-                                placeholder="Votre nom ou pseudo plateforme"
-                                class="w-full bg-transparent px-3 py-3 text-sm font-semibold text-white outline-none placeholder:text-slate-500"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="block text-[11px] font-black uppercase tracking-[0.22em] text-slate-400" for="password">Mot de passe</label>
-                        <p class="text-xs text-slate-500">Minimum 8 caractères.</p>
-                        <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-2 ring-1 ring-white/5 focus-within:border-emerald-400/40 focus-within:ring-emerald-400/20 transition">
-                            <input
-                                id="password"
-                                type="password"
-                                name="password"
-                                required
-                                minlength="8"
-                                autocomplete="new-password"
-                                placeholder="••••••••"
-                                class="w-full bg-transparent px-3 py-3 text-sm text-white outline-none placeholder:text-slate-500"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="block text-[11px] font-black uppercase tracking-[0.22em] text-slate-400" for="password_confirmation">Confirmation</label>
-                        <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-2 ring-1 ring-white/5 focus-within:border-emerald-400/40 focus-within:ring-emerald-400/20 transition">
-                            <input
-                                id="password_confirmation"
-                                type="password"
-                                name="password_confirmation"
-                                required
-                                minlength="8"
-                                autocomplete="new-password"
-                                placeholder="••••••••"
-                                class="w-full bg-transparent px-3 py-3 text-sm text-white outline-none placeholder:text-slate-500"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 px-4 py-4">
-                        <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-300/90 mb-4">
-                            Personnage role play
-                        </p>
-                        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-                            Ces identifiants constituent votre fiche opérationnelle de départ ; vous pourrez la compléter plus tard dans le dossier personnel.
-                        </p>
-                        <div class="space-y-4">
-                            <div class="space-y-2">
-                                <label class="block text-[11px] font-black uppercase tracking-[0.22em] text-slate-400" for="character_name">Nom opérateur / RP</label>
-                                <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-2 ring-1 ring-white/5 focus-within:border-emerald-400/40 focus-within:ring-emerald-400/20 transition">
-                                    <input
-                                        id="character_name"
-                                        type="text"
-                                        name="character_name"
-                                        required
-                                        minlength="2"
-                                        maxlength="150"
-                                        autocomplete="off"
-                                        placeholder="Nom de votre personnage"
-                                        class="w-full bg-transparent px-3 py-3 text-sm font-semibold text-white outline-none placeholder:text-slate-500"
-                                    >
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="block text-[11px] font-black uppercase tracking-[0.22em] text-slate-400" for="callsign">Callsign</label>
-                                <p class="text-xs text-slate-500">Unique dans la communauté (2 à 50 caractères).</p>
-                                <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-2 ring-1 ring-white/5 focus-within:border-emerald-400/40 focus-within:ring-emerald-400/20 transition">
-                                    <input
-                                        id="callsign"
-                                        type="text"
-                                        name="callsign"
-                                        required
-                                        minlength="2"
-                                        maxlength="50"
-                                        autocomplete="off"
-                                        placeholder="E-10"
-                                        class="w-full bg-transparent px-3 py-3 text-sm font-mono font-semibold tracking-wide text-white outline-none placeholder:text-slate-500"
-                                    >
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="block text-[11px] font-black uppercase tracking-[0.22em] text-slate-400" for="primary_role">Rôle principal</label>
-                                <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-2 ring-1 ring-white/5 focus-within:border-emerald-400/40 focus-within:ring-emerald-400/20 transition">
-                                    <input
-                                        id="primary_role"
-                                        type="text"
-                                        name="primary_role"
-                                        required
-                                        minlength="2"
-                                        maxlength="100"
-                                        autocomplete="off"
-                                        placeholder="Fusilier, médic, JTAC…"
-                                        class="w-full bg-transparent px-3 py-3 text-sm font-semibold text-white outline-none placeholder:text-slate-500"
-                                    >
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="block text-[11px] font-black uppercase tracking-[0.22em] text-slate-400" for="secondary_role">Rôle secondaire <span class="font-semibold normal-case tracking-normal text-slate-500">(facultatif)</span></label>
-                                <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-2 ring-1 ring-white/5 focus-within:border-emerald-400/40 focus-within:ring-emerald-400/20 transition">
-                                    <input
-                                        id="secondary_role"
-                                        type="text"
-                                        name="secondary_role"
-                                        maxlength="100"
-                                        autocomplete="off"
-                                        placeholder="…"
-                                        class="w-full bg-transparent px-3 py-3 text-sm font-semibold text-white outline-none placeholder:text-slate-500"
-                                    >
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button
-                        type="submit"
-                        class="w-full rounded-2xl bg-emerald-600 px-6 py-3.5 text-sm font-black uppercase tracking-[0.18em] text-white transition hover:bg-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-400/20"
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="community_code">Code reçu (si applicable)</label>
+                    <input
+                        id="community_code"
+                        type="text"
+                        name="community_code"
+                        value="<?= htmlspecialchars((string) $prefillCc, ENT_QUOTES, 'UTF-8') ?>"
+                        maxlength="64"
+                        placeholder="Ex. UNIT-ALPHA"
+                        autocomplete="off"
+                        class="w-full bg-white border-2 border-slate-200 px-4 py-3.5 rounded-2xl text-sm font-semibold tracking-wide uppercase text-slate-900 placeholder:text-slate-400 placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors shadow-inner shadow-slate-100/60"
                     >
-                        S’inscrire
-                    </button>
-                </form>
-
-                <div class="border-t border-white/10 px-6 py-4 text-center text-sm text-slate-500">
-                    <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-slate-400 hover:text-white transition">
-                        Déjà un compte ? Connexion
-                    </a>
                 </div>
+
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="email">E-mail</label>
+                    <input
+                        id="email"
+                        type="email"
+                        name="email"
+                        required
+                        autocomplete="email"
+                        placeholder="operateur@exemple.fr"
+                        class="w-full bg-white border-2 border-slate-200 px-4 py-3.5 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors shadow-inner shadow-slate-100/60"
+                    >
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="display_name">Nom affiché</label>
+                    <p class="text-xs text-slate-500 ml-1">Visible sur la plateforme (2 à 100 caractères).</p>
+                    <input
+                        id="display_name"
+                        type="text"
+                        name="display_name"
+                        required
+                        minlength="2"
+                        maxlength="100"
+                        autocomplete="nickname"
+                        placeholder="Votre nom ou pseudo"
+                        class="w-full bg-white border-2 border-slate-200 px-4 py-3.5 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors shadow-inner shadow-slate-100/60"
+                    >
+                </div>
+
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="password">Mot de passe</label>
+                        <input
+                            id="password"
+                            type="password"
+                            name="password"
+                            required
+                            minlength="8"
+                            autocomplete="new-password"
+                            placeholder="••••••••"
+                            class="w-full bg-white border-2 border-slate-200 px-4 py-3.5 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors shadow-inner shadow-slate-100/60"
+                        >
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="password_confirmation">Confirmation</label>
+                        <input
+                            id="password_confirmation"
+                            type="password"
+                            name="password_confirmation"
+                            required
+                            minlength="8"
+                            autocomplete="new-password"
+                            placeholder="••••••••"
+                            class="w-full bg-white border-2 border-slate-200 px-4 py-3.5 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors shadow-inner shadow-slate-100/60"
+                        >
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 -mt-2">Au moins 8 caractères.</p>
+
+                <div class="rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 to-white p-5 sm:p-6">
+                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-800/90 mb-1">Personnage role play</p>
+                    <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+                        Nom d’opérateur / RP de départ. Callsign, grade et affectation se complètent ensuite dans le dossier personnel.
+                    </p>
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="character_name">Nom opérateur / RP</label>
+                        <input
+                            id="character_name"
+                            type="text"
+                            name="character_name"
+                            required
+                            minlength="2"
+                            maxlength="150"
+                            autocomplete="off"
+                            placeholder="Nom de votre personnage"
+                            class="w-full bg-white border border-emerald-100 px-4 py-3.5 rounded-2xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-colors"
+                        >
+                    </div>
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full rounded-2xl bg-slate-900 py-4 text-[11px] font-black uppercase tracking-[0.28em] text-white shadow-lg shadow-slate-200/80 transition-all hover:bg-emerald-600 hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-emerald-500/15"
+                >
+                    Valider l’inscription
+                </button>
+            </form>
+
+            <div class="px-6 sm:px-8 py-5 border-t border-slate-100 bg-slate-50/70 text-center">
+                <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors">
+                    Déjà un compte ? Connexion
+                </a>
+                <p class="mt-3 text-xs text-slate-500">
+                    Pas encore de communauté ?
+                    <a href="<?= htmlspecialchars(url('join'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 hover:underline">Utiliser un code d’accès</a>
+                </p>
             </div>
         </div>
     </div>
+</main>
+
+<?php require base_path('views/partials/public_portal_auth_footer.php'); ?>
+
 </body>
 </html>

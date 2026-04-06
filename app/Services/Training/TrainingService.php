@@ -9,6 +9,7 @@ use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingLessonRepository;
 use App\Repositories\TrainingModuleRepository;
 use App\Repositories\TrainingProgressRepository;
+use App\Repositories\TrainingQuizRepository;
 
 class TrainingService
 {
@@ -17,7 +18,8 @@ class TrainingService
         private TrainingModuleRepository $moduleRepository,
         private TrainingLessonRepository $lessonRepository,
         private TrainingEnrollmentRepository $enrollmentRepository,
-        private TrainingProgressRepository $progressRepository
+        private TrainingProgressRepository $progressRepository,
+        private TrainingQuizRepository $quizRepository
     ) {}
 
     /** Catalogue : formations publiées pour le tenant, avec statut d'enrollment si userId fourni. */
@@ -52,7 +54,9 @@ class TrainingService
         }
         $modules = $this->moduleRepository->listByCourseId($courseId);
         foreach ($modules as $j => $mod) {
-            $modules[$j]['lessons'] = $this->lessonRepository->listByModuleId((int) $mod['id']);
+            $mid = (int) $mod['id'];
+            $modules[$j]['lessons'] = $this->lessonRepository->listByModuleId($mid);
+            $modules[$j]['quizzes'] = $this->quizRepository->listQuizzesByModuleId($mid);
         }
         $course['modules'] = $modules;
         return $course;
@@ -79,7 +83,12 @@ class TrainingService
             return false;
         }
         $enrollment = $this->enrollmentRepository->findByCourseAndUser($courseId, $userId);
-        return $enrollment !== null && !in_array($enrollment['status'], ['revoked', 'expired'], true);
+        if ($enrollment === null) {
+            return false;
+        }
+        $st = (string) ($enrollment['status'] ?? '');
+
+        return !in_array($st, ['revoked', 'expired', 'pending_approval'], true);
     }
 
     /** Pourcentage global de progression (leçons complétées / total). */

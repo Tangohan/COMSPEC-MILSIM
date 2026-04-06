@@ -1,0 +1,401 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * @return array{accent?:string,accentRgb?:string,font?:string,radius?:string,variant?:string}
+ */
+function training_lms_parse_theme(?string $json): array
+{
+    if ($json === null || trim($json) === '') {
+        return [];
+    }
+    $d = json_decode($json, true);
+    if (!is_array($d)) {
+        return [];
+    }
+    $out = [];
+    foreach (['accent', 'accentRgb', 'font', 'radius', 'variant'] as $k) {
+        if (isset($d[$k]) && is_string($d[$k])) {
+            $out[$k] = $d[$k];
+        }
+    }
+
+    return $out;
+}
+
+/** Attributs style inline pour :root (échapper les valeurs côté appel). */
+function training_lms_theme_css_vars(array $theme): string
+{
+    $accent = $theme['accent'] ?? '#10b981';
+    $rgb = $theme['accentRgb'] ?? '16, 185, 129';
+    $font = $theme['font'] ?? 'Inter, system-ui, sans-serif';
+    $radius = $theme['radius'] ?? '2rem';
+
+    return '--lms-accent: ' . $accent . '; --lms-accent-rgb: ' . $rgb . '; --lms-font: ' . $font . '; --lms-radius: ' . $radius . ';';
+}
+
+/**
+ * @param array<string, mixed> $course
+ * @return list<string>
+ */
+function training_lms_learning_objectives(array $course): array
+{
+    $raw = $course['learning_objectives'] ?? null;
+    if ($raw === null || $raw === '') {
+        return [];
+    }
+    if (is_string($raw)) {
+        $j = json_decode($raw, true);
+        if (is_array($j)) {
+            return array_values(array_filter(array_map(static fn ($x) => is_string($x) ? trim($x) : '', $j)));
+        }
+        $lines = preg_split('/\r\n|\r|\n/', $raw) ?: [];
+
+        return array_values(array_filter(array_map('trim', $lines)));
+    }
+
+    return [];
+}
+
+/**
+ * Libellés français pour les types de leçon (clé technique = valeur affichée).
+ *
+ * @return array<string, string>
+ */
+function training_lesson_type_labels_fr(): array
+{
+    return [
+        'richtext' => 'Texte enrichi',
+        'video' => 'Vidéo (URL fichier directe)',
+        'video_integrated' => 'Vidéo intégrée (MP4 / WebM)',
+        'video_embed' => 'Vidéo intégrée (YouTube / Vimeo)',
+        'pdf' => 'Document PDF',
+        'audio' => 'Audio',
+        'scorm_like' => 'Paquet SCORM',
+        'checklist' => 'Liste de contrôle',
+        'external_link' => 'Lien externe',
+        'canvas' => 'Parcours visuel (slides & modales)',
+        'quiz' => 'Quiz',
+        'modals' => 'Modales',
+        'slideshow' => 'Diaporama',
+    ];
+}
+
+/**
+ * Regroupement des types pour les listes déroulantes (ordre d’affichage).
+ *
+ * @return array<string, list<string>>
+ */
+function training_lesson_type_optgroups(): array
+{
+    return [
+        'Texte & pages' => ['richtext', 'checklist'],
+        'Vidéo & audio' => ['video', 'video_integrated', 'video_embed', 'audio'],
+        'Documents & liens' => ['pdf', 'external_link'],
+        'Parcours & SCORM' => ['canvas', 'scorm_like'],
+        'Interactif (quiz, modales, diaporama)' => ['quiz', 'modals', 'slideshow'],
+    ];
+}
+
+/**
+ * Niveaux de difficulté (alignés sur training_courses.level).
+ *
+ * @return array<string, string>
+ */
+function training_course_level_labels_fr(): array
+{
+    return [
+        'initiation' => 'Initiation',
+        'intermediaire' => 'Intermédiaire',
+        'avance' => 'Avancé',
+        'expert' => 'Expert',
+    ];
+}
+
+/**
+ * Toutes les leçons du parcours dans l’ordre des modules (liste plate).
+ *
+ * @param array<string, mixed> $course Résultat de getCourseWithStructure
+ * @return list<array<string, mixed>>
+ */
+function training_lms_ordered_lessons(array $course): array
+{
+    $out = [];
+    foreach ($course['modules'] ?? [] as $mod) {
+        foreach ($mod['lessons'] ?? [] as $l) {
+            $out[] = $l;
+        }
+    }
+
+    return $out;
+}
+
+/**
+ * Première leçon non terminée (progression ≠ completed), ou null si tout est fait.
+ *
+ * @param list<array<string, mixed>> $orderedLessons
+ * @param list<array<string, mixed>> $progressRows training_progress + métadonnées
+ */
+function training_lms_next_incomplete_lesson(array $orderedLessons, array $progressRows): ?array
+{
+    $statusByLesson = [];
+    foreach ($progressRows as $p) {
+        $lid = (int) ($p['lesson_id'] ?? 0);
+        if ($lid > 0) {
+            $statusByLesson[$lid] = (string) ($p['status'] ?? '');
+        }
+    }
+    foreach ($orderedLessons as $l) {
+        $lid = (int) ($l['id'] ?? 0);
+        if ($lid < 1) {
+            continue;
+        }
+        $st = $statusByLesson[$lid] ?? 'not_started';
+        if ($st !== 'completed') {
+            return $l;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Libellé français pour une action du journal d’audit formations (training_audit_log.action).
+ */
+function training_audit_action_label_fr(string $action): string
+{
+    static $map = [
+        'course_created' => 'Formation créée',
+        'course_updated' => 'Formation modifiée',
+        'course_published' => 'Formation publiée',
+        'enrollment_assigned' => 'Inscription assignée',
+        'lesson_completed' => 'Leçon terminée',
+        'quiz_attempt_submitted' => 'Tentative de quiz soumise',
+        'certificate_issued' => 'Certificat délivré',
+        'certificate_revoked' => 'Certificat révoqué',
+    ];
+
+    return $map[$action] ?? $action;
+}
+
+/**
+ * Libellé français pour un type de cible (training_audit_log.target_type).
+ */
+function training_audit_target_type_label_fr(string $targetType): string
+{
+    static $map = [
+        'training_course' => 'Formation',
+        'training_enrollment' => 'Inscription',
+        'training_progress' => 'Progression',
+        'training_quiz_attempt' => 'Tentative de quiz',
+        'training_certificate' => 'Certificat',
+    ];
+
+    return $map[$targetType] ?? $targetType;
+}
+
+/** Masque une URL pour l’aperçu caviardé (aucune fuite de cible réelle). */
+function training_preview_redact_url(?string $url): string
+{
+    if ($url === null || trim($url) === '') {
+        return '—';
+    }
+
+    return 'https://•••••••••••••••••••••••••••••••';
+}
+
+/**
+ * Objectifs pédagogiques stockés en JSON, texte multi-lignes ou vide.
+ *
+ * @return list<string>
+ */
+function training_lms_objectives_list_from_storage(?string $raw): array
+{
+    if ($raw === null || trim($raw) === '') {
+        return [];
+    }
+    $raw = trim($raw);
+    $j = json_decode($raw, true);
+    if (is_array($j)) {
+        return array_values(array_filter(array_map(static fn ($x) => is_string($x) ? trim($x) : '', $j), static fn (string $s): bool => $s !== ''));
+    }
+    $lines = preg_split('/\r\n|\r|\n/', $raw) ?: [];
+
+    return array_values(array_filter(array_map(static fn (string $s): string => trim($s), $lines), static fn (string $s): bool => $s !== ''));
+}
+
+/**
+ * @return array<string, string> clé technique => valeur CSS font-family
+ */
+function training_lms_theme_font_presets(): array
+{
+    return [
+        'inter' => 'Inter, system-ui, sans-serif',
+        'system' => 'system-ui, sans-serif',
+        'serif' => 'Georgia, Cambria, "Times New Roman", serif',
+        'mono' => 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    ];
+}
+
+/**
+ * @return array<string, string> clé technique => libellé français (studio)
+ */
+function training_lms_theme_font_labels_fr(): array
+{
+    return [
+        'inter' => 'Sans empattement (Inter)',
+        'system' => 'Police du système',
+        'serif' => 'Avec empattement',
+        'mono' => 'Style technique (monospace)',
+    ];
+}
+
+/**
+ * @return array<string, string> clé => valeur CSS (border-radius global du parcours)
+ */
+function training_lms_theme_radius_presets(): array
+{
+    return [
+        'generous' => '2rem',
+        'medium' => '1rem',
+        'tight' => '0.5rem',
+    ];
+}
+
+/**
+ * @return array<string, string>
+ */
+function training_lms_theme_radius_labels_fr(): array
+{
+    return [
+        'generous' => 'Très arrondi',
+        'medium' => 'Modéré',
+        'tight' => 'Discret',
+    ];
+}
+
+/**
+ * @return array<string, string> clé => libellé (variante d’ambiance, extension future du thème)
+ */
+function training_lms_theme_variant_labels_fr(): array
+{
+    return [
+        'default' => 'Standard',
+        'soft' => 'Plus doux',
+    ];
+}
+
+/** Convertit #RRGGBB (ou RRGGBB) en « r, g, b » pour les variables CSS. */
+function training_lms_hex_to_rgb_csv(string $hex): string
+{
+    $hex = trim($hex);
+    $hex = ltrim($hex, '#');
+    if (strlen($hex) === 3) {
+        $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+    }
+    if (strlen($hex) !== 6 || !ctype_xdigit($hex)) {
+        return '16, 185, 129';
+    }
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
+
+    return $r . ', ' . $g . ', ' . $b;
+}
+
+function training_lms_theme_font_key_from_css(?string $css): string
+{
+    $css = trim((string) $css);
+    foreach (training_lms_theme_font_presets() as $k => $v) {
+        if ($v === $css) {
+            return $k;
+        }
+    }
+
+    return 'inter';
+}
+
+function training_lms_theme_radius_key_from_value(?string $radius): string
+{
+    $radius = trim((string) $radius);
+    foreach (training_lms_theme_radius_presets() as $k => $v) {
+        if ($v === $radius) {
+            return $k;
+        }
+    }
+
+    return 'generous';
+}
+
+/**
+ * Statuts de compte (users.status) proposés pour la politique d’auto-inscription — valeurs BDD en clé.
+ *
+ * @return array<string, string>
+ */
+function training_lms_enrollment_user_status_labels_fr(): array
+{
+    return [
+        'active' => 'Compte actif',
+        'pending_verification' => 'En attente de confirmation de l’e-mail',
+        'pending' => 'Compte en attente (autre)',
+    ];
+}
+
+/**
+ * Types de ressources pédagogiques (training_resources.resource_type) — libellés studio / apprenant.
+ *
+ * @return array<string, string>
+ */
+function training_lms_resource_type_labels_fr(): array
+{
+    return [
+        'link' => 'Lien web',
+        'pdf' => 'Document PDF',
+        'video' => 'Vidéo',
+        'audio' => 'Audio',
+        'image' => 'Image',
+        'zip' => 'Archive',
+        'attachment' => 'Fichier joint',
+    ];
+}
+
+/**
+ * @param array<string, mixed> $policy Décodage de enrollment_policy_json
+ */
+function training_lms_policy_comments_enabled(array $policy): bool
+{
+    if (!array_key_exists('comments_enabled', $policy)) {
+        return true;
+    }
+
+    return $policy['comments_enabled'] === true || $policy['comments_enabled'] === 1 || $policy['comments_enabled'] === '1';
+}
+
+/**
+ * @param array<string, mixed> $policy
+ */
+function training_lms_policy_self_enroll_requires_approval(array $policy): bool
+{
+    return !empty($policy['self_enroll_requires_approval']);
+}
+
+/** Normalise un code saisi (majuscules, alphanumérique). */
+function training_lms_normalize_share_code(string $raw): string
+{
+    $s = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $raw) ?? '');
+
+    return $s;
+}
+
+/** Code court unique (évite O/0 et I/1 pour la lecture à voix). */
+function training_lms_generate_enrollment_share_code(): string
+{
+    $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    $out = '';
+    for ($i = 0; $i < 10; $i++) {
+        $out .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+    }
+
+    return $out;
+}

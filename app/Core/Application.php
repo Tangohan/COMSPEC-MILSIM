@@ -30,6 +30,7 @@ class Application
         \App\Core\Session::start();
         $runner = fn (\App\Core\Request $req): \App\Core\Response => $this->router->dispatch();
         $global = [
+            new \App\Middleware\ComspecTacticalApiMiddleware(),
             new \App\Middleware\SecurityHeadersMiddleware(),
             new \App\Middleware\RateLimitMiddleware(),
         ];

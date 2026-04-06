@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Core\Csrf;
 use App\Repositories\ForumCategoryRepository;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumPostRepository;
@@ -36,22 +38,38 @@ class ForumController
             return Response::redirect(url('login'));
         }
 
-        $categories = $this->categoryRepository->listForTenant($tenantId);
-        $categories = $this->profilePublicIdentityService->enrichCategoryRowsWithLastAuthor(
-            $categories,
-            $this->forumAuthorIdentityRepository,
-            (int) $tenantId
-        );
+        $tree = $this->categoryRepository->listForTenantWithChildren($tenantId);
+        if (function_exists('forum_filter_category_tree_for_user')) {
+            $tree = forum_filter_category_tree_for_user($tree, (int) $userId);
+        }
         $forumGeneralCategories = [];
         $forumOrganizationCategories = [];
-        foreach ($categories as $c) {
+        $forumModerationCategories = [];
+        foreach ($tree as $c) {
             $scope = $c['scope'] ?? 'general';
             if ($scope === 'organization') {
                 $forumOrganizationCategories[] = $c;
+            } elseif ($scope === 'moderation') {
+                $forumModerationCategories[] = $c;
             } else {
                 $forumGeneralCategories[] = $c;
             }
         }
+        $forumGeneralCategories = $this->profilePublicIdentityService->enrichCategoryRowsWithLastAuthor(
+            $forumGeneralCategories,
+            $this->forumAuthorIdentityRepository,
+            (int) $tenantId
+        );
+        $forumOrganizationCategories = $this->profilePublicIdentityService->enrichCategoryRowsWithLastAuthor(
+            $forumOrganizationCategories,
+            $this->forumAuthorIdentityRepository,
+            (int) $tenantId
+        );
+        $forumModerationCategories = $this->profilePublicIdentityService->enrichCategoryRowsWithLastAuthor(
+            $forumModerationCategories,
+            $this->forumAuthorIdentityRepository,
+            (int) $tenantId
+        );
         $topicCount = $this->topicRepository->getTotalTopicCount($tenantId);
         $postCount = $this->postRepository->getTotalPostCount($tenantId);
         $postsThisWeek = $this->postRepository->getPostsThisWeekCount($tenantId);
@@ -93,7 +111,7 @@ class ForumController
         $pinnedAnnouncements = [];
         $announcementsCategory = null;
         foreach ($forumGeneralCategories as $cat) {
-            if ($cat['slug'] === 'annonces') {
+            if (($cat['slug'] ?? '') === 'annonces') {
                 $announcementsCategory = $cat;
                 break;
             }
@@ -108,13 +126,25 @@ class ForumController
         }
 
         $forumCfg = forum_config_for_tenant((int) $tenantId);
+        $gate = Gate::getInstance();
+        $forumCanCreateSubcategory = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
+        $forumFullCategoryAdmin = $gate->allows('admin.access')
+            || (function_exists('can') && can('forum.categories.manage'));
+        $forumContextMenuEnabled = $forumCanCreateSubcategory || $forumFullCategoryAdmin;
 
         return Response::view('layout.forum', [
             'content' => 'forum.index',
             'title' => $forumCfg['name'] ?? 'Forum',
             'forumConfig' => $forumCfg,
+            'forumCanCreateSubcategory' => $forumCanCreateSubcategory,
+            'forumFullCategoryAdmin' => $forumFullCategoryAdmin,
+            'forumContextMenuEnabled' => $forumContextMenuEnabled,
+            'forumCsrfToken' => Csrf::token(),
+            'forumCategoriesApiUrl' => url('api/admin/forum-categories'),
+            'forumAdminForumConfigUrl' => url('admin/forum-config'),
             'categories' => $forumGeneralCategories,
             'forumOrganizationCategories' => $forumOrganizationCategories,
+            'forumModerationCategories' => $forumModerationCategories,
             'topicCount' => $topicCount,
             'postCount' => $postCount,
             'postsThisWeek' => $postsThisWeek,

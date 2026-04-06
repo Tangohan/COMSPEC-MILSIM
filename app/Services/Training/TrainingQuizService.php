@@ -24,6 +24,9 @@ class TrainingQuizService
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
             throw new \InvalidArgumentException('Enrollment not found or access denied.');
         }
+        if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired', 'pending_approval'], true)) {
+            throw new \InvalidArgumentException('Accès au quiz indisponible pour cette inscription.');
+        }
         $quiz = $this->quizRepository->findQuizById($quizId);
         if (!$quiz) {
             throw new \InvalidArgumentException('Quiz not found.');
@@ -65,6 +68,9 @@ class TrainingQuizService
         $enrollment = $this->enrollmentRepository->findById((int) $attempt['enrollment_id'], $tenantId);
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
             throw new \InvalidArgumentException('Access denied.');
+        }
+        if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired', 'pending_approval'], true)) {
+            throw new \InvalidArgumentException('Accès au quiz indisponible pour cette inscription.');
         }
         $quiz = $this->quizRepository->findQuizById((int) $attempt['quiz_id']);
         if (!$quiz) {

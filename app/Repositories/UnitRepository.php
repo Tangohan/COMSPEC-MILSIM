@@ -69,6 +69,176 @@ class UnitRepository
         return $out;
     }
 
+    /**
+     * Effectif par unité : union de user_units, personnel_assignments et personnel_profiles.primary_unit_id
+     * (utilisateurs actifs distincts).
+     *
+     * @return array<int, int> unit_id => nombre de membres
+     */
+    public function countDistinctMembersByUnitForTenant(int $tenantId): array
+    {
+        [$inner, $params] = $this->memberUnionSql($tenantId);
+        $sql = 'SELECT unit_id, COUNT(DISTINCT user_id) AS c FROM (' . $inner . ') t WHERE unit_id IS NOT NULL GROUP BY unit_id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $out[(int) $row['unit_id']] = (int) $row['c'];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Membres affichables par unité (libellé + id), pour ORBAT / listes.
+     *
+     * @return array<int, list<array{user_id: int, label: string}>>
+     */
+    public function rosterMembersByUnitForTenant(int $tenantId, int $maxPerUnit = 40): array
+    {
+        [$inner, $params] = $this->memberUnionSql($tenantId);
+        $sql = 'SELECT DISTINCT unit_id, user_id FROM (' . $inner . ') t WHERE unit_id IS NOT NULL';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $byUnit = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $uid = (int) $row['unit_id'];
+            $userId = (int) $row['user_id'];
+            if (!isset($byUnit[$uid])) {
+                $byUnit[$uid] = [];
+            }
+            $byUnit[$uid][$userId] = true;
+        }
+        $allIds = [];
+        foreach ($byUnit as $unitId => $map) {
+            $keys = array_keys($map);
+            sort($keys);
+            $byUnit[$unitId] = array_slice($keys, 0, $maxPerUnit);
+            foreach ($byUnit[$unitId] as $id) {
+                $allIds[(int) $id] = true;
+            }
+        }
+        $labels = $this->batchUserLabelsForTenant($tenantId, array_keys($allIds));
+        $out = [];
+        foreach ($byUnit as $unitId => $userIds) {
+            $list = [];
+            foreach ($userIds as $userId) {
+                $userId = (int) $userId;
+                $list[] = [
+                    'user_id' => $userId,
+                    'label' => $labels[$userId] ?? ('#' . $userId),
+                ];
+            }
+            $out[(int) $unitId] = $list;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Chef d’unité (commander_user_id) → libellé affichable.
+     *
+     * @param list<array<string, mixed>> $unitsFlat
+     * @return array<int, string> unit_id => label
+     */
+    public function commanderLabelByUnitForTenant(int $tenantId, array $unitsFlat): array
+    {
+        $need = [];
+        foreach ($unitsFlat as $u) {
+            $cid = (int) ($u['commander_user_id'] ?? 0);
+            if ($cid > 0) {
+                $need[$cid] = true;
+            }
+        }
+        $ids = array_keys($need);
+        $labels = $ids !== [] ? $this->batchUserLabelsForTenant($tenantId, $ids) : [];
+        $out = [];
+        foreach ($unitsFlat as $u) {
+            $id = (int) ($u['id'] ?? 0);
+            $cid = (int) ($u['commander_user_id'] ?? 0);
+            $out[$id] = $cid > 0 ? ($labels[$cid] ?? '—') : '—';
+        }
+
+        return $out;
+    }
+
+    /** @param list<array<string, mixed>> $nodes */
+    public static function flattenTree(array $nodes): array
+    {
+        $out = [];
+        foreach ($nodes as $n) {
+            $out[] = $n;
+            if (!empty($n['children']) && is_array($n['children'])) {
+                $out = array_merge($out, self::flattenTree($n['children']));
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array{0: string, 1: array<int, mixed>}
+     */
+    private function memberUnionSql(int $tenantId): array
+    {
+        $subqueries = [];
+        $params = [];
+        $subqueries[] = 'SELECT uu.unit_id, uu.user_id FROM user_units uu INNER JOIN users u ON u.id = uu.user_id AND u.tenant_id = ? WHERE u.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())';
+        $params[] = $tenantId;
+        if ($this->tableExists('personnel_assignments')) {
+            $subqueries[] = 'SELECT pa.unit_id, pa.user_id FROM personnel_assignments pa INNER JOIN users u ON u.id = pa.user_id AND u.tenant_id = ? WHERE pa.status = \'active\' AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())';
+            $params[] = $tenantId;
+        }
+        if ($this->columnExists('personnel_profiles', 'primary_unit_id')) {
+            $subqueries[] = 'SELECT pp.primary_unit_id AS unit_id, pp.user_id FROM personnel_profiles pp INNER JOIN users u ON u.id = pp.user_id AND u.tenant_id = ? WHERE pp.primary_unit_id IS NOT NULL AND u.status = \'active\'';
+            $params[] = $tenantId;
+        }
+
+        return [implode(' UNION ALL ', $subqueries), $params];
+    }
+
+    /**
+     * @param list<int> $userIds
+     * @return array<int, string>
+     */
+    private function batchUserLabelsForTenant(int $tenantId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter($userIds, static fn ($id) => (int) $id > 0)));
+        if ($userIds === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        $sql = 'SELECT id, display_name, callsign, email FROM users WHERE tenant_id = ? AND id IN (' . $placeholders . ')';
+        $params = array_merge([$tenantId], $userIds);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $id = (int) $row['id'];
+            $dn = trim((string) ($row['display_name'] ?? ''));
+            $cs = trim((string) ($row['callsign'] ?? ''));
+            $em = trim((string) ($row['email'] ?? ''));
+            $out[$id] = $dn !== '' ? $dn : ($cs !== '' ? $cs : $em);
+        }
+
+        return $out;
+    }
+
+    private function tableExists(string $table): bool
+    {
+        static $cache = [];
+        if (array_key_exists($table, $cache)) {
+            return $cache[$table];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+        );
+        $stmt->execute([$table]);
+        $cache[$table] = (bool) $stmt->fetchColumn();
+
+        return $cache[$table];
+    }
+
     private function columnExists(string $table, string $column): bool
     {
         $stmt = $this->pdo->prepare(

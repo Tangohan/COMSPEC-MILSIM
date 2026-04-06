@@ -20,9 +20,11 @@ class PermissionRepository
     public function allForTenant(int $tenantId): array
     {
         $hasAction = $this->tableHasColumn('permissions', 'action');
+        $hasRbacScope = $this->tableHasColumn('permissions', 'rbac_scope');
+        $extra = $hasRbacScope ? ', rbac_scope' : '';
         $sql = $hasAction
-            ? 'SELECT id, name, slug, module, action, scope FROM permissions WHERE tenant_id = ? ORDER BY module ASC, COALESCE(action, \'\') ASC, slug ASC'
-            : 'SELECT id, name, slug, module, scope FROM permissions WHERE tenant_id = ? ORDER BY module ASC, slug ASC';
+            ? 'SELECT id, name, slug, module, action, scope' . $extra . ' FROM permissions WHERE tenant_id = ? ORDER BY module ASC, COALESCE(action, \'\') ASC, slug ASC'
+            : 'SELECT id, name, slug, module, scope' . $extra . ' FROM permissions WHERE tenant_id = ? ORDER BY module ASC, slug ASC';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$tenantId]);
 
@@ -34,9 +36,11 @@ class PermissionRepository
     public function allGlobalSite(): array
     {
         $hasAction = $this->tableHasColumn('permissions', 'action');
+        $hasRbacScope = $this->tableHasColumn('permissions', 'rbac_scope');
+        $extra = $hasRbacScope ? ', rbac_scope' : '';
         $sql = $hasAction
-            ? 'SELECT id, name, slug, module, action, scope FROM permissions WHERE tenant_id IS NULL ORDER BY module ASC, COALESCE(action, \'\') ASC, slug ASC'
-            : 'SELECT id, name, slug, module, scope FROM permissions WHERE tenant_id IS NULL ORDER BY module ASC, slug ASC';
+            ? 'SELECT id, name, slug, module, action, scope' . $extra . ' FROM permissions WHERE tenant_id IS NULL ORDER BY module ASC, COALESCE(action, \'\') ASC, slug ASC'
+            : 'SELECT id, name, slug, module, scope' . $extra . ' FROM permissions WHERE tenant_id IS NULL ORDER BY module ASC, slug ASC';
         $stmt = $this->pdo->query($sql);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -16,10 +16,17 @@ class ForumReportRepository
         $this->pdo = Database::getPdo();
     }
 
-    public function create(int $tenantId, int $reporterId, ?int $postId, ?int $topicId, string $reason, string $reportType = 'other', ?string $comment = null): int
+    public function create(int $tenantId, int $reporterId, ?int $postId, ?int $topicId, string $reason, string $reportType = 'other', ?string $comment = null, ?string $reportedUrl = null): int
     {
-        $chk = $this->pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_reports' AND COLUMN_NAME = 'report_type' LIMIT 1");
-        if ($chk && $chk->fetchColumn()) {
+        $hasReportType = $this->columnExists('forum_reports', 'report_type');
+        $hasReportedUrl = $this->columnExists('forum_reports', 'reported_url');
+
+        if ($hasReportType && $hasReportedUrl) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO forum_reports (tenant_id, reporter_id, post_id, topic_id, reason, report_type, comment, reported_url, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'pending\', NOW())'
+            );
+            $stmt->execute([$tenantId, $reporterId, $postId, $topicId, $reason, $reportType, $comment, $reportedUrl !== null && $reportedUrl !== '' ? $reportedUrl : null]);
+        } elseif ($hasReportType) {
             $stmt = $this->pdo->prepare(
                 'INSERT INTO forum_reports (tenant_id, reporter_id, post_id, topic_id, reason, report_type, comment, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, \'pending\', NOW())'
             );
@@ -28,10 +35,38 @@ class ForumReportRepository
             $stmt = $this->pdo->prepare(
                 'INSERT INTO forum_reports (tenant_id, reporter_id, post_id, topic_id, reason, status, created_at) VALUES (?, ?, ?, ?, ?, \'pending\', NOW())'
             );
-            $stmt->execute([$tenantId, $reporterId, $postId, $topicId, $reason]);
+            $reasonOut = $reason;
+            if ($reportedUrl !== null && $reportedUrl !== '' && str_contains($reasonOut, $reportedUrl) === false) {
+                $reasonOut .= "\nURL : " . $reportedUrl;
+            }
+            $stmt->execute([$tenantId, $reporterId, $postId, $topicId, $reasonOut]);
         }
 
         return (int) $this->pdo->lastInsertId();
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        static $cache = [];
+        $k = $table . '.' . $column;
+        if (array_key_exists($k, $cache)) {
+            return $cache[$k];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+        );
+        $stmt->execute([$table, $column]);
+        $cache[$k] = (bool) $stmt->fetchColumn();
+
+        return $cache[$k];
+    }
+
+    public function countPending(int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM forum_reports WHERE tenant_id = ? AND status = ?');
+        $stmt->execute([$tenantId, 'pending']);
+
+        return (int) $stmt->fetchColumn();
     }
 
     public function listPending(int $tenantId): array

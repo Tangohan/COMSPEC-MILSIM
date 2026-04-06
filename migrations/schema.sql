@@ -16,6 +16,44 @@ CREATE TABLE IF NOT EXISTS `tenants` (
   UNIQUE KEY `slug` (`slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `role_definitions` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `slug` varchar(100) NOT NULL,
+  `name_fr` varchar(160) NOT NULL,
+  `name_us` varchar(160) NOT NULL,
+  `family` varchar(64) NOT NULL DEFAULT 'general',
+  `description` varchar(600) DEFAULT NULL,
+  `sort_order` int NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_role_definitions_slug` (`slug`),
+  KEY `idx_role_definitions_family` (`family`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `role_definition_relations` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `from_definition_id` int unsigned NOT NULL,
+  `to_definition_id` int unsigned NOT NULL,
+  `relation_type` varchar(32) NOT NULL DEFAULT 'reports_to',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_rdr_pair` (`from_definition_id`,`to_definition_id`,`relation_type`),
+  KEY `idx_rdr_to` (`to_definition_id`),
+  CONSTRAINT `rdr_from_fk` FOREIGN KEY (`from_definition_id`) REFERENCES `role_definitions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `rdr_to_fk` FOREIGN KEY (`to_definition_id`) REFERENCES `role_definitions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `clearance_levels` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `slug` varchar(80) NOT NULL,
+  `name` varchar(120) NOT NULL,
+  `rank_order` int NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_clearance_tenant_slug` (`tenant_id`,`slug`),
+  CONSTRAINT `clr_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `roles` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned DEFAULT NULL,
@@ -25,12 +63,15 @@ CREATE TABLE IF NOT EXISTS `roles` (
   `is_system` tinyint(1) DEFAULT 0,
   `is_locked` tinyint(1) DEFAULT 0,
   `role_layer` enum('site','community','intra') NOT NULL DEFAULT 'community',
+  `definition_id` int unsigned DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
   KEY `tenant_id` (`tenant_id`),
   KEY `roles_tenant_layer` (`tenant_id`,`role_layer`),
-  CONSTRAINT `roles_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `roles_definition_id` (`definition_id`),
+  CONSTRAINT `roles_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `roles_definition_fk` FOREIGN KEY (`definition_id`) REFERENCES `role_definitions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `permissions` (
@@ -41,6 +82,7 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   `module` varchar(50) DEFAULT NULL,
   `action` varchar(32) DEFAULT NULL,
   `scope` enum('site','community','intra') NOT NULL DEFAULT 'community',
+  `rbac_scope` enum('global','tenant','unit') NOT NULL DEFAULT 'tenant',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
@@ -199,6 +241,124 @@ CREATE TABLE IF NOT EXISTS `user_units` (
   CONSTRAINT `user_units_unit_id_fk` FOREIGN KEY (`unit_id`) REFERENCES `units` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `tenant_user_roles` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  `role_id` int unsigned NOT NULL,
+  `org_unit_id` int unsigned DEFAULT NULL,
+  `valid_from` datetime DEFAULT NULL,
+  `valid_until` datetime DEFAULT NULL,
+  `metadata` json DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `co_unit_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Miroir IFNULL(org_unit_id,0) pour unicité — maintenu par triggers (MariaDB sans GENERATED sur org_unit_id)',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_tur_scope` (`tenant_id`,`user_id`,`role_id`,`co_unit_id`),
+  KEY `idx_tur_user` (`user_id`),
+  KEY `idx_tur_tenant_role` (`tenant_id`,`role_id`),
+  KEY `idx_tur_unit` (`org_unit_id`),
+  CONSTRAINT `tur_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `tur_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `tur_role_fk` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `tur_unit_fk` FOREIGN KEY (`org_unit_id`) REFERENCES `units` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `role_relations` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `from_role_id` int unsigned NOT NULL,
+  `to_role_id` int unsigned NOT NULL,
+  `relation_type` varchar(32) NOT NULL DEFAULT 'reports_to',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_rr_tenant_pair` (`tenant_id`,`from_role_id`,`to_role_id`,`relation_type`),
+  KEY `idx_rr_from` (`from_role_id`),
+  KEY `idx_rr_to` (`to_role_id`),
+  CONSTRAINT `rr_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `rr_from_fk` FOREIGN KEY (`from_role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `rr_to_fk` FOREIGN KEY (`to_role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_permission_overrides` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  `permission_id` int unsigned NOT NULL,
+  `grant_flag` tinyint(1) NOT NULL DEFAULT 1,
+  `org_unit_id` int unsigned DEFAULT NULL,
+  `co_unit_scope` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Miroir IFNULL(org_unit_id,0) — triggers',
+  `reason` varchar(255) DEFAULT NULL,
+  `created_by_user_id` int unsigned DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_upo` (`tenant_id`,`user_id`,`permission_id`,`co_unit_scope`),
+  KEY `idx_upo_user` (`user_id`),
+  CONSTRAINT `upo_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `upo_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `upo_perm_fk` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `upo_unit_fk` FOREIGN KEY (`org_unit_id`) REFERENCES `units` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `badges` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `slug` varchar(80) NOT NULL,
+  `name` varchar(160) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  `icon_url` varchar(500) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_badges_tenant_slug` (`tenant_id`,`slug`),
+  CONSTRAINT `badges_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_badges` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  `badge_id` int unsigned NOT NULL,
+  `granted_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `granted_by_user_id` int unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_badge` (`user_id`,`badge_id`),
+  KEY `idx_ub_tenant` (`tenant_id`),
+  CONSTRAINT `ub_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ub_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ub_badge_fk` FOREIGN KEY (`badge_id`) REFERENCES `badges` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `certifications` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `slug` varchar(80) NOT NULL,
+  `name` varchar(160) NOT NULL,
+  `description` varchar(600) DEFAULT NULL,
+  `training_course_id` int unsigned DEFAULT NULL,
+  `validity_days` int unsigned DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_cert_tenant_slug` (`tenant_id`,`slug`),
+  CONSTRAINT `cert_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_certifications` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  `certification_id` int unsigned NOT NULL,
+  `training_course_id` int unsigned DEFAULT NULL,
+  `status` varchar(32) NOT NULL DEFAULT 'active',
+  `issued_at` datetime DEFAULT NULL,
+  `expires_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_ucert_user` (`user_id`,`certification_id`),
+  KEY `idx_ucert_tenant` (`tenant_id`),
+  CONSTRAINT `ucert_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ucert_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ucert_cert_fk` FOREIGN KEY (`certification_id`) REFERENCES `certifications` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `user_profiles` (
   `user_id` int unsigned NOT NULL,
   `first_name` varchar(100) DEFAULT NULL,
@@ -221,13 +381,16 @@ CREATE TABLE IF NOT EXISTS `user_profile_display_settings` (
   `user_id` int unsigned NOT NULL,
   `forum_alias` varchar(80) DEFAULT NULL,
   `forum_label_mode` varchar(32) NOT NULL DEFAULT 'display_name',
+  `forum_visible_role_id` int unsigned DEFAULT NULL COMMENT 'Rôle org affiché sur carte forum (NULL = rôle principal du compte)',
   `show_matricule_forum` tinyint(1) NOT NULL DEFAULT 1,
   `show_grade_forum` tinyint(1) NOT NULL DEFAULT 1,
   `show_unit_forum` tinyint(1) NOT NULL DEFAULT 1,
   `show_bio_forum` tinyint(1) NOT NULL DEFAULT 1,
+  `hide_forum_level` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = masquer LVL_ sur carte forum',
   `fiche_show_email_to_others` tinyint(1) NOT NULL DEFAULT 0,
   `fiche_show_matricule_to_others` tinyint(1) NOT NULL DEFAULT 1,
   `public_roster_opt_in` tinyint(1) NOT NULL DEFAULT 0,
+  `hide_personal_info` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`),
@@ -240,6 +403,7 @@ CREATE TABLE IF NOT EXISTS `personnel_extras` (
   `squadron` varchar(100) DEFAULT NULL,
   `date_of_enlistment` date DEFAULT NULL,
   `clearance_level` varchar(100) DEFAULT NULL,
+  `clearance_level_id` int unsigned DEFAULT NULL,
   `flight_hours` decimal(10,1) DEFAULT NULL,
   `specializations` text,
   `readiness_percent` int DEFAULT NULL,
@@ -247,7 +411,9 @@ CREATE TABLE IF NOT EXISTS `personnel_extras` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`user_id`),
-  CONSTRAINT `personnel_extras_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  KEY `personnel_extras_clearance_level_id` (`clearance_level_id`),
+  CONSTRAINT `personnel_extras_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `pe_clearance_fk` FOREIGN KEY (`clearance_level_id`) REFERENCES `clearance_levels` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Profils de candidature (préréglages utilisateur, par compte communauté)
@@ -296,6 +462,19 @@ CREATE TABLE IF NOT EXISTS `enlistments` (
   CONSTRAINT `enlistments_submitter_user_fk` FOREIGN KEY (`submitter_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `enlistments_recruitment_preset_fk` FOREIGN KEY (`recruitment_preset_id`) REFERENCES `recruitment_presets` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `enlistment_canned_messages` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `label` varchar(160) NOT NULL,
+  `body` text NOT NULL,
+  `sort_order` int unsigned NOT NULL DEFAULT 0,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_sort` (`tenant_id`, `sort_order`),
+  CONSTRAINT `enlistment_canned_messages_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Documents
 CREATE TABLE IF NOT EXISTS `document_categories` (

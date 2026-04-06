@@ -14,7 +14,10 @@ use App\Services\Training\TrainingQuizService;
 use App\Services\Training\TrainingCertificateService;
 use App\Services\Training\TrainingAssignmentService;
 use App\Repositories\TrainingEnrollmentRepository;
+use App\Repositories\TrainingLessonRepository;
+use App\Repositories\TrainingModuleRepository;
 use App\Repositories\TrainingQuizRepository;
+use App\Repositories\TrainingResourceRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Services\Platform\FeatureGateService;
 
@@ -29,7 +32,10 @@ class TrainingApiController
         private TrainingEnrollmentRepository $enrollmentRepository,
         private TrainingQuizRepository $quizRepository,
         private TrainingCourseRepository $courseRepository,
-        private FeatureGateService $featureGate
+        private FeatureGateService $featureGate,
+        private TrainingResourceRepository $resourceRepository,
+        private TrainingLessonRepository $lessonRepository,
+        private TrainingModuleRepository $moduleRepository
     ) {}
 
     private function tenantId(): int
@@ -71,6 +77,36 @@ class TrainingApiController
     }
 
     /** Alignement avec le web : pas d’accès API aux formations si le plan ne l’autorise pas. */
+    /**
+     * @param list<array<string, mixed>> $questions
+     * @return list<array<string, mixed>>
+     */
+    private function sanitizeQuizQuestionsForLearner(array $questions): array
+    {
+        $out = [];
+        foreach ($questions as $q) {
+            $row = $q;
+            if (isset($row['explanation'])) {
+                unset($row['explanation']);
+            }
+            if (isset($row['answers']) && is_array($row['answers'])) {
+                $ans = [];
+                foreach ($row['answers'] as $a) {
+                    if (!is_array($a)) {
+                        continue;
+                    }
+                    $a2 = $a;
+                    unset($a2['is_correct']);
+                    $ans[] = $a2;
+                }
+                $row['answers'] = $ans;
+            }
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
     private function assertTrainingAllowed(): ?Response
     {
         try {
@@ -115,13 +151,12 @@ class TrainingApiController
         $courseId = (int) $course['id'];
         $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId);
         $enrollment = $this->enrollmentRepository->findByCourseAndUser($courseId, $userId);
+        if ($enrollment && in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired'], true)) {
+            $enrollment = null;
+        }
         $progressPercent = 0;
-        if ($enrollment) {
-            if (!$this->trainingService->canAccessCourse($userId, $courseId, $tenantId)) {
-                $enrollment = null;
-            } else {
-                $progressPercent = $this->trainingService->getGlobalProgress((int) $enrollment['id']);
-            }
+        if ($enrollment && $this->trainingService->canAccessCourse($userId, $courseId, $tenantId)) {
+            $progressPercent = $this->trainingService->getGlobalProgress((int) $enrollment['id']);
         }
         return Response::json([
             'course' => $course,
@@ -145,9 +180,14 @@ class TrainingApiController
             return Response::json(['error' => 'course_id requis.'], 400);
         }
         try {
-            $enrollmentId = $this->assignmentService->assignUser($courseId, $userId, $tenantId, $userId, 'self_enroll');
-            $this->progressService->startEnrollment($enrollmentId, $tenantId, $userId);
+            $motivation = trim((string) ($request->input('enrollment_motivation') ?? $body['enrollment_motivation'] ?? ''));
+            $motivation = $motivation === '' ? null : mb_substr($motivation, 0, 4000);
+            $enrollmentId = $this->assignmentService->assignUser($courseId, $userId, $tenantId, $userId, 'self_enroll', null, $motivation);
             $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
+            if ($enrollment && (($enrollment['status'] ?? '') === 'assigned')) {
+                $this->progressService->startEnrollment($enrollmentId, $tenantId, $userId);
+                $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
+            }
             return Response::json(['enrollment' => $enrollment]);
         } catch (\Throwable $e) {
             return Response::json(['error' => $e->getMessage()], 400);
@@ -179,12 +219,30 @@ class TrainingApiController
         $this->validateCsrf($request);
         $tenantId = $this->tenantId();
         $userId = $this->userId();
+        $wantsJson = str_contains(strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? '')), 'application/json');
         $body = $this->body($request);
         $enrollmentId = (int) ($request->input('enrollment_id') ?? $body['enrollment_id'] ?? 0);
         $lessonId = (int) ($request->input('lesson_id') ?? $body['lesson_id'] ?? 0);
         $status = $request->input('status') ?? $body['status'] ?? 'completed';
         $timeSpent = (int) ($request->input('time_spent_seconds') ?? $body['time_spent_seconds'] ?? 0);
+
+        $redirectToCourse = function () use ($enrollmentId, $tenantId): Response {
+            $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
+            if (!$enrollment) {
+                return Response::redirect(url('formations'));
+            }
+            $slug = trim((string) ($enrollment['course_slug'] ?? ''));
+
+            return Response::redirect($slug !== '' ? url('formations/' . rawurlencode($slug)) : url('formations'));
+        };
+
         if (!$enrollmentId || !$lessonId) {
+            if (!$wantsJson) {
+                Session::flash('error', 'Données de progression incomplètes. Rechargez la page de la leçon et réessayez.');
+
+                return Response::redirect(url('formations'));
+            }
+
             return Response::json(['error' => 'enrollment_id et lesson_id requis.'], 400);
         }
         try {
@@ -194,8 +252,20 @@ class TrainingApiController
                 $this->progressService->markLessonCompleted($enrollmentId, $lessonId, $tenantId, $userId, $timeSpent);
             }
             $progress = $this->progressService->getProgressForEnrollment($enrollmentId);
+            if (!$wantsJson) {
+                Session::flash('success', 'Votre progression a été enregistrée.');
+
+                return $redirectToCourse();
+            }
+
             return Response::json($progress);
         } catch (\Throwable $e) {
+            if (!$wantsJson) {
+                Session::flash('error', 'Impossible d’enregistrer la progression. Réessayez dans un instant.');
+
+                return $redirectToCourse();
+            }
+
             return Response::json(['error' => $e->getMessage()], 400);
         }
     }
@@ -225,6 +295,7 @@ class TrainingApiController
                 unset($q['explanation']);
                 $questionsWithAnswers[] = $q;
             }
+            $questionsWithAnswers = $this->sanitizeQuizQuestionsForLearner($questionsWithAnswers);
             return Response::json([
                 'attempt' => $attempt,
                 'questions' => $questionsWithAnswers,
@@ -246,6 +317,21 @@ class TrainingApiController
         $attempt = $this->quizService->getAttempt($attemptId, $this->tenantId(), $userId);
         if (!$attempt) {
             return Response::json(['error' => 'Tentative non trouvée.'], 404);
+        }
+        if (($attempt['status'] ?? '') === 'in_progress') {
+            $quiz = $this->quizRepository->findQuizById((int) ($attempt['quiz_id'] ?? 0));
+            if ($quiz) {
+                $questions = $this->quizRepository->listQuestionsByQuizId((int) $quiz['id'], (bool) ($quiz['randomize_questions'] ?? 0));
+                $questionsWithAnswers = [];
+                foreach ($questions as $q) {
+                    $q['answers'] = $this->quizRepository->listAnswersByQuestionId((int) $q['id']);
+                    unset($q['explanation']);
+                    $questionsWithAnswers[] = $q;
+                }
+                $attempt['questions'] = $this->sanitizeQuizQuestionsForLearner($questionsWithAnswers);
+                $attempt['time_limit_minutes'] = $quiz['time_limit_minutes'] ?? null;
+                $attempt['passing_score'] = $quiz['passing_score'] ?? null;
+            }
         }
         return Response::json($attempt);
     }
@@ -323,6 +409,64 @@ class TrainingApiController
         return $response;
     }
 
+    /** Téléchargement sécurisé d’une ressource de leçon (fichier sur serveur). */
+    public function lessonResourceDownload(Request $request, array $params = []): Response
+    {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
+        $tenantId = $this->tenantId();
+        $userId = $this->userId();
+        $rid = (int) ($params['id'] ?? 0);
+        if ($rid < 1) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $res = $this->resourceRepository->findById($rid);
+        if (!$res || empty($res['file_path'])) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $lesson = $this->lessonRepository->findById((int) $res['lesson_id']);
+        if (!$lesson) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $mod = $this->moduleRepository->findById((int) $lesson['module_id']);
+        if (!$mod) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $courseId = (int) $mod['course_id'];
+        if (!$this->courseRepository->findById($courseId, $tenantId)) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $enrollment = $this->enrollmentRepository->findByCourseAndUser($courseId, $userId);
+        if (!$enrollment || in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired'], true)) {
+            return (new Response())->setStatusCode(403)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Accès non autorisé.');
+        }
+        if (!$this->trainingService->canAccessCourse($userId, $courseId, $tenantId)) {
+            return (new Response())->setStatusCode(403)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Accès non autorisé.');
+        }
+        $path = (string) $res['file_path'];
+        if (!str_starts_with($path, '/') && !preg_match('#^[A-Za-z]:#', $path)) {
+            $path = base_path($path);
+        }
+        if (!is_file($path) || !is_readable($path)) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Fichier indisponible.');
+        }
+        $mime = trim((string) ($res['mime_type'] ?? ''));
+        if ($mime === '') {
+            $mime = 'application/octet-stream';
+        }
+        $safeName = preg_replace('/[^a-zA-Z0-9._-]+/', '_', basename($path)) ?: 'fichier';
+        $response = new Response();
+        $response->header('Content-Type', $mime);
+        $response->header('Content-Disposition', 'attachment; filename="' . $safeName . '"');
+        $response->setBodyStream(static function () use ($path): void {
+            readfile($path);
+        });
+
+        return $response;
+    }
+
     // ---------- Admin API ----------
     public function adminCourses(Request $request, array $params = []): Response
     {
@@ -356,8 +500,11 @@ class TrainingApiController
             $this->courseRepository->update($id, [
                 'title' => $data['title'] ?? $course['title'],
                 'slug' => $data['slug'] ?? $course['slug'],
+                'course_code' => array_key_exists('course_code', $data) ? $data['course_code'] : ($course['course_code'] ?? null),
                 'short_description' => $data['short_description'] ?? $course['short_description'],
                 'description' => $data['description'] ?? $course['description'],
+                'learning_objectives' => array_key_exists('learning_objectives', $data) ? $data['learning_objectives'] : ($course['learning_objectives'] ?? null),
+                'theme_json' => array_key_exists('theme_json', $data) ? $data['theme_json'] : ($course['theme_json'] ?? null),
                 'thumbnail_path' => array_key_exists('thumbnail_path', $data) ? $data['thumbnail_path'] : $course['thumbnail_path'],
                 'banner_path' => array_key_exists('banner_path', $data) ? $data['banner_path'] : $course['banner_path'],
                 'showcase_cycle_date' => array_key_exists('showcase_cycle_date', $data) ? $data['showcase_cycle_date'] : ($course['showcase_cycle_date'] ?? null),
@@ -377,8 +524,11 @@ class TrainingApiController
         $newId = $this->courseRepository->create($tenantId, [
             'title' => $data['title'] ?? 'Nouvelle formation',
             'slug' => $slug,
+            'course_code' => $data['course_code'] ?? null,
             'short_description' => $data['short_description'] ?? null,
             'description' => $data['description'] ?? null,
+            'learning_objectives' => $data['learning_objectives'] ?? null,
+            'theme_json' => $data['theme_json'] ?? null,
             'thumbnail_path' => $data['thumbnail_path'] ?? null,
             'banner_path' => $data['banner_path'] ?? null,
             'visibility' => $data['visibility'] ?? 'draft',

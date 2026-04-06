@@ -97,4 +97,47 @@ class RoleRepository
 
         return $layer === 'community' || $layer === 'intra';
     }
+
+    /**
+     * Matrice permissions × rôles organisation (pour UI admin).
+     *
+     * @return array{roles: list<array<string,mixed>>, permissions: list<array<string,mixed>>, byRole: array<int, array<int, true>>}
+     */
+    public function organizationRolesPermissionMatrix(int $tenantId): array
+    {
+        $roles = $this->forTenantOrganization($tenantId);
+        $roleIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $roles);
+        $roleIds = array_values(array_filter($roleIds, static fn (int $id): bool => $id > 0));
+        if ($roleIds === []) {
+            return ['roles' => [], 'permissions' => [], 'byRole' => []];
+        }
+        $ph = implode(',', array_fill(0, count($roleIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT DISTINCT p.id, p.slug, p.name, COALESCE(p.module, '') AS module
+             FROM permissions p
+             INNER JOIN role_permissions rp ON rp.permission_id = p.id
+             WHERE rp.role_id IN ({$ph})
+             ORDER BY p.module, p.name"
+        );
+        $stmt->execute($roleIds);
+        $permissions = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $byRole = [];
+        $stmt2 = $this->pdo->prepare(
+            "SELECT rp.role_id, p.id AS permission_id
+             FROM role_permissions rp
+             INNER JOIN permissions p ON p.id = rp.permission_id
+             WHERE rp.role_id IN ({$ph})"
+        );
+        $stmt2->execute($roleIds);
+        while ($row = $stmt2->fetch(PDO::FETCH_ASSOC)) {
+            $rid = (int) ($row['role_id'] ?? 0);
+            $pid = (int) ($row['permission_id'] ?? 0);
+            if ($rid > 0 && $pid > 0) {
+                $byRole[$rid][$pid] = true;
+            }
+        }
+
+        return ['roles' => $roles, 'permissions' => $permissions, 'byRole' => $byRole];
+    }
 }

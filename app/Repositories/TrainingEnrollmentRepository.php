@@ -75,11 +75,21 @@ class TrainingEnrollmentRepository
         return $row ?: null;
     }
 
+    public function userHasCompletedCourse(int $userId, int $courseId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT 1 FROM training_enrollments WHERE user_id = ? AND course_id = ? AND status = ? LIMIT 1'
+        );
+        $stmt->execute([$userId, $courseId, 'completed']);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
     public function create(int $tenantId, array $data): int
     {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO training_enrollments (tenant_id, course_id, user_id, assigned_by, assignment_type, status, expires_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO training_enrollments (tenant_id, course_id, user_id, assigned_by, assignment_type, status, expires_at, motivation_text)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $tenantId,
@@ -89,13 +99,14 @@ class TrainingEnrollmentRepository
             $data['assignment_type'] ?? 'manual',
             $data['status'] ?? 'assigned',
             $data['expires_at'] ?? null,
+            $data['motivation_text'] ?? null,
         ]);
         return (int) $this->pdo->lastInsertId();
     }
 
     public function update(int $id, array $data): void
     {
-        $allowed = ['status', 'started_at', 'completed_at', 'expires_at'];
+        $allowed = ['status', 'started_at', 'completed_at', 'expires_at', 'motivation_text'];
         $fields = [];
         $params = [];
         foreach ($allowed as $k) {

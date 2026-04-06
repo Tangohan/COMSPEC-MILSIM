@@ -93,7 +93,7 @@ $title = $title ?? 'Mot de passe oublié';
                 <?= \App\Core\Csrf::field() ?>
                 <div class="space-y-2">
                     <label for="forgot-email" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Email de secours</label>
-                    <input type="email" name="email" id="forgot-email" required autocomplete="email" placeholder="OPERATOR@FORWARD.OBS"
+                    <input type="email" name="email" id="forgot-email" required autocomplete="email" placeholder="vous@exemple.fr"
                            class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs font-bold tracking-widest focus:outline-none focus:border-emerald-500 transition-colors">
                 </div>
 
@@ -111,8 +111,15 @@ $title = $title ?? 'Mot de passe oublié';
             <span class="text-[8px] font-black tracking-widest uppercase">Encryption: AES-256</span>
             <span class="text-[8px] font-black tracking-widest uppercase">Node: Paris_FR</span>
         </div>
+        <div class="mt-8 flex flex-wrap justify-center gap-x-3 gap-y-1 text-center text-[10px] text-slate-400 max-w-lg mx-auto px-2">
+            <?php
+            $legal_link_class = 'font-semibold hover:text-emerald-700';
+            require base_path('views/partials/legal_site_links.php');
+            ?>
+        </div>
     </div>
 </main>
 
+<?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

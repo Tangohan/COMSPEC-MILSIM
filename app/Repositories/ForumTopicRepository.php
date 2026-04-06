@@ -61,16 +61,12 @@ class ForumTopicRepository
             }
         }
 
-        $selectExtra = $sort === 'popular_7d'
-            ? ', (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id AND fp.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS posts_7d'
-            : '';
-
         $sql = "SELECT ft.*, u.id AS topic_author_user_id, u.display_name AS author_name, u.callsign AS author_callsign,
                     (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id) AS post_count,
                     (SELECT fp.created_at FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_at,
                     (SELECT u2.display_name FROM forum_posts fp JOIN users u2 ON u2.id = fp.user_id WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_author_name_legacy,
-                    (SELECT fp.user_id FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id
-                    $selectExtra
+                    (SELECT fp.user_id FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id,
+                    (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id AND fp.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS posts_7d
              FROM forum_topics ft
              $filterJoin
              LEFT JOIN users u ON u.id = ft.user_id
@@ -125,7 +121,8 @@ class ForumTopicRepository
                     (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id) AS post_count,
                     (SELECT fp.created_at FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_at,
                     (SELECT u2.display_name FROM forum_posts fp JOIN users u2 ON u2.id = fp.user_id WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_author_name_legacy,
-                    (SELECT fp.user_id FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id
+                    (SELECT fp.user_id FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id,
+                    (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id AND fp.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS posts_7d
              FROM forum_topics ft
              LEFT JOIN users u ON u.id = ft.user_id
              WHERE ft.category_id = ? AND ft.tenant_id = ? AND ($hiddenCond) AND (ft.title LIKE ? OR EXISTS (
@@ -142,7 +139,8 @@ class ForumTopicRepository
     {
         $stmt = $this->pdo->prepare(
             'SELECT ft.*, u.id AS topic_author_user_id, u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id,
-                    fc.name AS category_name, fc.slug AS category_slug, COALESCE(fc.scope, \'general\') AS category_scope
+                    fc.name AS category_name, fc.slug AS category_slug, COALESCE(fc.scope, \'general\') AS category_scope,
+                    (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id AND fp.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS posts_7d
              FROM forum_topics ft
              LEFT JOIN users u ON u.id = ft.user_id
              LEFT JOIN forum_categories fc ON fc.id = ft.category_id
@@ -166,7 +164,7 @@ class ForumTopicRepository
 
     public function update(int $id, int $tenantId, array $data): bool
     {
-        $allowed = ['title', 'is_pinned', 'is_locked', 'is_archived', 'is_hidden'];
+        $allowed = ['title', 'is_pinned', 'is_locked', 'is_archived', 'is_hidden', 'is_official', 'suppress_auto_lock'];
         $set = [];
         $params = [];
         foreach ($allowed as $key) {
@@ -194,6 +192,43 @@ class ForumTopicRepository
     {
         $stmt = $this->pdo->prepare('UPDATE forum_topics SET view_count = view_count + 1 WHERE id = ?');
         $stmt->execute([$topicId]);
+    }
+
+    /**
+     * Verrouille automatiquement les sujets de plus de 6 mois (sauf si suppression du verrou auto demandée).
+     */
+    public function applyAutoLockIfStale(int $topicId, int $tenantId): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT id, is_locked, created_at, suppress_auto_lock FROM forum_topics WHERE id = ? AND tenant_id = ? LIMIT 1'
+            );
+            $stmt->execute([$topicId, $tenantId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) {
+                return false;
+            }
+            if (!empty($row['is_locked']) || !empty($row['suppress_auto_lock'])) {
+                return false;
+            }
+            $created = strtotime((string) ($row['created_at'] ?? ''));
+            if ($created === false) {
+                return false;
+            }
+            if ($created >= strtotime('-6 months')) {
+                return false;
+            }
+            $this->update($topicId, $tenantId, ['is_locked' => 1]);
+            $hasCol = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_topics' AND COLUMN_NAME = 'auto_locked_at' LIMIT 1");
+            if ($hasCol && $hasCol->fetchColumn()) {
+                $u = $this->pdo->prepare('UPDATE forum_topics SET auto_locked_at = NOW() WHERE id = ? AND tenant_id = ?');
+                $u->execute([$topicId, $tenantId]);
+            }
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function getPinnedInCategory(int $categoryId, int $tenantId): array

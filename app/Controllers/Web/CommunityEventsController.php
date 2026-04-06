@@ -39,8 +39,10 @@ final class CommunityEventsController
             $user ? (int) $user['id'] : null,
             'events'
         );
-        $rows = $this->events->upcomingForTenant($tenantId);
         $userId = $user ? (int) $user['id'] : null;
+        $rows = $userId
+            ? $this->events->upcomingForTenantWithUserRsvp($tenantId, $userId, 50)
+            : $this->events->upcomingForTenant($tenantId, 50);
         $checkInFlags = [];
         if ($userId) {
             foreach ($rows as $row) {

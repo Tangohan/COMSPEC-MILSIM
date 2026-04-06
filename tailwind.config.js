@@ -7,6 +7,30 @@
  */
 module.exports = {
   content: ['views/**/*.php', 'public/**/*.js'],
+  /** Classes utilisées depuis des chaînes PHP (ex. vues/account/index.php) — évite un fond blanc si le purge les omet. */
+  safelist: [
+    /* Méga-menu : utilitaires arbitraires du header (filet de sécurité après build Tailwind) */
+    'w-[min(60rem,calc(100vw-1.25rem))]',
+    'max-w-[calc(100vw-1rem)]',
+    'from-violet-500',
+    'to-purple-600',
+    'from-sky-500',
+    'to-blue-600',
+    'from-amber-500',
+    'to-orange-600',
+    'from-emerald-500',
+    'to-teal-600',
+    'from-rose-500',
+    'to-red-600',
+    'from-indigo-500',
+    'to-indigo-700',
+    'group-hover:ring-violet-500/25',
+    'group-hover:ring-sky-500/25',
+    'group-hover:ring-amber-500/25',
+    'group-hover:ring-emerald-500/25',
+    'group-hover:ring-rose-500/25',
+    'group-hover:ring-indigo-500/25',
+  ],
   theme: {
     extend: {
       fontFamily: {

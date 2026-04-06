@@ -37,4 +37,17 @@ class ForumAttachmentRepository
 
         return $rows ?: [];
     }
+
+    public function insert(int $tenantId, int $postId, string $filePath, string $mime, int $sizeBytes): int
+    {
+        if (!$this->tableExists()) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO forum_attachments (tenant_id, post_id, file_path, mime, size_bytes, created_at) VALUES (?, ?, ?, ?, ?, NOW())'
+        );
+        $stmt->execute([$tenantId, $postId, $filePath, $mime, $sizeBytes]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
 }

@@ -2,6 +2,8 @@
 $base = url('');
 $error = \App\Core\Session::getFlash('error');
 $success = \App\Core\Session::getFlash('success');
+$warning = \App\Core\Session::getFlash('warning');
+$pendingVerificationEmail = \App\Core\Session::get('pending_verification_email');
 $title = $title ?? 'Connexion';
 ?>
 <!DOCTYPE html>
@@ -44,6 +46,20 @@ $title = $title ?? 'Connexion';
         <?php endif; ?>
         <?php if ($success): ?>
         <?php $flash_variant = 'success'; $flash_message = $success; require base_path('views/partials/flash_message.php'); ?>
+        <?php endif; ?>
+        <?php if ($warning): ?>
+        <?php $flash_variant = 'warning'; $flash_message = $warning; require base_path('views/partials/flash_message.php'); ?>
+        <?php endif; ?>
+
+        <?php if ($pendingVerificationEmail !== null && $pendingVerificationEmail !== ''): ?>
+        <form method="post" action="<?= url('resend-verification') ?>" class="mb-6 rounded-2xl border border-emerald-200/80 bg-emerald-50/60 px-4 py-4 shadow-sm">
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="email" value="<?= htmlspecialchars((string) $pendingVerificationEmail, ENT_QUOTES, 'UTF-8') ?>">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-800/90 mb-3">Lien de confirmation</p>
+            <button type="submit" class="w-full rounded-xl bg-emerald-600 px-4 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-white hover:bg-emerald-700 transition-colors">
+                Renvoyer le lien par e-mail
+            </button>
+        </form>
         <?php endif; ?>
 
         <div x-show="view === 'login'" x-transition.opacity.duration.400ms
@@ -93,7 +109,7 @@ $title = $title ?? 'Connexion';
                 <?= \App\Core\Csrf::field() ?>
                 <div class="space-y-2">
                     <label for="forgot-email" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Email de secours</label>
-                    <input type="email" name="email" id="forgot-email" required autocomplete="email" placeholder="OPERATOR@FORWARD.OBS"
+                    <input type="email" name="email" id="forgot-email" required autocomplete="email" placeholder="vous@exemple.fr"
                            class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs font-bold tracking-widest focus:outline-none focus:border-emerald-500 transition-colors">
                 </div>
 
@@ -120,8 +136,15 @@ $title = $title ?? 'Connexion';
             <span class="text-[8px] font-black tracking-widest uppercase">Encryption: AES-256</span>
             <span class="text-[8px] font-black tracking-widest uppercase">Node: Paris_FR</span>
         </div>
+        <div class="mt-8 flex flex-wrap justify-center gap-x-3 gap-y-1 text-center text-[10px] text-slate-400 max-w-lg mx-auto px-2">
+            <?php
+            $legal_link_class = 'font-semibold hover:text-emerald-700';
+            require base_path('views/partials/legal_site_links.php');
+            ?>
+        </div>
     </div>
 </main>
 
+<?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

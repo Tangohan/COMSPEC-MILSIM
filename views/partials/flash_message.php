@@ -17,7 +17,10 @@ $description = isset($flash_description) ? (string) $flash_description : null;
 
 if ($eyebrowTitle === null || $eyebrowTitle === '') {
     if ($variant === 'error') {
-        if (preg_match('/authentification|session|connecter|connecté/i', $message)) {
+        if (preg_match('/confirmez votre adresse|e-mail avant de vous connecter|vérification.*e-mail/i', $message)) {
+            $eyebrowTitle = 'Confirmation requise';
+            $description = ($description !== null && $description !== '') ? $description : null;
+        } elseif (preg_match('/authentification|session|connecter|connecté/i', $message)) {
             $eyebrowTitle = 'Accès refusé';
             $description = ($description !== null && $description !== '') ? $description : 'Cette action ou cette page nécessite une session valide avant de pouvoir être consultée.';
         } else {

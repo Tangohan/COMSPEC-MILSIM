@@ -160,4 +160,157 @@ class EnlistmentRepository
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /** Dernière candidature liée au compte (prénom/nom souvent plus complets que le seul `users.display_name`). */
+    public function findLatestBySubmitter(int $tenantId, int $userId): ?array
+    {
+        if (!$this->hasAccountColumns()) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM enlistments WHERE tenant_id = ? AND submitter_user_id = ? ORDER BY created_at DESC LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
+     * Candidatures « en attente » (statut submitted) pour l’utilisateur courant : compte lié ou même e-mail (invité).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listPendingSubmittedForSubmitter(int $tenantId, int $userId, string $userEmail): array
+    {
+        $emailNorm = strtolower(trim($userEmail));
+        if ($this->hasAccountColumns()) {
+            $stmt = $this->pdo->prepare(
+                "SELECT * FROM enlistments WHERE tenant_id = ? AND status = 'submitted'
+                 AND (submitter_user_id = ? OR LOWER(TRIM(email)) = ?)
+                 ORDER BY created_at DESC LIMIT 20"
+            );
+            $stmt->execute([$tenantId, $userId, $emailNorm !== '' ? $emailNorm : '__none__']);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        if ($emailNorm === '') {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM enlistments WHERE tenant_id = ? AND status = 'submitted' AND LOWER(TRIM(email)) = ?
+             ORDER BY created_at DESC LIMIT 20"
+        );
+        $stmt->execute([$tenantId, $emailNorm]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * File d’attente recrutement du tenant (statut submitted).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listPendingSubmittedForTenant(int $tenantId, int $limit = 25): array
+    {
+        $limit = max(1, min(100, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM enlistments WHERE tenant_id = ? AND status = 'submitted' ORDER BY created_at ASC LIMIT {$limit}"
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Comptages par statut (clé = status, valeur = effectif).
+     *
+     * @return array<string, int>
+     */
+    public function countsByStatusForTenant(int $tenantId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT status, COUNT(*) AS c FROM enlistments WHERE tenant_id = ? GROUP BY status');
+        $stmt->execute([$tenantId]);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $out[(string) ($row['status'] ?? '')] = (int) ($row['c'] ?? 0);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Dernières candidatures (tous statuts), pour tableau de bord org.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function recentForTenantDashboard(int $tenantId, int $limit = 12): array
+    {
+        $limit = max(1, min(50, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT id, first_name, last_name, email, status, created_at, updated_at, reviewed_at, submitter_user_id
+             FROM enlistments WHERE tenant_id = ?
+             ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
+             LIMIT {$limit}"
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Enregistre une décision sur une candidature encore « soumise » (statut submitted).
+     *
+     * @return bool true si une ligne a été mise à jour
+     */
+    public function applyDecision(int $tenantId, int $id, string $newStatus, int $reviewerUserId, ?string $reviewerComment): bool
+    {
+        $allowed = ['reviewed', 'rejected', 'blocked'];
+        if (!in_array($newStatus, $allowed, true)) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE enlistments SET status = ?, reviewed_by = ?, reviewed_at = NOW(), reviewer_comment = ?, updated_at = NOW()
+             WHERE tenant_id = ? AND id = ? AND status = \'submitted\''
+        );
+        $stmt->execute([$newStatus, $reviewerUserId, $reviewerComment, $tenantId, $id]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Rattache une candidature acceptée à un utilisateur du tenant (colonne submitter_user_id).
+     */
+    public function linkSubmitterUserId(int $tenantId, int $enlistmentId, int $userId): bool
+    {
+        if (!$this->hasAccountColumns() || $userId < 1) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE enlistments SET submitter_user_id = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ? AND status = \'reviewed\''
+        );
+        $stmt->execute([$userId, $tenantId, $enlistmentId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Candidatures acceptées avec compte rattaché (outil debug / synchro).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listReviewedWithSubmitterForTenant(int $tenantId): array
+    {
+        if (!$this->hasAccountColumns()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM enlistments WHERE tenant_id = ? AND status = \'reviewed\'
+             AND submitter_user_id IS NOT NULL AND submitter_user_id > 0
+             ORDER BY id ASC'
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }

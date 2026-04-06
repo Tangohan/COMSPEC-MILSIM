@@ -1,100 +1,115 @@
+<?php
+$base = url('');
+$title = $title ?? 'Rejoindre';
+$active = 'join';
+?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="public-portal-day">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= htmlspecialchars($title ?? 'Rejoindre') ?> — Athena</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title><?= htmlspecialchars($title) ?> — Athena</title>
+    <?php $tailwindBaseUrl = $base; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/styles.css" rel="stylesheet">
+    <?php endif; ?>
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/public-portal-day.css" rel="stylesheet">
+    <style>
+        body.public-portal-day { font-family: Inter, system-ui, sans-serif; }
+    </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-white">
-    <div class="relative isolate flex min-h-screen items-center justify-center px-4 py-10">
+<body class="public-portal-day min-h-screen bg-white text-slate-900 antialiased flex flex-col">
 
-        <!-- Fonds décoratifs -->
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.18),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.12),transparent_28%)]"></div>
-        <div class="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,6,23,0.6),rgba(2,6,23,0.95))]"></div>
+<div class="absolute top-0 left-0 w-full h-1 bg-emerald-600 z-30" aria-hidden="true"></div>
+<div class="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_100%_60%_at_50%_-10%,rgba(16,185,129,0.08),transparent_50%)]" aria-hidden="true"></div>
 
-        <div class="relative z-10 w-full max-w-lg">
-            <!-- En-tête -->
-            <div class="mb-8 text-center">
-                <div class="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-300">
-                    Accès communauté
+<?php require base_path('views/partials/public_portal_auth_frame.php'); ?>
+
+<main class="relative z-10 flex-1 w-full px-4 py-12 sm:py-16 flex flex-col items-center justify-center">
+    <div class="w-full max-w-lg">
+
+        <div class="text-center mb-10">
+            <p class="text-[11px] font-black tracking-[0.45em] text-emerald-700/80 uppercase mb-3">Accès communauté</p>
+            <div class="flex items-center justify-center gap-4 mb-4">
+                <span class="h-px w-10 bg-slate-200"></span>
+                <span class="text-2xl font-black italic tracking-tight uppercase text-slate-900">Forward</span>
+                <span class="h-px w-10 bg-slate-200"></span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Rejoindre avec un code</h1>
+            <p class="mt-3 text-sm text-slate-700 leading-relaxed">
+                Saisissez le code communauté fourni par votre staff (invitation, brief, message). Vous serez redirigé vers la bonne étape (inscription ou connexion).
+            </p>
+        </div>
+
+        <?php $err = \App\Core\Session::getFlash('error'); ?>
+        <?php if ($err): ?>
+            <?php $flash_variant = 'error'; $flash_message = $err; $flash_margin_class = 'mb-8'; require base_path('views/partials/flash_message.php'); ?>
+        <?php endif; ?>
+
+        <div class="bg-white border border-slate-200/90 rounded-[1.75rem] shadow-[0_20px_50px_-12px_rgba(15,23,42,0.12)] overflow-hidden ring-1 ring-slate-100">
+            <div class="px-6 sm:px-8 py-6 border-b border-slate-100 bg-emerald-50/40">
+                <div class="flex items-start gap-4">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white text-lg font-black shadow-sm" aria-hidden="true">1</div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">Étape unique</p>
+                        <p class="mt-1 text-sm text-slate-600 leading-relaxed">
+                            Le code ressemble souvent à un identifiant d’unité, par exemple
+                            <span class="inline-flex items-center rounded-lg bg-emerald-50 px-2 py-0.5 font-mono text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200/80">UNIT-ALPHA</span>.
+                        </p>
+                    </div>
                 </div>
-
-                <h1 class="mt-6 text-3xl font-black tracking-tight text-white">
-                    Rejoindre une communauté
-                </h1>
-
-                <p class="mt-3 text-sm text-slate-400 leading-6">
-                    Saisissez un code valide pour accéder à un espace existant ou initier votre inscription.
-                </p>
             </div>
 
-            <?php $err = \App\Core\Session::getFlash('error'); ?>
-            <?php if ($err): ?>
-                <?php $flash_variant = 'error'; $flash_message = $err; $flash_surface = 'dark'; $flash_margin_class = 'mb-6'; require base_path('views/partials/flash_message.php'); ?>
-            <?php endif; ?>
+            <form method="post" action="<?= htmlspecialchars(url('community/resolve-code'), ENT_QUOTES, 'UTF-8') ?>" class="px-6 sm:px-8 py-8 space-y-6">
+                <?= \App\Core\Csrf::field() ?>
 
-            <!-- Carte formulaire -->
-            <div class="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.06] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-
-                <div class="border-b border-white/10 px-6 py-5">
-                    <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">
-                        Code d’accès
-                    </p>
-                    <p class="mt-2 text-sm text-slate-400">
-                        Exemple :
-                        <span class="ml-1 inline-flex items-center rounded-md bg-emerald-400/10 px-2 py-0.5 font-mono text-emerald-300 ring-1 ring-emerald-400/20">
-                            UNIT-ALPHA
-                        </span>
-                    </p>
-                </div>
-
-                <form method="post" action="<?= htmlspecialchars(url('community/resolve-code'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-6 px-6 py-6">
-                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-
-                    <div class="space-y-2">
-                        <label class="block text-[11px] font-black uppercase tracking-[0.22em] text-slate-400" for="community_code">
-                            Code communauté
-                        </label>
-
-                        <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-2 ring-1 ring-white/5 focus-within:border-emerald-400/40 focus-within:ring-emerald-400/20 transition">
-                            <input
-                                id="community_code"
-                                type="text"
-                                name="community_code"
-                                value="<?= htmlspecialchars($prefill_code ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                                required
-                                minlength="3"
-                                maxlength="64"
-                                placeholder="UNIT-2026"
-                                autocomplete="off"
-                                class="w-full bg-transparent px-3 py-3 text-sm font-semibold tracking-widest uppercase text-white outline-none placeholder:text-slate-500"
-                            >
-                        </div>
-                    </div>
-
-                    <button
-                        type="submit"
-                        class="w-full rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-black uppercase tracking-[0.18em] text-white transition hover:bg-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-400/20"
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="community_code">Code communauté</label>
+                    <input
+                        id="community_code"
+                        type="text"
+                        name="community_code"
+                        value="<?= htmlspecialchars($prefill_code ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        required
+                        minlength="3"
+                        maxlength="64"
+                        placeholder="Saisissez votre code"
+                        autocomplete="off"
+                        class="w-full bg-white border-2 border-slate-200 px-4 py-4 rounded-2xl text-center text-lg font-bold tracking-[0.2em] uppercase text-slate-900 placeholder:text-slate-400 placeholder:tracking-normal placeholder:text-sm placeholder:font-semibold focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 transition-all shadow-inner shadow-slate-100/80"
                     >
-                        Continuer
-                    </button>
-                </form>
-
-                <div class="border-t border-white/10 px-6 py-4 text-center text-sm text-slate-500">
-                    <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>" class="hover:text-white transition">
-                        Accueil
-                    </a>
-                    <span class="mx-2 text-slate-700">·</span>
-                    <a href="<?= htmlspecialchars(url('register'), ENT_QUOTES, 'UTF-8') ?>" class="hover:text-white transition">
-                        Créer un compte
-                    </a>
                 </div>
 
+                <button
+                    type="submit"
+                    class="w-full rounded-2xl bg-slate-900 py-4 text-[11px] font-black uppercase tracking-[0.28em] text-white shadow-lg shadow-slate-200/80 transition-all hover:bg-emerald-600 hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-emerald-500/15"
+                >
+                    Continuer
+                </button>
+            </form>
+
+            <div class="px-6 sm:px-8 py-5 border-t border-slate-100 bg-slate-50/60">
+                <p class="text-center text-xs text-slate-500 mb-3">Pas encore de code ?</p>
+                <div class="flex flex-col sm:flex-row items-stretch justify-center gap-3 text-center text-sm">
+                    <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-800 transition-colors">
+                        Retour à l’accueil
+                    </a>
+                    <a href="<?= htmlspecialchars(url('register'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-transparent bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700 transition-colors">
+                        Créer un compte sans code
+                    </a>
+                </div>
             </div>
         </div>
+
+        <p class="mt-8 text-center text-xs text-slate-500 leading-relaxed max-w-md mx-auto">
+            Après connexion, vous pourrez aussi
+            <a href="<?= htmlspecialchars(url('communities/create'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-slate-700 hover:text-emerald-700 underline decoration-slate-300 underline-offset-2">créer une communauté</a>
+            si votre projet le prévoit.
+        </p>
     </div>
+</main>
+
+<?php require base_path('views/partials/public_portal_auth_footer.php'); ?>
+
 </body>
 </html>

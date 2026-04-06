@@ -13,7 +13,6 @@ if (!isset($currentPath)) {
 $variant = (string) ($item['variant'] ?? 'operations');
 $layoutClass = 'nav-mega-layout nav-mega-layout--' . preg_replace('/[^a-z0-9_-]/', '', $variant);
 $slots = navigation_group_sections_by_slot($item['sections'] ?? []);
-$liveBlocks = is_array($item['live'] ?? null) ? $item['live'] : [];
 $feat = is_array($item['featured'] ?? null) ? $item['featured'] : null;
 
 $renderLinks = static function (array $section) use ($currentPath): void {
@@ -24,14 +23,14 @@ $renderLinks = static function (array $section) use ($currentPath): void {
         $isActive = nav_link_is_active($link, $currentPath) ? '1' : '0';
         ?>
         <a href="<?= htmlspecialchars((string) ($link['href'] ?? '#')) ?>"
-           class="nav-mega-link group/item flex items-start justify-between gap-3 rounded-2xl px-3 py-3"
+           class="nav-mega-link group/item flex items-start justify-between gap-2 rounded-xl px-2.5 py-2 sm:gap-3 sm:px-3 sm:py-2.5"
            data-active="<?= $isActive ?>">
             <div class="min-w-0">
-                <p class="text-sm font-bold text-slate-950">
+                <p class="text-[13px] font-bold leading-snug text-slate-950 sm:text-sm">
                     <?= htmlspecialchars((string) ($link['label'] ?? '')) ?>
                 </p>
                 <?php if (!empty($link['description'])): ?>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">
+                    <p class="mt-1 text-[11px] leading-snug text-slate-500 sm:text-xs sm:leading-5">
                         <?= htmlspecialchars((string) $link['description']) ?>
                     </p>
                 <?php endif; ?>
@@ -54,41 +53,15 @@ $renderSectionColumn = static function (array $sections, string $colClass) use (
             <?php if (!is_array($section)) {
                 continue;
             } ?>
-            <div class="nav-mega-col border-b border-slate-200/80 p-5 last:border-b-0">
-                <p class="mb-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+            <div class="nav-mega-col border-b border-slate-200/80 p-4 last:border-b-0 sm:p-5">
+                <p class="mb-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:mb-3 sm:text-[11px]">
                     <?= htmlspecialchars((string) ($section['title'] ?? '')) ?>
                 </p>
-                <div class="space-y-1.5">
+                <div class="space-y-1">
                     <?php $renderLinks($section); ?>
                 </div>
             </div>
         <?php endforeach; ?>
-    </div>
-    <?php
-};
-
-$renderLive = static function (array $blocks): void {
-    if ($blocks === []) {
-        return;
-    }
-    ?>
-    <div class="nav-mega-live mt-4 rounded-2xl p-4">
-        <p class="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Flux</p>
-        <div class="space-y-3">
-            <?php foreach ($blocks as $b): ?>
-                <?php if (!is_array($b) || empty($b['enabled'])) {
-                    continue;
-                } ?>
-                <div>
-                    <p class="nav-mega-live__label text-[11px] font-semibold uppercase tracking-wide">
-                        <?= htmlspecialchars((string) ($b['title'] ?? '')) ?>
-                    </p>
-                    <p class="mt-1 text-xs text-slate-500">
-                        <?= htmlspecialchars((string) ($b['empty_message'] ?? '—')) ?>
-                    </p>
-                </div>
-            <?php endforeach; ?>
-        </div>
     </div>
     <?php
 };
@@ -113,7 +86,7 @@ $renderFeatured = static function (?array $f): void {
     };
     if (!$showImg) {
         ?>
-        <aside class="nav-mega-aside flex min-h-[220px] flex-col justify-between border-l p-6 md:min-h-full">
+        <aside class="nav-mega-aside flex min-h-[200px] flex-col justify-between border-l p-4 sm:p-5 md:min-h-full">
             <div>
                 <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em]"
                       style="background: var(--nav-accent-soft); color: var(--nav-accent); border: 1px solid color-mix(in srgb, var(--nav-accent) 25%, transparent);">
@@ -139,7 +112,7 @@ $renderFeatured = static function (?array $f): void {
         return;
     }
     ?>
-    <aside class="nav-mega-aside relative flex min-h-[220px] flex-col justify-between border-l p-6 text-white md:min-h-full">
+    <aside class="nav-mega-aside relative flex min-h-[200px] flex-col justify-between border-l p-4 text-white sm:p-5 md:min-h-full">
         <div class="absolute inset-0 bg-cover opacity-45"
              style="background-image:url('<?= htmlspecialchars($imgUrl) ?>');background-position:<?= htmlspecialchars((string) $pos) ?>"></div>
         <div class="absolute inset-0 bg-gradient-to-br <?= $overlayClass ?>"></div>
@@ -183,7 +156,6 @@ $secondary = $slots['secondary'];
             <?php if ($secondary !== []) {
                 $renderSectionColumn($secondary, '');
             } ?>
-            <?php $renderLive($liveBlocks); ?>
         </div>
         <?php $renderFeatured($feat); ?>
     </div>

@@ -24,9 +24,16 @@ class UserProfileRepository
         return $row ?: null;
     }
 
+    /** Garantit une ligne `user_profiles` pour les jointures et l’édition (prénom/nom, etc.). */
+    public function ensureRow(int $userId): void
+    {
+        $stmt = $this->pdo->prepare('INSERT IGNORE INTO user_profiles (user_id, created_at) VALUES (?, NOW())');
+        $stmt->execute([$userId]);
+    }
+
     public function upsert(int $userId, array $data): void
     {
-        $fields = ['first_name', 'last_name', 'birth_date', 'nationality', 'timezone', 'language', 'bio', 'phone', 'emergency_contact'];
+        $fields = ['first_name', 'last_name', 'birth_date', 'nationality', 'timezone', 'language', 'bio', 'phone'];
         $existing = $this->getByUserId($userId);
         if ($existing) {
             $set = [];

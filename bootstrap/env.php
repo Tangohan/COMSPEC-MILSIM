@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-function load_env(string $root): void
-{
+if (!function_exists('load_env')) {
+    function load_env(string $root): void
+    {
     $path = rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.env';
 
     if (!is_file($path) || !is_readable($path)) {
@@ -52,5 +53,6 @@ function load_env(string $root): void
         $_ENV[$name] = $value;
         $_SERVER[$name] = $value;
         putenv($name . '=' . $value);
+    }
     }
 }

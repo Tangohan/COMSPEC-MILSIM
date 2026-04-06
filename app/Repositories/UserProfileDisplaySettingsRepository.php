@@ -46,6 +46,7 @@ class UserProfileDisplaySettingsRepository
             'user_id' => $userId,
             'forum_alias' => null,
             'forum_label_mode' => 'display_name',
+            'forum_visible_role_id' => null,
             'show_matricule_forum' => 1,
             'show_grade_forum' => 1,
             'show_unit_forum' => 1,
@@ -53,6 +54,8 @@ class UserProfileDisplaySettingsRepository
             'fiche_show_email_to_others' => 0,
             'fiche_show_matricule_to_others' => 1,
             'public_roster_opt_in' => 0,
+            'hide_personal_info' => 0,
+            'hide_forum_level' => 0,
         ], $row ?? []);
     }
 
@@ -62,10 +65,10 @@ class UserProfileDisplaySettingsRepository
             return;
         }
         $allowed = [
-            'forum_alias', 'forum_label_mode',
-            'show_matricule_forum', 'show_grade_forum', 'show_unit_forum', 'show_bio_forum',
+            'forum_alias', 'forum_label_mode', 'forum_visible_role_id',
+            'show_matricule_forum', 'show_grade_forum', 'show_unit_forum', 'show_bio_forum', 'hide_forum_level',
             'fiche_show_email_to_others', 'fiche_show_matricule_to_others',
-            'public_roster_opt_in',
+            'public_roster_opt_in', 'hide_personal_info',
         ];
         $existing = $this->getByUserId($userId);
         $sets = [];

@@ -13,13 +13,14 @@ declare(strict_types=1);
 return [
     'brand' => [
         'name' => 'Athena',
-        'subtitle' => 'Système de conduite communautaire',
+        'subtitle' => '',
         'tagline' => '',
         'path' => '',
     ],
 
     'search' => [
         'enabled' => true,
+        'shortcut' => true,
         'placeholder' => 'Rechercher un module, un document, un personnel…',
         'path' => 'search',
         'method' => 'get',
@@ -38,12 +39,6 @@ return [
             'label' => 'Dashboard',
             'type' => 'link',
             'path' => 'dashboard',
-            'auth_only' => true,
-        ],
-        [
-            'label' => 'Pointage',
-            'type' => 'link',
-            'path' => 'pointage',
             'auth_only' => true,
         ],
         [
@@ -72,6 +67,7 @@ return [
                     'links' => [
                         ['label' => 'Hub', 'path' => 'hub'],
                         ['label' => 'Pointage', 'path' => 'pointage'],
+                        ['label' => 'Communautés', 'path' => 'communities'],
                         ['label' => 'Briefing', 'path' => 'forum'],
                         ['label' => 'ORBAT', 'path' => 'orbat'],
                         ['label' => 'ATAK', 'path' => 'atak'],
@@ -83,6 +79,31 @@ return [
                     'links' => [
                         ['label' => 'Derniers briefings', 'path' => 'forum'],
                         ['label' => 'Situation tactique', 'path' => 'atak'],
+                    ],
+                ],
+                [
+                    'title' => 'Calendrier & messagerie',
+                    'slot' => 'center',
+                    'links' => [
+                        ['label' => 'Événements', 'path' => 'evenements'],
+                        ['label' => 'Messages internes', 'path' => 'messages'],
+                    ],
+                ],
+                [
+                    'title' => 'Dossier & cartographie',
+                    'slot' => 'secondary',
+                    'links' => [
+                        ['label' => 'Dossier opérateur (accréditation)', 'path' => 'dossier-operateur/accreditation'],
+                        ['label' => 'TACMAP', 'path' => 'tacmap'],
+                        ['label' => 'Overwatch', 'path' => 'overwatch'],
+                    ],
+                ],
+                [
+                    'title' => 'Matériel & mods',
+                    'slot' => 'secondary',
+                    'links' => [
+                        ['label' => 'Équipement', 'path' => 'equipment'],
+                        ['label' => 'Modpacks', 'path' => 'modpacks'],
                     ],
                 ],
             ],
@@ -140,6 +161,15 @@ return [
                         ['label' => 'Bureau courrier', 'path' => 'courrier', 'any_permissions' => ['courrier.view', 'admin.access']],
                     ],
                 ],
+                [
+                    'title' => 'Aide & documentation',
+                    'slot' => 'secondary',
+                    'links' => [
+                        ['label' => 'Guide du portail', 'path' => 'documentation', 'description' => 'Documentation utilisateur intégrée au site'],
+                        ['label' => 'Références projet (équipe)', 'path' => 'documentation/references', 'description' => 'Inventaires techniques et fiches sources'],
+                        ['label' => 'Recherche portail', 'path' => 'search', 'description' => 'Recherche globale · raccourci clavier selon configuration'],
+                    ],
+                ],
             ],
             'live' => [
                 [
@@ -176,6 +206,7 @@ return [
                     'slot' => 'primary',
                     'links' => [
                         ['label' => 'Ma fiche', 'path' => 'personnel/me'],
+                        ['label' => 'Guide dossier & presets', 'path' => 'personnel/tutorials', 'description' => 'ORBAT, forum, complétude, presets métier'],
                         ['label' => 'Annuaire (ORBAT)', 'path' => 'orbat', 'description' => 'Vue d’organisation et des effectifs'],
                     ],
                 ],
@@ -184,6 +215,8 @@ return [
                     'slot' => 'center',
                     'links' => [
                         ['label' => 'Grades', 'path' => 'back-office/referentiels/grades', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Rôles métier (référentiel)', 'path' => 'back-office/personnel-job-roles', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Attributions rôles métier', 'path' => 'back-office/personnel-job-roles/assignments', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Unités', 'path' => 'back-office/groups', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Équipes', 'path' => 'back-office/teams', 'any_permissions' => ['admin.organization', 'admin.access']],
                     ],
@@ -201,6 +234,7 @@ return [
         ],
         [
             'label' => 'Formation',
+            'badge' => 'Nouveau',
             'type' => 'mega',
             'auth_only' => true,
             'icon' => 'academic',
@@ -231,7 +265,18 @@ return [
                     'title' => 'Pilotage',
                     'slot' => 'center',
                     'links' => [
-                        ['label' => 'Administration formation', 'path' => 'admin/training', 'any_permissions' => ['training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish']],
+                        ['label' => 'Administration formation', 'path' => 'back-office/ressources/training', 'any_permissions' => ['training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish'], 'description' => 'Tableau de bord LMS communauté'],
+                        ['label' => 'Studio LMS', 'path' => 'back-office/ressources/training/studio', 'any_permissions' => ['training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish'], 'description' => 'Édition des parcours'],
+                    ],
+                ],
+                [
+                    'title' => 'Documentation',
+                    'slot' => 'secondary',
+                    'links' => [
+                        ['label' => 'Guide du portail', 'path' => 'documentation', 'description' => 'Documentation utilisateur intégrée au site'],
+                        ['label' => 'Références projet (équipe)', 'path' => 'documentation/references', 'description' => 'Inventaires techniques et fiches sources'],
+                        ['label' => 'Rubrique Formations (guide)', 'path' => 'documentation#formations', 'description' => 'Section du guide utilisateur'],
+                        ['label' => 'Navigation & dashboard (guide)', 'path' => 'documentation#navigation-et-recherche', 'description' => 'Sommaire du guide intégré'],
                     ],
                 ],
             ],
@@ -254,24 +299,26 @@ return [
             'accent' => 'rose',
             'variant' => 'admin',
             'featured' => [
-                'eyebrow' => 'Supervision',
-                'title' => 'Centre de contrôle',
-                'description' => 'Supervision, paramétrage, audit et administration des modules.',
+                'eyebrow' => 'Deux périmètres',
+                'title' => 'Plateforme vs communauté',
+                'description' => '/admin = site entier (super-admins). /back-office = votre organisation. Les modules métier (forum, LMS…) sont toujours liés à la communauté de session.',
                 'image' => 'assets/img/nav/admin.jpg',
                 'image_enabled' => true,
                 'image_position' => 'center',
                 'overlay' => 'dark',
-                'cta_label' => 'Administrer la plateforme',
+                'cta_label' => 'Administration plateforme',
                 'cta_path' => 'admin',
                 'cta_permission' => 'admin.system',
                 'cta_intent' => 'administer',
             ],
             'sections' => [
                 [
-                    'title' => 'Plateforme',
+                    'title' => 'Plateforme (site entier)',
                     'slot' => 'primary',
                     'links' => [
-                        ['label' => 'Dashboard admin', 'path' => 'admin', 'permission' => 'admin.system'],
+                        ['label' => 'Tableau de bord plateforme', 'path' => 'admin', 'permission' => 'admin.system'],
+                        ['label' => 'Rôles système', 'path' => 'admin/roles', 'permission' => 'admin.system'],
+                        ['label' => 'Rôles site (affectations)', 'path' => 'admin/site-roles', 'permission' => 'admin.system'],
                         ['label' => 'Paramètres système', 'path' => 'admin/settings', 'permission' => 'admin.system'],
                         ['label' => 'Alertes plateforme', 'path' => 'admin/system/alerts', 'permission' => 'admin.system'],
                         ['label' => 'Maintenance BDD', 'path' => 'admin/maintenance', 'permission' => 'admin.system'],
@@ -279,22 +326,25 @@ return [
                     ],
                 ],
                 [
-                    'title' => 'Modules techniques (communauté courante)',
+                    'title' => 'Modules métier (communauté active)',
                     'slot' => 'secondary',
                     'links' => [
-                        ['label' => 'Modpacks', 'path' => 'admin/modpacks', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
-                        ['label' => 'Configuration ATAK', 'path' => 'admin/atak-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
-                        ['label' => 'Mod ATAK', 'path' => 'admin/atak-mod', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
-                        ['label' => 'Configuration forum', 'path' => 'admin/forum-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
-                        ['label' => 'Formations (LMS)', 'path' => 'admin/training', 'any_permissions' => ['admin.system', 'training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish', 'admin.access']],
+                        ['label' => 'Modpacks', 'path' => 'back-office/ressources/modpacks', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
+                        ['label' => 'Configuration ATAK', 'path' => 'back-office/ressources/atak-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
+                        ['label' => 'Mod ATAK', 'path' => 'back-office/ressources/atak-mod', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
+                        ['label' => 'Configuration forum', 'path' => 'back-office/ressources/forum-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
+                        ['label' => 'Formations (LMS)', 'path' => 'back-office/ressources/training', 'any_permissions' => ['admin.system', 'training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish', 'admin.access']],
                         ['label' => 'Gestion documentaire', 'path' => 'documents/gestion', 'any_permissions' => ['admin.system', 'documents.upload', 'admin.access']],
                     ],
                 ],
                 [
-                    'title' => 'Organisation & sécurité',
+                    'title' => 'Organisation (back-office)',
                     'slot' => 'center',
                     'links' => [
-                        ['label' => 'Back-office', 'path' => 'back-office', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Back-office communauté', 'path' => 'back-office', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Raccourcis dashboard', 'path' => 'back-office/dashboard-pins', 'any_permissions' => ['dashboard.pins.manage']],
+                        ['label' => 'Profils permissions (rôles)', 'path' => 'back-office/roles/presets', 'any_permissions' => ['admin.organization', 'admin.roles.manage', 'admin.permissions.manage']],
+                        ['label' => 'Rôles & fonctions (toile)', 'path' => 'back-office/roles-functions', 'any_permissions' => ['admin.organization', 'admin.roles.manage', 'admin.permissions.manage']],
                         ['label' => 'Modération forum', 'path' => 'back-office/forum-moderation', 'any_permissions' => ['forum.moderate', 'forum.moderate_organization', 'forum.topic.pin', 'forum.reports.manage', 'forum.post.edit_any', 'admin.organization', 'admin.access']],
                         ['label' => 'Modération fichiers', 'path' => 'back-office/content-moderation', 'any_permissions' => ['forum.moderate', 'forum.moderate_organization', 'forum.topic.pin', 'forum.reports.manage', 'admin.organization', 'admin.access']],
                         ['label' => 'Audit organisation', 'path' => 'back-office/audit', 'any_permissions' => ['admin.organization', 'admin.access']],

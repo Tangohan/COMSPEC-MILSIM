@@ -43,12 +43,16 @@ class TrainingModuleRepository
     {
         $position = $data['position'] ?? $this->getMaxPosition($courseId) + 1;
         $stmt = $this->pdo->prepare(
-            'INSERT INTO training_modules (course_id, title, description, position, is_required) VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO training_modules (course_id, title, description, subtitle, learning_objectives, estimated_minutes, position, is_required)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $courseId,
             $data['title'],
             $data['description'] ?? null,
+            $data['subtitle'] ?? null,
+            $data['learning_objectives'] ?? null,
+            (int) ($data['estimated_minutes'] ?? 0),
             $position,
             (int) ($data['is_required'] ?? 1),
         ]);
@@ -57,7 +61,7 @@ class TrainingModuleRepository
 
     public function update(int $id, array $data): void
     {
-        $allowed = ['title', 'description', 'position', 'is_required'];
+        $allowed = ['title', 'description', 'subtitle', 'learning_objectives', 'estimated_minutes', 'position', 'is_required'];
         $fields = [];
         $params = [];
         foreach ($allowed as $k) {

@@ -45,11 +45,11 @@ class AuthMiddleware
             return Response::redirect(url('login'));
         }
 
-        // Recharger les permissions à chaque requête pour que le menu Admin soit affiché
-        $roleId = Session::get('role_id');
-        $email = Session::get('email');
+        // Recharger les permissions à chaque requête (union multi-rôles) + aligner role_id session sur la BDD
+        Session::set('role_id', $user['role_id'] ? (int) $user['role_id'] : null);
         $rbac = Container::get(RbacService::class);
-        $rbac->setPermissionsForGate($roleId ? (int) $roleId : null, $email !== null && $email !== '' ? (string) $email : null);
+        $rbac->setPermissionsForGateFromUserRow($user, $userRepo);
+        Session::set('rbac_unit_map', json_encode(\App\Core\Gate::getInstance()->getUnitPermissionMap()) ?: '{}');
 
         $tenantId = (int) $user['tenant_id'];
         try {
@@ -78,5 +78,6 @@ class AuthMiddleware
         Session::forget('display_name');
         Session::forget('callsign');
         Session::forget('role_id');
+        Session::forget('rbac_unit_map');
     }
 }

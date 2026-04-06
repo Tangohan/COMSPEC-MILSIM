@@ -85,7 +85,8 @@ class ForumPostRepository
                     COALESCE(ups.show_matricule_forum, 1) AS author_show_matricule_forum,
                     COALESCE(ups.show_grade_forum, 1) AS author_show_grade_forum,
                     COALESCE(ups.show_unit_forum, 1) AS author_show_unit_forum,
-                    COALESCE(ups.show_bio_forum, 1) AS author_show_bio_forum,'
+                    COALESCE(ups.show_bio_forum, 1) AS author_show_bio_forum,
+                    COALESCE(ups.hide_forum_level, 0) AS author_hide_forum_level,'
             : 'u.id AS author_user_id,
                     u.email AS author_email,
                     up.first_name AS author_first_name,
@@ -96,17 +97,21 @@ class ForumPostRepository
                     1 AS author_show_matricule_forum,
                     1 AS author_show_grade_forum,
                     1 AS author_show_unit_forum,
-                    1 AS author_show_bio_forum,';
+                    1 AS author_show_bio_forum,
+                    0 AS author_hide_forum_level,';
         $upsJoin = $this->hasDisplaySettingsTable()
             ? 'LEFT JOIN user_profile_display_settings ups ON ups.user_id = u.id'
             : '';
+        $roleJoinSql = $this->hasDisplaySettingsTable()
+            ? 'LEFT JOIN roles r ON r.id = COALESCE(NULLIF(ups.forum_visible_role_id, 0), u.role_id)'
+            : 'LEFT JOIN roles r ON r.id = u.role_id';
         $fullSql = "SELECT fp.*,
                     u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id, u.avatar_url AS author_avatar_url, u.created_at AS author_created_at,
                     $identityCols
                     r.name AS author_role_name, r.slug AS author_role_slug,
                     up.bio AS author_bio,
                     $gradeCols,
-                    pp.matricule_internal AS author_matricule, pp.primary_role AS author_primary_role,
+                    pp.matricule_internal AS author_matricule, COALESCE(pjr.name, pp.primary_role) AS author_primary_role,
                     un.name AS author_unit_name, un.code AS author_unit_code,
                     (SELECT GROUP_CONCAT(psh.title ORDER BY psh.event_date DESC, psh.id DESC SEPARATOR ' · ')
                      FROM personnel_service_history psh
@@ -114,12 +119,13 @@ class ForumPostRepository
                     (SELECT COUNT(*) FROM forum_posts fpc WHERE fpc.user_id = u.id) AS author_post_count
              FROM forum_posts fp
              LEFT JOIN users u ON u.id = fp.user_id
-             LEFT JOIN roles r ON r.id = u.role_id
              LEFT JOIN user_profiles up ON up.user_id = u.id
              $gradeJoin
              LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+             LEFT JOIN personnel_job_roles pjr ON pjr.id = pp.personnel_job_role_id AND pjr.tenant_id = u.tenant_id
              LEFT JOIN units un ON un.id = pp.primary_unit_id
              $upsJoin
+             $roleJoinSql
              WHERE fp.topic_id = ? AND ($hiddenCond)
              ORDER BY fp.created_at ASC
              LIMIT $perPage OFFSET $offset";
@@ -136,6 +142,7 @@ class ForumPostRepository
                     1 AS author_show_grade_forum,
                     1 AS author_show_unit_forum,
                     1 AS author_show_bio_forum,
+                    0 AS author_hide_forum_level,
                     r.name AS author_role_name, r.slug AS author_role_slug,
                     up.bio AS author_bio,
                     $gradeCols,

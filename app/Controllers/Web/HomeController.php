@@ -12,7 +12,7 @@ class HomeController
 {
     public function index(Request $request, array $params = []): Response
     {
-        return Response::view('home.index', ['title' => 'Athena — Commandement Aérien MILSIM']);
+        return Response::view('home.index', ['title' => 'Athena Compsec — Portail MILSIM']);
     }
 
     /** Page d’information sur les offres (fondateurs, essai Pro, Stripe). */
@@ -108,6 +108,10 @@ class HomeController
         $dashboardTenantLabel = null;
         $showcaseTrainingFeature = false;
         $showcaseItems = [];
+        $myEnlistmentsPending = [];
+        $staffEnlistmentsPending = [];
+        $showStaffEnlistments = false;
+        $dashboardPins = [];
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
@@ -118,6 +122,29 @@ class HomeController
             if ($showcaseTrainingFeature) {
                 $rows = \App\Core\Container::get(\App\Repositories\TrainingCourseRepository::class)->listPublishedForDashboard($tid, 20);
                 $showcaseItems = self::buildTrainingShowcasePayload($rows);
+            }
+
+            if ($currentUser) {
+                $uid = (int) $currentUser['id'];
+                $uemail = (string) ($currentUser['email'] ?? '');
+                $enlistRepo = \App\Core\Container::get(\App\Repositories\EnlistmentRepository::class);
+                $myEnlistmentsPending = $enlistRepo->listPendingSubmittedForSubmitter($tid, $uid, $uemail);
+
+                $gate = \App\Core\Gate::getInstance();
+                $roleSlug = \App\Core\Container::get(\App\Repositories\UserRepository::class)->getRoleSlugForUser($uid) ?? '';
+                $staffSlugs = ['recruiter', 'community_owner', 'hr', 'tenant_admin'];
+                $showStaffEnlistments = $gate->allows('admin.organization') || $gate->allows('admin.access')
+                    || in_array($roleSlug, $staffSlugs, true);
+                if ($showStaffEnlistments) {
+                    $staffEnlistmentsPending = $enlistRepo->listPendingSubmittedForTenant($tid, 25);
+                }
+
+                try {
+                    $dashboardPins = \App\Core\Container::get(\App\Services\Dashboard\TenantDashboardPinService::class)
+                        ->listResolvedPinsForViewer($tid, $uid);
+                } catch (\Throwable) {
+                    $dashboardPins = [];
+                }
             }
         }
 
@@ -134,6 +161,10 @@ class HomeController
             'dashboard_tenant_label' => $dashboardTenantLabel,
             'showcase_training_feature' => $showcaseTrainingFeature,
             'showcase_items' => $showcaseItems,
+            'my_enlistments_pending' => $myEnlistmentsPending,
+            'staff_enlistments_pending' => $staffEnlistmentsPending,
+            'show_staff_enlistments' => $showStaffEnlistments,
+            'dashboard_pins' => $dashboardPins,
         ]);
     }
 

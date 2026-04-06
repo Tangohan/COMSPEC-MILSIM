@@ -64,4 +64,19 @@ class EmailTokenRepository
     {
         $this->pdo->prepare('UPDATE email_tokens SET consumed_at = NOW() WHERE id = ?')->execute([$id]);
     }
+
+    /** Dernier envoi (tout jeton, même consommé) pour le délai entre renvois. */
+    public function getLatestTokenCreatedAtForUserPurpose(int $userId, string $purpose): ?\DateTimeImmutable
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT created_at FROM email_tokens WHERE user_id = ? AND purpose = ? ORDER BY id DESC LIMIT 1'
+        );
+        $stmt->execute([$userId, $purpose]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row || empty($row['created_at'])) {
+            return null;
+        }
+
+        return new \DateTimeImmutable((string) $row['created_at']);
+    }
 }

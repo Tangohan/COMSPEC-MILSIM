@@ -56,6 +56,9 @@ $themes = [
 
 $eyebrowFor = static function (string $variant, string $message): string {
     if ($variant === 'error') {
+        if (preg_match('/confirmez votre adresse|e-mail avant de vous connecter|vérification.*e-mail/i', $message)) {
+            return 'Confirmation requise';
+        }
         if (preg_match('/authentification|session|connecter|connecté/i', $message)) {
             return 'Accès refusé';
         }

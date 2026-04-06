@@ -256,6 +256,7 @@ final class ProfilePublicIdentityService
 
     /**
      * Forum « plateforme » (catégorie scope=platform) : carte auteur allégée — rôle communauté uniquement, sans ORBAT / dossier militaire.
+     * S’applique à tous les lecteurs (y compris modérateurs) ; le détail légal reste dans les champs réservés à la modération.
      *
      * @param array<string, mixed> $postRow
      * @return array<string, mixed>

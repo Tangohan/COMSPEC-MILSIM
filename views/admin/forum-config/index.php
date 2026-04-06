@@ -30,7 +30,7 @@ $forumName = $forumConfig['name'] ?? 'Chambre des Murmures';
     <section class="mb-10">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-bold text-slate-900">Gestion des catégories</h2>
-            <button type="button" @click="fcOpenCreate()" class="px-3 py-1.5 bg-slate-900 text-white text-sm font-medium rounded hover:bg-slate-800">Créer une catégorie</button>
+            <button type="button" @click="fcOpenCreate(null)" class="px-3 py-1.5 bg-slate-900 text-white text-sm font-medium rounded hover:bg-slate-800">Créer une catégorie</button>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
             <?php if (empty($categories)): ?>
@@ -42,6 +42,7 @@ $forumName = $forumConfig['name'] ?? 'Chambre des Murmures';
                         <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Ordre</th>
                         <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Nom</th>
                         <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Slug</th>
+                        <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Portée</th>
                         <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Verrouillé</th>
                         <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
                     </tr>
@@ -51,14 +52,30 @@ $forumName = $forumConfig['name'] ?? 'Chambre des Murmures';
                     <tr class="border-b border-slate-100 hover:bg-slate-50">
                         <td class="p-3"><?= (int)($cat['display_order'] ?? 0) ?></td>
                         <td class="p-3 font-medium"><?= htmlspecialchars($cat['name'] ?? '') ?></td>
-                        <td class="p-3 text-slate-500"><?= htmlspecialchars($cat['slug'] ?? '') ?></td>
+                        <td class="p-3 text-slate-500 font-mono text-xs"><?= htmlspecialchars($cat['slug'] ?? '') ?></td>
+                        <td class="p-3 text-xs"><?= htmlspecialchars($cat['scope'] ?? 'general') ?></td>
                         <td class="p-3"><?= !empty($cat['is_locked']) ? 'Oui' : 'Non' ?></td>
                         <td class="p-3 flex flex-wrap gap-2">
+                            <button type="button" @click="fcOpenCreate(<?= (int)($cat['id']) ?>)" class="text-emerald-700 hover:text-emerald-900 text-sm underline">Sous-catégorie</button>
                             <button type="button" @click='fcOpenEdit(<?= json_encode($cat) ?>)' class="text-slate-600 hover:text-slate-900 text-sm underline">Éditer</button>
                             <button type="button" @click="fcLock(<?= (int)($cat['id']) ?>, <?= !empty($cat['is_locked']) ? 'false' : 'true' ?>)" class="text-slate-600 hover:text-slate-900 text-sm underline"><?= !empty($cat['is_locked']) ? 'Déverrouiller' : 'Verrouiller' ?></button>
                             <button type="button" @click="fcDelete(<?= (int)($cat['id']) ?>)" class="text-rose-600 hover:text-rose-800 text-sm underline">Supprimer</button>
                         </td>
                     </tr>
+                    <?php foreach ($cat['children'] ?? [] as $sub): ?>
+                    <tr class="border-b border-slate-100 bg-slate-50/80 hover:bg-slate-50">
+                        <td class="p-3 pl-8 text-slate-400">↳</td>
+                        <td class="p-3 font-medium text-slate-800"><?= htmlspecialchars($sub['name'] ?? '') ?></td>
+                        <td class="p-3 text-slate-500 font-mono text-xs"><?= htmlspecialchars($sub['slug'] ?? '') ?></td>
+                        <td class="p-3 text-xs"><?= htmlspecialchars($sub['scope'] ?? ($cat['scope'] ?? 'general')) ?></td>
+                        <td class="p-3"><?= !empty($sub['is_locked']) ? 'Oui' : 'Non' ?></td>
+                        <td class="p-3 flex flex-wrap gap-2">
+                            <button type="button" @click='fcOpenEdit(<?= json_encode($sub + ['_parent_name' => $cat['name'] ?? '']) ?>)' class="text-slate-600 hover:text-slate-900 text-sm underline">Éditer</button>
+                            <button type="button" @click="fcLock(<?= (int)($sub['id']) ?>, <?= !empty($sub['is_locked']) ? 'false' : 'true' ?>)" class="text-slate-600 hover:text-slate-900 text-sm underline"><?= !empty($sub['is_locked']) ? 'Déverrouiller' : 'Verrouiller' ?></button>
+                            <button type="button" @click="fcDelete(<?= (int)($sub['id']) ?>)" class="text-rose-600 hover:text-rose-800 text-sm underline">Supprimer</button>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
                     <?php endforeach; ?>
                 </tbody>
             </table>
@@ -211,6 +228,25 @@ $forumName = $forumConfig['name'] ?? 'Chambre des Murmures';
                         <label class="block text-sm font-medium text-slate-700 mb-1">Ordre d'affichage</label>
                         <input type="number" class="fc-input w-full border border-slate-200 rounded px-3 py-2" name="display_order" x-model="fcForm.display_order" min="0">
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Catégorie parente</label>
+                        <select class="fc-input w-full border border-slate-200 rounded px-3 py-2 text-sm" x-model="fcForm.parent_id">
+                            <option value="">— Racine (canal principal) —</option>
+                            <?php foreach ($categories as $rc): ?>
+                            <option value="<?= (int)($rc['id'] ?? 0) ?>"><?= htmlspecialchars($rc['name'] ?? '') ?> (racine)</option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="mt-1 text-xs text-slate-500">Choisissez une racine pour créer une <strong>sous-catégorie</strong> (un seul niveau). La portée hérite du parent.</p>
+                    </div>
+                    <div x-show="!fcForm.parent_id">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Portée / espace</label>
+                        <select class="fc-input w-full border border-slate-200 rounded px-3 py-2 text-sm" x-model="fcForm.scope">
+                            <option value="general">Général (membres)</option>
+                            <option value="platform">Plateforme (global)</option>
+                            <option value="organization">Organisation / unité</option>
+                            <option value="moderation">Espace modération (équipe uniquement)</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="mt-6 flex gap-2">
                     <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Enregistrer</button>
@@ -228,17 +264,24 @@ function forumConfigPage() {
     return {
         fcModalOpen: false,
         fcEditId: null,
-        fcForm: { name: '', slug: '', description: '', display_order: 0 },
+        fcForm: { name: '', slug: '', description: '', display_order: 0, parent_id: '', scope: 'general' },
         bannedWordInput: '',
         blacklistedDomainInput: '',
-        async fcOpenCreate() {
+        fcOpenCreate(parentId) {
             this.fcEditId = null;
-            this.fcForm = { name: '', slug: '', description: '', display_order: 0 };
+            this.fcForm = { name: '', slug: '', description: '', display_order: 0, parent_id: parentId ? String(parentId) : '', scope: 'general' };
             this.fcModalOpen = true;
         },
         fcOpenEdit(cat) {
             this.fcEditId = cat.id;
-            this.fcForm = { name: cat.name || '', slug: cat.slug || '', description: cat.description || '', display_order: cat.display_order ?? 0 };
+            this.fcForm = {
+                name: cat.name || '',
+                slug: cat.slug || '',
+                description: cat.description || '',
+                display_order: cat.display_order ?? 0,
+                parent_id: cat.parent_id ? String(cat.parent_id) : '',
+                scope: cat.scope || 'general',
+            };
             this.fcModalOpen = true;
         },
         async fcSubmitForm() {
@@ -251,6 +294,10 @@ function forumConfigPage() {
             body.append('slug', this.fcForm.slug || this.fcForm.name.toLowerCase().replace(/\s+/g, '-'));
             body.append('description', this.fcForm.description);
             body.append('display_order', this.fcForm.display_order);
+            body.append('parent_id', this.fcForm.parent_id || '');
+            if (!this.fcForm.parent_id) {
+                body.append('scope', this.fcForm.scope || 'general');
+            }
             try {
                 const r = await fetch(BASE + '/api/admin/forum-categories', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));

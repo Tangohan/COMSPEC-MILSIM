@@ -50,14 +50,36 @@ $canCreateEvent = $canCreateEvent ?? true;
             <label class="block text-xs text-slate-500">Campagne / tag</label>
             <input type="text" name="campaign_tag" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" <?= !$canCreateEvent ? 'disabled' : '' ?>>
         </div>
+        <div>
+            <label class="block text-xs text-slate-500">Type</label>
+            <select name="event_type" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" <?= !$canCreateEvent ? 'disabled' : '' ?>>
+                <option value="operation">Opération</option>
+                <option value="evenement" selected>Événement</option>
+                <option value="formation">Formation (créneau)</option>
+                <option value="autre">Autre</option>
+            </select>
+        </div>
         <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded" <?= !$canCreateEvent ? 'disabled' : '' ?>>Créer</button>
     </form>
 
     <ul class="divide-y divide-slate-200 border border-slate-200 rounded-lg">
         <?php foreach ($events as $ev): ?>
-            <li class="px-4 py-3 text-sm">
-                <span class="font-semibold"><?= htmlspecialchars((string) ($ev['title'] ?? '')) ?></span>
-                <span class="text-slate-500"><?= htmlspecialchars((string) ($ev['starts_at'] ?? '')) ?></span>
+            <li class="px-4 py-3 text-sm flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <span class="font-semibold"><?= htmlspecialchars((string) ($ev['title'] ?? '')) ?></span>
+                    <span class="text-slate-500 ml-2"><?= htmlspecialchars((string) ($ev['starts_at'] ?? '')) ?></span>
+                    <?php
+                    $et = (string) ($ev['event_type'] ?? 'evenement');
+                    $etLab = match ($et) {
+                        'operation' => 'Opération',
+                        'formation' => 'Formation',
+                        'autre' => 'Autre',
+                        default => 'Événement',
+                    };
+                    ?>
+                    <span class="ml-2 text-[10px] font-bold uppercase tracking-wider text-slate-400"><?= htmlspecialchars($etLab) ?></span>
+                </div>
+                <a href="<?= url('back-office/events/' . (int) ($ev['id'] ?? 0)) ?>" class="text-emerald-700 text-xs font-semibold hover:underline">Participants</a>
             </li>
         <?php endforeach; ?>
     </ul>

@@ -4,6 +4,11 @@ $baseUrl = url('');
 $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('email') ?? 'Connecté';
 $heroImageUrl = trim((string) ($forumConfig['forum_hero_image_url'] ?? ''));
 $hasHeroBg = $heroImageUrl !== '';
+$forumContextMenuEnabled = !empty($forumContextMenuEnabled);
+$forumFullCategoryAdmin = !empty($forumFullCategoryAdmin);
+$forumCsrfToken = $forumCsrfToken ?? '';
+$forumCategoriesApiUrl = $forumCategoriesApiUrl ?? '';
+$forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('admin/forum-config');
 ?>
 <div class="w-full px-4 sm:px-6 lg:px-8 py-10 bg-[#f8fafc]">
   <!-- Hero -->
@@ -37,6 +42,19 @@ $hasHeroBg = $heroImageUrl !== '';
     </div>
     <?php endif; ?>
   </div>
+
+  <?php if ($forumContextMenuEnabled): ?>
+  <div class="mb-6 rounded-xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50/90 via-white to-slate-50 px-4 py-3 shadow-sm flex flex-wrap items-center gap-3">
+    <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white text-xs font-black" title="Staff">⌁</span>
+    <div class="min-w-0 flex-1">
+      <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">Création rapide</p>
+      <p class="text-xs text-slate-700 mt-0.5"><span class="font-semibold text-slate-900">Clic droit</span> sur une catégorie racine pour ajouter une <span class="font-semibold">sous-catégorie</span> sans quitter le forum.</p>
+    </div>
+    <?php if ($forumFullCategoryAdmin): ?>
+    <a href="<?= htmlspecialchars($forumAdminForumConfigUrl, ENT_QUOTES, 'UTF-8') ?>" class="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-800 shadow-sm hover:border-emerald-400 hover:text-emerald-900 transition">Configuration forum</a>
+    <?php endif; ?>
+  </div>
+  <?php endif; ?>
 
   <!-- Search -->
   <div class="border border-slate-200 bg-white rounded-lg shadow-sm p-4 mb-8">
@@ -153,12 +171,44 @@ $hasHeroBg = $heroImageUrl !== '';
         </div>
         <div class="grid sm:grid-cols-2 gap-4">
           <?php foreach ($forumOrganizationCategories as $ocat): ?>
-            <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($ocat['slug']) ?>" class="block border border-slate-200 bg-white p-5 hover:border-emerald-400/60 transition rounded-xl shadow-sm">
+            <div class="forum-category-root rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-emerald-400/60 hover:shadow-md overflow-hidden" data-forum-category-root="1" data-category-id="<?= (int) ($ocat['id'] ?? 0) ?>" data-category-name="<?= htmlspecialchars($ocat['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= htmlspecialchars($ocat['scope'] ?? 'organization', ENT_QUOTES, 'UTF-8') ?>">
+            <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($ocat['slug']) ?>" class="block p-5 hover:bg-slate-50/50 transition">
               <p class="text-[9px] font-black uppercase tracking-widest text-emerald-700 mb-1">Unité</p>
               <h3 class="text-lg font-black text-slate-900 uppercase italic"><?= htmlspecialchars($ocat['name']) ?></h3>
               <p class="text-xs text-slate-600 mt-2 line-clamp-2"><?= htmlspecialchars($ocat['description'] ?? '') ?></p>
               <p class="text-[10px] text-slate-500 mt-3"><?= (int) ($ocat['topic_count'] ?? 0) ?> sujets · <?= (int) ($ocat['post_count'] ?? 0) ?> messages</p>
             </a>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      </section>
+      <?php endif; ?>
+
+      <?php if (!empty($forumModerationCategories)): ?>
+      <section class="mb-10">
+        <div class="flex items-center gap-3 mb-6">
+          <span class="flex-1 h-px bg-rose-200"></span>
+          <span class="text-[8px] font-black uppercase tracking-[0.4em] text-rose-800">Espaces modération</span>
+          <span class="flex-1 h-px bg-rose-200"></span>
+        </div>
+        <p class="text-xs text-slate-600 mb-4 max-w-2xl">Canaux visibles uniquement par l’équipe de modération (signalements internes, consignes, coordination).</p>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <?php foreach ($forumModerationCategories as $mcat): ?>
+            <div class="forum-category-root rounded-xl border-2 border-rose-200 bg-rose-50/80 shadow-sm transition hover:border-rose-400 hover:shadow-md overflow-hidden" data-forum-category-root="1" data-category-id="<?= (int) ($mcat['id'] ?? 0) ?>" data-category-name="<?= htmlspecialchars($mcat['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= htmlspecialchars($mcat['scope'] ?? 'moderation', ENT_QUOTES, 'UTF-8') ?>">
+            <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($mcat['slug']) ?>" class="block p-5 hover:bg-rose-50 transition">
+              <p class="text-[9px] font-black uppercase tracking-widest text-rose-800 mb-1">Staff</p>
+              <h3 class="text-lg font-black text-slate-900 uppercase italic"><?= htmlspecialchars($mcat['name']) ?></h3>
+              <p class="text-xs text-slate-700 mt-2 line-clamp-2"><?= htmlspecialchars($mcat['description'] ?? '') ?></p>
+              <p class="text-[10px] text-rose-900 mt-3 font-bold"><?= (int) ($mcat['topic_count'] ?? 0) ?> sujets · <?= (int) ($mcat['post_count'] ?? 0) ?> messages</p>
+              <?php if (!empty($mcat['children'])): ?>
+              <ul class="mt-3 space-y-1 border-t border-rose-200/80 pt-3">
+                <?php foreach ($mcat['children'] as $ch): ?>
+                <li><a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($ch['slug']) ?>" class="text-xs font-semibold text-rose-900 hover:underline">↳ <?= htmlspecialchars($ch['name']) ?></a></li>
+                <?php endforeach; ?>
+              </ul>
+              <?php endif; ?>
+            </a>
+            </div>
           <?php endforeach; ?>
         </div>
       </section>
@@ -178,8 +228,9 @@ $hasHeroBg = $heroImageUrl !== '';
             $theme = $colorThemes[$cat['color_theme'] ?? 'slate'] ?? $colorThemes['slate'];
             $num = str_pad((string) ($idx + 1), 2, '0', STR_PAD_LEFT);
           ?>
-            <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($cat['slug']) ?>" class="category-card group block border <?= $theme['border'] ?> <?= $theme['hover'] ?> bg-white rounded-xl shadow-sm transition relative overflow-hidden hover:shadow-md">
-              <div class="absolute -right-10 -top-10 w-52 h-52 <?= $theme['glow'] ?> blur-3xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full"></div>
+            <div class="category-card forum-category-root group border <?= $theme['border'] ?> <?= $theme['hover'] ?> bg-white rounded-xl shadow-sm transition relative overflow-hidden hover:shadow-md" data-forum-category-root="1" data-category-id="<?= (int) ($cat['id'] ?? 0) ?>" data-category-name="<?= htmlspecialchars($cat['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= htmlspecialchars($cat['scope'] ?? 'general', ENT_QUOTES, 'UTF-8') ?>">
+              <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($cat['slug']) ?>" class="block">
+              <div class="absolute -right-10 -top-10 w-52 h-52 <?= $theme['glow'] ?> blur-3xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none"></div>
               <div class="relative flex flex-col md:flex-row p-4 md:p-6">
                 <span class="absolute top-3 right-3 text-[8px] font-bold text-slate-300/90 tabular-nums select-none"><?= $num ?></span>
                 <div class="w-16 h-16 md:w-20 md:h-20 <?= $theme['icon'] ?> flex items-center justify-center text-2xl md:text-3xl mb-4 md:mb-0 md:mr-6 transition -rotate-0 group-hover:-rotate-3 rounded-lg">📁</div>
@@ -209,7 +260,15 @@ $hasHeroBg = $heroImageUrl !== '';
                   <span class="h-12 w-12 border border-slate-200 flex items-center justify-center text-xl text-slate-500 group-hover:border-emerald-500/60 group-hover:text-emerald-700 transition rounded-md">→</span>
                 </div>
               </div>
-            </a>
+              </a>
+              <?php if (!empty($cat['children'])): ?>
+              <div class="border-t border-slate-100 bg-slate-50/50 px-4 py-3 flex flex-wrap gap-2">
+                <?php foreach ($cat['children'] as $sub): ?>
+                  <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($sub['slug'] ?? '') ?>" class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-bold text-slate-800 hover:border-emerald-400 transition">↳ <?= htmlspecialchars($sub['name'] ?? '') ?></a>
+                <?php endforeach; ?>
+              </div>
+              <?php endif; ?>
+            </div>
           <?php endforeach; ?>
         </div>
       </section>
@@ -243,7 +302,8 @@ $hasHeroBg = $heroImageUrl !== '';
 
       <?php if (function_exists('forum_user_can_moderate') && forum_user_can_moderate()): ?>
       <?php
-      $reportPending = count($pendingReports ?? []);
+      $prRaw = $pendingReports ?? null;
+      $reportPending = is_countable($prRaw) ? count($prRaw) : (int) ($prRaw ?? 0);
       $queueArtifacts = (int) ($contentModerationQueueCount ?? 0);
       $artifactsReady = !empty($moderationArtifactsTableAvailable);
       ?>
@@ -339,3 +399,35 @@ $hasHeroBg = $heroImageUrl !== '';
     </aside>
   </div>
 </div>
+
+<?php if ($forumContextMenuEnabled): ?>
+<div id="forum-context-menu-config" class="hidden" data-enabled="1" data-api-url="<?= htmlspecialchars($forumCategoriesApiUrl, ENT_QUOTES, 'UTF-8') ?>" data-csrf="<?= htmlspecialchars($forumCsrfToken, ENT_QUOTES, 'UTF-8') ?>" data-full-admin="<?= $forumFullCategoryAdmin ? '1' : '0' ?>" data-admin-url="<?= htmlspecialchars($forumAdminForumConfigUrl, ENT_QUOTES, 'UTF-8') ?>"></div>
+
+<div id="forum-subcategory-modal" class="forum-modal-backdrop fixed inset-0 z-[10000] hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" aria-hidden="true">
+  <div class="forum-modal-panel w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="forum-subcat-modal-title">
+    <div class="border-b border-slate-100 px-5 py-4 bg-gradient-to-r from-emerald-50 to-white">
+      <h2 id="forum-subcat-modal-title" class="text-sm font-black uppercase tracking-[0.15em] text-slate-900">Nouvelle sous-catégorie</h2>
+      <p id="forum-subcat-modal-parent" class="text-xs text-slate-600 mt-1"></p>
+    </div>
+    <form id="forum-subcategory-form" class="p-5 space-y-4">
+      <div>
+        <label for="forum-subcat-name" class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Nom <span class="text-rose-600">*</span></label>
+        <input type="text" id="forum-subcat-name" name="name" required maxlength="120" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30" placeholder="Ex. Briefings équipe Alpha">
+      </div>
+      <div>
+        <label for="forum-subcat-slug" class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Slug URL <span class="text-slate-400 font-normal normal-case">(optionnel)</span></label>
+        <input type="text" id="forum-subcat-slug" name="slug" maxlength="80" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30" placeholder="auto depuis le nom si vide">
+      </div>
+      <div>
+        <label for="forum-subcat-desc" class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Description <span class="text-slate-400 font-normal normal-case">(optionnel)</span></label>
+        <textarea id="forum-subcat-desc" name="description" rows="2" maxlength="2000" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 resize-y min-h-[4rem]" placeholder="Une ligne pour situer le canal"></textarea>
+      </div>
+      <p id="forum-subcat-error" class="hidden text-xs text-rose-700 font-semibold"></p>
+      <div class="flex flex-wrap gap-2 justify-end pt-1">
+        <button type="button" id="forum-subcat-cancel" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-50">Annuler</button>
+        <button type="submit" id="forum-subcat-submit" class="rounded-lg bg-emerald-600 px-5 py-2 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-500 shadow-sm">Créer</button>
+      </div>
+    </form>
+  </div>
+</div>
+<?php endif; ?>

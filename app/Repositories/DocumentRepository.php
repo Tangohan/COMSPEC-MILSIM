@@ -25,7 +25,8 @@ class DocumentRepository
         ?string $entityType = null,
         ?int $entityId = null,
         ?string $documentType = null,
-        ?string $classificationLevel = null
+        ?string $classificationLevel = null,
+        ?string $sort = null
     ): array {
         $sql = 'SELECT d.*, dc.name AS category_name, dc.slug AS category_slug, dv.id AS version_id, dv.file_path, dv.mime_type, dv.size, dv.version_number
                 FROM documents d
@@ -63,7 +64,13 @@ class DocumentRepository
             $sql .= ' AND d.classification_level = ?';
             $params[] = $classificationLevel;
         }
-        $sql .= ' ORDER BY d.title ASC';
+        $order = match ($sort) {
+            'title_desc' => 'd.title DESC',
+            'updated_desc' => 'COALESCE(d.updated_at, d.created_at) DESC, d.title ASC',
+            'updated_asc' => 'COALESCE(d.updated_at, d.created_at) ASC, d.title ASC',
+            default => 'd.title ASC',
+        };
+        $sql .= ' ORDER BY ' . $order;
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

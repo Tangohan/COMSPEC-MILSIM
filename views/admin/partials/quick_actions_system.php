@@ -1,15 +1,41 @@
-<div class="rounded-xl border border-amber-200 bg-amber-50/40 p-5 mb-8">
-    <h2 class="text-lg font-bold text-slate-900 mb-1">Actions rapides — plateforme</h2>
-    <p class="text-xs text-slate-600 mb-3">Réservé au périmètre <strong class="font-semibold text-slate-800">site entier</strong> (rôles site, paramètres, audit global).</p>
-    <div class="flex flex-wrap gap-2">
-        <a href="<?= url('admin/roles') ?>" class="inline-flex items-center px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800">Rôles site</a>
-        <a href="<?= url('admin/site-roles') ?>" class="inline-flex items-center px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-800 hover:bg-slate-50">Affectations site</a>
-        <a href="<?= url('admin/settings') ?>" class="inline-flex items-center px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-800 hover:bg-slate-50">Paramètres</a>
-        <a href="<?= url('admin/system/alerts') ?>" class="inline-flex items-center px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-800 hover:bg-slate-50">Alertes plateforme</a>
-        <a href="<?= url('admin/maintenance') ?>" class="inline-flex items-center px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-800 hover:bg-slate-50">Maintenance</a>
-        <a href="<?= url('admin/audit') ?>" class="inline-flex items-center px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-800 hover:bg-slate-50">Audit</a>
-        <?php if (\App\Core\Gate::getInstance()->allows('admin.organization') || \App\Core\Gate::getInstance()->allows('admin.access')): ?>
-        <a href="<?= url('back-office') ?>" class="inline-flex items-center px-4 py-2 rounded-lg border border-emerald-300 bg-emerald-50 text-sm font-medium text-emerald-900 hover:bg-emerald-100">Back-office communauté</a>
-        <?php endif; ?>
+<?php
+declare(strict_types=1);
+/**
+ * Actions réservées à admin.system — périmètre plateforme uniquement.
+ */
+?>
+<section class="space-y-4" aria-labelledby="qa-platform-heading">
+    <div>
+        <h2 id="qa-platform-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Modules plateforme</h2>
+        <p class="mt-1 text-sm text-slate-600">Accès direct aux fonctions <strong class="font-semibold text-slate-800">transverses</strong> (hors configuration d’une communauté précise).</p>
     </div>
-</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Sécurité &amp; accès</p>
+            <h3 class="text-base font-bold text-slate-900">Identité globale</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4 flex-1">Rôles applicatifs et habilitations au niveau du site (pas les rôles communautaires).</p>
+            <div class="flex flex-col gap-2">
+                <a href="<?= url('admin/roles') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800">Rôles système</a>
+                <a href="<?= url('admin/site-roles') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Affectations rôles site</a>
+            </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Configuration</p>
+            <h3 class="text-base font-bold text-slate-900">Paramètres &amp; communication</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4 flex-1">Variables applicatives et messages visibles sur l’ensemble des instances.</p>
+            <div class="flex flex-col gap-2">
+                <a href="<?= url('admin/settings') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800">Paramètres système</a>
+                <a href="<?= url('admin/system/alerts') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Alertes plateforme</a>
+            </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Exploitation</p>
+            <h3 class="text-base font-bold text-slate-900">Données &amp; conformité</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4 flex-1">Maintenance planifiée, traçabilité globale et diagnostics.</p>
+            <div class="flex flex-col gap-2">
+                <a href="<?= url('admin/maintenance') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800">Maintenance BDD</a>
+                <a href="<?= url('admin/audit') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Journal d’audit</a>
+            </div>
+        </div>
+    </div>
+</section>

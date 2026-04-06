@@ -39,6 +39,26 @@ class UserNotificationPreferencesRepository
     }
 
     /**
+     * Préférence absente = opt-in (e-mail envoyé). Désactivé uniquement si une ligne existe avec enabled = 0.
+     */
+    public function isEmailEventEnabled(int $userId, string $eventKey): bool
+    {
+        if ($userId < 1 || $eventKey === '') {
+            return true;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT enabled FROM user_notification_preferences WHERE user_id = ? AND channel = ? AND event_key = ? LIMIT 1'
+        );
+        $stmt->execute([$userId, 'email', $eventKey]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return true;
+        }
+
+        return (bool) ((int) ($row['enabled'] ?? 0));
+    }
+
+    /**
      * @param list<array{channel: string, event_key: string, enabled: bool}> $rows
      */
     public function replaceMany(int $userId, int $tenantId, array $rows): void

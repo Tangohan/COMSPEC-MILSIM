@@ -15,6 +15,7 @@ use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Community\EnlistmentMilsimPackService;
+use App\Services\EmailService;
 use App\Services\Profile\RecruitmentPresetPayloadService;
 
 class EnlistmentController
@@ -26,7 +27,8 @@ class EnlistmentController
         private UserRepository $userRepository,
         private UserProfileRepository $userProfileRepository,
         private RecruitmentPresetRepository $recruitmentPresetRepository,
-        private RecruitmentPresetPayloadService $recruitmentPresetPayloadService
+        private RecruitmentPresetPayloadService $recruitmentPresetPayloadService,
+        private EmailService $emailService
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -118,9 +120,16 @@ class EnlistmentController
         $flow = trim((string) $request->input('enlistment_flow', 'guest'));
 
         if ($flow !== 'account') {
-            $guestEmail = trim((string) $request->input('email'));
+            $guestEmail = '';
+            if ($request->input('use_platform_email') && $this->authService->check()) {
+                $u = $this->authService->user();
+                $guestEmail = trim((string) ($u['email'] ?? ''));
+            }
+            if ($guestEmail === '') {
+                $guestEmail = trim((string) $request->input('email'));
+            }
             if ($guestEmail === '' || !filter_var($guestEmail, FILTER_VALIDATE_EMAIL)) {
-                Session::flash('enlistment_error', 'Merci d’indiquer une adresse email valide.');
+                Session::flash('enlistment_error', 'Merci d’indiquer une adresse email valide (ou cochez l’utilisation de l’e-mail du compte si vous êtes connecté).');
 
                 return Response::redirect(url('enlistment/error'));
             }
@@ -279,16 +288,18 @@ class EnlistmentController
             $payload['first_name'] = $first ?: '—';
             $payload['last_name'] = $last ?: '—';
             $payload['email'] = trim((string) $request->input('email'));
-            $payload['callsign'] = trim((string) $request->input('callsign')) ?: null;
+            $payload['callsign'] = null;
         }
 
         try {
-            $this->enlistmentRepository->create((int) $tenant['id'], $payload);
+            $enlistmentId = $this->enlistmentRepository->create((int) $tenant['id'], $payload);
         } catch (\Throwable $e) {
             Session::flash('enlistment_error', 'Une erreur technique a empêché l\'enregistrement de votre candidature. Veuillez réessayer ou contacter le support.');
 
             return Response::redirect(url('enlistment/error'));
         }
+
+        $this->notifyStaffNewEnlistment((int) $tenant['id'], $tenant, $enlistmentId, $payload);
 
         return Response::redirect($this->enlistmentSuccessUrl($tenant));
     }
@@ -308,6 +319,53 @@ class EnlistmentController
         $retry = Session::getFlash('enlistment_retry_url', url('enlistment'));
 
         return Response::view('enlistment.error', ['message' => $message, 'enlistmentRetryUrl' => $retry]);
+    }
+
+    /**
+     * E-mails : rôles recruteur, fondateur (community_owner), RH ; sinon gouvernance (tenant_admin + community_owner).
+     *
+     * @param array<string, mixed> $tenant
+     * @param array<string, mixed> $payload
+     */
+    private function notifyStaffNewEnlistment(int $tenantId, array $tenant, int $enlistmentId, array $payload): void
+    {
+        $recipients = $this->userRepository->listRecruitmentNotificationEmailsForTenant($tenantId);
+        if ($recipients === []) {
+            $recipients = $this->userRepository->listGovernanceEmailsForTenant($tenantId);
+        }
+        if ($recipients === []) {
+            return;
+        }
+
+        $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
+        $first = trim((string) ($payload['first_name'] ?? ''));
+        $last = trim((string) ($payload['last_name'] ?? ''));
+        $full = trim($first . ' ' . $last);
+        if ($full === '') {
+            $full = '—';
+        }
+        $candidateEmail = trim((string) ($payload['email'] ?? ''));
+        $availability = trim((string) ($payload['availability'] ?? ''));
+        $motivation = trim((string) ($payload['motivation_why_join'] ?? ''));
+        $reviewUrl = url('back-office/recruitments/' . $enlistmentId);
+
+        foreach ($recipients as $to) {
+            try {
+                $this->emailService->sendEnlistmentSubmittedStaffNotify(
+                    $to,
+                    $tenantName,
+                    $full,
+                    $candidateEmail,
+                    $availability !== '' ? $availability : null,
+                    $motivation !== '' ? $motivation : null,
+                    $enlistmentId,
+                    $reviewUrl,
+                    $tenantId
+                );
+            } catch (\Throwable) {
+                // La candidature est déjà enregistrée ; l’échec mail ne doit pas bloquer l’utilisateur.
+            }
+        }
     }
 
     /** @param array<string,mixed> $tenant */
@@ -353,7 +411,6 @@ class EnlistmentController
         $prefill = [
             'full_name' => '',
             'email' => '',
-            'callsign' => '',
             'age' => '',
             'timezone' => '',
             'weekly_availability' => '',
@@ -382,7 +439,6 @@ class EnlistmentController
                     } else {
                         $prefill['full_name'] = trim((string) ($user['display_name'] ?? ''));
                     }
-                    $prefill['callsign'] = trim((string) ($user['callsign'] ?? ''));
                     try {
                         $recruitmentPresets = $this->recruitmentPresetRepository->listForUser($uid);
                     } catch (\Throwable) {
@@ -403,9 +459,16 @@ class EnlistmentController
             }
         }
 
+        $platformEmail = '';
+        if ($this->authService->check()) {
+            $u = $this->authService->user();
+            $platformEmail = trim((string) ($u['email'] ?? ''));
+        }
+
         return [
             'canUseAccount' => $canUseAccount,
             'prefill' => $prefill,
+            'platform_email' => $platformEmail,
             'recruitmentPresets' => $recruitmentPresets,
             'hasMembershipOnTarget' => $hasMembershipOnTarget,
             'switchToTargetUrl' => $switchToTargetUrl,
