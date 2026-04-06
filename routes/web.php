@@ -26,6 +26,7 @@ use App\Controllers\Api\ForumApiController;
 use App\Controllers\Api\ForumModerationApiController;
 use App\Controllers\Api\ForumUploadController;
 use App\Controllers\Api\ForumRestController;
+use App\Controllers\Api\CommunityReportController;
 use App\Controllers\Api\OrbatApiController;
 use App\Controllers\Api\AtakIntelController;
 use App\Controllers\Api\AtakApiController;
@@ -706,6 +707,7 @@ return function (Router $router) {
     $router->get('/api/forum/topics/{topicId}/posts', [ForumRestController::class, 'listPosts'], $mwForum);
     $router->post('/api/forum/posts/{postId}/vote', [ForumRestController::class, 'votePost'], $mwForum);
     $router->post('/api/forum/report', [ForumRestController::class, 'report'], $mwForum);
+    $router->post('/api/community/report', [CommunityReportController::class, 'submit'], [AuthMiddleware::class]);
     $router->get('/api/forum/search', [ForumRestController::class, 'search'], $mwForum);
 
     // API Forum (JSON, actions legacy)

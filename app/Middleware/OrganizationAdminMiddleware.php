@@ -19,7 +19,8 @@ class OrganizationAdminMiddleware
         }
         $gate = \App\Core\Gate::getInstance();
         $path = $request->path();
-        $scopedOrgAccess = $gate->allows('admin.organization') || $gate->allows('admin.access');
+        $scopedOrgAccess = $gate->allows('admin.organization') || $gate->allows('admin.access')
+            || $gate->allows('site.support');
         if (!$scopedOrgAccess) {
             if (str_starts_with($path, '/back-office/recruitments') && $gate->allows('organization.recruitment.manage')) {
                 $scopedOrgAccess = true;

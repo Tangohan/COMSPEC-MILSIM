@@ -1,0 +1,55 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers\Api;
+
+use App\Core\Csrf;
+use App\Core\Request;
+use App\Core\Response;
+use App\Core\Session;
+use App\Services\Community\CommunityReportService;
+
+/**
+ * Signalements contenus hors forum (auth requise, sans sanction forum).
+ */
+final class CommunityReportController
+{
+    public function __construct(
+        private CommunityReportService $communityReportService,
+    ) {}
+
+    public function submit(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::json(['success' => false, 'error' => 'Connexion requise pour envoyer un signalement.'], 401);
+        }
+
+        $input = [];
+        $ct = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? ''));
+        if (str_contains($ct, 'application/json')) {
+            $raw = file_get_contents('php://input');
+            $decoded = json_decode((string) $raw, true);
+            $input = is_array($decoded) ? $decoded : [];
+        } else {
+            $input = $request->all();
+        }
+
+        $token = (string) ($input['csrf_token'] ?? $request->input('_csrf_token', ''));
+        if (!Csrf::validate($token)) {
+            return Response::json(['success' => false, 'error' => 'Session expirée. Rechargez la page puis réessayez.'], 403);
+        }
+
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        $targetType = (string) ($input['target_type'] ?? '');
+
+        $result = $this->communityReportService->submit($tenantId, $userId, $targetType, $input, $host);
+        if (!$result['ok']) {
+            return Response::json(['success' => false, 'error' => $result['error']], 400);
+        }
+
+        return Response::json(['success' => true]);
+    }
+}

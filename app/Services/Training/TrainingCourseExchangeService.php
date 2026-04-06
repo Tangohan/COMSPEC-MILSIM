@@ -48,7 +48,7 @@ class TrainingCourseExchangeService
     /** @return array<string, mixed> */
     public function buildExportDocument(int $courseId, int $tenantId): array
     {
-        $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId);
+        $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId, true);
         if (!$course) {
             throw new InvalidArgumentException('Formation introuvable.');
         }
@@ -340,7 +340,7 @@ class TrainingCourseExchangeService
         $keys = [
             'title', 'slug', 'course_code', 'short_description', 'description', 'category', 'level',
             'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying',
-            'validity_days', 'visibility', 'thumbnail_path', 'banner_path',
+            'validity_days', 'visibility', 'lms_scope', 'thumbnail_path', 'banner_path',
             'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes',
             'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order',
         ];

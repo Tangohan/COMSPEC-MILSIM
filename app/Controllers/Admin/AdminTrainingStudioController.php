@@ -44,6 +44,11 @@ class AdminTrainingStudioController
 
     private const LEVELS = ['initiation', 'intermediaire', 'avance', 'expert'];
 
+    private function canSetPlatformLmsScope(): bool
+    {
+        return Gate::getInstance()->allows('admin.system');
+    }
+
     /** Onglets d’édition Studio (URL dédiées). */
     private const STUDIO_SECTIONS = ['fiche', 'presentation', 'structure'];
 
@@ -201,6 +206,7 @@ class AdminTrainingStudioController
             'trainingStudioCourse' => null,
             'lmsPlatformVersion' => function_exists('lms_platform_version') ? lms_platform_version() : '',
             'lmsChangelogUrl' => training_studio_url('versions'),
+            'studioCanSetPlatformScope' => $this->canSetPlatformLmsScope(),
         ]);
     }
 
@@ -250,8 +256,21 @@ class AdminTrainingStudioController
         }
         $slugRaw = trim((string) $request->input('slug', ''));
         $slug = $slugRaw !== '' ? $slugRaw : $this->slugify($title);
-        if ($this->courseRepository->slugExists($tenantId, $slug)) {
-            Session::flash('error', 'Ce slug existe déjà pour une autre formation.');
+        $lmsScope = TrainingCourseRepository::LMS_SCOPE_TENANT;
+        if ($this->canSetPlatformLmsScope()) {
+            $in = trim((string) $request->input('lms_scope', TrainingCourseRepository::LMS_SCOPE_TENANT));
+            $lmsScope = $in === TrainingCourseRepository::LMS_SCOPE_PLATFORM
+                ? TrainingCourseRepository::LMS_SCOPE_PLATFORM
+                : TrainingCourseRepository::LMS_SCOPE_TENANT;
+        }
+        if ($lmsScope === TrainingCourseRepository::LMS_SCOPE_PLATFORM) {
+            if ($this->courseRepository->platformSlugExists($slug)) {
+                Session::flash('error', 'Cet identifiant d’URL est déjà utilisé pour un autre parcours proposé sur toute la plateforme.');
+
+                return Response::redirect(training_studio_url());
+            }
+        } elseif ($this->courseRepository->slugExists($tenantId, $slug)) {
+            Session::flash('error', 'Ce segment d’URL est déjà utilisé pour une autre formation de votre communauté.');
 
             return Response::redirect(training_studio_url());
         }
@@ -278,11 +297,13 @@ class AdminTrainingStudioController
             'updated_by' => $userId,
             'lms_created_with_version' => $lmsVer,
             'lms_last_saved_with_version' => $lmsVer,
+            'lms_scope' => $lmsScope,
         ]);
         $this->auditService->logCourseCreated($tenantId, $userId, $newId, [
             'title' => $title,
             'slug' => $slug,
             'visibility' => $visibility,
+            'lms_scope' => $lmsScope,
         ]);
         if ($visibility === 'published') {
             $this->auditService->logCoursePublished($tenantId, $userId, $newId);
@@ -328,7 +349,7 @@ class AdminTrainingStudioController
         }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
-        $course = $this->trainingService->getCourseWithStructure($id, $tenantId);
+        $course = $this->trainingService->getCourseWithStructure($id, $tenantId, true);
         if (!$course) {
             Session::flash('error', 'Formation introuvable.');
 
@@ -395,6 +416,7 @@ class AdminTrainingStudioController
             'studioSessions' => $sessions,
             'studioQuestions' => $pendingQuestions,
             'studioStaffPickUsers' => $staffPickUsers,
+            'studioCanSetPlatformScope' => $this->canSetPlatformLmsScope(),
         ]);
     }
 
@@ -407,7 +429,7 @@ class AdminTrainingStudioController
         }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
-        $course = $this->trainingService->getCourseWithStructure($id, $tenantId);
+        $course = $this->trainingService->getCourseWithStructure($id, $tenantId, true);
         if (!$course) {
             Session::flash('error', 'Formation introuvable.');
 
@@ -512,8 +534,29 @@ class AdminTrainingStudioController
         if ($slug === '') {
             $slug = $this->slugify($title);
         }
-        if ($this->courseRepository->slugExists($tenantId, $slug, $courseId)) {
-            Session::flash('error', 'Ce slug est déjà utilisé.');
+        $currentScope = (string) ($course['lms_scope'] ?? TrainingCourseRepository::LMS_SCOPE_TENANT);
+        if ($currentScope !== TrainingCourseRepository::LMS_SCOPE_PLATFORM && $currentScope !== TrainingCourseRepository::LMS_SCOPE_TENANT) {
+            $currentScope = TrainingCourseRepository::LMS_SCOPE_TENANT;
+        }
+        $requestedScope = $currentScope;
+        if ($this->canSetPlatformLmsScope()) {
+            $in = trim((string) $request->input('lms_scope', $currentScope));
+            $requestedScope = $in === TrainingCourseRepository::LMS_SCOPE_PLATFORM
+                ? TrainingCourseRepository::LMS_SCOPE_PLATFORM
+                : TrainingCourseRepository::LMS_SCOPE_TENANT;
+        } elseif ($currentScope === TrainingCourseRepository::LMS_SCOPE_PLATFORM) {
+            $requestedScope = TrainingCourseRepository::LMS_SCOPE_PLATFORM;
+        } else {
+            $requestedScope = TrainingCourseRepository::LMS_SCOPE_TENANT;
+        }
+        if ($requestedScope === TrainingCourseRepository::LMS_SCOPE_PLATFORM) {
+            if ($this->courseRepository->platformSlugExists($slug, $courseId)) {
+                Session::flash('error', 'Cet identifiant d’URL est déjà utilisé pour un autre parcours proposé sur toute la plateforme.');
+
+                return Response::redirect($this->studioEditUrl($courseId, 'fiche'));
+            }
+        } elseif ($this->courseRepository->slugExists($tenantId, $slug, $courseId)) {
+            Session::flash('error', 'Ce segment d’URL est déjà utilisé pour une autre formation de votre communauté.');
 
             return Response::redirect($this->studioEditUrl($courseId, 'fiche'));
         }
@@ -547,6 +590,7 @@ class AdminTrainingStudioController
             'is_certifying' => $request->input('is_certifying') ? 1 : 0,
             'validity_days' => ($v = trim((string) $request->input('validity_days', ''))) === '' ? null : max(0, (int) $v),
             'visibility' => $newVis,
+            'lms_scope' => $requestedScope,
             'updated_by' => $userId,
             'theme_json' => $course['theme_json'] ?? null,
             'thumbnail_path' => trim((string) ($course['thumbnail_path'] ?? '')) !== '' ? trim((string) $course['thumbnail_path']) : null,

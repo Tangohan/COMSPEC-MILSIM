@@ -19,13 +19,16 @@ if (!empty($personnelProfile['character_portrait_path'])) {
     <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-800 text-sm rounded"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
     <div class="bg-white border border-slate-200 rounded-lg p-6 flex flex-col sm:flex-row gap-6 items-start">
-        <div class="shrink-0">
+        <div class="shrink-0 space-y-2">
             <?php if ($portraitUrl): ?>
             <img src="<?= htmlspecialchars($portraitUrl) ?>" alt="Portrait opérateur" class="w-24 h-32 object-cover rounded-lg border-2 border-slate-200">
             <?php else: ?>
             <div class="w-24 h-32 rounded-lg bg-slate-200 flex items-center justify-center text-slate-500">
                 <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             </div>
+            <?php endif; ?>
+            <?php if (!empty($user['id'])): ?>
+            <button type="button" data-community-report data-cr-type="operator_visual" data-cr-id="<?= (int) $user['id'] ?>" data-cr-summary="Signalement concernant votre portrait opérateur." class="text-[10px] font-bold uppercase tracking-wide text-rose-700 hover:text-rose-900 border border-rose-200 rounded-lg px-2 py-1 w-full">Signaler ce portrait</button>
             <?php endif; ?>
         </div>
         <form method="post" action="<?= url('account/portrait') ?>" enctype="multipart/form-data" class="flex-1 space-y-4 w-full">

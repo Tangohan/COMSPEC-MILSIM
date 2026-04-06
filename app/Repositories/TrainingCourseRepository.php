@@ -9,6 +9,10 @@ use PDO;
 
 class TrainingCourseRepository
 {
+    public const LMS_SCOPE_TENANT = 'tenant';
+
+    public const LMS_SCOPE_PLATFORM = 'platform';
+
     private PDO $pdo;
 
     public function __construct()
@@ -16,17 +20,24 @@ class TrainingCourseRepository
         $this->pdo = Database::getPdo();
     }
 
+    /**
+     * @param bool $tenantCatalogOnly si vrai avec visibility published : exclut les parcours lms_scope=platform (réservés au catalogue fusionné)
+     */
     public function listForTenant(
         int $tenantId,
         ?string $visibility = 'published',
         ?string $category = null,
-        ?string $search = null
+        ?string $search = null,
+        bool $tenantCatalogOnly = false
     ): array {
         $sql = 'SELECT * FROM training_courses WHERE tenant_id = ?';
         $params = [$tenantId];
         if ($visibility !== null) {
             $sql .= ' AND visibility = ?';
             $params[] = $visibility;
+        }
+        if ($tenantCatalogOnly) {
+            $sql .= " AND COALESCE(lms_scope, 'tenant') = 'tenant'";
         }
         if ($category !== null && $category !== '') {
             $sql .= ' AND category = ?';
@@ -45,6 +56,32 @@ class TrainingCourseRepository
     }
 
     /**
+     * Formations publiées « plateforme Athena » (tous tenants).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listPublishedPlatform(?string $category = null, ?string $search = null): array
+    {
+        $sql = "SELECT * FROM training_courses WHERE lms_scope = 'platform' AND visibility = 'published'";
+        $params = [];
+        if ($category !== null && $category !== '') {
+            $sql .= ' AND category = ?';
+            $params[] = $category;
+        }
+        if ($search !== null && $search !== '') {
+            $sql .= ' AND (title LIKE ? OR short_description LIKE ?)';
+            $term = '%' . $search . '%';
+            $params[] = $term;
+            $params[] = $term;
+        }
+        $sql .= ' ORDER BY title ASC';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Formations publiées pour le carrousel dashboard (ordre vitrine, puis date de cycle, puis titre).
      *
      * @return array<int, array<string, mixed>>
@@ -53,11 +90,12 @@ class TrainingCourseRepository
     {
         $limit = max(1, min(50, $limit));
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM training_courses WHERE tenant_id = ? AND visibility = ? '
-            . 'ORDER BY (showcase_sort_order IS NULL) ASC, showcase_sort_order ASC, (showcase_cycle_date IS NULL) ASC, showcase_cycle_date ASC, title ASC '
+            "SELECT * FROM training_courses WHERE visibility = 'published' AND ("
+            . '(tenant_id = ? AND COALESCE(lms_scope, \'tenant\') = \'tenant\') OR lms_scope = \'platform\''
+            . ') ORDER BY (showcase_sort_order IS NULL) ASC, showcase_sort_order ASC, (showcase_cycle_date IS NULL) ASC, showcase_cycle_date ASC, title ASC '
             . 'LIMIT ' . $limit
         );
-        $stmt->execute([$tenantId, 'published']);
+        $stmt->execute([$tenantId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -75,11 +113,36 @@ class TrainingCourseRepository
         return $row ?: null;
     }
 
-    public function findBySlug(string $slug, int $tenantId): ?array
+    public function findBySlug(string $slug, int $viewerTenantId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM training_courses WHERE tenant_id = ? AND slug = ? LIMIT 1');
-        $stmt->execute([$tenantId, $slug]);
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM training_courses WHERE tenant_id = ? AND slug = ? AND COALESCE(lms_scope, 'tenant') = 'tenant' AND visibility = 'published' LIMIT 1"
+        );
+        $stmt->execute([$viewerTenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            return $row;
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM training_courses WHERE slug = ? AND lms_scope = 'platform' AND visibility = 'published' LIMIT 1"
+        );
+        $stmt->execute([$slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
+     * Accès lecteur : parcours de la communauté (tenant + publié ou brouillon pour l’éditeur) ou parcours plateforme publié.
+     */
+    public function findByIdForViewer(int $courseId, int $viewerTenantId): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM training_courses WHERE id = ? AND (tenant_id = ? OR (lms_scope = \'platform\' AND visibility = \'published\')) LIMIT 1'
+        );
+        $stmt->execute([$courseId, $viewerTenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
         return $row ?: null;
     }
 
@@ -131,7 +194,7 @@ class TrainingCourseRepository
 
     public function slugExists(int $tenantId, string $slug, ?int $excludeId = null): bool
     {
-        $sql = 'SELECT 1 FROM training_courses WHERE tenant_id = ? AND slug = ?';
+        $sql = "SELECT 1 FROM training_courses WHERE tenant_id = ? AND slug = ? AND COALESCE(lms_scope, 'tenant') = 'tenant'";
         $params = [$tenantId, $slug];
         if ($excludeId !== null) {
             $sql .= ' AND id != ?';
@@ -142,15 +205,34 @@ class TrainingCourseRepository
         return (bool) $stmt->fetch();
     }
 
+    public function platformSlugExists(string $slug, ?int $excludeId = null): bool
+    {
+        $sql = "SELECT 1 FROM training_courses WHERE slug = ? AND lms_scope = 'platform'";
+        $params = [$slug];
+        if ($excludeId !== null) {
+            $sql .= ' AND id != ?';
+            $params[] = $excludeId;
+        }
+        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute($params);
+
+        return (bool) $stmt->fetch();
+    }
+
     public function create(int $tenantId, array $data): int
     {
         $uuid = $data['uuid'] ?? $this->generateUuid();
+        $scope = $data['lms_scope'] ?? self::LMS_SCOPE_TENANT;
+        if ($scope !== self::LMS_SCOPE_PLATFORM) {
+            $scope = self::LMS_SCOPE_TENANT;
+        }
         $stmt = $this->pdo->prepare(
-            'INSERT INTO training_courses (tenant_id, uuid, title, slug, course_code, short_description, description, learning_objectives, theme_json, thumbnail_path, banner_path, category, level, language_code, estimated_minutes, passing_score, is_mandatory, is_certifying, validity_days, visibility, created_by, updated_by, lms_created_with_version, lms_last_saved_with_version)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO training_courses (tenant_id, lms_scope, uuid, title, slug, course_code, short_description, description, learning_objectives, theme_json, thumbnail_path, banner_path, category, level, language_code, estimated_minutes, passing_score, is_mandatory, is_certifying, validity_days, visibility, created_by, updated_by, lms_created_with_version, lms_last_saved_with_version)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $tenantId,
+            $scope,
             $uuid,
             $data['title'],
             $data['slug'],
@@ -182,7 +264,7 @@ class TrainingCourseRepository
     {
         $fields = [];
         $params = [];
-        $allowed = ['title', 'slug', 'course_code', 'short_description', 'description', 'learning_objectives', 'theme_json', 'enrollment_policy_json', 'enrollment_share_code', 'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by', 'lms_created_with_version', 'lms_last_saved_with_version'];
+        $allowed = ['title', 'slug', 'course_code', 'short_description', 'description', 'learning_objectives', 'theme_json', 'enrollment_policy_json', 'enrollment_share_code', 'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by', 'lms_created_with_version', 'lms_last_saved_with_version', 'lms_scope'];
         foreach ($allowed as $k) {
             if (array_key_exists($k, $data)) {
                 $fields[] = "`$k` = ?";

@@ -25,7 +25,7 @@ class TrainingAssignmentService
 
     public function assignUser(int $courseId, int $userId, int $tenantId, ?int $assignedBy = null, string $assignmentType = 'manual', ?string $expiresAt = null, ?string $motivationText = null): int
     {
-        $course = $this->courseRepository->findById($courseId, $tenantId);
+        $course = $this->courseRepository->findByIdForViewer($courseId, $tenantId);
         if (!$course) {
             throw new \InvalidArgumentException('Course not found.');
         }
@@ -51,7 +51,7 @@ class TrainingAssignmentService
         }
         $existing = $this->enrollmentRepository->findByCourseAndUser($courseId, $userId);
         if ($existing) {
-            if (in_array($existing['status'], ['revoked', 'expired'], true)) {
+            if (in_array($existing['status'], ['revoked', 'expired', 'withdrawn'], true)) {
                 $upd = [
                     'status' => $initialStatus,
                     'expires_at' => $expiresAt,

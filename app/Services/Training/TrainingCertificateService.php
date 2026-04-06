@@ -35,7 +35,7 @@ class TrainingCertificateService
         if ($enrollment['status'] !== 'completed') {
             return null;
         }
-        $course = $this->courseRepository->findById((int) $enrollment['course_id'], $tenantId);
+        $course = $this->courseRepository->findByIdForViewer((int) $enrollment['course_id'], $tenantId);
         if (!$course || (int) ($course['is_certifying'] ?? 0) !== 1) {
             return null;
         }

@@ -45,10 +45,11 @@ class TrainingEnrollmentPolicyService
         $existing = $cid > 0 ? $this->enrollmentRepository->findByCourseAndUser($cid, $userId) : null;
         if ($existing) {
             $est = (string) ($existing['status'] ?? '');
-            if ($est === 'pending_approval') {
+            if (in_array($est, ['revoked', 'expired', 'withdrawn'], true)) {
+                // Réinscription possible : la même ligne sera réactivée par l’assignation.
+            } elseif ($est === 'pending_approval') {
                 return ['allowed' => false, 'messages' => ['Votre demande d’inscription est en cours d’examen par un formateur.']];
-            }
-            if (in_array($est, ['assigned', 'in_progress', 'completed', 'failed'], true)) {
+            } elseif (in_array($est, ['assigned', 'in_progress', 'completed', 'failed'], true)) {
                 return ['allowed' => false, 'messages' => ['Vous êtes déjà inscrit à cette formation.']];
             }
         }
@@ -58,9 +59,9 @@ class TrainingEnrollmentPolicyService
             if ($preId === (int) ($course['id'] ?? 0)) {
                 continue;
             }
-            $preCourse = $this->courseRepository->findById($preId, $tenantId);
+            $preCourse = $this->courseRepository->findByIdForViewer($preId, $tenantId);
             if (!$preCourse) {
-                $messages[] = 'Prérequis : formation #' . $preId . ' (introuvable — vérifiez la configuration).';
+                $messages[] = 'Un prérequis de cette formation n’est plus disponible ou n’est pas accessible depuis votre communauté.';
 
                 continue;
             }
@@ -104,7 +105,7 @@ class TrainingEnrollmentPolicyService
         $reqCerts = $this->normalizeIdList($policy['require_certificate_from_course_ids'] ?? []);
         foreach ($reqCerts as $cid) {
             if (!$this->enrollmentRepository->userHasCompletedCourse($userId, $cid)) {
-                $c = $this->courseRepository->findById($cid, $tenantId);
+                $c = $this->courseRepository->findByIdForViewer($cid, $tenantId);
                 $t = $c ? (string) ($c['title'] ?? '') : ('#' . $cid);
 
                 return ['allowed' => false, 'messages' => ['Attestation ou validation requise pour : « ' . $t . ' ».']];
@@ -132,7 +133,7 @@ class TrainingEnrollmentPolicyService
             if ($preId === $courseId) {
                 continue;
             }
-            $c = $this->courseRepository->findById($preId, $tenantId);
+            $c = $this->courseRepository->findByIdForViewer($preId, $tenantId);
             if (!$c) {
                 continue;
             }
@@ -149,7 +150,7 @@ class TrainingEnrollmentPolicyService
         }
         $certificateCourses = [];
         foreach ($this->normalizeIdList($policy['require_certificate_from_course_ids'] ?? []) as $cid) {
-            $c = $this->courseRepository->findById($cid, $tenantId);
+            $c = $this->courseRepository->findByIdForViewer($cid, $tenantId);
             if (!$c) {
                 continue;
             }

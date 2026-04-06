@@ -119,6 +119,18 @@ if (is_array($grade)) {
                         <span class="inline-flex px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400">Déployable</span>
                         <?php endif; ?>
                     </div>
+                    <?php if (\App\Core\Session::get('user_id')): ?>
+                    <?php $reportUid = (int) ($targetUser['id'] ?? 0); ?>
+                    <div class="flex flex-wrap gap-2 mt-4">
+                        <button type="button" data-community-report data-cr-type="member_profile" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant cette fiche personnelle." class="text-[10px] font-bold uppercase tracking-wide text-rose-200/90 hover:text-white border border-rose-400/40 rounded-lg px-3 py-1.5 bg-slate-900/20">Signaler la fiche</button>
+                        <?php if (!empty($avatarUrl)): ?>
+                        <button type="button" data-community-report data-cr-type="profile_picture" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant la photo de compte affichée." class="text-[10px] font-bold uppercase tracking-wide text-rose-200/90 hover:text-white border border-rose-400/40 rounded-lg px-3 py-1.5 bg-slate-900/20">Signaler la photo de compte</button>
+                        <?php endif; ?>
+                        <?php if (!empty($portraitUrl)): ?>
+                        <button type="button" data-community-report data-cr-type="operator_visual" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant le portrait opérateur affiché." class="text-[10px] font-bold uppercase tracking-wide text-rose-200/90 hover:text-white border border-rose-400/40 rounded-lg px-3 py-1.5 bg-slate-900/20">Signaler le portrait opérateur</button>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
                 <div class="flex items-center gap-4 md:gap-6">
                     <div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 border-slate-600/50 bg-slate-800 flex-shrink-0" title="Avatar compte">

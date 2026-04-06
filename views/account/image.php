@@ -15,11 +15,14 @@ $avatarUrl = !empty($user['avatar_url']) ? (url('') . '/' . ltrim($user['avatar_
     <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-800 text-sm rounded"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
     <div class="bg-white border border-slate-200 rounded-lg p-6 flex flex-col sm:flex-row gap-6 items-start">
-        <div class="shrink-0">
+        <div class="shrink-0 space-y-2">
             <?php if ($avatarUrl): ?>
             <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Avatar" class="w-24 h-24 rounded-full object-cover border-2 border-slate-200">
             <?php else: ?>
             <div class="w-24 h-24 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-2xl font-bold"><?= strtoupper(mb_substr($user['display_name'] ?? $user['email'] ?? '?', 0, 1)) ?></div>
+            <?php endif; ?>
+            <?php if (!empty($user['id'])): ?>
+            <button type="button" data-community-report data-cr-type="profile_picture" data-cr-id="<?= (int) $user['id'] ?>" data-cr-summary="Signalement concernant votre photo de compte (avatar)." class="text-[10px] font-bold uppercase tracking-wide text-rose-700 hover:text-rose-900 border border-rose-200 rounded-lg px-2 py-1 w-full">Signaler cette photo</button>
             <?php endif; ?>
         </div>
         <form method="post" action="<?= url('account/image') ?>" enctype="multipart/form-data" class="flex-1 space-y-4 w-full">

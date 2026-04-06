@@ -114,6 +114,18 @@ function training_course_level_labels_fr(): array
 }
 
 /**
+ * Libellé métier pour la portée catalogue (Studio / cartes catalogue).
+ */
+function training_lms_course_scope_label_fr(?string $scope): string
+{
+    $s = trim((string) $scope);
+
+    return $s === 'platform'
+        ? 'Proposé sur toute la plateforme'
+        : 'Parcours de la communauté';
+}
+
+/**
  * Toutes les leçons du parcours dans l’ordre des modules (liste plate).
  *
  * @param array<string, mixed> $course Résultat de getCourseWithStructure
@@ -310,6 +322,28 @@ function training_lms_footer_next_step(array $course, int $currentLessonId, call
 }
 
 /**
+ * Statuts pour lesquels l’inscription n’est plus considérée comme active côté membre (fiche formation, API).
+ *
+ * @return list<string>
+ */
+function training_enrollment_inactive_for_member_ui_statuses(): array
+{
+    return ['revoked', 'expired', 'withdrawn'];
+}
+
+/**
+ * Le membre peut-il demander l’annulation de son inscription (contrôler séparément l’attestation délivrée).
+ *
+ * @param array<string, mixed> $enrollment
+ */
+function training_enrollment_can_withdraw_by_member(array $enrollment): bool
+{
+    $st = (string) ($enrollment['status'] ?? '');
+
+    return in_array($st, ['assigned', 'in_progress', 'pending_approval', 'failed'], true);
+}
+
+/**
  * Libellé français pour une action du journal d’audit formations (training_audit_log.action).
  */
 function training_audit_action_label_fr(string $action): string
@@ -319,6 +353,7 @@ function training_audit_action_label_fr(string $action): string
         'course_updated' => 'Formation modifiée',
         'course_published' => 'Formation publiée',
         'enrollment_assigned' => 'Inscription assignée',
+        'enrollment_withdrawn' => 'Inscription annulée par le membre',
         'lesson_completed' => 'Leçon terminée',
         'quiz_attempt_submitted' => 'Tentative de quiz soumise',
         'certificate_issued' => 'Certificat délivré',
@@ -426,6 +461,7 @@ function training_audit_detail_summary_fr(array $logRow): string
             'failed' => 'Statut : non validé',
             'expired' => 'Statut : expiré',
             'revoked' => 'Statut : retiré',
+            'withdrawn' => 'Statut : inscription annulée par le membre',
             'pending_approval' => 'Statut : en attente de validation',
         ];
         $st = $statusMap[(string) ($new['status'] ?? '')] ?? '';
@@ -435,6 +471,27 @@ function training_audit_detail_summary_fr(array $logRow): string
         }
 
         return trim($type . ($st !== '' ? ' — ' . $st : '') . ($mot !== '' ? ' ' . $mot : ''));
+    }
+
+    if ($action === 'enrollment_withdrawn') {
+        $title = trim((string) ($new['course_title'] ?? ''));
+        $prevSt = (string) ($new['previous_status'] ?? '');
+        $phase = match ($prevSt) {
+            'assigned' => 'avant le démarrage du parcours',
+            'in_progress' => 'alors que le parcours était en cours',
+            'pending_approval' => 'pendant l’attente de validation de la demande',
+            'failed' => 'après un parcours non validé',
+            default => '',
+        };
+        $head = 'Le membre a annulé son inscription';
+        if ($title !== '') {
+            $head .= ' à « ' . $title . ' »';
+        }
+        if ($phase !== '') {
+            $head .= ' ' . $phase;
+        }
+
+        return $head . '.';
     }
 
     if ($action === 'certificate_issued') {

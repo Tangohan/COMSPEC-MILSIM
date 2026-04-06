@@ -2,6 +2,7 @@
 $courses = $courses ?? [];
 $visibilityFilter = $visibilityFilter ?? '';
 $canPublish = $canPublish ?? false;
+$studioCanSetPlatformScope = $studioCanSetPlatformScope ?? false;
 $lmsPlatformVersion = (string) ($lmsPlatformVersion ?? '');
 $lmsChangelogUrl = (string) ($lmsChangelogUrl ?? training_studio_url('versions'));
 
@@ -105,6 +106,12 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
                             <?php if ($lmsBehind): ?>
                             <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide rounded-full bg-amber-100 text-amber-900 border border-amber-200/80" title="Créée avant la version actuelle du Studio">Création — ancienne version</span>
                             <?php endif; ?>
+                            <?php
+                            $rowScope = (string) ($c['lms_scope'] ?? 'tenant');
+                            if ($rowScope === 'platform'):
+                            ?>
+                            <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide rounded-full bg-violet-100 text-violet-900 border border-violet-200/80" title="Visible dans le catalogue de toutes les organisations éligibles">Toute la plateforme</span>
+                            <?php endif; ?>
                             <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide rounded-full <?= $isPub ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700' ?>"><?= htmlspecialchars($visLabels[$c['visibility']] ?? (string) ($c['visibility'] ?? '')) ?></span>
                             <a href="<?= htmlspecialchars(training_studio_url((string) (int) $c['id'] . '/echange/export')) ?>"
                                class="inline-flex items-center justify-center px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-lg hover:bg-slate-50 shadow-sm transition-colors"
@@ -129,9 +136,19 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
                         <input type="text" name="title" required class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400" placeholder="Ex. Introduction tactique">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Identifiant d’URL <span class="font-normal text-slate-400">(optionnel)</span></label>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Adresse courte du lien <span class="font-normal text-slate-400">(optionnel)</span></label>
                         <input type="text" name="slug" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono shadow-inner focus:ring-2 focus:ring-violet-400/40" placeholder="généré depuis le titre si vide">
                     </div>
+                    <?php if ($studioCanSetPlatformScope): ?>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Portée du catalogue</label>
+                        <select name="lms_scope" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40 bg-white">
+                            <option value="tenant" selected>Parcours de la communauté</option>
+                            <option value="platform">Proposé sur toute la plateforme</option>
+                        </select>
+                        <p class="text-xs text-slate-500 mt-1.5">Les parcours globaux doivent avoir une adresse courte unique sur l’ensemble du site.</p>
+                    </div>
+                    <?php endif; ?>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1.5">Visibilité initiale</label>
                         <select name="visibility" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40">

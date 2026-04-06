@@ -8,16 +8,20 @@ $title = $title ?? 'Formations';
 $filterCategory = $filterCategory ?? null;
 $filterSearch = $filterSearch ?? null;
 $filterCategories = $filterCategories ?? [];
+$filterParcours = $filterParcours ?? '';
 
 $totalModules = count($courses) + ($training_legacy_enabled ? count($legacyModules) : 0);
 $formationsUrl = rtrim($base, '/') . '/formations';
-$buildFormationsUrl = static function (?string $cat, ?string $q) use ($formationsUrl): string {
+$buildFormationsUrl = static function (?string $cat, ?string $q, string $parcours = '') use ($formationsUrl): string {
     $p = [];
     if ($cat !== null && $cat !== '') {
         $p['category'] = $cat;
     }
     if ($q !== null && $q !== '') {
         $p['search'] = $q;
+    }
+    if ($parcours !== '' && in_array($parcours, ['communaute', 'plateforme'], true)) {
+        $p['parcours'] = $parcours;
     }
 
     return $formationsUrl . ($p !== [] ? '?' . http_build_query($p) : '');
@@ -55,7 +59,7 @@ $headHtml = ob_get_clean();
                     <span class="lms-infobanner__icon" aria-hidden="true">
                         <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </span>
-                    <p><strong>Repère.</strong> Parcours publiés dans votre espace — recherche et filtres ci-dessous. Pour reprendre un parcours déjà commencé ou vos attestations, ouvrez <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="text-emerald-700 font-semibold hover:underline">Mes formations</a>.</p>
+                    <p><strong>Repère.</strong> Catalogue mêlant les parcours de votre communauté et, le cas échéant, des parcours proposés sur l’ensemble du site — recherche et filtres ci-dessous. Pour reprendre un parcours déjà commencé ou vos attestations, ouvrez <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="text-emerald-700 font-semibold hover:underline">Mes formations</a>. Pour signaler un problème sur un parcours, ouvrez sa fiche puis utilisez le lien en bas de page.</p>
                 </div>
 
                 <header id="overview" class="lms-panel rounded-[2rem] p-6 md:p-8 overflow-hidden relative">
@@ -107,6 +111,9 @@ $headHtml = ob_get_clean();
                             <?php if ($filterCategory): ?>
                             <input type="hidden" name="category" value="<?= htmlspecialchars($filterCategory) ?>">
                             <?php endif; ?>
+                            <?php if ($filterParcours !== '' && in_array($filterParcours, ['communaute', 'plateforme'], true)): ?>
+                            <input type="hidden" name="parcours" value="<?= htmlspecialchars($filterParcours) ?>">
+                            <?php endif; ?>
                             <label class="sr-only" for="catalogue-search">Recherche</label>
                             <input type="search" id="catalogue-search" name="search" value="<?= htmlspecialchars((string) ($filterSearch ?? '')) ?>"
                                    placeholder="Rechercher un titre, un code…"
@@ -115,14 +122,32 @@ $headHtml = ob_get_clean();
                                 Rechercher
                             </button>
                         </form>
+                        <form method="get" action="<?= htmlspecialchars($formationsUrl) ?>" class="flex flex-wrap gap-2 mb-6 items-center">
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mr-1">Origine :</span>
+                            <a href="<?= htmlspecialchars($buildFormationsUrl($filterCategory, $filterSearch, '')) ?>"
+                               class="px-4 py-2 rounded-full border text-[10px] font-black tracking-[0.18em] uppercase transition-colors <?= $filterParcours === '' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-800' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200' ?>">
+                                Tous
+                            </a>
+                            <a href="<?= htmlspecialchars($buildFormationsUrl($filterCategory, $filterSearch, 'communaute')) ?>"
+                               class="px-4 py-2 rounded-full border text-[10px] font-black tracking-[0.18em] uppercase transition-colors <?= $filterParcours === 'communaute' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-800' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200' ?>">
+                                Communauté
+                            </a>
+                            <a href="<?= htmlspecialchars($buildFormationsUrl($filterCategory, $filterSearch, 'plateforme')) ?>"
+                               class="px-4 py-2 rounded-full border text-[10px] font-black tracking-[0.18em] uppercase transition-colors <?= $filterParcours === 'plateforme' ? 'border-violet-500 bg-violet-500/10 text-violet-900' : 'border-slate-200 bg-white text-slate-700 hover:border-violet-200' ?>">
+                                Toute la plateforme
+                            </a>
+                        </form>
                         <form method="get" action="<?= htmlspecialchars($formationsUrl) ?>" class="flex flex-wrap gap-2 mb-8 items-center">
-                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mr-1">Filtrer :</span>
-                            <a href="<?= htmlspecialchars($buildFormationsUrl(null, $filterSearch)) ?>"
+                            <?php if ($filterParcours !== '' && in_array($filterParcours, ['communaute', 'plateforme'], true)): ?>
+                            <input type="hidden" name="parcours" value="<?= htmlspecialchars($filterParcours) ?>">
+                            <?php endif; ?>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mr-1">Thème :</span>
+                            <a href="<?= htmlspecialchars($buildFormationsUrl(null, $filterSearch, $filterParcours)) ?>"
                                class="px-4 py-2 rounded-full border text-[10px] font-black tracking-[0.18em] uppercase transition-colors <?= $filterCategory === null ? 'border-emerald-500 bg-emerald-500/10 text-emerald-800' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200' ?>">
-                                Tout
+                                Tous
                             </a>
                             <?php foreach ($filterCategories as $cat): ?>
-                            <a href="<?= htmlspecialchars($buildFormationsUrl($cat, $filterSearch)) ?>"
+                            <a href="<?= htmlspecialchars($buildFormationsUrl($cat, $filterSearch, $filterParcours)) ?>"
                                class="px-4 py-2 rounded-full border text-[10px] font-black tracking-[0.18em] uppercase transition-colors <?= ($filterCategory === $cat) ? 'border-emerald-500 bg-emerald-500/10 text-emerald-800' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200' ?>">
                                 <?= htmlspecialchars($cat) ?>
                             </a>
@@ -153,13 +178,20 @@ $headHtml = ob_get_clean();
                                 $duration = $mins ? $mins . ' min' : '—';
                                 $cc = $cardColorClasses[$ci % count($cardColorClasses)];
                                 $ci++;
+                                $lmsScopeRow = (string) ($c['lms_scope'] ?? 'tenant');
+                                $scopeBadge = function_exists('training_lms_course_scope_label_fr') ? training_lms_course_scope_label_fr($lmsScopeRow) : '';
                             ?>
                             <a href="<?= htmlspecialchars($base) ?>/formations/<?= htmlspecialchars($c['slug']) ?>" class="lms-course-card block bg-white rounded-3xl border border-slate-200 p-5">
                                 <div class="flex items-start justify-between gap-4 mb-5">
                                     <div class="w-12 h-12 rounded-2xl <?= $cc['bg'] ?> <?= $cc['border'] ?> flex items-center justify-center">
                                         <span class="text-[11px] font-black tracking-widest <?= $cc['text'] ?>"><?= htmlspecialchars(mb_substr($code, 0, 4)) ?></span>
                                     </div>
-                                    <span class="text-[8px] font-black tracking-[0.25em] uppercase text-slate-400"><?= htmlspecialchars($cat) ?></span>
+                                    <div class="text-right space-y-1.5 max-w-[58%]">
+                                        <?php if ($lmsScopeRow === 'platform'): ?>
+                                        <span class="inline-block px-2 py-0.5 rounded-full text-[8px] font-black tracking-[0.2em] uppercase bg-violet-500/15 text-violet-800 border border-violet-500/25"><?= htmlspecialchars($scopeBadge) ?></span>
+                                        <?php endif; ?>
+                                        <span class="block text-[8px] font-black tracking-[0.25em] uppercase text-slate-400"><?= htmlspecialchars($cat) ?></span>
+                                    </div>
                                 </div>
                                 <h4 class="text-lg font-black tracking-tight uppercase mb-2"><?= htmlspecialchars($c['title']) ?></h4>
                                 <p class="text-[11px] text-slate-600 font-medium leading-relaxed mb-5"><?= !empty($c['short_description']) ? htmlspecialchars($c['short_description']) : 'Parcours publié dans le catalogue.' ?></p>
@@ -254,6 +286,7 @@ $headHtml = ob_get_clean();
             </main>
         </div>
     </div>
+    <?php require base_path('views/partials/community_report_modal.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

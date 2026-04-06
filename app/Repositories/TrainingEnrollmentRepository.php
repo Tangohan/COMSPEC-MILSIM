@@ -21,13 +21,14 @@ class TrainingEnrollmentRepository
     {
         $sql = 'SELECT e.*, c.title AS course_title, c.slug AS course_slug, c.estimated_minutes, c.banner_path,
                        c.short_description, c.category, c.level, c.is_certifying, c.is_mandatory, c.thumbnail_path,
+                       c.lms_scope AS course_lms_scope,
                        (SELECT id FROM training_certificates WHERE enrollment_id = e.id AND status = \'valid\' ORDER BY id DESC LIMIT 1) AS certificate_id
                 FROM training_enrollments e
                 JOIN training_courses c ON c.id = e.course_id
                 WHERE e.user_id = ?';
         $params = [$userId];
         if ($tenantId !== null) {
-            $sql .= ' AND e.tenant_id = ?';
+            $sql .= ' AND (e.tenant_id = ? OR c.lms_scope = \'platform\')';
             $params[] = $tenantId;
         }
         $sql .= ' ORDER BY e.assigned_at DESC';
@@ -58,7 +59,7 @@ class TrainingEnrollmentRepository
                 WHERE e.id = ?';
         $params = [$id];
         if ($tenantId !== null) {
-            $sql .= ' AND e.tenant_id = ?';
+            $sql .= ' AND (e.tenant_id = ? OR c.lms_scope = \'platform\')';
             $params[] = $tenantId;
         }
         $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
@@ -127,6 +128,25 @@ class TrainingEnrollmentRepository
     {
         $stmt = $this->pdo->prepare("UPDATE training_enrollments SET status = 'revoked' WHERE id = ?");
         $stmt->execute([$id]);
+    }
+
+    /**
+     * Abandon volontaire : le membre annule son inscription (assigned, in_progress, pending_approval, failed).
+     * Vérifie que l’inscription appartient au membre et est visible depuis le tenant (parcours communauté ou plateforme).
+     */
+    public function withdrawByLearner(int $enrollmentId, int $userId, int $tenantId): bool
+    {
+        $sql = 'UPDATE training_enrollments e
+                INNER JOIN training_courses c ON c.id = e.course_id
+                SET e.status = \'withdrawn\'
+                WHERE e.id = ?
+                  AND e.user_id = ?
+                  AND (e.tenant_id = ? OR c.lms_scope = \'platform\')
+                  AND e.status IN (\'assigned\', \'in_progress\', \'pending_approval\', \'failed\')';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$enrollmentId, $userId, $tenantId]);
+
+        return $stmt->rowCount() > 0;
     }
 
     /** Enrollments expirant ou expirés pour un tenant. */

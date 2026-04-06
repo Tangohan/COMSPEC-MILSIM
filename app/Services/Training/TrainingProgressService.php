@@ -91,7 +91,7 @@ class TrainingProgressService
     private function notifyCourseCompleted(int $tenantId, int $userId, int $courseId, int $enrollmentId): void
     {
         try {
-            $course = $this->courseRepository->findById($courseId, $tenantId);
+            $course = $this->courseRepository->findByIdForViewer($courseId, $tenantId);
             if (!$course) {
                 return;
             }
@@ -154,7 +154,7 @@ class TrainingProgressService
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
             return null;
         }
-        if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired'], true)) {
+        if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired', 'withdrawn'], true)) {
             return null;
         }
         $courseId = (int) $enrollment['course_id'];
@@ -353,7 +353,7 @@ class TrainingProgressService
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
             throw new \InvalidArgumentException('Enrollment not found or access denied.');
         }
-        if (in_array($enrollment['status'], ['revoked', 'expired', 'pending_approval'], true)) {
+        if (in_array($enrollment['status'], ['revoked', 'expired', 'pending_approval', 'withdrawn'], true)) {
             throw new \InvalidArgumentException('Enrollment no longer active.');
         }
     }

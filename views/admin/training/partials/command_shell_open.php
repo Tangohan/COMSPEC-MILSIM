@@ -11,51 +11,24 @@ $trainingCmdCanEditContent = $gateNav->allows('admin.access') || $gateNav->allow
     || $gateNav->allows('training.delete') || $gateNav->allows('training.publish');
 ?>
 <link rel="stylesheet" href="<?= htmlspecialchars(url('assets/css/training_admin_command.css')) ?>">
-<div class="training-cmd relative overflow-hidden rounded-2xl border border-slate-200/90 shadow-xl shadow-slate-900/[0.06] mb-10">
+<div class="training-cmd relative overflow-hidden rounded-2xl border border-slate-200/90 shadow-md shadow-slate-900/[0.04] mb-10">
     <div class="training-cmd__grain" aria-hidden="true"></div>
-    <div class="training-cmd-layout relative z-[1]">
-        <aside class="training-cmd-aside" aria-label="Navigation formations">
-            <div class="training-cmd-aside__brand">
-                <p class="training-cmd-aside__kicker">Athena · Admin</p>
-                <p class="training-cmd-aside__title">Training Command</p>
-                <p class="training-cmd-aside__sub">Catalogue LMS, assignations, conformité et suivi des parcours pour votre communauté.</p>
-            </div>
-            <nav class="training-cmd-nav">
-                <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="<?= trim($is('dashboard')) ?>">
-                    <span>Vue d’ensemble</span>
-                    <span class="tc-nav-meta">01</span>
-                </a>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('courses')) ?>" class="<?= trim($coursesNavActive) ?>">
-                    <span>Catalogue</span>
-                    <span class="tc-nav-meta">02</span>
-                </a>
-                <a href="<?= htmlspecialchars(training_studio_url()) ?>" class="<?= trim($is('studio')) ?>">
-                    <span>Studio LMS</span>
-                    <span class="tc-nav-meta">03</span>
-                </a>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments')) ?>" class="<?= trim($is('enrollments')) ?>">
-                    <span>Assignations</span>
-                    <span class="tc-nav-meta">04</span>
-                </a>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('reports')) ?>" class="<?= trim($is('reports')) ?>">
-                    <span>Rapports</span>
-                    <span class="tc-nav-meta">05</span>
-                </a>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('certificates')) ?>" class="<?= trim($certNavActive) ?>">
-                    <span>Certificats</span>
-                    <span class="tc-nav-meta">06</span>
-                </a>
+    <div class="training-cmd-shell relative z-[1]">
+        <div class="training-cmd-toolbar-wrap">
+            <p class="training-cmd-toolbar-eyebrow">Administration des formations</p>
+            <nav class="training-cmd-toolbar" aria-label="Sections administration formations">
+                <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="<?= trim($is('dashboard')) ?>">Vue d’ensemble</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('courses')) ?>" class="<?= trim($coursesNavActive) ?>">Catalogue</a>
+                <a href="<?= htmlspecialchars(training_studio_url()) ?>" class="<?= trim($is('studio')) ?>">Studio LMS</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments')) ?>" class="<?= trim($is('enrollments')) ?>">Assignations</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('reports')) ?>" class="<?= trim($is('reports')) ?>">Rapports</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('certificates')) ?>" class="<?= trim($certNavActive) ?>">Certificats</a>
                 <?php if ($trainingCmdCanEditContent): ?>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('certificates/gabarit')) ?>" class="<?= trim($is('certificates_gabarit')) ?>">
-                    <span>Gabarit PDF</span>
-                    <span class="tc-nav-meta">06b</span>
-                </a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('certificates/gabarit')) ?>" class="<?= trim($is('certificates_gabarit')) ?>">Gabarit PDF</a>
                 <?php endif; ?>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('audit')) ?>" class="<?= trim($is('audit')) ?>">
-                    <span>Audit</span>
-                    <span class="tc-nav-meta">07</span>
-                </a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('audit')) ?>" class="<?= trim($is('audit')) ?>">Audit</a>
+                <a href="<?= url('formations') ?>" target="_blank" rel="noopener" class="training-cmd-toolbar__ext">Catalogue public</a>
             </nav>
-        </aside>
+        </div>
         <div class="training-cmd-main min-w-0">
             <div class="training-cmd-main-inner space-y-8">

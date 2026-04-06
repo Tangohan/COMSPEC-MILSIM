@@ -454,6 +454,9 @@ if (!function_exists('forum_visible_role_choice_label')) {
         $siteLabels = [
             'site_super_admin' => 'Gestionnaire de plateforme',
             'platform_admin' => 'Gestionnaire de plateforme',
+            'site_support' => 'Équipe assistance',
+            'site_moderator' => 'Modérateur plateforme',
+            'site_senior_moderator' => 'Modérateur senior plateforme',
         ];
         if ($layer === 'site') {
             if ($slug !== '' && isset($siteLabels[$slug])) {

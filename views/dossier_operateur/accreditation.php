@@ -54,6 +54,11 @@ $fmtDate = static function (?string $d): string {
                 Synthèse de votre profil opérationnel : complétude du dossier, qualifications enregistrées et attestations de formation.
                 Les données proviennent de votre fiche personnelle et du module formations.
             </p>
+            <?php if (!empty($user['id'])): ?>
+            <p class="mt-4">
+                <button type="button" data-community-report data-cr-type="operator_visual" data-cr-id="<?= (int) $user['id'] ?>" data-cr-summary="Signalement concernant un élément visuel ou le contenu de votre dossier opérateur." class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-[10px] font-black uppercase tracking-wide text-rose-900 hover:bg-rose-100">Signaler un problème sur ce dossier</button>
+            </p>
+            <?php endif; ?>
         </header>
 
         <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">

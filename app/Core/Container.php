@@ -896,6 +896,14 @@ class Container
                 self::get(\App\Repositories\UserForumStatsRepository::class),
                 self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class)
             ),
+            \App\Services\Community\CommunityReportService::class => new \App\Services\Community\CommunityReportService(
+                self::get(\App\Repositories\ForumReportRepository::class),
+                self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(UserRepository::class),
+            ),
+            \App\Controllers\Api\CommunityReportController::class => new \App\Controllers\Api\CommunityReportController(
+                self::get(\App\Services\Community\CommunityReportService::class),
+            ),
             \App\Controllers\Api\ForumRestController::class => new \App\Controllers\Api\ForumRestController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
                 self::get(\App\Repositories\ForumTopicRepository::class),

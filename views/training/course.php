@@ -427,12 +427,16 @@ $headHtml = ob_get_clean();
                     <a href="<?= url('formations/' . rawurlencode($slugForForms) . '/echanges') ?>" class="inline-flex items-center justify-center px-6 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-800">Ouvrir la page « Avis &amp; échanges »</a>
                 </section>
 
-                <div class="pt-4">
+                <div class="pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <a href="<?= url('formations') ?>" class="text-sm font-bold text-slate-600 hover:text-slate-900">← Retour au catalogue</a>
+                    <?php if (!empty($viewerLoggedIn)): ?>
+                    <button type="button" data-community-report data-cr-type="training_course" data-cr-id="<?= (int) $courseId ?>" data-cr-summary="Signalement concernant ce parcours de formation." class="text-left sm:text-right text-xs font-bold text-rose-700 hover:text-rose-900 border border-rose-200 rounded-xl px-4 py-2 bg-rose-50/80">Signaler un problème sur ce parcours</button>
+                    <?php endif; ?>
                 </div>
             </main>
         </div>
     </div>
+    <?php if (!empty($viewerLoggedIn)) { require base_path('views/partials/community_report_modal.php'); } ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

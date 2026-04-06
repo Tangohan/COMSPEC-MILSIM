@@ -16,12 +16,28 @@ class ForumReportRepository
         $this->pdo = Database::getPdo();
     }
 
-    public function create(int $tenantId, int $reporterId, ?int $postId, ?int $topicId, string $reason, string $reportType = 'other', ?string $comment = null, ?string $reportedUrl = null): int
+    public function create(int $tenantId, int $reporterId, ?int $postId, ?int $topicId, string $reason, string $reportType = 'other', ?string $comment = null, ?string $reportedUrl = null, ?string $contentKind = null): int
     {
         $hasReportType = $this->columnExists('forum_reports', 'report_type');
         $hasReportedUrl = $this->columnExists('forum_reports', 'reported_url');
+        $hasContentKind = $this->columnExists('forum_reports', 'content_kind');
 
-        if ($hasReportType && $hasReportedUrl) {
+        if ($hasReportType && $hasReportedUrl && $hasContentKind) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO forum_reports (tenant_id, reporter_id, post_id, topic_id, reason, report_type, comment, reported_url, content_kind, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, \'pending\', NOW())'
+            );
+            $stmt->execute([
+                $tenantId,
+                $reporterId,
+                $postId,
+                $topicId,
+                $reason,
+                $reportType,
+                $comment,
+                $reportedUrl !== null && $reportedUrl !== '' ? $reportedUrl : null,
+                $contentKind !== null && $contentKind !== '' ? $contentKind : null,
+            ]);
+        } elseif ($hasReportType && $hasReportedUrl) {
             $stmt = $this->pdo->prepare(
                 'INSERT INTO forum_reports (tenant_id, reporter_id, post_id, topic_id, reason, report_type, comment, reported_url, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'pending\', NOW())'
             );

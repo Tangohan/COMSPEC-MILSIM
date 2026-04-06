@@ -201,6 +201,17 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] roles_organic_architecture : ' . $e->getMessage() . "\n";
 }
+$sitePlatformRolesPath = $root . '/bootstrap/site_platform_roles_migration.php';
+if (is_file($sitePlatformRolesPath)) {
+    require_once $sitePlatformRolesPath;
+    try {
+        run_site_platform_roles_migration($pdo);
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] site_platform_roles : ' . $e->getMessage() . "\n";
+    }
+} else {
+    echo "  [ATTENTION] Fichier absent : bootstrap/site_platform_roles_migration.php — ajoutez-le sur le serveur (même version que le dépôt) puis relancez pour créer les rôles site (modération, assistance).\n";
+}
 try {
     run_military_role_catalog_schema_migration($pdo);
 } catch (Throwable $e) {
@@ -229,11 +240,23 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_enrollment_features : ' . $e->getMessage() . "\n";
 }
+$trainingEnrollmentWithdrawnMigrate = require $root . '/bootstrap/training_enrollment_withdrawn_status_migration.php';
+try {
+    $trainingEnrollmentWithdrawnMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_enrollment_withdrawn : ' . $e->getMessage() . "\n";
+}
 $trainingCourseLmsPlatformVersionMigrate = require $root . '/bootstrap/training_course_lms_platform_version_migration.php';
 try {
     $trainingCourseLmsPlatformVersionMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_course_lms_platform_version : ' . $e->getMessage() . "\n";
+}
+$trainingCoursesLmsScopeMigrate = require $root . '/bootstrap/training_courses_lms_scope_migration.php';
+try {
+    $trainingCoursesLmsScopeMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_courses_lms_scope : ' . $e->getMessage() . "\n";
 }
 $trainingCertificateTemplatesMigrate = require $root . '/bootstrap/training_certificate_templates_migration.php';
 try {
@@ -2143,6 +2166,19 @@ if ($stmt && $stmt->fetch()) {
         }
     } catch (Throwable $e) {
         echo '  [ATTENTION] training_lessons canvas : ' . $e->getMessage() . "\n";
+    }
+
+    try {
+        $fr = $pdo->query("SHOW TABLES LIKE 'forum_reports'");
+        if ($fr && $fr->fetch()) {
+            $ck = $pdo->query("SHOW COLUMNS FROM forum_reports LIKE 'content_kind'");
+            if ($ck && !$ck->fetch()) {
+                $pdo->exec('ALTER TABLE forum_reports ADD COLUMN content_kind VARCHAR(64) NULL DEFAULT NULL');
+                echo "forum_reports.content_kind ajouté (signalements étendus).\n";
+            }
+        }
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] forum_reports.content_kind : ' . $e->getMessage() . "\n";
     }
 
     echo "Migrations terminées.\n";

@@ -24,7 +24,7 @@ class TrainingQuizService
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
             throw new \InvalidArgumentException('Inscription introuvable ou accès refusé.');
         }
-        if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired', 'pending_approval'], true)) {
+        if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired', 'pending_approval', 'withdrawn'], true)) {
             throw new \InvalidArgumentException('Accès au quiz indisponible pour cette inscription.');
         }
         $quiz = $this->quizRepository->findQuizById($quizId);
@@ -80,7 +80,7 @@ class TrainingQuizService
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
             throw new \InvalidArgumentException('Accès refusé.');
         }
-        if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired', 'pending_approval'], true)) {
+        if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired', 'pending_approval', 'withdrawn'], true)) {
             throw new \InvalidArgumentException('Accès au quiz indisponible pour cette inscription.');
         }
         $quiz = $this->quizRepository->findQuizById((int) $attempt['quiz_id']);

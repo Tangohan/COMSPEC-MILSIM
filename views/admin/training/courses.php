@@ -35,7 +35,7 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                                 <th class="hidden md:table-cell">Adresse courte</th>
                                 <th>Statut</th>
                                 <th class="hidden lg:table-cell">Catégorie</th>
-                                <th>Actions</th>
+                                <th class="w-[min(22rem,32vw)]">Accès &amp; gestion</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -64,36 +64,34 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                                     <span class="inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full <?= $visClass ?>"><?= htmlspecialchars($visFr) ?></span>
                                 </td>
                                 <td class="hidden lg:table-cell text-slate-600 align-top"><?= htmlspecialchars((string) ($c['category'] ?? '—')) ?></td>
-                                <td class="align-top">
-                                    <div class="flex flex-col gap-1.5 text-xs font-bold">
-                                        <div class="flex flex-wrap gap-x-2 gap-y-1">
-                                            <a href="<?= url('formations/' . rawurlencode((string) $c['slug'])) ?>" class="text-emerald-700 hover:underline" target="_blank" rel="noopener">Voir</a>
+                                <td class="align-top py-4">
+                                    <div class="tc-course-actions">
+                                        <div class="tc-course-actions__chips" role="group" aria-label="Raccourcis pour cette formation">
+                                            <a href="<?= url('formations/' . rawurlencode((string) $c['slug'])) ?>" class="tc-course-actions__chip tc-course-actions__chip--ext" target="_blank" rel="noopener" title="Ouvre la page publique de la formation">Fiche publique</a>
                                             <?php if ($trainingCanEditShowcaseOrCatalog): ?>
-                                            <a href="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/showcase')) ?>" class="text-slate-700 hover:underline">Vitrine</a>
+                                            <a href="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/showcase')) ?>" class="tc-course-actions__chip" title="Carte et textes sur la page des formations">Vitrine</a>
                                             <?php endif; ?>
-                                            <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments') . '?course_id=' . (int) $cid) ?>" class="text-slate-700 hover:underline">Inscriptions</a>
-                                            <a href="<?= training_studio_url((string) $cid) ?>" class="text-violet-700 hover:underline">Studio</a>
+                                            <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments') . '?course_id=' . (int) $cid) ?>" class="tc-course-actions__chip">Inscriptions</a>
+                                            <a href="<?= training_studio_url((string) $cid) ?>" class="tc-course-actions__chip" title="Modifier le contenu pédagogique">Studio LMS</a>
                                         </div>
                                         <?php if ($trainingCanExportFull): ?>
-                                        <a href="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/export')) ?>" class="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-500 hover:text-emerald-700 w-fit border border-slate-200 rounded-lg px-2 py-1 bg-white hover:border-emerald-200">
-                                            Télécharger le dossier
-                                        </a>
+                                        <a href="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/export')) ?>" class="tc-course-actions__btn tc-course-actions__btn--download">Télécharger le dossier</a>
                                         <?php endif; ?>
-                                        <?php if ($trainingCanEditShowcaseOrCatalog && $vis === 'published'): ?>
-                                        <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/unpublish')) ?>" class="inline" onsubmit="return confirm('Retirer cette formation du catalogue public ? Elle restera modifiable dans le studio.');">
-                                            <?= \App\Core\Csrf::field() ?>
-                                            <button type="submit" class="mt-0.5 text-[10px] font-black uppercase tracking-wider text-amber-800 hover:text-amber-950 underline decoration-amber-300 underline-offset-2">
-                                                Retirer du catalogue
-                                            </button>
-                                        </form>
-                                        <?php endif; ?>
-                                        <?php if ($trainingCanDeleteCourse): ?>
-                                        <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/delete')) ?>" class="inline" onsubmit="return confirm('Supprimer définitivement ce parcours, les inscriptions et la progression associées ? Cette action est irréversible.');">
-                                            <?= \App\Core\Csrf::field() ?>
-                                            <button type="submit" class="text-[10px] font-black uppercase tracking-wider text-rose-700 hover:text-rose-900 underline decoration-rose-300 underline-offset-2">
-                                                Supprimer
-                                            </button>
-                                        </form>
+                                        <?php if (($trainingCanEditShowcaseOrCatalog && $vis === 'published') || $trainingCanDeleteCourse): ?>
+                                        <div class="tc-course-actions__risky" role="group" aria-label="Actions sensibles">
+                                            <?php if ($trainingCanEditShowcaseOrCatalog && $vis === 'published'): ?>
+                                            <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/unpublish')) ?>" class="tc-course-actions__form" onsubmit="return confirm('Retirer cette formation du catalogue public ? Elle restera modifiable dans le studio.');">
+                                                <?= \App\Core\Csrf::field() ?>
+                                                <button type="submit" class="tc-course-actions__btn tc-course-actions__btn--warn">Retirer du catalogue</button>
+                                            </form>
+                                            <?php endif; ?>
+                                            <?php if ($trainingCanDeleteCourse): ?>
+                                            <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/delete')) ?>" class="tc-course-actions__form" onsubmit="return confirm('Supprimer définitivement ce parcours, les inscriptions et la progression associées ? Cette action est irréversible.');">
+                                                <?= \App\Core\Csrf::field() ?>
+                                                <button type="submit" class="tc-course-actions__btn tc-course-actions__btn--danger">Supprimer le parcours</button>
+                                            </form>
+                                            <?php endif; ?>
+                                        </div>
                                         <?php endif; ?>
                                     </div>
                                 </td>

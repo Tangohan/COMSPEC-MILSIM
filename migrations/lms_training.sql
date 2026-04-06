@@ -107,7 +107,7 @@ CREATE TABLE `training_enrollments` (
     `user_id` INT UNSIGNED NOT NULL,
     `assigned_by` INT UNSIGNED NULL,
     `assignment_type` ENUM('manual','role','unit','campaign','self_enroll') DEFAULT 'manual',
-    `status` ENUM('assigned','in_progress','completed','failed','expired','revoked') DEFAULT 'assigned',
+    `status` ENUM('assigned','in_progress','completed','failed','expired','revoked','pending_approval','withdrawn') DEFAULT 'assigned',
     `assigned_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `started_at` DATETIME NULL,
     `completed_at` DATETIME NULL,

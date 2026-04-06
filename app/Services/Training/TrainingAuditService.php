@@ -78,6 +78,12 @@ class TrainingAuditService
         $this->log('enrollment_assigned', 'training_enrollment', $enrollmentId, $tenantId, $userId, null, $newValue);
     }
 
+    /** @param array<string, mixed> $newValue course_id, course_title, previous_status, user_id */
+    public function logEnrollmentWithdrawn(int $tenantId, int $userId, int $enrollmentId, array $newValue): void
+    {
+        $this->log('enrollment_withdrawn', 'training_enrollment', $enrollmentId, $tenantId, $userId, null, $newValue);
+    }
+
     public function logLessonCompleted(int $tenantId, int $userId, int $enrollmentId, int $lessonId): void
     {
         $this->log('lesson_completed', 'training_progress', $enrollmentId, $tenantId, $userId, null, ['lesson_id' => $lessonId]);

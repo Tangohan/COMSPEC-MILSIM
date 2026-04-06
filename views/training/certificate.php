@@ -12,6 +12,7 @@ $og_url = $og_url ?? null;
 $og_title = $og_title ?? null;
 $og_description = $og_description ?? null;
 $appDisplayName = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
+$tailwindBaseUrl = $base;
 
 $pdfRel = (string) ($certificate['pdf_path'] ?? '');
 $pdfFull = '';
@@ -61,18 +62,31 @@ $isCelebration = $statusRaw === 'valid';
             0% { background-position: 200% center; }
             100% { background-position: -200% center; }
         }
-        .cert-animate-in { animation: cert-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        /* Opacité initiale ici uniquement — ne pas combiner avec Tailwind opacity-0 (sinon le texte de la carte reste invisible après l’animation). */
+        .cert-animate-in {
+            opacity: 0;
+            animation: cert-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
         .cert-card-glow { animation: cert-glow 4s ease-in-out infinite; }
         .cert-title-shine {
+            color: #0f172a;
             background: linear-gradient(105deg, #0f172a 0%, #0f172a 40%, #059669 50%, #0f172a 60%, #0f172a 100%);
             background-size: 200% auto;
             -webkit-background-clip: text;
             background-clip: text;
-            color: transparent;
+            -webkit-text-fill-color: transparent;
             animation: cert-shimmer 3.5s linear infinite;
         }
+        @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+            .cert-title-shine {
+                -webkit-text-fill-color: currentColor;
+                background: none;
+                animation: none;
+            }
+        }
         @media (prefers-reduced-motion: reduce) {
-            .cert-animate-in, .cert-card-glow, .cert-title-shine { animation: none !important; color: #0f172a; -webkit-text-fill-color: #0f172a; }
+            .cert-animate-in, .cert-card-glow, .cert-title-shine { animation: none !important; opacity: 1 !important; }
+            .cert-title-shine { color: #0f172a; -webkit-text-fill-color: #0f172a; background: none; }
         }
     </style>
     <?php if ($isCelebration): ?>
@@ -93,7 +107,7 @@ $isCelebration = $statusRaw === 'valid';
     </nav>
 
     <main class="relative z-10 max-w-2xl mx-auto px-6 py-10 sm:py-14">
-        <div class="cert-animate-in opacity-0 rounded-3xl border border-amber-400/25 bg-white text-slate-900 p-8 sm:p-12 text-center cert-card-glow">
+        <div class="cert-animate-in rounded-3xl border border-amber-400/25 bg-white text-slate-900 p-8 sm:p-12 text-center cert-card-glow">
             <?php if ($isCelebration): ?>
             <div class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-800 ring-1 ring-emerald-200/80 mb-6">
                 <span class="text-lg leading-none" aria-hidden="true">🎉</span>

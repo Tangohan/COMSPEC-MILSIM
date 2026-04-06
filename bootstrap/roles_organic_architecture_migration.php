@@ -235,6 +235,9 @@ function run_roles_organic_architecture_migration(PDO $pdo): void
         'deputy_commander' => ['authority', 1, 0],
         'technical_admin' => ['authority', 1, 0],
         'site_super_admin' => ['authority', 1, 0],
+        'site_senior_moderator' => ['authority', 1, 0],
+        'site_moderator' => ['function', 1, 0],
+        'site_support' => ['function', 1, 0],
     ];
     foreach ($tierMap as $slug => [$tier, $dg, $vis]) {
         try {

@@ -123,9 +123,21 @@ $forumModerationLogsAvailable = $forumModerationLogsAvailable ?? false;
                       <span class="text-[10px] font-bold uppercase tracking-wide text-slate-500"><?= htmlspecialchars($r['report_type']) ?></span>
                     <?php endif; ?>
                     <?php
+                    $contentKind = trim((string) ($r['content_kind'] ?? ''));
+                    $contentKindFr = match ($contentKind) {
+                        'training_course' => 'Formation',
+                        'member_profile' => 'Fiche personnelle',
+                        'profile_picture' => 'Photo de compte',
+                        'operator_visual' => 'Dossier opérateur',
+                        'help_page' => 'Aide intégrée',
+                        'site_image' => 'Image du site',
+                        default => '',
+                    };
                     $hasPost = !empty($r['post_id']);
                     $hasUrl = !empty($r['reported_url']);
-                    if ($hasUrl): ?>
+                    if ($contentKindFr !== ''): ?>
+                      <span class="inline-flex rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 text-[10px] font-black uppercase text-teal-900"><?= htmlspecialchars($contentKindFr) ?></span>
+                    <?php elseif ($hasUrl): ?>
                       <span class="inline-flex rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-black uppercase text-amber-900">URL</span>
                     <?php elseif ($hasPost): ?>
                       <span class="inline-flex rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-black uppercase text-slate-600">Message</span>
@@ -159,6 +171,8 @@ $forumModerationLogsAvailable = $forumModerationLogsAvailable ?? false;
                 <div class="flex flex-wrap items-center gap-2 shrink-0">
                   <?php if ($topicId): ?>
                     <a href="<?= $baseUrl ?>/forum/topic/<?= $topicId ?>" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 shadow-sm hover:border-emerald-300 hover:text-emerald-800">Voir</a>
+                  <?php elseif ($hasUrl): ?>
+                    <a href="<?= htmlspecialchars((string) $r['reported_url']) ?>" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 shadow-sm hover:border-emerald-300 hover:text-emerald-800">Ouvrir le lien</a>
                   <?php endif; ?>
                   <form method="post" action="<?= $baseUrl ?>/forum/report/<?= (int) $r['id'] ?>/handle" class="inline">
                     <?= \App\Core\Csrf::field() ?>

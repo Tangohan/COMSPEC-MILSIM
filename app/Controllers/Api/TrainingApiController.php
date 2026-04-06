@@ -543,7 +543,7 @@ class TrainingApiController
             return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
         }
         $courseId = (int) $mod['course_id'];
-        if (!$this->courseRepository->findById($courseId, $tenantId)) {
+        if (!$this->courseRepository->findByIdForViewer($courseId, $tenantId)) {
             return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
         }
         $enrollment = $this->enrollmentRepository->findByCourseAndUser($courseId, $userId);

@@ -5,6 +5,11 @@ $lessonTypes = $lessonTypes ?? [];
 $visibilityOptions = $visibilityOptions ?? [];
 $levelOptions = $levelOptions ?? [];
 $canPublish = $canPublish ?? false;
+$studioCanSetPlatformScope = $studioCanSetPlatformScope ?? false;
+$curLmsScope = (string) ($course['lms_scope'] ?? 'tenant');
+if ($curLmsScope !== 'platform' && $curLmsScope !== 'tenant') {
+    $curLmsScope = 'tenant';
+}
 $cid = (int) ($course['id'] ?? 0);
 $slug = (string) ($course['slug'] ?? '');
 $modules = $course['modules'] ?? [];
@@ -216,8 +221,8 @@ $defaultCanvasJson = json_encode([
                     <input type="text" name="title" required value="<?= htmlspecialchars((string) ($course['title'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Slug</label>
-                    <input type="text" name="slug" required value="<?= htmlspecialchars($slug) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-xs">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Adresse courte du lien</label>
+                    <input type="text" name="slug" required value="<?= htmlspecialchars($slug) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-xs" title="Segment utilisé dans l’adresse web du parcours">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1">Code affichage (ex. A-03)</label>
@@ -233,6 +238,21 @@ $defaultCanvasJson = json_encode([
                         <option value="<?= htmlspecialchars($v) ?>" <?= ($curVis === $v) ? 'selected' : '' ?> <?= $pubLocked ? 'disabled' : '' ?>><?= htmlspecialchars($visLabels[$v] ?? $v) ?><?= $pubLocked ? ' (permission requise)' : '' ?></option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+                <div class="md:col-span-2 rounded-xl border border-slate-100 bg-slate-50/80 p-4 space-y-2">
+                    <label class="block text-xs font-bold text-slate-600">Portée du catalogue</label>
+                    <?php if ($studioCanSetPlatformScope): ?>
+                    <select name="lms_scope" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                        <option value="tenant" <?= $curLmsScope === 'tenant' ? 'selected' : '' ?>>Parcours de la communauté — proposé aux membres de cette organisation</option>
+                        <option value="platform" <?= $curLmsScope === 'platform' ? 'selected' : '' ?>>Proposé sur toute la plateforme — visible par toutes les organisations éligibles</option>
+                    </select>
+                    <p class="text-xs text-slate-500 leading-relaxed">Les parcours proposés sur toute la plateforme partagent les mêmes adresses courtes : choisissez un segment de lien unique à l’échelle du site.</p>
+                    <?php else: ?>
+                    <p class="text-sm text-slate-800 font-medium"><?= htmlspecialchars(function_exists('training_lms_course_scope_label_fr') ? training_lms_course_scope_label_fr($curLmsScope) : '') ?></p>
+                    <?php if ($curLmsScope === 'platform'): ?>
+                    <p class="text-xs text-slate-500">Seuls les administrateurs de la plateforme peuvent modifier cette portée.</p>
+                    <?php endif; ?>
+                    <?php endif; ?>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1">Catégorie</label>

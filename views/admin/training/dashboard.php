@@ -9,7 +9,7 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                     <h1 class="tc-hero-title mb-4">Formations &amp; continuité pédagogique</h1>
                     <div class="h-px w-20 bg-slate-900/10 mb-5"></div>
                     <p class="text-slate-600 text-sm max-w-2xl leading-relaxed">
-                        Catalogue, studio d’édition, inscriptions et suivi des échéances pour votre communauté.
+                        Accédez au catalogue, au studio d’édition, aux inscriptions et au suivi des échéances depuis la barre ci-dessus. Les raccourcis ci-dessous reprennent les actions les plus fréquentes.
                     </p>
                     <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-8">
                         <div class="tc-stat">
@@ -61,13 +61,6 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                     </div>
                 </section>
                 <?php endif; ?>
-
-                <div class="flex flex-wrap gap-3">
-                    <a href="<?= htmlspecialchars(training_lms_admin_url('reports')) ?>" class="tc-btn-primary tc-btn-ghost">Rapports</a>
-                    <a href="<?= htmlspecialchars(training_lms_admin_url('certificates')) ?>" class="tc-btn-primary tc-btn-ghost">Certificats</a>
-                    <a href="<?= htmlspecialchars(training_lms_admin_url('audit')) ?>" class="tc-btn-primary tc-btn-ghost">Audit</a>
-                    <a href="<?= url('formations') ?>" target="_blank" rel="noopener" class="tc-btn-primary tc-btn-emerald">Catalogue public ↗</a>
-                </div>
 
                 <?php if (!empty($expiring)): ?>
                 <section class="rounded-2xl border border-amber-200/90 bg-amber-50/90 p-6 shadow-inner">

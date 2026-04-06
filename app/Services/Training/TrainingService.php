@@ -22,10 +22,20 @@ class TrainingService
         private TrainingQuizRepository $quizRepository
     ) {}
 
-    /** Catalogue : formations publiées pour le tenant, avec statut d'enrollment si userId fourni. */
+    /** Catalogue : parcours publiés de la communauté + parcours plateforme Athena, avec statut d’inscription si userId fourni. */
     public function getCatalogue(int $tenantId, ?int $userId = null, ?string $category = null, ?string $search = null): array
     {
-        $courses = $this->courseRepository->listForTenant($tenantId, 'published', $category, $search);
+        $tenantCourses = $this->courseRepository->listForTenant($tenantId, 'published', $category, $search, true);
+        $platformCourses = $this->courseRepository->listPublishedPlatform($category, $search);
+        $byId = [];
+        foreach ($platformCourses as $c) {
+            $byId[(int) ($c['id'] ?? 0)] = $c;
+        }
+        foreach ($tenantCourses as $c) {
+            $byId[(int) ($c['id'] ?? 0)] = $c;
+        }
+        $courses = array_values($byId);
+        usort($courses, static fn (array $a, array $b): int => strcmp((string) ($a['title'] ?? ''), (string) ($b['title'] ?? '')));
         if ($userId === null) {
             return $courses;
         }
@@ -34,21 +44,27 @@ class TrainingService
             $courses[$i]['enrollment'] = $enrollment;
             $courses[$i]['progress_percent'] = $enrollment ? $this->getGlobalProgress($enrollment['id']) : 0;
         }
+
         return $courses;
     }
 
     public function getCourseBySlugOrId(int $tenantId, string $slugOrId): ?array
     {
         if (is_numeric($slugOrId)) {
-            return $this->courseRepository->findById((int) $slugOrId, $tenantId);
+            return $this->courseRepository->findByIdForViewer((int) $slugOrId, $tenantId);
         }
+
         return $this->courseRepository->findBySlug($slugOrId, $tenantId);
     }
 
     /** Formation avec structure complète : modules, leçons, quiz par module. */
-    public function getCourseWithStructure(int $courseId, ?int $tenantId = null): ?array
+    public function getCourseWithStructure(int $courseId, ?int $tenantId = null, bool $studioContext = false): ?array
     {
-        $course = $this->courseRepository->findById($courseId, $tenantId);
+        $course = $studioContext && $tenantId !== null
+            ? $this->courseRepository->findById($courseId, $tenantId)
+            : ($tenantId !== null
+                ? $this->courseRepository->findByIdForViewer($courseId, $tenantId)
+                : $this->courseRepository->findById($courseId, null));
         if (!$course) {
             return null;
         }
@@ -78,7 +94,7 @@ class TrainingService
 
     public function canAccessCourse(int $userId, int $courseId, int $tenantId): bool
     {
-        $course = $this->courseRepository->findById($courseId, $tenantId);
+        $course = $this->courseRepository->findByIdForViewer($courseId, $tenantId);
         if (!$course || $course['visibility'] !== 'published') {
             return false;
         }
@@ -88,7 +104,7 @@ class TrainingService
         }
         $st = (string) ($enrollment['status'] ?? '');
 
-        return !in_array($st, ['revoked', 'expired', 'pending_approval'], true);
+        return !in_array($st, ['revoked', 'expired', 'pending_approval', 'withdrawn'], true);
     }
 
     /** Pourcentage global de progression (leçons complétées / total des leçons du parcours). */

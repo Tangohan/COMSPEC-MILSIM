@@ -370,7 +370,7 @@ function training_onboarding_upgrade_portal_legacy_five_modules(PDO $pdo, int $c
             'Questions sur la navigation, le compte, les documents et le catalogue des formations.',
             75.00,
             4,
-            15,
+            22,
             $now,
         ]);
         $midQuizId = (int) $pdo->lastInsertId();
@@ -764,21 +764,22 @@ function training_onboarding_deck_navigation(): array
             'title' => '',
             'lead' => 'Menus, tableau de bord, compte et recherche : les bons réflexes pour ne pas perdre le fil au quotidien.',
             'stats' => [
-                ['label' => 'Durée indicative', 'value' => '~24 min'],
-                ['label' => 'Focus', 'value' => 'Navigation'],
+                ['label' => 'Durée indicative', 'value' => '~28 min'],
+                ['label' => 'Focus', 'value' => 'Repérage + compte'],
             ],
         ],
         'closure' => [
             'title' => 'Synthèse — Navigation et compte',
             'seen' => [
-                'Le tableau de bord synthétise ce qui vous concerne après connexion.',
-                'Le compte regroupe profil, préférences et sécurité.',
+                'Tableau de bord comme premier arrêt ; menu et zone Opérations selon les droits.',
+                'Procédure type de mise à jour du profil et des préférences dans la rubrique compte.',
+                'Comparaison poste personnel / poste partagé et conduite en cas de page invisible.',
             ],
             'acquired' => [
-                'Vous savez où ajuster notifications et identifiants affichés.',
-                'Vous évitez les erreurs de contexte entre plusieurs communautés.',
+                'Vous savez enchaîner les étapes pour tenir votre compte à jour sans improvisation.',
+                'Vous évitez les erreurs de contexte entre communautés et les sessions ouvertes sur poste partagé.',
             ],
-            'nextHint' => 'Enchaînez avec le module sur le personnel, les documents et le catalogue des formations.',
+            'nextHint' => 'Poursuivez avec « Organisation et contenus » : personnel, documents, formations et attestations.',
         ],
         'slides' => [
             [
@@ -843,6 +844,49 @@ HTML
                 'body' => "Revoyez périodiquement vos préférences de notification : un rappel de formation ou d’événement se joue souvent sur un simple e-mail ou une alerte interne.\nSi un libellé de menu vous échappe, ouvrez la rubrique plutôt que d’ignorer : les intitulés sont pensés pour le langage courant.\nSur un poste partagé, déconnectez-vous explicitement ; fermer l’onglet ne suffit pas toujours.\nAvant d’ouvrir un nouveau fil sur le forum, recherchez ou parcourez la catégorie pour éviter les doublons.\nSi une page refuse l’accès, considérez que votre rôle n’inclut peut-être pas cette fonction : demandez au staff au lieu d’essayer de contourner.",
             ],
             [
+                'template' => 'process_steps',
+                'title' => 'Procédure type : mettre à jour son profil et ses préférences',
+                'steps' => [
+                    [
+                        'title' => 'Ouvrir la rubrique compte',
+                        'action' => 'Depuis le menu principal, accédez à « Mon compte » (ou libellé équivalent).',
+                        'vigilance' => 'Vérifiez que vous êtes dans la bonne communauté si vous en avez plusieurs.',
+                    ],
+                    [
+                        'title' => 'Parcourir les sections proposées',
+                        'action' => 'Identifiez profil (identité affichée, champs de dossier), préférences (notifications, affichage) et sécurité (mot de passe, contact).',
+                        'vigilance' => 'Ne modifiez le mot de passe ou l’adresse de contact que si vous pouvez assumer la confirmation demandée par le site.',
+                    ],
+                    [
+                        'title' => 'Enregistrer et contrôler',
+                        'action' => 'Validez les changements ; relisez les messages de confirmation ou les e-mails de vérification.',
+                        'vigilance' => 'Un contact obsolète bloque souvent la récupération d’accès en cas de problème.',
+                    ],
+                ],
+            ],
+            [
+                'template' => 'role_scope_compare',
+                'title' => 'Poste personnel et poste partagé',
+                'memberView' => '<p>Sur <strong>votre</strong> ordinateur ou appareil personnel, vous gérez la session comme d’habitude : fermeture du navigateur peut suffire selon les réglages, mais la déconnexion du portail reste recommandée si d’autres applications sont ouvertes.</p>',
+                'staffView' => '<p>Pour le <strong>staff</strong>, l’enjeu est le même au niveau collectif : rappeler la déconnexion sur les postes de permanence ou salles partagées fait partie du bon usage du service.</p>',
+                'rightsNote' => '<p>Les droits d’accès (menu, rubriques) ne changent pas selon le type de machine : ils dépendent du <strong>compte</strong> et du <strong>rôle</strong>. En revanche, le <strong>risque</strong> de session laissée ouverte est maximal sur un poste partagé.</p>',
+                'notAnomaly' => '<p>Que le site vous demande une reconnexion après une durée d’inactivité n’est pas une anomalie : c’est souvent une protection de session.</p>',
+            ],
+            [
+                'template' => 'scenario_decision',
+                'title' => 'Une page du parcours ne s’affiche pas pour vous',
+                'context' => 'Un encadré de formation cite une page (recherche, organigramme, etc.) ; chez vous le menu ne propose pas la même chose qu’illustré.',
+                'situation' => '<p>Vous devez compléter une tâche qui, selon vous, nécessite cette page.</p>',
+                'options' => [
+                    ['id' => 'a', 'text' => 'Contrôler la communauté active et demander au staff si l’accès est normal pour votre affectation avant d’alerter tout le monde.'],
+                    ['id' => 'b', 'text' => 'Installer un outil tiers pour « forcer » l’affichage du site.'],
+                    ['id' => 'c', 'text' => 'Utiliser le compte d’un autre membre pour entrer à sa place.'],
+                    ['id' => 'd', 'text' => 'Publier sur le forum que le portail est inutilisable sans plus de précision.'],
+                ],
+                'correctOptionId' => 'a',
+                'explanation' => '<p>La conduite attendue combine <strong>vérification du contexte</strong> et <strong>escalade par le canal prévu</strong>. Les autres options exposent la sécurité ou créent du bruit.</p>',
+            ],
+            [
                 'template' => 'resources_list',
                 'title' => 'Raccourcis fréquents',
                 'subtitle' => '',
@@ -869,19 +913,20 @@ function training_onboarding_deck_org(): array
             'title' => '',
             'lead' => 'Personnel, documents et formations : où vit l’information « durable » et comment la progression est enregistrée.',
             'stats' => [
-                ['label' => 'Durée indicative', 'value' => '~26 min'],
+                ['label' => 'Durée indicative', 'value' => '~32 min'],
                 ['label' => 'Thème', 'value' => 'Organisation'],
             ],
         ],
         'closure' => [
             'title' => 'Synthèse — Organisation et contenus',
             'seen' => [
-                'La fiche personnelle relie votre compte au dossier tenu par la communauté.',
-                'Les documents portent la version de référence ; le forum sert à échanger.',
+                'Distinction nette : dossier personnel, organigramme, documents de référence, catalogue des formations.',
+                'Cas pratiques : document sensible, version obsolète, formation assignée mais non terminée.',
+                'Attestation : ce qu’elle atteste sur le portail et ce qu’elle ne remplace pas.',
             ],
             'acquired' => [
-                'Vous distinguez inscription libre et assignation par le staff.',
-                'Vous savez pourquoi une formation n’est terminée que lorsque toutes les étapes requises le sont.',
+                'Vous savez pourquoi un contenu peut être invisible selon le rôle et que ce n’est pas forcément une erreur.',
+                'Vous distinguez progression réelle et intention ; assignation vs inscription libre.',
             ],
             'nextHint' => 'Passez au bilan interrogé de mi-parcours, puis au module sur le forum et les événements.',
         ],
@@ -955,6 +1000,51 @@ HTML
                 ,
             ],
             [
+                'template' => 'case_review',
+                'title' => 'Cas : document sensible et diffusion',
+                'caseText' => '<p>Un fichier marqué restreint circule dans une messagerie personnelle externe « pour aller plus vite ». Un membre vous demande la « bonne » copie.</p>',
+                'analysis' => '<p>La diffusion hors des espaces prévus fait perdre la maîtrise des accès et la traçabilité attendue par l’organisation.</p>',
+                'goodConduct' => '<p>Ne pas recopier le fichier sur un canal non autorisé. Orienter vers la rubrique documents ou vers le staff si l’accès manque. Signaler la fuite si les règles internes l’exigent.</p>',
+                'conclusion' => '<p>La rapidité ne doit pas se faire au détriment du périmètre de diffusion défini par la communauté.</p>',
+            ],
+            [
+                'template' => 'common_mistakes',
+                'title' => 'Document obsolète ou douteux',
+                'mistakes' => [
+                    [
+                        'error' => 'Recirculer une ancienne version « au cas où »',
+                        'why' => 'Plusieurs versions coexistent déjà ; en ajouter une informelle aggrave la confusion.',
+                        'consequence' => 'Des équipes travaillent sur des textes différents au même titre.',
+                        'correction' => 'Signaler au référent ou au staff ; laisser la mise à jour officielle dans la rubrique documents.',
+                    ],
+                    [
+                        'error' => 'Considérer qu’une formation « presque finie » suffit',
+                        'why' => 'Le système enregistre les étapes réellement accomplies ; une obligation reste une obligation.',
+                        'consequence' => 'Retard sur l’exigence collective et rappels répétés du staff.',
+                        'correction' => 'Repérer les leçons ou quiz restants sur la fiche formation et les terminer dans le délai fixé.',
+                    ],
+                ],
+            ],
+            [
+                'template' => 'reading_article',
+                'title' => 'Attestation : ce qu’elle prouve et ce qu’elle ne prouve pas',
+                'subtitle' => 'Lecture institutionnelle',
+                'body' => <<<'HTML'
+<p>Lorsqu’une formation est <strong>certifiante</strong> et que vous avez accompli toutes les étapes requises (y compris les scores minimaux aux questionnaires), le portail peut délivrer une <strong>attestation</strong> (ou équivalent) selon les réglages de votre communauté.</p>
+<p><strong>Ce que cela prouve en général</strong> : vous avez validé le parcours tel qu’il est conçu sur le site, aux dates enregistrées.</p>
+<p><strong>Ce que cela ne prouve pas automatiquement</strong> : une habilitation opérationnelle spécifique, une clearance, ou toute compétence que seule votre unité peut reconnaître hors du LMS. L’attestation et le dossier métier peuvent coexiger : l’un ne remplace pas l’autre.</p>
+HTML
+                ,
+            ],
+            [
+                'template' => 'role_scope_compare',
+                'title' => 'Pourquoi un même contenu n’est pas visible pour tout le monde',
+                'memberView' => '<p>Un membre voit les dossiers, documents et formations correspondant à <strong>son rôle</strong> et aux <strong>niveaux de diffusion</strong> choisis par le staff. Certaines fiches ou fichiers sont volontairement limités à un groupe.</p>',
+                'staffView' => '<p>Le staff dispose en général d’outils d’administration ou de modération pour publier, retirer ou restreindre un contenu. La visibilité est une décision d’organisation, pas une préférence personnelle du site.</p>',
+                'rightsNote' => '<p>Si vous changez de fonction ou d’affectation, votre périmètre peut évoluer après mise à jour des rôles : ce n’est pas une punition, c’est l’alignement des accès.</p>',
+                'notAnomaly' => '<p>Deux camarades avec des rôles différents peuvent légitimement ne pas voir les mêmes rubriques : ce n’est pas systématiquement un dysfonctionnement.</p>',
+            ],
+            [
                 'template' => 'knowledge_check',
                 'title' => 'Ce qui compte vraiment côté organisation',
                 'body' => "Les contenus sensibles restent dans les espaces prévus ; ne les faites pas migrer vers des canaux privés non maîtrisés.\nUne formation obligatoire doit être traitée dans les délais fixés par le staff : l’outil permet de suivre l’avancement.\nConsultez régulièrement votre espace formations pour voir les assignations et les rappels.\nL’organigramme oriente ; il ne remplace pas une consigne écrite ou un ordre de mission.\nSi un document semble faux ou obsolète, signalez-le au responsable plutôt que de le recirculer.",
@@ -986,21 +1076,22 @@ function training_onboarding_deck_community(): array
             'title' => '',
             'lead' => 'Forum, événements, annonces : des règles simples pour que l’information reste utile à toute l’unité.',
             'stats' => [
-                ['label' => 'Durée indicative', 'value' => '~20 min'],
-                ['label' => 'Enjeu', 'value' => 'Clarté collective'],
+                ['label' => 'Durée indicative', 'value' => '~26 min'],
+                ['label' => 'Enjeu', 'value' => 'Canaux et rigueur'],
             ],
         ],
         'closure' => [
             'title' => 'Synthèse — Communauté',
             'seen' => [
-                'Un bon titre de sujet et une recherche avant de poster évitent le bruit.',
-                'Les inscriptions aux créneaux engagent : prévenir en cas d’empêchement.',
+                'Quand poster publiquement et quand passer par un canal dédié ou un signalement.',
+                'Titres de sujet utiles vs vagues ; annonce officielle vs conversation libre.',
+                'Cas types : doublon sur le forum, absence non signalée à un événement inscrit.',
             ],
             'acquired' => [
-                'Vous savez quand utiliser un signalement ou un message privé plutôt qu’un post public.',
-                'Vous appliquez des réflexes de participation utile dès la première semaine.',
+                'Vous réduisez le bruit informationnel par des réflexes simples (recherche, titre, prévenance).',
+                'Vous savez qu’un engagement sur un créneau inscrit est une donnée logistique pour le staff.',
             ],
-            'nextHint' => 'Il reste la validation finale par questionnaire et l’attestation.',
+            'nextHint' => 'Il reste le module « Validation finale » : questionnaire, attestation et limites de ce que couvre la certification sur le portail.',
         ],
         'slides' => [
             [
@@ -1059,6 +1150,58 @@ HTML
                 ,
             ],
             [
+                'template' => 'dos_donts',
+                'title' => 'Canal public ou canal dédié ?',
+                'dos' => [
+                    'Poser une question générale dans la catégorie adaptée, après recherche.',
+                    'Utiliser le signalement ou la procédure interne pour un contenu inapproprié ou un conflit sensible.',
+                    'Écrire au staff sur le canal prévu pour un sujet personnel ou confidentiel.',
+                ],
+                'donts' => [
+                    'Épingler une polémique personnelle en tête de forum sans passer par la modération.',
+                    'Multiplier les posts identiques dans plusieurs catégories « pour être sûr d’être vu ».',
+                    'Diffuser des données sensibles sur un fil ouvert alors qu’un canal restreint existe.',
+                ],
+                'synthesis' => '<p>La règle simple : <strong>public</strong> pour ce qui doit être partagé et archivable par la collectivité ; <strong>canal dédié</strong> pour ce qui exige confidentialité, preuve ou traitement par le staff.</p>',
+            ],
+            [
+                'template' => 'reading_article',
+                'title' => 'Titre utile, titre inutile',
+                'subtitle' => 'Lisibilité collective',
+                'body' => <<<'HTML'
+<p><strong>Inutile</strong> : « Question », « Urgent », « À lire » — aucun membre ne sait de quoi il s’agit sans ouvrir le fil.</p>
+<p><strong>Utile</strong> : « Point logistique — convocation du 12 : tenue et horaire », « Document obsolète sur la fiche X : demande de retrait », « Besoin d’accès documents section Y pour la permanence ».</p>
+<p>Le titre est le contrat de lecture avec les autres : il doit permettre de trier, d’archiver et de retrouver le sujet plus tard.</p>
+HTML
+                ,
+            ],
+            [
+                'template' => 'reading_article',
+                'title' => 'Annonce officielle et conversation',
+                'subtitle' => 'Deux fonctions différentes',
+                'body' => <<<'HTML'
+<p>Une <strong>annonce officielle</strong> (souvent épinglée ou mise en avant) fixe une consigne ou une information structurante pour une période donnée. Elle complète parfois un document de référence ; elle ne le remplace pas si la version stabilisée doit vivre dans la rubrique documents.</p>
+<p>Une <strong>conversation</strong> sur le forum sert au débat, aux questions de détail, aux mises à jour de situation. Mélanger les deux — par exemple noyer une annonce sous des messages hors-sujet — rend la consigne illisible pour ceux qui arrivent après.</p>
+HTML
+                ,
+            ],
+            [
+                'template' => 'case_review',
+                'title' => 'Cas : doublon sur le forum',
+                'caseText' => '<p>Le même sujet apparaît en trois fils ouverts la même semaine dans la même catégorie. Les réponses se dispersent.</p>',
+                'analysis' => '<p>Chacun a voulu « gagner du temps » sans parcourir la catégorie ; le staff doit fusionner ou orienter, et les membres ne savent plus où lire la décision.</p>',
+                'goodConduct' => '<p>Avant d’ouvrir un sujet : recherche et lecture des fils récents. Si le sujet existe, poster dans le fil existant. Si vous avez ouvert par erreur un doublon, indiquez-le et renvoyez vers le fil principal.</p>',
+                'conclusion' => '<p>La discipline de fil unique sur un même sujet est un geste de respect du temps collectif.</p>',
+            ],
+            [
+                'template' => 'case_review',
+                'title' => 'Cas : absence non signalée à un événement',
+                'caseText' => '<p>Vous étiez inscrit à un créneau ; un empêchement de dernière minute survient. Vous ne modifiez pas l’inscription et ne prévenez personne.</p>',
+                'analysis' => '<p>Le staff a dimensionné l’encadrement et le matériel sur la base des inscriptions. Une place vide non signalée est une ressource mal utilisée ; un autre membre aurait pu prendre la place.</p>',
+                'goodConduct' => '<p>Dès que l’empêchement est connu, suivre la procédure affichée (désinscription, message au référent, fil prévu). Mieux vaut prévenir tôt qu’imposer un silence au collectif.</p>',
+                'conclusion' => '<p>L’inscription à un événement est un engagement logistique, pas seulement un clic décoratif.</p>',
+            ],
+            [
                 'template' => 'fill_blanks',
                 'title' => 'Une dernière vérification',
                 'contextKicker' => 'Auto-évaluation',
@@ -1092,14 +1235,15 @@ function training_onboarding_deck_validation_intro(): array
         'closure' => [
             'title' => 'Avant de lancer le questionnaire',
             'seen' => [
-                'Les questions portent sur les usages du portail vus dans ce parcours.',
-                'Une attestation peut être proposée si la formation est certifiante et le score atteint.',
+                'Le questionnaire final couvre l’ensemble du parcours : navigation, compte, contenus, forum, événements, sécurité.',
+                'Les explications après une réponse incorrecte sont une aide pédagogique : servez-vous-en avant de retenter.',
+                'Validation sur le portail et habilitation métier reconnue par l’unité sont deux choses distinctes.',
             ],
             'acquired' => [
-                'Vous savez comment utiliser un échec comme liste de révision.',
-                'Vous savez où retrouver l’historique de vos formations terminées.',
+                'Vous savez organiser une reprise de révision ciblée après un échec.',
+                'Vous savez ce qu’une attestation atteste — et ce qu’elle ne remplace pas.',
             ],
-            'nextHint' => 'Utilisez le bouton pour passer à la leçon quiz lorsqu’elle est disponible dans votre parcours.',
+            'nextHint' => 'Passez à la leçon « Quiz » du module lorsqu’elle est disponible dans votre parcours.',
         ],
         'slides' => [
             [
@@ -1138,6 +1282,25 @@ HTML
                 'title' => 'Pourquoi cette validation existe',
                 'subtitle' => 'Responsabilité partagée',
                 'body' => '<p>La communauté a intérêt à ce que chaque membre sache se servir du portail correctement : moins d’erreurs de diffusion, moins de fichiers égarés, moins de questions répétitives au staff. En validant ce parcours, vous confirmez que vous connaissez les bons réflexes — pas que vous êtes infaillible, mais que vous savez où relire l’information quand un doute revient.</p>',
+            ],
+            [
+                'template' => 'scenario_decision',
+                'title' => 'Vous avez réussi le quiz certifiant : que pouvez-vous en déduire ?',
+                'context' => 'Le portail affiche le parcours comme terminé et propose une attestation.',
+                'situation' => '<p>Un camarade affirme que vous êtes « habilité » sur un poste sensible uniquement sur cette base.</p>',
+                'options' => [
+                    ['id' => 'a', 'text' => 'Considérer que l’attestation couvre le parcours sur le site ; toute habilitation opérationnelle spécifique relève encore des règles de l’unité.'],
+                    ['id' => 'b', 'text' => 'Conclure que l’attestation remplace toute validation métier interne sans autre formalité.'],
+                    ['id' => 'c', 'text' => 'Refuser d’afficher l’attestation car elle n’a aucune valeur.'],
+                    ['id' => 'd', 'text' => 'Publier l’attestation sur le forum comme preuve de clearance.'],
+                ],
+                'correctOptionId' => 'a',
+                'explanation' => '<p>L’attestation atteste la <strong>validation du parcours</strong> tel que paramétré sur le portail. Les exigences métier (affectation, validation d’un chef, clearance) restent du ressort de l’organisation : ne pas les confondre évite les malentendus.</p>',
+            ],
+            [
+                'template' => 'knowledge_check',
+                'title' => 'En cas de doute pendant le questionnaire',
+                'body' => "Si deux réponses semblent crédibles, demandez-vous laquelle correspond au réflexe « membre du portail » décrit dans ce parcours, pas à une habitude personnelle ou à une astuce technique.\nEn cas d’échec, notez les thèmes signalés par les explications puis rouvrez les synthèses des modules concernés.\nNe tentez pas le quiz dans des conditions de connexion très dégradées : une coupure peut interrompre la session.\nLe score seuil est rappelé sur la fiche formation : il est identique pour tous les membres sur ce parcours.\nAprès réussite, conservez ou téléchargez l’attestation selon les options proposées par votre communauté.",
             ],
         ],
     ];
@@ -1277,7 +1440,7 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
                     'Questions sur la navigation, le compte, les documents et le catalogue des formations.',
                     75.00,
                     4,
-                    15,
+                    22,
                     1,
                     0,
                     $now,
@@ -1326,7 +1489,7 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
                 'Validez vos acquis sur la navigation, le compte, les contenus et la vie de la communauté.',
                 80.00,
                 5,
-                24,
+                32,
                 1,
                 1,
                 $now,
@@ -1345,6 +1508,7 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
 
 /**
  * Questions du bilan à mi-parcours (thèmes des trois premiers modules).
+ * Utilisé à la création du parcours pour une nouvelle communauté ; pas de resynchronisation automatique sur les tenants existants.
  *
  * @return list<array{text:string,explain?:string,answers:list<array{t:string,ok:bool}>}>
  */
@@ -1363,6 +1527,7 @@ function training_onboarding_mid_quiz_questions(): array
         ],
         [
             'text' => 'Où met-on à jour en principe ses préférences de notification et son profil affiché ?',
+            'explain' => 'Profil, préférences et sécurité relèvent de la rubrique compte du portail.',
             'answers' => [
                 ['t' => 'Dans la rubrique compte (souvent « Mon compte ») du portail', 'ok' => true],
                 ['t' => 'En modifiant le nom du poste de travail', 'ok' => false],
@@ -1372,6 +1537,7 @@ function training_onboarding_mid_quiz_questions(): array
         ],
         [
             'text' => 'Où retrouver en priorité une note officielle stabilisée, destinée à tous les membres autorisés ?',
+            'explain' => 'Les textes de référence publiés par le staff sont en principe dans la rubrique documents (selon la diffusion).',
             'answers' => [
                 ['t' => 'Dans la rubrique documents du portail, selon le niveau de diffusion', 'ok' => true],
                 ['t' => 'Uniquement en enchaînant des messages sur le forum sans fiche dédiée', 'ok' => false],
@@ -1380,7 +1546,18 @@ function training_onboarding_mid_quiz_questions(): array
             ],
         ],
         [
+            'text' => 'Un fichier de référence ne figure que dans un fil de forum ancien, sans entrée dans les documents. Quelle conduite est la plus raisonnable ?',
+            'explain' => 'La référence stabilisée doit être portée par le staff dans l’espace prévu ; signaler évite la dispersion des versions.',
+            'answers' => [
+                ['t' => 'Signaler au staff ou au référent documentaire plutôt que de recopier le fichier sur un canal personnel', 'ok' => true],
+                ['t' => 'Considérer le fil de forum comme la seule source officielle et le diffuser tel quel', 'ok' => false],
+                ['t' => 'Archiver le fil sur clé USB personnelle pour « sécuriser »', 'ok' => false],
+                ['t' => 'Supprimer les messages anciens pour faire propre', 'ok' => false],
+            ],
+        ],
+        [
             'text' => 'Une formation du catalogue apparaît comme obligatoire : que signifie cela en général ?',
+            'explain' => 'Obligatoire implique une attente de complétion dans le cadre fixé par la communauté.',
             'answers' => [
                 ['t' => 'Le staff attend sa complétion dans le cadre fixé par la communauté', 'ok' => true],
                 ['t' => 'Elle est purement décorative sur le site', 'ok' => false],
@@ -1389,7 +1566,18 @@ function training_onboarding_mid_quiz_questions(): array
             ],
         ],
         [
+            'text' => 'Une formation obligatoire est assignée ; vous n’avez lu qu’une partie des leçons. Quelle est votre situation réelle sur le portail ?',
+            'explain' => 'La progression enregistrée reflète ce qui est effectivement accompli, pas l’intention.',
+            'answers' => [
+                ['t' => 'La formation n’est pas terminée tant que les étapes requises ne le sont pas', 'ok' => true],
+                ['t' => 'Le simple fait d’être assigné suffit pour être considéré comme à jour', 'ok' => false],
+                ['t' => 'Lire un résumé externe remplace les leçons sur le site', 'ok' => false],
+                ['t' => 'Le staff ne peut pas voir l’avancement', 'ok' => false],
+            ],
+        ],
+        [
             'text' => 'Pourquoi l’organigramme (ORBAT) du portail est-il utile au quotidien ?',
+            'explain' => 'Il donne une vue de structure ; il ne remplace pas une consigne écrite ou un ordre.',
             'answers' => [
                 ['t' => 'Pour comprendre la structure et les rattachements de l’unité', 'ok' => true],
                 ['t' => 'Pour stocker les mots de passe partagés', 'ok' => false],
@@ -1397,10 +1585,43 @@ function training_onboarding_mid_quiz_questions(): array
                 ['t' => 'Pour envoyer des messages privés automatiques', 'ok' => false],
             ],
         ],
+        [
+            'text' => 'Vous participez à plusieurs communautés sur la même plateforme. Avant une action engageante (inscription, message officiel), que devez-vous vérifier en premier ?',
+            'explain' => 'Le contexte actif détermine rubriques, droits et destinataires.',
+            'answers' => [
+                ['t' => 'Que vous agissez dans la bonne communauté (contexte actif affiché sur le site)', 'ok' => true],
+                ['t' => 'Que votre navigateur est en mode navigation privée', 'ok' => false],
+                ['t' => 'Que tous les forums ont le même nombre de sujets', 'ok' => false],
+                ['t' => 'Que la date du poste de travail est exacte', 'ok' => false],
+            ],
+        ],
+        [
+            'text' => 'Sur un poste partagé (salle, permanence), en quittant le portail, quelle est la conduite attendue ?',
+            'explain' => 'La déconnexion explicite du portail protège le compte sur équipement partagé.',
+            'answers' => [
+                ['t' => 'Se déconnecter explicitement du portail', 'ok' => true],
+                ['t' => 'Fermer seulement l’onglet, ce qui suffit toujours', 'ok' => false],
+                ['t' => 'Laisser la session ouverte pour le collègue suivant', 'ok' => false],
+                ['t' => 'Éteindre uniquement l’écran', 'ok' => false],
+            ],
+        ],
+        [
+            'text' => 'Un contenu sensible est publié dans la rubrique documents avec restriction d’accès. Un collègue vous demande de lui transférer le fichier par messagerie personnelle. Que faire ?',
+            'explain' => 'Respecter le périmètre de diffusion ; orienter vers le staff si un accès légitime manque.',
+            'answers' => [
+                ['t' => 'Refuser la copie hors canal et l’orienter vers une demande d’accès auprès du staff si besoin', 'ok' => true],
+                ['t' => 'Transférer pour « gagner du temps » puisqu’il est dans la même unité', 'ok' => false],
+                ['t' => 'Poster le fichier sur le forum en message privé', 'ok' => false],
+                ['t' => 'Renommer le fichier pour qu’il paraisse anodin', 'ok' => false],
+            ],
+        ],
     ];
 }
 
 /**
+ * Questions du quiz final (ensemble du parcours).
+ * Utilisé à la création du parcours pour une nouvelle communauté ; pas de resynchronisation automatique sur les tenants existants.
+ *
  * @return list<array{text:string,explain?:string,answers:list<array{t:string,ok:bool}>}>
  */
 function training_onboarding_quiz_questions(): array
@@ -1418,6 +1639,7 @@ function training_onboarding_quiz_questions(): array
         ],
         [
             'text' => 'Où un membre met-il généralement à jour son identité affichée et ses préférences ?',
+            'explain' => 'La rubrique compte concentre profil, préférences et sécurité.',
             'answers' => [
                 ['t' => 'Dans le profil / Mon compte', 'ok' => true],
                 ['t' => 'Sur un document papier uniquement', 'ok' => false],
@@ -1426,39 +1648,43 @@ function training_onboarding_quiz_questions(): array
             ],
         ],
         [
-            'text' => 'Comment s’inscrire à une formation publiée dans le catalogue ?',
+            'text' => 'Comment s’inscrire à une formation ouverte dans le catalogue, en l’absence d’assignation directe ?',
+            'explain' => 'L’inscription se fait depuis la fiche formation selon les règles affichées.',
             'answers' => [
                 ['t' => 'Ouvrir la fiche formation et suivre l’inscription prévue (selon les règles de la communauté)', 'ok' => true],
-                ['t' => 'En demandant à un ami de s’inscrire à votre place', 'ok' => false],
-                ['t' => 'En fermant le navigateur puis en rouvrant n’importe quelle page', 'ok' => false],
-                ['t' => 'Ce n’est jamais possible', 'ok' => false],
+                ['t' => 'En demander l’accès uniquement par message sur un réseau social personnel', 'ok' => false],
+                ['t' => 'Attendre qu’une copie papier soit distribuée', 'ok' => false],
+                ['t' => 'Ce n’est jamais possible sans intervention manuelle du support technique externe', 'ok' => false],
             ],
         ],
         [
             'text' => 'Sur le forum, quelle attitude est attendue par défaut ?',
+            'explain' => 'Canal, courtoisie et pertinence préservent la lisibilité collective.',
             'answers' => [
                 ['t' => 'Respecter les canaux, rester courtois et pertinent', 'ok' => true],
-                ['t' => 'Publier des informations sensibles hors rubrique autorisée', 'ok' => false],
-                ['t' => 'Ignorer les annonces officielles', 'ok' => false],
-                ['t' => 'Créer un sujet par message', 'ok' => false],
+                ['t' => 'Publier des informations sensibles hors rubrique autorisée pour aller plus vite', 'ok' => false],
+                ['t' => 'Ignorer les annonces officielles si elles sont longues', 'ok' => false],
+                ['t' => 'Créer un nouveau sujet pour chaque réponse afin de remonter dans la liste', 'ok' => false],
             ],
         ],
         [
-            'text' => 'Pour les événements communautaires (brief, séance…), que faut-il faire en cas d’empêchement ?',
+            'text' => 'Vous êtes inscrit à un événement communautaire mais ne pouvez plus y assister. Quelle conduite est attendue ?',
+            'explain' => 'Prévenir permet d’ajuster encadrement et places.',
             'answers' => [
-                ['t' => 'Prévenir selon les consignes de l’organisation (fil prévu, message au staff, etc.)', 'ok' => true],
-                ['t' => 'Ne jamais prévenir', 'ok' => false],
-                ['t' => 'Supprimer son compte', 'ok' => false],
-                ['t' => 'Modifier l’événement pour tout le monde', 'ok' => false],
+                ['t' => 'Prévenir selon les consignes de l’organisation (désinscription, message au staff, fil prévu, etc.)', 'ok' => true],
+                ['t' => 'Ne pas venir sans prévenir : le staff verra bien sur place', 'ok' => false],
+                ['t' => 'Demander à un tiers de prendre sa place avec votre compte', 'ok' => false],
+                ['t' => 'Supprimer l’événement pour tout le monde si vous êtes inscrit', 'ok' => false],
             ],
         ],
         [
             'text' => 'Une formation marquée « obligatoire » et « certifiante » signifie en général que :',
+            'explain' => 'Importance pour le collectif et possibilité d’attestation après validation complète selon les réglages.',
             'answers' => [
                 ['t' => 'Elle est importante pour le collectif et peut débloquer une attestation après validation complète', 'ok' => true],
-                ['t' => 'Elle est optionnelle et sans suivi', 'ok' => false],
-                ['t' => 'Elle ne concerne que les administrateurs système', 'ok' => false],
-                ['t' => 'Elle remplace le règlement sans validation', 'ok' => false],
+                ['t' => 'Elle est suivie anonymement sans trace pour le staff', 'ok' => false],
+                ['t' => 'Elle ne concerne que les personnes qui se connectent un dimanche', 'ok' => false],
+                ['t' => 'Elle remplace automatiquement toute validation métier interne', 'ok' => false],
             ],
         ],
         [
@@ -1473,15 +1699,17 @@ function training_onboarding_quiz_questions(): array
         ],
         [
             'text' => 'Avant d’ouvrir un nouveau sujet sur le forum, le meilleur réflexe est de :',
+            'explain' => 'Évite les doublons et disperse moins les réponses.',
             'answers' => [
                 ['t' => 'Vérifier si un fil existant traite déjà le même sujet', 'ok' => true],
-                ['t' => 'Toujours créer un nouveau sujet sans regarder', 'ok' => false],
-                ['t' => 'Poster le même message dans toutes les catégories', 'ok' => false],
-                ['t' => 'Supprimer les anciens sujets', 'ok' => false],
+                ['t' => 'Toujours créer un nouveau sujet pour gagner en visibilité', 'ok' => false],
+                ['t' => 'Poster le même message dans toutes les catégories pour être certain d’être lu', 'ok' => false],
+                ['t' => 'Supprimer les anciens sujets qui ressemblent au vôtre', 'ok' => false],
             ],
         ],
         [
             'text' => 'Que représente en général l’organigramme (ORBAT) dans le portail ?',
+            'explain' => 'Vue de structure et rattachements, pas substitut aux ordres écrits.',
             'answers' => [
                 ['t' => 'Une vue de la structure de l’unité et des rattachements', 'ok' => true],
                 ['t' => 'La liste des mots de passe du site', 'ok' => false],
@@ -1491,6 +1719,7 @@ function training_onboarding_quiz_questions(): array
         ],
         [
             'text' => 'Sur un ordinateur partagé (foyer, salle…), que faire en fin de session sur le portail ?',
+            'explain' => 'La déconnexion explicite protège le compte.',
             'answers' => [
                 ['t' => 'Se déconnecter explicitement du compte', 'ok' => true],
                 ['t' => 'Fermer seulement l’onglet sans se déconnecter', 'ok' => false],
@@ -1499,33 +1728,63 @@ function training_onboarding_quiz_questions(): array
             ],
         ],
         [
-            'text' => 'Une note officielle destinée à tous les membres, une fois validée par le staff, doit en principe être retrouvée plutôt…',
-            'explain' => 'La rubrique documents (ou équivalent) sert de support aux versions stabilisées ; le forum vit par messages successifs.',
+            'text' => 'Une note officielle destinée à tous les membres autorisés, une fois validée par le staff, doit en principe être retrouvée plutôt…',
+            'explain' => 'La rubrique documents sert de support aux versions stabilisées ; le forum vit par messages successifs.',
             'answers' => [
                 ['t' => 'Dans la rubrique documents du portail, avec le niveau de diffusion prévu', 'ok' => true],
-                ['t' => 'Uniquement sous forme de messages successifs sur le forum, sans fichier joint ni fiche dédiée', 'ok' => false],
+                ['t' => 'Uniquement sous forme de messages successifs sur le forum, sans fiche documentaire', 'ok' => false],
                 ['t' => 'Sur une messagerie personnelle extérieure au portail', 'ok' => false],
                 ['t' => 'Dans les préférences du compte, onglet sécurité', 'ok' => false],
             ],
         ],
         [
-            'text' => 'Une rubrique décrite dans cette formation ne s’affiche pas pour vous. Quelle démarche est la plus raisonnable en premier ?',
-            'explain' => 'Souvent il s’agit de droits, de rôle ou de communauté active ; le staff peut confirmer.',
+            'text' => 'Une rubrique mentionnée dans ce parcours ne s’affiche pas pour vous. Quelle démarche est la plus raisonnable en premier ?',
+            'explain' => 'Contexte (communauté, rôle) puis clarification auprès du staff.',
             'answers' => [
                 ['t' => 'Vérifier que vous êtes dans la bonne communauté si vous en avez plusieurs, puis demander au staff si l’accès est normal', 'ok' => true],
                 ['t' => 'Publier immédiatement un message d’alerte dans toutes les catégories du forum', 'ok' => false],
-                ['t' => 'Supposer que le portail est « cassé » et cesser toute utilisation', 'ok' => false],
+                ['t' => 'Supposer que le portail est défaillant et cesser toute utilisation', 'ok' => false],
                 ['t' => 'Demander à un tiers de se connecter avec votre compte pour tester', 'ok' => false],
             ],
         ],
         [
             'text' => 'À quoi sert en général la zone ou le menu « Opérations » lorsqu’il est proposé après connexion ?',
-            'explain' => 'Il regroupe les accès utiles au pilotage courant (briefings, structure, outils activés), sans remplacer les documents officiels.',
+            'explain' => 'Raccourcis vers briefings, structure, outils activés — sans remplacer documents ni ordres.',
             'answers' => [
                 ['t' => 'À regrouper les accès utiles au suivi opérationnel (briefings, organigramme, outils selon ce qui est activé)', 'ok' => true],
                 ['t' => 'À remplacer entièrement le règlement et les ordres écrits', 'ok' => false],
                 ['t' => 'À stocker les mots de passe de l’unité pour tout le monde', 'ok' => false],
                 ['t' => 'À désactiver automatiquement le forum pour les nouveaux membres', 'ok' => false],
+            ],
+        ],
+        [
+            'text' => 'Pour un problème sensible (contenu inapproprié, conflit, sécurité), quelle approche est préférable ?',
+            'explain' => 'Les procédures de signalement ou canaux dédiés protègent les personnes et la résolution.',
+            'answers' => [
+                ['t' => 'Utiliser le canal prévu (signalement, modération, procédure interne)', 'ok' => true],
+                ['t' => 'Multiplier les posts publics pour « mobiliser » avant d’informer le staff', 'ok' => false],
+                ['t' => 'Résoudre seul en exposant des noms sur le forum ouvert', 'ok' => false],
+                ['t' => 'Ignorer le problème pour ne pas créer de tension', 'ok' => false],
+            ],
+        ],
+        [
+            'text' => 'Vous échouez au quiz final malgré plusieurs lectures. Quelle est la meilleure suite ?',
+            'explain' => 'Les explications du quiz servent de plan de révision ciblé.',
+            'answers' => [
+                ['t' => 'Relire les explications fournies, reprendre les modules concernés, puis retenter dans la limite des tentatives', 'ok' => true],
+                ['t' => 'Abandonner le parcours : un échec signifie que le portail n’est pas fait pour vous', 'ok' => false],
+                ['t' => 'Contacter un tiers pour passer le quiz à votre place', 'ok' => false],
+                ['t' => 'Considérer que le score est décoratif et ignorer la reprise', 'ok' => false],
+            ],
+        ],
+        [
+            'text' => 'Vous avez validé un parcours certifiant sur le portail et obtenu une attestation. Que peut-on en déduire de façon correcte ?',
+            'explain' => 'L’attestation couvre le parcours LMS ; les habilitations métier spécifiques relèvent encore de l’organisation.',
+            'answers' => [
+                ['t' => 'Vous avez accompli et validé ce parcours sur le site selon les règles affichées ; les exigences métier complémentaires restent du ressort de l’unité', 'ok' => true],
+                ['t' => 'Vous êtes automatiquement habilité à tout poste sensible sans autre formalité', 'ok' => false],
+                ['t' => 'L’attestation remplace toute formation présentielle imposée par ailleurs', 'ok' => false],
+                ['t' => 'L’attestation n’a aucune valeur et ne doit pas être conservée', 'ok' => false],
             ],
         ],
     ];

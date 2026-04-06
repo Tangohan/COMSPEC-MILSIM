@@ -38,6 +38,10 @@ final class PermissionImplication
             return true;
         }
 
+        if (in_array('site.support', $granted, true) && self::impliedBySiteSupport($permission)) {
+            return true;
+        }
+
         if (in_array('admin.access', $granted, true) && in_array($permission, self::tenantCatalogSlugs(), true)) {
             return true;
         }
@@ -72,6 +76,23 @@ final class PermissionImplication
         }
 
         return $permission === 'invitations.send';
+    }
+
+    /**
+     * Habilitations dérivées du rôle site « assistance » (lecture / accompagnement, hors système).
+     */
+    private static function impliedBySiteSupport(string $permission): bool
+    {
+        static $slugs = null;
+        if ($slugs === null) {
+            $slugs = [
+                'forum.view', 'forum.reply', 'forum.create_topic', 'forum.edit_own', 'forum.delete_own',
+                'admin.backoffice.view', 'admin.members.view', 'personnel.profile.view',
+                'admin.audit.view', 'documents.view', 'documents.download.standard',
+            ];
+        }
+
+        return in_array($permission, $slugs, true);
     }
 
     private static function impliedByForumModerate(string $permission): bool

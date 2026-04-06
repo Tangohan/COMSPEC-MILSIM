@@ -1044,6 +1044,7 @@ CREATE TABLE IF NOT EXISTS `forum_reports` (
   `post_id` int unsigned DEFAULT NULL,
   `topic_id` int unsigned DEFAULT NULL,
   `reason` text,
+  `content_kind` varchar(64) DEFAULT NULL,
   `status` varchar(20) DEFAULT 'pending',
   `handled_by` int unsigned DEFAULT NULL,
   `handled_at` datetime DEFAULT NULL,

@@ -25,6 +25,7 @@ use App\Services\Training\TrainingStaffAlertService;
 use App\Repositories\TrainingCourseLmsSocialRepository;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingCertificateShareService;
+use App\Services\Training\TrainingAuditService;
 use App\Core\Csrf;
 
 class TrainingController
@@ -48,6 +49,7 @@ class TrainingController
         private TrainingStaffAlertService $trainingStaffAlertService,
         private TrainingQuizRepository $trainingQuizRepository,
         private TrainingCertificateShareService $certificateShareService,
+        private TrainingAuditService $trainingAuditService,
     ) {}
 
     private function trainingQuizHasPassingAttempt(int $enrollmentId, int $quizId): bool
@@ -81,7 +83,22 @@ class TrainingController
         }
         $category = $request->query('category');
         $search = $request->query('search');
+        $filterParcours = trim((string) $request->query('parcours', ''));
+        if (!in_array($filterParcours, ['', 'communaute', 'plateforme'], true)) {
+            $filterParcours = '';
+        }
         $courses = $this->trainingService->getCatalogue($tenantId, $userId ? (int) $userId : null, $category, $search);
+        if ($filterParcours === 'communaute') {
+            $courses = array_values(array_filter(
+                $courses,
+                static fn (array $c): bool => (string) ($c['lms_scope'] ?? TrainingCourseRepository::LMS_SCOPE_TENANT) === TrainingCourseRepository::LMS_SCOPE_TENANT
+            ));
+        } elseif ($filterParcours === 'plateforme') {
+            $courses = array_values(array_filter(
+                $courses,
+                static fn (array $c): bool => (string) ($c['lms_scope'] ?? '') === TrainingCourseRepository::LMS_SCOPE_PLATFORM
+            ));
+        }
         $coursesForCategories = $this->trainingService->getCatalogue($tenantId, $userId ? (int) $userId : null, null, null);
         $legacyEnabled = training_legacy_enabled();
         $legacyModules = $legacyEnabled ? $this->trainingRepository->listPublishedForTenant($tenantId) : [];
@@ -98,6 +115,7 @@ class TrainingController
             'filterCategory' => $category !== null && $category !== '' ? (string) $category : null,
             'filterSearch' => $search !== null && $search !== '' ? (string) $search : null,
             'filterCategories' => $categories,
+            'filterParcours' => $filterParcours,
         ]);
     }
 

@@ -80,7 +80,7 @@ class TrainingStaffAlertService
     public function recordEnrollmentPendingApproval(int $tenantId, int $learnerUserId, int $enrollmentId, int $courseId): void
     {
         try {
-            $course = $this->courseRepository->findById($courseId, $tenantId);
+            $course = $this->courseRepository->findByIdForViewer($courseId, $tenantId);
             if (!$course) {
                 return;
             }
@@ -104,7 +104,7 @@ class TrainingStaffAlertService
     public function recordCourseCompletedByLearner(int $tenantId, int $learnerUserId, int $enrollmentId, int $courseId): void
     {
         try {
-            $course = $this->courseRepository->findById($courseId, $tenantId);
+            $course = $this->courseRepository->findByIdForViewer($courseId, $tenantId);
             if (!$course) {
                 return;
             }
