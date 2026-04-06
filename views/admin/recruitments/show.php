@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /** @var array<string,mixed> $enlistment */
 /** @var list<array<string,mixed>> $enlistmentCannedMessages */
 $e = $enlistment ?? [];
@@ -7,259 +8,322 @@ $rpSnap = is_array($e['recruitment_rp_json'] ?? null) ? $e['recruitment_rp_json'
 $id = (int) ($e['id'] ?? 0);
 $statusRaw = (string) ($e['status'] ?? '');
 $statusLabels = [
-    'submitted' => 'Soumis',
+    'submitted' => 'À traiter',
     'reviewed' => 'Acceptée',
     'rejected' => 'Refusée',
-    'blocked' => 'Interdit (non admis)',
+    'blocked' => 'Non admis',
 ];
 $statusLabel = $statusLabels[$statusRaw] ?? $statusRaw;
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
 $membershipRepairHint = $membershipRepairHint ?? null;
+
+$statusBand = match ($statusRaw) {
+    'submitted' => 'from-amber-500 to-amber-600',
+    'reviewed' => 'from-emerald-600 to-emerald-700',
+    'rejected' => 'from-rose-500 to-rose-600',
+    'blocked' => 'from-slate-600 to-slate-800',
+    default => 'from-stone-400 to-stone-600',
+};
 ?>
-<div class="max-w-4xl mx-auto px-6 py-12">
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
-        <h1 class="text-2xl font-black text-slate-900">Candidature #<?= $id ?></h1>
-        <a href="<?= url('back-office/recruitments') ?>" class="text-sm text-slate-600 hover:text-slate-900 underline">← Liste</a>
-    </div>
+<div class="recruitment-bureau min-h-[calc(100vh-3.5rem)] bg-gradient-to-b from-[#ebe6dc] via-[#f5f2eb] to-[#e8e4db]">
+    <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
 
-    <?php if ($flashOk): ?>
-        <p class="mb-4 text-sm text-emerald-700 font-medium"><?= htmlspecialchars((string) $flashOk) ?></p>
-    <?php endif; ?>
-    <?php if ($flashErr): ?>
-        <p class="mb-4 text-sm text-red-600 font-medium"><?= htmlspecialchars((string) $flashErr) ?></p>
-    <?php endif; ?>
+        <nav class="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold text-stone-600" aria-label="Fil d’Ariane">
+            <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="rounded-lg px-2 py-1 transition hover:bg-white/60 hover:text-[#1c2d41]">Dossiers de candidature</a>
+            <span class="text-stone-400" aria-hidden="true">/</span>
+            <span class="rounded-lg bg-white/80 px-2 py-1 text-[#1c2d41] ring-1 ring-stone-200/80">Dossier n°<?= $id ?></span>
+        </nav>
 
-    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 mb-6">
-        <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Identité</h2>
-        <dl class="grid sm:grid-cols-2 gap-3 text-sm">
-            <dt class="text-slate-500">Date</dt>
-            <dd><?= !empty($e['created_at']) ? htmlspecialchars(date('d/m/Y H:i', strtotime((string) $e['created_at']))) : '—' ?></dd>
-            <dt class="text-slate-500">Nom</dt>
-            <dd><?= htmlspecialchars(trim(($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? '')) ?: '—') ?></dd>
-            <dt class="text-slate-500">Email</dt>
-            <dd><?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></dd>
-            <dt class="text-slate-500">Indicatif</dt>
-            <dd><?= htmlspecialchars((string) ($e['callsign'] ?? '—')) ?></dd>
-            <dt class="text-slate-500">Statut</dt>
-            <dd>
-                <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium
-                    <?= $statusRaw === 'submitted' ? 'bg-amber-100 text-amber-900' : ($statusRaw === 'rejected' ? 'bg-red-100 text-red-800' : ($statusRaw === 'blocked' ? 'bg-red-950 text-red-100' : ($statusRaw === 'reviewed' ? 'bg-emerald-100 text-emerald-900' : 'bg-slate-100 text-slate-700'))) ?>">
-                    <?= htmlspecialchars($statusLabel ?: '—') ?>
-                </span>
-            </dd>
-            <?php if (!empty($e['reviewed_at']) || !empty($e['reviewer_comment']) || !empty($e['reviewed_by'])): ?>
-            <dt class="text-slate-500">Traitement</dt>
-            <dd class="text-sm text-slate-700">
-                <?php if (!empty($e['reviewed_at'])): ?>
-                    <span class="block"><?= htmlspecialchars(date('d/m/Y H:i', strtotime((string) $e['reviewed_at']))) ?></span>
-                <?php endif; ?>
-                <?php if (!empty($e['reviewed_by'])): ?>
-                    <span class="block text-slate-500">Par utilisateur #<?= (int) $e['reviewed_by'] ?></span>
-                <?php endif; ?>
-                <?php if (!empty($e['reviewer_comment'])): ?>
-                    <span class="block mt-1 whitespace-pre-wrap"><?= htmlspecialchars((string) $e['reviewer_comment']) ?></span>
-                <?php endif; ?>
-            </dd>
-            <?php endif; ?>
-            <dt class="text-slate-500">Compte / soumission</dt>
-            <dd>
-                <?php if (!empty($e['submitter_user_id'])): ?>
-                    <a href="<?= url('personnel/' . (int) $e['submitter_user_id']) ?>" class="text-sky-700 underline font-medium">Utilisateur #<?= (int) $e['submitter_user_id'] ?></a>
-                    <span class="text-xs text-slate-500 block"><?= htmlspecialchars((string) ($e['submitted_via'] ?? '')) ?></span>
-                <?php else: ?>
-                    —
-                <?php endif; ?>
-            </dd>
-            <?php if (!empty($e['recruitment_preset_id'])): ?>
-                <dt class="text-slate-500">Profil preset</dt>
-                <dd>#<?= (int) $e['recruitment_preset_id'] ?></dd>
-            <?php endif; ?>
-        </dl>
-    </div>
-
-    <?php if ($statusRaw === 'reviewed'): ?>
-    <div class="mb-6 rounded-2xl border border-sky-200 bg-sky-50/90 p-5 shadow-sm">
-        <h2 class="text-sm font-black uppercase tracking-widest text-sky-950 mb-2">Rattachement du compte membre</h2>
-        <?php if (!empty($membershipRepairHint)): ?>
-            <p class="text-sm text-sky-950/90 leading-relaxed mb-4"><?= htmlspecialchars((string) $membershipRepairHint) ?></p>
-        <?php else: ?>
-            <p class="text-sm text-sky-900/85 leading-relaxed mb-4">
-                Si le membre ne voit pas encore votre communauté comme prévu (par exemple accès encore limité ou compte lié à un autre espace), vous pouvez relancer le rattachement : le dossier accepté sera de nouveau aligné sur le compte de cette communauté.
-            </p>
+        <?php if ($flashOk): ?>
+            <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/95 px-4 py-3 text-sm font-medium text-emerald-950 shadow-sm" role="status"><?= htmlspecialchars((string) $flashOk) ?></div>
         <?php endif; ?>
-        <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/finalize-membership')) ?>" class="inline">
-            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
-            <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-sky-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-sky-800">
-                Forcer le rattachement au compte de la communauté
-            </button>
-        </form>
-        <p class="mt-3 text-xs text-sky-900/75">Aucun nouvel e-mail n’est envoyé automatiquement par cette action. Le membre peut se connecter s’il avait déjà un accès.</p>
-    </div>
-    <?php endif; ?>
+        <?php if ($flashErr): ?>
+            <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 shadow-sm" role="alert"><?= htmlspecialchars((string) $flashErr) ?></div>
+        <?php endif; ?>
 
-    <?php if ($statusRaw === 'submitted'): ?>
-    <div class="bg-amber-50/90 border border-amber-200 rounded-2xl p-6 shadow-sm mb-6">
-        <h2 class="text-sm font-black uppercase tracking-widest text-amber-950 mb-3">Décision</h2>
-        <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/decision')) ?>" class="space-y-4">
-            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
-            <div>
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-                    <label for="reviewer_comment" class="block text-xs font-bold text-amber-900">Commentaire interne (optionnel)</label>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <?php if (!empty($enlistmentCannedMessages)): ?>
-                        <label for="canned-msg-select" class="sr-only">Message préfait</label>
-                        <select id="canned-msg-select" class="max-w-[min(100%,16rem)] rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-[11px] font-semibold text-amber-950 shadow-sm">
-                            <option value="">— Insérer un message préfait —</option>
-                            <?php foreach ($enlistmentCannedMessages as $cm): ?>
-                            <option value="<?= (int) ($cm['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($cm['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
-                            <?php endforeach; ?>
-                        </select>
+        <!-- Couverture dossier -->
+        <header class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-[0_20px_50px_-24px_rgba(28,45,65,0.4)] ring-1 ring-black/[0.03]">
+            <div class="h-2 bg-gradient-to-r <?= htmlspecialchars($statusBand) ?>" aria-hidden="true"></div>
+            <div class="flex flex-col gap-6 border-b border-stone-200 bg-[#1c2d41] px-6 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#c9a227]/90">Dossier individuel</p>
+                    <h1 class="mt-2 font-serif text-3xl font-bold tracking-tight text-white">Candidature n°<?= $id ?></h1>
+                    <p class="mt-2 text-sm text-slate-300/95">
+                        <?= htmlspecialchars(trim(($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? '')) ?: 'Candidat') ?>
+                        <?php if (!empty($e['created_at'])): ?>
+                            <span class="text-slate-500"> · </span>
+                            <span class="tabular-nums">Réception le <?= htmlspecialchars(date('d/m/Y à H:i', strtotime((string) $e['created_at']))) ?></span>
                         <?php endif; ?>
-                        <a href="<?= url('back-office/recruitments/messages-prefaits') ?>" class="text-[11px] font-bold text-sky-800 hover:text-sky-950 underline underline-offset-2">Gérer les modèles</a>
-                    </div>
+                    </p>
                 </div>
-                <textarea id="reviewer_comment" name="reviewer_comment" rows="3" class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400" placeholder="Motif, consignes…"></textarea>
-                <?php if (!empty($enlistmentCannedMessages)): ?>
-                <script type="application/json" id="enlistment-canned-json"><?= json_encode($enlistmentCannedMessages, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
-                <script>
-                (function () {
-                  var sel = document.getElementById('canned-msg-select');
-                  var raw = document.getElementById('enlistment-canned-json');
-                  var ta = document.getElementById('reviewer_comment');
-                  if (!sel || !raw || !ta) return;
-                  var list = [];
-                  try { list = JSON.parse(raw.textContent || '[]'); } catch (e) { return; }
-                  var byId = {};
-                  list.forEach(function (row) { if (row && row.id) byId[String(row.id)] = row.body || ''; });
-                  sel.addEventListener('change', function () {
-                    var id = sel.value;
-                    if (!id || !byId[id]) { sel.selectedIndex = 0; return; }
-                    var chunk = byId[id];
-                    if (ta.value.trim() !== '') ta.value += '\n\n';
-                    ta.value += chunk;
-                    sel.selectedIndex = 0;
-                    ta.focus();
-                  });
-                })();
-                </script>
-                <?php endif; ?>
+                <div class="flex shrink-0 flex-col items-start sm:items-end gap-2">
+                    <span class="inline-flex items-center rounded-xl border-2 border-white/25 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur-sm">
+                        <?= htmlspecialchars($statusLabel ?: '—') ?>
+                    </span>
+                    <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="text-xs font-bold uppercase tracking-wider text-slate-400 transition hover:text-white">← Retour à la liste</a>
+                </div>
             </div>
-            <div class="flex flex-wrap gap-2 items-stretch sm:items-center enlist-decision-actions" role="group" aria-label="Décision sur la candidature">
-                <?php
-                $btnBase = 'enlist-decision-btn inline-flex min-h-[2.75rem] items-center justify-center px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer';
-                ?>
-                <button type="submit" name="decision" value="accept" class="<?= $btnBase ?> enlist-decision-btn--accept">Accepter</button>
-                <button type="submit" name="decision" value="reject" class="<?= $btnBase ?> enlist-decision-btn--reject">Refuser</button>
-                <button type="submit" name="decision" value="block" class="<?= $btnBase ?> enlist-decision-btn--block">Interdire</button>
-            </div>
-            <p class="text-xs text-amber-900/80"><strong>Interdire</strong> marque la candidature comme refus définitif (non admis). Le commentaire est conservé en interne.</p>
-        </form>
-    </div>
-    <?php endif; ?>
+        </header>
 
-    <?php
-    $olympus = [
-        'age' => 'Âge',
-        'timezone' => 'Fuseau',
-        'weekly_availability' => 'Disponibilités hebdo',
-        'system_config' => 'Config PC',
-        'microphone_quality' => 'Microphone',
-        'past_milsim_experience' => 'Exp. MilSim',
-        'ace_acre_level' => 'ACE / ACRE',
-        'motivation_why_join' => 'Motivation',
-        'motivation_accountability' => 'Accountability',
-        'commitment_effort' => 'Engagement',
-        'availability_wed_sat' => 'Mer. / sam. soir',
-        'availability' => 'Disponibilité (résumé)',
-    ];
-    $hasOlympus = false;
-    foreach ($olympus as $k => $_) {
-        if (isset($e[$k]) && $e[$k] !== '' && $e[$k] !== null) {
-            $hasOlympus = true;
-            break;
-        }
-    }
-    ?>
-    <?php if ($hasOlympus): ?>
-    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3 mb-6">
-        <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Dossier MilSim</h2>
-        <dl class="space-y-3 text-sm">
-            <?php foreach ($olympus as $col => $label): ?>
-                <?php if (isset($e[$col]) && $e[$col] !== '' && $e[$col] !== null): ?>
-                    <div>
-                        <dt class="text-xs font-bold text-slate-500"><?= $label ?></dt>
-                        <dd class="mt-1 text-slate-800 whitespace-pre-wrap"><?= htmlspecialchars((string) $e[$col]) ?></dd>
+        <div class="mt-8 space-y-6">
+
+            <section class="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+                <div class="border-b border-stone-200 bg-[#f4f1ea] px-6 py-3">
+                    <h2 class="text-[10px] font-bold uppercase tracking-[0.25em] text-stone-500">Rubrique 1 — Identité &amp; réception</h2>
+                </div>
+                <dl class="grid gap-0 sm:grid-cols-2 divide-y divide-stone-100 sm:divide-y-0 sm:divide-x sm:divide-stone-100">
+                    <div class="px-6 py-4 sm:col-span-2 sm:grid sm:grid-cols-[minmax(8rem,1fr)_2fr] sm:gap-4 sm:border-b sm:border-stone-100">
+                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Nom complet</dt>
+                        <dd class="mt-1 font-semibold text-stone-900 sm:mt-0"><?= htmlspecialchars(trim(($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? '')) ?: '—') ?></dd>
                     </div>
-                <?php endif; ?>
-            <?php endforeach; ?>
-        </dl>
-    </div>
-    <?php endif; ?>
+                    <div class="px-6 py-4">
+                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Courriel</dt>
+                        <dd class="mt-1 break-all text-stone-800"><?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></dd>
+                    </div>
+                    <div class="px-6 py-4">
+                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Indicatif</dt>
+                        <dd class="mt-1 text-stone-800"><?= htmlspecialchars((string) ($e['callsign'] ?? '—')) ?></dd>
+                    </div>
+                    <div class="px-6 py-4 sm:col-span-2 sm:grid sm:grid-cols-[minmax(8rem,1fr)_2fr] sm:gap-4 sm:border-t sm:border-stone-100">
+                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Compte portail</dt>
+                        <dd class="mt-1 sm:mt-0">
+                            <?php if (!empty($e['submitter_user_id'])): ?>
+                                <a href="<?= htmlspecialchars(url('personnel/' . (int) $e['submitter_user_id'])) ?>" class="font-semibold text-[#1c4d6e] underline decoration-[#1c4d6e]/30 underline-offset-2 hover:decoration-[#1c4d6e]">Ouvrir la fiche membre liée</a>
+                                <span class="mt-1 block text-xs text-stone-500">Canal de soumission : <?= htmlspecialchars((string) ($e['submitted_via'] ?? '—')) ?></span>
+                            <?php else: ?>
+                                <span class="text-stone-500">Candidature invitée (sans compte au dépôt)</span>
+                            <?php endif; ?>
+                        </dd>
+                    </div>
+                    <?php if (!empty($e['reviewed_at']) || !empty($e['reviewer_comment']) || !empty($e['reviewed_by'])): ?>
+                    <div class="px-6 py-4 sm:col-span-2 border-t border-stone-100 bg-[#faf8f3]/50">
+                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Instruction du dossier</dt>
+                        <dd class="mt-2 text-sm text-stone-800">
+                            <?php if (!empty($e['reviewed_at'])): ?>
+                                <p class="tabular-nums font-medium"><?= htmlspecialchars(date('d/m/Y H:i', strtotime((string) $e['reviewed_at']))) ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($e['reviewed_by'])): ?>
+                                <p class="mt-1 text-xs text-stone-500">Agent référent (compte interne n°<?= (int) $e['reviewed_by'] ?>)</p>
+                            <?php endif; ?>
+                            <?php if (!empty($e['reviewer_comment'])): ?>
+                                <div class="mt-3 rounded-xl border border-stone-200 bg-white p-4 text-stone-800 shadow-inner whitespace-pre-wrap"><?= htmlspecialchars((string) $e['reviewer_comment']) ?></div>
+                            <?php endif; ?>
+                        </dd>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($e['recruitment_preset_id'])): ?>
+                    <div class="px-6 py-4 sm:col-span-2 border-t border-stone-100">
+                        <dt class="text-xs font-bold uppercase tracking-wide text-stone-500">Modèle de formulaire utilisé</dt>
+                        <dd class="mt-1 text-stone-700">Référence interne n°<?= (int) $e['recruitment_preset_id'] ?></dd>
+                    </div>
+                    <?php endif; ?>
+                </dl>
+            </section>
 
-    <?php if (!empty($e['notes'])): ?>
-    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-6">
-        <h2 class="text-sm font-black uppercase tracking-widest text-slate-900 mb-2">Notes (fusion dossier)</h2>
-        <pre class="text-sm text-slate-800 whitespace-pre-wrap font-sans"><?= htmlspecialchars((string) $e['notes']) ?></pre>
-    </div>
-    <?php endif; ?>
+            <?php if ($statusRaw === 'reviewed'): ?>
+            <section class="overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white shadow-sm">
+                <div class="border-b border-sky-200/80 bg-sky-100/50 px-6 py-3">
+                    <h2 class="text-[10px] font-bold uppercase tracking-[0.25em] text-sky-900">Rubrique — Rattachement membre</h2>
+                </div>
+                <div class="p-6">
+                    <?php if (!empty($membershipRepairHint)): ?>
+                        <p class="text-sm leading-relaxed text-sky-950"><?= htmlspecialchars((string) $membershipRepairHint) ?></p>
+                    <?php else: ?>
+                        <p class="text-sm leading-relaxed text-sky-900/90">
+                            Si le membre ne voit pas encore votre communauté comme prévu, vous pouvez relancer l’alignement du compte sur cette organisation.
+                        </p>
+                    <?php endif; ?>
+                    <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/finalize-membership')) ?>" class="mt-5">
+                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                        <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-[#0c4a6e] px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#0a3d5c]">
+                            Forcer le rattachement au compte de la communauté
+                        </button>
+                    </form>
+                    <p class="mt-3 text-xs text-sky-800/80">Aucun nouvel e-mail automatique. Le membre peut se connecter s’il avait déjà un accès.</p>
+                </div>
+            </section>
+            <?php endif; ?>
 
-    <?php if ($rpSnap): ?>
-    <div class="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-6 space-y-4">
-        <h2 class="text-sm font-black uppercase tracking-widest text-emerald-950">Snapshot RP (au dépôt)</h2>
-        <?php
-        $img = trim((string) ($rpSnap['image_url'] ?? ''));
-        $imgExt = trim((string) ($rpSnap['image_external_url'] ?? ''));
-        ?>
-        <?php if ($img !== ''): ?>
-            <div>
-                <p class="text-xs font-bold text-emerald-900 mb-1">Portrait (fichier)</p>
-                <img src="<?= htmlspecialchars(url($img)) ?>" alt="" class="max-h-48 rounded-xl border border-emerald-200">
-            </div>
-        <?php endif; ?>
-        <?php if ($imgExt !== ''): ?>
-            <p class="text-sm"><a href="<?= htmlspecialchars($imgExt) ?>" class="text-emerald-800 underline break-all" target="_blank" rel="noopener"><?= htmlspecialchars($imgExt) ?></a></p>
-        <?php endif; ?>
-        <?php if (trim((string) ($rpSnap['character_name'] ?? '')) !== ''): ?>
-            <div>
-                <p class="text-xs font-bold text-emerald-900">Personnage</p>
-                <p class="text-sm text-emerald-950"><?= htmlspecialchars((string) $rpSnap['character_name']) ?></p>
-            </div>
-        <?php endif; ?>
-        <?php if (trim((string) ($rpSnap['bio'] ?? '')) !== ''): ?>
-            <div>
-                <p class="text-xs font-bold text-emerald-900">Bio</p>
-                <pre class="text-sm text-emerald-950 whitespace-pre-wrap font-sans"><?= htmlspecialchars((string) $rpSnap['bio']) ?></pre>
-            </div>
-        <?php endif; ?>
-        <?php if (trim((string) ($rpSnap['cv'] ?? '')) !== ''): ?>
-            <div>
-                <p class="text-xs font-bold text-emerald-900">CV</p>
-                <pre class="text-sm text-emerald-950 whitespace-pre-wrap font-sans"><?= htmlspecialchars((string) $rpSnap['cv']) ?></pre>
-            </div>
-        <?php endif; ?>
-        <?php if (trim((string) ($rpSnap['admin_notes'] ?? '')) !== ''): ?>
-            <div>
-                <p class="text-xs font-bold text-emerald-900">Notes candidat</p>
-                <pre class="text-sm text-emerald-950 whitespace-pre-wrap font-sans"><?= htmlspecialchars((string) $rpSnap['admin_notes']) ?></pre>
-            </div>
-        <?php endif; ?>
-        <?php
-        $derived = is_array($rpSnap['derived_availability'] ?? null) ? $rpSnap['derived_availability'] : null;
-        ?>
-        <?php if ($derived && (!empty($derived['availability']) || !empty($derived['weekly_availability']))): ?>
-            <div class="text-sm text-emerald-950">
-                <p class="text-xs font-bold text-emerald-900 mb-1">Disponibilités dérivées</p>
-                <?php if (!empty($derived['weekly_availability'])): ?>
-                    <p class="whitespace-pre-wrap"><?= htmlspecialchars((string) $derived['weekly_availability']) ?></p>
-                <?php endif; ?>
-                <?php if (!empty($derived['availability']) && ($derived['availability'] ?? '') !== ($derived['weekly_availability'] ?? '')): ?>
-                    <p class="mt-2 whitespace-pre-wrap"><?= htmlspecialchars((string) $derived['availability']) ?></p>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>
-    </div>
-    <?php endif; ?>
+            <?php if ($statusRaw === 'submitted'): ?>
+            <section class="overflow-hidden rounded-2xl border-2 border-amber-300/80 bg-gradient-to-b from-amber-50/90 to-white shadow-md ring-1 ring-amber-200/50">
+                <div class="border-b border-amber-200 bg-amber-100/60 px-6 py-3">
+                    <h2 class="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-950">Décision à enregistrer</h2>
+                </div>
+                <div class="p-6">
+                    <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/decision')) ?>" class="space-y-5">
+                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                        <div>
+                            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                <label for="reviewer_comment" class="text-xs font-bold text-amber-950">Note interne (facultatif)</label>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <?php if (!empty($enlistmentCannedMessages)): ?>
+                                    <label for="canned-msg-select" class="sr-only">Modèle de texte</label>
+                                    <select id="canned-msg-select" class="max-w-[min(100%,18rem)] rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-950 shadow-sm">
+                                        <option value="">— Insérer un modèle —</option>
+                                        <?php foreach ($enlistmentCannedMessages as $cm): ?>
+                                        <option value="<?= (int) ($cm['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($cm['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <?php endif; ?>
+                                    <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits')) ?>" class="text-xs font-bold text-[#1c4d6e] underline underline-offset-2 hover:text-[#0c3d5c]">Gérer les modèles</a>
+                                </div>
+                            </div>
+                            <textarea id="reviewer_comment" name="reviewer_comment" rows="4" class="w-full rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm text-stone-900 shadow-inner placeholder:text-stone-400" placeholder="Motif, consignes pour l’équipe…"></textarea>
+                            <?php if (!empty($enlistmentCannedMessages)): ?>
+                            <script type="application/json" id="enlistment-canned-json"><?= json_encode($enlistmentCannedMessages, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
+                            <script>
+                            (function () {
+                              var sel = document.getElementById('canned-msg-select');
+                              var raw = document.getElementById('enlistment-canned-json');
+                              var ta = document.getElementById('reviewer_comment');
+                              if (!sel || !raw || !ta) return;
+                              var list = [];
+                              try { list = JSON.parse(raw.textContent || '[]'); } catch (e) { return; }
+                              var byId = {};
+                              list.forEach(function (row) { if (row && row.id) byId[String(row.id)] = row.body || ''; });
+                              sel.addEventListener('change', function () {
+                                var id = sel.value;
+                                if (!id || !byId[id]) { sel.selectedIndex = 0; return; }
+                                var chunk = byId[id];
+                                if (ta.value.trim() !== '') ta.value += '\n\n';
+                                ta.value += chunk;
+                                sel.selectedIndex = 0;
+                                ta.focus();
+                              });
+                            })();
+                            </script>
+                            <?php endif; ?>
+                        </div>
+                        <div class="flex flex-wrap gap-3 enlist-decision-actions" role="group" aria-label="Décision sur la candidature">
+                            <?php
+                            $btnBase = 'enlist-decision-btn inline-flex min-h-[2.75rem] items-center justify-center px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer';
+                            ?>
+                            <button type="submit" name="decision" value="accept" class="<?= $btnBase ?> enlist-decision-btn--accept">Accepter</button>
+                            <button type="submit" name="decision" value="reject" class="<?= $btnBase ?> enlist-decision-btn--reject">Refuser</button>
+                            <button type="submit" name="decision" value="block" class="<?= $btnBase ?> enlist-decision-btn--block">Marquer non admis</button>
+                        </div>
+                        <p class="text-xs text-amber-900/85"><strong>Non admis</strong> clôt le dossier de façon définitive pour cette candidature. La note reste dans le service.</p>
+                    </form>
+                </div>
+            </section>
+            <?php endif; ?>
 
-    <p class="mt-8 text-sm text-slate-500"><a href="<?= url('back-office/recruitments') ?>" class="underline">Retour liste</a></p>
+            <?php
+            $olympus = [
+                'age' => 'Âge',
+                'timezone' => 'Fuseau horaire',
+                'weekly_availability' => 'Disponibilités hebdomadaires',
+                'system_config' => 'Configuration matérielle',
+                'microphone_quality' => 'Qualité microphone',
+                'past_milsim_experience' => 'Expérience MilSim',
+                'ace_acre_level' => 'Niveau ACE / ACRE',
+                'motivation_why_join' => 'Motivation',
+                'motivation_accountability' => 'Responsabilité & sérieux',
+                'commitment_effort' => 'Engagement',
+                'availability_wed_sat' => 'Mercredis & samedis soir',
+                'availability' => 'Disponibilité (résumé)',
+            ];
+            $hasOlympus = false;
+            foreach ($olympus as $k => $_) {
+                if (isset($e[$k]) && $e[$k] !== '' && $e[$k] !== null) {
+                    $hasOlympus = true;
+                    break;
+                }
+            }
+            ?>
+            <?php if ($hasOlympus): ?>
+            <section class="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+                <div class="border-b border-stone-200 bg-[#f4f1ea] px-6 py-3">
+                    <h2 class="text-[10px] font-bold uppercase tracking-[0.25em] text-stone-500">Rubrique 2 — Questionnaire MilSim</h2>
+                </div>
+                <div class="divide-y divide-stone-100 px-6 py-2">
+                    <?php foreach ($olympus as $col => $label): ?>
+                        <?php if (isset($e[$col]) && $e[$col] !== '' && $e[$col] !== null): ?>
+                            <div class="py-4">
+                                <p class="text-xs font-bold uppercase tracking-wide text-stone-500"><?= htmlspecialchars($label) ?></p>
+                                <p class="mt-2 text-sm leading-relaxed text-stone-800 whitespace-pre-wrap"><?= htmlspecialchars((string) $e[$col]) ?></p>
+                            </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+            <?php endif; ?>
+
+            <?php if (!empty($e['notes'])): ?>
+            <section class="overflow-hidden rounded-2xl border border-stone-200 bg-[#faf8f3] shadow-sm">
+                <div class="border-b border-stone-200 bg-stone-200/40 px-6 py-3">
+                    <h2 class="text-[10px] font-bold uppercase tracking-[0.25em] text-stone-600">Notes consolidées</h2>
+                </div>
+                <pre class="max-h-[28rem] overflow-auto p-6 text-sm leading-relaxed text-stone-800 whitespace-pre-wrap font-sans"><?= htmlspecialchars((string) $e['notes']) ?></pre>
+            </section>
+            <?php endif; ?>
+
+            <?php if ($rpSnap): ?>
+            <section class="overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-b from-emerald-50/80 to-white shadow-sm">
+                <div class="border-b border-emerald-200/80 bg-emerald-100/40 px-6 py-3">
+                    <h2 class="text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-950">Dossier personnage (copie au dépôt)</h2>
+                </div>
+                <div class="space-y-5 p-6">
+                    <?php
+                    $img = trim((string) ($rpSnap['image_url'] ?? ''));
+                    $imgExt = trim((string) ($rpSnap['image_external_url'] ?? ''));
+                    ?>
+                    <?php if ($img !== ''): ?>
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wide text-emerald-900 mb-2">Portrait</p>
+                            <img src="<?= htmlspecialchars(url($img)) ?>" alt="" class="max-h-52 rounded-xl border border-emerald-200 shadow-sm">
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($imgExt !== ''): ?>
+                        <p class="text-sm"><a href="<?= htmlspecialchars($imgExt) ?>" class="break-all font-medium text-emerald-800 underline underline-offset-2 hover:text-emerald-950" target="_blank" rel="noopener">Lien vers portrait externe</a></p>
+                    <?php endif; ?>
+                    <?php if (trim((string) ($rpSnap['character_name'] ?? '')) !== ''): ?>
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wide text-emerald-900">Personnage</p>
+                            <p class="mt-1 text-stone-900"><?= htmlspecialchars((string) $rpSnap['character_name']) ?></p>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (trim((string) ($rpSnap['bio'] ?? '')) !== ''): ?>
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wide text-emerald-900">Biographie</p>
+                            <pre class="mt-2 text-sm text-stone-800 whitespace-pre-wrap font-sans"><?= htmlspecialchars((string) $rpSnap['bio']) ?></pre>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (trim((string) ($rpSnap['cv'] ?? '')) !== ''): ?>
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wide text-emerald-900">Parcours (CV)</p>
+                            <pre class="mt-2 text-sm text-stone-800 whitespace-pre-wrap font-sans"><?= htmlspecialchars((string) $rpSnap['cv']) ?></pre>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (trim((string) ($rpSnap['admin_notes'] ?? '')) !== ''): ?>
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wide text-emerald-900">Remarques candidat</p>
+                            <pre class="mt-2 text-sm text-stone-800 whitespace-pre-wrap font-sans"><?= htmlspecialchars((string) $rpSnap['admin_notes']) ?></pre>
+                        </div>
+                    <?php endif; ?>
+                    <?php
+                    $derived = is_array($rpSnap['derived_availability'] ?? null) ? $rpSnap['derived_availability'] : null;
+                    ?>
+                    <?php if ($derived && (!empty($derived['availability']) || !empty($derived['weekly_availability']))): ?>
+                        <div class="rounded-xl border border-emerald-200/60 bg-white/80 p-4 text-sm text-emerald-950">
+                            <p class="text-xs font-bold uppercase tracking-wide text-emerald-900 mb-2">Disponibilités (synthèse)</p>
+                            <?php if (!empty($derived['weekly_availability'])): ?>
+                                <p class="whitespace-pre-wrap"><?= htmlspecialchars((string) $derived['weekly_availability']) ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($derived['availability']) && ($derived['availability'] ?? '') !== ($derived['weekly_availability'] ?? '')): ?>
+                                <p class="mt-2 whitespace-pre-wrap"><?= htmlspecialchars((string) $derived['availability']) ?></p>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+            <?php endif; ?>
+
+        </div>
+
+        <p class="mt-10 text-center">
+            <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="text-sm font-semibold text-stone-600 underline decoration-stone-300 underline-offset-4 hover:text-[#1c2d41]">← Retour aux dossiers</a>
+        </p>
+    </div>
 </div>

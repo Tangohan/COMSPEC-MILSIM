@@ -344,6 +344,147 @@ function training_audit_target_type_label_fr(string $targetType): string
     return $map[$targetType] ?? $targetType;
 }
 
+/**
+ * Libellé lisible pour l’acteur d’une ligne d’audit (nom affiché ou e-mail).
+ */
+function training_audit_actor_label_fr(?string $displayName, ?string $email): string
+{
+    $d = trim((string) $displayName);
+    if ($d !== '') {
+        return $d;
+    }
+    $e = trim((string) $email);
+    if ($e !== '') {
+        return $e;
+    }
+
+    return 'Automatique ou compte inconnu';
+}
+
+/**
+ * Libellé pour le créateur / référent du parcours (colonne « Référent pédagogique »).
+ */
+function training_audit_course_author_label_fr(?string $displayName, ?string $email): string
+{
+    $d = trim((string) $displayName);
+    if ($d !== '') {
+        return $d;
+    }
+    $e = trim((string) $email);
+    if ($e !== '') {
+        return $e;
+    }
+
+    return '—';
+}
+
+/**
+ * Résumé métier d’une ligne d’audit (évite d’afficher du JSON brut).
+ *
+ * @param array<string, mixed> $logRow ligne enrichie (new_value déjà tableau si possible)
+ */
+function training_audit_detail_summary_fr(array $logRow): string
+{
+    $new = $logRow['new_value'] ?? null;
+    if (!is_array($new)) {
+        $new = [];
+    }
+
+    $action = (string) ($logRow['action'] ?? '');
+
+    if ($action === 'lesson_completed') {
+        return isset($new['lesson_id']) && (int) $new['lesson_id'] > 0
+            ? 'Une leçon du parcours a été validée.'
+            : 'Progression enregistrée.';
+    }
+
+    if ($action === 'quiz_attempt_submitted') {
+        $parts = [];
+        if (array_key_exists('score', $new) && $new['score'] !== null && $new['score'] !== '') {
+            $parts[] = 'Score : ' . round((float) $new['score'], 1) . ' %';
+        }
+        if (array_key_exists('passed', $new)) {
+            $parts[] = !empty($new['passed']) ? 'Réussite' : 'Non validé';
+        }
+
+        return $parts !== [] ? implode(' · ', $parts) : 'Tentative enregistrée.';
+    }
+
+    if ($action === 'enrollment_assigned') {
+        $typeMap = [
+            'manual' => 'Assignation manuelle',
+            'role' => 'Par rôle',
+            'unit' => 'Par unité',
+            'campaign' => 'Campagne',
+            'self_enroll' => 'Inscription spontanée',
+        ];
+        $type = $typeMap[(string) ($new['assignment_type'] ?? '')] ?? 'Assignation';
+        $statusMap = [
+            'assigned' => 'Statut : assigné',
+            'in_progress' => 'Statut : en cours',
+            'completed' => 'Statut : terminé',
+            'failed' => 'Statut : non validé',
+            'expired' => 'Statut : expiré',
+            'revoked' => 'Statut : retiré',
+            'pending_approval' => 'Statut : en attente de validation',
+        ];
+        $st = $statusMap[(string) ($new['status'] ?? '')] ?? '';
+        $mot = !empty($new['motivation_provided']) ? 'Motivation transmise.' : '';
+
+        return trim($type . ($st !== '' ? ' — ' . $st : '') . ($mot !== '' ? ' ' . $mot : ''));
+    }
+
+    if ($action === 'certificate_issued') {
+        $num = trim((string) ($new['certificate_number'] ?? ''));
+
+        return $num !== '' ? 'Référence du document : ' . $num : 'Certificat enregistré.';
+    }
+
+    if ($action === 'certificate_revoked') {
+        return 'Certificat retiré.';
+    }
+
+    if ($action === 'course_created') {
+        return 'Nouvelle formation enregistrée.';
+    }
+
+    if ($action === 'course_published') {
+        return 'Parcours rendu visible dans le catalogue.';
+    }
+
+    if ($action === 'course_updated') {
+        if (!empty($new['enrollment_share_code_regenerated'])) {
+            return 'Lien d’inscription par code renouvelé.';
+        }
+        if (isset($new['module_created'])) {
+            return 'Nouveau module ajouté au parcours.';
+        }
+
+        return 'Parcours mis à jour.';
+    }
+
+    return '—';
+}
+
+/**
+ * Objet métier : type de cible + formation concernée si connue.
+ *
+ * @param array<string, mixed> $logRow
+ */
+function training_audit_object_label_fr(array $logRow): string
+{
+    $targetSlug = (string) ($logRow['target_type'] ?? '');
+    $targetLabel = function_exists('training_audit_target_type_label_fr')
+        ? training_audit_target_type_label_fr($targetSlug)
+        : $targetSlug;
+    $courseTitle = trim((string) ($logRow['ctx_course_title'] ?? ''));
+    if ($courseTitle !== '') {
+        return $targetLabel . ' — ' . $courseTitle;
+    }
+
+    return $targetLabel;
+}
+
 /** Masque une URL pour l’aperçu caviardé (aucune fuite de cible réelle). */
 function training_preview_redact_url(?string $url): string
 {

@@ -243,21 +243,11 @@ if (!function_exists('url')) {
 if (!function_exists('back_office_path_suffix')) {
     /**
      * Chemin HTTP normalisé après le préfixe d’application (ex. « back-office/users »), sans slash initial/final.
+     * Aligné sur {@see \App\Core\Request::normalizePathFromServer()} (docroot « public » + segment /public/ dans l’URI).
      */
     function back_office_path_suffix(): string
     {
-        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
-        $path = parse_url($uri, PHP_URL_PATH);
-        $path = is_string($path) ? $path : '';
-        $prefix = rtrim((string) env('APP_BASE_PATH', ''), '/');
-        if ($prefix === '' && isset($_SERVER['SCRIPT_NAME']) && str_contains((string) $_SERVER['SCRIPT_NAME'], '/public/')) {
-            $prefix = '/public';
-        }
-        if ($prefix !== '' && str_starts_with($path, $prefix)) {
-            $path = substr($path, strlen($prefix)) ?: '/';
-        }
-
-        return trim($path, '/');
+        return trim(\App\Core\Request::normalizePathFromServer(), '/');
     }
 }
 
