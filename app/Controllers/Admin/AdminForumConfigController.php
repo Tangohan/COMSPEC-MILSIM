@@ -29,7 +29,7 @@ class AdminForumConfigController
         $categories = $this->forumCategoryRepository->listForTenantWithChildren($tenantId);
         return Response::view('layout.main', [
             'content' => 'admin.forum-config.index',
-            'title' => 'Configuration forum — Chambre des Murmures',
+            'title' => 'Configuration du forum',
             'categories' => $categories,
             'forumConfig' => forum_config_for_tenant($tenantId),
             'bannedWords' => $this->bannedWordRepository->listForTenant($tenantId),

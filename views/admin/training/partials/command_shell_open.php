@@ -16,38 +16,35 @@ $coursesNavActive = ($active === 'courses' || $active === 'showcase') ? ' is-act
                 <p class="training-cmd-aside__sub">Catalogue LMS, assignations, conformité et suivi des parcours pour votre communauté.</p>
             </div>
             <nav class="training-cmd-nav">
-                <a href="<?= htmlspecialchars(url('admin/training')) ?>" class="<?= trim($is('dashboard')) ?>">
+                <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="<?= trim($is('dashboard')) ?>">
                     <span>Vue d’ensemble</span>
                     <span class="tc-nav-meta">01</span>
                 </a>
-                <a href="<?= htmlspecialchars(url('admin/training/courses')) ?>" class="<?= trim($coursesNavActive) ?>">
+                <a href="<?= htmlspecialchars(training_lms_admin_url('courses')) ?>" class="<?= trim($coursesNavActive) ?>">
                     <span>Catalogue</span>
                     <span class="tc-nav-meta">02</span>
                 </a>
-                <a href="<?= htmlspecialchars(url('admin/training/studio')) ?>" class="<?= trim($is('studio')) ?>">
+                <a href="<?= htmlspecialchars(training_studio_url()) ?>" class="<?= trim($is('studio')) ?>">
                     <span>Studio LMS</span>
                     <span class="tc-nav-meta">03</span>
                 </a>
-                <a href="<?= htmlspecialchars(url('admin/training/enrollments')) ?>" class="<?= trim($is('enrollments')) ?>">
+                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments')) ?>" class="<?= trim($is('enrollments')) ?>">
                     <span>Assignations</span>
                     <span class="tc-nav-meta">04</span>
                 </a>
-                <a href="<?= htmlspecialchars(url('admin/training/reports')) ?>" class="<?= trim($is('reports')) ?>">
+                <a href="<?= htmlspecialchars(training_lms_admin_url('reports')) ?>" class="<?= trim($is('reports')) ?>">
                     <span>Rapports</span>
                     <span class="tc-nav-meta">05</span>
                 </a>
-                <a href="<?= htmlspecialchars(url('admin/training/certificates')) ?>" class="<?= trim($is('certificates')) ?>">
+                <a href="<?= htmlspecialchars(training_lms_admin_url('certificates')) ?>" class="<?= trim($is('certificates')) ?>">
                     <span>Certificats</span>
                     <span class="tc-nav-meta">06</span>
                 </a>
-                <a href="<?= htmlspecialchars(url('admin/training/audit')) ?>" class="<?= trim($is('audit')) ?>">
+                <a href="<?= htmlspecialchars(training_lms_admin_url('audit')) ?>" class="<?= trim($is('audit')) ?>">
                     <span>Audit</span>
                     <span class="tc-nav-meta">07</span>
                 </a>
             </nav>
-            <div class="training-cmd-aside__foot">
-                LMS — interface administration
-            </div>
         </aside>
         <div class="training-cmd-main min-w-0">
             <div class="training-cmd-main-inner space-y-8">

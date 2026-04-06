@@ -5,9 +5,9 @@ declare(strict_types=1);
 /**
  * Formation LMS obligatoire « guide du portail » : publiée, certifiante, ouverte à tous (policy vide).
  * Idempotent par tenant + slug `parcours-portail`.
- * À chaque exécution des migrations : durées, modules et contenu des leçons « canvas » sont resynchronisés
- * pour ce parcours (mises à jour pédagogiques). Le quiz, les inscriptions et le texte marketing de la fiche
- * formation (titre, descriptions longues) ne sont pas modifiés par cette synchro — seule la durée totale affichée est mise à jour.
+ * À chaque exécution des migrations : durées, contenu des leçons « canvas », fiches « À retenir » et texte d’introduction
+ * du bilan de mi-parcours sont resynchronisés. Les quiz et leurs questions (tentatives) ne sont pas réécrits.
+ * Une extension idempotente peut insérer le module « Bilan à mi-parcours » et les leçons de synthèse sur les anciens parcours à 5 modules.
  *
  * @param PDO $pdo Connexion SQL (comme run-migrations.php)
  */
@@ -105,7 +105,7 @@ Ce parcours d’accueil est la base commune pour travailler correctement dans le
 
 Vous y verrez concrètement le rôle du tableau de bord après connexion, la logique du menu (y compris l’accès aux modules d’opérations lorsqu’ils sont proposés), la mise à jour du profil et des préférences, la différence entre documents officiels et échanges sur le forum, le fonctionnement du catalogue des formations avec obligation et attestation, ainsi que les usages attendus sur le forum et pour les événements.
 
-Le contenu est volontairement dense : chaque diapositive se lit comme un court article. Prenez le temps de parcourir les exemples et les encadrés « à retenir ». Un quiz final contrôle que les réflexes utiles sont acquis ; en cas d’échec, vous pouvez reprendre les modules concernés puis retenter.
+Le contenu est volontairement dense : chaque diapositive se lit comme un court article. Prenez le temps de parcourir les exemples et les encadrés « à retenir ». Un questionnaire à mi-parcours vérifie les premiers acquis ; un quiz final contrôle l’ensemble des réflexes utiles — en cas d’échec, vous pouvez reprendre les modules concernés puis retenter.
 TXT;
 }
 
@@ -116,7 +116,8 @@ function training_onboarding_course_objectives(): string
         . "Tenir son compte à jour : profil, préférences, sécurité, adresse de contact\n"
         . "Utiliser le personnel, l’organigramme, les documents et le catalogue des formations selon les droits\n"
         . "Distinguer documents officiels et fils de discussion, participer correctement au forum et aux événements\n"
-        . "Comprendre obligation, certificat, quiz, tentatives et reprise de parcours";
+        . "Comprendre obligation, certificat, quiz, tentatives et reprise de parcours\n"
+        . "Valider les acquis à mi-parcours avant d’aborder la vie collective et l’évaluation finale";
 }
 
 function training_onboarding_course_short_description(): string
@@ -124,7 +125,18 @@ function training_onboarding_course_short_description(): string
     return 'Accueil opérationnel du portail : navigation réelle, compte, contenus, communauté, formations et validation.';
 }
 
-/** @return list<array{title:string,subtitle:string,minutes:int,deck:array,lesson_summary:string}> */
+function training_onboarding_mid_module_intro_html(): string
+{
+    return <<<'HTML'
+<div class="prose prose-slate max-w-none">
+<p>Ce court bilan porte sur les <strong>trois premiers modules</strong> : vision d’ensemble du portail, navigation quotidienne, personnel, documents et catalogue des formations. Il n’est pas une punition : il vous aide à repérer ce qu’il vaut mieux relire avant la suite.</p>
+<p>Lisez chaque énoncé jusqu’au bout : plusieurs réponses peuvent sembler crédibles, une seule est attendue. Les propositions sont mélangées à chaque affichage.</p>
+<p>Lorsque vous aurez terminé cette étape, vous poursuivrez avec le module sur le <strong>forum</strong>, les <strong>événements</strong>, puis la <strong>validation finale</strong>.</p>
+</div>
+HTML;
+}
+
+/** @return list<array<string, mixed>> */
 function training_onboarding_portal_module_specs(): array
 {
     return [
@@ -134,6 +146,9 @@ function training_onboarding_portal_module_specs(): array
             'minutes' => 22,
             'deck' => training_onboarding_deck_overview(),
             'lesson_summary' => 'Rôle du portail, déroulé pédagogique, méthode de travail, sécurité du compte, liens vers l’aide.',
+            'recap_html' => <<<'HTML'
+<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">À retenir</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li>Le portail regroupe documents stabilisés, échanges, formations et votre dossier — ce ne sont pas des usages interchangeables.</li><li>Le tableau de bord et le menu reflètent ce que votre rôle permet de voir.</li><li>Mot de passe, déconnexion sur poste partagé et adresse de contact à jour sont des gestes collectifs, pas seulement personnels.</li></ul></div>
+HTML,
         ],
         [
             'title' => 'Navigation et compte',
@@ -141,6 +156,9 @@ function training_onboarding_portal_module_specs(): array
             'minutes' => 24,
             'deck' => training_onboarding_deck_navigation(),
             'lesson_summary' => 'Menu principal, zone Opérations, tableau de bord, compte, préférences, recherche, bonnes pratiques.',
+            'recap_html' => <<<'HTML'
+<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">À retenir</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li>Commencez souvent par le tableau de bord : c’est la synthèse utile pour votre session.</li><li>Profil, préférences et sécurité se gèrent dans la rubrique compte.</li><li>Avec plusieurs communautés, vérifiez toujours le contexte actif avant une action engageante.</li></ul></div>
+HTML,
         ],
         [
             'title' => 'Organisation et contenus',
@@ -148,6 +166,18 @@ function training_onboarding_portal_module_specs(): array
             'minutes' => 26,
             'deck' => training_onboarding_deck_org(),
             'lesson_summary' => 'Fiche personnelle, organigramme, documents officiels, catalogue LMS, progression et erreurs fréquentes.',
+            'recap_html' => <<<'HTML'
+<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">À retenir</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li>Documents = version de référence ; forum = conversation : ne les inversez pas.</li><li>La progression LMS reflète le parcours réellement achevé, pas l’intention.</li><li>L’organigramme oriente ; il ne remplace pas une consigne écrite ou un ordre de mission.</li></ul></div>
+HTML,
+        ],
+        [
+            'title' => 'Bilan à mi-parcours',
+            'subtitle' => 'Vérifier ses acquis',
+            'minutes' => 12,
+            'deck' => null,
+            'lesson_summary' => 'Questionnaire court sur les trois premiers blocs avant la suite du parcours.',
+            'intro_html' => training_onboarding_mid_module_intro_html(),
+            'mid_quiz' => true,
         ],
         [
             'title' => 'Communauté',
@@ -155,6 +185,9 @@ function training_onboarding_portal_module_specs(): array
             'minutes' => 20,
             'deck' => training_onboarding_deck_community(),
             'lesson_summary' => 'Forum, annonces, événements, pointage, signalements, résumé des bons réflexes.',
+            'recap_html' => <<<'HTML'
+<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">À retenir</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li>Recherchez ou parcourez la catégorie avant d’ouvrir un doublon sur le forum.</li><li>Inscription à un événement = engagement logistique : prévenez en cas d’empêchement.</li><li>Les annonces officielles et les canaux de signalement ont une fonction : utilisez-les plutôt que le bruit public.</li></ul></div>
+HTML,
         ],
         [
             'title' => 'Validation',
@@ -162,16 +195,200 @@ function training_onboarding_portal_module_specs(): array
             'minutes' => 16,
             'deck' => training_onboarding_deck_validation_intro(),
             'lesson_summary' => 'Quiz, score, tentatives, attestation, reprise de parcours et gestion du stress de l’évaluation.',
+            'recap_html' => <<<'HTML'
+<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">Avant le questionnaire final</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li>Prévoyez un moment calme : lisez chaque énoncé jusqu’au bout.</li><li>Le seuil et le nombre de tentatives sont rappelés sur la fiche formation.</li><li>En cas d’échec, utilisez les explications comme liste de révision puis retentez.</li></ul></div>
+HTML,
         ],
     ];
 }
 
 /**
- * Met à jour durées, contenu canvas et durée totale du parcours « parcours-portail » pour un tenant.
- * N’altère pas les quiz (historique des tentatives préservé).
+ * Insère les questions / réponses d’un quiz ; mélange l’ordre des réponses par question.
+ *
+ * @param list<array{text:string,explain?:string,answers:list<array{t:string,ok:bool}>}> $questions
+ */
+function training_onboarding_seed_quiz_questions_for_module(PDO $pdo, int $quizId, array $questions, string $now): void
+{
+    $qIns = $pdo->prepare(
+        'INSERT INTO training_quiz_questions (quiz_id, question_type, question_text, explanation, points, position, created_at) VALUES (?, ?, ?, ?, 1, ?, ?)'
+    );
+    $aIns = $pdo->prepare(
+        'INSERT INTO training_quiz_answers (question_id, answer_text, is_correct, position) VALUES (?, ?, ?, ?)'
+    );
+    $qpos = 1;
+    foreach ($questions as $q) {
+        $qIns->execute([
+            $quizId,
+            'single_choice',
+            $q['text'],
+            $q['explain'] ?? null,
+            $qpos,
+            $now,
+        ]);
+        $qid = (int) $pdo->lastInsertId();
+        $rows = $q['answers'];
+        shuffle($rows);
+        $apos = 1;
+        foreach ($rows as $ans) {
+            $aIns->execute([$qid, $ans['t'], $ans['ok'] ? 1 : 0, $apos]);
+            ++$apos;
+        }
+        ++$qpos;
+    }
+}
+
+/**
+ * Insère le 4e module (bilan), décale Communauté et Validation, ajoute quiz intermédiaire et leçons « À retenir ».
+ */
+function training_onboarding_upgrade_portal_legacy_five_modules(PDO $pdo, int $courseId): void
+{
+    $now = date('Y-m-d H:i:s');
+    $specs = training_onboarding_portal_module_specs();
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('UPDATE training_modules SET position = position + 1, updated_at = ? WHERE course_id = ? AND position >= 4')
+            ->execute([$now, $courseId]);
+
+        $modIns = $pdo->prepare(
+            'INSERT INTO training_modules (course_id, title, description, subtitle, learning_objectives, estimated_minutes, position, is_required, created_at, updated_at)
+             VALUES (?, ?, ?, ?, NULL, ?, ?, 1, ?, ?)'
+        );
+        $midTitle = 'Bilan à mi-parcours';
+        $modIns->execute([
+            $courseId,
+            $midTitle,
+            'Module 4 — Vérifier ses acquis',
+            'Vérifier ses acquis',
+            12,
+            4,
+            $now,
+            $now,
+        ]);
+        $midModuleId = (int) $pdo->lastInsertId();
+
+        $lesIns = $pdo->prepare(
+            'INSERT INTO training_lessons (module_id, title, summary, learning_objectives, instructor_notes, lesson_type, content, external_url, duration_minutes, difficulty, position, is_required)
+             VALUES (?, ?, ?, NULL, NULL, ?, ?, NULL, ?, ?, ?, 1)'
+        );
+        $introSum = (string) $specs[3]['lesson_summary'];
+        if (strlen($introSum) > 500) {
+            $introSum = substr($introSum, 0, 497) . '…';
+        }
+        $lesIns->execute([
+            $midModuleId,
+            'Pourquoi ce bilan',
+            $introSum,
+            'richtext',
+            (string) $specs[3]['intro_html'],
+            3,
+            'initiation',
+            1,
+        ]);
+
+        $quizIns = $pdo->prepare(
+            'INSERT INTO training_quizzes (module_id, title, description, passing_score, max_attempts, time_limit_minutes, randomize_questions, is_final_exam, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, 1, 0, ?)'
+        );
+        $quizIns->execute([
+            $midModuleId,
+            'Bilan — premiers réflexes',
+            'Questions sur la navigation, le compte, les documents et le catalogue des formations.',
+            75.00,
+            4,
+            15,
+            $now,
+        ]);
+        $midQuizId = (int) $pdo->lastInsertId();
+        training_onboarding_seed_quiz_questions_for_module($pdo, $midQuizId, training_onboarding_mid_quiz_questions(), $now);
+
+        $pairs = [
+            [1, 0],
+            [2, 1],
+            [3, 2],
+            [5, 4],
+            [6, 5],
+        ];
+        $selMod = $pdo->prepare('SELECT id FROM training_modules WHERE course_id = ? AND position = ? LIMIT 1');
+        $cntSt = $pdo->prepare('SELECT COUNT(*) FROM training_lessons WHERE module_id = ?');
+        foreach ($pairs as [$pos, $specIdx]) {
+            $selMod->execute([$courseId, $pos]);
+            $modId = (int) $selMod->fetchColumn();
+            if ($modId < 1 || empty($specs[$specIdx]['recap_html'])) {
+                continue;
+            }
+            $cntSt->execute([$modId]);
+            if ((int) $cntSt->fetchColumn() !== 1) {
+                continue;
+            }
+            $spec = $specs[$specIdx];
+            $recapTitle = ($specIdx === 5) ? 'Avant le questionnaire final' : ('À retenir — ' . (string) $spec['title']);
+            $sum = 'Synthèse courte pour ancrer les idées du module.';
+            $lesIns->execute([
+                $modId,
+                $recapTitle,
+                $sum,
+                'richtext',
+                (string) $spec['recap_html'],
+                5,
+                'initiation',
+                2,
+            ]);
+        }
+
+        $totalMin = 0;
+        foreach ($specs as $s) {
+            $totalMin += (int) $s['minutes'];
+        }
+        $pdo->prepare('UPDATE training_courses SET estimated_minutes = ?, updated_at = ? WHERE id = ?')
+            ->execute([$totalMin, $now, $courseId]);
+
+        $pdo->commit();
+        echo "  training_onboarding_course : course_id {$courseId} — parcours portail étendu (bilan mi-parcours + synthèses).\n";
+    } catch (\Throwable $e) {
+        $pdo->rollBack();
+        echo '  [ATTENTION] training_onboarding_course extension : ' . $e->getMessage() . "\n";
+    }
+}
+
+/**
+ * Étend un parcours « historique » (5 modules, un seul quiz final) : module bilan + fiches « À retenir ».
+ */
+function training_onboarding_ensure_extended_parcours_portal(PDO $pdo, int $tenantId): void
+{
+    $slug = 'parcours-portail';
+    $st = $pdo->prepare('SELECT id FROM training_courses WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $st->execute([$tenantId, $slug]);
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+    if (!$row) {
+        return;
+    }
+    $courseId = (int) $row['id'];
+    $modFetch = $pdo->prepare('SELECT id, title, position FROM training_modules WHERE course_id = ? ORDER BY position ASC, id ASC');
+    $modFetch->execute([$courseId]);
+    $modules = $modFetch->fetchAll(PDO::FETCH_ASSOC);
+    if (count($modules) !== 5) {
+        return;
+    }
+    $qzSt = $pdo->prepare('SELECT COUNT(*) FROM training_quizzes q INNER JOIN training_modules m ON m.id = q.module_id WHERE m.course_id = ?');
+    $qzSt->execute([$courseId]);
+    if ((int) $qzSt->fetchColumn() !== 1) {
+        return;
+    }
+    $lastTitle = (string) ($modules[4]['title'] ?? '');
+    if (!str_contains($lastTitle, 'Validation')) {
+        return;
+    }
+    training_onboarding_upgrade_portal_legacy_five_modules($pdo, $courseId);
+}
+
+/**
+ * Met à jour durées, contenu canvas, fiches « À retenir », intro du bilan et durée totale du parcours « parcours-portail ».
+ * Ne modifie pas les questions des quiz existants.
  */
 function training_onboarding_refresh_portal_canvas_for_tenant(PDO $pdo, int $tenantId): void
 {
+    training_onboarding_ensure_extended_parcours_portal($pdo, $tenantId);
+
     $slug = 'parcours-portail';
     $st = $pdo->prepare('SELECT id FROM training_courses WHERE tenant_id = ? AND slug = ? LIMIT 1');
     $st->execute([$tenantId, $slug]);
@@ -196,6 +413,12 @@ function training_onboarding_refresh_portal_canvas_for_tenant(PDO $pdo, int $ten
     $lessonIdSt = $pdo->prepare(
         "SELECT id FROM training_lessons WHERE module_id = ? AND lesson_type = 'canvas' ORDER BY position ASC, id ASC LIMIT 1"
     );
+    $recapIdSt = $pdo->prepare(
+        "SELECT id FROM training_lessons WHERE module_id = ? AND lesson_type = 'richtext' AND position >= 2 ORDER BY position ASC, id ASC LIMIT 1"
+    );
+    $introIdSt = $pdo->prepare(
+        "SELECT id FROM training_lessons WHERE module_id = ? AND lesson_type = 'richtext' AND position = 1 ORDER BY id ASC LIMIT 1"
+    );
 
     $totalMin = 0;
     foreach ($specs as $idx => $spec) {
@@ -207,18 +430,43 @@ function training_onboarding_refresh_portal_canvas_for_tenant(PDO $pdo, int $ten
         $totalMin += $minutes;
         $modUpd->execute([$minutes, $now, $mid]);
 
-        $lessonIdSt->execute([$mid]);
-        $lid = $lessonIdSt->fetchColumn();
-        if (!$lid) {
-            continue;
+        if (!empty($spec['deck']) && is_array($spec['deck'])) {
+            $lessonIdSt->execute([$mid]);
+            $lid = $lessonIdSt->fetchColumn();
+            if ($lid) {
+                $deckJson = json_encode($spec['deck'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $dur = max(6, (int) ceil($minutes * 0.65));
+                $summary = (string) $spec['lesson_summary'];
+                if (strlen($summary) > 500) {
+                    $summary = substr($summary, 0, 497) . '…';
+                }
+                $lesUpd->execute([$deckJson, $dur, $summary, $now, (int) $lid]);
+            }
         }
-        $deckJson = json_encode($spec['deck'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $dur = max(6, (int) ceil($minutes * 0.65));
-        $summary = (string) $spec['lesson_summary'];
-        if (strlen($summary) > 500) {
-            $summary = substr($summary, 0, 497) . '…';
+
+        if (!empty($spec['recap_html'])) {
+            $recapIdSt->execute([$mid]);
+            $rid = $recapIdSt->fetchColumn();
+            if ($rid) {
+                $sum = 'Synthèse courte pour ancrer les idées du module.';
+                if (strlen($sum) > 500) {
+                    $sum = substr($sum, 0, 497) . '…';
+                }
+                $lesUpd->execute([(string) $spec['recap_html'], 5, $sum, $now, (int) $rid]);
+            }
         }
-        $lesUpd->execute([$deckJson, $dur, $summary, $now, (int) $lid]);
+
+        if (!empty($spec['mid_quiz']) && !empty($spec['intro_html'])) {
+            $introIdSt->execute([$mid]);
+            $iid = $introIdSt->fetchColumn();
+            if ($iid) {
+                $sum = (string) $spec['lesson_summary'];
+                if (strlen($sum) > 500) {
+                    $sum = substr($sum, 0, 497) . '…';
+                }
+                $lesUpd->execute([(string) $spec['intro_html'], 3, $sum, $now, (int) $iid]);
+            }
+        }
     }
 
     $pdo->prepare('UPDATE training_courses SET estimated_minutes = ?, updated_at = ? WHERE id = ?')
@@ -305,9 +553,9 @@ HTML
             [
                 'template' => 'reading_article',
                 'title' => 'Déroulé de ce parcours et méthode de travail',
-                'subtitle' => 'Cinq blocs, puis quiz',
+                'subtitle' => 'Lectures, bilan interrogé, puis validation finale',
                 'body' => <<<'HTML'
-<p>Ce parcours comporte cinq modules avant le questionnaire final. L’ordre est logique : d’abord la vision d’ensemble et la sécurité du compte, ensuite la navigation quotidienne, puis les contenus « métier » (personnel, documents, formations), enfin la vie collective (forum, événements) et la manière dont le site valide vos acquis.</p>
+<p>Ce parcours enchaîne plusieurs modules de lecture, un <strong>bilan interrogé à mi-parcours</strong> pour ancrer les premiers acquis, puis le module sur la vie collective (forum, événements) et enfin la <strong>validation finale</strong>. L’ordre est logique : d’abord la vision d’ensemble et la sécurité du compte, ensuite la navigation quotidienne, puis les contenus « métier » (personnel, documents, formations), avant le bilan, le collectif et la manière dont le site atteste vos acquis.</p>
 <h3>Comment lire efficacement</h3>
 <p>Utilisez les boutons <strong>Précédent</strong> et <strong>Suivant</strong> sous les diapositives. Ne cherchez pas à « swiper » trop vite : plusieurs écrans contiennent des nuances importantes (par exemple la différence entre un document officiel et un fil de discussion). Lorsqu’un <strong>texte à trous</strong> apparaît, complétez-le avant de valider : c’est un mini-test de vocabulaire intégré au parcours.</p>
 <h3>Si quelque chose reste flou pour votre unité</h3>
@@ -328,7 +576,8 @@ HTML
 <li>parcourir le catalogue des formations, distinguer inscription libre et assignation par le staff, et reprendre un module en cours ;</li>
 <li>participer au forum sans saturer les catégories ni ignorer les annonces officielles ;</li>
 <li>traiter un événement comme un engagement : inscription, prévenance en cas d’empêchement, respect des consignes de présence ;</li>
-<li>comprendre ce que signifient pour vous une formation <strong>obligatoire</strong> et une formation <strong>certifiante</strong>, ainsi que le rôle du quiz et de l’attestation.</li>
+<li>réussir le bilan interrogé à mi-parcours puis le questionnaire final, et utiliser les explications affichées pour réviser en cas d’échec ;</li>
+<li>comprendre ce que signifient pour vous une formation <strong>obligatoire</strong> et une formation <strong>certifiante</strong>, ainsi que le rôle de l’attestation.</li>
 </ul>
 <p>Ce n’est pas une liste à décorer : c’est le socle minimal attendu d’un membre qui utilise le portail au quotidien.</p>
 HTML
@@ -491,7 +740,7 @@ function training_onboarding_deck_org(): array
                 'Vous distinguez inscription libre et assignation par le staff.',
                 'Vous savez pourquoi une formation n’est terminée que lorsque toutes les étapes requises le sont.',
             ],
-            'nextHint' => 'Passez au module sur le forum, les événements et les usages collectifs.',
+            'nextHint' => 'Passez au bilan interrogé de mi-parcours, puis au module sur le forum et les événements.',
         ],
         'slides' => [
             [
@@ -524,6 +773,13 @@ HTML
                 'template' => 'reading_article',
                 'title' => 'Documents : la version de référence',
                 'subtitle' => 'Pourquoi ce n’est pas « comme le forum »',
+                'contextKicker' => 'Étape clé · Référence vs discussion',
+                'surface' => 'default',
+                'cards' => [
+                    ['label' => 'Documents', 'body' => 'Textes et fichiers stabilisés, avec contrôle de diffusion.'],
+                    ['label' => 'Forum', 'body' => 'Conversation vivante : annonces, questions, relances.'],
+                    ['label' => 'Erreur fréquente', 'body' => 'Publier la « version finale » uniquement dans un fil de discussion.'],
+                ],
                 'body' => <<<'HTML'
 <p>La rubrique <strong>documents</strong> sert à publier ce qui doit rester <strong>stable</strong> et <strong>retrouvable</strong> : notes, guides, modèles, visuels autorisés, parfois packs techniques. Chaque dossier ou fichier peut avoir un niveau de diffusion différent ; si vous ne voyez pas un contenu, c’est souvent qu’il est réservé à un autre groupe.</p>
 <p>Le <strong>forum</strong>, lui, vit par messages successifs : on y annonce, on débat, on relance. Un fil n’est pas un bon endroit pour « stocker » la version finale d’un texte : il se noie, on ne sait plus laquelle est la bonne page, et les nouveaux arrivants ne remontent pas 200 messages. En pratique, lorsque le staff valide un document, il doit vivre dans la rubrique documents (ou équivalent) ; le forum sert à expliquer le contexte ou à répondre aux questions.</p>
@@ -582,12 +838,40 @@ function training_onboarding_deck_community(): array
     return [
         'version' => 2,
         'modals' => [],
+        'opening' => [
+            'eyebrow' => 'Vie collective',
+            'title' => '',
+            'lead' => 'Forum, événements, annonces : des règles simples pour que l’information reste utile à toute l’unité.',
+            'stats' => [
+                ['label' => 'Durée indicative', 'value' => '~20 min'],
+                ['label' => 'Enjeu', 'value' => 'Clarté collective'],
+            ],
+        ],
+        'closure' => [
+            'title' => 'Synthèse — Communauté',
+            'seen' => [
+                'Un bon titre de sujet et une recherche avant de poster évitent le bruit.',
+                'Les inscriptions aux créneaux engagent : prévenir en cas d’empêchement.',
+            ],
+            'acquired' => [
+                'Vous savez quand utiliser un signalement ou un message privé plutôt qu’un post public.',
+                'Vous appliquez des réflexes de participation utile dès la première semaine.',
+            ],
+            'nextHint' => 'Il reste la validation finale par questionnaire et l’attestation.',
+        ],
         'slides' => [
             [
                 'template' => 'title_hero',
                 'title' => 'Vie de communauté',
                 'subtitle' => 'Coordonner sans encombrer les canaux',
                 'body' => '<p>Le <strong>forum</strong> et les <strong>événements</strong> sont les lieux où la communauté vit au quotidien : annonces, questions, briefings, débriefs, organisation logistique. La qualité collective dépend de chacun : un fil lisible vaut mieux que vingt messages redondants ; une inscription honnête vaut mieux qu’une absence non signalée.</p>',
+                'contextKicker' => 'Étape 01 · Cadre',
+                'surface' => 'elevated',
+                'cards' => [
+                    ['label' => 'Forum', 'body' => 'Structurer les sujets et respecter les annonces épinglées.'],
+                    ['label' => 'Événements', 'body' => 'Inscription = engagement logistique pour le staff.'],
+                    ['label' => 'Signalement', 'body' => 'Canal adapté pour les sujets sensibles.'],
+                ],
             ],
             [
                 'template' => 'reading_article',
@@ -634,6 +918,8 @@ HTML
             [
                 'template' => 'fill_blanks',
                 'title' => 'Une dernière vérification',
+                'contextKicker' => 'Auto-évaluation',
+                'metric' => ['label' => 'Rappel', 'value' => 'Une réponse exacte par trou'],
                 'body' => '<p>Avant d’ouvrir un nouveau sujet sur le forum, il est préférable de vérifier qu’un [[fil]] ou une discussion ne traite pas déjà le même problème.</p>',
             ],
             [
@@ -651,12 +937,42 @@ function training_onboarding_deck_validation_intro(): array
     return [
         'version' => 2,
         'modals' => [],
+        'opening' => [
+            'eyebrow' => 'Validation',
+            'title' => '',
+            'lead' => 'Questionnaire final, attestation et reprise de parcours : ce qui se passe après la dernière lecture.',
+            'stats' => [
+                ['label' => 'Seuil de réussite', 'value' => '80 %'],
+                ['label' => 'Tentatives', 'value' => 'Plusieurs (selon la formation)'],
+            ],
+        ],
+        'closure' => [
+            'title' => 'Avant de lancer le questionnaire',
+            'seen' => [
+                'Les questions portent sur les usages du portail vus dans ce parcours.',
+                'Une attestation peut être proposée si la formation est certifiante et le score atteint.',
+            ],
+            'acquired' => [
+                'Vous savez comment utiliser un échec comme liste de révision.',
+                'Vous savez où retrouver l’historique de vos formations terminées.',
+            ],
+            'nextHint' => 'Utilisez le bouton pour passer à la leçon quiz lorsqu’elle est disponible dans votre parcours.',
+        ],
         'slides' => [
             [
                 'template' => 'title_hero',
                 'title' => 'Dernière étape : validation',
                 'subtitle' => 'Quiz de fin de parcours',
                 'body' => '<p>Le questionnaire porte sur les <strong>idées directrices</strong> du portail : navigation, compte, documents, formations, forum, événements, sécurité. Le <strong>seuil de réussite est de 80&nbsp;%</strong>. Vous disposez de <strong>plusieurs tentatives</strong> dans la limite fixée par la formation.</p><p>Les formulations volontairement longues dans certaines réponses fausses imitent des croyances courantes : lisez jusqu’au bout avant de choisir.</p>',
+                'contextKicker' => 'Étape finale · Évaluation',
+                'surface' => 'elevated',
+                'insights' => [
+                    [
+                        'variant' => 'vigilance',
+                        'title' => '',
+                        'body' => 'Ne validez pas la dernière réponse si votre connexion est très instable : en cas de doute, attendez un réseau fiable.',
+                    ],
+                ],
             ],
             [
                 'template' => 'reading_article',
@@ -759,12 +1075,17 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
             'INSERT INTO training_lessons (module_id, title, summary, learning_objectives, instructor_notes, lesson_type, content, external_url, duration_minutes, difficulty, position, is_required)
              VALUES (?, ?, ?, NULL, NULL, ?, ?, NULL, ?, ?, ?, 1)'
         );
+        $quizIns = $pdo->prepare(
+            'INSERT INTO training_quizzes (module_id, title, description, passing_score, max_attempts, time_limit_minutes, randomize_questions, is_final_exam, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        );
 
         $position = 1;
-        $lastModuleId = 0;
+        $finalModuleId = 0;
+        $nSpecs = count($specs);
         foreach ($specs as $mi => $m) {
-            $title = $m['title'];
-            $sub = $m['subtitle'];
+            $title = (string) $m['title'];
+            $sub = (string) $m['subtitle'];
             $minutes = (int) $m['minutes'];
             $descMod = 'Module ' . ($mi + 1) . ' — ' . $sub;
             $modIns->execute([
@@ -779,13 +1100,45 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
             ]);
             $moduleId = (int) $pdo->lastInsertId();
             $position++;
-            $lastModuleId = $moduleId;
+            $finalModuleId = $moduleId;
 
-            $deckJson = json_encode($m['deck'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if (!empty($m['mid_quiz'])) {
+                $summary = (string) $m['lesson_summary'];
+                if (strlen($summary) > 500) {
+                    $summary = substr($summary, 0, 497) . '…';
+                }
+                $lesIns->execute([
+                    $moduleId,
+                    'Pourquoi ce bilan',
+                    $summary,
+                    'richtext',
+                    (string) $m['intro_html'],
+                    3,
+                    'initiation',
+                    1,
+                ]);
+                $quizIns->execute([
+                    $moduleId,
+                    'Bilan — premiers réflexes',
+                    'Questions sur la navigation, le compte, les documents et le catalogue des formations.',
+                    75.00,
+                    4,
+                    15,
+                    1,
+                    0,
+                    $now,
+                ]);
+                $midQz = (int) $pdo->lastInsertId();
+                training_onboarding_seed_quiz_questions_for_module($pdo, $midQz, training_onboarding_mid_quiz_questions(), $now);
+
+                continue;
+            }
+
             $summary = (string) $m['lesson_summary'];
             if (strlen($summary) > 500) {
                 $summary = substr($summary, 0, 497) . '…';
             }
+            $deckJson = json_encode($m['deck'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             $lesIns->execute([
                 $moduleId,
                 $title . ' — parcours visuel',
@@ -796,49 +1149,36 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
                 'initiation',
                 1,
             ]);
+
+            if (!empty($m['recap_html'])) {
+                $recapTitle = ($mi === $nSpecs - 1) ? 'Avant le questionnaire final' : ('À retenir — ' . $title);
+                $lesIns->execute([
+                    $moduleId,
+                    $recapTitle,
+                    'Synthèse courte pour ancrer les idées du module.',
+                    'richtext',
+                    (string) $m['recap_html'],
+                    5,
+                    'initiation',
+                    2,
+                ]);
+            }
         }
 
-        if ($lastModuleId > 0) {
-            $quizIns = $pdo->prepare(
-                'INSERT INTO training_quizzes (module_id, title, description, passing_score, max_attempts, time_limit_minutes, randomize_questions, is_final_exam, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, 0, 1, ?)'
-            );
+        if ($finalModuleId > 0) {
             $quizIns->execute([
-                $lastModuleId,
+                $finalModuleId,
                 'Quiz — fonctionnement du portail',
                 'Validez vos acquis sur la navigation, le compte, les contenus et la vie de la communauté.',
                 80.00,
                 5,
                 24,
+                1,
+                1,
                 $now,
             ]);
-            $quizId = (int) $pdo->lastInsertId();
-
-            $questions = training_onboarding_quiz_questions();
-            $qIns = $pdo->prepare(
-                'INSERT INTO training_quiz_questions (quiz_id, question_type, question_text, explanation, points, position, created_at) VALUES (?, ?, ?, ?, 1, ?, ?)'
-            );
-            $aIns = $pdo->prepare(
-                'INSERT INTO training_quiz_answers (question_id, answer_text, is_correct, position) VALUES (?, ?, ?, ?)'
-            );
-            $qpos = 1;
-            foreach ($questions as $q) {
-                $qIns->execute([
-                    $quizId,
-                    'single_choice',
-                    $q['text'],
-                    $q['explain'] ?? null,
-                    $qpos,
-                    $now,
-                ]);
-                $qid = (int) $pdo->lastInsertId();
-                $apos = 1;
-                foreach ($q['answers'] as $ans) {
-                    $aIns->execute([$qid, $ans['t'], $ans['ok'] ? 1 : 0, $apos]);
-                    $apos++;
-                }
-                $qpos++;
-            }
+            $finalQz = (int) $pdo->lastInsertId();
+            training_onboarding_seed_quiz_questions_for_module($pdo, $finalQz, training_onboarding_quiz_questions(), $now);
         }
 
         $pdo->commit();
@@ -847,6 +1187,63 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
         $pdo->rollBack();
         echo '  [ATTENTION] training_onboarding_course : ' . $e->getMessage() . "\n";
     }
+}
+
+/**
+ * Questions du bilan à mi-parcours (thèmes des trois premiers modules).
+ *
+ * @return list<array{text:string,explain?:string,answers:list<array{t:string,ok:bool}>}>
+ */
+function training_onboarding_mid_quiz_questions(): array
+{
+    return [
+        [
+            'text' => 'Après connexion, quel écran regroupe en général les raccourcis et rappels utiles pour votre session ?',
+            'explain' => 'Le tableau de bord est le point de départ logique après connexion.',
+            'answers' => [
+                ['t' => 'Le tableau de bord', 'ok' => true],
+                ['t' => 'Uniquement la page de réinitialisation du mot de passe', 'ok' => false],
+                ['t' => 'L’historique du navigateur, hors portail', 'ok' => false],
+                ['t' => 'Un écran réservé aux seuls formateurs', 'ok' => false],
+            ],
+        ],
+        [
+            'text' => 'Où met-on à jour en principe ses préférences de notification et son profil affiché ?',
+            'answers' => [
+                ['t' => 'Dans la rubrique compte (souvent « Mon compte ») du portail', 'ok' => true],
+                ['t' => 'En modifiant le nom du poste de travail', 'ok' => false],
+                ['t' => 'Uniquement sur un réseau social extérieur', 'ok' => false],
+                ['t' => 'Ce n’est jamais possible en ligne', 'ok' => false],
+            ],
+        ],
+        [
+            'text' => 'Où retrouver en priorité une note officielle stabilisée, destinée à tous les membres autorisés ?',
+            'answers' => [
+                ['t' => 'Dans la rubrique documents du portail, selon le niveau de diffusion', 'ok' => true],
+                ['t' => 'Uniquement en enchaînant des messages sur le forum sans fiche dédiée', 'ok' => false],
+                ['t' => 'Dans les préférences du compte', 'ok' => false],
+                ['t' => 'Sur une messagerie personnelle uniquement', 'ok' => false],
+            ],
+        ],
+        [
+            'text' => 'Une formation du catalogue apparaît comme obligatoire : que signifie cela en général ?',
+            'answers' => [
+                ['t' => 'Le staff attend sa complétion dans le cadre fixé par la communauté', 'ok' => true],
+                ['t' => 'Elle est purement décorative sur le site', 'ok' => false],
+                ['t' => 'Elle ne concerne que les visiteurs non connectés', 'ok' => false],
+                ['t' => 'Elle se valide sans parcourir le contenu', 'ok' => false],
+            ],
+        ],
+        [
+            'text' => 'Pourquoi l’organigramme (ORBAT) du portail est-il utile au quotidien ?',
+            'answers' => [
+                ['t' => 'Pour comprendre la structure et les rattachements de l’unité', 'ok' => true],
+                ['t' => 'Pour stocker les mots de passe partagés', 'ok' => false],
+                ['t' => 'Pour remplacer tous les documents officiels', 'ok' => false],
+                ['t' => 'Pour envoyer des messages privés automatiques', 'ok' => false],
+            ],
+        ],
+    ];
 }
 
 /**

@@ -18,6 +18,7 @@ use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\LoginSecurityNotificationService;
 use App\Services\EmailService;
+use App\Services\Moderation\IndicatorBlocklistService;
 
 class AuthController
 {
@@ -37,7 +38,8 @@ class AuthController
         private PasswordResetRepository $passwordResetRepository,
         private AuditService $auditService,
         private EmailService $emailService,
-        private LoginSecurityNotificationService $loginSecurityNotifications
+        private LoginSecurityNotificationService $loginSecurityNotifications,
+        private IndicatorBlocklistService $indicatorBlocklist
     ) {}
 
     /**
@@ -53,6 +55,19 @@ class AuthController
 
             return $slug === '' || !in_array($slug, $hidden, true);
         }));
+    }
+
+    private function loginAllowedForTenantAndClient(int $tenantId, string $emailNorm, Request $request): bool
+    {
+        if ($this->indicatorBlocklist->isEmailBlockedForTenant($tenantId, $emailNorm)) {
+            return false;
+        }
+        $ip = trim($request->ip());
+        if ($ip !== '' && $this->indicatorBlocklist->isIpBlockedForLogin($tenantId, $ip)) {
+            return false;
+        }
+
+        return true;
     }
 
     private function redirectToDashboardAfterLogin(array $user, Request $request): Response
@@ -139,6 +154,18 @@ class AuthController
             Session::flash('error', 'Identifiants incorrects ou compte inactif.');
             return Response::redirect(url('login'));
         }
+
+        $emailNorm = strtolower(trim($email));
+        $matchesAfterBlocklist = array_values(array_filter(
+            $matches,
+            fn (array $row): bool => $this->loginAllowedForTenantAndClient((int) ($row['tenant_id'] ?? 0), $emailNorm, $request)
+        ));
+        if ($matchesAfterBlocklist === []) {
+            Session::forget('pending_verification_email');
+            Session::flash('error', 'Votre accès est restreint pour cette communauté ou depuis cet équipement.');
+            return Response::redirect(url('login'));
+        }
+        $matches = $matchesAfterBlocklist;
 
         if (count($matches) === 1) {
             $row = $matches[0];
@@ -286,6 +313,13 @@ class AuthController
             Session::set('pending_verification_email', strtolower(trim((string) ($pending['email'] ?? ''))));
             Session::flash('error', 'Confirmez votre adresse e-mail avant de vous connecter.');
             return Response::redirect(url('login'));
+        }
+
+        $emailNorm = strtolower(trim((string) ($pending['email'] ?? '')));
+        if (!$this->loginAllowedForTenantAndClient($tenantId, $emailNorm, $request)) {
+            Session::flash('error', 'Cette communauté n’est pas accessible avec votre compte ou depuis cet équipement pour le moment.');
+
+            return Response::redirect(url('login/select-community'));
         }
 
         Session::forget('pending_community_selection');

@@ -16,6 +16,7 @@ use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Community\EnlistmentMilsimPackService;
 use App\Services\EmailService;
+use App\Services\Moderation\IndicatorBlocklistService;
 use App\Services\Profile\RecruitmentPresetPayloadService;
 
 class EnlistmentController
@@ -28,7 +29,8 @@ class EnlistmentController
         private UserProfileRepository $userProfileRepository,
         private RecruitmentPresetRepository $recruitmentPresetRepository,
         private RecruitmentPresetPayloadService $recruitmentPresetPayloadService,
-        private EmailService $emailService
+        private EmailService $emailService,
+        private IndicatorBlocklistService $indicatorBlocklist
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -289,6 +291,15 @@ class EnlistmentController
             $payload['last_name'] = $last ?: '—';
             $payload['email'] = trim((string) $request->input('email'));
             $payload['callsign'] = null;
+        }
+
+        $joinEmail = strtolower(trim((string) ($payload['email'] ?? '')));
+        if ($joinEmail !== '' && filter_var($joinEmail, FILTER_VALIDATE_EMAIL)
+            && $this->indicatorBlocklist->isEmailBlockedForTenant($targetTenantId, $joinEmail)) {
+            Session::flash('enlistment_error', 'Cette adresse ne peut pas être utilisée pour une candidature dans cette communauté pour le moment.');
+            Session::flash('enlistment_retry_url', $this->enlistmentFormUrl($tenant));
+
+            return Response::redirect(url('enlistment/error'));
         }
 
         try {

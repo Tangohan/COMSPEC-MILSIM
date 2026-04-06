@@ -13,6 +13,9 @@ class Request
     private string $uri;
     private string $path;
 
+    /** @var array<string, mixed> Contexte requête (ex. API intégrations, hors session). */
+    private array $attributes = [];
+
     public function __construct()
     {
         $this->query = $_GET;
@@ -38,6 +41,20 @@ class Request
         $prefix = self::basePathPrefixFromServer($server);
         if ($prefix !== '' && str_starts_with($path, $prefix)) {
             $path = substr($path, strlen($prefix)) ?: '/';
+        }
+
+        // Docroot = dossier « public » : l’URI peut contenir /public/… alors que SCRIPT_NAME vaut
+        // souvent /index.php (sans « /public/ »). Sans ce retrait, le routeur voit /public/admin/… → 404.
+        if ($prefix === '' && ($path === '/public' || str_starts_with($path, '/public/'))) {
+            $script = (string) ($server['SCRIPT_NAME'] ?? '');
+            $scriptReferencesPublicDir = str_contains($script, '/public/');
+            $frontControllerIndex = $script === '/index.php' || str_ends_with($script, '/index.php');
+            if (!$scriptReferencesPublicDir && $frontControllerIndex) {
+                $path = $path === '/public' ? '/' : ('/' . ltrim(substr($path, strlen('/public')), '/'));
+                if ($path !== '/') {
+                    $path = rtrim($path, '/') ?: '/';
+                }
+            }
         }
 
         return $path;
@@ -110,6 +127,17 @@ class Request
     public function userAgent(): string
     {
         return $this->server['HTTP_USER_AGENT'] ?? '';
+    }
+
+    /** @param mixed $value */
+    public function setAttribute(string $key, mixed $value): void
+    {
+        $this->attributes[$key] = $value;
+    }
+
+    public function attribute(string $key, mixed $default = null): mixed
+    {
+        return $this->attributes[$key] ?? $default;
     }
 
 }

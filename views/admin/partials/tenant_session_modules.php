@@ -20,6 +20,7 @@ if ($sys || $org) {
     $links[] = ['href' => url('back-office/ressources/atak-config'), 'label' => 'Configuration ATAK / Tacmap', 'desc' => 'Carte et paramètres tactiques pour ce tenant'];
     $links[] = ['href' => url('back-office/ressources/atak-mod'), 'label' => 'Mod ATAK (Overwatch)', 'desc' => 'Fichiers mod côté communauté'];
     $links[] = ['href' => url('back-office/ressources/forum-config'), 'label' => 'Configuration forum', 'desc' => 'Canaux, modération technique, filtres'];
+    $links[] = ['href' => url('back-office/ressources/interteam-missions'), 'label' => 'Missions inter-unités', 'desc' => 'Coopération entre communautés et partage ciblé du brief'];
 }
 if ($sys || $training) {
     $links[] = ['href' => url('back-office/ressources/training'), 'label' => 'Formations (LMS)', 'desc' => 'Catalogue, inscriptions et suivi pour ce tenant'];

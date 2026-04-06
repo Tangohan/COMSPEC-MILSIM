@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -140,7 +141,7 @@ class AdminConfigurationController
             try {
                 $this->userRepository->markEmailVerified($uid, $tenantId);
                 if ($recruitRoleId !== null && $recruitRoleId > 0) {
-                    $this->userRepository->syncOrganizationRoles($uid, $tenantId, [$recruitRoleId]);
+                    $this->userRepository->syncOrganizationRoles($uid, $tenantId, [$recruitRoleId], null, true);
                 }
                 $this->personnelProfileRepository->ensureRecord($uid);
                 if ($firstUnitId > 0) {
@@ -167,6 +168,45 @@ class AdminConfigurationController
         if ($errors !== []) {
             Session::flash('error', implode(' ', array_slice($errors, 0, 5)));
         }
+
+        return Response::redirect(url('back-office/configuration'));
+    }
+
+    /**
+     * Préférences d’affichage des rôles (choix membre, badges).
+     */
+    public function saveMemberRoleDisplay(Request $request, array $params = []): Response
+    {
+        if (!$request->isPost()) {
+            return Response::redirect(url('back-office/configuration'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/configuration'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.access')) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        $memberChoose = $request->input('member_can_choose_display_role') === '1' || $request->input('member_can_choose_display_role') === 'on';
+        $mode = trim((string) $request->input('display_badges_mode', 'primary_only'));
+        if (!in_array($mode, ['primary_only', 'multi'], true)) {
+            $mode = 'primary_only';
+        }
+        $this->tenantRepository->updateSettings($tenantId, [
+            'community' => [
+                'member_can_choose_display_role' => $memberChoose ? 1 : 0,
+                'display_badges_mode' => $mode,
+            ],
+        ]);
+        Session::flash('success', 'Préférences d’affichage des rôles enregistrées.');
 
         return Response::redirect(url('back-office/configuration'));
     }

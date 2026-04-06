@@ -82,13 +82,39 @@ if (!function_exists('forum_can_read')) {
     }
 }
 
+if (!function_exists('forum_truthy')) {
+    /**
+     * Interprète une valeur issue des réglages site (0/1, on/off, etc.).
+     */
+    function forum_truthy(mixed $raw, bool $default = false): bool
+    {
+        if ($raw === null || $raw === '') {
+            return $default;
+        }
+        $v = strtolower(trim((string) $raw));
+
+        return in_array($v, ['1', 'true', 'yes', 'on'], true);
+    }
+}
+
 if (!function_exists('forum_get_setting')) {
+    /**
+     * Valeur de config forum : d’abord fusion tenant (site_settings forum_*), puis config/forum.php.
+     */
     function forum_get_setting(string $key, mixed $default = null): mixed
     {
+        $tid = \App\Core\Session::get('tenant_id');
+        if ($tid) {
+            $merged = forum_config_for_tenant((int) $tid);
+            if (array_key_exists($key, $merged) && $merged[$key] !== null && $merged[$key] !== '') {
+                return $merged[$key];
+            }
+        }
         $forum = config('forum');
         if (!is_array($forum)) {
             return $default;
         }
+
         return $forum[$key] ?? $default;
     }
 }
@@ -113,10 +139,8 @@ if (!function_exists('forum_config_for_tenant')) {
             return $base;
         }
         $merged = array_merge($base, $site);
-        if (array_key_exists('forum_enabled', $merged)) {
-            $v = strtolower(trim((string) $merged['forum_enabled']));
-            $merged['enabled'] = in_array($v, ['1', 'true', 'yes', 'on'], true);
-        }
+        $merged['community_section_enabled'] = forum_truthy($merged['forum_community_section_enabled'] ?? null, true);
+        $merged['community_section_notice'] = trim((string) ($merged['forum_community_section_notice'] ?? ''));
         $shortFromForum = [
             'name' => 'forum_name',
             'subtitle' => 'forum_subtitle',
@@ -136,24 +160,79 @@ if (!function_exists('forum_config_for_tenant')) {
     }
 }
 
+if (!function_exists('brief_is_open_for_members_globally')) {
+    /**
+     * Interrupteur plateforme : accès au brief pour les membres (toutes communautés).
+     */
+    function brief_is_open_for_members_globally(): bool
+    {
+        try {
+            $repo = new \App\Repositories\PlatformSettingsRepository();
+            if (!$repo->tableExists()) {
+                return true;
+            }
+
+            return $repo->getBool('brief_member_access', true);
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+}
+
+if (!function_exists('brief_platform_closed_message_text')) {
+    function brief_platform_closed_message_text(): string
+    {
+        try {
+            $repo = new \App\Repositories\PlatformSettingsRepository();
+            if (!$repo->tableExists()) {
+                return '';
+            }
+
+            return trim($repo->get('brief_member_closed_message', ''));
+        } catch (\Throwable) {
+            return '';
+        }
+    }
+}
+
+if (!function_exists('forum_community_section_open_for_current_viewer')) {
+    /**
+     * Section « organisation » du brief : visible / utilisable pour le visiteur courant.
+     * Les modérateurs et administrateurs du forum passent toujours.
+     */
+    function forum_community_section_open_for_current_viewer(int $tenantId): bool
+    {
+        if (function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator()) {
+            return true;
+        }
+        $cfg = forum_config_for_tenant($tenantId);
+
+        return !empty($cfg['community_section_enabled']);
+    }
+}
+
+if (!function_exists('forum_organization_scope_accessible_for_current_viewer')) {
+    function forum_organization_scope_accessible_for_current_viewer(int $tenantId, string $scope): bool
+    {
+        if ($scope !== 'organization') {
+            return true;
+        }
+
+        return forum_community_section_open_for_current_viewer($tenantId);
+    }
+}
+
 if (!function_exists('forum_is_enabled')) {
     function forum_is_enabled(): bool
     {
-        $tid = \App\Core\Session::get('tenant_id');
-        if ($tid) {
-            $c = forum_config_for_tenant((int) $tid);
-            if (array_key_exists('enabled', $c)) {
-                return (bool) $c['enabled'];
-            }
-        }
-
-        return (bool) forum_get_setting('enabled', true);
+        return brief_is_open_for_members_globally();
     }
 }
 
 if (!function_exists('forum_forum_resolve_href_for_http_url')) {
     /**
-     * URL http(s) déjà validée : lien interne direct ou interstitiel /leave signé si externe.
+     * URL http(s) déjà validée : lien interne direct ou interstitiel /leave signé si externe
+     * (selon forum_url_gate_enabled pour le tenant en session).
      *
      * @param list<string> $extraInternalHosts
      */
@@ -162,9 +241,18 @@ if (!function_exists('forum_forum_resolve_href_for_http_url')) {
         $svc = new \App\Services\Forum\ExternalLeaveService();
         $href = $sanitizedUrl;
         if (!$svc->isInternalUrl($sanitizedUrl, $extraInternalHosts)) {
-            $leave = $svc->buildSignedLeaveUrl($sanitizedUrl);
-            if ($leave !== null) {
-                $href = $leave;
+            $tid = \App\Core\Session::get('tenant_id');
+            $gate = true;
+            if ($tid) {
+                $cfg = forum_config_for_tenant((int) $tid);
+                /* Absence de clé = comportement historique (page d’avertissement) */
+                $gate = forum_truthy($cfg['forum_url_gate_enabled'] ?? null, true);
+            }
+            if ($gate) {
+                $leave = $svc->buildSignedLeaveUrl($sanitizedUrl);
+                if ($leave !== null) {
+                    $href = $leave;
+                }
             }
         }
 
@@ -320,45 +408,26 @@ if (!function_exists('forum_render_content')) {
 
 if (!function_exists('forum_forum_role_display')) {
     /**
-     * Libellé carte auteur forum à partir du rôle communauté (nom + slug).
+     * Libellé carte auteur forum : privilégie l’intitulé défini pour l’organisation (table des rôles).
      */
     function forum_forum_role_display(?string $name, ?string $slug): string
     {
-        $slugNorm = $slug !== null && trim((string) $slug) !== '' ? strtolower(trim((string) $slug)) : '';
-        $bySlug = [
-            'member' => 'Opérateur',
-            'forum_moderator' => 'Modérateur forum',
-            'tenant_admin' => 'État-major',
-            'community_owner' => 'Fondateur',
-            'officer' => 'Cadre',
-            'administrator' => 'Administrateur',
-            'site_admin' => 'Admin plateforme',
-            'recruiter' => 'Recruteur',
-            'guest' => 'Invité',
-            'hr' => 'RH (S1)',
-            'invite' => 'Visiteur',
-            'instructor' => 'Instructeur',
-            'medic' => 'OPSAN',
-            'logistics' => 'Logistique',
-            'rto' => 'R2',
-            'probation' => 'Période d’essai',
-        ];
-        if ($slugNorm !== '' && isset($bySlug[$slugNorm])) {
-            return $bySlug[$slugNorm];
-        }
         $n = trim((string) $name);
-        if ($n === '') {
+        if ($n !== '') {
+            return $n;
+        }
+        $slugNorm = $slug !== null && trim((string) $slug) !== '' ? strtolower(trim((string) $slug)) : '';
+        if ($slugNorm === '') {
             return '';
         }
-        $lower = strtolower($n);
-        if ($lower === 'administrator') {
-            return 'Administrateur';
-        }
-        if ($lower === 'member') {
-            return 'Membre';
-        }
+        $fallback = [
+            'guest' => 'Invité',
+            'invite' => 'Visiteur',
+            'member' => 'Membre',
+            'administrator' => 'Administrateur',
+        ];
 
-        return $n;
+        return $fallback[$slugNorm] ?? 'Membre';
     }
 }
 
@@ -502,5 +571,224 @@ if (!function_exists('forum_topic_trend_level')) {
         }
 
         return null;
+    }
+}
+
+if (!function_exists('forum_allowed_upload_extensions')) {
+    /**
+     * @return list<string>
+     */
+    function forum_allowed_upload_extensions(int $tenantId): array
+    {
+        $fc = forum_config_for_tenant($tenantId);
+        $raw = strtolower(trim((string) ($fc['forum_attachments_allowed_ext'] ?? '')));
+        $safe = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
+        if ($raw === '') {
+            return $safe;
+        }
+        $out = [];
+        foreach (preg_split('/[\s,]+/', $raw, -1, PREG_SPLIT_NO_EMPTY) as $p) {
+            $p = preg_replace('/[^a-z0-9]/', '', $p);
+            if (in_array($p, $safe, true)) {
+                $out[] = $p;
+            }
+        }
+
+        return $out !== [] ? array_values(array_unique($out)) : $safe;
+    }
+}
+
+if (!function_exists('forum_upload_max_bytes')) {
+    function forum_upload_max_bytes(int $tenantId): int
+    {
+        $fc = forum_config_for_tenant($tenantId);
+        $v = (int) ($fc['forum_attachments_max_size'] ?? 0);
+        if ($v <= 0) {
+            return 5 * 1024 * 1024;
+        }
+
+        return max(1024, min(52_428_800, $v));
+    }
+}
+
+if (!function_exists('forum_upload_allowed_mimes')) {
+    /**
+     * @return list<string>
+     */
+    function forum_upload_allowed_mimes(int $tenantId): array
+    {
+        $map = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'pdf' => 'application/pdf',
+        ];
+        $mimes = [];
+        foreach (forum_allowed_upload_extensions($tenantId) as $e) {
+            if (isset($map[$e])) {
+                $mimes[] = $map[$e];
+            }
+        }
+
+        return $mimes !== [] ? array_values(array_unique($mimes)) : array_values($map);
+    }
+}
+
+if (!function_exists('forum_pagination_limit')) {
+    function forum_pagination_limit(array $cfg, string $key, int $fallback, int $min = 1, int $max = 200): int
+    {
+        $v = isset($cfg[$key]) ? (int) $cfg[$key] : 0;
+        if ($v < 1) {
+            $v = $fallback;
+        }
+
+        return max($min, min($max, $v));
+    }
+}
+
+if (!function_exists('forum_cooldown_remaining_seconds')) {
+    function forum_cooldown_remaining_seconds(int $tenantId, int $userId): int
+    {
+        $cfg = forum_config_for_tenant($tenantId);
+        $cool = (int) ($cfg['forum_cooldown_seconds'] ?? 0);
+        if ($cool <= 0) {
+            return 0;
+        }
+        try {
+            $pr = \App\Core\Container::get(\App\Repositories\ForumPostRepository::class);
+            $last = $pr->latestPostCreatedAtForUser($tenantId, $userId);
+            if ($last === null || $last === '') {
+                return 0;
+            }
+            $ts = strtotime($last);
+            if ($ts === false) {
+                return 0;
+            }
+            $elapsed = time() - $ts;
+
+            return max(0, $cool - $elapsed);
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+}
+
+if (!function_exists('forum_validate_post_text_limits')) {
+    /**
+     * @return string|null message d’erreur affichable, ou null si OK
+     */
+    function forum_validate_post_text_limits(int $tenantId, string $bodyTrimmed, bool $hasAttachments, int $maxLen): ?string
+    {
+        if (strlen($bodyTrimmed) > $maxLen) {
+            return 'Le message dépasse la longueur maximale autorisée.';
+        }
+        $cfg = forum_config_for_tenant($tenantId);
+        if (!forum_truthy($cfg['forum_antispam_enabled'] ?? null, false)) {
+            return null;
+        }
+        $min = (int) ($cfg['forum_antispam_min_length'] ?? 20);
+        $min = max(1, min(5000, $min));
+        if ($hasAttachments && $bodyTrimmed === '') {
+            return null;
+        }
+        if ($bodyTrimmed !== '' && strlen($bodyTrimmed) < $min) {
+            return 'Le message est trop court pour être accepté (filtre anti-spam de l’unité).';
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('forum_after_post_moderation')) {
+    /**
+     * Heuristiques, file d’attente masquée, notifications modérateurs.
+     */
+    function forum_after_post_moderation(int $tenantId, int $userId, int $postId, string $body): void
+    {
+        try {
+            $engine = \App\Core\Container::get(\App\Services\Forum\ForumModerationEngine::class);
+            $result = $engine->analyze($tenantId, $userId, $postId, $body);
+            $cfg = forum_config_for_tenant($tenantId);
+            $action = (string) ($result['action'] ?? 'allow');
+            if ($action === 'flag' && forum_truthy($cfg['forum_sandbox_enabled'] ?? null, false)) {
+                $pr = \App\Core\Container::get(\App\Repositories\ForumPostRepository::class);
+                $pr->setHidden($postId, $tenantId, true);
+            }
+            if ($action === 'flag' && forum_truthy($cfg['forum_notify_moderators'] ?? null, false)) {
+                forum_send_moderation_alert_notifications($tenantId, $postId, $result);
+            }
+        } catch (\Throwable) {
+            // ne pas bloquer la publication
+        }
+    }
+}
+
+if (!function_exists('forum_api_disabled_response')) {
+    function forum_api_disabled_response(int $tenantId): ?\App\Core\Response
+    {
+        if (function_exists('brief_is_open_for_members_globally') && brief_is_open_for_members_globally()) {
+            return null;
+        }
+        if (function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator()) {
+            return null;
+        }
+
+        return \App\Core\Response::json(['success' => false, 'error' => 'Le brief est temporairement indisponible pour les membres.'], 403);
+    }
+}
+
+if (!function_exists('forum_disabled_for_member_response')) {
+    /**
+     * Brief fermé au niveau plateforme pour les membres (les modérateurs passent).
+     */
+    function forum_disabled_for_member_response(int $tenantId): ?\App\Core\Response
+    {
+        $cfg = forum_config_for_tenant($tenantId);
+        if (function_exists('brief_is_open_for_members_globally') && brief_is_open_for_members_globally()) {
+            return null;
+        }
+        if (function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator()) {
+            return null;
+        }
+
+        return \App\Core\Response::view('layout.forum', [
+            'content' => 'forum.disabled',
+            'title' => 'Brief indisponible',
+            'forumConfig' => $cfg,
+            'briefClosureLevel' => 'platform',
+            'briefClosedMessageText' => function_exists('brief_platform_closed_message_text') ? brief_platform_closed_message_text() : '',
+        ]);
+    }
+}
+
+if (!function_exists('forum_send_moderation_alert_notifications')) {
+    /**
+     * @param array{action?: string, score?: float, reasons?: list<string>} $result
+     */
+    function forum_send_moderation_alert_notifications(int $tenantId, int $postId, array $result): void
+    {
+        try {
+            $notif = \App\Core\Container::get(\App\Repositories\ForumNotificationRepository::class);
+            if (!$notif->tableExists()) {
+                return;
+            }
+            $users = \App\Core\Container::get(\App\Repositories\UserRepository::class);
+            $ids = $users->listForumAlertRecipientUserIds($tenantId);
+            $reasons = $result['reasons'] ?? [];
+            $snippet = implode(', ', array_slice($reasons, 0, 4));
+            foreach ($ids as $uid) {
+                if ($uid <= 0) {
+                    continue;
+                }
+                $notif->create($tenantId, $uid, 'moderation_alert', [
+                    'post_id' => $postId,
+                    'reasons' => $reasons,
+                    'summary' => $snippet,
+                ]);
+            }
+        } catch (\Throwable) {
+        }
     }
 }

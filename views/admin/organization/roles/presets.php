@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 $presetMeta = $presetMeta ?? [];
 $roles = $roles ?? [];
-$excludedSlugs = $excludedSlugs ?? [];
 
 $err = \App\Core\Session::getFlash('error');
 $ok = \App\Core\Session::getFlash('success');
@@ -30,11 +29,10 @@ $ok = \App\Core\Session::getFlash('success');
 
     <div class="rounded-2xl border border-amber-200 bg-amber-50/80 p-5 mb-8">
         <h2 class="text-sm font-bold text-amber-950">Toujours exclus des profils automatiques</h2>
-        <p class="mt-1 text-sm text-amber-950/90">Ces permissions ne sont pas assignées par les profils ci-dessous (réservées aux rôles <code class="text-xs bg-white/80 px-1 rounded">site</code> / plateforme) :</p>
-        <ul class="mt-2 font-mono text-xs text-amber-950 space-y-0.5">
-            <?php foreach ($excludedSlugs as $slug): ?>
-                <li><?= htmlspecialchars((string) $slug, ENT_QUOTES, 'UTF-8') ?></li>
-            <?php endforeach; ?>
+        <p class="mt-1 text-sm text-amber-950/90">Les profils ci-dessous ne donnent jamais les habilitations réservées à l’administration de l’ensemble du site, par exemple :</p>
+        <ul class="mt-2 text-sm text-amber-950 list-disc list-inside space-y-1">
+            <li>Paramètres et maintenance de la plateforme pour tous les espaces communautaires.</li>
+            <li>Modération forum au niveau global (au-delà de votre communauté).</li>
         </ul>
     </div>
 

@@ -28,12 +28,14 @@ class AdminRecruitmentsController
         }
         $statusFilter = $request->query('status');
         $enlistments = $this->enlistmentRepository->allForTenant((int) $tenantId, $statusFilter ?: null);
+        $enlistmentCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
 
         return Response::view('layout.main', [
             'content' => 'admin.recruitments.index',
             'title' => 'Candidatures',
             'enlistments' => $enlistments,
             'statusFilter' => $statusFilter,
+            'enlistmentCounts' => $enlistmentCounts,
         ]);
     }
 
@@ -59,7 +61,43 @@ class AdminRecruitmentsController
             'title' => 'Candidature #' . $id,
             'enlistment' => $row,
             'enlistmentCannedMessages' => $canned,
+            'membershipRepairHint' => $this->enlistmentAcceptanceProvisioningService->membershipRepairHint((int) $tenantId, $row),
         ]);
+    }
+
+    public function finalizeMembership(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost()) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $actorId = (int) Session::get('user_id');
+        if ($id < 1 || $actorId < 1) {
+            Session::flash('error', 'Action impossible.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+
+        $result = $this->enlistmentAcceptanceProvisioningService->repairAcceptedMembership((int) $tenantId, $id, $actorId);
+        if (!$result['ok']) {
+            Session::flash('error', $result['message'] ?? 'Finalisation impossible.');
+        } else {
+            $extra = trim((string) ($result['message'] ?? ''));
+            Session::flash(
+                'success',
+                $extra !== ''
+                    ? 'Adhésion mise à jour. ' . $extra
+                    : 'Adhésion finalisée : le compte est bien rattaché comme membre de la communauté.'
+            );
+        }
+
+        return Response::redirect(url('back-office/recruitments/' . $id));
     }
 
     public function cannedMessagesIndex(Request $request, array $params = []): Response

@@ -129,6 +129,6 @@ $levelLabels = function_exists('training_course_level_labels_fr') ? training_cou
 </div>
 
 <div class="flex flex-wrap gap-3 mt-8">
-    <a href="<?= url('admin/training/studio/' . $cid) ?>" class="inline-flex items-center px-5 py-2.5 bg-slate-900 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-800">← Retour au Studio</a>
+    <a href="<?= training_studio_url($cid) ?>" class="inline-flex items-center px-5 py-2.5 bg-slate-900 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-800">← Retour au Studio</a>
     <a href="<?= url('formations/' . rawurlencode((string) ($course['slug'] ?? ''))) ?>" target="_blank" rel="noopener" class="inline-flex items-center px-5 py-2.5 border border-slate-300 text-slate-800 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-50">Aperçu public (nouvel onglet)</a>
 </div>

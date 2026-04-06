@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Community;
 
 use App\Authorization\TenantPermissionCatalog;
+use App\Services\Rbac\MilitaryRoleCatalogSyncService;
 use PDO;
 use PDOException;
 
@@ -104,6 +105,11 @@ final class TenantSeedHelper
         $stmt = $pdo->prepare('SELECT 1 FROM forum_categories WHERE tenant_id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         if ($stmt->fetch()) {
+            try {
+                MilitaryRoleCatalogSyncService::syncForTenant($pdo, $tenantId);
+            } catch (\Throwable $_) {
+            }
+
             return;
         }
 
@@ -117,6 +123,11 @@ final class TenantSeedHelper
         $insCat = $pdo->prepare('INSERT INTO forum_categories (tenant_id, parent_id, name, slug, description, color_theme, display_order, is_locked, created_at, updated_at) VALUES (?, NULL, ?, ?, ?, ?, ?, 0, NOW(), NOW())');
         foreach ($categories as $c) {
             $insCat->execute([$tenantId, $c[0], $c[1], $c[2], $c[3], $c[4]]);
+        }
+
+        try {
+            MilitaryRoleCatalogSyncService::syncForTenant($pdo, $tenantId);
+        } catch (\Throwable $_) {
         }
     }
 
@@ -362,6 +373,11 @@ final class TenantSeedHelper
                 $link->execute([$modId, $permIds['forum.moderate_organization']]);
             }
         }
+
+        try {
+            MilitaryRoleCatalogSyncService::syncForTenant($pdo, $tenantId);
+        } catch (\Throwable $_) {
+        }
     }
 
     /**
@@ -501,6 +517,7 @@ final class TenantSeedHelper
                     'forum.moderate_organization',
                     'forum.categories.manage',
                     'forum.manage_categories',
+                    'interteam.missions.respond',
                 ],
                 TenantPermissionCatalog::forumModerateGranularSlugs()
             ));
@@ -510,8 +527,6 @@ final class TenantSeedHelper
                 }
             }
         }
-
-        TenantDefaultRoleDefinitions::applyCanonicalLabels($pdo, $tenantId);
 
         foreach (TenantDefaultRoleDefinitions::defaultPermissionSlugsForOperationalRoles() as $slug => $permSlugs) {
             $rid = self::roleId($pdo, $tenantId, $slug);
@@ -530,7 +545,8 @@ final class TenantSeedHelper
             if ($stDef && $stDef->fetchColumn()) {
                 $pdo->prepare(
                     'UPDATE roles r
-                     INNER JOIN role_definitions d ON d.slug = r.slug
+                     INNER JOIN role_definitions d
+                       ON (d.slug COLLATE utf8mb4_unicode_ci) = (r.slug COLLATE utf8mb4_unicode_ci)
                      SET r.definition_id = d.id
                      WHERE r.tenant_id = ? AND r.definition_id IS NULL'
                 )->execute([$tenantId]);

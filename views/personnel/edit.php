@@ -15,6 +15,7 @@ $forumQuickMode = $forumQuickMode ?? '';
 $forumFocus = $forumFocus ?? '';
 $forumPreHideLevel = !empty($forumPreHideLevel);
 $forumOrgRoleChoices = is_array($forumOrgRoleChoices ?? null) ? $forumOrgRoleChoices : [];
+$memberCanChooseDisplayRole = !empty($memberCanChooseDisplayRole);
 
 $isMe = (int) ($targetUser['id'] ?? 0) === (int) (\App\Core\Session::get('user_id'));
 $formAction = url('personnel/' . (int) $targetUser['id'] . '/update');
@@ -386,6 +387,24 @@ $bloodOptions = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Inconnu'
                 } ?>
               </select>
               <p class="mt-1 text-[11px] text-slate-500">Si vous avez plusieurs rôles communauté, choisissez celui qui apparaît sur la carte auteur des messages (sinon : rôle principal).</p>
+            </div>
+            <?php endif; ?>
+            <?php if ($isMe && $memberCanChooseDisplayRole && !empty($forumOrgRoleChoices)): ?>
+            <?php $prefRole = (int) ($targetUser['preferred_display_role_id'] ?? 0); ?>
+            <div class="md:col-span-2 rounded-xl border border-sky-100 bg-sky-50/50 px-4 py-3">
+              <label for="preferred_display_role_id" class="mb-1 block text-xs font-bold text-slate-700">Rôle affiché en priorité (portail et forum)</label>
+              <select name="preferred_display_role_id" id="preferred_display_role_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                <option value=""<?= $prefRole === 0 ? ' selected' : '' ?>>Automatique (recommandé)</option>
+                <?php foreach ($forumOrgRoleChoices as $fro) {
+                    $oid = (int) ($fro['id'] ?? 0);
+                    $oname = trim((string) ($fro['name'] ?? ''));
+                    if ($oid < 1) {
+                        continue;
+                    }
+                    echo '<option value="' . $oid . '"' . ($prefRole === $oid ? ' selected' : '') . '>' . htmlspecialchars($oname !== '' ? $oname : ('#' . $oid)) . '</option>';
+                } ?>
+              </select>
+              <p class="mt-1 text-[11px] text-slate-600">Votre organisation autorise ce choix : il prime sur l’ordre habituel lorsqu’il est défini.</p>
             </div>
             <?php endif; ?>
             <div>

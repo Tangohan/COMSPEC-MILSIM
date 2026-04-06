@@ -16,13 +16,26 @@ $topicStaleNotice = !empty($topicStaleNotice);
 $topicAutoLockedNotice = !empty($topicAutoLockedNotice);
 $forumOrgRoleChoices = $forumOrgRoleChoices ?? [];
 $forumVisibleRoleCurrent = (int) ($forumVisibleRoleCurrent ?? 0);
+$interteamCoopReadOnly = !empty($interteamCoopReadOnly);
+$interteamMissionTitle = trim((string) ($interteamMissionTitle ?? ''));
+$interteamMissionSlug = trim((string) ($interteamMissionSlug ?? ''));
 ?>
 <main class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 bg-[#f8fafc] min-h-[60vh]">
+  <?php if ($interteamCoopReadOnly): ?>
+  <div class="mb-6 rounded-xl border border-sky-200 bg-sky-50/90 px-4 py-3 text-sm text-sky-950 shadow-sm anim-up" style="animation-delay:0ms">
+    <p class="font-bold text-sky-950">Lecture partagée (mission inter-unités<?= $interteamMissionTitle !== '' ? ' : ' . htmlspecialchars($interteamMissionTitle, ENT_QUOTES, 'UTF-8') : '' ?>)</p>
+    <p class="mt-1 text-xs text-sky-900/90 leading-relaxed">Ce sujet est hébergé par une autre communauté. Vous consultez une copie de travail en <strong class="font-semibold">lecture seule</strong> ; les réponses et certaines actions restent du côté de l’unité hôte.</p>
+  </div>
+  <?php endif; ?>
   <!-- Fil d'Ariane -->
   <nav class="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.25em] text-slate-600 mb-8 flex-wrap anim-up" style="animation-delay:0ms">
     <a href="<?= $baseUrl ?>/forum" class="hover:text-emerald-700 transition-colors">Forum</a>
     <span class="text-slate-400">›</span>
+    <?php if ($interteamCoopReadOnly && $interteamMissionSlug !== ''): ?>
+    <a href="<?= $baseUrl ?>/forum" class="hover:text-emerald-700 transition-colors"><?= htmlspecialchars($topic['category_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></a>
+    <?php else: ?>
     <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($topic['category_slug'] ?? '') ?>" class="hover:text-emerald-700 transition-colors"><?= htmlspecialchars($topic['category_name'] ?? '') ?></a>
+    <?php endif; ?>
     <span class="text-slate-400">›</span>
     <span class="text-slate-800 truncate max-w-[200px] normal-case tracking-normal font-bold"><?= htmlspecialchars($topic['title']) ?></span>
   </nav>
@@ -70,10 +83,10 @@ $forumVisibleRoleCurrent = (int) ($forumVisibleRoleCurrent ?? 0);
         </div>
       </div>
       <div class="shrink-0 flex flex-wrap items-center gap-2">
-        <?php if ($userId): ?>
+        <?php if ($userId && !$interteamCoopReadOnly): ?>
         <button type="button" id="topic-report-topic-btn" class="inline-flex items-center gap-2 px-4 py-2.5 text-[9px] font-black uppercase tracking-widest border-2 border-rose-300 bg-white text-rose-700 hover:bg-rose-50 transition-colors rounded-lg shadow-sm" title="Signaler le sujet">Signaler</button>
         <?php endif; ?>
-        <?php if ($userId): ?>
+        <?php if ($userId && !$interteamCoopReadOnly): ?>
         <details class="relative group/topic-actions z-30">
           <summary class="list-none cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 text-[9px] font-black uppercase tracking-widest border border-slate-300 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50 transition-colors rounded-lg shadow-sm [&::-webkit-details-marker]:hidden">
             <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
@@ -172,6 +185,14 @@ $forumVisibleRoleCurrent = (int) ($forumVisibleRoleCurrent ?? 0);
         $roleName = function_exists('forum_forum_role_display')
             ? forum_forum_role_display($roleNameRaw, $roleSlug)
             : ($roleNameRaw !== null && strtolower($roleNameRaw) === 'administrator' ? 'Administrateur' : $roleNameRaw);
+        $slugLow = strtolower(trim((string) ($roleSlug ?? '')));
+        $rl = trim((string) ($forumConfig['forum_role_read_label'] ?? ''));
+        $wl = trim((string) ($forumConfig['forum_role_write_label'] ?? ''));
+        if ($rl !== '' && in_array($slugLow, ['guest', 'invite'], true)) {
+            $roleName = $rl;
+        } elseif ($wl !== '' && $slugLow !== '' && !in_array($slugLow, ['guest', 'invite'], true)) {
+            $roleName = $wl;
+        }
         $authorPostCount = isset($post['author_post_count']) ? (int) $post['author_post_count'] : 0;
         $authorCreatedAt = isset($post['author_created_at']) && $post['author_created_at'] ? $post['author_created_at'] : null;
         $authorBio = isset($post['author_bio']) && trim((string) $post['author_bio']) !== '' ? trim($post['author_bio']) : null;
@@ -315,7 +336,7 @@ $forumVisibleRoleCurrent = (int) ($forumVisibleRoleCurrent ?? 0);
                 <a href="#post-<?= (int) $post['id'] ?>" class="text-[10px] text-slate-400 hover:text-slate-700 transition-colors font-bold select-none">¶</a>
               </div>
               <div class="flex-1 px-5 py-5">
-                <div class="post-content text-sm text-slate-800 leading-relaxed rounded-2xl border border-slate-200/90 bg-white p-4 md:p-5 ring-1 ring-slate-900/[0.04] shadow-[0_1px_3px_rgba(15,23,42,0.06)]" style="font-family: Inter, ui-sans-serif, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;">
+                <div class="post-content prose prose-slate max-w-none text-sm text-slate-800 leading-relaxed rounded-2xl border border-slate-200/90 bg-white p-4 md:p-5 ring-1 ring-slate-900/[0.04] shadow-[0_1px_3px_rgba(15,23,42,0.06)] prose-p:leading-relaxed prose-a:text-emerald-700" style="font-family: Inter, ui-sans-serif, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;">
                   <?= function_exists('forum_render_content') ? forum_render_content($post['body'] ?? '') : nl2br(htmlspecialchars($post['body'] ?? '')) ?>
                 </div>
                 <?php if (!empty($post['attachments'])): ?>
@@ -343,17 +364,19 @@ $forumVisibleRoleCurrent = (int) ($forumVisibleRoleCurrent ?? 0);
               </div>
               <div class="border-t border-slate-100 px-5 py-3 flex items-center justify-between gap-4 flex-wrap bg-slate-50/50">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <?php if ($userId): ?>
+                  <?php if ($userId && !$interteamCoopReadOnly): ?>
                   <span class="text-[9px] font-black text-slate-500 tabular-nums forum-vote-score" data-post-id="<?= (int) $post['id'] ?>"><?= (int) ($post['vote_score'] ?? 0) ?></span>
                   <button type="button" class="forum-vote-btn px-2 py-0.5 text-[10px] font-black border border-slate-200 rounded bg-white hover:bg-emerald-50" data-post-id="<?= (int) $post['id'] ?>" data-value="1" title="+1">+</button>
                   <button type="button" class="forum-vote-btn px-2 py-0.5 text-[10px] font-black border border-slate-200 rounded bg-white hover:bg-rose-50" data-post-id="<?= (int) $post['id'] ?>" data-value="-1" title="-1">−</button>
+                  <?php elseif ($interteamCoopReadOnly): ?>
+                  <span class="text-[9px] font-semibold text-slate-500 tabular-nums"><?= (int) ($post['vote_score'] ?? 0) ?> votes</span>
                   <?php endif; ?>
                 </div>
                 <div class="flex items-center gap-4 ml-auto flex-wrap">
-                  <?php if ($userId): ?><button type="button" class="post-quote-btn text-[8px] font-black uppercase tracking-widest text-slate-500 hover:text-emerald-700 transition-colors flex items-center gap-1.5" data-post-id="<?= (int) $post['id'] ?>" data-author="<?= htmlspecialchars($authorDisplayName) ?>"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Citer</button><?php endif; ?>
+                  <?php if ($userId && !$interteamCoopReadOnly): ?><button type="button" class="post-quote-btn text-[8px] font-black uppercase tracking-widest text-slate-500 hover:text-emerald-700 transition-colors flex items-center gap-1.5" data-post-id="<?= (int) $post['id'] ?>" data-author="<?= htmlspecialchars($authorDisplayName) ?>"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Citer</button><?php endif; ?>
                   <?php if ($showEdit): ?><button type="button" class="post-edit-btn text-[8px] font-black uppercase tracking-widest text-neutral-600 hover:text-amber-400 transition-colors flex items-center gap-1.5" data-post-id="<?= (int) $post['id'] ?>"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> Modifier</button><?php endif; ?>
                   <?php if ($showEdit): ?><button type="button" class="post-delete-btn text-[8px] font-black uppercase tracking-widest text-neutral-700 hover:text-rose-400 transition-colors flex items-center gap-1.5" data-post-id="<?= (int) $post['id'] ?>"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Suppr.</button><?php endif; ?>
-                  <?php if ($userId && (int) $post['user_id'] !== $userId): ?><button type="button" class="post-report-btn text-[8px] font-black uppercase tracking-widest text-neutral-600 hover:text-rose-400 transition-colors" data-post-id="<?= (int) $post['id'] ?>">Signaler</button><?php endif; ?>
+                  <?php if ($userId && !$interteamCoopReadOnly && (int) $post['user_id'] !== $userId): ?><button type="button" class="post-report-btn text-[8px] font-black uppercase tracking-widest text-neutral-600 hover:text-rose-400 transition-colors" data-post-id="<?= (int) $post['id'] ?>">Signaler</button><?php endif; ?>
                   <?php if (!empty($isModo)): ?><button type="button" class="post-modo-hide-btn text-[8px] font-black uppercase tracking-widest text-rose-800 hover:text-rose-400 transition-colors" data-post-id="<?= (int) $post['id'] ?>" data-is-hidden="<?= $postIsHidden ? '1' : '0' ?>"><?= $postIsHidden ? 'Restaurer' : 'Masquer' ?></button><?php endif; ?>
                 </div>
               </div>

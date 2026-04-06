@@ -9,7 +9,6 @@ $notifEmailCatalog = $notifEmailCatalog ?? [];
 $notifEmailState = $notifEmailState ?? [];
 $accountSnapshot = $accountSnapshot ?? ['email_masked' => '—', 'email_verified' => false, 'last_login_label' => null];
 $timezoneSuggestions = $timezoneSuggestions ?? [];
-$baseUrl = url('');
 
 $quickLinks = [
     ['href' => url('account'), 'label' => 'Vue d’ensemble compte', 'sub' => 'Tableau des réglages'],
@@ -104,17 +103,17 @@ foreach ($notifEmailCatalog as $item) {
                     <?php endforeach; endif; ?>
                 </div>
                 <div>
-                    <label for="callsign" class="block text-sm font-medium text-slate-700 mb-1">Indicatif (plateforme, ATAK)</label>
+                    <label for="callsign" class="block text-sm font-medium text-slate-700 mb-1">Indicatif (plateforme, outil cartographique)</label>
                     <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars($user['callsign'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900" maxlength="50">
-                    <p class="mt-1 text-xs text-slate-500">Source unique sur le compte (<code class="text-xs">users.callsign</code>).</p>
+                    <p class="mt-1 text-xs text-slate-500">Même valeur partout sur le portail et pour les intégrations cartographiques.</p>
                     <?php if (!empty($errors['callsign'])): foreach ($errors['callsign'] as $e): ?>
                     <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
                     <?php endforeach; endif; ?>
                 </div>
                 <div>
-                    <label for="profile_slug" class="block text-sm font-medium text-slate-700 mb-1">Identifiant URL fiche personnel (optionnel)</label>
+                    <label for="profile_slug" class="block text-sm font-medium text-slate-700 mb-1">Adresse courte de votre fiche (optionnel)</label>
                     <input type="text" name="profile_slug" id="profile_slug" value="<?= htmlspecialchars($user['profile_slug'] ?? '') ?>" pattern="[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?" class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono lowercase focus:ring-2 focus:ring-slate-900 focus:border-slate-900" maxlength="40" placeholder="ex. jean-dupont">
-                    <p class="mt-1 text-xs text-slate-500">Lien : <?= htmlspecialchars(rtrim($baseUrl, '/')) ?>/personnel/<em>identifiant</em></p>
+                    <p class="mt-1 text-xs text-slate-500">Permet d’ouvrir votre fiche avec une adresse plus lisible dans le navigateur.</p>
                     <?php if (!empty($errors['profile_slug'])): foreach ($errors['profile_slug'] as $e): ?>
                     <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
                     <?php endforeach; endif; ?>
@@ -165,7 +164,7 @@ foreach ($notifEmailCatalog as $item) {
         <!-- Interface -->
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <h2 class="text-lg font-black text-slate-900">Interface</h2>
-            <p class="mt-1 text-sm text-slate-600">Thème et densité sont enregistrés pour votre compte (utilisés par le portail et l’API <code class="text-xs">/api/me/preferences</code>).</p>
+            <p class="mt-1 text-sm text-slate-600">Thème et densité sont enregistrés pour votre compte et réutilisés sur tout le portail.</p>
             <div class="mt-6 grid gap-6 sm:grid-cols-2">
                 <div>
                     <label for="ui_theme" class="block text-sm font-medium text-slate-700 mb-1">Thème</label>
@@ -194,7 +193,7 @@ foreach ($notifEmailCatalog as $item) {
         </div>
 
         <!-- Notifications e-mail -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div id="notifications-email" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 scroll-mt-24">
             <h2 class="text-lg font-black text-slate-900">Notifications par e-mail</h2>
             <p class="mt-1 text-sm text-slate-600">
                 Décochez les types de messages que vous ne souhaitez plus recevoir. Les e-mails indispensables (réinitialisation de mot de passe, vérification d’adresse, liens à usage unique) peuvent toujours être envoyés.

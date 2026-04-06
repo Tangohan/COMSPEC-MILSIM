@@ -51,6 +51,13 @@ class ForumTopicController
             return Response::redirect(url('login'));
         }
 
+        if (function_exists('forum_disabled_for_member_response')) {
+            $blocked = forum_disabled_for_member_response((int) $tenantId);
+            if ($blocked !== null) {
+                return $blocked;
+            }
+        }
+
         $id = (int) ($params['id'] ?? $request->query('topic_id', 0));
         if ($id <= 0) {
             return (new Response())->setStatusCode(404)->setBody('Sujet non trouvé.');
@@ -79,6 +86,14 @@ class ForumTopicController
 
         $category = $this->categoryRepository->findById((int) $topic['category_id'], $tenantId);
         $categoryScope = (string) ($topic['category_scope'] ?? $category['scope'] ?? 'general');
+        if (function_exists('forum_organization_scope_accessible_for_current_viewer')
+            && !forum_organization_scope_accessible_for_current_viewer((int) $tenantId, $categoryScope)) {
+            $resp = new Response();
+            $resp->setStatusCode(403)->header('Content-Type', 'text/html; charset=utf-8');
+            $resp->setBody('<html><body style="background:#050505;color:#a3a3a3;font-family:sans-serif;padding:2rem;text-align:center;"><h1>Accès refusé</h1><p>Ce canal unité n’est pas ouvert aux membres pour le moment.</p><p style="margin-top:1rem"><a style="color:#6ee7b7" href="' . htmlspecialchars(url('forum'), ENT_QUOTES, 'UTF-8') . '">Retour au brief</a></p></body></html>');
+
+            return $resp;
+        }
         if ($category && function_exists('forum_can_read') && !forum_can_read($userId, $category)) {
             $resp = new Response();
             $resp->setStatusCode(403)->header('Content-Type', 'text/html; charset=utf-8');
@@ -88,7 +103,10 @@ class ForumTopicController
 
         $this->topicRepository->incrementViewCount($id);
         $page = max(1, (int) $request->query('page', 1));
-        $perPage = 20;
+        $fcTopic = forum_config_for_tenant((int) $tenantId);
+        $perPage = function_exists('forum_pagination_limit')
+            ? forum_pagination_limit($fcTopic, 'forum_posts_per_page', 20, 1, 200)
+            : 20;
         $postCount = $this->postRepository->countByTopic($id, $isModo);
         $totalPages = max(1, (int) ceil($postCount / $perPage));
         $posts = $this->postRepository->listByTopicPaginated($id, $page, $perPage, $isModo);
@@ -181,6 +199,13 @@ class ForumTopicController
             return Response::redirect(url('login'));
         }
 
+        if (function_exists('forum_disabled_for_member_response')) {
+            $blocked = forum_disabled_for_member_response((int) $tenantId);
+            if ($blocked !== null) {
+                return $blocked;
+            }
+        }
+
         if (!function_exists('can') || !can('forum.reply')) {
             Session::flash('error', 'Vous n\'êtes pas autorisé à répondre.');
             return Response::redirect(url('forum'));
@@ -191,6 +216,14 @@ class ForumTopicController
         if (!$topic) {
             Session::flash('error', 'Sujet non trouvé.');
             return Response::redirect(url('forum'));
+        }
+
+        $catReply = $this->categoryRepository->findById((int) $topic['category_id'], (int) $tenantId);
+        $scopeReply = (string) ($topic['category_scope'] ?? $catReply['scope'] ?? 'general');
+        if (function_exists('forum_organization_scope_accessible_for_current_viewer')
+            && !forum_organization_scope_accessible_for_current_viewer((int) $tenantId, $scopeReply)) {
+            Session::flash('error', 'Ce canal unité n’accepte pas de nouveaux messages pour le moment.');
+            return Response::redirect(url('forum/topic/' . $id));
         }
 
         if ($topic['is_locked']) {
@@ -217,18 +250,37 @@ class ForumTopicController
         } else {
             $attachmentIds = is_array($attachmentRaw) ? $attachmentRaw : [];
         }
-        $maxLen = (int) forum_get_setting('forum_max_post_length', 10000);
+        $fc = forum_config_for_tenant((int) $tenantId);
+        $maxLen = (int) ($fc['forum_max_post_length'] ?? forum_get_setting('forum_max_post_length', 10000));
+        $maxLen = max(500, min(200000, $maxLen));
         $hasBody = strlen($body) >= 1;
         $hasFiles = $attachmentIds !== [];
         if ((!$hasBody && !$hasFiles) || strlen($body) > $maxLen) {
             Session::flash('error', 'Message vide ou trop long.');
             return Response::redirect(url('forum/topic/' . $id));
         }
+        if (function_exists('forum_validate_post_text_limits')) {
+            $err = forum_validate_post_text_limits((int) $tenantId, $body, $hasFiles, $maxLen);
+            if ($err !== null) {
+                Session::flash('error', $err);
+                return Response::redirect(url('forum/topic/' . $id));
+            }
+        }
+        if (function_exists('forum_cooldown_remaining_seconds')) {
+            $wait = forum_cooldown_remaining_seconds((int) $tenantId, (int) $userId);
+            if ($wait > 0) {
+                Session::flash('error', 'Merci d’attendre encore ' . $wait . ' seconde(s) avant d’envoyer un autre message.');
+                return Response::redirect(url('forum/topic/' . $id));
+            }
+        }
 
         $postId = $this->postRepository->create($tenantId, $id, $userId, $body);
         $this->topicRepository->touchUpdatedAt($id);
         $this->userForumStatsRepository->incrementPostCount((int) $tenantId, (int) $userId);
         $this->forumPostAttachmentService->attachToPost((int) $tenantId, $postId, (int) $userId, $attachmentIds);
+        if (function_exists('forum_after_post_moderation')) {
+            forum_after_post_moderation((int) $tenantId, (int) $userId, $postId, $body);
+        }
         $this->notifyTopicParticipants((int) $tenantId, $id, (int) $userId, $topic);
 
         Session::flash('success', 'Réponse publiée.');

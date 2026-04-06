@@ -27,6 +27,7 @@ foreach ($kpis as $k) {
 }
 
 $gate = \App\Core\Gate::getInstance();
+$canInv = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('invitations.send');
 $canDocs = $gate->allows('documents.upload') || $gate->allows('admin.access');
 $canTraining = $gate->allows('training.manage') || $gate->allows('training.assign') || $gate->allows('admin.access');
 $canTenantTechModules = $gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access');
@@ -105,63 +106,38 @@ if ($showPlatformEnv) {
     };
 }
 ?>
-<div class="bg-slate-50 min-h-[calc(100vh-3.5rem)]">
-    <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8 lg:space-y-10">
+<div class="min-h-0 flex-1">
+    <div class="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 space-y-8 lg:space-y-10">
 
-        <header class="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100/90 shadow-sm">
-            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/80 via-transparent to-transparent pointer-events-none" aria-hidden="true"></div>
-            <div class="relative px-5 sm:px-8 py-7 lg:py-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                <div class="min-w-0 flex-1">
-                    <p class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800/90 mb-3">
-                        <span class="h-px w-6 bg-emerald-400" aria-hidden="true"></span>
-                        Back-office communauté
-                    </p>
-                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Centre de pilotage</h1>
-                    <p class="mt-2 text-sm sm:text-base text-slate-600 max-w-2xl leading-relaxed">
-                        Pilotage <strong class="font-semibold text-slate-800">de votre organisation</strong> (membres, structure, recrutement, modération locale).
-                        L’administration <strong class="font-semibold text-slate-800">globale du site</strong> (tous tenants, rôles système, maintenance) est sur
-                        <?php if ($gate->allows('admin.system')): ?>
-                            <a href="<?= url('admin') ?>" class="font-semibold text-amber-900 underline decoration-amber-300 hover:text-amber-950">/admin</a>.
-                        <?php else: ?>
-                            <span class="font-mono text-xs bg-slate-100 px-1 rounded">/admin</span> (réservé aux opérateurs plateforme).
-                        <?php endif; ?>
-                    </p>
-                    <div class="mt-5 flex flex-wrap items-center gap-3">
-                        <a href="<?= url('dashboard') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-colors">
-                            <svg class="h-4 w-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-                            Retour au tableau de bord
-                        </a>
-                        <?php if ($gate->allows('admin.system')): ?>
-                        <a href="<?= url('admin') ?>" class="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-2 text-sm font-semibold text-amber-950 shadow-sm hover:bg-amber-50 transition-colors">Admin plateforme</a>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <div class="shrink-0 w-full lg:w-72 rounded-xl border border-slate-200/80 bg-white/90 backdrop-blur-sm p-4 shadow-sm">
-                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Contexte</p>
-                    <dl class="space-y-2 text-sm">
-                        <div class="flex justify-between gap-3">
-                            <dt class="text-slate-500">Horodatage</dt>
-                            <dd class="font-medium text-slate-900 tabular-nums"><?= htmlspecialchars($nowLabel, ENT_QUOTES, 'UTF-8') ?></dd>
-                        </div>
-                        <?php if ($showPlatformEnv && $envLabel !== ''): ?>
-                        <div class="flex justify-between gap-3">
-                            <dt class="text-slate-500">Environnement</dt>
-                            <dd><span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700"><?= htmlspecialchars($envLabel, ENT_QUOTES, 'UTF-8') ?></span></dd>
-                        </div>
-                        <?php endif; ?>
-                        <?php if ($tenantName !== ''): ?>
-                        <div class="pt-1 border-t border-slate-100">
-                            <dt class="text-slate-500 text-xs mb-0.5">Communauté</dt>
-                            <dd class="font-semibold text-slate-900 truncate" title="<?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></dd>
-                        </div>
-                        <?php else: ?>
-                        <div class="pt-1 border-t border-slate-100">
-                            <p class="text-xs text-slate-500 leading-snug">Centre de pilotage organisationnel — session active.</p>
-                        </div>
-                        <?php endif; ?>
-                    </dl>
-                </div>
+        <header class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div class="min-w-0">
+                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700/90">Synthèse</p>
+                <h1 class="mt-1 text-2xl font-black tracking-tight text-slate-900">Centre de pilotage</h1>
+                <p class="mt-1 text-sm text-slate-600">
+                    Membres, structure, recrutement et modération pour
+                    <?php if ($tenantName !== ''): ?>
+                        <span class="font-semibold text-slate-800"><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></span>.
+                    <?php else: ?>
+                        votre communauté.
+                    <?php endif; ?>
+                    <?php if ($gate->allows('admin.system')): ?>
+                        <span class="text-slate-500"> — outils globaux du site dans </span>
+                        <a href="<?= url('admin') ?>" class="font-semibold text-amber-900 underline decoration-amber-200 hover:text-amber-950">l’administration plateforme</a>.
+                    <?php endif; ?>
+                </p>
             </div>
+            <dl class="flex shrink-0 flex-wrap gap-4 text-sm sm:flex-col sm:gap-2 sm:text-right">
+                <div class="flex items-baseline justify-between gap-6 sm:justify-end">
+                    <dt class="text-slate-500">Mis à jour</dt>
+                    <dd class="font-semibold tabular-nums text-slate-900"><?= htmlspecialchars($nowLabel, ENT_QUOTES, 'UTF-8') ?></dd>
+                </div>
+                <?php if ($showPlatformEnv && $envLabel !== ''): ?>
+                <div class="flex items-baseline justify-between gap-6 sm:justify-end">
+                    <dt class="text-slate-500">Environnement</dt>
+                    <dd><span class="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700"><?= htmlspecialchars($envLabel, ENT_QUOTES, 'UTF-8') ?></span></dd>
+                </div>
+                <?php endif; ?>
+            </dl>
         </header>
 
         <section aria-labelledby="org-kpi-heading">
@@ -216,6 +192,83 @@ if ($showPlatformEnv) {
                 </div>
             <?php endif; ?>
         </section>
+
+        <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-labelledby="org-actions-rapides-heading">
+            <h2 id="org-actions-rapides-heading" class="text-sm font-bold text-slate-900">Actions rapides</h2>
+            <p class="mt-0.5 text-xs text-slate-500">Le détail des rubriques se trouve dans le menu latéral.</p>
+            <div class="mt-4 flex flex-wrap gap-2">
+                <a href="<?= url('back-office/users/create') ?>" class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-slate-800">Nouvel utilisateur</a>
+                <a href="<?= url('back-office/groups/create') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-blue-300 hover:bg-blue-50/50">Nouveau groupe</a>
+                <a href="<?= url('back-office/teams/create') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-blue-300 hover:bg-blue-50/50">Nouvelle équipe</a>
+                <?php if ($canInv): ?>
+                <a href="<?= url('back-office/invitations') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-amber-300 hover:bg-amber-50/40">Invitations</a>
+                <?php endif; ?>
+                <a href="<?= url('back-office/moderation') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-rose-200 hover:bg-rose-50/40">Modération</a>
+                <a href="<?= url('back-office/integrations') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-violet-200 hover:bg-violet-50/40">Intégrations</a>
+                <?php if (\App\Core\Gate::getInstance()->allows('admin.compliance.export')): ?>
+                <a href="<?= url('back-office/conformite/export-dossier') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-emerald-200 hover:bg-emerald-50/40">Export conformité</a>
+                <?php endif; ?>
+            </div>
+        </section>
+
+        <?php
+        $orgTrainingFeed = $orgTrainingFeed ?? [];
+        $orgTrainingFeedErr = $orgTrainingFeedError ?? null;
+        $trainingFeedBadge = static function (string $cat): array {
+            return match ($cat) {
+                'training_enrollment_pending' => ['Inscription', 'bg-violet-100 text-violet-950 ring-violet-200/80'],
+                'training_course_completed' => ['Réussite', 'bg-emerald-100 text-emerald-950 ring-emerald-200/80'],
+                'training_module_blocked' => ['Accompagnement', 'bg-amber-100 text-amber-950 ring-amber-200/80'],
+                default => ['Formation', 'bg-slate-100 text-slate-800 ring-slate-200/80'],
+            };
+        };
+        ?>
+        <?php if ($canTraining): ?>
+        <section aria-labelledby="org-training-feed-heading" class="space-y-4">
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <h2 id="org-training-feed-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Formations — alertes récentes</h2>
+                    <p class="mt-1 text-sm text-slate-600">Inscriptions à valider, parcours terminés et demandes d’aide sur un module (issues du portail apprenant).</p>
+                </div>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1 text-sm font-semibold text-emerald-800 hover:text-emerald-950">Assignations →</a>
+            </div>
+            <div class="rounded-2xl border border-emerald-200/70 bg-white shadow-sm overflow-hidden">
+                <?php if ($orgTrainingFeedErr): ?>
+                    <div class="p-5 text-sm text-rose-600"><?= htmlspecialchars($orgTrainingFeedErr, ENT_QUOTES, 'UTF-8') ?></div>
+                <?php elseif ($orgTrainingFeed === []): ?>
+                    <div class="p-8 text-center text-sm text-slate-600">Aucune alerte récente liée aux formations.</div>
+                <?php else: ?>
+                    <ul class="divide-y divide-slate-100">
+                        <?php foreach ($orgTrainingFeed as $frow): ?>
+                            <?php
+                            $cat = (string) ($frow['category'] ?? '');
+                            [$catLab, $catClass] = $trainingFeedBadge($cat);
+                            $fLink = trim((string) ($frow['link_url'] ?? ''));
+                            ?>
+                            <li class="px-5 py-4 hover:bg-emerald-50/30 transition-colors">
+                                <div class="flex flex-wrap items-start gap-3">
+                                    <span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-bold ring-1 <?= htmlspecialchars($catClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($catLab, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="font-semibold text-slate-900"><?= htmlspecialchars((string) ($frow['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                        <?php $fb = trim((string) ($frow['body'] ?? '')); ?>
+                                        <?php if ($fb !== ''): ?>
+                                        <p class="text-sm text-slate-600 mt-1"><?= htmlspecialchars($fb, ENT_QUOTES, 'UTF-8') ?></p>
+                                        <?php endif; ?>
+                                        <div class="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                                            <span class="tabular-nums"><?= htmlspecialchars($orgFormatDt(isset($frow['created_at']) ? (string) $frow['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php if ($fLink !== ''): ?>
+                                            <a href="<?= htmlspecialchars($fLink, ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 hover:underline">Ouvrir</a>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <?php
         $orgEnlistmentCounts = $orgEnlistmentCounts ?? [];
@@ -423,8 +476,8 @@ if ($showPlatformEnv) {
             </div>
         </section>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-            <section class="lg:col-span-7 xl:col-span-8" aria-labelledby="org-journal-heading">
+        <div class="grid grid-cols-1 gap-6 lg:gap-8 items-start">
+            <section class="w-full" aria-labelledby="org-journal-heading">
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                     <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
                         <div>
@@ -469,72 +522,6 @@ if ($showPlatformEnv) {
                     <?php endif; ?>
                 </div>
             </section>
-
-            <aside class="lg:col-span-5 xl:col-span-4" aria-labelledby="org-pilotage-heading">
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                    <div class="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-                        <h2 id="org-pilotage-heading" class="text-base font-bold text-slate-900">Actions de pilotage</h2>
-                        <p class="text-xs text-slate-500 mt-0.5">Création, supervision et modules transverses.</p>
-                    </div>
-                    <div class="p-5 space-y-6">
-                        <div>
-                            <a href="<?= url('back-office/users/create') ?>" class="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-bold text-white shadow-md hover:bg-slate-800 transition-colors">
-                                <svg class="h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                                Nouvel utilisateur
-                            </a>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Création</p>
-                            <div class="grid grid-cols-1 gap-2">
-                                <a href="<?= url('back-office/groups/create') ?>" class="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:border-blue-300 hover:bg-blue-50/50 transition-colors">
-                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-blue-700"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 1 0-5.196-3H4.5" /></svg></span>
-                                    Nouveau groupe
-                                </a>
-                                <a href="<?= url('back-office/teams/create') ?>" class="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:border-blue-300 hover:bg-blue-50/50 transition-colors">
-                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-blue-700"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg></span>
-                                    Nouvelle équipe
-                                </a>
-                            </div>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Supervision</p>
-                            <div class="grid grid-cols-1 gap-2">
-                                <a href="<?= url('back-office/invitations') ?>" class="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:border-amber-300 hover:bg-amber-50/40 transition-colors">
-                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-amber-700"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg></span>
-                                    Invitations
-                                </a>
-                                <a href="<?= url('back-office/moderation') ?>" class="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:border-rose-300 hover:bg-rose-50/40 transition-colors">
-                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-rose-700"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.25-8.25-3.286Zm0 13.036h.008v.008H12v-.008Z" /></svg></span>
-                                    Modération
-                                </a>
-                                <a href="<?= url('back-office/events') ?>" class="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:border-emerald-300 hover:bg-emerald-50/40 transition-colors">
-                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-emerald-700"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg></span>
-                                    Événements
-                                </a>
-                            </div>
-                        </div>
-                        <?php if ($canDocs || $canTraining): ?>
-                        <div>
-                            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Modules</p>
-                            <div class="grid grid-cols-1 gap-2">
-                                <?php if ($canDocs): ?>
-                                <a href="<?= url('documents/gestion') ?>" class="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:border-slate-400 hover:bg-slate-50 transition-colors">
-                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg></span>
-                                    Documents
-                                </a>
-                                <?php endif; ?>
-                                <?php if ($canTraining): ?>
-                                <a href="<?= url('back-office/ressources/training') ?>" class="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:border-sky-300 hover:bg-sky-50/50 transition-colors">
-                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-sky-700"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm6 0a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm6 0a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" /></svg></span>
-                                    Formations (LMS)
-                                </a>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </aside>
         </div>
 
         <section aria-labelledby="org-watch-heading">
@@ -646,75 +633,6 @@ if ($showPlatformEnv) {
                         </ul>
                         <a href="<?= url('back-office/moderation') ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-rose-800 hover:text-rose-950">Ouvrir la modération →</a>
                     <?php endif; ?>
-                </div>
-            </div>
-        </section>
-
-        <section class="pb-4" aria-labelledby="org-domains-heading">
-            <div class="mb-5">
-                <h2 id="org-domains-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Domaines d’administration</h2>
-                <p class="mt-1 text-sm text-slate-600">Accès structurés par famille fonctionnelle.</p>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-                    <h3 class="text-sm font-bold text-slate-900">Communauté</h3>
-                    <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">Identité, configuration et mesures d’usage.</p>
-                    <ul class="space-y-1">
-                        <li><a href="<?= url('back-office/alerts') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Alertes &amp; annonces</a></li>
-                        <li><a href="<?= url('back-office/community') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Code communauté</a></li>
-                        <li><a href="<?= url('back-office/configuration') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Configuration</a></li>
-                        <li><a href="<?= url('back-office/analytics') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Analytics</a></li>
-                    </ul>
-                </div>
-                <div class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-                    <h3 class="text-sm font-bold text-slate-900">Utilisateurs &amp; accès</h3>
-                    <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">Comptes, droits et parcours d’entrée.</p>
-                    <ul class="space-y-1">
-                        <li><a href="<?= url('back-office/users') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Utilisateurs</a></li>
-                        <li><a href="<?= url('back-office/invitations') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Invitations</a></li>
-                        <li><a href="<?= url('back-office/roles') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Rôles</a></li>
-                        <li><a href="<?= url('back-office/recruitments') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Candidatures</a></li>
-                    </ul>
-                </div>
-                <div class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-                    <h3 class="text-sm font-bold text-slate-900">Structure</h3>
-                    <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">Organisation interne et référentiels.</p>
-                    <ul class="space-y-1">
-                        <li><a href="<?= url('back-office/groups') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Groupes</a></li>
-                        <li><a href="<?= url('back-office/teams') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Équipes</a></li>
-                        <li><a href="<?= url('back-office/categories') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Catégories</a></li>
-                        <li><a href="<?= url('back-office/referentiels/grades') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Référentiels · Grades</a></li>
-                    </ul>
-                </div>
-                <div class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-                    <h3 class="text-sm font-bold text-slate-900">Contrôle &amp; suivi</h3>
-                    <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">Traçabilité, conformité et vie communautaire.</p>
-                    <ul class="space-y-1">
-                        <li><a href="<?= url('back-office/audit') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Journal d’activité</a></li>
-                        <li><a href="<?= url('back-office/moderation') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Modération &amp; sanctions</a></li>
-                        <li><a href="<?= url('back-office/events') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Événements</a></li>
-                    </ul>
-                </div>
-                <div class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-                    <h3 class="text-sm font-bold text-slate-900">Modules &amp; intégrations</h3>
-                    <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">Ressources et outils <strong class="font-semibold text-slate-700">scopés à cette communauté</strong> (URL canonique <span class="font-mono text-[10px]">/back-office/ressources/…</span>).</p>
-                    <ul class="space-y-1">
-                        <?php if ($canDocs): ?>
-                        <li><a href="<?= url('documents/gestion') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Documents</a></li>
-                        <?php endif; ?>
-                        <?php if ($canTraining): ?>
-                        <li><a href="<?= url('back-office/ressources/training') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Formations (LMS)</a></li>
-                        <li><a href="<?= url('back-office/ressources/training/studio') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Studio LMS</a></li>
-                        <?php endif; ?>
-                        <?php if ($canTenantTechModules): ?>
-                        <li><a href="<?= url('back-office/ressources/modpacks') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Modpacks</a></li>
-                        <li><a href="<?= url('back-office/ressources/forum-config') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">Configuration forum</a></li>
-                        <li><a href="<?= url('back-office/ressources/atak-config') ?>" class="block rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-800 -mx-2">ATAK / Tacmap</a></li>
-                        <?php endif; ?>
-                        <?php if (!$canDocs && !$canTraining && !$canTenantTechModules): ?>
-                        <li class="text-xs text-slate-400">Aucun module transverse accessible avec vos droits actuels.</li>
-                        <?php endif; ?>
-                    </ul>
                 </div>
             </div>
         </section>

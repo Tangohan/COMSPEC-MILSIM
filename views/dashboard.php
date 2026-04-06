@@ -40,24 +40,30 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
 <body class="dashboard-shell bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
     <?php $__dashGate = \App\Core\Gate::getInstance(); ?>
     <style>
-        #dashDrawerTrack { will-change: transform; }
+        /* Secours si le build Tailwind omet les utilitaires arbitraires (w-[200%], etc.) */
+        #dashDrawerTrack {
+            width: 200%;
+            will-change: transform;
+        }
+        @media (max-width: 1023px) {
+            .dashboard-shell #navDrawer {
+                width: min(100%, 340px);
+                max-width: min(100%, 340px);
+            }
+        }
         /* Fenêtre de défilement : sans ceci, le track 200 % peut laisser voir les deux colonnes */
+        /* min-width:0 évite que le track 200 % impose une largeur min et affiche les deux colonnes */
         #dashDrawerViewport {
             width: 100%;
             max-width: 100%;
+            min-width: 0;
             overflow: hidden;
         }
-        /* Grand écran : navigation latérale toujours visible (pas seulement en tiroir) */
+        /* Grand écran : même logique tiroir (fermé par défaut, ouvert via le bouton menu) */
         @media (min-width: 1024px) {
-            .dashboard-shell #navDrawer.drawer-translate {
-                transform: translateX(0) !important;
-            }
-            .dashboard-shell #bodyOverlay {
-                display: none !important;
-                pointer-events: none !important;
-            }
-            .dashboard-main-shift {
-                margin-left: 18rem; /* 288px = w-72 */
+            .dashboard-shell #navDrawer {
+                width: 18rem;
+                max-width: none;
             }
         }
         .dash-vers-details > summary {
@@ -92,7 +98,12 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
             var vp = document.getElementById('dashDrawerViewport');
             if (!tpl || !host || !subTitle || !tr) return;
             subTitle.textContent = title;
-            host.innerHTML = tpl.innerHTML;
+            host.replaceChildren();
+            if (tpl.tagName === 'TEMPLATE' && tpl.content) {
+                host.append(...tpl.content.cloneNode(true).children);
+            } else {
+                host.innerHTML = tpl.innerHTML;
+            }
             /* Décalage d’exactement une « page » de tiroir (largeur du viewport), pas -50 % du track (plus fiable) */
             var w = vp ? vp.offsetWidth : tr.parentElement ? tr.parentElement.offsetWidth : 0;
             tr.style.transform = w ? ('translate3d(-' + w + 'px,0,0)') : 'translate3d(-50%,0,0)';
@@ -114,25 +125,25 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
             });
         });
     </script>
-    <div id="bodyOverlay" class="overlay fixed inset-0 z-[110] bg-slate-900/40 backdrop-blur-sm lg:hidden" onclick="toggleMenu()"></div>
+    <div id="bodyOverlay" class="overlay fixed inset-0 z-[110] bg-slate-900/40 backdrop-blur-sm" onclick="toggleMenu()"></div>
 
     <aside id="navDrawer"
            class="drawer-translate fixed top-0 left-0 z-[120] flex h-full w-[min(100%,340px)] flex-col overflow-x-hidden border-r border-slate-200/80 bg-gradient-to-b from-slate-50 to-slate-100/90 shadow-[8px_0_40px_-12px_rgba(15,23,42,0.35)] lg:w-72 lg:max-w-none lg:shadow-md"
            aria-label="Menu latéral">
         <div class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            <div id="dashDrawerViewport" class="min-h-0 flex-1 w-full max-w-full overflow-hidden">
+            <div id="dashDrawerViewport" class="min-h-0 min-w-0 flex-1 w-full max-w-full overflow-x-hidden overflow-y-hidden">
             <div id="dashDrawerTrack" class="flex h-full w-[200%] shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]" style="transform:translate3d(0,0,0)">
                 <div class="flex h-full w-1/2 min-w-0 shrink-0 grow-0 basis-1/2 flex-col overflow-hidden">
                     <div class="flex shrink-0 items-center justify-between border-b border-slate-200/60 px-5 pb-4 pt-5">
                         <span class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Menu</span>
-                        <button type="button" onclick="toggleMenu()" class="rounded-xl p-2 text-slate-500 transition hover:bg-slate-200/80 hover:text-slate-900 lg:hidden" aria-label="Fermer le menu">
+                        <button type="button" onclick="toggleMenu()" class="rounded-xl p-2 text-slate-500 transition hover:bg-slate-200/80 hover:text-slate-900" aria-label="Fermer le menu">
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
                     <nav class="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 py-4" aria-label="Navigation du tableau de bord">
                         <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-800 transition hover:border-slate-200/80 hover:bg-white/90 hover:shadow-sm"
-                                onclick="dashOpenSubmenu('Accès rapide', 'dashTplQuick')">
-                            <span>Accès rapide</span>
+                                onclick="dashOpenSubmenu('Personnel', 'dashTplQuick')">
+                            <span>Personnel</span>
                             <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
                         </button>
                         <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-800 transition hover:border-slate-200/80 hover:bg-white/90 hover:shadow-sm"
@@ -185,8 +196,8 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
     </aside>
 
     <template id="dashTplQuick">
-        <a href="<?= htmlspecialchars($base) ?>/" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Accueil</a>
         <a href="<?= htmlspecialchars(url('dashboard')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Tableau de bord</a>
+        <a href="<?= htmlspecialchars(url('activite')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Mon activité</a>
         <a href="<?= htmlspecialchars(url('personnel/me')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Ma fiche</a>
     </template>
     <template id="dashTplOps">
@@ -194,6 +205,7 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         <a href="<?= htmlspecialchars(url('orbat')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">ORBAT / Unité</a>
     </template>
     <template id="dashTplRes">
+        <a href="<?= htmlspecialchars($base) ?>/" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Accueil</a>
         <a href="<?= htmlspecialchars(url('documents')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Documents</a>
         <a href="<?= htmlspecialchars(url('modpacks')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Modpacks</a>
         <a href="<?= htmlspecialchars(url('formations')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Formations</a>
@@ -202,16 +214,23 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
     <template id="dashTplAccount">
         <a href="<?= htmlspecialchars(url('account')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Paramètres</a>
     </template>
+    <?php
+    $__dashTplAdminSystem = $__dashGate->allows('admin.system');
+    $__dashTplAdminOffice = $__dashGate->allows('admin.organization') || $__dashGate->allows('admin.access');
+    ?>
     <template id="dashTplAdmin">
-        <?php if ($__dashGate->allows('admin.system')): ?>
+        <?php if ($__dashTplAdminSystem): ?>
         <a href="<?= htmlspecialchars(url('admin')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50" onclick="toggleMenu()">Administration système</a>
         <?php endif; ?>
-        <?php if ($__dashGate->allows('admin.organization') || $__dashGate->allows('admin.access')): ?>
+        <?php if ($__dashTplAdminOffice): ?>
         <a href="<?= htmlspecialchars(url('back-office')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50" onclick="toggleMenu()">Back-office</a>
+        <?php endif; ?>
+        <?php if (!$__dashTplAdminSystem && !$__dashTplAdminOffice): ?>
+        <p class="rounded-xl px-4 py-3.5 text-sm leading-relaxed text-slate-500">Aucun raccourci n’est disponible pour le moment. Si vous pensez qu’il s’agit d’une erreur, contactez un responsable de l’unité.</p>
         <?php endif; ?>
     </template>
 
-    <div class="dashboard-main-shift min-h-screen">
+    <div class="min-h-screen">
     <div class="w-full border-b border-white/5 bg-slate-900 text-white/30 select-none">
         <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 sm:px-8">
             <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[8px] uppercase tracking-[0.15em]">
@@ -289,7 +308,7 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
     <header class="sticky top-0 z-[100] w-full border-b border-slate-200/80 bg-slate-50/95 backdrop-blur-md">
         <div class="relative mx-auto flex h-[3.75rem] max-w-5xl items-center justify-between px-4 text-slate-900 sm:px-8">
             <div class="flex flex-1 items-center">
-                <button type="button" onclick="toggleMenu()" class="group flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-xl outline-none transition hover:bg-slate-200/60 lg:hidden" aria-label="Ouvrir le menu">
+                <button type="button" onclick="toggleMenu()" class="group flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-xl outline-none transition hover:bg-slate-200/60" aria-label="Ouvrir le menu">
                     <span class="h-0.5 w-5 rounded-full bg-slate-900 transition group-hover:translate-x-0.5"></span>
                     <span class="h-0.5 w-3 self-end rounded-full bg-slate-900 transition group-hover:w-5"></span>
                 </button>
@@ -413,6 +432,90 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         <?php endif; ?>
 
         <?php
+        $mission_briefing = $mission_briefing ?? null;
+        $atakModDownloadUrl = $atakModDownloadUrl ?? null;
+        if (is_array($mission_briefing) && ($currentTid ?? 0) > 1):
+            $mbOp = $mission_briefing['next_op'] ?? null;
+            $mbTrain = $mission_briefing['trainings'] ?? [];
+            $mbMod = $mission_briefing['modpack'] ?? null;
+            $mbExcerpt = $mission_briefing['consigne_excerpt'] ?? null;
+            $mbPinsA = $mission_briefing['pins_anchor_href'] ?? url('dashboard');
+        ?>
+        <section class="border-b border-slate-200 bg-gradient-to-b from-slate-900 to-slate-800 text-white" aria-label="Préparation opérationnelle">
+            <div class="mx-auto max-w-5xl px-4 py-6 sm:px-8">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-400/90">Aujourd’hui</p>
+                        <h2 class="text-lg font-black uppercase italic tracking-tight text-white">Préparer la mission</h2>
+                    </div>
+                    <?php if ($mbOp): ?>
+                        <a href="<?= htmlspecialchars($mbOp['list_href'], ENT_QUOTES, 'UTF-8') ?>" class="text-[10px] font-black uppercase tracking-wider text-emerald-300 hover:text-white">Calendrier des opérations</a>
+                    <?php endif; ?>
+                </div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                        <p class="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Prochaine opération</p>
+                        <?php if ($mbOp): ?>
+                            <?php
+                            $mbStart = $mbOp['starts_at'] ?? '';
+                            $mbStartFmt = '';
+                            if ($mbStart !== '') {
+                                $tsOp = strtotime($mbStart);
+                                $mbStartFmt = $tsOp !== false ? date('d/m/Y à H\hi', $tsOp) : '';
+                            }
+                            ?>
+                            <p class="text-base font-bold text-white leading-snug"><?= htmlspecialchars($mbOp['title'], ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php if ($mbStartFmt !== ''): ?>
+                                <p class="mt-1 text-sm text-slate-300"><?= htmlspecialchars($mbStartFmt, ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($mbOp['rsvp_label'])): ?>
+                                <p class="mt-2 text-xs text-emerald-200/90"><?= htmlspecialchars((string) $mbOp['rsvp_label'], ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <p class="text-sm text-slate-400">Aucune opération planifiée pour l’instant.</p>
+                        <?php endif; ?>
+                    </div>
+                    <div class="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                        <p class="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Modpack & outils</p>
+                        <?php if (is_array($mbMod)): ?>
+                            <a href="<?= htmlspecialchars($mbMod['detail_href'], ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-bold text-white hover:text-emerald-300 transition"><?= htmlspecialchars($mbMod['title'], ENT_QUOTES, 'UTF-8') ?></a>
+                            <p class="mt-1 text-xs text-slate-400"><?= !empty($mbMod['has_pack']) ? 'Voir la fiche et le téléchargement.' : 'Consultez les packs disponibles pour votre unité.' ?></p>
+                        <?php endif; ?>
+                        <?php if (!empty($atakModDownloadUrl)): ?>
+                            <a href="<?= htmlspecialchars((string) $atakModDownloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex text-xs font-bold uppercase tracking-wider text-emerald-300 hover:text-white">Télécharger le module ATAK</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php if ($mbExcerpt !== null && $mbExcerpt !== ''): ?>
+                    <div class="mt-4 rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4">
+                        <p class="text-[10px] font-black uppercase tracking-wider text-amber-200/90 mb-1">Consigne communautaire</p>
+                        <p class="text-sm text-amber-50/95 leading-relaxed"><?= htmlspecialchars($mbExcerpt, ENT_QUOTES, 'UTF-8') ?></p>
+                        <a href="<?= htmlspecialchars($mbPinsA, ENT_QUOTES, 'UTF-8') ?>" class="mt-2 inline-block text-xs font-bold text-amber-200 hover:text-white">Voir les raccourcis</a>
+                    </div>
+                <?php endif; ?>
+                <?php if ($mbTrain !== []): ?>
+                    <div class="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Formations à finaliser</p>
+                            <a href="<?= htmlspecialchars(url('formations/mes-formations'), ENT_QUOTES, 'UTF-8') ?>" class="text-[10px] font-black uppercase tracking-wider text-emerald-300 hover:text-white">Mes formations</a>
+                        </div>
+                        <ul class="space-y-2">
+                            <?php foreach ($mbTrain as $t): ?>
+                                <li>
+                                    <a href="<?= htmlspecialchars($t['href'], ENT_QUOTES, 'UTF-8') ?>" class="flex flex-wrap items-baseline justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-white/5 transition <?= !empty($t['urgent']) ? 'border border-rose-400/30 bg-rose-500/10' : '' ?>">
+                                        <span class="text-sm font-semibold text-white"><?= htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="text-xs text-slate-400"><?= htmlspecialchars($t['subtitle'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <?php
         $my_enlistments_pending = $my_enlistments_pending ?? [];
         $staff_enlistments_pending = $staff_enlistments_pending ?? [];
         $show_staff_enlistments = $show_staff_enlistments ?? false;
@@ -423,7 +526,7 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         $dashboard_pins = $dashboard_pins ?? [];
         if (!empty($dashboard_pins)):
         ?>
-        <section class="border-b border-slate-200 bg-white">
+        <section id="dashboard-community-pins" class="border-b border-slate-200 bg-white scroll-mt-24">
             <div class="max-w-7xl mx-auto px-6 md:px-10 py-8">
                 <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
                     <div>

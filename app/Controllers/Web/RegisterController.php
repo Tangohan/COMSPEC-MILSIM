@@ -20,6 +20,7 @@ use App\Services\Audit\AuditService;
 use App\Services\Auth\AuthService;
 use App\Services\Email\EmailTokenPurpose;
 use App\Services\EmailService;
+use App\Services\Moderation\IndicatorBlocklistService;
 use App\Services\Rbac\RbacService;
 use Throwable;
 
@@ -34,7 +35,8 @@ final class RegisterController
         private RbacService $rbacService,
         private AuditService $auditService,
         private EmailService $emailService,
-        private EmailTokenRepository $emailTokens
+        private EmailTokenRepository $emailTokens,
+        private IndicatorBlocklistService $indicatorBlocklist
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -122,6 +124,11 @@ final class RegisterController
 
             return Response::redirect(url('register'));
         }
+        if ($this->indicatorBlocklist->isEmailBlockedForTenant($tenantId, $email)) {
+            Session::flash('error', 'Cette adresse ne peut pas être utilisée pour rejoindre cette communauté pour le moment.');
+
+            return Response::redirect(url('register'));
+        }
 
         $roleId = $this->roleRepository->getIdBySlug($tenantId, 'member');
         $hash = password_hash($password, PASSWORD_ARGON2ID);
@@ -138,7 +145,7 @@ final class RegisterController
                 'status' => 'pending_verification',
             ]);
             if ($roleId > 0) {
-                $this->userRepository->syncOrganizationRoles($userId, $tenantId, [$roleId]);
+                $this->userRepository->syncOrganizationRoles($userId, $tenantId, [$roleId], null, true);
             }
             $this->personnelProfileRepository->ensureRecord($userId);
             $this->personnelProfileRepository->update($userId, [

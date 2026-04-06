@@ -25,6 +25,12 @@ final class ForumModerationEngine
      */
     public function analyze(int $tenantId, int $userId, ?int $postId, string $text): array
     {
+        $cfg = function_exists('forum_config_for_tenant') ? forum_config_for_tenant($tenantId) : [];
+        /* Désactivé explicitement dans les réglages : pas d’analyse ni de journal (comportement neutre). */
+        if (function_exists('forum_truthy') && !forum_truthy($cfg['forum_bot_enabled'] ?? null, true)) {
+            return ['action' => 'allow', 'score' => 0.0, 'reasons' => []];
+        }
+
         $reasons = [];
         $score = 0.0;
         $lower = mb_strtolower($text);

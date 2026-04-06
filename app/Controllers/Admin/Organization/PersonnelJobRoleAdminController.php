@@ -12,7 +12,9 @@ use App\Repositories\PermissionRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelJobRoleRepository;
+use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
+use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
 
 class PersonnelJobRoleAdminController
 {
@@ -21,7 +23,8 @@ class PersonnelJobRoleAdminController
         private PermissionRepository $permissionRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
         private UserRepository $userRepository,
-        private PersonnelAssignmentRepository $personnelAssignmentRepository
+        private PersonnelAssignmentRepository $personnelAssignmentRepository,
+        private TenantRepository $tenantRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -242,7 +245,9 @@ class PersonnelJobRoleAdminController
             $filterJobRoleId = null;
         }
         $page = max(1, (int) $request->query('page', 1));
-        $perPage = 30;
+        $tenantSettings = $this->tenantRepository->getSettings($tenantId);
+        $pjrAssignSettings = PersonnelJobRoleAssignmentsSettings::resolve($tenantSettings);
+        $perPage = $pjrAssignSettings['assignments_page_size'];
         $total = $this->jobRoleRepository->countUsersForJobRoleAssignments($tenantId, $search, $filterJobRoleId, $onlyUnassigned);
         $rows = $this->jobRoleRepository->listUsersForJobRoleAssignments(
             $tenantId,
@@ -252,14 +257,25 @@ class PersonnelJobRoleAdminController
             $perPage,
             ($page - 1) * $perPage
         );
-        $jobRoleOptions = $this->jobRoleRepository->listRoleOptionsForSelect($tenantId);
+        $userIds = array_values(array_filter(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows), static fn (int $id): bool => $id > 0));
+        $assignmentPivot = $this->jobRoleRepository->pivotTableExists()
+            ? $this->jobRoleRepository->listPivotAssignmentsForUsers($tenantId, $userIds)
+            : [];
+        $jobRoleOptions = $this->jobRoleRepository->listRoleOptionsForSelect(
+            $tenantId,
+            $pjrAssignSettings['show_english_labels'],
+            $pjrAssignSettings['show_category_in_role_picklist']
+        );
         $totalPages = max(1, (int) ceil($total / $perPage));
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.personnel_job_roles.assignments',
             'title' => 'Attributions rôles métier',
             'assignmentRows' => $rows,
+            'assignmentPivot' => $assignmentPivot,
             'jobRoleOptions' => $jobRoleOptions,
+            'pjrAssignSettings' => $pjrAssignSettings,
+            'pivotEnabled' => $this->jobRoleRepository->pivotTableExists(),
             'filters' => [
                 'search' => $search ?? '',
                 'job_role_id' => $filterJobRoleId ?? 0,
@@ -271,6 +287,31 @@ class PersonnelJobRoleAdminController
             'assignmentsTotalPages' => $totalPages,
             'activeTab' => 'assignments',
         ]);
+    }
+
+    public function saveAssignmentsSettings(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/personnel-job-roles/assignments'));
+        }
+        $current = $this->tenantRepository->getSettings($tenantId);
+        $patch = [
+            'max_roles_per_member' => max(1, min(12, (int) $request->input('max_roles_per_member', 5))),
+            'require_primary_when_multiple' => $request->input('require_primary_when_multiple') === '1',
+            'assignments_page_size' => max(10, min(100, (int) $request->input('assignments_page_size', 30))),
+            'show_english_labels' => $request->input('show_english_labels') === '1',
+            'append_secondaries_to_primary_display' => $request->input('append_secondaries_to_primary_display') === '1',
+            'show_category_in_role_picklist' => $request->input('show_category_in_role_picklist') === '1',
+            'default_expand_role_rows' => max(1, min(12, (int) $request->input('default_expand_role_rows', 3))),
+        ];
+        $merged = PersonnelJobRoleAssignmentsSettings::mergePatch($current, $patch);
+        $this->tenantRepository->updateSettings($tenantId, $merged);
+        Session::flash('success', 'Paramètres d’attribution enregistrés pour votre organisation.');
+
+        return Response::redirect(url('back-office/personnel-job-roles/assignments'));
     }
 
     public function saveAssignment(Request $request, array $params = []): Response
@@ -298,40 +339,113 @@ class PersonnelJobRoleAdminController
 
             return Response::redirect(url('back-office/personnel-job-roles/assignments'));
         }
-        $rawJr = $request->input('personnel_job_role_id');
-        $jobRoleId = ($rawJr === null || $rawJr === '') ? null : (int) $rawJr;
-        if ($jobRoleId !== null && $jobRoleId <= 0) {
-            $jobRoleId = null;
-        }
-        $roleSubLabel = trim((string) $request->input('role_sub_label'));
-        $jrRow = null;
-        if ($jobRoleId !== null) {
-            $jrRow = $this->jobRoleRepository->findRoleById($jobRoleId, $tenantId);
-            if (!$jrRow) {
-                Session::flash('error', 'Rôle métier invalide.');
 
-                return Response::redirect(url('back-office/personnel-job-roles/assignments'));
+        $tenantSettings = $this->tenantRepository->getSettings($tenantId);
+        $assignCfg = PersonnelJobRoleAssignmentsSettings::resolve($tenantSettings);
+        $roleSubLabelGlobal = trim((string) $request->input('role_sub_label'));
+
+        $pivotResult = [
+            'primary_job_role_id' => null,
+            'primary_detail' => '',
+            'primary_role_display' => '',
+            'secondary_role_display' => '',
+        ];
+
+        if ($this->jobRoleRepository->pivotTableExists()) {
+            $slotsIn = $request->input('slots');
+            if (!is_array($slotsIn)) {
+                $slotsIn = [];
             }
-        }
-        $primaryRoleStr = $this->buildPrimaryRoleString($jrRow, $roleSubLabel);
-        if (function_exists('mb_strlen') && mb_strlen($primaryRoleStr) > 100) {
-            $primaryRoleStr = mb_substr($primaryRoleStr, 0, 100);
-        } elseif (strlen($primaryRoleStr) > 100) {
-            $primaryRoleStr = substr($primaryRoleStr, 0, 100);
-        }
+            $parsed = [];
+            foreach ($slotsIn as $s) {
+                if (!is_array($s)) {
+                    continue;
+                }
+                $rid = (int) ($s['role_id'] ?? 0);
+                if ($rid <= 0) {
+                    continue;
+                }
+                $parsed[] = [
+                    'personnel_job_role_id' => $rid,
+                    'role_detail' => trim((string) ($s['detail'] ?? '')),
+                    'is_primary' => false,
+                ];
+            }
+            $max = $assignCfg['max_roles_per_member'];
+            if (count($parsed) > $max) {
+                $parsed = array_slice($parsed, 0, $max);
+            }
+            $primaryIdx = (int) $request->input('primary_slot', 0);
+            if ($parsed !== []) {
+                if ($primaryIdx < 0 || $primaryIdx >= count($parsed)) {
+                    $primaryIdx = 0;
+                }
+                foreach ($parsed as $i => &$p) {
+                    $p['is_primary'] = ($i === $primaryIdx);
+                }
+                unset($p);
+            }
+            try {
+                $pivotResult = $this->jobRoleRepository->replaceUserPivotJobRoles($tenantId, $userId, $parsed);
+            } catch (\Throwable) {
+                Session::flash('error', 'Enregistrement impossible (rôles métier).');
 
-        $this->personnelProfileRepository->ensureRecord($userId);
-        $this->personnelProfileRepository->update($userId, [
-            'personnel_job_role_id' => $jobRoleId,
-            'role_sub_label' => $roleSubLabel !== '' ? $roleSubLabel : null,
-            'primary_role' => $primaryRoleStr,
-        ]);
+                return Response::redirect($this->assignmentsRedirectAfterSave($request));
+            }
+
+            $primaryBase = $pivotResult['primary_role_display'];
+            if ($roleSubLabelGlobal !== '' && $primaryBase !== '') {
+                $primaryBase .= ' — ' . $roleSubLabelGlobal;
+            } elseif ($roleSubLabelGlobal !== '' && $primaryBase === '') {
+                $primaryBase = $roleSubLabelGlobal;
+            }
+
+            $secondaryField = $pivotResult['secondary_role_display'];
+            $primaryRoleStr = $primaryBase;
+            if ($assignCfg['append_secondaries_to_primary_display'] && $secondaryField !== '') {
+                $primaryRoleStr = $primaryBase !== '' ? $primaryBase . ' · ' . $secondaryField : $secondaryField;
+            }
+            $primaryRoleStr = $this->truncate100($primaryRoleStr);
+            $secondaryFieldStored = $this->truncate100($secondaryField);
+
+            $this->personnelProfileRepository->ensureRecord($userId);
+            $this->personnelProfileRepository->update($userId, [
+                'personnel_job_role_id' => $pivotResult['primary_job_role_id'],
+                'role_sub_label' => $roleSubLabelGlobal !== '' ? $roleSubLabelGlobal : null,
+                'primary_role' => $primaryRoleStr,
+                'secondary_role' => $assignCfg['append_secondaries_to_primary_display'] ? null : ($secondaryFieldStored !== '' ? $secondaryFieldStored : null),
+            ]);
+        } else {
+            $rawJr = $request->input('personnel_job_role_id');
+            $jobRoleId = ($rawJr === null || $rawJr === '') ? null : (int) $rawJr;
+            if ($jobRoleId !== null && $jobRoleId <= 0) {
+                $jobRoleId = null;
+            }
+            $jrRow = null;
+            if ($jobRoleId !== null) {
+                $jrRow = $this->jobRoleRepository->findRoleById($jobRoleId, $tenantId);
+                if (!$jrRow) {
+                    Session::flash('error', 'Rôle métier invalide.');
+
+                    return Response::redirect(url('back-office/personnel-job-roles/assignments'));
+                }
+            }
+            $primaryRoleStr = $this->truncate100($this->buildPrimaryRoleString($jrRow, $roleSubLabelGlobal));
+
+            $this->personnelProfileRepository->ensureRecord($userId);
+            $this->personnelProfileRepository->update($userId, [
+                'personnel_job_role_id' => $jobRoleId,
+                'role_sub_label' => $roleSubLabelGlobal !== '' ? $roleSubLabelGlobal : null,
+                'primary_role' => $primaryRoleStr,
+            ]);
+        }
 
         $profile = $this->personnelProfileRepository->getByUserId($userId) ?? [];
         $primaryUnitId = isset($profile['primary_unit_id']) ? (int) $profile['primary_unit_id'] : 0;
+        $orbatRole = (string) ($profile['primary_role'] ?? '');
         if ($primaryUnitId > 0) {
             try {
-                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier($userId, $primaryUnitId, $primaryRoleStr);
+                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier($userId, $primaryUnitId, $orbatRole);
             } catch (\Throwable) {
                 Session::flash('error', 'Rôle enregistré, mais la synchronisation ORBAT a échoué. Vérifiez l’unité principale du dossier.');
 
@@ -339,9 +453,21 @@ class PersonnelJobRoleAdminController
             }
         }
 
-        Session::flash('success', 'Rôle métier dossier mis à jour pour ' . trim((string) ($user['display_name'] ?? 'le membre')) . '.');
+        Session::flash('success', 'Rôles métier du dossier mis à jour pour ' . trim((string) ($user['display_name'] ?? 'le membre')) . '.');
 
         return Response::redirect($this->assignmentsRedirectAfterSave($request));
+    }
+
+    private function truncate100(string $s): string
+    {
+        if (function_exists('mb_strlen') && mb_strlen($s) > 100) {
+            return mb_substr($s, 0, 100);
+        }
+        if (strlen($s) > 100) {
+            return substr($s, 0, 100);
+        }
+
+        return $s;
     }
 
     private function assignmentsRedirectAfterSave(Request $request): string

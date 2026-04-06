@@ -67,6 +67,10 @@ class ForumUploadController
             @mkdir($qDir, 0755, true);
         }
 
+        $maxSize = function_exists('forum_upload_max_bytes') ? forum_upload_max_bytes((int) $tenantId) : self::MAX_SIZE;
+        $allowedMimes = function_exists('forum_upload_allowed_mimes') ? forum_upload_allowed_mimes((int) $tenantId) : self::ALLOWED_TYPES;
+        $maxMo = max(1, (int) ceil($maxSize / (1024 * 1024)));
+
         $saved = [];
         $warnings = [];
         for ($i = 0; $i < $count; $i++) {
@@ -77,13 +81,13 @@ class ForumUploadController
             if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) {
                 continue;
             }
-            if ($size > self::MAX_SIZE) {
-                return Response::json(['success' => false, 'error' => 'Un fichier dépasse 5 Mo'], 400);
+            if ($size > $maxSize) {
+                return Response::json(['success' => false, 'error' => 'Un fichier dépasse la taille maximale autorisée (' . $maxMo . ' Mo).'], 400);
             }
             $finfo = new \finfo(FILEINFO_MIME_TYPE);
             $detected = $finfo->file($tmp);
-            if (!is_string($detected) || !in_array($detected, self::ALLOWED_TYPES, true)) {
-                return Response::json(['success' => false, 'error' => 'Type non autorisé (images JPEG, PNG, GIF, WebP ou PDF)'], 400);
+            if (!is_string($detected) || !in_array($detected, $allowedMimes, true)) {
+                return Response::json(['success' => false, 'error' => 'Ce type de fichier n’est pas accepté pour votre unité.'], 400);
             }
             $ext = match ($detected) {
                 'image/jpeg' => 'jpg',

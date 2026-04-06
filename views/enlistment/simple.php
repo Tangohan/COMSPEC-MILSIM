@@ -18,40 +18,43 @@ $switchToTargetUrl = $ctx['switchToTargetUrl'] ?? null;
 $showMilsimUnavailableNotice = $showMilsimUnavailableNotice ?? false;
 $simpleEnlistmentUrl = $simpleEnlistmentUrl ?? $formAction;
 ?>
-<div
-    class="max-w-2xl mx-auto px-4 py-12"
-    x-data="{
-        flow: <?= $canUseAccount ? "'account'" : "'guest'" ?>,
-        showConsentModal: false,
-        usePlatformEmail: false,
-        platformEmail: <?= json_encode($platformEmail, JSON_UNESCAPED_UNICODE) ?>,
-        prefillEmail: <?= json_encode($prefill['email'] ?? '', JSON_UNESCAPED_UNICODE) ?>,
-        syncGuestEmail() {
-            const el = document.querySelector('#simple-enlist-email');
-            if (!el) return;
-            el.value = this.usePlatformEmail ? this.platformEmail : this.prefillEmail;
-        },
-        applyPreset(ev) {
-            const opt = ev.target.selectedOptions[0];
-            if (!opt || !opt.dataset.payload) return;
-            try {
-                const p = JSON.parse(opt.dataset.payload);
-                const av = document.querySelector('input[name=availability]');
-                const mo = document.querySelector('textarea[name=motivation_why_join]');
-                if (av && p.availability) av.value = p.availability;
-                if (mo && p.motivation_why_join) mo.value = p.motivation_why_join;
-            } catch (e) {}
-        }
-    }"
->
+<script>
+document.addEventListener('alpine:init', function () {
+    Alpine.data('simpleEnlistmentForm', function () {
+        return {
+            flow: <?= json_encode($canUseAccount ? 'account' : 'guest', JSON_UNESCAPED_UNICODE) ?>,
+            showConsentModal: false,
+            usePlatformEmail: false,
+            platformEmail: <?= json_encode($platformEmail, JSON_UNESCAPED_UNICODE) ?>,
+            prefillEmail: <?= json_encode($prefill['email'] ?? '', JSON_UNESCAPED_UNICODE) ?>,
+            syncGuestEmail: function () {
+                var el = document.querySelector('#simple-enlist-email');
+                if (!el) return;
+                el.value = this.usePlatformEmail ? this.platformEmail : this.prefillEmail;
+            },
+            applyPreset: function (ev) {
+                var opt = ev.target.selectedOptions[0];
+                if (!opt || !opt.dataset.payload) return;
+                try {
+                    var p = JSON.parse(opt.dataset.payload);
+                    var av = document.querySelector('input[name="availability"]');
+                    var mo = document.querySelector('textarea[name="motivation_why_join"]');
+                    if (av && p.availability) av.value = p.availability;
+                    if (mo && p.motivation_why_join) mo.value = p.motivation_why_join;
+                } catch (e) {}
+            },
+        };
+    });
+});
+</script>
+<div class="max-w-2xl mx-auto px-4 py-12" x-data="simpleEnlistmentForm">
     <h1 class="text-2xl font-black uppercase tracking-tight text-slate-900 mb-2">Inscription — <?= htmlspecialchars($tenantName) ?></h1>
     <p class="text-sm text-slate-500 mb-6">Mode simple activé : formulaire condensé pour onboarding rapide.</p>
 
     <?php if ($showMilsimUnavailableNotice): ?>
         <div class="mb-6 p-5 rounded-2xl bg-amber-50 border border-amber-300 text-sm text-amber-950 shadow-sm">
             <p class="font-black uppercase tracking-widest text-[10px] text-amber-800 mb-2">Questionnaire MilSim indisponible</p>
-            <p class="leading-relaxed">Cette communauté n’utilise pas le dossier MilSim complet. L’inscription officielle passe par ce <strong>formulaire simplifié</strong> ci-dessous.</p>
-            <a href="#formulaire-inscription-simple" class="mt-4 inline-flex text-xs font-black uppercase tracking-widest text-amber-950 underline decoration-amber-600/50 hover:decoration-amber-900">Accéder au formulaire</a>
+            <p class="leading-relaxed">Cette communauté n’utilise pas le dossier MilSim complet. Remplissez le <strong>formulaire simplifié</strong> juste sous ce message pour soumettre votre candidature.</p>
         </div>
     <?php endif; ?>
 

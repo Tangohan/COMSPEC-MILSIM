@@ -118,9 +118,13 @@ final class RoleDefinitionCatalog
         }
 
         try {
+            // Même collation des deux côtés (MariaDB 10.10+ : roles.slug peut être utf8mb4_uca1400_ai_ci,
+            // role_definitions.slug utf8mb4_unicode_ci → 1267 sans COLLATE explicite).
             $pdo->exec(
                 'UPDATE roles r
-                 INNER JOIN role_definitions d ON d.slug = r.slug AND r.tenant_id IS NOT NULL
+                 INNER JOIN role_definitions d
+                   ON (d.slug COLLATE utf8mb4_unicode_ci) = (r.slug COLLATE utf8mb4_unicode_ci)
+                  AND r.tenant_id IS NOT NULL
                  SET r.definition_id = d.id
                  WHERE r.definition_id IS NULL'
             );

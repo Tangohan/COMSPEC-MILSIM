@@ -15,6 +15,10 @@ class PersonnelJobRoleRepository
 
     private static ?bool $usersServiceAccountColumn = null;
 
+    private static ?bool $pivotTableExists = null;
+
+    private static ?bool $jobRolesLabelEnColumn = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -111,7 +115,15 @@ class PersonnelJobRoleRepository
             $params[] = $term;
             $params[] = $term;
         }
-        if ($onlyUnassigned) {
+        if ($this->pivotTableExists()) {
+            if ($onlyUnassigned) {
+                $parts[] = '(NOT EXISTS (SELECT 1 FROM personnel_profile_job_roles pj0 WHERE pj0.tenant_id = u.tenant_id AND pj0.user_id = u.id) AND (pp.personnel_job_role_id IS NULL OR pp.personnel_job_role_id = 0))';
+            } elseif ($filterJobRoleId !== null && $filterJobRoleId > 0) {
+                $parts[] = '(EXISTS (SELECT 1 FROM personnel_profile_job_roles pjf WHERE pjf.tenant_id = u.tenant_id AND pjf.user_id = u.id AND pjf.personnel_job_role_id = ?) OR pp.personnel_job_role_id = ?)';
+                $params[] = $filterJobRoleId;
+                $params[] = $filterJobRoleId;
+            }
+        } elseif ($onlyUnassigned) {
             $parts[] = '(pp.personnel_job_role_id IS NULL OR pp.personnel_job_role_id = 0)';
         } elseif ($filterJobRoleId !== null && $filterJobRoleId > 0) {
             $parts[] = 'pp.personnel_job_role_id = ?';
@@ -148,6 +160,191 @@ class PersonnelJobRoleRepository
         $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_job_roles' LIMIT 1");
 
         return (bool) ($stmt && $stmt->fetchColumn());
+    }
+
+    public function pivotTableExists(): bool
+    {
+        if (self::$pivotTableExists !== null) {
+            return self::$pivotTableExists;
+        }
+        if (!$this->tablesExist()) {
+            self::$pivotTableExists = false;
+
+            return false;
+        }
+        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profile_job_roles' LIMIT 1");
+        self::$pivotTableExists = (bool) ($stmt && $stmt->fetchColumn());
+
+        return self::$pivotTableExists;
+    }
+
+    private function jobRolesHasLabelEn(): bool
+    {
+        if (self::$jobRolesLabelEnColumn !== null) {
+            return self::$jobRolesLabelEnColumn;
+        }
+        if (!$this->tablesExist()) {
+            self::$jobRolesLabelEnColumn = false;
+
+            return false;
+        }
+        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_job_roles' AND COLUMN_NAME = 'label_en' LIMIT 1");
+        self::$jobRolesLabelEnColumn = (bool) ($stmt && $stmt->fetchColumn());
+
+        return self::$jobRolesLabelEnColumn;
+    }
+
+    /**
+     * @param list<int> $userIds
+     *
+     * @return array<int, list<array<string, mixed>>>
+     */
+    public function listPivotAssignmentsForUsers(int $tenantId, array $userIds): array
+    {
+        if (!$this->pivotTableExists() || $userIds === []) {
+            return [];
+        }
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $x): bool => $x > 0)));
+        if ($userIds === []) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($userIds), '?'));
+        $labelEn = $this->jobRolesHasLabelEn();
+        $sql = 'SELECT pj.user_id, pj.personnel_job_role_id, pj.is_primary, pj.sort_order, pj.role_detail,
+                       r.name AS role_name, r.slug AS role_slug'
+            . ($labelEn ? ', r.label_en AS role_label_en' : ', NULL AS role_label_en')
+            . ' FROM personnel_profile_job_roles pj
+                INNER JOIN personnel_job_roles r ON r.id = pj.personnel_job_role_id AND r.tenant_id = pj.tenant_id
+                WHERE pj.tenant_id = ? AND pj.user_id IN (' . $ph . ')
+                ORDER BY pj.is_primary DESC, pj.sort_order ASC, pj.id ASC';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId], $userIds));
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            if ($uid <= 0) {
+                continue;
+            }
+            $out[$uid][] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Remplace toutes les lignes pivot et renvoie les infos pour synchroniser personnel_profiles.
+     *
+     * @param list<array{personnel_job_role_id: int, role_detail: string, is_primary: bool}> $rows ordre conservé pour sort_order
+     *
+     * @return array{
+     *   primary_job_role_id: int|null,
+     *   primary_detail: string,
+     *   primary_role_display: string,
+     *   secondary_role_display: string
+     * }
+     */
+    public function replaceUserPivotJobRoles(int $tenantId, int $userId, array $rows): array
+    {
+        $empty = [
+            'primary_job_role_id' => null,
+            'primary_detail' => '',
+            'primary_role_display' => '',
+            'secondary_role_display' => '',
+        ];
+        if (!$this->pivotTableExists() || $userId <= 0 || $tenantId <= 0) {
+            return $empty;
+        }
+
+        $norm = [];
+        $seen = [];
+        foreach ($rows as $r) {
+            $rid = (int) ($r['personnel_job_role_id'] ?? 0);
+            if ($rid <= 0 || isset($seen[$rid])) {
+                continue;
+            }
+            $jr = $this->findRoleById($rid, $tenantId);
+            if (!$jr) {
+                continue;
+            }
+            $seen[$rid] = true;
+            $norm[] = [
+                'personnel_job_role_id' => $rid,
+                'role_detail' => trim((string) ($r['role_detail'] ?? '')),
+                'is_primary' => !empty($r['is_primary']),
+            ];
+        }
+
+        $primarySeen = false;
+        foreach ($norm as $i => $_) {
+            if ($norm[$i]['is_primary'] && !$primarySeen) {
+                $primarySeen = true;
+            } elseif ($norm[$i]['is_primary']) {
+                $norm[$i]['is_primary'] = false;
+            }
+        }
+        if ($norm !== [] && !$primarySeen) {
+            $norm[0]['is_primary'] = true;
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $this->pdo->prepare('DELETE FROM personnel_profile_job_roles WHERE tenant_id = ? AND user_id = ?')->execute([$tenantId, $userId]);
+            $ins = $this->pdo->prepare(
+                'INSERT INTO personnel_profile_job_roles (tenant_id, user_id, personnel_job_role_id, is_primary, sort_order, role_detail) VALUES (?, ?, ?, ?, ?, ?)'
+            );
+            $so = 0;
+            foreach ($norm as $slot) {
+                $ins->execute([
+                    $tenantId,
+                    $userId,
+                    $slot['personnel_job_role_id'],
+                    $slot['is_primary'] ? 1 : 0,
+                    $so++,
+                    $slot['role_detail'] !== '' ? $slot['role_detail'] : null,
+                ]);
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+
+        if ($norm === []) {
+            return $empty;
+        }
+
+        $primaries = array_values(array_filter($norm, static fn (array $x): bool => $x['is_primary']));
+        if ($primaries === []) {
+            $norm[0]['is_primary'] = true;
+            $primaries = [$norm[0]];
+        }
+
+        $primary = $primaries[0];
+        $pRow = $this->findRoleById($primary['personnel_job_role_id'], $tenantId);
+        $pName = $pRow ? trim((string) ($pRow['name'] ?? '')) : '';
+        $pDet = $primary['role_detail'];
+        $primaryDisplay = $pDet !== '' && $pName !== '' ? $pName . ' — ' . $pDet : ($pName !== '' ? $pName : $pDet);
+
+        $secondaryParts = [];
+        foreach ($norm as $slot) {
+            if ($slot['is_primary']) {
+                continue;
+            }
+            $jr = $this->findRoleById($slot['personnel_job_role_id'], $tenantId);
+            if (!$jr) {
+                continue;
+            }
+            $n = trim((string) ($jr['name'] ?? ''));
+            $d = $slot['role_detail'];
+            $secondaryParts[] = $d !== '' && $n !== '' ? $n . ' — ' . $d : ($n !== '' ? $n : $d);
+        }
+
+        return [
+            'primary_job_role_id' => $primary['personnel_job_role_id'],
+            'primary_detail' => $pDet,
+            'primary_role_display' => $primaryDisplay,
+            'secondary_role_display' => implode(' · ', array_filter($secondaryParts, static fn (string $s): bool => $s !== '')),
+        ];
     }
 
     /** @return list<array<string, mixed>> */
@@ -347,9 +544,9 @@ class PersonnelJobRoleRepository
     /**
      * Libellés pour &lt;select&gt; : « Racine › Sous-cat › Nom du rôle ».
      *
-     * @return list<array{id: int, label: string, name: string}>
+     * @return list<array{id: int, label: string, name: string, label_en?: string}>
      */
-    public function listRoleOptionsForSelect(int $tenantId): array
+    public function listRoleOptionsForSelect(int $tenantId, bool $appendEnglishLabel = false, bool $useCategoryPath = true): array
     {
         $roles = $this->listRolesWithCategory($tenantId);
         $cats = $this->listCategories($tenantId);
@@ -375,8 +572,17 @@ class PersonnelJobRoleRepository
             $cid = (int) ($r['category_id'] ?? 0);
             $c = $catById[$cid] ?? null;
             $prefix = $c ? $path($c) : '';
-            $label = $prefix !== '' ? $prefix . ' › ' . $r['name'] : (string) $r['name'];
-            $out[] = ['id' => (int) $r['id'], 'label' => $label, 'name' => (string) $r['name']];
+            $name = (string) $r['name'];
+            $label = $useCategoryPath && $prefix !== '' ? $prefix . ' › ' . $name : $name;
+            $en = trim((string) ($r['label_en'] ?? ''));
+            if ($appendEnglishLabel && $en !== '') {
+                $label .= ' — ' . $en;
+            }
+            $row = ['id' => (int) $r['id'], 'label' => $label, 'name' => $name];
+            if ($en !== '') {
+                $row['label_en'] = $en;
+            }
+            $out[] = $row;
         }
 
         return $out;

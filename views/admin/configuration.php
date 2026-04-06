@@ -193,8 +193,39 @@ $card = static function (string $href, string $title, string $desc, string $acce
                 <?php $card(url('back-office/roles/presets'), 'Profils de permissions', 'Appliquer un jeu complet de droits à un rôle en une fois (hors droits plateforme).'); ?>
                 <?php $card(url('back-office/recruitments'), 'Candidatures', 'Dossiers, décisions, file d’attente.' . ($pendingEnlist > 0 ? ' (' . $pendingEnlist . ' en attente)' : '')); ?>
                 <?php $card(url('back-office/recruitments/messages-prefaits'), 'Messages préfaits (recrutement)', 'Modèles de commentaires internes pour traiter les candidatures.', 'border-emerald-200/80 hover:border-emerald-400 hover:bg-emerald-50/40'); ?>
+                <?php $card(url('back-office/positions'), 'Postes organisationnels', 'Intitulés de fonction et affectations, distincts des rôles et habilitations.'); ?>
             </div>
         </section>
+
+        <?php if ($gate->allows('admin.organization') || $gate->allows('admin.access')): ?>
+        <?php
+        $memberChooseRole = !empty($community['member_can_choose_display_role']);
+        $badgesMode = (string) ($community['display_badges_mode'] ?? 'primary_only');
+        if ($badgesMode !== 'multi') {
+            $badgesMode = 'primary_only';
+        }
+        ?>
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="text-sm font-bold text-slate-900">Affichage des rôles (membres)</h2>
+            <p class="mt-1 text-xs text-slate-600 max-w-2xl">Autorisez les titulaires à choisir quel rôle organisation apparaît en priorité sur le forum et dans le portail, et définissez si plusieurs badges peuvent être affichés à terme.</p>
+            <form method="post" action="<?= htmlspecialchars(url('back-office/configuration/member-role-display'), ENT_QUOTES, 'UTF-8') ?>" class="mt-5 space-y-4 max-w-xl">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="member_can_choose_display_role" value="0">
+                <label class="flex items-start gap-3 text-sm text-slate-800 cursor-pointer">
+                    <input type="checkbox" name="member_can_choose_display_role" value="1" class="mt-1 rounded border-slate-300" <?= $memberChooseRole ? 'checked' : '' ?>>
+                    <span>Permettre à chaque membre de choisir le rôle affiché en priorité (parmi ses rôles organisation).</span>
+                </label>
+                <div>
+                    <label for="display_badges_mode" class="block text-xs font-semibold text-slate-700 mb-1">Affichage des badges</label>
+                    <select id="display_badges_mode" name="display_badges_mode" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                        <option value="primary_only" <?= $badgesMode === 'primary_only' ? 'selected' : '' ?>>Un seul badge principal</option>
+                        <option value="multi" <?= $badgesMode === 'multi' ? 'selected' : '' ?>>Plusieurs badges (quand l’interface le proposera)</option>
+                    </select>
+                </div>
+                <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800">Enregistrer</button>
+            </form>
+        </section>
+        <?php endif; ?>
 
         <section>
             <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Contenu, événements &amp; mesure</h2>

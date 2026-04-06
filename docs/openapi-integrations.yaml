@@ -1,0 +1,49 @@
+openapi: 3.0.3
+info:
+  title: Athena — API intégrations (communauté)
+  version: "1.0"
+  description: |
+    Accès en lecture pour outils externes. Authentification par en-tête `Authorization: Bearer <clé>`.
+    Les clés sont créées dans le back-office communauté (administration organisationnelle).
+servers:
+  - url: https://votre-domaine.example
+paths:
+  /integrations/v1/evenements:
+    get:
+      summary: Liste des opérations à venir
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        starts_at:
+                          type: string
+                        ends_at:
+                          type: string
+                          nullable: true
+                        location:
+                          type: string
+                          nullable: true
+                        type:
+                          type: string
+        "401":
+          description: Clé absente ou invalide
+        "429":
+          description: Quota journalier dépassé
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

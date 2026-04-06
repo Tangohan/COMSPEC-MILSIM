@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\CommunityEventRepository;
 use App\Services\Attendance\CommunityEventAttendanceService;
 use App\Services\Auth\AuthService;
+use App\Services\Calendar\CommunityCalendarFeedTokenService;
 use App\Services\Platform\FeatureGateService;
 
 final class CommunityEventsController
@@ -53,6 +54,16 @@ final class CommunityEventsController
             }
         }
 
+        $calendarSubscriptionUrl = null;
+        if ($userId) {
+            try {
+                $tok = CommunityCalendarFeedTokenService::fromEnv()->mint($userId, $tenantId);
+                $calendarSubscriptionUrl = url('calendrier/abonnement/' . rawurlencode($tok));
+            } catch (\Throwable) {
+                $calendarSubscriptionUrl = null;
+            }
+        }
+
         return Response::view('layout.main', [
             'title' => 'Événements & opérations',
             'content' => 'community.events',
@@ -60,6 +71,7 @@ final class CommunityEventsController
             'currentUserId' => $userId,
             'eventsQuota' => $this->featureGate->quotaStatusForFeature($tenantId, 'events'),
             'eventsCheckInFlags' => $checkInFlags,
+            'calendar_subscription_url' => $calendarSubscriptionUrl,
         ]);
     }
 

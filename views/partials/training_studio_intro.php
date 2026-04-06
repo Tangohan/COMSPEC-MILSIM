@@ -16,7 +16,7 @@ declare(strict_types=1);
         <div class="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600 max-w-md">
             <p class="font-bold text-slate-800 mb-1">Raccourcis</p>
             <ul class="list-disc pl-4 space-y-1">
-                <li>Utilisez le menu (☰) pour replier le panneau latéral et gagner de la place.</li>
+                <li>Le menu latéral reste affiché pour passer rapidement d’une section à l’autre.</li>
                 <li>Les modifications sont enregistrées dans le contexte de votre communauté.</li>
             </ul>
         </div>

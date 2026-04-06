@@ -21,7 +21,7 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                 </header>
 
                 <div class="tc-panel p-5 md:p-6">
-                    <form method="get" action="<?= url('admin/training/enrollments') ?>" class="flex flex-wrap items-end gap-4">
+                    <form method="get" action="<?= htmlspecialchars(training_lms_admin_url('enrollments')) ?>" class="flex flex-wrap items-end gap-4">
                         <div>
                             <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Formation</label>
                             <select name="course_id" class="border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium bg-white shadow-sm min-w-[240px]" onchange="this.form.submit()">
@@ -90,11 +90,11 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                                     ?>
                                     <?php if ($canAct): ?>
                                     <div class="flex flex-wrap gap-2">
-                                        <form method="post" action="<?= url('admin/training/enrollments/' . $eid . '/approve') ?>" class="inline">
+                                        <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('enrollments/' . $eid . '/approve')) ?>" class="inline">
                                             <?= \App\Core\Csrf::field() ?>
                                             <button type="submit" class="px-2 py-1 text-[10px] font-black uppercase rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Valider</button>
                                         </form>
-                                        <form method="post" action="<?= url('admin/training/enrollments/' . $eid . '/decline') ?>" class="inline" onsubmit="return confirm('Refuser cette inscription ?');">
+                                        <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('enrollments/' . $eid . '/decline')) ?>" class="inline" onsubmit="return confirm('Refuser cette inscription ?');">
                                             <?= \App\Core\Csrf::field() ?>
                                             <button type="submit" class="px-2 py-1 text-[10px] font-black uppercase rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50">Refuser</button>
                                         </form>
@@ -113,6 +113,6 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                 <?php endif; ?>
 
                 <p class="text-sm text-slate-500">
-                    <a href="<?= url('admin/training') ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Vue d’ensemble</a>
+                    <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Vue d’ensemble</a>
                 </p>
 <?php require base_path('views/admin/training/partials/command_shell_close.php'); ?>

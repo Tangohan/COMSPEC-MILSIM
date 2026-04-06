@@ -19,7 +19,8 @@ class TrainingAssignmentService
         private TrainingAuditService $auditService,
         private TrainingEnrollmentPolicyService $enrollmentPolicyService,
         private EmailService $emailService,
-        private TenantRepository $tenantRepository
+        private TenantRepository $tenantRepository,
+        private TrainingStaffAlertService $staffAlertService
     ) {}
 
     public function assignUser(int $courseId, int $userId, int $tenantId, ?int $assignedBy = null, string $assignmentType = 'manual', ?string $expiresAt = null, ?string $motivationText = null): int
@@ -228,7 +229,7 @@ class TrainingAssignmentService
             }
             $courseTitle = (string) ($course['title'] ?? 'Formation');
             $courseId = (int) ($course['id'] ?? 0);
-            $reviewUrl = \url('admin/training/enrollments?course_id=' . $courseId);
+            $reviewUrl = \training_lms_admin_url('enrollments') . '?course_id=' . $courseId;
             $sent = [];
             foreach ($approverIds as $uid) {
                 $staff = $this->userRepository->findById((int) $uid, $tenantId);
@@ -253,6 +254,7 @@ class TrainingAssignmentService
                     $tenantId
                 );
             }
+            $this->staffAlertService->recordEnrollmentPendingApproval($tenantId, $learnerUserId, $enrollmentId, $courseId);
         } catch (\Throwable) {
         }
     }

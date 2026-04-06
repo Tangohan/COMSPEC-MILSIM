@@ -118,4 +118,78 @@ class TrainingAuditService
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Journal d’audit pour l’écran tenant : acteur (profil), formation liée, auteur du parcours.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listLogsForTenantDisplay(int $tenantId, int $limit = 200): array
+    {
+        $limit = max(1, min(500, $limit));
+        $sql = <<<SQL
+SELECT
+    a.id,
+    a.tenant_id,
+    a.user_id,
+    a.action,
+    a.target_type,
+    a.target_id,
+    a.old_value,
+    a.new_value,
+    a.ip_address,
+    a.user_agent,
+    a.created_at,
+    ua.display_name AS actor_display_name,
+    ua.email AS actor_email,
+    COALESCE(cd.id, te.course_id, tprog.course_id, tquiz_e.course_id, tcert_e.course_id) AS ctx_course_id,
+    cctx.title AS ctx_course_title,
+    uauth.display_name AS course_author_display_name,
+    uauth.email AS course_author_email
+FROM training_audit_log a
+LEFT JOIN users ua ON ua.id = a.user_id
+LEFT JOIN training_courses cd
+    ON a.target_type = 'training_course' AND cd.id = a.target_id AND cd.tenant_id = a.tenant_id
+LEFT JOIN training_enrollments te
+    ON a.target_type = 'training_enrollment' AND te.id = a.target_id AND te.tenant_id = a.tenant_id
+LEFT JOIN training_enrollments tprog
+    ON a.target_type = 'training_progress' AND tprog.id = a.target_id AND tprog.tenant_id = a.tenant_id
+LEFT JOIN training_quiz_attempts tqa
+    ON a.target_type = 'training_quiz_attempt' AND tqa.id = a.target_id
+LEFT JOIN training_enrollments tquiz_e
+    ON tquiz_e.id = tqa.enrollment_id AND tquiz_e.tenant_id = a.tenant_id
+LEFT JOIN training_certificates tcert
+    ON a.target_type = 'training_certificate' AND tcert.id = a.target_id AND tcert.tenant_id = a.tenant_id
+LEFT JOIN training_enrollments tcert_e
+    ON tcert_e.id = tcert.enrollment_id AND tcert_e.tenant_id = a.tenant_id
+LEFT JOIN training_courses cctx
+    ON cctx.id = COALESCE(cd.id, te.course_id, tprog.course_id, tquiz_e.course_id, tcert_e.course_id)
+    AND cctx.tenant_id = a.tenant_id
+LEFT JOIN users uauth ON uauth.id = cctx.created_by
+WHERE a.tenant_id = ?
+ORDER BY a.created_at DESC
+LIMIT {$limit}
+SQL;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$tenantId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            foreach (['old_value', 'new_value'] as $jsonCol) {
+                $raw = $row[$jsonCol] ?? null;
+                if ($raw === null || $raw === '') {
+                    $row[$jsonCol] = null;
+
+                    continue;
+                }
+                if (is_string($raw)) {
+                    $decoded = json_decode($raw, true);
+                    $row[$jsonCol] = is_array($decoded) ? $decoded : null;
+                }
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
 }

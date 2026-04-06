@@ -29,10 +29,12 @@ class GradeReferentielController
             return Response::redirect(url('login'));
         }
         $tab = $request->input('tab') ?: 'fr';
+        $categoryFilter = (int) $request->query('categorie', 0);
+        $categoryFilter = $categoryFilter > 0 ? $categoryFilter : null;
         $systems = $this->gradeSystemRepository->listActive();
         $categories = $this->gradeCategoryRepository->listActive();
-        $gradesFr = $this->gradeRepository->listBySystemCode('FR_CLASSIC');
-        $gradesUs = $this->gradeRepository->listBySystemCode('US_CLASSIC');
+        $gradesFr = $this->gradeRepository->listBySystemCodeAndCategoryId('FR_CLASSIC', $categoryFilter);
+        $gradesUs = $this->gradeRepository->listBySystemCodeAndCategoryId('US_CLASSIC', $categoryFilter);
         $allGrades = $this->gradeRepository->listActive();
 
         return Response::view('layout.main', [
@@ -44,6 +46,7 @@ class GradeReferentielController
             'gradesFr' => $gradesFr,
             'gradesUs' => $gradesUs,
             'allGrades' => $allGrades,
+            'gradeCategoryFilterId' => $categoryFilter,
             'gradeDisplayService' => $this->gradeDisplayService,
         ]);
     }

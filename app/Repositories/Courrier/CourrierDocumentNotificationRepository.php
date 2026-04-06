@@ -119,4 +119,15 @@ class CourrierDocumentNotificationRepository
         );
         $stmt->execute([$tenantId, $userId, $documentId]);
     }
+
+    public function markAllReadForUser(int $tenantId, int $userId): void
+    {
+        if (!$this->tableExists()) {
+            return;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE courrier_document_notifications SET read_at = NOW() WHERE tenant_id = ? AND recipient_user_id = ? AND read_at IS NULL'
+        );
+        $stmt->execute([$tenantId, $userId]);
+    }
 }

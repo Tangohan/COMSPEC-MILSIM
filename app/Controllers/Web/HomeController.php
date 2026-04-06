@@ -112,6 +112,7 @@ class HomeController
         $staffEnlistmentsPending = [];
         $showStaffEnlistments = false;
         $dashboardPins = [];
+        $missionBriefing = null;
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
@@ -145,6 +146,13 @@ class HomeController
                 } catch (\Throwable) {
                     $dashboardPins = [];
                 }
+
+                try {
+                    $missionBriefing = \App\Core\Container::get(\App\Services\Dashboard\MemberMissionBriefingService::class)
+                        ->buildForViewer($tid, $uid, $modpack, $dashboardPins, $showcaseTrainingFeature);
+                } catch (\Throwable) {
+                    $missionBriefing = null;
+                }
             }
         }
 
@@ -165,6 +173,7 @@ class HomeController
             'staff_enlistments_pending' => $staffEnlistmentsPending,
             'show_staff_enlistments' => $showStaffEnlistments,
             'dashboard_pins' => $dashboardPins,
+            'mission_briefing' => $missionBriefing,
         ]);
     }
 

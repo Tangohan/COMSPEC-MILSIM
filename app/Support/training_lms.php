@@ -161,6 +161,155 @@ function training_lms_next_incomplete_lesson(array $orderedLessons, array $progr
 }
 
 /**
+ * Prochaine étape en bas de page leçon : leçon suivante, quiz de module, ou page « Avis & échanges ».
+ * Respecte l’ordre du sommaire (leçons du module, puis quiz non finaux du module, puis modules suivants, puis quiz finaux).
+ *
+ * @param callable(int): bool $quizHasPassingAttempt true si au moins une tentative réussie pour ce quiz
+ * @return array{kind: 'lesson', lesson: array<string, mixed>}|array{kind: 'quiz', quiz: array{id: int, title: string}}|array{kind: 'echanges'}|null null si leçon introuvable dans le parcours
+ */
+function training_lms_footer_next_step(array $course, int $currentLessonId, callable $quizHasPassingAttempt): ?array
+{
+    $modules = $course['modules'] ?? [];
+    if (!is_array($modules) || $modules === []) {
+        return ['kind' => 'echanges'];
+    }
+
+    $foundMi = null;
+    $foundLi = null;
+    foreach ($modules as $mi => $mod) {
+        if (!is_array($mod)) {
+            continue;
+        }
+        $lessons = $mod['lessons'] ?? [];
+        if (!is_array($lessons)) {
+            $lessons = [];
+        }
+        foreach ($lessons as $li => $l) {
+            if (!is_array($l)) {
+                continue;
+            }
+            if ((int) ($l['id'] ?? 0) === $currentLessonId) {
+                $foundMi = (int) $mi;
+                $foundLi = (int) $li;
+                break 2;
+            }
+        }
+    }
+    if ($foundMi === null || $foundLi === null) {
+        return null;
+    }
+
+    $mod = $modules[$foundMi];
+    $lessons = is_array($mod['lessons'] ?? null) ? $mod['lessons'] : [];
+
+    if ($foundLi + 1 < count($lessons)) {
+        $nextLes = $lessons[$foundLi + 1];
+        if (is_array($nextLes) && (int) ($nextLes['id'] ?? 0) > 0) {
+            return ['kind' => 'lesson', 'lesson' => $nextLes];
+        }
+    }
+
+    $quizzes = is_array($mod['quizzes'] ?? null) ? $mod['quizzes'] : [];
+    foreach ($quizzes as $qz) {
+        if (!is_array($qz)) {
+            continue;
+        }
+        if ((int) ($qz['is_final_exam'] ?? 0) === 1) {
+            continue;
+        }
+        $qid = (int) ($qz['id'] ?? 0);
+        if ($qid < 1) {
+            continue;
+        }
+        if (!$quizHasPassingAttempt($qid)) {
+            return [
+                'kind' => 'quiz',
+                'quiz' => [
+                    'id' => $qid,
+                    'title' => trim((string) ($qz['title'] ?? 'Évaluation')) !== ''
+                        ? trim((string) ($qz['title'] ?? ''))
+                        : 'Évaluation',
+                ],
+            ];
+        }
+    }
+
+    $nMod = count($modules);
+    for ($mi2 = $foundMi + 1; $mi2 < $nMod; $mi2++) {
+        $mod2 = $modules[$mi2];
+        if (!is_array($mod2)) {
+            continue;
+        }
+        $lessons2 = is_array($mod2['lessons'] ?? null) ? $mod2['lessons'] : [];
+        foreach ($lessons2 as $l2) {
+            if (!is_array($l2)) {
+                continue;
+            }
+            $lid = (int) ($l2['id'] ?? 0);
+            if ($lid > 0) {
+                return ['kind' => 'lesson', 'lesson' => $l2];
+            }
+        }
+        $quizzes2 = is_array($mod2['quizzes'] ?? null) ? $mod2['quizzes'] : [];
+        foreach ($quizzes2 as $qz) {
+            if (!is_array($qz)) {
+                continue;
+            }
+            if ((int) ($qz['is_final_exam'] ?? 0) === 1) {
+                continue;
+            }
+            $qid = (int) ($qz['id'] ?? 0);
+            if ($qid < 1) {
+                continue;
+            }
+            if (!$quizHasPassingAttempt($qid)) {
+                return [
+                    'kind' => 'quiz',
+                    'quiz' => [
+                        'id' => $qid,
+                        'title' => trim((string) ($qz['title'] ?? 'Évaluation')) !== ''
+                            ? trim((string) ($qz['title'] ?? ''))
+                            : 'Évaluation',
+                    ],
+                ];
+            }
+        }
+    }
+
+    foreach ($modules as $modF) {
+        if (!is_array($modF)) {
+            continue;
+        }
+        $qzf = is_array($modF['quizzes'] ?? null) ? $modF['quizzes'] : [];
+        foreach ($qzf as $qz) {
+            if (!is_array($qz)) {
+                continue;
+            }
+            if ((int) ($qz['is_final_exam'] ?? 0) !== 1) {
+                continue;
+            }
+            $qid = (int) ($qz['id'] ?? 0);
+            if ($qid < 1) {
+                continue;
+            }
+            if (!$quizHasPassingAttempt($qid)) {
+                return [
+                    'kind' => 'quiz',
+                    'quiz' => [
+                        'id' => $qid,
+                        'title' => trim((string) ($qz['title'] ?? 'Évaluation finale')) !== ''
+                            ? trim((string) ($qz['title'] ?? ''))
+                            : 'Évaluation finale',
+                    ],
+                ];
+            }
+        }
+    }
+
+    return ['kind' => 'echanges'];
+}
+
+/**
  * Libellé français pour une action du journal d’audit formations (training_audit_log.action).
  */
 function training_audit_action_label_fr(string $action): string

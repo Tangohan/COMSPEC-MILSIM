@@ -69,6 +69,24 @@ class GradeRepository
     }
 
     /**
+     * Filtre optionnel par catégorie (id de grade_categories), pour les écrans d’administration.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listBySystemCodeAndCategoryId(string $systemCode, ?int $gradeCategoryId): array
+    {
+        if ($gradeCategoryId === null || $gradeCategoryId < 1) {
+            return $this->listBySystemCode($systemCode);
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT ' . $this->selectColumns() . ' FROM ' . $this->fromClause() . ' WHERE g.is_active = 1 AND gs.code = ? AND g.grade_category_id = ? ORDER BY g.sort_order ASC, g.id ASC'
+        );
+        $stmt->execute([$systemCode, $gradeCategoryId]);
+
+        return $this->normalizeRows($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
      * Liste les grades d'un système par id.
      * @return list<array<string, mixed>>
      */

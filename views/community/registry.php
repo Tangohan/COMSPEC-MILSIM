@@ -64,7 +64,7 @@ if ($registryCount === 0) {
                             Pointage
                         </a>
                         <a href="<?= htmlspecialchars(url('dashboard')) ?>" class="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2">
-                            Dashboard
+                            Tableau de bord
                         </a>
                     </div>
                 </div>
@@ -118,7 +118,7 @@ if ($registryCount === 0) {
                 <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Registre vide</p>
                 <p class="mt-3 text-lg font-black text-slate-950">Aucune communauté listée pour l’instant</p>
                 <p class="mt-2 max-w-md mx-auto text-sm text-slate-600">
-                    L’espace système (hors organisations) n’apparaît pas ici. Créez une unité ou attendez la publication d’autres communautés.
+                    Toutes les communautés ne choisissent pas d’être visibles ici. Vous pouvez créer la vôtre ou revenir plus tard.
                 </p>
                 <a href="<?= htmlspecialchars(url('communities/create')) ?>" class="mt-8 inline-flex items-center rounded-2xl bg-slate-950 px-6 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-white transition hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
                     Créer une communauté
@@ -177,9 +177,6 @@ if ($registryCount === 0) {
                             <h2 class="text-2xl font-black tracking-tight text-white"><?= htmlspecialchars($name) ?></h2>
                             <?php if ($gameLabel !== ''): ?>
                             <p class="mt-1 text-sm font-semibold leading-snug text-white/95"><?= htmlspecialchars($gameLabel) ?></p>
-                            <p class="mt-0.5 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-400"><?= htmlspecialchars($slug) ?></p>
-                            <?php else: ?>
-                            <p class="mt-1 text-xs font-mono uppercase tracking-[0.14em] text-slate-300"><?= htmlspecialchars($slug) ?></p>
                             <?php endif; ?>
                         </div>
 
@@ -221,7 +218,7 @@ if ($registryCount === 0) {
                     </p>
                     <?php else: ?>
                     <p class="mt-4 text-sm leading-6 text-slate-600">
-                        Présentation à compléter par l’unité (back-office → Fiche registre). En attendant, ouvrez la fiche publique pour voir les informations de recrutement et les accès au forum.
+                        La communauté peut encore enrichir son texte d’accroche depuis l’espace d’administration (menu <strong class="font-semibold text-slate-800">Fiche registre &amp; contact</strong>). En attendant, ouvrez la fiche publique pour le recrutement et le forum.
                     </p>
                     <?php endif; ?>
 
@@ -235,8 +232,8 @@ if ($registryCount === 0) {
                             <p class="mt-1 text-sm font-semibold text-slate-900"><?= $locked ? 'Fermé' : 'Ouvert' ?></p>
                         </div>
                         <div class="rounded-2xl bg-slate-50 px-4 py-3 min-w-0">
-                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400"><?= $code !== '' ? 'Code communauté' : 'Page publique' ?></p>
-                            <p class="mt-1 text-sm font-semibold text-slate-900 break-words" title="<?= htmlspecialchars($code !== '' ? $code : $slug) ?>"><?= htmlspecialchars($code !== '' ? $code : '/' . $slug) ?></p>
+                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400"><?= $code !== '' ? 'Code d’accès' : 'Lien' ?></p>
+                            <p class="mt-1 text-sm font-semibold text-slate-900 break-words"><?= $code !== '' ? htmlspecialchars($code) : 'Fiche publique ci-dessous' ?></p>
                         </div>
                     </div>
 
@@ -277,13 +274,18 @@ if ($registryCount === 0) {
         </ul>
         <?php endif; ?>
 
-        <!-- Extension -->
+        <!-- Aide responsables (sans jargon technique) -->
         <section class="mt-10 rounded-[1.75rem] border border-dashed border-slate-300 bg-white/70 px-6 py-8 text-center">
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Personnalisation</p>
-            <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">Enrichir le registre</h3>
+            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Pour les équipes qui gèrent une communauté</p>
+            <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">Rendre votre carte plus claire et plus accueillante</h3>
             <p class="mt-3 max-w-2xl mx-auto text-sm leading-6 text-slate-600">
-                Administration organisation → <strong>Fiche registre &amp; contact</strong> : texte de présentation, jeu, tags (style et thématiques), visibilité dans ce catalogue.
-                Image de couverture optionnelle : <code class="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono">public/assets/img/communities/<em>slug</em>-cover.jpg</code>.
+                Connectez-vous au <strong class="font-semibold text-slate-800">back-office de votre communauté</strong>, puis ouvrez <strong class="font-semibold text-slate-800">Fiche registre &amp; contact</strong>.
+                Vous pouvez y rédiger un court texte de présentation, indiquer le <strong class="font-semibold text-slate-800">jeu</strong> auquel vous jouez,
+                choisir des <strong class="font-semibold text-slate-800">pastilles</strong> qui décrivent votre style et vos thèmes,
+                et décider si votre unité doit <strong class="font-semibold text-slate-800">apparaître dans cette liste</strong>.
+            </p>
+            <p class="mt-4 max-w-2xl mx-auto text-sm leading-6 text-slate-600">
+                Une <strong class="font-semibold text-slate-800">grande image d’en-tête</strong> (paysage) peut remplacer le fond coloré&nbsp;: transmettez votre visuel à la personne qui gère l’hébergement du site, ou suivez l’indication affichée dans la même fiche registre — le portail saura alors l’afficher automatiquement sur votre carte.
             </p>
         </section>
     </div>

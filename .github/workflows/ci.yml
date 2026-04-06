@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, pdo_mysql
+          coverage: none
+      - name: Composer install
+        run: composer install --no-interaction --prefer-dist
+      - name: Composer audit
+        run: composer audit --no-interaction
+      - name: PHPUnit
+        run: vendor/bin/phpunit
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit=1G
+
+  assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: npm ci
+        run: npm ci
+      - name: Build Tailwind
+        run: npm run build:tailwind

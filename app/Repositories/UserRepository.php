@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Repositories\RoleAssignmentLogRepository;
+use App\Services\Rbac\RoleCoherenceValidator;
 use App\Services\User\UserProfileSlugService;
+use InvalidArgumentException;
 use PDO;
 
 class UserRepository
@@ -19,6 +22,9 @@ class UserRepository
     private static ?bool $hasUserUnitsTable = null;
 
     private static ?bool $hasUserRolesTable = null;
+
+    /** @var array{join: string, grade_short: string, order_grade: string}|null */
+    private static ?array $gradesConfigPublicRoster = null;
 
     /** Email réservé au compte technique par tenant (modération auto, cron, futurs tickets / webhooks). */
     public const SYSTEM_MODERATOR_EMAIL = 'system.moderation@internal.local';
@@ -175,10 +181,18 @@ class UserRepository
      * Remplace les rôles organisation de l’utilisateur et synchronise users.role_id (rôle « principal » affichage).
      *
      * @param list<int> $roleIds
+     * @throws InvalidArgumentException si le jeu de rôles viole les règles de cohérence (sauf si $skipCoherenceCheck).
      */
-    public function syncOrganizationRoles(int $userId, int $tenantId, array $roleIds): void
+    public function syncOrganizationRoles(int $userId, int $tenantId, array $roleIds, ?int $actorUserId = null, bool $skipCoherenceCheck = false): void
     {
         $roleIds = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $x) => $x > 0)));
+        if (!$skipCoherenceCheck) {
+            $err = RoleCoherenceValidator::validateOrgRoleSet($this->pdo, $tenantId, $roleIds);
+            if ($err !== null) {
+                throw new InvalidArgumentException($err);
+            }
+        }
+        $beforeIds = $this->listOrganizationRoleIdsForUser($userId);
         if (!$this->hasUserRolesTable()) {
             $primary = $roleIds[0] ?? null;
             $this->pdo->prepare('UPDATE users SET role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')->execute([$primary, $userId, $tenantId]);
@@ -218,6 +232,59 @@ class UserRepository
         $primary = $this->computePrimaryRoleIdForTenant($tenantId, $valid);
         $this->pdo->prepare('UPDATE users SET role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
             ->execute([$primary, $userId, $tenantId]);
+
+        if ($this->hasPreferredDisplayRoleColumn()) {
+            $prefSt = $this->pdo->prepare('SELECT preferred_display_role_id FROM users WHERE id = ? AND tenant_id = ? LIMIT 1');
+            $prefSt->execute([$userId, $tenantId]);
+            $prefRow = $prefSt->fetch(PDO::FETCH_ASSOC);
+            $pref = isset($prefRow['preferred_display_role_id']) ? (int) $prefRow['preferred_display_role_id'] : 0;
+            if ($pref > 0 && !in_array($pref, $valid, true)) {
+                $this->pdo->prepare('UPDATE users SET preferred_display_role_id = NULL, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
+                    ->execute([$userId, $tenantId]);
+            }
+        }
+
+        $logger = new RoleAssignmentLogRepository();
+        $beforeSet = array_fill_keys($beforeIds, true);
+        $afterSet = array_fill_keys($valid, true);
+        foreach ($beforeIds as $rid) {
+            if (!isset($afterSet[$rid])) {
+                $logger->logRevoke($tenantId, $userId, $rid, $actorUserId, null);
+            }
+        }
+        foreach ($valid as $rid) {
+            if (!isset($beforeSet[$rid])) {
+                $logger->logAssign($tenantId, $userId, $rid, $actorUserId, null);
+            }
+        }
+    }
+
+    private function hasPreferredDisplayRoleColumn(): bool
+    {
+        static $v;
+        if ($v !== null) {
+            return $v;
+        }
+        try {
+            $st = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'preferred_display_role_id' LIMIT 1");
+            $v = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $v = false;
+        }
+
+        return $v;
+    }
+
+    public function setPreferredDisplayRoleId(int $userId, int $tenantId, ?int $roleId): void
+    {
+        if (!$this->hasPreferredDisplayRoleColumn()) {
+            return;
+        }
+        if ($roleId !== null && $roleId > 0 && !$this->userHasTenantRole($userId, $roleId)) {
+            return;
+        }
+        $this->pdo->prepare('UPDATE users SET preferred_display_role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
+            ->execute([$roleId, $userId, $tenantId]);
     }
 
     /**
@@ -251,7 +318,10 @@ class UserRepository
         }
         $validRoleIds = array_values(array_unique($validRoleIds));
         $ph = implode(',', array_fill(0, count($validRoleIds), '?'));
-        $stmt = $this->pdo->prepare("SELECT id, slug, role_layer FROM roles WHERE tenant_id = ? AND id IN ({$ph})");
+        $stmt = $this->pdo->prepare(
+            "SELECT id, slug, role_layer, COALESCE(semantic_tier, 'function') AS semantic_tier, COALESCE(display_priority, 0) AS display_priority
+             FROM roles WHERE tenant_id = ? AND id IN ({$ph})"
+        );
         $stmt->execute(array_merge([$tenantId], $validRoleIds));
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         if ($rows === []) {
@@ -264,11 +334,38 @@ class UserRepository
                 }
             }
         }
-        foreach ($rows as $r) {
-            if (($r['role_layer'] ?? '') === 'community') {
-                return (int) $r['id'];
+        usort(
+            $rows,
+            static function (array $a, array $b): int {
+                $rank = static function (array $x): int {
+                    return match ((string) ($x['semantic_tier'] ?? 'function')) {
+                        'authority' => 1,
+                        'function' => 2,
+                        'specialty' => 3,
+                        'status' => 4,
+                        default => 2,
+                    };
+                };
+                $cmp = $rank($a) <=> $rank($b);
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
+                $cmp = ((int) ($a['display_priority'] ?? 0)) <=> ((int) ($b['display_priority'] ?? 0));
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
+                $la = (string) ($a['role_layer'] ?? '');
+                $lb = (string) ($b['role_layer'] ?? '');
+                if ($la === 'community' && $lb !== 'community') {
+                    return -1;
+                }
+                if ($lb === 'community' && $la !== 'community') {
+                    return 1;
+                }
+
+                return ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));
             }
-        }
+        );
 
         return (int) $rows[0]['id'];
     }
@@ -907,7 +1004,7 @@ class UserRepository
             }
         }
         if ($roleId > 0) {
-            $this->syncOrganizationRoles($newId, $newTenantId, [$roleId]);
+            $this->syncOrganizationRoles($newId, $newTenantId, [$roleId], null, true);
         }
 
         return $newId;
@@ -964,6 +1061,41 @@ class UserRepository
     }
 
     /**
+     * Jointure / colonnes grades : ancienne table tenant (name, short_name, rank_order) ou référentiel (label_*, sort_order).
+     *
+     * @return array{join: string, grade_short: string, order_grade: string}
+     */
+    private function getGradesConfigForPublicRoster(): array
+    {
+        if (self::$gradesConfigPublicRoster !== null) {
+            return self::$gradesConfigPublicRoster;
+        }
+        $stmt = $this->pdo->query(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME IN ('name', 'label_long', 'tenant_id')"
+        );
+        $columns = $stmt ? array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'COLUMN_NAME') : [];
+        $hasLabelLong = in_array('label_long', $columns, true);
+        $hasTenantId = in_array('tenant_id', $columns, true);
+        if ($hasLabelLong) {
+            self::$gradesConfigPublicRoster = [
+                'grade_short' => 'g.label_short AS grade_short',
+                'order_grade' => 'COALESCE(g.sort_order, 999) ASC, g.label_short ASC',
+                'join' => $hasTenantId
+                    ? 'LEFT JOIN grades g ON g.id = u.grade_id AND g.tenant_id = u.tenant_id'
+                    : 'LEFT JOIN grades g ON g.id = u.grade_id',
+            ];
+        } else {
+            self::$gradesConfigPublicRoster = [
+                'grade_short' => 'g.short_name AS grade_short',
+                'order_grade' => 'COALESCE(g.rank_order, 999) ASC, g.short_name ASC',
+                'join' => 'LEFT JOIN grades g ON g.id = u.grade_id AND g.tenant_id = u.tenant_id',
+            ];
+        }
+
+        return self::$gradesConfigPublicRoster;
+    }
+
+    /**
      * Membres pour le roster public : actifs, opt-in, ordre stable.
      *
      * @return list<array<string,mixed>>
@@ -979,20 +1111,24 @@ class UserRepository
         }
 
         $limit = max(1, min(200, $limit));
+        $gc = $this->getGradesConfigForPublicRoster();
+        $gradeJoin = $gc['join'];
+        $gradeShort = $gc['grade_short'];
+        $orderGrade = $gc['order_grade'];
         $sql = "SELECT u.id, u.display_name, u.callsign, u.status,
-                       g.short_name AS grade_short,
+                       {$gradeShort},
                        r.name AS role_name,
                        ups.forum_alias, ups.forum_label_mode,
                        un.name AS unit_name
                 FROM users u
                 INNER JOIN user_profile_display_settings ups ON ups.user_id = u.id AND COALESCE(ups.public_roster_opt_in, 0) = 1
-                LEFT JOIN grades g ON g.id = u.grade_id AND g.tenant_id = u.tenant_id
+                {$gradeJoin}
                 LEFT JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
                 LEFT JOIN user_units uu ON uu.user_id = u.id AND uu.is_primary = 1
                     AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
                 LEFT JOIN units un ON un.id = uu.unit_id AND un.tenant_id = u.tenant_id
                 WHERE u.tenant_id = ? AND u.status = 'active'
-                ORDER BY COALESCE(g.rank_order, 999) ASC, g.short_name ASC, u.display_name ASC, u.callsign ASC
+                ORDER BY {$orderGrade}, u.display_name ASC, u.callsign ASC
                 LIMIT {$limit}";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$tenantId]);
@@ -1080,6 +1216,48 @@ class UserRepository
         }
 
         return array_values(array_unique($emails));
+    }
+
+    /**
+     * Membres actifs susceptibles de modérer le forum (alertes internes).
+     *
+     * @return list<int>
+     */
+    public function listForumAlertRecipientUserIds(int $tenantId): array
+    {
+        $ids = [];
+        $svcExcl = $this->hasServiceAccountColumn() ? '(u.is_service_account IS NULL OR u.is_service_account = 0)' : '1';
+        $slugs = "'tenant_admin', 'community_owner', 'forum_moderator', 'administrator'";
+        $sql = "SELECT DISTINCT u.id FROM users u
+            INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
+            WHERE u.tenant_id = ? AND u.status = 'active' AND {$svcExcl}
+            AND r.slug IN ({$slugs})";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$tenantId]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $ids[] = (int) ($row['id'] ?? 0);
+            }
+        } catch (\Throwable) {
+            return [];
+        }
+        if ($this->hasTenantUserRolesTable()) {
+            $sql2 = "SELECT DISTINCT u.id FROM users u
+                INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
+                INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
+                WHERE u.tenant_id = ? AND u.status = 'active' AND {$svcExcl}
+                AND r.slug IN ({$slugs})";
+            try {
+                $st = $this->pdo->prepare($sql2);
+                $st->execute([$tenantId]);
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $ids[] = (int) ($row['id'] ?? 0);
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
     }
 
     public function invalidateAllSessionsForUser(int $userId, ?int $tenantId = null): void

@@ -15,6 +15,7 @@ use App\Repositories\ForumPostRepository;
 use App\Repositories\ForumReportRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\ForumAuthorIdentityRepository;
+use App\Repositories\InterteamMissionRepository;
 use App\Services\Profile\ProfilePublicIdentityService;
 
 class ForumController
@@ -26,7 +27,8 @@ class ForumController
         private ForumReportRepository $reportRepository,
         private ModerationArtifactRepository $moderationArtifactRepository,
         private ForumAuthorIdentityRepository $forumAuthorIdentityRepository,
-        private ProfilePublicIdentityService $profilePublicIdentityService
+        private ProfilePublicIdentityService $profilePublicIdentityService,
+        private InterteamMissionRepository $interteamMissionRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -36,6 +38,13 @@ class ForumController
         if (!$tenantId || !$userId) {
             Session::flash('error', 'Authentification requise.');
             return Response::redirect(url('login'));
+        }
+
+        if (function_exists('forum_disabled_for_member_response')) {
+            $blocked = forum_disabled_for_member_response((int) $tenantId);
+            if ($blocked !== null) {
+                return $blocked;
+            }
         }
 
         $tree = $this->categoryRepository->listForTenantWithChildren($tenantId);
@@ -70,6 +79,23 @@ class ForumController
             $this->forumAuthorIdentityRepository,
             (int) $tenantId
         );
+
+        $forumCfg = forum_config_for_tenant((int) $tenantId);
+        $forumCommunitySectionClosedNotice = null;
+        if (function_exists('forum_community_section_open_for_current_viewer')
+            && !forum_community_section_open_for_current_viewer((int) $tenantId)) {
+            $forumCommunitySectionClosedNotice = trim((string) ($forumCfg['community_section_notice'] ?? ''));
+            if ($forumCommunitySectionClosedNotice === '') {
+                $forumCommunitySectionClosedNotice = 'Cet espace est indisponible ici pour le moment. Pour les échanges d’unité, suivez les canaux indiqués par votre encadrement.';
+            }
+            $forumOrganizationCategories = [];
+        }
+
+        $interteamSharedTopics = [];
+        if ($this->interteamMissionRepository->tableExists()) {
+            $interteamSharedTopics = $this->interteamMissionRepository->listSharedTopicsForConsumer((int) $tenantId, 40);
+        }
+
         $topicCount = $this->topicRepository->getTotalTopicCount($tenantId);
         $postCount = $this->postRepository->getTotalPostCount($tenantId);
         $postsThisWeek = $this->postRepository->getPostsThisWeekCount($tenantId);
@@ -125,7 +151,6 @@ class ForumController
             );
         }
 
-        $forumCfg = forum_config_for_tenant((int) $tenantId);
         $gate = Gate::getInstance();
         $forumCanCreateSubcategory = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
         $forumFullCategoryAdmin = $gate->allows('admin.access')
@@ -158,6 +183,8 @@ class ForumController
             'searchResults' => $searchResults,
             'pinnedAnnouncements' => $pinnedAnnouncements,
             'announcementsCategory' => $announcementsCategory,
+            'forumCommunitySectionClosedNotice' => $forumCommunitySectionClosedNotice,
+            'interteamSharedTopics' => $interteamSharedTopics,
         ]);
     }
 }

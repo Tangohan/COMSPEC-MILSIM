@@ -18,16 +18,16 @@ final class TenantDefaultRoleDefinitions
         return [
             [
                 'slug' => 'community_owner',
-                'name' => 'Fondateur',
-                'description' => 'Propriétaire de la communauté : vision, gouvernance et validation stratégique. Ne confère pas l’administration technique de la plateforme.',
+                'name' => 'Gestionnaire d’organisation',
+                'description' => 'Autorité stratégique sur l’entité : gouvernance globale, hors périmètre technique de la plateforme.',
                 'role_layer' => 'community',
                 'is_system' => 1,
                 'is_locked' => 1,
             ],
             [
                 'slug' => 'tenant_admin',
-                'name' => 'État-major',
-                'description' => 'Direction de l’unité au quotidien : effectifs, ORBAT, rôles, invitations, modération organisationnelle et paramètres.',
+                'name' => 'Gestionnaire administratif d’organisation',
+                'description' => 'Administration opérationnelle quotidienne : membres, contenus et paramètres internes.',
                 'role_layer' => 'community',
                 'is_system' => 1,
                 'is_locked' => 0,
@@ -61,16 +61,16 @@ final class TenantDefaultRoleDefinitions
             ],
             [
                 'slug' => 'forum_moderator',
-                'name' => 'Modérateur forum',
-                'description' => 'Modération des espaces de discussion de l’unité (épinglage, signalements, catégories). Périmètre organisation, pas administration plateforme.',
+                'name' => 'Officier responsable de la communication',
+                'description' => 'Échanges, annonces, modération et structuration du discours collectif au sein de l’organisation.',
                 'role_layer' => 'intra',
                 'is_system' => 1,
                 'is_locked' => 0,
             ],
             [
                 'slug' => 'hr',
-                'name' => 'RH (S1)',
-                'description' => 'Ressources humaines : dossiers personnel, grades et suivi administratif des effectifs.',
+                'name' => 'Gestionnaire des ressources humaines de l’organisation',
+                'description' => 'Effectifs, recrutements, statuts, parcours et conformité interne.',
                 'role_layer' => 'intra',
                 'is_system' => 1,
                 'is_locked' => 0,
@@ -179,6 +179,7 @@ final class TenantDefaultRoleDefinitions
                 'documents.view', 'documents.download.standard', 'training.view',
                 'personnel.profile.view',
                 'dashboard.pins.manage',
+                'interteam.missions.respond',
             ],
         ];
     }
@@ -200,5 +201,97 @@ final class TenantDefaultRoleDefinitions
                 $row['slug'],
             ]);
         }
+    }
+
+    /**
+     * Clé de tri pour listes admin : d’abord la couche communauté, puis intra ;
+     * à l’intérieur de chaque couche, ordre type état-major → encadrement → soutiens → ligne → accès réduit.
+     *
+     * @param array<string, mixed> $roleRow
+     */
+    public static function organizationRoleDisplaySortKey(array $roleRow): int
+    {
+        $slug = strtolower(trim((string) ($roleRow['slug'] ?? '')));
+        $layer = (string) ($roleRow['role_layer'] ?? 'community');
+        $base = $layer === 'community' ? 0 : 1000;
+
+        /** @var array<string, int> */
+        $communitySlug = [
+            'community_owner' => 10,
+            'tenant_admin' => 20,
+            'recruiter' => 30,
+        ];
+        /** @var array<string, int> */
+        $intraSlug = [
+            'officer' => 10,
+            'instructor' => 20,
+            'forum_moderator' => 30,
+            'hr' => 40,
+            'logistics' => 50,
+            'medic' => 60,
+            'rto' => 70,
+            'member' => 80,
+            'probation' => 90,
+            'invite' => 100,
+            'guest' => 105,
+        ];
+
+        if ($layer === 'community') {
+            if (isset($communitySlug[$slug])) {
+                return $base + $communitySlug[$slug];
+            }
+            if (isset($intraSlug[$slug])) {
+                return $base + 200 + $intraSlug[$slug];
+            }
+
+            return $base + 40;
+        }
+
+        if (isset($intraSlug[$slug])) {
+            return $base + $intraSlug[$slug];
+        }
+        if (isset($communitySlug[$slug])) {
+            return $base + $communitySlug[$slug];
+        }
+
+        return $base + 250;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function sortOrganizationRoleRows(array $rows): array
+    {
+        usort(
+            $rows,
+            static function (array $a, array $b): int {
+                $la = (string) ($a['role_layer'] ?? 'community');
+                $lb = (string) ($b['role_layer'] ?? 'community');
+                if ($la !== $lb) {
+                    return $la === 'community' ? -1 : 1;
+                }
+                $ga = (int) ($a['display_group'] ?? 0);
+                $gb = (int) ($b['display_group'] ?? 0);
+                if ($ga !== $gb && ($ga > 0 || $gb > 0)) {
+                    return $ga <=> $gb;
+                }
+                $wa = (int) ($a['display_weight'] ?? 0);
+                $wb = (int) ($b['display_weight'] ?? 0);
+                if ($wa !== $wb && ($wa > 0 || $wb > 0)) {
+                    return $wa <=> $wb;
+                }
+                $ka = self::organizationRoleDisplaySortKey($a);
+                $kb = self::organizationRoleDisplaySortKey($b);
+                if ($ka !== $kb) {
+                    return $ka <=> $kb;
+                }
+
+                return strcasecmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+            }
+        );
+
+        return $rows;
     }
 }

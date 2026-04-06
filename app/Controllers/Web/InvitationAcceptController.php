@@ -23,6 +23,7 @@ use App\Services\Auth\AuthService;
 use App\Services\EmailService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Rbac\RbacService;
+use App\Services\Moderation\IndicatorBlocklistService;
 
 final class InvitationAcceptController
 {
@@ -38,7 +39,8 @@ final class InvitationAcceptController
         private UnitRepository $unitRepository,
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
-        private PersonnelJobRoleRepository $personnelJobRoleRepository
+        private PersonnelJobRoleRepository $personnelJobRoleRepository,
+        private IndicatorBlocklistService $indicatorBlocklist
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -83,6 +85,18 @@ final class InvitationAcceptController
             return Response::redirect(url(''));
         }
         $tenantId = (int) $inv['tenant_id'];
+        $inviteEmail = strtolower(trim((string) ($inv['email'] ?? '')));
+        if ($inviteEmail !== '' && $this->indicatorBlocklist->isEmailBlockedForTenant($tenantId, $inviteEmail)) {
+            Session::flash('error', 'Cette invitation ne peut pas être utilisée : l’adresse e-mail est restreinte pour cette communauté.');
+
+            return Response::redirect(url(''));
+        }
+        $ipAccept = trim($request->ip());
+        if ($ipAccept !== '' && $this->indicatorBlocklist->isIpBlockedForLogin($tenantId, $ipAccept)) {
+            Session::flash('error', 'L’acceptation n’est pas possible depuis cet équipement pour le moment.');
+
+            return Response::redirect(url(''));
+        }
         if (!$this->featureGate->canAddMember($tenantId)) {
             Session::flash('error', 'Cette communauté a atteint la limite de membres pour son plan.');
 
@@ -98,7 +112,7 @@ final class InvitationAcceptController
             return Response::redirect(url('invitations/accept') . '?token=' . rawurlencode($token));
         }
 
-        $email = (string) $inv['email'];
+        $email = $inviteEmail !== '' ? $inviteEmail : (string) $inv['email'];
         if ($this->users->emailExistsInTenant($tenantId, $email)) {
             Session::flash('error', 'Vous avez déjà un compte dans cette communauté.');
 
@@ -145,7 +159,7 @@ final class InvitationAcceptController
             ]);
         }
         if (!$existingGlobal) {
-            $this->users->syncOrganizationRoles($newId, $tenantId, [$roleId]);
+            $this->users->syncOrganizationRoles($newId, $tenantId, [$roleId], null, true);
         }
 
         $this->applyInvitationPayload($tenantId, $newId, $inv);

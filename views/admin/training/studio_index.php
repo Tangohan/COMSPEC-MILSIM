@@ -3,7 +3,7 @@ $courses = $courses ?? [];
 $visibilityFilter = $visibilityFilter ?? '';
 $canPublish = $canPublish ?? false;
 $lmsPlatformVersion = (string) ($lmsPlatformVersion ?? '');
-$lmsChangelogUrl = (string) ($lmsChangelogUrl ?? url('admin/training/studio/versions'));
+$lmsChangelogUrl = (string) ($lmsChangelogUrl ?? training_studio_url('versions'));
 
 $visLabels = [
     'draft' => 'Brouillon',
@@ -32,9 +32,11 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
                 <h1 class="text-2xl md:text-4xl font-black text-slate-900 tracking-tight uppercase leading-tight">Tableau des formations</h1>
                 <p class="text-slate-600 text-sm mt-3 max-w-2xl leading-relaxed">Créez des parcours, ajoutez des modules et des leçons, puis publiez-les dans le catalogue apprenant — comme un espace créateur dédié.</p>
                 <p class="text-sm text-slate-500 mt-2">
-                    <a href="<?= url('admin/training') ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:decoration-emerald-600 hover:text-emerald-800">← Tableau de bord formations</a>
+                    <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:decoration-emerald-600 hover:text-emerald-800">← Tableau de bord formations</a>
                     <span class="text-slate-300 mx-2">·</span>
                     <a href="<?= htmlspecialchars($lmsChangelogUrl) ?>" class="text-slate-600 underline decoration-slate-200 hover:text-emerald-800">Journal du Studio</a>
+                    <span class="text-slate-300 mx-2">·</span>
+                    <a href="<?= htmlspecialchars(url(training_studio_path() . '/echange/importer')) ?>" class="text-slate-600 underline decoration-slate-200 hover:text-emerald-800">Importer une formation</a>
                     <?php if ($lmsPlatformVersion !== ''): ?>
                     <span class="text-slate-400 ml-1">(v<?= htmlspecialchars($lmsPlatformVersion) ?>)</span>
                     <?php endif; ?>
@@ -65,7 +67,7 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
                         <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Vos formations</h2>
                         <p class="text-sm text-slate-600 mt-0.5">Cliquez sur <strong>Éditer</strong> pour structurer les modules et leçons.</p>
                     </div>
-                    <form method="get" action="<?= url('admin/training/studio') ?>" class="flex flex-wrap items-center gap-2">
+                    <form method="get" action="<?= training_studio_url() ?>" class="flex flex-wrap items-center gap-2">
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Visibilité</label>
                         <select name="visibility" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium bg-white shadow-sm focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400" onchange="this.form.submit()">
                             <option value="">Toutes</option>
@@ -104,7 +106,7 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
                             <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide rounded-full bg-amber-100 text-amber-900 border border-amber-200/80" title="Créée avant la version actuelle du Studio">Création — ancienne version</span>
                             <?php endif; ?>
                             <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide rounded-full <?= $isPub ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700' ?>"><?= htmlspecialchars($visLabels[$c['visibility']] ?? (string) ($c['visibility'] ?? '')) ?></span>
-                            <a href="<?= url('admin/training/studio/' . (int) $c['id']) ?>" class="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 shadow-sm transition-colors">Éditer</a>
+                            <a href="<?= training_studio_url((string) (int) $c['id']) ?>" class="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 shadow-sm transition-colors">Éditer</a>
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -117,7 +119,7 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
             <section class="training-studio-panel p-6 border-t-4 border-t-violet-500 shadow-lg shadow-slate-900/5">
                 <h2 class="text-xs font-black uppercase tracking-[0.22em] text-violet-900/80 mb-1">Nouvelle formation</h2>
                 <p class="text-sm text-slate-600 mb-5">Créée en brouillon par défaut ; vous pourrez compléter la fiche ensuite.</p>
-                <form method="post" action="<?= url('admin/training/studio') ?>" class="space-y-4">
+                <form method="post" action="<?= training_studio_url() ?>" class="space-y-4">
                     <?= \App\Core\Csrf::field() ?>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1.5">Titre</label>

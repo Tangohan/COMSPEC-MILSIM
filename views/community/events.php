@@ -21,6 +21,10 @@ $typeLabel = static function (string $t): string {
     <p class="text-sm text-neutral-400 mb-6">
         <a href="<?= htmlspecialchars(url('pointage')) ?>" class="text-emerald-400 hover:underline font-semibold">Ouvrir le pointage complet</a>
         — RSVP, pointage jour J et historique.
+        <?php if (!empty($calendar_subscription_url)): ?>
+        <span class="block mt-3 text-neutral-500">Abonnement calendrier (lecture seule, lien personnel) :</span>
+        <input type="text" readonly class="mt-1 w-full max-w-xl rounded border border-white/10 bg-neutral-950/80 px-3 py-2 text-xs text-neutral-200" value="<?= htmlspecialchars((string) $calendar_subscription_url, ENT_QUOTES, 'UTF-8') ?>" onclick="this.select();">
+        <?php endif; ?>
     </p>
     <?php
     $quotaBanner = $eventsQuota ?? null;

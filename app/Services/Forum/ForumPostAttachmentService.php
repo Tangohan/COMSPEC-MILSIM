@@ -14,7 +14,7 @@ final class ForumPostAttachmentService
 {
     private const MAX_ATTACHMENTS = 5;
 
-    private const ALLOWED_MIMES = [
+    private const FALLBACK_MIMES = [
         'image/jpeg',
         'image/png',
         'image/gif',
@@ -35,6 +35,12 @@ final class ForumPostAttachmentService
         if (!$this->attachmentRepository->tableExists()) {
             return;
         }
+        $allowedExt = function_exists('forum_allowed_upload_extensions')
+            ? forum_allowed_upload_extensions($tenantId)
+            : ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
+        $allowedMimes = function_exists('forum_upload_allowed_mimes')
+            ? forum_upload_allowed_mimes($tenantId)
+            : self::FALLBACK_MIMES;
         $keys = [];
         foreach ($sourceKeys as $k) {
             $k = basename((string) $k);
@@ -46,7 +52,16 @@ final class ForumPostAttachmentService
             }
         }
         foreach ($keys as $key) {
-            if (!preg_match('/^forum_[a-zA-Z0-9_.]+\.(jpe?g|png|gif|webp|pdf)$/i', $key)) {
+            if (!preg_match('/^forum_[a-zA-Z0-9_.]+\.([a-z0-9]+)$/i', $key, $xm)) {
+                continue;
+            }
+            $extRaw = strtolower($xm[1]);
+            if ($extRaw === 'jpeg') {
+                $extRaw = 'jpg';
+            }
+            $extOk = in_array($extRaw, $allowedExt, true)
+                || ($extRaw === 'jpg' && in_array('jpeg', $allowedExt, true));
+            if (!$extOk) {
                 continue;
             }
             $artifact = $this->moderationArtifactRepository->tableExists()
@@ -66,7 +81,7 @@ final class ForumPostAttachmentService
                 if (!is_file($full)) {
                     continue;
                 }
-                if (!in_array($mime, self::ALLOWED_MIMES, true)) {
+                if (!in_array($mime, $allowedMimes, true)) {
                     continue;
                 }
                 $size = (int) filesize($full);
@@ -86,7 +101,7 @@ final class ForumPostAttachmentService
             }
             $finfo = new \finfo(FILEINFO_MIME_TYPE);
             $detected = $finfo->file($full);
-            if (!is_string($detected) || !in_array($detected, self::ALLOWED_MIMES, true)) {
+            if (!is_string($detected) || !in_array($detected, $allowedMimes, true)) {
                 continue;
             }
             $size = (int) filesize($full);

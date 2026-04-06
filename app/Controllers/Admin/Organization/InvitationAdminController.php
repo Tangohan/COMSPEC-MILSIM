@@ -47,7 +47,7 @@ final class InvitationAdminController
             : [];
 
         return Response::view('layout.main', [
-            'title' => 'Invitations',
+            'title' => 'Invitations à rejoindre l’unité',
             'content' => 'admin.organization.invitations',
             'invitations' => $rows,
             'rolesOrganization' => $rolesOrganization,
@@ -78,7 +78,7 @@ final class InvitationAdminController
         $email = strtolower(trim((string) $request->input('email')));
         $roleId = (int) $request->input('role_id');
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            Session::flash('error', 'Email invalide.');
+            Session::flash('error', 'Adresse e-mail invalide. Vérifiez la saisie et réessayez.');
 
             return Response::redirect(url('back-office/invitations'));
         }
@@ -92,7 +92,7 @@ final class InvitationAdminController
         if ($roleRow && $this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
             $roleIdFinal = $roleId;
         } elseif ($roleId > 0) {
-            Session::flash('error', 'Rôle non autorisé pour une invitation (choisir un rôle communauté ou intra-communauté du tenant, pas un rôle site/plateforme).');
+            Session::flash('error', 'Rôle non autorisé pour une invitation : choisissez un rôle de gouvernance ou opérationnel de votre communauté, pas un rôle réservé à la plateforme.');
 
             return Response::redirect(url('back-office/invitations'));
         }
@@ -143,7 +143,7 @@ final class InvitationAdminController
         );
 
         $this->auditService->log(AuditAction::INVITATION_SENT, $tenantId, (int) $user['id'], 'invitation', null, null, $email);
-        Session::flash('success', 'Invitation envoyée.');
+        Session::flash('success', 'L’invitation a été envoyée. La personne recevra un message avec un lien pour rejoindre l’unité.');
 
         return Response::redirect(url('back-office/invitations'));
     }
@@ -172,9 +172,9 @@ final class InvitationAdminController
             }
         }
         if ($this->invitations->markRevoked($id, $tenantId)) {
-            Session::flash('success', 'Invitation révoquée.');
+            Session::flash('success', 'L’invitation a été annulée. Le lien envoyé par e-mail ne fonctionnera plus.');
         } else {
-            Session::flash('error', 'Révocation impossible.');
+            Session::flash('error', 'Impossible d’annuler cette invitation. Elle a peut-être déjà été utilisée ou retirée.');
         }
 
         return Response::redirect(url('back-office/invitations'));

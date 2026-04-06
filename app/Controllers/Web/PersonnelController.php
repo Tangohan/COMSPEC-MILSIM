@@ -27,7 +27,9 @@ use App\Repositories\UserProfileRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RoleRepository;
+use App\Repositories\TenantRepository;
 use App\Core\Gate;
+use App\Support\OrbatRosterPayload;
 
 class PersonnelController
 {
@@ -107,7 +109,8 @@ class PersonnelController
         private UserProfileRepository $userProfileRepository,
         private EnlistmentRepository $enlistmentRepository,
         private PersonnelJobRoleRepository $personnelJobRoleRepository,
-        private RoleRepository $roleRepository
+        private RoleRepository $roleRepository,
+        private TenantRepository $tenantRepository
     ) {}
 
     /**
@@ -339,19 +342,37 @@ class PersonnelController
             return Response::redirect(url('login'));
         }
         $tid = (int) $tenantId;
-        $tree = $this->unitRepository->getTree($tid);
-        $flat = \App\Repositories\UnitRepository::flattenTree($tree);
-        $memberCounts = $this->unitRepository->countDistinctMembersByUnitForTenant($tid);
-        $commanderLabels = $this->unitRepository->commanderLabelByUnitForTenant($tid, $flat);
-        $rosterByUnit = $this->unitRepository->rosterMembersByUnitForTenant($tid);
+        $rosterData = OrbatRosterPayload::buildForTenant($this->unitRepository, $tid);
+        $gate = Gate::getInstance();
+        $orbatCanManage = $gate->allows('admin.organization') || $gate->allows('admin.access');
+        $orbatCommanderOptions = [];
+        if ($orbatCanManage) {
+            foreach ($this->userRepository->allForTenant($tid) as $u) {
+                if (($u['status'] ?? '') !== 'active') {
+                    continue;
+                }
+                $id = (int) ($u['id'] ?? 0);
+                if ($id < 1) {
+                    continue;
+                }
+                $dn = trim((string) ($u['display_name'] ?? ''));
+                $cs = trim((string) ($u['callsign'] ?? ''));
+                $em = trim((string) ($u['email'] ?? ''));
+                $label = $dn !== '' ? $dn : ($cs !== '' ? $cs : $em);
+                if ($label === '') {
+                    $label = 'Compte #' . $id;
+                }
+                $orbatCommanderOptions[] = ['id' => $id, 'label' => $label];
+            }
+        }
 
         return Response::view('layout.main', [
             'content' => 'personnel.orbat',
             'title' => 'ORBAT',
-            'unitsTree' => $tree,
-            'unitMemberCounts' => $memberCounts,
-            'unitCommanderLabels' => $commanderLabels,
-            'unitRosterByUnit' => $rosterByUnit,
+            'orbatRosterData' => $rosterData,
+            'orbatCanManage' => $orbatCanManage,
+            'orbatCommanderOptions' => $orbatCommanderOptions,
+            'orbatCsrfToken' => Csrf::token(),
         ]);
     }
 
@@ -426,6 +447,10 @@ class PersonnelController
         }
         usort($forumOrgRoleChoices, static fn (array $a, array $b): int => strcmp($a['name'], $b['name']));
 
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $memberCanChooseDisplayRole = !empty($community['member_can_choose_display_role']);
+
         return Response::view('layout.main', [
             'content' => 'personnel.edit',
             'title' => 'Éditer le dossier',
@@ -447,6 +472,7 @@ class PersonnelController
             'jobRoleOptions' => $jobRoleOptions,
             'jobRoleSlugToId' => $jobRoleSlugToId,
             'forumOrgRoleChoices' => $forumOrgRoleChoices,
+            'memberCanChooseDisplayRole' => $memberCanChooseDisplayRole,
         ]);
     }
 
@@ -610,6 +636,20 @@ class PersonnelController
             }
             $displayUpsert['forum_visible_role_id'] = $forumVisibleRoleId;
             $this->displaySettingsRepository->upsert((int) $target['id'], $displayUpsert);
+        }
+        if ($isSelf) {
+            $settings = $this->tenantRepository->getSettings($tenantId);
+            $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+            if (!empty($community['member_can_choose_display_role'])) {
+                $prefRaw = $request->input('preferred_display_role_id');
+                $prefId = ($prefRaw === null || $prefRaw === '' || $prefRaw === '0') ? null : (int) $prefRaw;
+                if ($prefId !== null && $prefId > 0 && !$this->userRepository->userHasTenantRole((int) $target['id'], $prefId)) {
+                    Session::flash('error', 'Le rôle choisi doit faire partie de vos rôles dans cette communauté.');
+
+                    return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+                }
+                $this->userRepository->setPreferredDisplayRoleId((int) $target['id'], $tenantId, $prefId);
+            }
         }
         Session::flash('success', 'Dossier mis à jour.');
         $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));

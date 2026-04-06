@@ -6,6 +6,9 @@ $roleMatrix = $roleMatrix ?? ['roles' => [], 'permissions' => [], 'byRole' => []
 $selectedRoleIds = $selectedRoleIds ?? [];
 $grades = $grades ?? [];
 $gradeCategories = $gradeCategories ?? [];
+$positionsList = is_array($positionsList ?? null) ? $positionsList : [];
+$userActivePositions = is_array($userActivePositions ?? null) ? $userActivePositions : [];
+$roleSetsList = is_array($roleSetsList ?? null) ? $roleSetsList : [];
 if (!$user) {
     echo '<p>Utilisateur introuvable.</p>';
     return;
@@ -16,6 +19,12 @@ $isServiceAccount = !empty($isServiceAccount);
 <div class="max-w-5xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 mb-6">Modifier le compte administratif</h1>
     <p class="text-sm text-slate-600 mb-4">Connexion, rôle, identité civile liée au compte. L’identité opérationnelle (personnage, affectation, clearance) se gère dans la <a href="<?= url('personnel/' . $uid . '/edit') ?>" class="text-blue-700 font-medium underline">fiche personnelle</a>.</p>
+    <?php if (\App\Core\Session::get('success')): ?>
+    <p class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><?= htmlspecialchars((string) \App\Core\Session::get('success')) ?></p>
+    <?php \App\Core\Session::forget('success'); endif; ?>
+    <?php if (\App\Core\Session::get('error')): ?>
+    <p class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"><?= htmlspecialchars((string) \App\Core\Session::get('error')) ?></p>
+    <?php \App\Core\Session::forget('error'); endif; ?>
     <?php
     $gradeValidationIssues = $gradeValidationIssues ?? [];
     foreach ($gradeValidationIssues as $i):
@@ -157,6 +166,64 @@ $isServiceAccount = !empty($isServiceAccount);
             refreshUnion();
         })();
         </script>
+
+        <?php if (!$isServiceAccount && $positionsList !== []): ?>
+        <div class="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+            <h2 class="text-sm font-bold text-slate-900">Poste organisationnel</h2>
+            <p class="text-xs text-slate-600">Affectation de fonction (distincte des rôles ci-dessus). <a href="<?= url('back-office/positions') ?>" class="text-blue-700 underline font-medium">Gérer les postes</a></p>
+            <?php if ($userActivePositions !== []): ?>
+            <ul class="text-xs text-slate-700 space-y-1 mb-2">
+                <?php foreach ($userActivePositions as $up): ?>
+                <li>• <?= htmlspecialchars((string) ($up['position_name'] ?? '')) ?> — depuis <?= htmlspecialchars((string) ($up['starts_at'] ?? '')) ?><?php if (!empty($up['ends_at'])): ?> jusqu’au <?= htmlspecialchars((string) $up['ends_at']) ?><?php endif; ?></li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
+            <form method="post" action="<?= url('back-office/users/' . $uid . '/assign-position') ?>" class="grid sm:grid-cols-2 gap-3 items-end">
+                <?= \App\Core\Csrf::field() ?>
+                <div class="sm:col-span-2">
+                    <label for="position_id" class="block text-xs font-medium text-slate-600">Poste</label>
+                    <select id="position_id" name="position_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm">
+                        <option value="">— Choisir —</option>
+                        <?php foreach ($positionsList as $pos): ?>
+                        <option value="<?= (int) ($pos['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($pos['name'] ?? '')) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label for="starts_at" class="block text-xs font-medium text-slate-600">Début</label>
+                    <input type="date" id="starts_at" name="starts_at" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm">
+                </div>
+                <div>
+                    <label for="ends_at" class="block text-xs font-medium text-slate-600">Fin (optionnel)</label>
+                    <input type="date" id="ends_at" name="ends_at" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm">
+                </div>
+                <div class="sm:col-span-2">
+                    <button type="submit" class="px-3 py-2 bg-slate-800 text-white text-xs font-semibold rounded hover:bg-slate-900">Ajouter l’affectation</button>
+                </div>
+            </form>
+        </div>
+        <?php endif; ?>
+
+        <?php if (!$isServiceAccount && $roleSetsList !== []): ?>
+        <div class="rounded-xl border border-slate-200 bg-amber-50/40 p-4">
+            <h2 class="text-sm font-bold text-slate-900">Jeu de rôles (pack)</h2>
+            <p class="text-xs text-slate-600 mt-1 mb-3">Ajoute en une fois les rôles prédéfinis du pack, <strong>sans retirer</strong> les rôles déjà cochés.</p>
+            <form method="post" action="<?= url('back-office/users/' . $uid . '/apply-role-set') ?>" class="flex flex-wrap items-end gap-3">
+                <?= \App\Core\Csrf::field() ?>
+                <div class="flex-1 min-w-[200px]">
+                    <label for="role_set_id" class="block text-xs font-medium text-slate-600">Pack</label>
+                    <select id="role_set_id" name="role_set_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm">
+                        <option value="">— Choisir —</option>
+                        <?php foreach ($roleSetsList as $rs): ?>
+                        <option value="<?= (int) ($rs['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($rs['name'] ?? '')) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <button type="submit" class="px-3 py-2 bg-amber-900 text-white text-xs font-semibold rounded hover:bg-amber-950">Appliquer</button>
+            </form>
+        </div>
+        <?php endif; ?>
+
         <div>
             <label for="nationality_code" class="block text-sm font-medium text-slate-700">Nationalité / doctrine</label>
             <select id="nationality_code" name="nationality_code" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
@@ -194,7 +261,7 @@ $isServiceAccount = !empty($isServiceAccount);
         <div>
             <label for="status" class="block text-sm font-medium text-slate-700">Statut</label>
             <select id="status" name="status" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
-                <option value="pending" <?= ($user['status'] ?? '') === 'pending' ? 'selected' : '' ?>>En attente</option>
+                <option value="pending_verification" <?= ($user['status'] ?? '') === 'pending_verification' ? 'selected' : '' ?>>En attente de vérification de l’e-mail</option>
                 <option value="active" <?= ($user['status'] ?? '') === 'active' ? 'selected' : '' ?>>Actif</option>
                 <option value="inactive" <?= ($user['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>Inactif</option>
             </select>

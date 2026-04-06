@@ -9,6 +9,11 @@ module.exports = {
   content: ['views/**/*.php', 'public/**/*.js'],
   /** Classes utilisées depuis des chaînes PHP (ex. vues/account/index.php) — évite un fond blanc si le purge les omet. */
   safelist: [
+    /* Tiroir navigation dashboard (évite double colonne si purge) */
+    'w-[200%]',
+    'w-[min(100%,340px)]',
+    'ease-[cubic-bezier(0.33,1,0.68,1)]',
+    'shadow-[8px_0_40px_-12px_rgba(15,23,42,0.35)]',
     /* Méga-menu : utilitaires arbitraires du header (filet de sécurité après build Tailwind) */
     'w-[min(60rem,calc(100vw-1.25rem))]',
     'max-w-[calc(100vw-1rem)]',
@@ -43,5 +48,5 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [require('@tailwindcss/typography')],
 };

@@ -78,14 +78,14 @@ class SystemRoleController
         if (!$tenantId || !$id) {
             return Response::redirect(url('admin/roles'));
         }
-        if ($this->rolePermissionService->isRoleLocked($id)) {
-            Session::flash('error', 'Ce rôle est verrouillé.');
-
-            return Response::redirect(url('admin/roles/' . $id));
-        }
         $role = $this->roleRepository->findById($id, null);
         if (!$role || ($role['tenant_id'] ?? null) !== null || (($role['role_layer'] ?? '') !== 'site')) {
             return Response::redirect(url('admin/roles'));
+        }
+        if ($this->rolePermissionService->isRoleLocked($id) || !empty($role['is_system_critical'])) {
+            Session::flash('error', 'Ce rôle est verrouillé ou réservé à la plateforme : les habilitations ne peuvent pas être modifiées ici.');
+
+            return Response::redirect(url('admin/roles/' . $id));
         }
         $permissionIds = $this->rolePermissionService->getPermissionIdsForRole($id);
         $allPermissions = $this->permissionRepository->allGlobalSite();
@@ -106,16 +106,16 @@ class SystemRoleController
         if (!$tenantId || !$id) {
             return Response::redirect(url('admin/roles'));
         }
-        if ($this->rolePermissionService->isRoleLocked($id)) {
-            Session::flash('error', 'Ce rôle est verrouillé.');
-
-            return Response::redirect(url('admin/roles/' . $id));
-        }
         $role = $this->roleRepository->findById($id, null);
         if (!$role || ($role['tenant_id'] ?? null) !== null || (($role['role_layer'] ?? '') !== 'site')) {
             Session::flash('error', 'Rôle invalide.');
 
             return Response::redirect(url('admin/roles'));
+        }
+        if ($this->rolePermissionService->isRoleLocked($id) || !empty($role['is_system_critical'])) {
+            Session::flash('error', 'Ce rôle est verrouillé ou réservé : modification impossible.');
+
+            return Response::redirect(url('admin/roles/' . $id));
         }
         $permissionIds = $request->input('permission_ids');
         if (is_array($permissionIds)) {

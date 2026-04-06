@@ -23,6 +23,9 @@ use App\Services\Platform\FeatureGateService;
 
 class TrainingApiController
 {
+    /** Corps JSON déjà lu (php://input n’est lisible qu’une fois par requête). */
+    private ?array $cachedJsonBody = null;
+
     public function __construct(
         private TrainingService $trainingService,
         private TrainingProgressService $progressService,
@@ -56,15 +59,55 @@ class TrainingApiController
         return (int) $id;
     }
 
+    private function requestContentType(): string
+    {
+        return strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? ''));
+    }
+
+    /** Le client attend une réponse JSON (corps JSON ou en-tête Accept). */
+    private function clientExpectsJsonResponse(): bool
+    {
+        if (str_contains($this->requestContentType(), 'application/json')) {
+            return true;
+        }
+        $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+
+        return str_contains($accept, 'application/json');
+    }
+
     private function body(Request $request): array
     {
-        $contentType = $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+        $contentType = $this->requestContentType();
         if (str_contains($contentType, 'application/json')) {
+            if ($this->cachedJsonBody !== null) {
+                return $this->cachedJsonBody;
+            }
             $raw = file_get_contents('php://input');
             $decoded = json_decode($raw, true);
-            return is_array($decoded) ? $decoded : [];
+            $this->cachedJsonBody = is_array($decoded) ? $decoded : [];
+
+            return $this->cachedJsonBody;
         }
-        return array_merge($request->all(), $_POST);
+
+        if ($this->cachedJsonBody !== null) {
+            return $this->cachedJsonBody;
+        }
+
+        $merged = array_merge($request->all(), $_POST);
+        if ($merged === [] && strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? '')) === 'POST') {
+            $raw = file_get_contents('php://input');
+            $trim = ltrim((string) $raw);
+            if ($trim !== '' && ($trim[0] === '{' || $trim[0] === '[')) {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $this->cachedJsonBody = $decoded;
+
+                    return $this->cachedJsonBody;
+                }
+            }
+        }
+
+        return $merged;
     }
 
     private function validateCsrf(Request $request): void
@@ -98,6 +141,10 @@ class TrainingApiController
                     $a2 = $a;
                     unset($a2['is_correct']);
                     $ans[] = $a2;
+                }
+                $qType = (string) ($row['question_type'] ?? 'single_choice');
+                if (in_array($qType, ['single_choice', 'true_false', 'multiple_choice'], true)) {
+                    shuffle($ans);
                 }
                 $row['answers'] = $ans;
             }
@@ -216,10 +263,20 @@ class TrainingApiController
         if ($blocked !== null) {
             return $blocked;
         }
-        $this->validateCsrf($request);
+        try {
+            $this->validateCsrf($request);
+        } catch (\RuntimeException) {
+            $wantsJsonEarly = $this->clientExpectsJsonResponse();
+            if ($wantsJsonEarly) {
+                return Response::json(['error' => 'Session expirée ou sécurité : rechargez la page de la leçon puis réessayez.'], 403);
+            }
+            Session::flash('error', 'Session expirée. Rechargez la page puis réessayez.');
+
+            return Response::redirect(url('formations'));
+        }
         $tenantId = $this->tenantId();
         $userId = $this->userId();
-        $wantsJson = str_contains(strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? '')), 'application/json');
+        $wantsJson = $this->clientExpectsJsonResponse();
         $body = $this->body($request);
         $enrollmentId = (int) ($request->input('enrollment_id') ?? $body['enrollment_id'] ?? 0);
         $lessonId = (int) ($request->input('lesson_id') ?? $body['lesson_id'] ?? 0);
@@ -342,14 +399,21 @@ class TrainingApiController
         if ($blocked !== null) {
             return $blocked;
         }
-        $this->validateCsrf($request);
+        try {
+            $this->validateCsrf($request);
+        } catch (\RuntimeException) {
+            return Response::json(['error' => 'Session expirée ou sécurité : rechargez la page du questionnaire puis réessayez.'], 403);
+        }
         $tenantId = $this->tenantId();
         $userId = $this->userId();
         $body = $this->body($request);
         $attemptId = (int) ($request->input('attempt_id') ?? $body['attempt_id'] ?? 0);
-        $responses = $request->input('responses') ?? $body['responses'] ?? [];
-        if (!$attemptId || !is_array($responses)) {
-            return Response::json(['error' => 'attempt_id et responses requis.'], 400);
+        $responses = $body['responses'] ?? $request->input('responses') ?? [];
+        if (!is_array($responses)) {
+            $responses = [];
+        }
+        if (!$attemptId) {
+            return Response::json(['error' => 'Données de soumission incomplètes. Rechargez la page.'], 400);
         }
         try {
             $attempt = $this->quizService->submitAttempt($attemptId, $responses, $tenantId, $userId);

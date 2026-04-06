@@ -100,7 +100,7 @@ $themeRadiusPresets = function_exists('training_lms_theme_radius_presets') ? tra
 $themeRadiusLabels = function_exists('training_lms_theme_radius_labels_fr') ? training_lms_theme_radius_labels_fr() : [];
 
 $lmsPlatformVersion = (string) ($lmsPlatformVersion ?? '');
-$lmsChangelogUrl = (string) ($lmsChangelogUrl ?? url('admin/training/studio/versions'));
+$lmsChangelogUrl = (string) ($lmsChangelogUrl ?? training_studio_url('versions'));
 $lmsCourseCreatedBeforeCurrent = (bool) ($lmsCourseCreatedBeforeCurrent ?? false);
 $lmsCourseLastSaveBehind = (bool) ($lmsCourseLastSaveBehind ?? false);
 $lmsCreatedLabel = function_exists('lms_course_studio_created_version_label') ? lms_course_studio_created_version_label($course) : '';
@@ -167,23 +167,38 @@ $defaultCanvasJson = json_encode([
                 <p class="text-slate-600 text-sm mt-2">Communauté <strong><?= htmlspecialchars(community_display_name($tenant)) ?></strong></p>
                 <?php endif; ?>
                 <p class="text-sm text-slate-500 mt-3">
-                    <a href="<?= url('admin/training/studio') ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Toutes les formations</a>
+                    <a href="<?= training_studio_url() ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Toutes les formations</a>
                     <span class="text-slate-300 mx-2">·</span>
-                    <a href="<?= url('admin/training') ?>" class="text-slate-600 underline decoration-slate-200 hover:text-slate-900">Admin formations</a>
+                    <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="text-slate-600 underline decoration-slate-200 hover:text-slate-900">Admin formations</a>
                 </p>
             </div>
             <div class="flex flex-wrap gap-2 shrink-0">
-                <a href="<?= url('admin/training/courses/' . $cid . '/showcase') ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm">Vitrine</a>
-                <a href="<?= url('admin/training/studio/' . $cid . '/preview') ?>" class="px-3 py-2 border border-amber-200 bg-amber-50 text-amber-950 text-xs font-bold rounded-xl hover:bg-amber-100 shadow-sm">Aperçu caviardé</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/showcase')) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm">Vitrine</a>
+                <a href="<?= training_studio_url($cid . '/preview') ?>" class="px-3 py-2 border border-amber-200 bg-amber-50 text-amber-950 text-xs font-bold rounded-xl hover:bg-amber-100 shadow-sm">Aperçu caviardé</a>
                 <a href="<?= url('formations/' . rawurlencode($slug)) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm" target="_blank" rel="noopener">Aperçu public</a>
-                <a href="<?= url('admin/training/enrollments?course_id=' . $cid) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm">Assignations</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments') . '?course_id=' . (int) $cid) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm">Assignations</a>
             </div>
         </div>
     </header>
 
-    <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="space-y-10 mb-12" id="studio-fiche-form">
+    <?php
+    $trainingStudioSection = $trainingStudioSection ?? 'fiche';
+    if (!in_array($trainingStudioSection, ['fiche', 'presentation', 'structure'], true)) {
+        $trainingStudioSection = 'fiche';
+    }
+    $studioU = static fn (string $s): string => training_studio_url($cid . '/' . $s);
+    ?>
+    <nav class="mb-8 flex flex-wrap gap-2 rounded-2xl border border-slate-200/80 bg-slate-100/60 p-1.5 shadow-inner" aria-label="Sections du studio">
+        <a href="<?= htmlspecialchars($studioU('fiche')) ?>" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'fiche' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Données &amp; inscription</a>
+        <a href="<?= htmlspecialchars($studioU('presentation')) ?>" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'presentation' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Présentation apprenant</a>
+        <a href="<?= htmlspecialchars($studioU('structure')) ?>" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'structure' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Modules &amp; leçons</a>
+    </nav>
+
+    <?php if ($trainingStudioSection === 'fiche'): ?>
+    <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-10 mb-12" id="studio-fiche-form">
         <?= \App\Core\Csrf::field() ?>
         <input type="hidden" name="_action" value="save_course">
+        <input type="hidden" name="_studio_section" value="fiche">
 
         <section id="studio-fiche" class="training-studio-panel scroll-mt-28 p-6 md:p-8 space-y-4 shadow-sm">
             <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Fiche formation</h2>
@@ -258,42 +273,9 @@ $defaultCanvasJson = json_encode([
                     <label class="block text-xs font-bold text-slate-600 mb-1">Description</label>
                     <textarea name="description" rows="5" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"><?= htmlspecialchars((string) ($course['description'] ?? '')) ?></textarea>
                 </div>
-                <div class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
-                    <label class="inline-flex items-center gap-2 text-sm font-bold text-slate-800">
-                        <input type="checkbox" name="lms_theme_enable" value="1" <?= $themeEnable ? 'checked' : '' ?>>
-                        Personnaliser l’apparence du parcours apprenant
-                    </label>
-                    <p class="text-[11px] text-slate-600">Couleurs, typographie et forme des blocs pour cette formation uniquement.</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Couleur d’accent</label>
-                            <input type="color" name="lms_theme_accent" value="<?= htmlspecialchars($themeAccent) ?>" class="h-10 w-full max-w-[8rem] cursor-pointer rounded-lg border border-slate-200 bg-white p-1">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Typographie</label>
-                            <select name="lms_theme_font" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                                <?php foreach ($themeFontPresets as $fk => $_css): ?>
-                                <option value="<?= htmlspecialchars($fk) ?>" <?= $themeFontKey === $fk ? 'selected' : '' ?>><?= htmlspecialchars($themeFontLabels[$fk] ?? $fk) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Arrondi des blocs</label>
-                            <select name="lms_theme_radius" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                                <?php foreach ($themeRadiusPresets as $rk => $_rv): ?>
-                                <option value="<?= htmlspecialchars($rk) ?>" <?= $themeRadiusKey === $rk ? 'selected' : '' ?>><?= htmlspecialchars($themeRadiusLabels[$rk] ?? $rk) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Ambiance</label>
-                            <select name="lms_theme_variant" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                                <?php foreach ($themeVariantLabels as $vk => $vlab): ?>
-                                <option value="<?= htmlspecialchars($vk) ?>" <?= $themeVariant === $vk ? 'selected' : '' ?>><?= htmlspecialchars($vlab) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
+                <div class="md:col-span-2 rounded-xl border border-sky-100 bg-sky-50/50 p-4 text-sm text-sky-950">
+                    <p class="font-bold text-sky-950 mb-1">Apparence &amp; médias de couverture</p>
+                    <p class="text-xs text-sky-900/90">Thème couleur, typographie, miniature, bannière et consignes audio se règlent dans l’onglet <a href="<?= htmlspecialchars($studioU('presentation')) ?>" class="font-black underline decoration-sky-400 hover:text-sky-950">Présentation apprenant</a>.</p>
                 </div>
                 <div class="md:col-span-2" data-lms-objectives-scope>
                     <label class="block text-xs font-bold text-slate-600 mb-2">Objectifs pédagogiques</label>
@@ -306,14 +288,6 @@ $defaultCanvasJson = json_encode([
                         <?php endforeach; ?>
                     </div>
                     <button type="button" class="mt-2 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-emerald-800 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50" data-lms-objective-add>+ Ajouter un objectif</button>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Miniature (chemin ou URL)</label>
-                    <input type="text" name="thumbnail_path" value="<?= htmlspecialchars((string) ($course['thumbnail_path'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-xs" placeholder="uploads/...">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Bannière (chemin ou URL)</label>
-                    <input type="text" name="banner_path" value="<?= htmlspecialchars((string) ($course['banner_path'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-xs">
                 </div>
             </div>
 
@@ -415,23 +389,6 @@ $defaultCanvasJson = json_encode([
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-6 mt-4">
-                    <div class="md:col-span-2">
-                        <h4 class="text-xs font-black uppercase text-slate-500 mb-2">Consignes audio (optionnel)</h4>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">URL audio (fichier ou flux)</label>
-                        <input type="url" name="instruction_audio_url" value="<?= htmlspecialchars((string) ($course['instruction_audio_url'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="https://…">
-                    </div>
-                    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-                        <input type="checkbox" name="instruction_audio_instructor_optional" value="1" <?= (($course['instruction_audio_instructor_optional'] ?? 1) == 1) ? 'checked' : '' ?>>
-                        Écoute possible sans instructeur présent
-                    </label>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Notes</label>
-                        <input type="text" name="instruction_audio_notes" maxlength="500" value="<?= htmlspecialchars((string) ($course['instruction_audio_notes'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Contexte, consignes de sécurité…">
-                    </div>
-                </div>
                 <div class="border-t border-slate-100 pt-6 mt-2" id="studio-engagement-share">
                     <h4 class="text-xs font-black uppercase text-slate-500 mb-2">Repérer la formation ailleurs</h4>
                     <p class="text-[11px] text-slate-500 mb-3 max-w-3xl">Code court unique : les membres connectés à <strong>cette</strong> communauté peuvent le saisir sur la page dédiée pour ouvrir directement la fiche. Si la formation appartient à une autre communauté, le portail l’indique clairement sans mélanger les espaces.</p>
@@ -452,7 +409,7 @@ $defaultCanvasJson = json_encode([
     <div class="training-studio-panel scroll-mt-28 p-6 md:p-8 shadow-sm mb-10 border border-dashed border-slate-200">
         <p class="text-xs font-bold text-slate-700 mb-2">Code de partage</p>
         <p class="text-sm text-slate-600 mb-4">Générez un nouveau code si l’ancien a été partagé trop largement. Les liens déjà envoyés avec l’ancien code ne fonctionneront plus.</p>
-        <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="inline-flex">
+        <form method="post" action="<?= training_studio_url($cid) ?>" class="inline-flex">
             <?= \App\Core\Csrf::field() ?>
             <input type="hidden" name="_action" value="regenerate_enrollment_share_code">
             <button type="submit" class="px-4 py-2.5 bg-amber-600 text-white text-xs font-black uppercase tracking-wide rounded-xl hover:bg-amber-700 shadow-sm">Régénérer le code</button>
@@ -473,7 +430,7 @@ $defaultCanvasJson = json_encode([
                 ?>
                 <li class="flex flex-wrap items-center justify-between gap-2 border border-slate-100 rounded-lg px-3 py-2 bg-slate-50">
                     <span><?= htmlspecialchars((string) ($s['label'] ?? 'Session')) ?> — <?= htmlspecialchars((string) ($s['starts_at'] ?? '')) ?> → <?= htmlspecialchars((string) ($s['ends_at'] ?? '')) ?></span>
-                    <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="inline" onsubmit="return confirm('Supprimer ce créneau ?');">
+                    <form method="post" action="<?= training_studio_url($cid) ?>" class="inline" onsubmit="return confirm('Supprimer ce créneau ?');">
                         <?= \App\Core\Csrf::field() ?>
                         <input type="hidden" name="_action" value="delete_session">
                         <input type="hidden" name="session_id" value="<?= $sid ?>">
@@ -483,7 +440,7 @@ $defaultCanvasJson = json_encode([
                 <?php endforeach; ?>
             </ul>
             <?php endif; ?>
-            <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 border-t border-slate-100 pt-4">
+            <form method="post" action="<?= training_studio_url($cid) ?>" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 border-t border-slate-100 pt-4">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="_action" value="add_session">
                 <div><label class="block text-[11px] font-bold text-slate-600 mb-0.5">Début</label><input type="datetime-local" name="session_starts_at" required class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm"></div>
@@ -513,7 +470,7 @@ $defaultCanvasJson = json_encode([
                     <?php if (!empty($sq['answer_text'])): ?>
                     <p class="text-sm text-emerald-800 mt-2 border-l-2 border-emerald-400 pl-2"><?= nl2br(htmlspecialchars((string) $sq['answer_text'])) ?></p>
                     <?php else: ?>
-                    <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="mt-2 space-y-2">
+                    <form method="post" action="<?= training_studio_url($cid) ?>" class="mt-2 space-y-2">
                         <?= \App\Core\Csrf::field() ?>
                         <input type="hidden" name="_action" value="answer_question">
                         <input type="hidden" name="question_id" value="<?= $qid ?>">
@@ -528,6 +485,92 @@ $defaultCanvasJson = json_encode([
         </div>
     </section>
 
+    <?php elseif ($trainingStudioSection === 'presentation'): ?>
+    <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-8 mb-12" id="studio-presentation-form">
+        <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="_action" value="save_course">
+        <input type="hidden" name="_studio_section" value="presentation">
+
+        <section id="studio-presentation" class="training-studio-panel scroll-mt-28 p-6 md:p-8 space-y-6 shadow-sm">
+            <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Présentation côté apprenant</h2>
+            <p class="text-xs text-slate-500 max-w-3xl">Apparence du parcours, visuels de couverture et consignes audio. Les textes, visibilité et règles d’inscription se gèrent dans l’onglet <a href="<?= htmlspecialchars($studioU('fiche')) ?>" class="font-semibold text-emerald-800 underline decoration-emerald-200 hover:text-emerald-950">Données &amp; inscription</a>.</p>
+
+            <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+                <label class="inline-flex items-center gap-2 text-sm font-bold text-slate-800">
+                    <input type="checkbox" name="lms_theme_enable" value="1" <?= $themeEnable ? 'checked' : '' ?>>
+                    Personnaliser l’apparence du parcours pour cette formation
+                </label>
+                <p class="text-[11px] text-slate-600">Couleurs, typographie et forme des blocs visibles par les apprenants sur cette formation.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Couleur d’accent</label>
+                        <input type="color" name="lms_theme_accent" value="<?= htmlspecialchars($themeAccent) ?>" class="h-10 w-full max-w-[8rem] cursor-pointer rounded-lg border border-slate-200 bg-white p-1">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Typographie</label>
+                        <select name="lms_theme_font" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                            <?php foreach ($themeFontPresets as $fk => $_css): ?>
+                            <option value="<?= htmlspecialchars($fk) ?>" <?= $themeFontKey === $fk ? 'selected' : '' ?>><?= htmlspecialchars($themeFontLabels[$fk] ?? $fk) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Arrondi des blocs</label>
+                        <select name="lms_theme_radius" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                            <?php foreach ($themeRadiusPresets as $rk => $_rv): ?>
+                            <option value="<?= htmlspecialchars($rk) ?>" <?= $themeRadiusKey === $rk ? 'selected' : '' ?>><?= htmlspecialchars($themeRadiusLabels[$rk] ?? $rk) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Ambiance</label>
+                        <select name="lms_theme_variant" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                            <?php foreach ($themeVariantLabels as $vk => $vlab): ?>
+                            <option value="<?= htmlspecialchars($vk) ?>" <?= $themeVariant === $vk ? 'selected' : '' ?>><?= htmlspecialchars($vlab) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Miniature (chemin ou emplacement du fichier)</label>
+                    <input type="text" name="thumbnail_path" value="<?= htmlspecialchars((string) ($course['thumbnail_path'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-xs" placeholder="uploads/…">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Bannière (chemin ou emplacement du fichier)</label>
+                    <input type="text" name="banner_path" value="<?= htmlspecialchars((string) ($course['banner_path'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-xs">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-6">
+                <div class="md:col-span-2">
+                    <h3 class="text-xs font-black uppercase text-slate-500 mb-2">Consignes audio (optionnel)</h3>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Adresse du fichier ou du flux audio</label>
+                    <input type="url" name="instruction_audio_url" value="<?= htmlspecialchars((string) ($course['instruction_audio_url'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="https://…">
+                </div>
+                <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" name="instruction_audio_instructor_optional" value="1" <?= (($course['instruction_audio_instructor_optional'] ?? 1) == 1) ? 'checked' : '' ?>>
+                    Écoute possible sans instructeur présent
+                </label>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Notes</label>
+                    <input type="text" name="instruction_audio_notes" maxlength="500" value="<?= htmlspecialchars((string) ($course['instruction_audio_notes'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Contexte, consignes de sécurité…">
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 pt-2">
+                <button type="submit" class="px-6 py-3 bg-slate-900 text-white text-sm font-black rounded-xl hover:bg-slate-800 shadow-md">Enregistrer la présentation</button>
+                <a href="<?= htmlspecialchars($studioU('structure')) ?>" class="inline-flex items-center px-4 py-3 border border-slate-200 bg-white text-slate-800 text-sm font-bold rounded-xl hover:bg-slate-50">Aller aux modules &amp; leçons</a>
+            </div>
+        </section>
+    </form>
+
+    <?php else: ?>
+
     <details class="rounded-2xl border border-slate-200 bg-white p-5 mb-6 text-sm text-slate-800 shadow-sm open:ring-1 open:ring-slate-100">
         <summary class="cursor-pointer font-black text-slate-900 uppercase tracking-wide text-xs select-none">Comprendre les types de leçon</summary>
         <div class="mt-4 space-y-3 text-slate-700 leading-relaxed border-t border-slate-100 pt-4">
@@ -539,7 +582,7 @@ $defaultCanvasJson = json_encode([
         </div>
     </details>
     <div class="rounded-2xl border border-emerald-200/90 bg-emerald-50/80 p-5 mb-10 text-sm text-emerald-950 shadow-sm">
-        <strong>Raccourci :</strong> validez la structure sans diffuser le contenu avec <a href="<?= url('admin/training/studio/' . $cid . '/preview') ?>" class="font-black text-emerald-900 underline decoration-emerald-400 hover:text-emerald-950">Aperçu caviardé</a>.
+        <strong>Raccourci :</strong> validez la structure sans diffuser le contenu avec <a href="<?= training_studio_url($cid . '/preview') ?>" class="font-black text-emerald-900 underline decoration-emerald-400 hover:text-emerald-950">Aperçu caviardé</a>.
         Les types <strong>Quiz / Modales / Diaporama</strong> se configurent avec les formulaires sous chaque leçon.
     </div>
 
@@ -580,7 +623,7 @@ $defaultCanvasJson = json_encode([
     </nav>
     <?php endif; ?>
 
-    <div id="studio-modules-list" class="space-y-4" data-studio-url="<?= htmlspecialchars(url('admin/training/studio/' . $cid)) ?>" data-csrf="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+    <div id="studio-modules-list" class="space-y-4" data-studio-url="<?= htmlspecialchars(training_studio_url($cid)) ?>" data-csrf="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
     <?php
     $mi = 0;
     foreach ($modules as $mod):
@@ -602,7 +645,7 @@ $defaultCanvasJson = json_encode([
             </div>
         </div>
         <div class="p-4 space-y-4">
-            <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="space-y-3 border-b border-slate-100 pb-4">
+            <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-3 border-b border-slate-100 pb-4">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="_action" value="update_module">
                 <input type="hidden" name="module_id" value="<?= $mid ?>">
@@ -642,7 +685,7 @@ $defaultCanvasJson = json_encode([
                     <button type="submit" class="px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-700">Enregistrer le module</button>
                 </div>
             </form>
-            <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="inline" onsubmit="return confirm('Supprimer ce module et toutes ses leçons ?');">
+            <form method="post" action="<?= training_studio_url($cid) ?>" class="inline" onsubmit="return confirm('Supprimer ce module et toutes ses leçons ?');">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="_action" value="delete_module">
                 <input type="hidden" name="module_id" value="<?= $mid ?>">
@@ -671,7 +714,7 @@ $defaultCanvasJson = json_encode([
                         <span class="text-xs font-semibold text-slate-700 truncate">Leçon <?= (int) $li ?></span>
                     </div>
                 </div>
-                <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="space-y-2">
+                <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-2">
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="_action" value="update_lesson">
                     <input type="hidden" name="lesson_id" value="<?= $lid ?>">
@@ -767,7 +810,7 @@ $defaultCanvasJson = json_encode([
                             ?>
                             <li class="flex flex-wrap justify-between gap-2 items-start border-b border-sky-100/80 pb-2">
                                 <span class="text-slate-800 min-w-0"><span class="font-semibold"><?= htmlspecialchars((string) ($sr['title'] ?? '')) ?></span> <span class="text-slate-500">(<?= htmlspecialchars($srtl) ?>)</span></span>
-                                <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="shrink-0" onsubmit="return confirm('Retirer cette ressource de la leçon ?');">
+                                <form method="post" action="<?= training_studio_url($cid) ?>" class="shrink-0" onsubmit="return confirm('Retirer cette ressource de la leçon ?');">
                                     <?= \App\Core\Csrf::field() ?>
                                     <input type="hidden" name="_action" value="delete_lesson_resource">
                                     <input type="hidden" name="resource_id" value="<?= $srid ?>">
@@ -779,7 +822,7 @@ $defaultCanvasJson = json_encode([
                         <?php else: ?>
                         <p class="text-xs text-slate-600">Aucune ressource pour l’instant.</p>
                         <?php endif; ?>
-                        <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-sky-100">
+                        <form method="post" action="<?= training_studio_url($cid) ?>" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-sky-100">
                             <?= \App\Core\Csrf::field() ?>
                             <input type="hidden" name="_action" value="add_lesson_resource">
                             <input type="hidden" name="lesson_id" value="<?= (int) $lid ?>">
@@ -817,7 +860,7 @@ $defaultCanvasJson = json_encode([
                         <button type="submit" class="px-3 py-1.5 bg-slate-800 text-white text-xs font-bold rounded hover:bg-slate-700">Enregistrer la leçon</button>
                     </div>
                 </form>
-                <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" onsubmit="return confirm('Supprimer cette leçon ?');">
+                <form method="post" action="<?= training_studio_url($cid) ?>" onsubmit="return confirm('Supprimer cette leçon ?');">
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="_action" value="delete_lesson">
                     <input type="hidden" name="lesson_id" value="<?= $lid ?>">
@@ -829,7 +872,7 @@ $defaultCanvasJson = json_encode([
 
             <div class="border-t border-slate-100 pt-4 mt-2">
                 <p class="text-xs font-bold text-slate-600 mb-2">Ajouter une leçon dans ce module</p>
-                <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="space-y-2">
+                <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-2">
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="_action" value="add_lesson">
                     <input type="hidden" name="module_id" value="<?= $mid ?>">
@@ -891,7 +934,7 @@ $defaultCanvasJson = json_encode([
 
     <section class="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-6 mb-8">
         <h3 class="text-sm font-black uppercase text-slate-500 mb-3">Ajouter un module</h3>
-        <form method="post" action="<?= url('admin/training/studio/' . $cid) ?>" class="space-y-3 max-w-xl">
+        <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-3 max-w-xl">
             <?= \App\Core\Csrf::field() ?>
             <input type="hidden" name="_action" value="add_module">
             <input type="text" name="module_title" required placeholder="Titre du module" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
@@ -916,10 +959,16 @@ $defaultCanvasJson = json_encode([
         </form>
     </section>
 
-    <link rel="stylesheet" href="<?= url('assets/css/training_canvas.css') ?>">
+    <?php endif; ?>
+
+    <?php if (in_array($trainingStudioSection, ['fiche', 'structure'], true)): ?>
     <script src="<?= url('assets/js/training_studio_objectives.js') ?>" defer></script>
+    <?php endif; ?>
+    <?php if ($trainingStudioSection === 'structure'): ?>
+    <link rel="stylesheet" href="<?= url('assets/css/training_canvas.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
     <script src="<?= url('assets/js/training_studio_sortable.js') ?>" defer></script>
     <script src="<?= url('assets/js/training_canvas_editor.js') ?>" defer></script>
     <script src="<?= url('assets/js/training_studio_interactive_editors.js') ?>" defer></script>
+    <?php endif; ?>
 </div>

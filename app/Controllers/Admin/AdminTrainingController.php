@@ -15,8 +15,10 @@ use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingCertificateRepository;
 use App\Repositories\UserRepository;
 use App\Services\EmailService;
+use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingAuditService;
 use App\Services\Training\TrainingAssignmentService;
+use App\Services\Training\TrainingCourseExchangeService;
 use App\Services\Training\TrainingEnrollmentPolicyService;
 use App\Services\Training\TrainingProgressService;
 
@@ -32,7 +34,9 @@ class AdminTrainingController
         private TrainingProgressService $progressService,
         private EmailService $emailService,
         private UserRepository $userRepository,
-        private TrainingEnrollmentPolicyService $enrollmentPolicyService
+        private TrainingEnrollmentPolicyService $enrollmentPolicyService,
+        private TrainingCourseExchangeService $courseExchangeService,
+        private FeatureGateService $featureGate,
     ) {}
 
     public function dashboard(Request $request, array $params = []): Response
@@ -63,6 +67,7 @@ class AdminTrainingController
                 'expiringCount' => count($expiring),
             ],
             'expiring' => $expiring,
+            'trainingCanExportFull' => $this->userCanExportFullCourse(),
         ]);
     }
 
@@ -76,7 +81,50 @@ class AdminTrainingController
             'title' => 'Formations',
             'trainingAdminNav' => 'courses',
             'courses' => $courses,
+            'trainingCanExportFull' => $this->userCanExportFullCourse(),
         ]);
+    }
+
+    /**
+     * Export JSON complet d’une formation (même format que l’échange Studio) — sauvegarde / transfert.
+     */
+    public function exportCourse(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allows($tenantId, 'training')) {
+            return Response::view('layout.main', [
+                'title' => 'Formations',
+                'content' => 'platform.upgrade',
+                'feature' => 'training',
+                'planName' => 'standard',
+            ]);
+        }
+        if (!$this->userCanExportFullCourse()) {
+            throw new \RuntimeException('Accès refusé.', 403);
+        }
+        $courseId = (int) ($params['id'] ?? 0);
+        $course = $this->courseRepository->findById($courseId, $tenantId);
+        if (!$course) {
+            Session::flash('error', 'Formation introuvable.');
+
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        $doc = $this->courseExchangeService->buildExportDocument($courseId, $tenantId);
+        $body = json_encode($doc, JSON_UNESCAPED_UNICODE);
+        if ($body === false) {
+            Session::flash('error', 'Export impossible : le contenu n’a pas pu être encodé.');
+
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        $slug = (string) ($course['slug'] ?? 'formation');
+        $slug = preg_replace('/[^a-zA-Z0-9_-]+/', '-', $slug) ?: 'formation';
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', 'application/json; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="formation-' . $slug . '.json"')
+            ->setBody($body);
     }
 
     public function enrollments(Request $request, array $params = []): Response
@@ -118,7 +166,7 @@ class AdminTrainingController
         $tenantId = (int) Session::get('tenant_id');
         $actorId = (int) Session::get('user_id');
         $enrollmentId = (int) ($params['id'] ?? 0);
-        $redirect = Response::redirect(url('admin/training/enrollments'));
+        $redirect = Response::redirect(training_lms_admin_url('enrollments'));
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée, réessayez.');
 
@@ -149,7 +197,7 @@ class AdminTrainingController
         } catch (\Throwable $e) {
             Session::flash('error', 'Le statut a été mis à jour, mais le démarrage du parcours a échoué. Vérifiez la structure de la formation.');
 
-            return Response::redirect(url('admin/training/enrollments?course_id=' . $courseId));
+            return Response::redirect(training_lms_admin_url('enrollments') . '?course_id=' . $courseId);
         }
         $this->auditService->logEnrollmentAssigned($tenantId, $actorId, $enrollmentId, [
             'user_id' => $userId,
@@ -160,7 +208,7 @@ class AdminTrainingController
         $this->notifyLearnerSelfEnrollApproved($tenantId, $userId, $course);
         Session::flash('success', 'Inscription validée. L’apprenant peut commencer le parcours.');
 
-        return Response::redirect(url('admin/training/enrollments?course_id=' . $courseId));
+        return Response::redirect(training_lms_admin_url('enrollments') . '?course_id=' . $courseId);
     }
 
     public function declineEnrollment(Request $request, array $params = []): Response
@@ -168,7 +216,7 @@ class AdminTrainingController
         $tenantId = (int) Session::get('tenant_id');
         $actorId = (int) Session::get('user_id');
         $enrollmentId = (int) ($params['id'] ?? 0);
-        $redirect = Response::redirect(url('admin/training/enrollments'));
+        $redirect = Response::redirect(training_lms_admin_url('enrollments'));
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée, réessayez.');
 
@@ -203,7 +251,7 @@ class AdminTrainingController
         $this->notifyLearnerSelfEnrollDeclined($tenantId, $userId, $course);
         Session::flash('success', 'La demande d’inscription a été refusée. Un message a été envoyé à l’apprenant.');
 
-        return Response::redirect(url('admin/training/enrollments?course_id=' . $courseId));
+        return Response::redirect(training_lms_admin_url('enrollments') . '?course_id=' . $courseId);
     }
 
     public function reports(Request $request, array $params = []): Response
@@ -243,7 +291,7 @@ class AdminTrainingController
     {
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
-        $logs = $this->auditService->listLogs($tenantId, null, null, null, 200);
+        $logs = $this->auditService->listLogsForTenantDisplay($tenantId, 200);
         return Response::view('layout.main', [
             'content' => 'admin.training.audit',
             'title' => 'Audit Formations',
@@ -262,14 +310,14 @@ class AdminTrainingController
         if (!$course) {
             Session::flash('error', 'Formation introuvable.');
 
-            return Response::redirect(url('admin/training/courses'));
+            return Response::redirect(training_lms_admin_url('courses'));
         }
 
         if ($request->method() === 'POST') {
             if (!Csrf::validate($request->input('_csrf_token'))) {
                 Session::flash('error', 'Session expirée, réessayez.');
 
-                return Response::redirect(url('admin/training/courses/' . $id . '/showcase'));
+                return Response::redirect(training_lms_admin_url('courses/' . $id . '/showcase'));
             }
 
             $badge = (string) $request->input('showcase_badge', 'open');
@@ -302,7 +350,7 @@ class AdminTrainingController
 
             Session::flash('success', 'Vitrine et médias enregistrés.');
 
-            return Response::redirect(url('admin/training/courses/' . $id . '/showcase'));
+            return Response::redirect(training_lms_admin_url('courses/' . $id . '/showcase'));
         }
 
         $tenant = $this->tenantRepository->findById($tenantId);
@@ -314,6 +362,15 @@ class AdminTrainingController
             'course' => $course,
             'tenant' => $tenant,
         ]);
+    }
+
+    /** Même périmètre que l’export Studio : pas d’export pour le seul rôle « assignation ». */
+    private function userCanExportFullCourse(): bool
+    {
+        $gate = Gate::getInstance();
+
+        return $gate->allows('admin.access') || $gate->allows('training.manage')
+            || $gate->allows('training.create') || $gate->allows('training.update');
     }
 
     /** Accès au back-office formations : admin, training.manage ou droits de création / édition LMS. */

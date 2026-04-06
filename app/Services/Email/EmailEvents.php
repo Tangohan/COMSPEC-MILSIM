@@ -39,6 +39,8 @@ final class EmailEvents
     public const TRAINING_SELF_ENROLL_APPROVED = 'TRAINING_SELF_ENROLL_APPROVED';
     /** Auto-inscription refusée — message à l’apprenant. */
     public const TRAINING_SELF_ENROLL_DECLINED = 'TRAINING_SELF_ENROLL_DECLINED';
+    /** Apprenant bloqué sur un module — notification aux référents formation. */
+    public const TRAINING_MODULE_BLOCKED_STAFF = 'TRAINING_MODULE_BLOCKED_STAFF';
 
     /** @var list<string> */
     public const EMAIL_EVENTS = [
@@ -65,5 +67,6 @@ final class EmailEvents
         self::TRAINING_ENROLLMENT_PENDING_APPROVAL,
         self::TRAINING_SELF_ENROLL_APPROVED,
         self::TRAINING_SELF_ENROLL_DECLINED,
+        self::TRAINING_MODULE_BLOCKED_STAFF,
     ];
 }

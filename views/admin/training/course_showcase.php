@@ -10,7 +10,7 @@ require base_path('views/admin/training/partials/command_shell_open.php');
 ?>
                 <header class="tc-panel p-6 md:p-8">
                     <p class="text-sm text-slate-500 mb-3">
-                        <a href="<?= url('admin/training/courses') ?>" class="font-semibold text-emerald-700 hover:underline">← Catalogue formations</a>
+                        <a href="<?= htmlspecialchars(training_lms_admin_url('courses')) ?>" class="font-semibold text-emerald-700 hover:underline">← Catalogue formations</a>
                     </p>
                     <p class="tc-kicker">Vitrine publique</p>
                     <h1 class="tc-hero-title mb-4">Carte « Nos formations »</h1>
@@ -25,7 +25,7 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                     </p>
                 </header>
 
-                <form method="post" action="<?= url('admin/training/courses/' . $id . '/showcase') ?>" class="space-y-6">
+                <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('courses/' . $id . '/showcase')) ?>" class="space-y-6">
                     <?= \App\Core\Csrf::field() ?>
 
                     <section class="tc-panel p-6 md:p-8 space-y-4">

@@ -32,8 +32,7 @@ return [
             'label' => 'Accueil',
             'type' => 'link',
             'path' => '',
-            'guest_only' => false,
-            'auth_only' => false,
+            'guest_only' => true,
         ],
         [
             'label' => 'Dashboard',
@@ -147,6 +146,13 @@ return [
             ],
             'sections' => [
                 [
+                    'title' => 'Portail',
+                    'slot' => 'primary',
+                    'links' => [
+                        ['label' => 'Accueil', 'path' => '', 'description' => 'Page d’entrée du site'],
+                    ],
+                ],
+                [
                     'title' => 'Documents',
                     'slot' => 'primary',
                     'links' => [
@@ -205,6 +211,7 @@ return [
                     'title' => 'Ma situation',
                     'slot' => 'primary',
                     'links' => [
+                        ['label' => 'Mon activité', 'path' => 'activite', 'description' => 'Fil personnel, rappels et raccourcis'],
                         ['label' => 'Ma fiche', 'path' => 'personnel/me'],
                         ['label' => 'Guide dossier & presets', 'path' => 'personnel/tutorials', 'description' => 'ORBAT, forum, complétude, presets métier'],
                         ['label' => 'Annuaire (ORBAT)', 'path' => 'orbat', 'description' => 'Vue d’organisation et des effectifs'],
@@ -214,11 +221,13 @@ return [
                     'title' => 'Structure',
                     'slot' => 'center',
                     'links' => [
+                        ['label' => 'Organisation des effectifs', 'path' => 'back-office/organisation-effectifs', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Vue d’ensemble : rôles communauté, grades, structure, rôles métier.'],
+                        ['label' => 'Rôles et droits (communauté)', 'path' => 'back-office/roles', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Grades', 'path' => 'back-office/referentiels/grades', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Rôles métier (référentiel)', 'path' => 'back-office/personnel-job-roles', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Attributions rôles métier', 'path' => 'back-office/personnel-job-roles/assignments', 'any_permissions' => ['admin.organization', 'admin.access']],
-                        ['label' => 'Unités', 'path' => 'back-office/groups', 'any_permissions' => ['admin.organization', 'admin.access']],
-                        ['label' => 'Équipes', 'path' => 'back-office/teams', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Unités et regroupements', 'path' => 'back-office/groups', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Équipes transverses', 'path' => 'back-office/teams', 'any_permissions' => ['admin.organization', 'admin.access']],
                     ],
                 ],
             ],
@@ -342,6 +351,8 @@ return [
                     'slot' => 'center',
                     'links' => [
                         ['label' => 'Back-office communauté', 'path' => 'back-office', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Organisation des effectifs', 'path' => 'back-office/organisation-effectifs', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Rôles et droits (communauté)', 'path' => 'back-office/roles', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Raccourcis dashboard', 'path' => 'back-office/dashboard-pins', 'any_permissions' => ['dashboard.pins.manage']],
                         ['label' => 'Profils permissions (rôles)', 'path' => 'back-office/roles/presets', 'any_permissions' => ['admin.organization', 'admin.roles.manage', 'admin.permissions.manage']],
                         ['label' => 'Rôles & fonctions (toile)', 'path' => 'back-office/roles-functions', 'any_permissions' => ['admin.organization', 'admin.roles.manage', 'admin.permissions.manage']],

@@ -17,7 +17,6 @@ use App\Repositories\ForumVoteRepository;
 use App\Repositories\ForumNotificationRepository;
 use App\Repositories\UserForumStatsRepository;
 use App\Repositories\UserProfileDisplaySettingsRepository;
-use App\Services\Forum\ForumModerationEngine;
 use App\Services\Forum\ForumPostAttachmentService;
 use App\Support\ForumReportReason;
 
@@ -30,7 +29,6 @@ class ForumApiController
         private ForumReportRepository $reportRepository,
         private UserRepository $userRepository,
         private ForumVoteRepository $voteRepository,
-        private ForumModerationEngine $moderationEngine,
         private ForumNotificationRepository $notificationRepository,
         private ForumPostAttachmentService $postAttachmentService,
         private UserForumStatsRepository $userForumStatsRepository,
@@ -43,6 +41,13 @@ class ForumApiController
         $userId = Session::get('user_id');
         if (!$tenantId || !$userId) {
             return Response::json(['success' => false, 'error' => 'Non authentifié'], 401);
+        }
+
+        if (function_exists('forum_api_disabled_response')) {
+            $blocked = forum_api_disabled_response((int) $tenantId);
+            if ($blocked !== null) {
+                return $blocked;
+            }
         }
 
         if ($request->method() === 'GET') {
@@ -147,13 +152,27 @@ class ForumApiController
         if (strlen($title) < 3 || strlen($title) > 255) {
             return Response::json(['success' => false, 'error' => 'Titre entre 3 et 255 caractères'], 400);
         }
-        $maxLen = (int) forum_get_setting('forum_max_post_length', 10000);
+        $fc = forum_config_for_tenant((int) $tenantId);
+        $maxLen = (int) ($fc['forum_max_post_length'] ?? forum_get_setting('forum_max_post_length', 10000));
+        $maxLen = max(500, min(200000, $maxLen));
         $attachmentIds = $input['attachment_ids'] ?? [];
         if (!is_array($attachmentIds)) {
             $attachmentIds = [];
         }
         if ((strlen($content) < 5 && $attachmentIds === []) || strlen($content) > $maxLen) {
             return Response::json(['success' => false, 'error' => 'Contenu entre 5 et ' . $maxLen . ' caractères (ou joindre des fichiers)'], 400);
+        }
+        if (function_exists('forum_validate_post_text_limits')) {
+            $err = forum_validate_post_text_limits((int) $tenantId, $content, $attachmentIds !== [], $maxLen);
+            if ($err !== null) {
+                return Response::json(['success' => false, 'error' => $err], 400);
+            }
+        }
+        if (function_exists('forum_cooldown_remaining_seconds')) {
+            $wait = forum_cooldown_remaining_seconds((int) $tenantId, (int) $userId);
+            if ($wait > 0) {
+                return Response::json(['success' => false, 'error' => 'Merci d’attendre encore ' . $wait . ' seconde(s).'], 429);
+            }
         }
         $slug = $this->slugify($title) ?: 'sujet-' . time();
         $slug = $slug . '-' . substr(uniqid('', true), -6);
@@ -162,7 +181,9 @@ class ForumApiController
         $this->topicRepository->touchUpdatedAt($topicId);
         $this->userForumStatsRepository->incrementPostCount((int) $tenantId, (int) $userId);
         $this->postAttachmentService->attachToPost((int) $tenantId, $firstPostId, (int) $userId, $attachmentIds);
-        $this->moderationEngine->analyze($tenantId, $userId, $firstPostId, $content);
+        if (function_exists('forum_after_post_moderation')) {
+            forum_after_post_moderation((int) $tenantId, (int) $userId, $firstPostId, $content);
+        }
 
         return Response::json(['success' => true, 'topic_id' => $topicId]);
     }
@@ -181,7 +202,9 @@ class ForumApiController
         if ($topic['is_locked']) {
             return Response::json(['success' => false, 'error' => 'Sujet verrouillé'], 400);
         }
-        $maxLen = (int) forum_get_setting('forum_max_post_length', 10000);
+        $fc = forum_config_for_tenant((int) $tenantId);
+        $maxLen = (int) ($fc['forum_max_post_length'] ?? forum_get_setting('forum_max_post_length', 10000));
+        $maxLen = max(500, min(200000, $maxLen));
         $attachmentIds = $input['attachment_ids'] ?? [];
         if (!is_array($attachmentIds)) {
             $attachmentIds = [];
@@ -191,6 +214,18 @@ class ForumApiController
         if ((!$hasBody && !$hasFiles) || strlen($content) > $maxLen) {
             return Response::json(['success' => false, 'error' => 'Message vide ou trop long (texte ou pièces jointes requis)'], 400);
         }
+        if (function_exists('forum_validate_post_text_limits')) {
+            $err = forum_validate_post_text_limits((int) $tenantId, $content, $hasFiles, $maxLen);
+            if ($err !== null) {
+                return Response::json(['success' => false, 'error' => $err], 400);
+            }
+        }
+        if (function_exists('forum_cooldown_remaining_seconds')) {
+            $wait = forum_cooldown_remaining_seconds((int) $tenantId, (int) $userId);
+            if ($wait > 0) {
+                return Response::json(['success' => false, 'error' => 'Merci d’attendre encore ' . $wait . ' seconde(s).'], 429);
+            }
+        }
         $parentPostId = isset($input['parent_post_id']) ? (int) $input['parent_post_id'] : null;
         if ($parentPostId !== null && $parentPostId <= 0) {
             $parentPostId = null;
@@ -199,7 +234,9 @@ class ForumApiController
         $this->topicRepository->touchUpdatedAt($topicId);
         $this->userForumStatsRepository->incrementPostCount((int) $tenantId, (int) $userId);
         $this->postAttachmentService->attachToPost((int) $tenantId, $postId, (int) $userId, $attachmentIds);
-        $this->moderationEngine->analyze($tenantId, $userId, $postId, $content);
+        if (function_exists('forum_after_post_moderation')) {
+            forum_after_post_moderation((int) $tenantId, (int) $userId, $postId, $content);
+        }
         $this->notifyTopicParticipantsApi($tenantId, $topicId, $userId, (string) ($topic['title'] ?? 'Sujet'));
 
         return Response::json(['success' => true, 'post_id' => $postId]);
@@ -245,9 +282,17 @@ class ForumApiController
         if ((int) $post['user_id'] !== $userId && !$isModo) {
             return Response::json(['success' => false, 'error' => 'Non autorisé'], 403);
         }
-        $maxLen = (int) forum_get_setting('forum_max_post_length', 10000);
+        $fc = forum_config_for_tenant((int) $tenantId);
+        $maxLen = (int) ($fc['forum_max_post_length'] ?? forum_get_setting('forum_max_post_length', 10000));
+        $maxLen = max(500, min(200000, $maxLen));
         if (strlen($content) < 1 || strlen($content) > $maxLen) {
             return Response::json(['success' => false, 'error' => 'Contenu invalide'], 400);
+        }
+        if (function_exists('forum_validate_post_text_limits')) {
+            $err = forum_validate_post_text_limits((int) $tenantId, $content, false, $maxLen);
+            if ($err !== null) {
+                return Response::json(['success' => false, 'error' => $err], 400);
+            }
         }
         $this->postRepository->update($postId, $tenantId, $content);
         $this->topicRepository->touchUpdatedAt((int) $post['topic_id']);

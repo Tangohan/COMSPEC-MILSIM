@@ -4,6 +4,8 @@ $baseUrl = url('');
 $userName = \App\Core\Session::get('display_name') ?? \App\Core\Session::get('email') ?? 'Connecté';
 $heroImageUrl = trim((string) ($forumConfig['forum_hero_image_url'] ?? ''));
 $hasHeroBg = $heroImageUrl !== '';
+$forumDisplayTitle = trim((string) ($forumConfig['name'] ?? ''));
+$forumDisplaySubtitle = trim((string) ($forumConfig['subtitle'] ?? $forumConfig['forum_subtitle'] ?? ''));
 $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
 $forumFullCategoryAdmin = !empty($forumFullCategoryAdmin);
 $forumCsrfToken = $forumCsrfToken ?? '';
@@ -28,9 +30,11 @@ $forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('admin/forum-config
       <span class="text-[9px] font-black uppercase tracking-[0.5em] <?= $hasHeroBg ? 'text-emerald-300' : 'text-emerald-700' ?>"><?= htmlspecialchars($forumConfig['context'] ?? '') ?></span>
     </div>
     <h1 class="text-4xl md:text-5xl lg:text-6xl font-black italic uppercase tracking-tighter leading-[0.95] mb-3 <?= $hasHeroBg ? 'text-white drop-shadow-sm' : 'text-slate-900' ?>">
-      La Salle<br>
-      de <span class="bg-gradient-to-r <?= $hasHeroBg ? 'from-emerald-300 via-emerald-200 to-teal-300' : 'from-emerald-500 via-emerald-600 to-teal-700' ?> bg-clip-text text-transparent">brief</span><span class="<?= $hasHeroBg ? 'text-emerald-300' : 'text-emerald-600' ?> animate-blink">_</span>
+      <?= htmlspecialchars($forumDisplayTitle !== '' ? $forumDisplayTitle : 'Forum', ENT_QUOTES, 'UTF-8') ?>
     </h1>
+    <?php if ($forumDisplaySubtitle !== ''): ?>
+    <p class="text-xs md:text-sm font-semibold uppercase tracking-[0.2em] mb-3 <?= $hasHeroBg ? 'text-emerald-100/90' : 'text-slate-500' ?>"><?= htmlspecialchars($forumDisplaySubtitle, ENT_QUOTES, 'UTF-8') ?></p>
+    <?php endif; ?>
     <p class="text-sm border-l-2 pl-6 italic max-w-2xl mb-6 leading-relaxed <?= $hasHeroBg ? 'border-emerald-400/45 text-slate-200' : 'border-emerald-500/35 text-slate-600' ?>"><?= htmlspecialchars($forumConfig['tagline'] ?? '') ?></p>
     <div class="flex flex-wrap items-center gap-3 md:gap-4">
       <a href="<?= $baseUrl ?>/forum/new-topic" class="inline-block bg-emerald-600 text-white px-6 py-3 md:px-8 md:py-3.5 font-black uppercase text-[10px] tracking-[0.25em] hover:bg-emerald-500 transition shadow-sm rounded-md">Nouveau Sujet</a>
@@ -160,6 +164,38 @@ $forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('admin/forum-config
             <?php endforeach; ?>
           </div>
         </section>
+      <?php endif; ?>
+
+      <?php if (!empty($interteamSharedTopics)): ?>
+      <section class="mb-10 rounded-xl border border-sky-200 bg-sky-50/60 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="h-px w-8 bg-sky-400/60"></span>
+          <span class="text-[8px] font-black uppercase tracking-[0.35em] text-sky-900">Coopération inter-unités</span>
+          <span class="flex-1 h-px bg-sky-200"></span>
+        </div>
+        <p class="text-xs text-sky-950/90 mb-4 leading-relaxed">Sujets partagés avec votre unité dans le cadre d’une mission commune. Lecture seule depuis votre brief.</p>
+        <ul class="space-y-2">
+          <?php foreach ($interteamSharedTopics as $st): ?>
+          <li>
+            <a href="<?= $baseUrl ?>/forum/coop/<?= htmlspecialchars((string) ($st['mission_slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>/sujet/<?= (int) ($st['topic_id'] ?? 0) ?>" class="text-sm font-semibold text-sky-900 hover:text-sky-700">
+              <?= htmlspecialchars((string) ($st['topic_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+            </a>
+            <span class="text-[10px] text-sky-800/80 ml-2">— <?= htmlspecialchars((string) ($st['mission_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+          </li>
+          <?php endforeach; ?>
+        </ul>
+      </section>
+      <?php endif; ?>
+
+      <?php if (!empty($forumCommunitySectionClosedNotice)): ?>
+      <section class="mb-10 rounded-xl border border-amber-200 bg-amber-50/80 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="h-px w-8 bg-amber-400/70"></span>
+          <span class="text-[8px] font-black uppercase tracking-[0.35em] text-amber-900">Section unité</span>
+          <span class="flex-1 h-px bg-amber-200"></span>
+        </div>
+        <p class="text-sm text-amber-950 leading-relaxed whitespace-pre-wrap"><?= nl2br(htmlspecialchars((string) $forumCommunitySectionClosedNotice, ENT_QUOTES, 'UTF-8')) ?></p>
+      </section>
       <?php endif; ?>
 
       <?php if (!empty($forumOrganizationCategories)): ?>

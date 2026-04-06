@@ -4,117 +4,457 @@ $forumConfig = $forumConfig ?? [];
 $bannedWords = $bannedWords ?? [];
 $blacklistedDomains = $blacklistedDomains ?? [];
 $baseUrl = url('');
-$csrf = \App\Core\Csrf::field();
 $csrfToken = \App\Core\Csrf::token();
 $success = \App\Core\Session::getFlash('success');
 $error = \App\Core\Session::getFlash('error');
-$forumName = $forumConfig['name'] ?? 'Chambre des Murmures';
+$forumName = $forumConfig['name'] ?? 'Forum';
+$communitySectionOn = !empty($forumConfig['community_section_enabled']);
+
+if (!function_exists('forum_admin_setting_bool')) {
+    /**
+     * @param mixed $raw
+     */
+    function forum_admin_setting_bool($raw, bool $default = false): bool
+    {
+        if ($raw === null || $raw === '') {
+            return $default;
+        }
+        $v = strtolower(trim((string) $raw));
+
+        return in_array($v, ['1', 'true', 'yes', 'on'], true);
+    }
+}
+
+$fcScopeLabels = [
+    'general' => 'Membres',
+    'platform' => 'Plateforme entière',
+    'organization' => 'Unité / organisation',
+    'moderation' => 'Modération',
+];
+
+/**
+ * @param mixed $cat
+ */
+$fcScopeLabel = static function ($cat) use ($fcScopeLabels): string {
+    $scope = is_array($cat) ? ($cat['scope'] ?? 'general') : 'general';
+
+    return $fcScopeLabels[$scope] ?? $fcScopeLabels['general'];
+};
+
+$forumIdentityName = trim((string) ($forumConfig['forum_name'] ?? $forumConfig['name'] ?? ''));
+
+$forumSettingGroups = [
+    [
+        'id' => 'fc-essentiel',
+        'title' => 'Titre et accès',
+        'summary' => 'Nom du forum affiché dans le brief, section dédiée à votre unité et message affiché aux membres si cette section est fermée.',
+        'defaultOpen' => true,
+        'fields' => [
+            [
+                'key' => 'forum_name',
+                'type' => 'text',
+                'label' => 'Titre du forum',
+                'help' => 'Affiché en tête du forum et dans le navigateur.',
+                'value' => $forumIdentityName,
+            ],
+            [
+                'key' => 'forum_subtitle',
+                'type' => 'text',
+                'label' => 'Sous-titre',
+                'help' => 'Courte ligne sous le titre (optionnel).',
+                'value' => (string) ($forumConfig['forum_subtitle'] ?? $forumConfig['subtitle'] ?? ''),
+            ],
+            [
+                'key' => 'forum_tagline',
+                'type' => 'text',
+                'label' => 'Accroche',
+                'help' => 'Phrase d’introduction sur la page d’accueil du forum.',
+                'value' => (string) ($forumConfig['forum_tagline'] ?? $forumConfig['tagline'] ?? ''),
+            ],
+            [
+                'key' => 'forum_context',
+                'type' => 'text',
+                'label' => 'Mention de contexte',
+                'help' => 'Petit libellé de contexte (ex. organisation ou mission).',
+                'value' => (string) ($forumConfig['forum_context'] ?? $forumConfig['context'] ?? ''),
+            ],
+            [
+                'key' => 'forum_community_section_enabled',
+                'type' => 'toggle',
+                'label' => 'Section « unité » visible dans le brief',
+                'help' => 'L’espace réservé à votre communauté dans le brief (canaux internes d’unité). Désactivez-le pour masquer cette partie aux membres tout en laissant le reste du brief ouvert (annonces générales, etc.). Les personnes habilitées à la modération ou au back-office voient encore cette section. Pour fermer tout le brief pour tout le monde, le réglage se fait côté administration plateforme.',
+                'checked' => forum_admin_setting_bool($forumConfig['forum_community_section_enabled'] ?? null, $communitySectionOn),
+            ],
+            [
+                'key' => 'forum_community_section_notice',
+                'type' => 'textarea',
+                'label' => 'Message si la section unité est fermée',
+                'help' => 'Texte affiché aux membres à la place des canaux d’unité (ex. consigne pour rejoindre un canal vocal externe). Laisser vide pour un message par défaut.',
+                'value' => (string) ($forumConfig['forum_community_section_notice'] ?? $forumConfig['community_section_notice'] ?? ''),
+            ],
+            [
+                'key' => 'forum_guest_read',
+                'type' => 'toggle',
+                'label' => 'Lecture possible sans être connecté',
+                'help' => 'Enregistré pour référence : sur ce portail, le forum reste accessible uniquement après connexion.',
+                'checked' => forum_admin_setting_bool($forumConfig['forum_guest_read'] ?? null, false),
+            ],
+        ],
+    ],
+    [
+        'id' => 'fc-affichage',
+        'title' => 'Affichage et rôles',
+        'summary' => 'Image d’en-tête et libellés liés aux rôles.',
+        'defaultOpen' => false,
+        'fields' => [
+            [
+                'key' => 'forum_hero_image_url',
+                'type' => 'text',
+                'label' => 'Image d’en-tête',
+                'help' => 'Adresse complète en https ou chemin commençant par / (bannière large, fichier léger, de préférence WebP ou JPEG).',
+                'value' => (string) ($forumConfig['forum_hero_image_url'] ?? ''),
+            ],
+            [
+                'key' => 'forum_role_read_label',
+                'type' => 'text',
+                'label' => 'Libellé « lecture seule »',
+                'help' => 'Texte affiché pour les profils qui ne peuvent qu’observer.',
+                'value' => (string) ($forumConfig['forum_role_read_label'] ?? ''),
+            ],
+            [
+                'key' => 'forum_role_write_label',
+                'type' => 'text',
+                'label' => 'Libellé « peut participer »',
+                'help' => 'Texte affiché pour les profils autorisés à publier.',
+                'value' => (string) ($forumConfig['forum_role_write_label'] ?? ''),
+            ],
+        ],
+    ],
+    [
+        'id' => 'fc-listes',
+        'title' => 'Listes et rythme',
+        'summary' => 'Pagination et délai entre deux messages.',
+        'defaultOpen' => false,
+        'fields' => [
+            [
+                'key' => 'forum_topics_per_page',
+                'type' => 'number',
+                'label' => 'Sujets par page',
+                'help' => 'Nombre de sujets listés dans un canal.',
+                'value' => (string) ($forumConfig['forum_topics_per_page'] ?? ''),
+                'attrs' => 'min="1" max="200" step="1"',
+            ],
+            [
+                'key' => 'forum_posts_per_page',
+                'type' => 'number',
+                'label' => 'Messages par page',
+                'help' => 'Nombre de réponses visibles avant pagination.',
+                'value' => (string) ($forumConfig['forum_posts_per_page'] ?? ''),
+                'attrs' => 'min="1" max="200" step="1"',
+            ],
+            [
+                'key' => 'forum_cooldown_seconds',
+                'type' => 'number',
+                'label' => 'Pause entre deux envois (secondes)',
+                'help' => 'Réduit le spam en imposant un court délai entre deux messages d’un même membre.',
+                'value' => (string) ($forumConfig['forum_cooldown_seconds'] ?? ''),
+                'attrs' => 'min="0" max="86400" step="1"',
+            ],
+            [
+                'key' => 'forum_max_post_length',
+                'type' => 'number',
+                'label' => 'Longueur maximale d’un message (caractères)',
+                'help' => 'Plafond pour un sujet ou une réponse. Les pièces jointes ne comptent pas dans cette limite.',
+                'value' => (string) ($forumConfig['forum_max_post_length'] ?? ''),
+                'attrs' => 'min="500" max="200000" step="1"',
+            ],
+        ],
+    ],
+    [
+        'id' => 'fc-antispam',
+        'title' => 'Anti-spam',
+        'summary' => 'Filtres automatiques sur la longueur des messages.',
+        'defaultOpen' => false,
+        'fields' => [
+            [
+                'key' => 'forum_antispam_enabled',
+                'type' => 'toggle',
+                'label' => 'Règles de longueur minimale',
+                'help' => 'Rejette les messages trop courts souvent utilisés pour le spam.',
+                'checked' => forum_admin_setting_bool($forumConfig['forum_antispam_enabled'] ?? null, false),
+            ],
+            [
+                'key' => 'forum_antispam_min_length',
+                'type' => 'number',
+                'label' => 'Longueur minimale (caractères)',
+                'help' => 'Nombre minimum de caractères pour accepter un message.',
+                'value' => (string) ($forumConfig['forum_antispam_min_length'] ?? ''),
+                'attrs' => 'min="1" max="5000" step="1"',
+            ],
+        ],
+    ],
+    [
+        'id' => 'fc-pj',
+        'title' => 'Pièces jointes',
+        'summary' => 'Taille maximale et types de fichiers acceptés.',
+        'defaultOpen' => false,
+        'fields' => [
+            [
+                'key' => 'forum_attachments_max_size',
+                'type' => 'number',
+                'label' => 'Taille maximale (octets)',
+                'help' => 'Plafond par fichier. Vérifiez aussi la limite côté serveur.',
+                'value' => (string) ($forumConfig['forum_attachments_max_size'] ?? ''),
+                'attrs' => 'min="0" step="1"',
+            ],
+            [
+                'key' => 'forum_attachments_allowed_ext',
+                'type' => 'text',
+                'label' => 'Types de fichiers autorisés',
+                'help' => 'Uniquement parmi : jpg, jpeg, png, gif, webp, pdf — listez-les séparées par une virgule. Laisser vide pour tout autoriser.',
+                'value' => (string) ($forumConfig['forum_attachments_allowed_ext'] ?? ''),
+            ],
+        ],
+    ],
+    [
+        'id' => 'fc-liens',
+        'title' => 'Liens externes',
+        'summary' => 'Avertissement avant d’ouvrir un site tiers.',
+        'defaultOpen' => false,
+        'fields' => [
+            [
+                'key' => 'forum_url_gate_enabled',
+                'type' => 'toggle',
+                'label' => 'Afficher une page d’avertissement',
+                'help' => 'Avant d’ouvrir un site externe depuis un message, afficher une page de confirmation avec délai de sécurité.',
+                'checked' => forum_admin_setting_bool($forumConfig['forum_url_gate_enabled'] ?? null, true),
+            ],
+        ],
+    ],
+    [
+        'id' => 'fc-notif',
+        'title' => 'Notifications',
+        'summary' => 'Alertes envoyées à l’équipe de modération.',
+        'defaultOpen' => false,
+        'fields' => [
+            [
+                'key' => 'forum_notify_moderators',
+                'type' => 'toggle',
+                'label' => 'Prévenir les modérateurs',
+                'help' => 'Lorsque l’analyse automatique signale un message, envoyer une alerte dans le centre de notifications forum (icône cloche) aux rôles de direction et modération.',
+                'checked' => forum_admin_setting_bool($forumConfig['forum_notify_moderators'] ?? null, false),
+            ],
+        ],
+    ],
+    [
+        'id' => 'fc-auto',
+        'title' => 'Automatisation',
+        'summary' => 'Sandbox et assistant automatique (selon modules actifs).',
+        'defaultOpen' => false,
+        'fields' => [
+            [
+                'key' => 'forum_sandbox_enabled',
+                'type' => 'toggle',
+                'label' => 'File d’attente « bac à sable »',
+                'help' => 'Les messages signalés par l’analyse automatique restent invisibles pour les membres jusqu’à validation par un modérateur.',
+                'checked' => forum_admin_setting_bool($forumConfig['forum_sandbox_enabled'] ?? null, false),
+            ],
+            [
+                'key' => 'forum_bot_enabled',
+                'type' => 'toggle',
+                'label' => 'Assistant de modération',
+                'help' => 'Analyse les nouveaux messages (mots et sites interdits, liens multiples) et alimente le journal de modération. À désactiver seulement pour diagnostic.',
+                'checked' => forum_admin_setting_bool($forumConfig['forum_bot_enabled'] ?? null, true),
+            ],
+        ],
+    ],
+    [
+        'id' => 'fc-modo-texte',
+        'title' => 'Aide aux modérateurs',
+        'summary' => 'Texte d’information affiché dans l’espace modération.',
+        'defaultOpen' => false,
+        'fields' => [
+            [
+                'key' => 'forum_moderation_tutorial_html',
+                'type' => 'textarea',
+                'label' => 'Contenu d’aide (HTML simple)',
+                'help' => 'Rappels internes, procédures, contacts. Utilisez du HTML simple (paragraphes, listes).',
+                'value' => (string) ($forumConfig['forum_moderation_tutorial_html'] ?? ''),
+            ],
+        ],
+    ],
+];
 ?>
-<div class="max-w-5xl mx-auto px-6 py-12" x-data="forumConfigPage()">
-    <div class="flex items-center justify-between mb-8">
+<style>[x-cloak]{display:none!important}</style>
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12" x-data="forumConfigPage()">
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-            <h1 class="text-2xl font-black text-slate-900"><?= htmlspecialchars($forumName) ?></h1>
-            <p class="mt-1 text-slate-600">Configuration des catégories, paramètres, modération et mots bannis.</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Administration</p>
+            <h1 class="mt-1 text-2xl font-black tracking-tight text-slate-900">Configuration du forum</h1>
+            <p class="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
+                Organisez les canaux, puis ajustez les options d’accès et de comportement. Les changements des réglages sont appliqués après « Enregistrer les réglages » en bas de chaque bloc.
+            </p>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold <?= $forumEnabled ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900' ?>">
+                    <?= $forumEnabled ? 'Forum ouvert' : 'Forum désactivé pour les membres' ?>
+                </span>
+                <span class="text-xs text-slate-500">Titre affiché : <?= htmlspecialchars($forumName) ?></span>
+            </div>
         </div>
-        <a href="<?= $baseUrl ?>/forum" class="text-slate-600 hover:text-slate-900 text-sm font-medium">Voir le forum →</a>
+        <div class="flex shrink-0 flex-col gap-2 sm:items-end">
+            <a href="<?= htmlspecialchars($baseUrl) ?>/forum" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-emerald-300 hover:text-emerald-900">
+                Ouvrir le forum
+            </a>
+            <a href="<?= htmlspecialchars($baseUrl) ?>/forum/moderation" class="text-center text-sm font-medium text-slate-600 hover:text-slate-900">Espace modération →</a>
+        </div>
     </div>
 
+    <div x-show="banner" x-cloak x-transition class="mb-6 rounded-xl border px-4 py-3 text-sm"
+         :class="banner.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-rose-200 bg-rose-50 text-rose-900'"
+         x-text="banner.text"></div>
+
     <?php if ($success): ?>
-    <p class="mb-4 text-sm text-emerald-600"><?= htmlspecialchars($success) ?></p>
+    <p class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><?= htmlspecialchars($success) ?></p>
     <?php endif; ?>
     <?php if ($error): ?>
-    <p class="mb-4 text-sm text-red-600"><?= htmlspecialchars($error) ?></p>
+    <p class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900"><?= htmlspecialchars($error) ?></p>
     <?php endif; ?>
 
-    <!-- Section 1 : Catégories -->
-    <section class="mb-10">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-slate-900">Gestion des catégories</h2>
-            <button type="button" @click="fcOpenCreate(null)" class="px-3 py-1.5 bg-slate-900 text-white text-sm font-medium rounded hover:bg-slate-800">Créer une catégorie</button>
+    <nav class="mb-10 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm" aria-label="Sections de la page">
+        <a href="#fc-categories" class="rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-100 hover:text-slate-900">Canaux</a>
+        <a href="#fc-settings" class="rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-100 hover:text-slate-900">Réglages</a>
+        <a href="#fc-filters" class="rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-100 hover:text-slate-900">Filtres</a>
+        <a href="#fc-tools" class="rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-100 hover:text-slate-900">Outils</a>
+    </nav>
+
+    <!-- Canaux -->
+    <section id="fc-categories" class="mb-12 scroll-mt-24">
+        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Canaux du forum</h2>
+                <p class="mt-1 text-sm text-slate-600">Une ligne = un canal principal ; les sous-canaux sont indentés. Créez d’abord les canaux racine, puis les sous-canaux si besoin.</p>
+            </div>
+            <button type="button" @click="fcOpenCreate(null)" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">
+                Nouveau canal
+            </button>
         </div>
-        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <?php if (empty($categories)): ?>
-            <p class="p-6 text-slate-500">Aucune catégorie. Cliquez sur « Créer une catégorie » pour commencer.</p>
+            <p class="p-8 text-center text-sm text-slate-600">Aucun canal pour l’instant. Utilisez « Nouveau canal » pour créer le premier (ex. Annonces, Opérations, Débrief).</p>
             <?php else: ?>
-            <table class="w-full">
-                <thead class="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                        <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Ordre</th>
-                        <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Nom</th>
-                        <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Slug</th>
-                        <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Portée</th>
-                        <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Verrouillé</th>
-                        <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($categories as $cat): ?>
-                    <tr class="border-b border-slate-100 hover:bg-slate-50">
-                        <td class="p-3"><?= (int)($cat['display_order'] ?? 0) ?></td>
-                        <td class="p-3 font-medium"><?= htmlspecialchars($cat['name'] ?? '') ?></td>
-                        <td class="p-3 text-slate-500 font-mono text-xs"><?= htmlspecialchars($cat['slug'] ?? '') ?></td>
-                        <td class="p-3 text-xs"><?= htmlspecialchars($cat['scope'] ?? 'general') ?></td>
-                        <td class="p-3"><?= !empty($cat['is_locked']) ? 'Oui' : 'Non' ?></td>
-                        <td class="p-3 flex flex-wrap gap-2">
-                            <button type="button" @click="fcOpenCreate(<?= (int)($cat['id']) ?>)" class="text-emerald-700 hover:text-emerald-900 text-sm underline">Sous-catégorie</button>
-                            <button type="button" @click='fcOpenEdit(<?= json_encode($cat) ?>)' class="text-slate-600 hover:text-slate-900 text-sm underline">Éditer</button>
-                            <button type="button" @click="fcLock(<?= (int)($cat['id']) ?>, <?= !empty($cat['is_locked']) ? 'false' : 'true' ?>)" class="text-slate-600 hover:text-slate-900 text-sm underline"><?= !empty($cat['is_locked']) ? 'Déverrouiller' : 'Verrouiller' ?></button>
-                            <button type="button" @click="fcDelete(<?= (int)($cat['id']) ?>)" class="text-rose-600 hover:text-rose-800 text-sm underline">Supprimer</button>
-                        </td>
-                    </tr>
-                    <?php foreach ($cat['children'] ?? [] as $sub): ?>
-                    <tr class="border-b border-slate-100 bg-slate-50/80 hover:bg-slate-50">
-                        <td class="p-3 pl-8 text-slate-400">↳</td>
-                        <td class="p-3 font-medium text-slate-800"><?= htmlspecialchars($sub['name'] ?? '') ?></td>
-                        <td class="p-3 text-slate-500 font-mono text-xs"><?= htmlspecialchars($sub['slug'] ?? '') ?></td>
-                        <td class="p-3 text-xs"><?= htmlspecialchars($sub['scope'] ?? ($cat['scope'] ?? 'general')) ?></td>
-                        <td class="p-3"><?= !empty($sub['is_locked']) ? 'Oui' : 'Non' ?></td>
-                        <td class="p-3 flex flex-wrap gap-2">
-                            <button type="button" @click='fcOpenEdit(<?= json_encode($sub + ['_parent_name' => $cat['name'] ?? '']) ?>)' class="text-slate-600 hover:text-slate-900 text-sm underline">Éditer</button>
-                            <button type="button" @click="fcLock(<?= (int)($sub['id']) ?>, <?= !empty($sub['is_locked']) ? 'false' : 'true' ?>)" class="text-slate-600 hover:text-slate-900 text-sm underline"><?= !empty($sub['is_locked']) ? 'Déverrouiller' : 'Verrouiller' ?></button>
-                            <button type="button" @click="fcDelete(<?= (int)($sub['id']) ?>)" class="text-rose-600 hover:text-rose-800 text-sm underline">Supprimer</button>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[640px] text-left text-sm">
+                    <thead class="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                        <tr>
+                            <th class="whitespace-nowrap px-4 py-3">Ordre</th>
+                            <th class="px-4 py-3">Nom</th>
+                            <th class="px-4 py-3">Adresse dans l’URL</th>
+                            <th class="px-4 py-3">Qui voit ce canal</th>
+                            <th class="px-4 py-3">Publications</th>
+                            <th class="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <?php foreach ($categories as $cat): ?>
+                        <tr class="hover:bg-slate-50/80">
+                            <td class="whitespace-nowrap px-4 py-3 tabular-nums text-slate-600"><?= (int)($cat['display_order'] ?? 0) ?></td>
+                            <td class="px-4 py-3 font-semibold text-slate-900"><?= htmlspecialchars($cat['name'] ?? '') ?></td>
+                            <td class="px-4 py-3 font-mono text-xs text-slate-500"><?= htmlspecialchars($cat['slug'] ?? '') ?></td>
+                            <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars($fcScopeLabel($cat)) ?></td>
+                            <td class="px-4 py-3">
+                                <?php if (!empty($cat['is_locked'])): ?>
+                                <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900">Fermé</span>
+                                <?php else: ?>
+                                <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">Ouvert</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap justify-end gap-1.5">
+                                    <button type="button" @click="fcOpenCreate(<?= (int)($cat['id']) ?>)" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Sous-canal</button>
+                                    <button type="button" @click='fcOpenEdit(<?= json_encode($cat) ?>)' class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
+                                    <button type="button" @click="fcLock(<?= (int)($cat['id']) ?>, <?= !empty($cat['is_locked']) ? 'false' : 'true' ?>)" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><?= !empty($cat['is_locked']) ? 'Rouvrir' : 'Fermer' ?></button>
+                                    <button type="button" @click="fcDelete(<?= (int)($cat['id']) ?>)" class="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50">Supprimer</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php foreach ($cat['children'] ?? [] as $sub): ?>
+                        <tr class="bg-slate-50/50 hover:bg-slate-50">
+                            <td class="whitespace-nowrap px-4 py-3 pl-8 text-slate-400">↳</td>
+                            <td class="px-4 py-3 font-medium text-slate-800"><?= htmlspecialchars($sub['name'] ?? '') ?></td>
+                            <td class="px-4 py-3 font-mono text-xs text-slate-500"><?= htmlspecialchars($sub['slug'] ?? '') ?></td>
+                            <td class="px-4 py-3 text-slate-600"><?= htmlspecialchars($fcScopeLabel($sub + ['scope' => $sub['scope'] ?? ($cat['scope'] ?? 'general')])) ?></td>
+                            <td class="px-4 py-3">
+                                <?php if (!empty($sub['is_locked'])): ?>
+                                <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900">Fermé</span>
+                                <?php else: ?>
+                                <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">Ouvert</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap justify-end gap-1.5">
+                                    <button type="button" @click='fcOpenEdit(<?= json_encode($sub + ['_parent_name' => $cat['name'] ?? '']) ?>)' class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
+                                    <button type="button" @click="fcLock(<?= (int)($sub['id']) ?>, <?= !empty($sub['is_locked']) ? 'false' : 'true' ?>)" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><?= !empty($sub['is_locked']) ? 'Rouvrir' : 'Fermer' ?></button>
+                                    <button type="button" @click="fcDelete(<?= (int)($sub['id']) ?>)" class="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50">Supprimer</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
             <?php endif; ?>
         </div>
     </section>
 
-    <!-- Section 2 : Paramètres globaux (repliables) -->
-    <section class="mb-10">
-        <h2 class="text-lg font-bold text-slate-900 mb-4">Paramètres globaux</h2>
-        <div class="space-y-2">
-            <?php
-            $paramGroups = [
-                'Apparence' => ['forum_hero_image_url'],
-                'Accès' => ['forum_enabled', 'forum_guest_read'],
-                'Libellés rôles' => ['forum_role_read_label', 'forum_role_write_label'],
-                'Limites & cooldowns' => ['forum_topics_per_page', 'forum_posts_per_page', 'forum_cooldown_seconds'],
-                'Anti-spam' => ['forum_antispam_enabled', 'forum_antispam_min_length'],
-                'Sandbox & bot' => ['forum_sandbox_enabled', 'forum_bot_enabled'],
-                'Pièces jointes' => ['forum_attachments_max_size', 'forum_attachments_allowed_ext'],
-                'URL Gate' => ['forum_url_gate_enabled'],
-                'Notifications' => ['forum_notify_moderators'],
-                'Modération' => ['forum_moderation_tutorial_html'],
-            ];
-            foreach ($paramGroups as $groupLabel => $keys):
-            ?>
-            <div class="border border-slate-200 rounded-lg overflow-hidden" x-data="{ open: false }">
-                <button type="button" @click="open = !open" class="w-full px-4 py-3 bg-slate-50 text-left text-sm font-semibold text-slate-800 flex items-center justify-between">
-                    <?= htmlspecialchars($groupLabel) ?>
-                    <span x-text="open ? '−' : '+'"></span>
+    <!-- Réglages -->
+    <section id="fc-settings" class="mb-12 scroll-mt-24">
+        <div class="mb-4">
+            <h2 class="text-lg font-bold text-slate-900">Réglages du forum</h2>
+            <p class="mt-1 text-sm text-slate-600">Modifiez une ou plusieurs sections, puis enregistrez : tout est envoyé en une seule fois.</p>
+        </div>
+        <div class="space-y-3">
+            <?php foreach ($forumSettingGroups as $gi => $group): ?>
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" x-data="{ open: <?= !empty($group['defaultOpen']) ? 'true' : 'false' ?> }">
+                <button type="button" @click="open = !open" class="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition hover:bg-slate-50 sm:px-5">
+                    <span>
+                        <span class="block text-sm font-bold text-slate-900"><?= htmlspecialchars($group['title']) ?></span>
+                        <span class="mt-0.5 block text-xs text-slate-500"><?= htmlspecialchars($group['summary']) ?></span>
+                    </span>
+                    <span class="shrink-0 text-slate-400" x-text="open ? 'Réduire' : 'Déplier'"></span>
                 </button>
-                <div x-show="open" class="border-t border-slate-200">
-                    <div class="p-4 space-y-3 bg-white">
-                        <?php foreach ($keys as $key): ?>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1"><?= htmlspecialchars($key) ?></label>
-                            <input type="text" class="fc-input w-full border border-slate-200 rounded px-3 py-2 text-sm" name="<?= htmlspecialchars($key) ?>" data-key="<?= htmlspecialchars($key) ?>" value="<?= htmlspecialchars($forumConfig[$key] ?? '') ?>" placeholder="">
-                            <?php if ($key === 'forum_hero_image_url'): ?>
-                            <p class="mt-1.5 text-xs text-slate-500 leading-relaxed">Image d’en-tête du forum : URL HTTPS absolue ou chemin commençant par <code class="text-[11px] bg-slate-100 px-1 rounded">/</code> (ex. assets servis par le site). Recommandé : large bannière (~1600×400&nbsp;px), WebP ou JPEG, fichier léger pour de bonnes performances.</p>
+                <div x-show="open" class="border-t border-slate-100">
+                    <div class="space-y-5 px-4 py-5 sm:px-5">
+                        <?php foreach ($group['fields'] as $field): ?>
+                        <div class="border-b border-slate-100 pb-5 last:border-0 last:pb-0">
+                            <?php if ($field['type'] === 'toggle'): ?>
+                            <label class="flex cursor-pointer items-start gap-3">
+                                <input type="checkbox" class="fc-setting-input mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" data-setting-key="<?= htmlspecialchars($field['key']) ?>" <?= !empty($field['checked']) ? 'checked' : '' ?>>
+                                <span>
+                                    <span class="block text-sm font-semibold text-slate-900"><?= htmlspecialchars($field['label']) ?></span>
+                                    <?php if (!empty($field['help'])): ?>
+                                    <span class="mt-1 block text-xs leading-relaxed text-slate-600"><?= htmlspecialchars($field['help']) ?></span>
+                                    <?php endif; ?>
+                                </span>
+                            </label>
+                            <?php elseif ($field['type'] === 'textarea'): ?>
+                            <label class="block text-sm font-semibold text-slate-900"><?= htmlspecialchars($field['label']) ?></label>
+                            <?php if (!empty($field['help'])): ?>
+                            <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= htmlspecialchars($field['help']) ?></p>
+                            <?php endif; ?>
+                            <textarea class="fc-setting-input mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" rows="4" data-setting-key="<?= htmlspecialchars($field['key']) ?>"><?= htmlspecialchars($field['value']) ?></textarea>
+                            <?php else: ?>
+                            <label class="block text-sm font-semibold text-slate-900"><?= htmlspecialchars($field['label']) ?></label>
+                            <?php if (!empty($field['help'])): ?>
+                            <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= htmlspecialchars($field['help']) ?></p>
+                            <?php endif; ?>
+                            <input
+                                type="<?= $field['type'] === 'number' ? 'number' : 'text' ?>"
+                                class="fc-setting-input mt-2 w-full max-w-xl rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                data-setting-key="<?= htmlspecialchars($field['key']) ?>"
+                                value="<?= htmlspecialchars($field['value']) ?>"
+                                <?= $field['attrs'] ?? '' ?>
+                            >
                             <?php endif; ?>
                         </div>
                         <?php endforeach; ?>
@@ -123,134 +463,131 @@ $forumName = $forumConfig['name'] ?? 'Chambre des Murmures';
             </div>
             <?php endforeach; ?>
         </div>
-        <div class="mt-4">
-            <button type="button" @click="saveForumSettings()" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Enregistrer les paramètres</button>
+        <div class="mt-5 flex flex-wrap items-center gap-3">
+            <button type="button" @click="saveForumSettings()" :disabled="savingSettings" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50">
+                <span x-show="!savingSettings">Enregistrer tous les réglages</span>
+                <span x-show="savingSettings" x-cloak>Enregistrement…</span>
+            </button>
+            <p class="text-xs text-slate-500">Pensez à enregistrer après modification, même si vous n’avez changé qu’une section.</p>
         </div>
     </section>
 
-    <!-- Section 3 : Gains XP (lecture seule) -->
-    <section class="mb-10">
-        <h2 class="text-lg font-bold text-slate-900 mb-4">Gains XP</h2>
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-600">
-            <p>Configuration en lecture seule (gérée par le module XP).</p>
-            <p class="mt-2">Création de sujet : <?= htmlspecialchars($forumConfig['xp_topic'] ?? '—') ?> XP · Réponse : <?= htmlspecialchars($forumConfig['xp_reply'] ?? '—') ?> XP</p>
-        </div>
+    <!-- XP -->
+    <section class="mb-12 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+        <h2 class="text-sm font-bold text-slate-900">Points d’expérience (XP)</h2>
+        <p class="mt-2 text-sm text-slate-600">Les montants sont gérés par le module XP du site, pas sur cette page.</p>
+        <p class="mt-3 text-sm font-medium text-slate-800">
+            Création de sujet : <?= htmlspecialchars((string)($forumConfig['xp_topic'] ?? '—')) ?> XP
+            <span class="mx-2 text-slate-300">·</span>
+            Réponse : <?= htmlspecialchars((string)($forumConfig['xp_reply'] ?? '—')) ?> XP
+            <span class="mx-2 text-slate-300">·</span>
+            Longueur max. message : <?= htmlspecialchars((string)($forumConfig['forum_max_post_length'] ?? forum_get_setting('forum_max_post_length', 10000))) ?> caractères
+        </p>
     </section>
 
-    <!-- Section 4 : Mots bannis -->
-    <section class="mb-10">
-        <h2 class="text-lg font-bold text-slate-900 mb-4">Mots bannis</h2>
-        <div class="flex gap-2 mb-3">
-            <input type="text" x-model="bannedWordInput" placeholder="Mot ou expression" class="fc-input flex-1 border border-slate-200 rounded px-3 py-2 text-sm">
-            <button type="button" @click="bwAdd()" class="px-3 py-2 bg-slate-900 text-white text-sm font-medium rounded hover:bg-slate-800">Ajouter</button>
-        </div>
-        <ul class="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
-            <?php foreach ($bannedWords as $w): ?>
-            <li class="flex items-center justify-between px-4 py-2">
-                <span><?= htmlspecialchars(is_array($w) ? ($w['word'] ?? $w) : $w) ?></span>
-                <button type="button" @click="bwDelete(<?= is_array($w) ? (int)($w['id'] ?? 0) : 0 ?>)" class="text-rose-600 hover:text-rose-800 text-sm">Supprimer</button>
-            </li>
-            <?php endforeach; ?>
-            <?php if (empty($bannedWords)): ?>
-            <li class="px-4 py-4 text-slate-500 text-sm">Aucun mot banni.</li>
-            <?php endif; ?>
-        </ul>
-    </section>
-
-    <!-- Section 5 : Domaines blacklistés -->
-    <section class="mb-10">
-        <h2 class="text-lg font-bold text-slate-900 mb-4">Domaines blacklistés</h2>
-        <div class="flex gap-2 mb-3">
-            <input type="text" x-model="blacklistedDomainInput" placeholder="exemple.com" class="fc-input flex-1 border border-slate-200 rounded px-3 py-2 text-sm">
-            <button type="button" @click="bdAdd()" class="px-3 py-2 bg-slate-900 text-white text-sm font-medium rounded hover:bg-slate-800">Ajouter</button>
-        </div>
-        <ul class="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
-            <?php foreach ($blacklistedDomains as $d): ?>
-            <li class="flex items-center justify-between px-4 py-2">
-                <span><?= htmlspecialchars(is_array($d) ? ($d['domain'] ?? $d) : $d) ?></span>
-                <button type="button" @click="bdDelete(<?= is_array($d) ? (int)($d['id'] ?? 0) : 0 ?>)" class="text-rose-600 hover:text-rose-800 text-sm">Supprimer</button>
-            </li>
-            <?php endforeach; ?>
-            <?php if (empty($blacklistedDomains)): ?>
-            <li class="px-4 py-4 text-slate-500 text-sm">Aucun domaine blacklisté.</li>
-            <?php endif; ?>
-        </ul>
-    </section>
-
-    <!-- Section 6 : File sandbox -->
-    <section class="mb-10">
-        <h2 class="text-lg font-bold text-slate-900 mb-4">File sandbox (messages en attente)</h2>
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-600">
-            Aucun message en attente.
-        </div>
-    </section>
-
-    <!-- Section 7 : Statut bot -->
-    <section class="mb-10">
-        <h2 class="text-lg font-bold text-slate-900 mb-4">Statut bot de modération</h2>
-        <div class="flex gap-2">
-            <button type="button" @click="botSelfTest()" class="px-3 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Test bot</button>
-            <button type="button" @click="botPreview()" class="px-3 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Aperçu</button>
-        </div>
-        <p class="mt-2 text-sm text-slate-500">Bot actif (placeholder).</p>
-    </section>
-
-    <!-- Section 8 : Liens -->
-    <section class="mb-10">
-        <h2 class="text-lg font-bold text-slate-900 mb-4">Liens</h2>
-        <div class="flex flex-wrap gap-3">
-            <a href="<?= $baseUrl ?>/forum/moderation" class="px-3 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Modération forum</a>
-            <a href="<?= $baseUrl ?>/forum" class="px-3 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Voir le forum</a>
-            <a href="<?= $baseUrl ?>/admin" class="px-3 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Administration</a>
-        </div>
-    </section>
-
-    <!-- Modale création / édition catégorie -->
-    <div x-show="fcModalOpen" x-cloak class="fc-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="fcModalOpen = false">
-        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" @click.stop>
-            <h3 class="text-lg font-bold text-slate-900 mb-4" x-text="fcEditId ? 'Modifier la catégorie' : 'Nouvelle catégorie'"></h3>
-            <form @submit.prevent="fcSubmitForm()">
-                <input type="hidden" name="id" x-model="fcEditId">
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Nom</label>
-                        <input type="text" class="fc-input w-full border border-slate-200 rounded px-3 py-2" name="name" x-model="fcForm.name" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Slug</label>
-                        <input type="text" class="fc-input w-full border border-slate-200 rounded px-3 py-2" name="slug" x-model="fcForm.slug">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                        <textarea class="fc-input w-full border border-slate-200 rounded px-3 py-2" name="description" x-model="fcForm.description" rows="2"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Ordre d'affichage</label>
-                        <input type="number" class="fc-input w-full border border-slate-200 rounded px-3 py-2" name="display_order" x-model="fcForm.display_order" min="0">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Catégorie parente</label>
-                        <select class="fc-input w-full border border-slate-200 rounded px-3 py-2 text-sm" x-model="fcForm.parent_id">
-                            <option value="">— Racine (canal principal) —</option>
-                            <?php foreach ($categories as $rc): ?>
-                            <option value="<?= (int)($rc['id'] ?? 0) ?>"><?= htmlspecialchars($rc['name'] ?? '') ?> (racine)</option>
-                            <?php endforeach; ?>
-                        </select>
-                        <p class="mt-1 text-xs text-slate-500">Choisissez une racine pour créer une <strong>sous-catégorie</strong> (un seul niveau). La portée hérite du parent.</p>
-                    </div>
-                    <div x-show="!fcForm.parent_id">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Portée / espace</label>
-                        <select class="fc-input w-full border border-slate-200 rounded px-3 py-2 text-sm" x-model="fcForm.scope">
-                            <option value="general">Général (membres)</option>
-                            <option value="platform">Plateforme (global)</option>
-                            <option value="organization">Organisation / unité</option>
-                            <option value="moderation">Espace modération (équipe uniquement)</option>
-                        </select>
-                    </div>
+    <!-- Filtres -->
+    <section id="fc-filters" class="mb-12 scroll-mt-24">
+        <h2 class="text-lg font-bold text-slate-900">Filtres de contenu</h2>
+        <p class="mt-1 text-sm text-slate-600">Mots et sites bloqués dans les messages. Utile pour limiter les abus sans tout passer en modération manuelle.</p>
+        <div class="mt-6 grid gap-8 lg:grid-cols-2">
+            <div>
+                <h3 class="text-sm font-bold text-slate-800">Mots et expressions refusés</h3>
+                <div class="mt-3 flex gap-2">
+                    <input type="text" x-model="bannedWordInput" placeholder="Ajouter un mot ou une expression" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                    <button type="button" @click="bwAdd()" class="shrink-0 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Ajouter</button>
                 </div>
-                <div class="mt-6 flex gap-2">
-                    <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Enregistrer</button>
-                    <button type="button" @click="fcModalOpen = false" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Annuler</button>
+                <ul class="mt-3 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <?php foreach ($bannedWords as $w): ?>
+                    <li class="flex items-center justify-between gap-2 px-4 py-2.5 text-sm">
+                        <span class="min-w-0 truncate"><?= htmlspecialchars(is_array($w) ? ($w['word'] ?? $w) : $w) ?></span>
+                        <button type="button" @click="bwDelete(<?= is_array($w) ? (int)($w['id'] ?? 0) : 0 ?>)" class="shrink-0 text-xs font-semibold text-rose-600 hover:text-rose-800">Retirer</button>
+                    </li>
+                    <?php endforeach; ?>
+                    <?php if (empty($bannedWords)): ?>
+                    <li class="px-4 py-6 text-center text-sm text-slate-500">Aucun mot listé.</li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-slate-800">Sites web interdits</h3>
+                <p class="mt-1 text-xs text-slate-500">Indiquez le nom de domaine seul, sans https ni chemin (ex. mauvais-exemple.com).</p>
+                <div class="mt-3 flex gap-2">
+                    <input type="text" x-model="blacklistedDomainInput" placeholder="exemple.com" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                    <button type="button" @click="bdAdd()" class="shrink-0 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Ajouter</button>
+                </div>
+                <ul class="mt-3 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <?php foreach ($blacklistedDomains as $d): ?>
+                    <li class="flex items-center justify-between gap-2 px-4 py-2.5 text-sm">
+                        <span class="min-w-0 truncate font-mono text-xs"><?= htmlspecialchars(is_array($d) ? ($d['domain'] ?? $d) : $d) ?></span>
+                        <button type="button" @click="bdDelete(<?= is_array($d) ? (int)($d['id'] ?? 0) : 0 ?>)" class="shrink-0 text-xs font-semibold text-rose-600 hover:text-rose-800">Retirer</button>
+                    </li>
+                    <?php endforeach; ?>
+                    <?php if (empty($blacklistedDomains)): ?>
+                    <li class="px-4 py-6 text-center text-sm text-slate-500">Aucun domaine listé.</li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Outils -->
+    <section id="fc-tools" class="mb-12 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <h2 class="text-lg font-bold text-slate-900">Outils et vérifications</h2>
+        <p class="mt-2 text-sm text-slate-600">Tests réservés aux modules de modération automatique. Les files d’attente détaillées se consultent depuis l’espace modération lorsqu’elles sont disponibles.</p>
+        <div class="mt-5 flex flex-wrap gap-2">
+            <button type="button" @click="botSelfTest()" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100">Test de l’assistant</button>
+            <button type="button" @click="botPreview()" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100">Aperçu</button>
+            <a href="<?= htmlspecialchars($baseUrl) ?>/back-office/forum-moderation" class="inline-flex items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-100">Console modération</a>
+        </div>
+    </section>
+
+    <!-- Modale catégorie -->
+    <div x-show="fcModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]" @click.self="fcModalOpen = false">
+        <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl" @click.stop>
+            <h3 class="text-lg font-bold text-slate-900" x-text="fcEditId ? 'Modifier le canal' : 'Nouveau canal'"></h3>
+            <p class="mt-1 text-xs text-slate-500" x-show="fcForm.parent_id">Sous-canal : choisissez le canal parent ci-dessous.</p>
+            <form class="mt-5 space-y-4" @submit.prevent="fcSubmitForm()">
+                <input type="hidden" name="id" x-model="fcEditId">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-800">Nom affiché</label>
+                    <input type="text" class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" name="name" x-model="fcForm.name" required autocomplete="off">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-800">Adresse courte dans l’URL</label>
+                    <input type="text" class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" name="slug" x-model="fcForm.slug" placeholder="ex. annonces" autocomplete="off">
+                    <p class="mt-1 text-xs text-slate-500">Lettres minuscules et tirets. Doit être unique pour votre organisation.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-800">Description</label>
+                    <textarea class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" name="description" x-model="fcForm.description" rows="2"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-800">Ordre d’affichage</label>
+                    <input type="number" class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" name="display_order" x-model="fcForm.display_order" min="0">
+                    <p class="mt-1 text-xs text-slate-500">Plus le nombre est petit, plus le canal apparaît haut dans la liste.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-800">Rattachement</label>
+                    <select class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" x-model="fcForm.parent_id">
+                        <option value="">Canal principal (racine)</option>
+                        <?php foreach ($categories as $rc): ?>
+                        <option value="<?= (int)($rc['id'] ?? 0) ?>"><?= htmlspecialchars($rc['name'] ?? '') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="mt-1 text-xs text-slate-500">Un seul niveau de sous-canal. La visibilité reprend celle du canal parent.</p>
+                </div>
+                <div x-show="!fcForm.parent_id">
+                    <label class="block text-sm font-semibold text-slate-800">Visibilité du canal</label>
+                    <select class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" x-model="fcForm.scope">
+                        <option value="general">Tous les membres connectés</option>
+                        <option value="platform">Toute la plateforme</option>
+                        <option value="organization">Réservé à l’unité / organisation</option>
+                        <option value="moderation">Réservé à l’équipe de modération</option>
+                    </select>
+                </div>
+                <div class="flex flex-wrap gap-2 pt-2">
+                    <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Enregistrer</button>
+                    <button type="button" @click="fcModalOpen = false" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Annuler</button>
                 </div>
             </form>
         </div>
@@ -267,6 +604,8 @@ function forumConfigPage() {
         fcForm: { name: '', slug: '', description: '', display_order: 0, parent_id: '', scope: 'general' },
         bannedWordInput: '',
         blacklistedDomainInput: '',
+        banner: null,
+        savingSettings: false,
         fcOpenCreate(parentId) {
             this.fcEditId = null;
             this.fcForm = { name: '', slug: '', description: '', display_order: 0, parent_id: parentId ? String(parentId) : '', scope: 'general' };
@@ -283,6 +622,11 @@ function forumConfigPage() {
                 scope: cat.scope || 'general',
             };
             this.fcModalOpen = true;
+        },
+        showBanner(type, text) {
+            this.banner = { type, text };
+            clearTimeout(this._bannerT);
+            this._bannerT = setTimeout(() => { this.banner = null; }, 5000);
         },
         async fcSubmitForm() {
             const action = this.fcEditId ? 'update' : 'create';
@@ -302,8 +646,8 @@ function forumConfigPage() {
                 const r = await fetch(BASE + '/api/admin/forum-categories', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { this.fcModalOpen = false; location.reload(); return; }
-                alert(j.message || 'Erreur lors de l\'enregistrement.');
-            } catch (e) { alert('Erreur réseau.'); }
+                this.showBanner('error', j.message || 'Impossible d’enregistrer le canal.');
+            } catch (e) { this.showBanner('error', 'Problème de connexion. Réessayez.'); }
         },
         async fcLock(id, locked) {
             const body = new FormData();
@@ -315,10 +659,11 @@ function forumConfigPage() {
                 const r = await fetch(BASE + '/api/admin/forum-categories', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { location.reload(); return; }
-                alert(j.message || 'Erreur.'); } catch (e) { alert('Erreur réseau.'); }
+                this.showBanner('error', j.message || 'Action impossible.');
+            } catch (e) { this.showBanner('error', 'Problème de connexion.'); }
         },
         async fcDelete(id) {
-            if (!confirm('Supprimer cette catégorie ?')) return;
+            if (!confirm('Supprimer ce canal ? Les sujets éventuels doivent être vides ou déplacés avant.')) return;
             const body = new FormData();
             body.append('_csrf_token', CSRF);
             body.append('action', 'delete');
@@ -327,19 +672,41 @@ function forumConfigPage() {
                 const r = await fetch(BASE + '/api/admin/forum-categories', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { location.reload(); return; }
-                alert(j.message || 'Erreur.'); } catch (e) { alert('Erreur réseau.'); }
+                this.showBanner('error', j.message || 'Suppression impossible.');
+            } catch (e) { this.showBanner('error', 'Problème de connexion.'); }
+        },
+        collectSettings() {
+            const settings = {};
+            document.querySelectorAll('[data-setting-key]').forEach((el) => {
+                const k = el.dataset.settingKey;
+                if (!k) return;
+                if (el.type === 'checkbox') {
+                    settings[k] = el.checked ? '1' : '0';
+                } else {
+                    settings[k] = el.value;
+                }
+            });
+            return settings;
         },
         async saveForumSettings() {
-            const settings = {};
-            document.querySelectorAll('.fc-input[data-key]').forEach(el => { settings[el.dataset.key] = el.value; });
+            this.savingSettings = true;
+            const settings = this.collectSettings();
             const body = new FormData();
             body.append('_csrf_token', CSRF);
             body.append('settings', JSON.stringify(settings));
             try {
                 const r = await fetch(BASE + '/api/admin/site-settings', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
-                if (r.ok && (j.success || j.ok)) { alert('Paramètres enregistrés.'); return; }
-                alert(j.message || 'Erreur.'); } catch (e) { alert('Erreur réseau.'); }
+                if (r.ok && (j.success || j.ok)) {
+                    this.showBanner('success', 'Réglages enregistrés.');
+                } else {
+                    this.showBanner('error', j.message || 'Enregistrement refusé.');
+                }
+            } catch (e) {
+                this.showBanner('error', 'Problème de connexion.');
+            } finally {
+                this.savingSettings = false;
+            }
         },
         async bwAdd() {
             const word = this.bannedWordInput.trim();
@@ -352,7 +719,8 @@ function forumConfigPage() {
                 const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { this.bannedWordInput = ''; location.reload(); return; }
-                alert(j.message || 'Erreur.'); } catch (e) { alert('Erreur réseau.'); }
+                this.showBanner('error', j.message || 'Ajout impossible.');
+            } catch (e) { this.showBanner('error', 'Problème de connexion.'); }
         },
         async bwDelete(id) {
             if (!id) return;
@@ -364,7 +732,8 @@ function forumConfigPage() {
                 const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { location.reload(); return; }
-                alert(j.message || 'Erreur.'); } catch (e) { alert('Erreur réseau.'); }
+                this.showBanner('error', j.message || 'Suppression impossible.');
+            } catch (e) { this.showBanner('error', 'Problème de connexion.'); }
         },
         async bdAdd() {
             const domain = this.blacklistedDomainInput.trim();
@@ -377,7 +746,8 @@ function forumConfigPage() {
                 const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { this.blacklistedDomainInput = ''; location.reload(); return; }
-                alert(j.message || 'Erreur.'); } catch (e) { alert('Erreur réseau.'); }
+                this.showBanner('error', j.message || 'Ajout impossible.');
+            } catch (e) { this.showBanner('error', 'Problème de connexion.'); }
         },
         async bdDelete(id) {
             if (!id) return;
@@ -389,10 +759,29 @@ function forumConfigPage() {
                 const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { location.reload(); return; }
-                alert(j.message || 'Erreur.'); } catch (e) { alert('Erreur réseau.'); }
+                this.showBanner('error', j.message || 'Suppression impossible.');
+            } catch (e) { this.showBanner('error', 'Problème de connexion.'); }
         },
-        async botSelfTest() { const b = new FormData(); b.append('_csrf_token', CSRF); b.append('action', 'bot_self_test'); const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body: b }); const j = await r.json().catch(() => ({})); alert(j.message || (r.ok ? 'Test envoyé.' : 'Erreur.')); },
-        async botPreview() { const b = new FormData(); b.append('_csrf_token', CSRF); b.append('action', 'bot_preview'); const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body: b }); const j = await r.json().catch(() => ({})); alert(j.message || (r.ok ? 'Aperçu.' : 'Erreur.')); }
+        async botSelfTest() {
+            const b = new FormData();
+            b.append('_csrf_token', CSRF);
+            b.append('action', 'bot_self_test');
+            try {
+                const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body: b });
+                const j = await r.json().catch(() => ({}));
+                this.showBanner(r.ok ? 'success' : 'error', j.message || (r.ok ? 'Test terminé.' : 'Échec du test.'));
+            } catch (e) { this.showBanner('error', 'Problème de connexion.'); }
+        },
+        async botPreview() {
+            const b = new FormData();
+            b.append('_csrf_token', CSRF);
+            b.append('action', 'bot_preview');
+            try {
+                const r = await fetch(BASE + '/api/back-office/forum-moderation', { method: 'POST', body: b });
+                const j = await r.json().catch(() => ({}));
+                this.showBanner(r.ok ? 'success' : 'error', j.message || (r.ok ? 'Aperçu généré.' : 'Aperçu indisponible.'));
+            } catch (e) { this.showBanner('error', 'Problème de connexion.'); }
+        },
     };
 }
 </script>

@@ -40,6 +40,6 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                 <?php endif; ?>
 
                 <p class="text-sm text-slate-500">
-                    <a href="<?= url('admin/training') ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Vue d’ensemble</a>
+                    <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Vue d’ensemble</a>
                 </p>
 <?php require base_path('views/admin/training/partials/command_shell_close.php'); ?>

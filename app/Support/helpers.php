@@ -240,6 +240,109 @@ if (!function_exists('url')) {
     }
 }
 
+if (!function_exists('back_office_path_suffix')) {
+    /**
+     * Chemin HTTP normalisé après le préfixe d’application (ex. « back-office/users »), sans slash initial/final.
+     */
+    function back_office_path_suffix(): string
+    {
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        $path = parse_url($uri, PHP_URL_PATH);
+        $path = is_string($path) ? $path : '';
+        $prefix = rtrim((string) env('APP_BASE_PATH', ''), '/');
+        if ($prefix === '' && isset($_SERVER['SCRIPT_NAME']) && str_contains((string) $_SERVER['SCRIPT_NAME'], '/public/')) {
+            $prefix = '/public';
+        }
+        if ($prefix !== '' && str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix)) ?: '/';
+        }
+
+        return trim($path, '/');
+    }
+}
+
+if (!function_exists('is_back_office_request')) {
+    function is_back_office_request(): bool
+    {
+        $p = back_office_path_suffix();
+
+        return $p === 'back-office' || str_starts_with($p, 'back-office/');
+    }
+}
+
+if (!function_exists('training_studio_path')) {
+    /**
+     * Chemin URL du Studio LMS (back-office ressources), sans slash initial.
+     */
+    function training_studio_path(): string
+    {
+        return 'back-office/ressources/training/studio';
+    }
+}
+
+if (!function_exists('training_studio_url')) {
+    /**
+     * Lien vers le Studio LMS (création / édition des parcours) — toujours sous le back-office communauté.
+     *
+     * @param string|int $suffix ex. '', 'versions', 12, '12/fiche', '12/preview'
+     */
+    function training_studio_url(string|int $suffix = ''): string
+    {
+        $base = training_studio_path();
+        if ($suffix === '') {
+            return url($base);
+        }
+        $suffix = trim((string) $suffix, '/');
+
+        return $suffix === '' ? url($base) : url($base . '/' . $suffix);
+    }
+}
+
+if (!function_exists('training_lms_admin_path')) {
+    /**
+     * Chemin URL canonique de l’admin LMS communauté (hors Studio), sans slash initial.
+     */
+    function training_lms_admin_path(): string
+    {
+        return 'back-office/ressources/training';
+    }
+}
+
+if (!function_exists('training_lms_admin_url')) {
+    /**
+     * Lien vers le tableau de bord LMS, catalogue, inscriptions, etc. (back-office ressources).
+     *
+     * @param string $suffix ex. '', 'courses', 'enrollments', 'courses/12/showcase'
+     */
+    function training_lms_admin_url(string $suffix = ''): string
+    {
+        $base = training_lms_admin_path();
+        if ($suffix === '') {
+            return url($base);
+        }
+        $suffix = trim($suffix, '/');
+
+        return $suffix === '' ? url($base) : url($base . '/' . $suffix);
+    }
+}
+
+if (!function_exists('training_lms_admin_redirect_from_legacy')) {
+    /**
+     * Redirige une ancienne URL /admin/training/... vers le back-office en conservant les paramètres de requête (ex. course_id).
+     */
+    function training_lms_admin_redirect_from_legacy(\App\Core\Request $request, string $suffix = ''): \App\Core\Response
+    {
+        $target = training_lms_admin_url($suffix);
+        $params = $request->queryParams();
+        $qs = http_build_query($params);
+        if ($qs !== '') {
+            $target .= (str_contains($target, '?') ? '&' : '?') . $qs;
+        }
+
+        return \App\Core\Response::redirect($target);
+    }
+}
+
 if (!function_exists('can')) {
     function can(string $permission): bool
     {
@@ -335,6 +438,7 @@ if (!function_exists('detect_current_module')) {
             str_starts_with($path, '/formations')
             || str_starts_with($path, '/api/training')
             || str_starts_with($path, '/admin/training')
+            || str_starts_with($path, '/back-office/ressources/training')
         ) {
             return 'training';
         }

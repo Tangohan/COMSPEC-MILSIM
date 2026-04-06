@@ -38,34 +38,65 @@ $regionBadgesLines = implode("\n", is_array($c['public_region_badges'] ?? null) 
 $specialtiesLines = implode("\n", is_array($c['public_specialties'] ?? null) ? $c['public_specialties'] : []);
 $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed' : 'manual';
 ?>
-<div class="max-w-3xl mx-auto px-6 py-12">
-    <h1 class="text-2xl font-black text-slate-900 mb-2">Fiche registre &amp; contact</h1>
-    <p class="text-slate-600 text-sm mb-2">Contenu public sur la page <code class="bg-slate-100 px-1 rounded">/c/<?= htmlspecialchars((string) ($tenant['slug'] ?? '')) ?></code> et dans le catalogue <a href="<?= htmlspecialchars(url('communities')) ?>" class="text-emerald-700 underline">Registre</a>.</p>
-    <p class="text-slate-500 text-xs mb-8"><a href="<?= htmlspecialchars(url('back-office/community')) ?>" class="underline">Identité &amp; code rejoindre</a></p>
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 lg:py-12">
+    <header class="mb-6 lg:mb-8">
+        <h1 class="text-2xl lg:text-3xl font-black text-slate-900 mb-2">Fiche registre &amp; contact</h1>
+        <p class="text-slate-600 text-sm max-w-3xl">Ce que vous saisissez ici alimente la <strong class="font-semibold text-slate-800">page publique de votre communauté</strong> et, si vous le souhaitez, votre <a href="<?= htmlspecialchars(url('communities')) ?>" class="text-emerald-700 font-semibold underline decoration-emerald-200 hover:decoration-emerald-600">carte dans le registre des unités</a>.</p>
+        <p class="text-slate-500 text-xs mt-2"><a href="<?= htmlspecialchars(url('back-office/community')) ?>" class="underline hover:text-slate-800">← Identité &amp; code rejoindre</a></p>
+    </header>
 
-    <?php if ($err): ?><p class="text-red-600 text-sm mb-4"><?= htmlspecialchars($err) ?></p><?php endif; ?>
-    <?php if ($ok): ?><p class="text-emerald-700 text-sm mb-4"><?= htmlspecialchars($ok) ?></p><?php endif; ?>
+    <?php if ($err): ?><p class="text-red-600 text-sm mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3"><?= htmlspecialchars($err) ?></p><?php endif; ?>
+    <?php if ($ok): ?><p class="text-emerald-800 text-sm mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3"><?= htmlspecialchars($ok) ?></p><?php endif; ?>
 
-    <form method="post" action="<?= htmlspecialchars(url('back-office/community/presentation')) ?>" class="space-y-10">
+    <nav class="cp-presentation-tabs sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-8 border-y border-slate-200/90 bg-slate-50/95 backdrop-blur-md shadow-sm" aria-label="Parties de la fiche">
+        <p class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 lg:hidden">Navigation</p>
+        <div class="flex flex-wrap gap-2" role="tablist">
+            <button type="button" role="tab" data-cp-tab="visibilite" aria-selected="true" class="cp-tab-btn inline-flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">Registre &amp; accès</button>
+            <button type="button" role="tab" data-cp-tab="vitrine" aria-selected="false" class="cp-tab-btn inline-flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">Page publique</button>
+            <button type="button" role="tab" data-cp-tab="profil" aria-selected="false" class="cp-tab-btn inline-flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">Inscription &amp; profil jeu</button>
+            <button type="button" role="tab" data-cp-tab="textes" aria-selected="false" class="cp-tab-btn inline-flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">Textes &amp; contact</button>
+            <button type="button" role="tab" data-cp-tab="candidature" aria-selected="false" class="cp-tab-btn inline-flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">Formulaire candidature</button>
+        </div>
+    </nav>
+
+    <form id="community-presentation-form" method="post" action="<?= htmlspecialchars(url('back-office/community/presentation')) ?>" class="pb-28">
         <?= \App\Core\Csrf::field() ?>
 
+        <div class="cp-panel space-y-8 lg:space-y-10" data-cp-panel="visibilite" id="cp-panel-visibilite">
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
             <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Visibilité</h2>
             <label class="flex items-start gap-3 cursor-pointer">
                 <input type="hidden" name="registry_listed" value="0">
                 <input type="checkbox" name="registry_listed" value="1" class="mt-1" <?= (!array_key_exists('registry_listed', $c) || !empty($c['registry_listed'])) ? 'checked' : '' ?>>
-                <span class="text-sm text-slate-700">Apparaître dans le registre public (<code class="text-xs">/communities</code>)</span>
+                <span class="text-sm text-slate-700">Faire apparaître notre communauté dans la liste publique du registre des unités</span>
             </label>
             <label class="flex items-start gap-3 cursor-pointer">
                 <input type="hidden" name="forum_members_only" value="0">
                 <input type="checkbox" name="forum_members_only" value="1" class="mt-1" <?= !empty($c['forum_members_only']) ? 'checked' : '' ?>>
                 <span class="text-sm text-slate-700">Forum réservé aux membres (masquer le bouton « Accéder au forum » pour les visiteurs non membres)</span>
             </label>
+            <?php $slugHint = trim((string) ($tenant['slug'] ?? '')); ?>
+            <div class="rounded-xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-sm text-slate-700">
+                <p class="font-semibold text-slate-900">Image d’en-tête sur la carte du registre (facultatif)</p>
+                <p class="mt-1 text-xs text-slate-600 leading-relaxed">
+                    Pour remplacer le fond coloré par une photo paysage, enregistrez un fichier image sur le serveur du site, dans l’emplacement réservé aux visuels des communautés,
+                    sous le nom <strong class="font-semibold text-slate-800"><?= htmlspecialchars($slugHint !== '' ? $slugHint . '-cover.jpg' : 'votre-adresse-courte-cover.jpg') ?></strong>
+                    <?= $slugHint !== '' ? '' : ' (remplacez « votre-adresse-courte » par l’identifiant affiché dans Identité &amp; code rejoindre).' ?>
+                    Si vous ne gérez pas les fichiers du site vous-même, envoyez simplement l’image à la personne qui héberge le portail.
+                </p>
+            </div>
         </section>
+        </div>
 
-        <section class="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-6 shadow-sm space-y-4">
-            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Fiche publique vitrine</h2>
-            <p class="text-xs text-slate-600">Mise en page étendue sur <code class="text-xs bg-white px-1 rounded">/c/<?= htmlspecialchars((string) ($tenant['slug'] ?? '')) ?></code> (hero, stats, ORBAT, roster opt-in).</p>
+        <div class="cp-panel hidden space-y-8 lg:space-y-10" data-cp-panel="vitrine" id="cp-panel-vitrine">
+        <section class="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-6 shadow-sm space-y-6">
+            <div class="border-b border-emerald-200/80 pb-4">
+                <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Fiche publique vitrine</h2>
+                <p class="text-xs text-slate-600 mt-1">Bandeau d’accueil, chiffres clés, encadrement affiché et liste des membres (si activée) sur votre page publique.</p>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Modèle &amp; type de fiche</h3>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Modèle de page</label>
                 <select name="public_page_layout" class="w-full max-w-md rounded border border-slate-300 px-3 py-2 text-sm">
@@ -91,6 +122,10 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                 <input type="checkbox" name="public_roster_enabled" value="1" class="mt-1" <?= !empty($c['public_roster_enabled']) ? 'checked' : '' ?>>
                 <span class="text-sm text-slate-700">Activer le tableau roster public (membres avec opt-in)</span>
             </label>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Bandeau &amp; repères visuels</h3>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Sous-titre / accroche (hero)</label>
                 <textarea name="public_hero_subtitle" rows="3" maxlength="600" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_hero_subtitle'] ?? '')) ?></textarea>
@@ -109,6 +144,10 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                     <input type="text" name="public_access_label" value="<?= htmlspecialchars((string) ($c['public_access_label'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Public + validation">
                 </div>
             </div>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Blocs visibles &amp; textes du corps de page</h3>
             <div>
                 <p class="text-xs font-bold text-slate-700 mb-2">Modules affichés (vitrine)</p>
                 <div class="flex flex-wrap gap-3">
@@ -128,6 +167,10 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                 <label class="block text-xs font-bold text-slate-700 mb-1">Spécialités (une par ligne)</label>
                 <textarea name="public_specialties" rows="4" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars($specialtiesLines) ?></textarea>
             </div>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Vue d’ensemble chiffrée</h3>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Statistiques (vue d’ensemble)</label>
                 <select name="public_stats_mode" class="w-full max-w-md rounded border border-slate-300 px-3 py-2 text-sm mb-3">
@@ -153,6 +196,10 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                     </div>
                 </div>
             </div>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Encadrement affiché sur la fiche</h3>
             <div>
                 <p class="text-xs font-bold text-slate-700 mb-2">Chaîne de commandement (affichage libre)</p>
                 <?php foreach ($cmdChain as $ci => $crow): ?>
@@ -164,11 +211,14 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                 </div>
                 <?php endforeach; ?>
             </div>
+            </div>
         </section>
+        </div>
 
+        <div class="cp-panel hidden space-y-8 lg:space-y-10" data-cp-panel="profil" id="cp-panel-profil">
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
             <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Inscription publique</h2>
-            <p class="text-xs text-slate-500">Page <code class="bg-slate-100 px-1 rounded">/c/<?= htmlspecialchars((string) ($tenant['slug'] ?? '')) ?>/enlistment</code></p>
+            <p class="text-xs text-slate-500">Formulaire de candidature ouvert depuis votre page publique (section recrutement).</p>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Mode du formulaire de candidature</label>
                 <select name="registration_mode" class="w-full max-w-md rounded border border-slate-300 px-3 py-2 text-sm">
@@ -178,8 +228,8 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
             </div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Jeu &amp; technique</h2>
+        <section class="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 shadow-sm space-y-4">
+            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Jeu &amp; matériel</h2>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Jeu (titre court)</label>
                 <input type="text" name="game_label" value="<?= htmlspecialchars((string) ($c['game_label'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Arma 3, Squad…">
@@ -204,8 +254,8 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                 </div>
             </div>
             <div>
-                <p class="text-xs font-bold text-slate-700 mb-2">Tags catalogue (registre public)</p>
-                <p class="text-[11px] text-slate-500 mb-2">Affichés sur <code class="text-xs">/communities</code> lorsque l’unité est listée. Choisissez ce qui décrit le mieux votre communauté.</p>
+                <p class="text-xs font-bold text-slate-700 mb-2">Pastilles dans le registre des unités</p>
+                <p class="text-[11px] text-slate-500 mb-2">Visibles sur votre carte lorsque la communauté est affichée dans le registre. Cochez ce qui correspond le mieux à votre univers.</p>
                 <div class="flex flex-wrap gap-3">
                     <?php foreach ($registryTagLabels as $slug => $label): ?>
                         <label class="inline-flex items-center gap-2 text-sm text-slate-700">
@@ -216,7 +266,9 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                 </div>
             </div>
         </section>
+        </div>
 
+        <div class="cp-panel hidden space-y-8 lg:space-y-10" data-cp-panel="textes" id="cp-panel-textes">
         <section class="rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/30 to-white p-6 shadow-md space-y-6">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -280,7 +332,9 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                 <span class="text-sm text-slate-700">Activer le formulaire « nous écrire » sur la fiche publique (nécessite un e-mail valide ci-dessus)</span>
             </label>
         </section>
+        </div>
 
+        <div class="cp-panel hidden space-y-8 lg:space-y-10" data-cp-panel="candidature" id="cp-panel-candidature">
         <section id="pack-milsim-editor" class="rounded-2xl border border-emerald-100 bg-gradient-to-b from-white to-emerald-50/20 p-6 shadow-md space-y-4 scroll-mt-24">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-emerald-100 pb-4">
                 <div>
@@ -465,13 +519,167 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
                 </div>
             </details>
         </section>
+        </div>
 
-        <button type="submit" class="px-6 py-3 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-emerald-700">Enregistrer</button>
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-200">
+            <p class="text-xs text-slate-500 max-w-md">Les changements s’appliquent à toute la fiche. Utilisez le bouton fixe en bas à droite pour enregistrer avec le récapitulatif.</p>
+            <button type="submit" class="px-6 py-3 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 shadow-md">Enregistrer (direct)</button>
+        </div>
     </form>
+
+    <div id="presentation-save-dock" class="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
+        <div class="mx-auto max-w-6xl px-4 pb-4 pt-2 flex justify-end pointer-events-auto">
+            <button type="button" id="presentation-open-recap" class="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-slate-900/25 ring-1 ring-white/10 transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+                <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                Enregistrer
+            </button>
+        </div>
+    </div>
+
+    <div id="presentation-recap-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="presentation-recap-title">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" data-recap-close="1" tabindex="-1"></div>
+        <div class="absolute inset-x-4 top-[8vh] mx-auto max-h-[min(84vh,640px)] w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div class="border-b border-slate-100 px-5 py-4">
+                <h2 id="presentation-recap-title" class="text-lg font-black text-slate-900">Récapitulatif avant enregistrement</h2>
+                <p class="mt-1 text-xs text-slate-500">Vérifiez les changements détectés depuis l’ouverture de la page.</p>
+            </div>
+            <div id="presentation-recap-body" class="max-h-[min(50vh,320px)] overflow-y-auto px-5 py-4 text-sm text-slate-700"></div>
+            <p id="presentation-recap-empty" class="hidden px-5 text-sm text-slate-500">Aucune modification détectée par rapport au chargement de la page.</p>
+            <div class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4">
+                <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-100" data-recap-close="1">Annuler</button>
+                <button type="button" id="presentation-confirm-submit" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-sm hover:bg-emerald-700">Confirmer l’enregistrement</button>
+            </div>
+        </div>
+    </div>
 
     <p class="mt-10"><a href="<?= htmlspecialchars(url('back-office')) ?>" class="text-sm text-slate-600 underline">Retour administration organisation</a></p>
 </div>
 <script>
+(function () {
+    var form = document.getElementById('community-presentation-form');
+    if (form) {
+        function cssEsc(s) {
+            if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(s);
+            return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        }
+        function formToState(f) {
+            var fd = new FormData(f);
+            var o = {};
+            fd.forEach(function (v, k) {
+                if (o[k] === undefined) o[k] = [];
+                o[k].push(String(v));
+            });
+            Object.keys(o).forEach(function (k) { o[k].sort(); });
+            return o;
+        }
+        var initialState = formToState(form);
+        var recapBypass = false;
+
+        function truncate(s, n) {
+            s = String(s || '');
+            if (s.length <= n) return s;
+            return s.slice(0, n - 1) + '…';
+        }
+        function fieldLabel(el) {
+            if (!el || !el.name) return el && el.name ? el.name : '';
+            if (el.id) {
+                var lb = form.querySelector('label[for="' + cssEsc(el.id) + '"]');
+                if (lb) return truncate(lb.textContent.replace(/\s+/g, ' ').trim(), 100);
+            }
+            var p = el.closest('label');
+            if (p) return truncate(p.textContent.replace(/\s+/g, ' ').trim(), 100);
+            var sec = el.closest('section');
+            var h2 = sec ? sec.querySelector('h2') : null;
+            var secTitle = h2 ? h2.textContent.trim() : 'Formulaire';
+            return secTitle + ' — ' + el.name;
+        }
+        function getRepresentativeElement(name) {
+            var list = form.querySelectorAll('[name="' + cssEsc(name) + '"]');
+            return list.length ? list[0] : null;
+        }
+
+        var modal = document.getElementById('presentation-recap-modal');
+        var bodyEl = document.getElementById('presentation-recap-body');
+        var emptyEl = document.getElementById('presentation-recap-empty');
+        var btnOpen = document.getElementById('presentation-open-recap');
+        var btnConfirm = document.getElementById('presentation-confirm-submit');
+
+        function openModal() {
+            var cur = formToState(form);
+            var keys = Object.keys(initialState).concat(Object.keys(cur)).filter(function (v, i, a) { return a.indexOf(v) === i; });
+            var changes = [];
+            keys.forEach(function (k) {
+                var a = JSON.stringify(initialState[k] || []);
+                var b = JSON.stringify(cur[k] || []);
+                if (a !== b) changes.push(k);
+            });
+            bodyEl.innerHTML = '';
+            if (changes.length === 0) {
+                emptyEl.classList.remove('hidden');
+            } else {
+                emptyEl.classList.add('hidden');
+                var ul = document.createElement('ul');
+                ul.className = 'space-y-3';
+                changes.forEach(function (name) {
+                    var el = getRepresentativeElement(name);
+                    var lab = fieldLabel(el);
+                    var before = truncate((initialState[name] || []).join(', ') || '—', 120);
+                    var after = truncate((cur[name] || []).join(', ') || '—', 120);
+                    var li = document.createElement('li');
+                    li.className = 'rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2';
+                    var pTitle = document.createElement('p');
+                    pTitle.className = 'font-bold text-slate-900';
+                    pTitle.textContent = lab;
+                    var pBefore = document.createElement('p');
+                    pBefore.className = 'mt-1 text-xs text-slate-600';
+                    pBefore.appendChild(document.createTextNode('Avant : '));
+                    pBefore.appendChild(document.createTextNode(before));
+                    var pAfter = document.createElement('p');
+                    pAfter.className = 'mt-0.5 text-xs text-emerald-800';
+                    pAfter.appendChild(document.createTextNode('Après : '));
+                    pAfter.appendChild(document.createTextNode(after));
+                    li.appendChild(pTitle);
+                    li.appendChild(pBefore);
+                    li.appendChild(pAfter);
+                    ul.appendChild(li);
+                });
+                bodyEl.appendChild(ul);
+            }
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            if (btnConfirm) btnConfirm.focus();
+        }
+        function closeModal() {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        form.addEventListener('submit', function (e) {
+            if (recapBypass) {
+                recapBypass = false;
+                return;
+            }
+            e.preventDefault();
+            openModal();
+        });
+        if (btnOpen) btnOpen.addEventListener('click', function () { openModal(); });
+        modal.querySelectorAll('[data-recap-close]').forEach(function (el) {
+            el.addEventListener('click', closeModal);
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeModal();
+        });
+        if (btnConfirm) btnConfirm.addEventListener('click', function () {
+            if (typeof form.reportValidity === 'function' && !form.reportValidity()) return;
+            closeModal();
+            if (typeof form.requestSubmit === 'function') {
+                recapBypass = true;
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        });
+    }
+})();
 (function () {
     var container = document.getElementById('military-sections');
     var btn = document.getElementById('add-military-section');
@@ -488,5 +696,52 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
             '<textarea name="military_body[]" rows="4" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Contenu"></textarea>';
         container.appendChild(wrap);
     });
+})();
+(function () {
+    var tabs = document.querySelectorAll('[data-cp-tab]');
+    var panels = document.querySelectorAll('[data-cp-panel]');
+    if (!tabs.length || !panels.length) return;
+    var order = ['visibilite', 'vitrine', 'profil', 'textes', 'candidature'];
+    function show(id) {
+        if (order.indexOf(id) === -1) id = 'visibilite';
+        panels.forEach(function (p) {
+            var on = p.getAttribute('data-cp-panel') === id;
+            p.classList.toggle('hidden', !on);
+        });
+        tabs.forEach(function (t) {
+            var on = t.getAttribute('data-cp-tab') === id;
+            t.setAttribute('aria-selected', on ? 'true' : 'false');
+            t.classList.toggle('bg-emerald-50', on);
+            t.classList.toggle('border-emerald-500', on);
+            t.classList.toggle('text-emerald-950', on);
+            t.classList.toggle('shadow', on);
+            t.classList.toggle('ring-1', on);
+            t.classList.toggle('ring-emerald-500/30', on);
+        });
+        try {
+            if (history.replaceState) {
+                history.replaceState(null, '', '#' + id);
+            } else {
+                location.hash = id;
+            }
+        } catch (e) {}
+        var navEl = document.querySelector('.cp-presentation-tabs');
+        if (navEl && typeof navEl.scrollIntoView === 'function') {
+            navEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+    tabs.forEach(function (t) {
+        t.addEventListener('click', function () {
+            show(String(t.getAttribute('data-cp-tab') || ''));
+        });
+    });
+    window.addEventListener('hashchange', function () {
+        var h = (location.hash || '').replace(/^#/, '');
+        if (order.indexOf(h) !== -1) show(h);
+    });
+    var initial = (location.hash || '').replace(/^#/, '');
+    show(order.indexOf(initial) !== -1 ? initial : 'visibilite');
 })();
 </script>

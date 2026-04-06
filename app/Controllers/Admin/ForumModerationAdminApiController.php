@@ -9,8 +9,10 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\Csrf;
 use App\Core\Gate;
+use App\Core\Container;
 use App\Repositories\ForumBannedWordRepository;
 use App\Repositories\ForumBlacklistedDomainRepository;
+use App\Services\Forum\ForumModerationEngine;
 
 class ForumModerationAdminApiController
 {
@@ -40,8 +42,8 @@ class ForumModerationAdminApiController
             'delete_banned_word' => $this->deleteBannedWord($request, $tenantId),
             'add_blacklisted_domain' => $this->addBlacklistedDomain($request, $tenantId),
             'delete_blacklisted_domain' => $this->deleteBlacklistedDomain($request, $tenantId),
-            'bot_self_test' => $this->botSelfTest(),
-            'bot_preview' => $this->botPreview(),
+            'bot_self_test' => $this->botSelfTest($tenantId),
+            'bot_preview' => $this->botPreview($tenantId),
             default => Response::json(['success' => false, 'message' => 'Action inconnue'], 400),
         };
     }
@@ -86,13 +88,38 @@ class ForumModerationAdminApiController
         return $ok ? Response::json(['success' => true]) : Response::json(['success' => false, 'message' => 'Entrée introuvable'], 404);
     }
 
-    private function botSelfTest(): Response
+    private function botSelfTest(int $tenantId): Response
     {
-        return Response::json(['success' => true, 'message' => 'Test bot envoyé (placeholder).']);
+        $uid = (int) Session::get('user_id');
+        if ($uid <= 0) {
+            return Response::json(['success' => false, 'message' => 'Session invalide'], 400);
+        }
+        try {
+            $engine = Container::get(ForumModerationEngine::class);
+            $sample = 'Vérification interne : message de test avec lien https://example.com et termes neutres.';
+            $r = $engine->analyze($tenantId, $uid, null, $sample);
+            $action = (string) ($r['action'] ?? '?');
+            $score = round((float) ($r['score'] ?? 0), 2);
+
+            return Response::json([
+                'success' => true,
+                'message' => 'Analyse de test exécutée. Résultat : ' . $action . ' (score ' . $score . '). Les filtres mots et domaines de votre unité s’appliquent normalement.',
+            ]);
+        } catch (\Throwable) {
+            return Response::json(['success' => false, 'message' => 'Impossible d’exécuter le test pour le moment.'], 500);
+        }
     }
 
-    private function botPreview(): Response
+    private function botPreview(int $tenantId): Response
     {
-        return Response::json(['success' => true, 'message' => 'Aperçu bot (placeholder).']);
+        $words = $this->bannedWordRepository->listForTenant($tenantId);
+        $domains = $this->blacklistedDomainRepository->listForTenant($tenantId);
+        $wc = is_array($words) ? count($words) : 0;
+        $dc = is_array($domains) ? count($domains) : 0;
+
+        return Response::json([
+            'success' => true,
+            'message' => 'Aperçu : ' . $wc . ' mot(s) ou expression(s) filtrée(s), ' . $dc . ' site(s) interdit(s) dans les messages.',
+        ]);
     }
 }

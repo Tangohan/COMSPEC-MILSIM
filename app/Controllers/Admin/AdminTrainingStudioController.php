@@ -44,6 +44,32 @@ class AdminTrainingStudioController
 
     private const LEVELS = ['initiation', 'intermediaire', 'avance', 'expert'];
 
+    /** Onglets d’édition Studio (URL dédiées). */
+    private const STUDIO_SECTIONS = ['fiche', 'presentation', 'structure'];
+
+    private function studioEditUrl(int $courseId, string $section = 'fiche'): string
+    {
+        if (!in_array($section, self::STUDIO_SECTIONS, true)) {
+            $section = 'fiche';
+        }
+        if ($section === 'fiche') {
+            return training_studio_url($courseId . '/fiche');
+        }
+
+        return training_studio_url($courseId . '/' . $section);
+    }
+
+    /** Après action POST : retour vers l’onglet courant (champ caché _redirect_section). */
+    private function studioRedirectAfter(Request $request, int $courseId, string $defaultSection, string $hash = ''): Response
+    {
+        $sec = trim((string) $request->input('_redirect_section', $defaultSection));
+        if (!in_array($sec, self::STUDIO_SECTIONS, true)) {
+            $sec = $defaultSection;
+        }
+
+        return Response::redirect($this->studioEditUrl($courseId, $sec) . $hash);
+    }
+
     private function defaultCanvasJson(): string
     {
         return '{"version":1,"modals":[],"slides":[{"id":"slide-start","template":"title_hero","title":"","subtitle":"","body":"","imageUrl":"","imageCaption":"","fileUrl":"","fileLabel":"","resources":[],"primaryAction":null,"secondaryAction":null}]}';
@@ -174,7 +200,7 @@ class AdminTrainingStudioController
             'trainingStudioCourseCount' => count($courses),
             'trainingStudioCourse' => null,
             'lmsPlatformVersion' => function_exists('lms_platform_version') ? lms_platform_version() : '',
-            'lmsChangelogUrl' => url('admin/training/studio/versions'),
+            'lmsChangelogUrl' => training_studio_url('versions'),
         ]);
     }
 
@@ -196,7 +222,7 @@ class AdminTrainingStudioController
             'trainingStudioCourseCount' => $courseCount,
             'trainingStudioCourse' => null,
             'lmsPlatformVersion' => function_exists('lms_platform_version') ? lms_platform_version() : '',
-            'lmsChangelogUrl' => url('admin/training/studio/versions'),
+            'lmsChangelogUrl' => training_studio_url('versions'),
             'lmsChangelogEntries' => $entries,
             'lmsPlatformLabel' => function_exists('lms_platform_config') ? (string) (lms_platform_config()['label'] ?? '') : '',
         ]);
@@ -211,7 +237,7 @@ class AdminTrainingStudioController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée, réessayez.');
 
-            return Response::redirect(url('admin/training/studio'));
+            return Response::redirect(training_studio_url());
         }
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
@@ -220,14 +246,14 @@ class AdminTrainingStudioController
         if ($title === '') {
             Session::flash('error', 'Le titre est obligatoire.');
 
-            return Response::redirect(url('admin/training/studio'));
+            return Response::redirect(training_studio_url());
         }
         $slugRaw = trim((string) $request->input('slug', ''));
         $slug = $slugRaw !== '' ? $slugRaw : $this->slugify($title);
         if ($this->courseRepository->slugExists($tenantId, $slug)) {
             Session::flash('error', 'Ce slug existe déjà pour une autre formation.');
 
-            return Response::redirect(url('admin/training/studio'));
+            return Response::redirect(training_studio_url());
         }
         $visibility = (string) $request->input('visibility', 'draft');
         if (!in_array($visibility, self::VISIBILITY, true)) {
@@ -236,7 +262,7 @@ class AdminTrainingStudioController
         if ($visibility === 'published' && !$this->canPublish()) {
             Session::flash('error', 'Vous n’avez pas la permission de publier une formation.');
 
-            return Response::redirect(url('admin/training/studio'));
+            return Response::redirect(training_studio_url());
         }
 
         $lmsVer = function_exists('lms_platform_version') ? lms_platform_version() : '1.0.0';
@@ -263,11 +289,39 @@ class AdminTrainingStudioController
         }
         Session::flash('success', 'Formation créée.');
 
-        return Response::redirect(url('admin/training/studio/' . $newId));
+        return Response::redirect($this->studioEditUrl($newId, 'fiche'));
     }
 
     public function edit(Request $request, array $params = []): Response
     {
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::redirect(training_studio_url());
+        }
+
+        return Response::redirect($this->studioEditUrl($id, 'fiche'));
+    }
+
+    public function editFiche(Request $request, array $params = []): Response
+    {
+        return $this->renderStudioEdit($params, 'fiche');
+    }
+
+    public function editPresentation(Request $request, array $params = []): Response
+    {
+        return $this->renderStudioEdit($params, 'presentation');
+    }
+
+    public function editStructure(Request $request, array $params = []): Response
+    {
+        return $this->renderStudioEdit($params, 'structure');
+    }
+
+    private function renderStudioEdit(array $params, string $section): Response
+    {
+        if (!in_array($section, self::STUDIO_SECTIONS, true)) {
+            $section = 'fiche';
+        }
         $denied = $this->assertTrainingFeatureAndAccess();
         if ($denied !== null) {
             return $denied;
@@ -278,7 +332,7 @@ class AdminTrainingStudioController
         if (!$course) {
             Session::flash('error', 'Formation introuvable.');
 
-            return Response::redirect(url('admin/training/studio'));
+            return Response::redirect(training_studio_url());
         }
         foreach ($course['modules'] ?? [] as $modIdx => $modRow) {
             $lessons = $modRow['lessons'] ?? [];
@@ -305,9 +359,15 @@ class AdminTrainingStudioController
         $pendingQuestions = $this->lmsSocialRepository->listQuestionsForCourse($id, 200);
         $staffPickUsers = $this->userRepository->listForTenant($tenantId, null, 'active', null, 500, 0, true, null, null);
 
+        $sectionTitles = [
+            'fiche' => 'Données & inscription',
+            'presentation' => 'Présentation apprenant',
+            'structure' => 'Modules & leçons',
+        ];
+
         return Response::view('layout.training_studio', [
             'content' => 'admin.training.studio_edit',
-            'title' => 'Studio — ' . (string) $course['title'],
+            'title' => 'Studio — ' . (string) $course['title'] . ' — ' . ($sectionTitles[$section] ?? $section),
             'course' => $course,
             'tenant' => $tenant,
             'lessonTypes' => self::LESSON_TYPES,
@@ -316,8 +376,9 @@ class AdminTrainingStudioController
             'canPublish' => $this->canPublish(),
             'trainingStudioMode' => 'edit',
             'trainingStudioCourseCount' => count($allCourses),
+            'trainingStudioSection' => $section,
             'lmsPlatformVersion' => function_exists('lms_platform_version') ? lms_platform_version() : '',
-            'lmsChangelogUrl' => url('admin/training/studio/versions'),
+            'lmsChangelogUrl' => training_studio_url('versions'),
             'lmsCourseCreatedBeforeCurrent' => function_exists('lms_course_studio_created_before_current') ? lms_course_studio_created_before_current($course) : false,
             'lmsCourseLastSaveBehind' => function_exists('lms_course_studio_last_save_behind_current') ? lms_course_studio_last_save_behind_current($course) : false,
             'trainingStudioCourse' => [
@@ -350,7 +411,7 @@ class AdminTrainingStudioController
         if (!$course) {
             Session::flash('error', 'Formation introuvable.');
 
-            return Response::redirect(url('admin/training/studio'));
+            return Response::redirect(training_studio_url());
         }
         $allCourses = $this->courseRepository->listForTenant($tenantId, null);
         $modCount = count($course['modules'] ?? []);
@@ -395,7 +456,7 @@ class AdminTrainingStudioController
         if (!$course) {
             Session::flash('error', 'Formation introuvable.');
 
-            return Response::redirect(url('admin/training/studio'));
+            return Response::redirect(training_studio_url());
         }
 
         $action = (string) $request->input('_action', '');
@@ -425,6 +486,11 @@ class AdminTrainingStudioController
     private function saveCourse(Request $request, array $course, int $tenantId, int $userId): Response
     {
         $courseId = (int) $course['id'];
+        $scope = trim((string) $request->input('_studio_section', 'fiche'));
+        if ($scope === 'presentation') {
+            return $this->saveCoursePresentation($request, $course, $tenantId, $userId);
+        }
+
         $oldVis = (string) ($course['visibility'] ?? '');
         $newVis = (string) $request->input('visibility', $oldVis);
         if (!in_array($newVis, self::VISIBILITY, true)) {
@@ -433,14 +499,14 @@ class AdminTrainingStudioController
         if ($newVis === 'published' && $oldVis !== 'published' && !$this->canPublish()) {
             Session::flash('error', 'Vous n’avez pas la permission de publier cette formation.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return Response::redirect($this->studioEditUrl($courseId, 'fiche'));
         }
 
         $title = trim((string) $request->input('title', ''));
         if ($title === '') {
             Session::flash('error', 'Le titre est obligatoire.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return Response::redirect($this->studioEditUrl($courseId, 'fiche'));
         }
         $slug = trim((string) $request->input('slug', ''));
         if ($slug === '') {
@@ -449,7 +515,7 @@ class AdminTrainingStudioController
         if ($this->courseRepository->slugExists($tenantId, $slug, $courseId)) {
             Session::flash('error', 'Ce slug est déjà utilisé.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return Response::redirect($this->studioEditUrl($courseId, 'fiche'));
         }
 
         $level = (string) $request->input('level', (string) ($course['level'] ?? 'initiation'));
@@ -458,16 +524,11 @@ class AdminTrainingStudioController
         }
 
         $learningObjectives = $this->learningObjectivesJsonFromRequest($request, 'course_learning_objectives');
-        $themeJson = $this->buildThemeJsonFromRequest($request, (string) ($course['theme_json'] ?? ''));
         $courseCode = trim((string) $request->input('course_code', ''));
         $courseCode = $courseCode === '' ? null : substr($courseCode, 0, 32);
 
         $policy = $this->buildEnrollmentPolicyFromRequest($request, (int) $course['id']);
         $policyJson = json_encode($policy, JSON_UNESCAPED_UNICODE);
-        $audioUrl = trim((string) $request->input('instruction_audio_url', ''));
-        $audioUrl = $audioUrl === '' ? null : substr($audioUrl, 0, 512);
-        $audioNotes = trim((string) $request->input('instruction_audio_notes', ''));
-        $audioNotes = $audioNotes === '' ? null : substr($audioNotes, 0, 500);
 
         $patch = [
             'title' => $title,
@@ -476,13 +537,7 @@ class AdminTrainingStudioController
             'short_description' => trim((string) $request->input('short_description', '')) ?: null,
             'description' => trim((string) $request->input('description', '')) ?: null,
             'learning_objectives' => $learningObjectives,
-            'theme_json' => $themeJson,
             'enrollment_policy_json' => $policyJson,
-            'instruction_audio_url' => $audioUrl,
-            'instruction_audio_instructor_optional' => $request->input('instruction_audio_instructor_optional') ? 1 : 0,
-            'instruction_audio_notes' => $audioNotes,
-            'thumbnail_path' => trim((string) $request->input('thumbnail_path', '')) ?: null,
-            'banner_path' => trim((string) $request->input('banner_path', '')) ?: null,
             'category' => trim((string) $request->input('category', '')) ?: null,
             'level' => $level,
             'language_code' => substr(trim((string) $request->input('language_code', 'fr')), 0, 10) ?: 'fr',
@@ -493,6 +548,12 @@ class AdminTrainingStudioController
             'validity_days' => ($v = trim((string) $request->input('validity_days', ''))) === '' ? null : max(0, (int) $v),
             'visibility' => $newVis,
             'updated_by' => $userId,
+            'theme_json' => $course['theme_json'] ?? null,
+            'thumbnail_path' => trim((string) ($course['thumbnail_path'] ?? '')) !== '' ? trim((string) $course['thumbnail_path']) : null,
+            'banner_path' => trim((string) ($course['banner_path'] ?? '')) !== '' ? trim((string) $course['banner_path']) : null,
+            'instruction_audio_url' => trim((string) ($course['instruction_audio_url'] ?? '')) !== '' ? trim((string) $course['instruction_audio_url']) : null,
+            'instruction_audio_instructor_optional' => (int) ($course['instruction_audio_instructor_optional'] ?? 1) ? 1 : 0,
+            'instruction_audio_notes' => trim((string) ($course['instruction_audio_notes'] ?? '')) !== '' ? trim((string) $course['instruction_audio_notes']) : null,
         ];
         if (function_exists('lms_platform_version')) {
             $patch['lms_last_saved_with_version'] = lms_platform_version();
@@ -513,9 +574,37 @@ class AdminTrainingStudioController
             $this->auditService->logCoursePublished($tenantId, $userId, $courseId);
         }
         $this->ensureEnrollmentShareCodeIfMissing($courseId, $tenantId);
-        Session::flash('success', 'Formation enregistrée.');
+        Session::flash('success', 'Données de la formation enregistrées.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return Response::redirect($this->studioEditUrl($courseId, 'fiche'));
+    }
+
+    private function saveCoursePresentation(Request $request, array $course, int $tenantId, int $userId): Response
+    {
+        $courseId = (int) $course['id'];
+        $themeJson = $this->buildThemeJsonFromRequest($request, (string) ($course['theme_json'] ?? ''));
+        $audioUrl = trim((string) $request->input('instruction_audio_url', ''));
+        $audioUrl = $audioUrl === '' ? null : substr($audioUrl, 0, 512);
+        $audioNotes = trim((string) $request->input('instruction_audio_notes', ''));
+        $audioNotes = $audioNotes === '' ? null : substr($audioNotes, 0, 500);
+
+        $patch = [
+            'theme_json' => $themeJson,
+            'thumbnail_path' => trim((string) $request->input('thumbnail_path', '')) ?: null,
+            'banner_path' => trim((string) $request->input('banner_path', '')) ?: null,
+            'instruction_audio_url' => $audioUrl,
+            'instruction_audio_instructor_optional' => $request->input('instruction_audio_instructor_optional') ? 1 : 0,
+            'instruction_audio_notes' => $audioNotes,
+            'updated_by' => $userId,
+        ];
+        if (function_exists('lms_platform_version')) {
+            $patch['lms_last_saved_with_version'] = lms_platform_version();
+        }
+        $this->courseRepository->update($courseId, $patch);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
+        Session::flash('success', 'Présentation enregistrée.');
+
+        return Response::redirect($this->studioEditUrl($courseId, 'presentation'));
     }
 
     private function regenerateEnrollmentShareCode(Request $request, int $courseId, int $tenantId, int $userId): Response
@@ -524,13 +613,13 @@ class AdminTrainingStudioController
         if (!$course) {
             Session::flash('error', 'Formation introuvable.');
 
-            return Response::redirect(url('admin/training/studio'));
+            return Response::redirect(training_studio_url());
         }
         $code = $this->pickUniqueEnrollmentShareCode($courseId);
         if ($code === null) {
             Session::flash('error', 'Impossible de générer un code unique pour le moment. Réessayez.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');
+            return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-engagement-share');
         }
         try {
             $upd = [
@@ -544,12 +633,12 @@ class AdminTrainingStudioController
         } catch (\Throwable) {
             Session::flash('error', 'Enregistrement du code impossible (migration appliquée ?).');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');
+            return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-engagement-share');
         }
         $this->auditService->logCourseUpdated($tenantId, $userId, $courseId, null, ['enrollment_share_code_regenerated' => true]);
         Session::flash('success', 'Nouveau code de partage généré.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');
+        return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-engagement-share');
     }
 
     private function ensureEnrollmentShareCodeIfMissing(int $courseId, int $tenantId): void
@@ -595,7 +684,7 @@ class AdminTrainingStudioController
         if ($title === '') {
             Session::flash('error', 'Le titre du module est obligatoire.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $mid = $this->moduleRepository->create($courseId, [
             'title' => $title,
@@ -609,7 +698,7 @@ class AdminTrainingStudioController
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Module ajouté.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return $this->studioRedirectAfter($request, $courseId, 'structure');
     }
 
     private function updateModule(Request $request, int $courseId, int $tenantId): Response
@@ -619,13 +708,13 @@ class AdminTrainingStudioController
         if (!$mod) {
             Session::flash('error', 'Module introuvable.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $title = trim((string) $request->input('module_title', ''));
         if ($title === '') {
             Session::flash('error', 'Le titre du module est obligatoire.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $this->moduleRepository->update($moduleId, [
             'title' => $title,
@@ -638,7 +727,7 @@ class AdminTrainingStudioController
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Module enregistré.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return $this->studioRedirectAfter($request, $courseId, 'structure');
     }
 
     private function deleteModule(Request $request, int $courseId, int $tenantId): Response
@@ -648,13 +737,13 @@ class AdminTrainingStudioController
         if (!$mod) {
             Session::flash('error', 'Module introuvable.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $this->moduleRepository->delete($moduleId);
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Module supprimé.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return $this->studioRedirectAfter($request, $courseId, 'structure');
     }
 
     private function reorderModules(Request $request, int $courseId, int $tenantId): Response
@@ -670,13 +759,13 @@ class AdminTrainingStudioController
         if ($ids === [] || count($ids) !== count($valid) || $sorted !== $valid) {
             Session::flash('error', 'Ordre des modules invalide.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $this->moduleRepository->reorder($courseId, $ids);
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Ordre des modules mis à jour.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return $this->studioRedirectAfter($request, $courseId, 'structure');
     }
 
     private function reorderLessons(Request $request, int $courseId, int $tenantId): Response
@@ -686,7 +775,7 @@ class AdminTrainingStudioController
         if (!$mod) {
             Session::flash('error', 'Module introuvable.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $raw = $request->input('lesson_ids', []);
         $ids = is_array($raw) ? array_map('intval', $raw) : [];
@@ -699,13 +788,13 @@ class AdminTrainingStudioController
         if ($ids === [] || count($ids) !== count($valid) || $sorted !== $valid) {
             Session::flash('error', 'Ordre des leçons invalide.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $this->lessonRepository->reorder($moduleId, $ids);
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Ordre des leçons mis à jour.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return $this->studioRedirectAfter($request, $courseId, 'structure');
     }
 
     private function moveModule(Request $request, int $courseId, int $tenantId): Response
@@ -714,13 +803,13 @@ class AdminTrainingStudioController
         $dir = (string) $request->input('direction', '');
         $mod = $this->assertModuleInCourse($moduleId, $courseId, $tenantId);
         if (!$mod) {
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $modules = $this->moduleRepository->listByCourseId($courseId);
         $ids = array_map(static fn (array $m) => (int) $m['id'], $modules);
         $idx = array_search($moduleId, $ids, true);
         if ($idx === false) {
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         if ($dir === 'up' && $idx > 0) {
             $tmp = $ids[$idx - 1];
@@ -735,7 +824,7 @@ class AdminTrainingStudioController
         }
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return $this->studioRedirectAfter($request, $courseId, 'structure');
     }
 
     private function addLesson(Request $request, int $courseId, int $tenantId): Response
@@ -745,13 +834,13 @@ class AdminTrainingStudioController
         if (!$mod) {
             Session::flash('error', 'Module introuvable.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $title = trim((string) $request->input('lesson_title', ''));
         if ($title === '') {
             Session::flash('error', 'Le titre de la leçon est obligatoire.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $type = (string) $request->input('lesson_type', 'richtext');
         if (!in_array($type, self::LESSON_TYPES, true)) {
@@ -762,7 +851,7 @@ class AdminTrainingStudioController
         if ($contentRaw === null) {
             Session::flash('error', 'Contenu de leçon invalide pour ce type — vérifiez le quiz, les modales ou le diaporama.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $this->lessonRepository->create($moduleId, [
             'title' => $title,
@@ -779,7 +868,7 @@ class AdminTrainingStudioController
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Leçon ajoutée.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return $this->studioRedirectAfter($request, $courseId, 'structure');
     }
 
     private function updateLesson(Request $request, int $courseId, int $tenantId): Response
@@ -789,13 +878,13 @@ class AdminTrainingStudioController
         if (!$lesson || !$this->assertLessonInTenantCourse($lesson, $courseId, $tenantId)) {
             Session::flash('error', 'Leçon introuvable.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $title = trim((string) $request->input('lesson_title', ''));
         if ($title === '') {
             Session::flash('error', 'Le titre de la leçon est obligatoire.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $type = (string) $request->input('lesson_type', 'richtext');
         if (!in_array($type, self::LESSON_TYPES, true)) {
@@ -806,7 +895,7 @@ class AdminTrainingStudioController
         if ($contentRaw === null) {
             Session::flash('error', 'Contenu de leçon invalide pour ce type — vérifiez le quiz, les modales ou le diaporama.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $this->lessonRepository->update($lessonId, [
             'title' => $title,
@@ -823,7 +912,7 @@ class AdminTrainingStudioController
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Leçon enregistrée.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return $this->studioRedirectAfter($request, $courseId, 'structure');
     }
 
     private function deleteLesson(Request $request, int $courseId, int $tenantId): Response
@@ -833,13 +922,13 @@ class AdminTrainingStudioController
         if (!$lesson || !$this->assertLessonInTenantCourse($lesson, $courseId, $tenantId)) {
             Session::flash('error', 'Leçon introuvable.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $this->lessonRepository->delete($lessonId);
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Leçon supprimée.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return $this->studioRedirectAfter($request, $courseId, 'structure');
     }
 
     private const RESOURCE_TYPES = ['pdf', 'image', 'video', 'audio', 'zip', 'attachment', 'link'];
@@ -851,13 +940,13 @@ class AdminTrainingStudioController
         if (!$lesson || !$this->assertLessonInTenantCourse($lesson, $courseId, $tenantId)) {
             Session::flash('error', 'Leçon introuvable.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $title = trim((string) $request->input('resource_title', ''));
         if ($title === '') {
             Session::flash('error', 'Indiquez un titre pour la ressource.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId) . '#lesson-res-' . $lessonId);
+            return $this->studioRedirectAfter($request, $courseId, 'structure', '#lesson-res-' . $lessonId);
         }
         $type = trim((string) $request->input('resource_type', 'link'));
         if (!in_array($type, self::RESOURCE_TYPES, true)) {
@@ -870,7 +959,7 @@ class AdminTrainingStudioController
         if ($extUrl === null && $filePath === null) {
             Session::flash('error', 'Renseignez une adresse web ou un emplacement de fichier sur le serveur.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId) . '#lesson-res-' . $lessonId);
+            return $this->studioRedirectAfter($request, $courseId, 'structure', '#lesson-res-' . $lessonId);
         }
         $this->resourceRepository->create($lessonId, [
             'resource_type' => $type,
@@ -881,7 +970,7 @@ class AdminTrainingStudioController
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Ressource ajoutée à la leçon.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId) . '#lesson-res-' . $lessonId);
+        return $this->studioRedirectAfter($request, $courseId, 'structure', '#lesson-res-' . $lessonId);
     }
 
     private function deleteLessonResource(Request $request, int $courseId, int $tenantId): Response
@@ -891,20 +980,20 @@ class AdminTrainingStudioController
         if (!$res) {
             Session::flash('error', 'Ressource introuvable.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $lessonId = (int) ($res['lesson_id'] ?? 0);
         $lesson = $this->lessonRepository->findById($lessonId);
         if (!$lesson || !$this->assertLessonInTenantCourse($lesson, $courseId, $tenantId)) {
             Session::flash('error', 'Ressource introuvable.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $this->resourceRepository->delete($rid);
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Ressource retirée.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId) . '#lesson-res-' . $lessonId);
+        return $this->studioRedirectAfter($request, $courseId, 'structure', '#lesson-res-' . $lessonId);
     }
 
     private function moveLesson(Request $request, int $courseId, int $tenantId): Response
@@ -913,14 +1002,14 @@ class AdminTrainingStudioController
         $dir = (string) $request->input('direction', '');
         $lesson = $this->lessonRepository->findById($lessonId);
         if (!$lesson || !$this->assertLessonInTenantCourse($lesson, $courseId, $tenantId)) {
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         $moduleId = (int) $lesson['module_id'];
         $lessons = $this->lessonRepository->listByModuleId($moduleId);
         $ids = array_map(static fn (array $l) => (int) $l['id'], $lessons);
         $idx = array_search($lessonId, $ids, true);
         if ($idx === false) {
-            return Response::redirect(url('admin/training/studio/' . $courseId));
+            return $this->studioRedirectAfter($request, $courseId, 'structure');
         }
         if ($dir === 'up' && $idx > 0) {
             $a = $lessons[$idx];
@@ -935,7 +1024,7 @@ class AdminTrainingStudioController
         }
         $this->markCourseSavedWithCurrentStudioVersion($courseId);
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return $this->studioRedirectAfter($request, $courseId, 'structure');
     }
 
     /** @return non-empty-string|null JSON tableau d’objectifs ou null si aucun. */
@@ -1047,7 +1136,7 @@ class AdminTrainingStudioController
         if ($starts === '' || $ends === '') {
             Session::flash('error', 'Créneau : indiquez le début et la fin.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');
+            return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-sessions-qa');
         }
         $id = $this->lmsSocialRepository->createSession($tenantId, $courseId, [
             'starts_at' => $starts,
@@ -1066,7 +1155,7 @@ class AdminTrainingStudioController
             $this->markCourseSavedWithCurrentStudioVersion($courseId);
         }
 
-        return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');
+        return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-sessions-qa');
     }
 
     private function deleteSession(Request $request, int $courseId, int $tenantId): Response
@@ -1079,7 +1168,7 @@ class AdminTrainingStudioController
             $this->markCourseSavedWithCurrentStudioVersion($courseId);
         }
 
-        return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');
+        return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-sessions-qa');
     }
 
     private function answerQuestion(Request $request, int $courseId, int $tenantId, int $staffUserId): Response
@@ -1089,7 +1178,7 @@ class AdminTrainingStudioController
         if ($qid < 1 || $answer === '') {
             Session::flash('error', 'Réponse vide ou question invalide.');
 
-            return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');
+            return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-sessions-qa');
         }
         if (!$this->lmsSocialRepository->answerQuestion($qid, $tenantId, $courseId, $staffUserId, $answer)) {
             Session::flash('error', 'Réponse non enregistrée.');
@@ -1098,24 +1187,24 @@ class AdminTrainingStudioController
             $this->markCourseSavedWithCurrentStudioVersion($courseId);
         }
 
-        return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');
+        return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-sessions-qa');
     }
 
     private function badAction(int $courseId): Response
     {
         Session::flash('error', 'Action non reconnue.');
 
-        return Response::redirect(url('admin/training/studio/' . $courseId));
+        return Response::redirect($this->studioEditUrl($courseId, 'structure'));
     }
 
     private function redirectToEdit(array $params): Response
     {
         $id = (int) ($params['id'] ?? 0);
         if ($id > 0) {
-            return Response::redirect(url('admin/training/studio/' . $id));
+            return Response::redirect($this->studioEditUrl($id, 'fiche'));
         }
 
-        return Response::redirect(url('admin/training/studio'));
+        return Response::redirect(training_studio_url());
     }
 
     private function assertModuleInCourse(int $moduleId, int $courseId, int $tenantId): ?array

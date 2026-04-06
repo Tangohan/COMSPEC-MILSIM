@@ -16,18 +16,29 @@ class ModerationRepository
         $this->pdo = Database::getPdo();
         require_once dirname(__DIR__, 2) . '/bootstrap/platform_unit_commander_migration.php';
         ensure_platform_unit_commander_schema($this->pdo);
+        require_once dirname(__DIR__, 2) . '/bootstrap/moderation_granular_sanctions_migration.php';
+        ensure_moderation_granular_sanctions_schema($this->pdo);
     }
 
     public function hasActiveAccessBlock(int $tenantId, int $userId): bool
     {
+        $resolver = new \App\Services\Moderation\ModerationRestrictionResolver($this);
+
+        return $resolver->isAccountLocked($tenantId, $userId);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listActiveActionsWithRestrictions(int $tenantId, int $userId): array
+    {
         $stmt = $this->pdo->prepare(
-            "SELECT 1 FROM moderation_actions WHERE tenant_id = ? AND target_user_id = ? AND revoked_at IS NULL
+            "SELECT action_type, restrictions_json FROM moderation_actions
+             WHERE tenant_id = ? AND target_user_id = ? AND revoked_at IS NULL
              AND action_type IN ('mute','suspend','ban')
-             AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1"
+             AND (expires_at IS NULL OR expires_at > NOW())"
         );
         $stmt->execute([$tenantId, $userId]);
 
-        return (bool) $stmt->fetchColumn();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     /** @return list<array<string, mixed>> */
@@ -64,23 +75,58 @@ class ModerationRepository
         int $actorUserId,
         string $actionType,
         ?string $reason,
-        ?\DateTimeInterface $expiresAt
+        ?\DateTimeInterface $expiresAt,
+        ?string $restrictionsJson = null
     ): int {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO moderation_actions (case_id, tenant_id, target_user_id, actor_user_id, action_type, reason, expires_at, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())'
-        );
-        $stmt->execute([
-            $caseId,
-            $tenantId,
-            $targetUserId,
-            $actorUserId,
-            $actionType,
-            $reason,
-            $expiresAt ? $expiresAt->format('Y-m-d H:i:s') : null,
-        ]);
+        $hasJson = $this->hasRestrictionsJsonColumn();
+        if ($hasJson) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO moderation_actions (case_id, tenant_id, target_user_id, actor_user_id, action_type, reason, restrictions_json, expires_at, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+            );
+            $stmt->execute([
+                $caseId,
+                $tenantId,
+                $targetUserId,
+                $actorUserId,
+                $actionType,
+                $reason,
+                $restrictionsJson,
+                $expiresAt ? $expiresAt->format('Y-m-d H:i:s') : null,
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO moderation_actions (case_id, tenant_id, target_user_id, actor_user_id, action_type, reason, expires_at, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW())'
+            );
+            $stmt->execute([
+                $caseId,
+                $tenantId,
+                $targetUserId,
+                $actorUserId,
+                $actionType,
+                $reason,
+                $expiresAt ? $expiresAt->format('Y-m-d H:i:s') : null,
+            ]);
+        }
 
         return (int) $this->pdo->lastInsertId();
+    }
+
+    private function hasRestrictionsJsonColumn(): bool
+    {
+        static $v;
+        if ($v !== null) {
+            return $v;
+        }
+        try {
+            $st = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_actions' AND COLUMN_NAME = 'restrictions_json' LIMIT 1");
+            $v = (bool) ($st && $st->fetchColumn());
+        } catch (\Throwable) {
+            $v = false;
+        }
+
+        return $v;
     }
 
     public function revokeAction(int $tenantId, int $actionId, int $revokedByUserId): bool

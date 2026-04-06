@@ -51,6 +51,20 @@ class RolePermissionService
         $this->permissionRepository->setPermissionsForRole($roleId, $permissionIds);
     }
 
+    /**
+     * Remplace les permissions d’un rôle **strictement** rattaché à la communauté (couches communauté / intra).
+     * Refuse les rôles site ou sans lien avec le tenant.
+     *
+     * @throws \InvalidArgumentException si le rôle est hors périmètre
+     */
+    public function setPermissionsForOrganizationTenantRole(int $tenantId, int $roleId, array $permissionIds): void
+    {
+        if (!$this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
+            throw new \InvalidArgumentException('Ce rôle ne relève pas de votre communauté ou est réservé à la plateforme. Il ne peut pas être modifié depuis cet espace.');
+        }
+        $this->permissionRepository->setPermissionsForRole($roleId, $permissionIds);
+    }
+
     public function isRoleLocked(int $roleId): bool
     {
         $role = $this->roleRepository->findById($roleId);

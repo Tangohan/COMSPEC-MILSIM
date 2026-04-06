@@ -27,6 +27,9 @@ class ProfileCompletenessService
     /**
      * Calcule le score de complétude et la liste des champs manquants pour l'admin.
      *
+     * @param bool $includeAdministrativeChecks Si faux (vue communauté / hors équipe plateforme), les critères
+     *        purement « hygiene » côté produit (ex. photo de profil) sont exclus du score et de la liste.
+     *
      * @return array{
      *   score: int,
      *   missing: list<array{key: string, label: string, level: string}>,
@@ -34,10 +37,15 @@ class ProfileCompletenessService
      *   sections_critiques: list<string>
      * }
      */
-    public function getCompleteness(int $userId, array $user, ?array $userProfile, ?array $personnelProfile): array
-    {
-        $userProfile = $userProfile ?? $this->userProfileRepository->getByUserId($userId);
-        $personnelProfile = $personnelProfile ?? $this->personnelProfileRepository->getByUserId($userId);
+    public function getCompleteness(
+        int $userId,
+        array $user,
+        ?array $userProfile,
+        ?array $personnelProfile,
+        bool $includeAdministrativeChecks = true
+    ): array {
+        $userProfile = $userProfile ?? $this->userProfileRepository->getByUserId($userId) ?? [];
+        $personnelProfile = $personnelProfile ?? $this->personnelProfileRepository->getByUserId($userId) ?? [];
         $assignments = $this->assignmentRepository->listActiveForUserResolved($userId);
         $primary = $assignments[0] ?? null;
         $unitName = $primary['unit_name'] ?? null;
@@ -65,13 +73,17 @@ class ProfileCompletenessService
         $definitions = [
             'first_name' => ['label' => 'Prénom manquant', 'level' => self::LEVEL_BLOCKING],
             'last_name' => ['label' => 'Nom manquant', 'level' => self::LEVEL_BLOCKING],
-            'email' => ['label' => 'Email absent', 'level' => self::LEVEL_BLOCKING],
+            'email' => ['label' => 'Adresse e-mail absente', 'level' => self::LEVEL_BLOCKING],
             'role_id' => ['label' => 'Rôle non affecté', 'level' => self::LEVEL_BLOCKING],
             'display_name' => ['label' => 'Nom d\'affichage absent', 'level' => self::LEVEL_RECOMMENDED],
             'callsign' => ['label' => 'Indicatif absent', 'level' => self::LEVEL_RECOMMENDED],
             'unit' => ['label' => 'Groupe / équipe absent', 'level' => self::LEVEL_RECOMMENDED],
             'avatar' => ['label' => 'Photo ou portrait absent', 'level' => self::LEVEL_ADMINISTRATIVE],
         ];
+
+        if (!$includeAdministrativeChecks) {
+            unset($checks['avatar'], $definitions['avatar']);
+        }
 
         $missing = [];
         $sectionsCritiques = [];

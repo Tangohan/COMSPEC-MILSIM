@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 /**
  * Autoload : vendor/autoload.php (Composer) si présent, sinon App\ + helpers à la main.
- * Dossier racine PHPMailer/src en secours si Composer n’inclut pas la lib (déploiement partiel).
  */
 $root = dirname(__DIR__);
 
@@ -29,20 +28,4 @@ if (is_file($vendorAutoload)) {
     });
 
     require $root . '/app/Support/helpers.php';
-}
-
-$phpmailerSrc = $root . '/PHPMailer/src';
-if (is_file($phpmailerSrc . '/PHPMailer.php')) {
-    spl_autoload_register(static function (string $class) use ($phpmailerSrc): void {
-        $prefix = 'PHPMailer\\PHPMailer\\';
-        $len = strlen($prefix);
-        if (strncmp($class, $prefix, $len) !== 0) {
-            return;
-        }
-        $rel = substr($class, $len);
-        $path = $phpmailerSrc . '/' . str_replace('\\', DIRECTORY_SEPARATOR, $rel) . '.php';
-        if (is_file($path)) {
-            require_once $path;
-        }
-    });
 }

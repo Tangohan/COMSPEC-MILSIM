@@ -49,9 +49,17 @@
   --portal-bar-h: 4rem;
 }
 
-/* Onglet Administration : actif un peu plus discret que les autres accents */
-[data-accent='rose'] .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner {
-  background: rgba(244, 63, 94, 0.09);
+/* Administration (rose) : actif / ouvert sans cadre criard — évite bordure rouge qui chevauche les icônes */
+[data-accent='rose'] .portal-nav__link--mega .portal-nav__trigger-inner {
+  border: 1px solid transparent;
+}
+
+[data-accent='rose'] .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner,
+[data-accent='rose'] .portal-nav__link--mega.nav-mega-is-open .portal-nav__trigger-inner {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: transparent;
+  outline: none;
+  box-shadow: none;
 }
 
 .portal-nav__shell {

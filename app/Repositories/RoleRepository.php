@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\Community\TenantDefaultRoleDefinitions;
 use PDO;
 
 class RoleRepository
@@ -20,7 +21,7 @@ class RoleRepository
     public function allForTenant(int $tenantId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, tenant_id, name, slug, description, is_system, is_locked, role_layer FROM roles WHERE tenant_id = ? ORDER BY name ASC'
+            'SELECT * FROM roles WHERE tenant_id = ? ORDER BY name ASC'
         );
         $stmt->execute([$tenantId]);
 
@@ -32,22 +33,24 @@ class RoleRepository
     public function forTenantOrganization(int $tenantId): array
     {
         $stmt = $this->pdo->prepare(
-            "SELECT id, tenant_id, name, slug, description, is_system, is_locked, role_layer FROM roles WHERE tenant_id = ? AND role_layer IN ('community','intra') ORDER BY role_layer DESC, name ASC"
+            "SELECT * FROM roles WHERE tenant_id = ? AND role_layer IN ('community','intra')"
         );
         $stmt->execute([$tenantId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return TenantDefaultRoleDefinitions::sortOrganizationRoleRows($rows);
     }
 
     /** @return list<array<string, mixed>> */
     public function forTenantByLayer(int $tenantId, string $layer): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, tenant_id, name, slug, description, is_system, is_locked, role_layer FROM roles WHERE tenant_id = ? AND role_layer = ? ORDER BY name ASC'
+            'SELECT * FROM roles WHERE tenant_id = ? AND role_layer = ?'
         );
         $stmt->execute([$tenantId, $layer]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return TenantDefaultRoleDefinitions::sortOrganizationRoleRows($rows);
     }
 
     /** Rôles site globaux (tenant_id NULL). */
@@ -55,7 +58,7 @@ class RoleRepository
     public function allSiteRoles(): array
     {
         $stmt = $this->pdo->query(
-            "SELECT id, tenant_id, name, slug, description, is_system, is_locked, role_layer FROM roles WHERE tenant_id IS NULL AND role_layer = 'site' ORDER BY name ASC"
+            "SELECT * FROM roles WHERE tenant_id IS NULL AND role_layer = 'site' ORDER BY name ASC"
         );
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -139,5 +142,65 @@ class RoleRepository
         }
 
         return ['roles' => $roles, 'permissions' => $permissions, 'byRole' => $byRole];
+    }
+
+    /**
+     * Met à jour l’intitulé et la description d’un rôle d’organisation (slug inchangé).
+     * Rôles critiques ou « gestionnaire d’organisation » : description seule.
+     */
+    public function updateOrganizationRolePresentation(int $tenantId, int $roleId, string $name, string $description): bool
+    {
+        $r = $this->findById($roleId, $tenantId);
+        if (!$r) {
+            return false;
+        }
+        $slug = (string) ($r['slug'] ?? '');
+        $critical = !empty($r['is_system_critical']);
+        $desc = mb_substr(trim($description), 0, 500);
+        if ($critical || $slug === 'community_owner') {
+            $st = $this->pdo->prepare('UPDATE roles SET description = ? WHERE id = ? AND tenant_id = ?');
+
+            return $st->execute([$desc, $roleId, $tenantId]);
+        }
+        $nm = mb_substr(trim($name), 0, 160);
+        if ($nm === '') {
+            return false;
+        }
+        $st = $this->pdo->prepare('UPDATE roles SET name = ?, description = ? WHERE id = ? AND tenant_id = ?');
+
+        return $st->execute([$nm, $desc, $roleId, $tenantId]);
+    }
+
+    /**
+     * @param array{color?: string, icon?: string, variant?: string}|null $style
+     */
+    public function updateOrganizationRoleBadgeStyle(int $tenantId, int $roleId, ?array $style): bool
+    {
+        $r = $this->findById($roleId, $tenantId);
+        if (!$r) {
+            return false;
+        }
+        if ($style === null || $style === []) {
+            $st = $this->pdo->prepare('UPDATE roles SET badge_style = NULL WHERE id = ? AND tenant_id = ?');
+
+            return $st->execute([$roleId, $tenantId]);
+        }
+        $clean = array_filter(
+            [
+                'color' => isset($style['color']) ? trim((string) $style['color']) : '',
+                'icon' => isset($style['icon']) ? trim((string) $style['icon']) : '',
+                'variant' => isset($style['variant']) ? trim((string) $style['variant']) : '',
+            ],
+            static fn (string $v): bool => $v !== ''
+        );
+        if ($clean === []) {
+            $st = $this->pdo->prepare('UPDATE roles SET badge_style = NULL WHERE id = ? AND tenant_id = ?');
+
+            return $st->execute([$roleId, $tenantId]);
+        }
+        $json = json_encode($clean, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $st = $this->pdo->prepare('UPDATE roles SET badge_style = ? WHERE id = ? AND tenant_id = ?');
+
+        return $st->execute([$json !== false ? $json : '{}', $roleId, $tenantId]);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin\Organization;
 
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
@@ -13,6 +14,7 @@ use App\Repositories\PermissionRepository;
 use App\Repositories\RoleRepository;
 use App\Services\Admin\RolePermissionService;
 use App\Services\Admin\TenantRolePermissionPresetService;
+use App\Services\Rbac\RoleCoherenceValidator;
 
 class RoleAdminController
 {
@@ -35,10 +37,29 @@ class RoleAdminController
             'intra' => $this->rolePermissionService->listOrganizationRolesByLayer($tenantId, 'intra'),
             default => $this->rolePermissionService->listOrganizationRoles($tenantId),
         };
+
+        $tierFilter = trim((string) $request->query('tier', ''));
+        $validTiers = ['authority', 'function', 'specialty', 'status'];
+        if ($tierFilter !== '' && !in_array($tierFilter, $validTiers, true)) {
+            $tierFilter = '';
+        }
+        if ($tierFilter !== '') {
+            $roles = array_values(array_filter(
+                $roles,
+                static function (array $r) use ($tierFilter): bool {
+                    $t = (string) ($r['semantic_tier'] ?? 'function');
+
+                    return $t === $tierFilter;
+                }
+            ));
+        }
+
         $permissionCounts = [];
         foreach ($roles as $r) {
             $permissionCounts[(int) $r['id']] = count($this->rolePermissionService->getPermissionIdsForRole((int) $r['id']));
         }
+
+        $roleViewSections = $this->buildRoleViewSections($roles);
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.roles.index',
@@ -46,7 +67,58 @@ class RoleAdminController
             'roles' => $roles,
             'permissionCounts' => $permissionCounts,
             'roleLayerFilter' => $layer,
+            'roleTierFilter' => $tierFilter,
+            'roleViewSections' => $roleViewSections,
         ]);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $roles
+     *
+     * @return list<array{kind: string, title: string, category?: string, subcategory?: string, roles: list<array<string, mixed>>}>
+     */
+    private function buildRoleViewSections(array $roles): array
+    {
+        $ungroupedIntraKey = "\0other_intra\0";
+        $community = [];
+        /** @var array<string, list<array<string, mixed>>> $intraBuckets */
+        $intraBuckets = [];
+        foreach ($roles as $r) {
+            if (($r['role_layer'] ?? '') === 'community') {
+                $community[] = $r;
+                continue;
+            }
+            $cat = trim((string) ($r['category'] ?? ''));
+            $sub = trim((string) ($r['subcategory'] ?? ''));
+            if ($cat === '' && $sub === '') {
+                $intraBuckets[$ungroupedIntraKey][] = $r;
+            } else {
+                $k = $cat . "\n" . $sub;
+                $intraBuckets[$k][] = $r;
+            }
+        }
+
+        $sections = [];
+        if ($community !== []) {
+            $sections[] = ['kind' => 'community', 'title' => 'Gouvernance de la communauté', 'roles' => $community];
+        }
+        foreach ($intraBuckets as $k => $list) {
+            if ($k === $ungroupedIntraKey) {
+                $sections[] = ['kind' => 'flat', 'title' => 'Autres rôles opérationnels', 'roles' => $list];
+
+                continue;
+            }
+            $parts = explode("\n", $k, 2);
+            $sections[] = [
+                'kind' => 'group',
+                'title' => ($parts[0] ?? '') . ' — ' . ($parts[1] ?? ''),
+                'category' => $parts[0] ?? '',
+                'subcategory' => $parts[1] ?? '',
+                'roles' => $list,
+            ];
+        }
+
+        return $sections;
     }
 
     public function show(Request $request, array $params = []): Response
@@ -103,7 +175,6 @@ class RoleAdminController
             'content' => 'admin.organization.roles.presets',
             'title' => 'Profils de permissions',
             'presetMeta' => $this->presetService->listPresetMeta(),
-            'excludedSlugs' => TenantRolePermissionPresetService::EXCLUDED_SLUGS,
             'roles' => $roles,
         ]);
     }
@@ -146,12 +217,6 @@ class RoleAdminController
 
             return Response::redirect(url('back-office/roles/presets'));
         }
-        $layer = (string) ($role['role_layer'] ?? '');
-        if ($layer !== 'community' && $layer !== 'intra') {
-            Session::flash('error', 'Seuls les rôles communauté ou opérationnels peuvent être configurés ici.');
-
-            return Response::redirect(url('back-office/roles/presets'));
-        }
         if ($this->rolePermissionService->isRoleLocked($roleId)) {
             Session::flash('error', 'Ce rôle est verrouillé : les permissions ne peuvent pas être remplacées par un profil.');
 
@@ -165,9 +230,118 @@ class RoleAdminController
             return Response::redirect(url('back-office/roles/presets'));
         }
 
-        $this->rolePermissionService->setPermissionsForRole($roleId, $ids);
+        try {
+            $this->rolePermissionService->setPermissionsForOrganizationTenantRole($tenantId, $roleId, $ids);
+        } catch (\InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect(url('back-office/roles/presets'));
+        }
         Session::flash('success', 'Permissions du rôle « ' . (string) ($role['name'] ?? '') . ' » mises à jour selon le profil sélectionné (' . count($ids) . ' droits).');
 
         return Response::redirect(url('back-office/roles/' . $roleId));
+    }
+
+    /**
+     * Intitulé, description et apparence du badge (hors permissions et slug).
+     */
+    public function editPresentation(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        if (!$tenantId || !$id) {
+            return Response::redirect(url('back-office/roles'));
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
+            Session::flash('error', 'Vous n’avez pas la permission de modifier les rôles.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        $role = $this->roleRepository->findById($id, $tenantId);
+        if (!$role || !in_array((string) ($role['role_layer'] ?? ''), ['community', 'intra'], true)) {
+            Session::flash('error', 'Rôle introuvable ou hors périmètre organisation.');
+
+            return Response::redirect(url('back-office/roles'));
+        }
+        $badge = [];
+        $rawBadge = $role['badge_style'] ?? null;
+        if (is_string($rawBadge) && $rawBadge !== '') {
+            $decoded = json_decode($rawBadge, true);
+            $badge = is_array($decoded) ? $decoded : [];
+        } elseif (is_array($rawBadge)) {
+            $badge = $rawBadge;
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.roles.edit_presentation',
+            'title' => 'Présentation du rôle',
+            'role' => $role,
+            'badgeStyle' => $badge,
+        ]);
+    }
+
+    public function updatePresentation(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        if (!$tenantId || !$id) {
+            return Response::redirect(url('back-office/roles'));
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/roles/' . $id . '/edit-presentation'));
+        }
+        $role = $this->roleRepository->findById($id, $tenantId);
+        if (!$role || !in_array((string) ($role['role_layer'] ?? ''), ['community', 'intra'], true)) {
+            Session::flash('error', 'Rôle invalide.');
+
+            return Response::redirect(url('back-office/roles'));
+        }
+        $name = trim((string) $request->input('name', ''));
+        $description = trim((string) $request->input('description', ''));
+        $ok = $this->roleRepository->updateOrganizationRolePresentation($tenantId, $id, $name, $description);
+        if (!$ok) {
+            Session::flash('error', 'Enregistrement impossible (intitulé vide ou rôle introuvable).');
+
+            return Response::redirect(url('back-office/roles/' . $id . '/edit-presentation'));
+        }
+
+        $allowedColors = ['slate', 'blue', 'indigo', 'emerald', 'amber', 'red', 'purple'];
+        $allowedIcons = ['shield', 'star', 'user', 'flag', 'briefcase', 'award', 'megaphone', 'none'];
+        $allowedVariants = ['soft', 'solid', 'outline'];
+        $c = trim((string) $request->input('badge_color', ''));
+        $ic = trim((string) $request->input('badge_icon', ''));
+        $v = trim((string) $request->input('badge_variant', ''));
+        $style = [];
+        if ($c !== '' && in_array($c, $allowedColors, true)) {
+            $style['color'] = $c;
+        }
+        if ($ic !== '' && in_array($ic, $allowedIcons, true) && $ic !== 'none') {
+            $style['icon'] = $ic;
+        }
+        if ($v !== '' && in_array($v, $allowedVariants, true)) {
+            $style['variant'] = $v;
+        }
+        $this->roleRepository->updateOrganizationRoleBadgeStyle($tenantId, $id, $style === [] ? null : $style);
+
+        $msg = 'Présentation du rôle mise à jour.';
+        $tier = (string) ($role['semantic_tier'] ?? 'function');
+        if ($tier === 'authority') {
+            $pdo = Database::getPdo();
+            if (!RoleCoherenceValidator::authorityRoleHasPermissions($pdo, $id)) {
+                $msg .= ' Pensez à associer au moins une habilitation à ce rôle d’autorité (depuis la fiche du rôle).';
+            }
+        }
+        Session::flash('success', $msg);
+
+        return Response::redirect(url('back-office/roles/' . $id));
     }
 }

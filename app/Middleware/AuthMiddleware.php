@@ -53,10 +53,10 @@ class AuthMiddleware
 
         $tenantId = (int) $user['tenant_id'];
         try {
-            $mod = Container::get(\App\Services\Moderation\ModerationService::class);
-            if ($mod->isAccessBlocked($tenantId, $userId)) {
+            $resolver = Container::get(\App\Services\Moderation\ModerationRestrictionResolver::class);
+            if ($resolver->isAccountLocked($tenantId, $userId)) {
                 $this->clearAuthSession();
-                Session::flash('error', 'Votre accès à cette communauté est restreint (sanction active).');
+                Session::flash('error', 'Votre accès à cette communauté est restreint (compte verrouillé).');
 
                 return Response::redirect(url('login'));
             }

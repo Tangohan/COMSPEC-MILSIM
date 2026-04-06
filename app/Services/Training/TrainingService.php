@@ -91,20 +91,30 @@ class TrainingService
         return !in_array($st, ['revoked', 'expired', 'pending_approval'], true);
     }
 
-    /** Pourcentage global de progression (leçons complétées / total). */
+    /** Pourcentage global de progression (leçons complétées / total des leçons du parcours). */
     public function getGlobalProgress(int $enrollmentId): float
     {
-        $progressRows = $this->progressRepository->listByEnrollmentId($enrollmentId);
-        $total = count($progressRows);
+        $enrollment = $this->enrollmentRepository->findById($enrollmentId, null);
+        if (!$enrollment) {
+            return 0.0;
+        }
+        $lessonIds = $this->getCourseLessonIds((int) $enrollment['course_id']);
+        $total = count($lessonIds);
         if ($total === 0) {
             return 0.0;
         }
-        $completed = 0;
+        $progressRows = $this->progressRepository->listByEnrollmentId($enrollmentId);
+        $byLesson = [];
         foreach ($progressRows as $p) {
-            if (($p['status'] ?? '') === 'completed') {
+            $byLesson[(int) $p['lesson_id']] = (string) ($p['status'] ?? '');
+        }
+        $completed = 0;
+        foreach ($lessonIds as $lid) {
+            if (($byLesson[$lid] ?? '') === 'completed') {
                 $completed++;
             }
         }
+
         return round(100.0 * $completed / $total, 2);
     }
 }

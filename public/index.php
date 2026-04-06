@@ -45,7 +45,19 @@ $maintenanceSafelist = [
     '/api/stripe/webhook',
     '/api/health',
 ];
-if (!in_array($requestPath, $maintenanceSafelist, true)) {
+$maintenancePrefixSafelist = [
+    '/calendrier/abonnement/',
+];
+$maintenanceSkipped = in_array($requestPath, $maintenanceSafelist, true);
+if (!$maintenanceSkipped) {
+    foreach ($maintenancePrefixSafelist as $pfx) {
+        if (str_starts_with($requestPath, $pfx)) {
+            $maintenanceSkipped = true;
+            break;
+        }
+    }
+}
+if (!$maintenanceSkipped) {
     try {
         $pdo = \App\Core\Database::getPdo();
         $maintenanceRepo = new \App\Repositories\MaintenanceRepository($pdo);

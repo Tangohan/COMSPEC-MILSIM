@@ -24,6 +24,9 @@ final class EnlistmentAcceptanceProvisioningService
 {
     private const SETUP_TOKEN_HOURS = 72;
 
+    /** Rôles restreints à promouvoir en « member » après acceptation recrutement. */
+    private const PROMOTABLE_ROLE_SLUGS = ['guest', 'invite'];
+
     public function __construct(
         private EnlistmentRepository $enlistmentRepository,
         private UserRepository $userRepository,
@@ -46,7 +49,23 @@ final class EnlistmentAcceptanceProvisioningService
         if (!$row || (string) ($row['status'] ?? '') !== 'submitted') {
             return 'Cette candidature ne peut pas être acceptée dans son état actuel.';
         }
-        if ((int) ($row['submitter_user_id'] ?? 0) > 0) {
+        $submitter = (int) ($row['submitter_user_id'] ?? 0);
+        if ($submitter > 0) {
+            $global = $this->userRepository->findById($submitter, null);
+            if (!$global) {
+                return 'Le compte indiqué sur la candidature est introuvable. Corrigez le dossier ou contactez le support.';
+            }
+            if ((int) ($global['tenant_id'] ?? 0) === $tenantId) {
+                return null;
+            }
+            $em = trim((string) ($global['email'] ?? ''));
+            if ($em !== '' && $this->userRepository->findByEmail($tenantId, $em)) {
+                return null;
+            }
+            if (!$this->featureGateService->canAddMember($tenantId)) {
+                return 'Limite de membres du plan atteinte. Augmentez le quota ou refusez temporairement de nouvelles entrées.';
+            }
+
             return null;
         }
         $email = trim((string) ($row['email'] ?? ''));
@@ -64,6 +83,52 @@ final class EnlistmentAcceptanceProvisioningService
     }
 
     /**
+     * Texte court pour proposer une action manuelle (candidature déjà acceptée).
+     */
+    public function membershipRepairHint(int $tenantId, array $enlistmentRow): ?string
+    {
+        if ((string) ($enlistmentRow['status'] ?? '') !== 'reviewed') {
+            return null;
+        }
+        $submitter = (int) ($enlistmentRow['submitter_user_id'] ?? 0);
+        $email = trim((string) ($enlistmentRow['email'] ?? ''));
+
+        if ($submitter > 0) {
+            $local = $this->userRepository->findById($submitter, $tenantId);
+            if (!$local) {
+                return 'Le compte lié n’appartient pas à cette communauté ou a été supprimé : vous pouvez finaliser l’adhésion pour recréer le lien.';
+            }
+            if ($this->roleSlugNeedsPromotion($tenantId, $submitter)) {
+                return 'Le compte est encore en accès limité (invité) : finalisez pour lui attribuer le rôle membre.';
+            }
+
+            return null;
+        }
+
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $byMail = $this->userRepository->findByEmail($tenantId, $email);
+            if ($byMail && $this->roleSlugNeedsPromotion($tenantId, (int) $byMail['id'])) {
+                return 'Un compte existe avec le même e-mail mais en accès limité : finalisez pour le passer membre et lier la candidature.';
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{ok: bool, message: string|null}
+     */
+    public function repairAcceptedMembership(int $tenantId, int $enlistmentId, int $actorUserId): array
+    {
+        $row = $this->enlistmentRepository->findForTenant($tenantId, $enlistmentId);
+        if (!$row || (string) ($row['status'] ?? '') !== 'reviewed') {
+            return ['ok' => false, 'message' => 'Seules les candidatures déjà acceptées peuvent être finalisées.'];
+        }
+
+        return $this->runMembershipSync($tenantId, $enlistmentId, $row, $actorUserId, null, false);
+    }
+
+    /**
      * @return array{ok: bool, message: string|null}
      */
     public function provisionAfterAccept(
@@ -77,6 +142,20 @@ final class EnlistmentAcceptanceProvisioningService
             return ['ok' => true, 'message' => null];
         }
 
+        return $this->runMembershipSync($tenantId, $enlistmentId, $row, $actorUserId, $reviewerComment, true);
+    }
+
+    /**
+     * @return array{ok: bool, message: string|null}
+     */
+    private function runMembershipSync(
+        int $tenantId,
+        int $enlistmentId,
+        array $row,
+        int $actorUserId,
+        ?string $reviewerComment,
+        bool $sendNotifications
+    ): array {
         $tenantRow = $this->tenantRepository->findById($tenantId);
         $tenantName = trim((string) ($tenantRow['name'] ?? 'Communauté'));
         $reviewUrl = url('back-office/recruitments/' . $enlistmentId);
@@ -87,26 +166,51 @@ final class EnlistmentAcceptanceProvisioningService
         $fullName = trim($first . ' ' . $last) ?: '—';
         $email = trim((string) ($row['email'] ?? ''));
 
-        $existingSubmitter = (int) ($row['submitter_user_id'] ?? 0);
-        if ($existingSubmitter > 0) {
-            $this->notifyCandidateAccepted($email, $tenantName, $tenantId, $reviewerComment, $dashboardUrl, 'existing');
+        $sync = $this->syncUserIntoTenantForAcceptance($tenantId, $enlistmentId, $row, $actorUserId);
+        if (!$sync['ok']) {
+            return ['ok' => false, 'message' => $sync['message']];
+        }
+
+        $staffLine = (string) $sync['staff_summary'];
+        $candidateScenario = (string) $sync['candidate_scenario'];
+
+        if ($sendNotifications) {
+            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $this->notifyCandidateAccepted($email, $tenantName, $tenantId, $reviewerComment, $dashboardUrl, $candidateScenario);
+            }
             $this->notifyStaffAccepted(
                 $tenantId,
                 $tenantName,
                 $enlistmentId,
                 $fullName,
-                $email,
-                'Le candidat avait déjà un compte lié à la soumission.',
+                $email !== '' ? $email : '—',
+                $staffLine,
                 $reviewUrl
             );
+        }
 
-            return ['ok' => true, 'message' => null];
+        return ['ok' => true, 'message' => $sync['warn']];
+    }
+
+    /**
+     * @return array{ok: bool, message: ?string, staff_summary: string, candidate_scenario: string, warn: ?string}
+     */
+    private function syncUserIntoTenantForAcceptance(int $tenantId, int $enlistmentId, array $row, int $actorUserId): array
+    {
+        $email = trim((string) ($row['email'] ?? ''));
+        $existingSubmitter = (int) ($row['submitter_user_id'] ?? 0);
+
+        if ($existingSubmitter > 0) {
+            return $this->syncFromSubmitterUserId($tenantId, $enlistmentId, $existingSubmitter, $email, $actorUserId);
         }
 
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return [
                 'ok' => false,
                 'message' => 'E-mail de candidature invalide : impossible de créer ou de lier un compte automatiquement.',
+                'staff_summary' => '',
+                'candidate_scenario' => 'existing',
+                'warn' => null,
             ];
         }
 
@@ -116,27 +220,210 @@ final class EnlistmentAcceptanceProvisioningService
             if (!$this->enlistmentRepository->linkSubmitterUserId($tenantId, $enlistmentId, $uid)) {
                 return [
                     'ok' => false,
-                    'message' => 'Impossible de lier la candidature au compte existant (migration colonnes manquante ?).',
+                    'message' => 'Impossible de lier la candidature au compte existant.',
+                    'staff_summary' => '',
+                    'candidate_scenario' => 'existing',
+                    'warn' => null,
                 ];
             }
-            $this->notifyCandidateAccepted($email, $tenantName, $tenantId, $reviewerComment, $dashboardUrl, 'existing');
-            $this->notifyStaffAccepted(
-                $tenantId,
-                $tenantName,
-                $enlistmentId,
-                $fullName,
-                $email,
-                'Un compte existait déjà pour cet e-mail dans la communauté — la candidature a été rattachée à ce compte.',
-                $reviewUrl
-            );
+            if (!$this->promoteGuestOrInviteToMember($tenantId, $uid)) {
+                return [
+                    'ok' => false,
+                    'message' => 'Le compte existe mais le rôle « membre » est introuvable pour cette communauté.',
+                    'staff_summary' => '',
+                    'candidate_scenario' => 'existing',
+                    'warn' => null,
+                ];
+            }
 
-            return ['ok' => true, 'message' => null];
+            return [
+                'ok' => true,
+                'message' => null,
+                'staff_summary' => 'Compte existant rattaché : le membre dispose désormais du rôle adapté dans la communauté.',
+                'candidate_scenario' => 'existing',
+                'warn' => null,
+            ];
+        }
+
+        return $this->createFreshTenantUser($tenantId, $enlistmentId, $row, $email, $actorUserId);
+    }
+
+    /**
+     * @return array{ok: bool, message: ?string, staff_summary: string, candidate_scenario: string, warn: ?string}
+     */
+    private function syncFromSubmitterUserId(int $tenantId, int $enlistmentId, int $submitterId, string $enlistmentEmail, int $actorUserId): array
+    {
+        $global = $this->userRepository->findById($submitterId, null);
+        if (!$global) {
+            return [
+                'ok' => false,
+                'message' => 'Compte candidat introuvable.',
+                'staff_summary' => '',
+                'candidate_scenario' => 'existing',
+                'warn' => null,
+            ];
+        }
+
+        $srcTenant = (int) ($global['tenant_id'] ?? 0);
+        if ($srcTenant === $tenantId) {
+            if (!$this->promoteGuestOrInviteToMember($tenantId, $submitterId)) {
+                return [
+                    'ok' => false,
+                    'message' => 'Rôle « membre » introuvable : impossible de finaliser l’adhésion.',
+                    'staff_summary' => '',
+                    'candidate_scenario' => 'existing',
+                    'warn' => null,
+                ];
+            }
+
+            return [
+                'ok' => true,
+                'message' => null,
+                'staff_summary' => 'Compte déjà dans la communauté : passage en membre effectué (ou déjà en place).',
+                'candidate_scenario' => 'existing',
+                'warn' => null,
+            ];
+        }
+
+        $srcEmail = trim((string) ($global['email'] ?? ''));
+        $match = $srcEmail !== '' ? $this->userRepository->findByEmail($tenantId, $srcEmail) : null;
+        if ($match) {
+            $uid = (int) $match['id'];
+            if (!$this->enlistmentRepository->linkSubmitterUserId($tenantId, $enlistmentId, $uid)) {
+                return [
+                    'ok' => false,
+                    'message' => 'Impossible de mettre à jour le lien candidature — compte local déjà présent.',
+                    'staff_summary' => '',
+                    'candidate_scenario' => 'existing',
+                    'warn' => null,
+                ];
+            }
+            if (!$this->promoteGuestOrInviteToMember($tenantId, $uid)) {
+                return [
+                    'ok' => false,
+                    'message' => 'Rôle « membre » introuvable pour finaliser le compte local.',
+                    'staff_summary' => '',
+                    'candidate_scenario' => 'existing',
+                    'warn' => null,
+                ];
+            }
+
+            return [
+                'ok' => true,
+                'message' => null,
+                'staff_summary' => 'Le compte était rattaché à un autre espace : la candidature pointe maintenant vers le compte de cette communauté et le rôle membre est appliqué.',
+                'candidate_scenario' => 'existing',
+                'warn' => null,
+            ];
+        }
+
+        if ($enlistmentEmail !== '' && filter_var($enlistmentEmail, FILTER_VALIDATE_EMAIL)) {
+            $byFormEmail = $this->userRepository->findByEmail($tenantId, $enlistmentEmail);
+            if ($byFormEmail) {
+                $uid = (int) $byFormEmail['id'];
+                if (!$this->enlistmentRepository->linkSubmitterUserId($tenantId, $enlistmentId, $uid)) {
+                    return [
+                        'ok' => false,
+                        'message' => 'Impossible de lier la candidature au compte local correspondant à l’e-mail.',
+                        'staff_summary' => '',
+                        'candidate_scenario' => 'existing',
+                        'warn' => null,
+                    ];
+                }
+                if (!$this->promoteGuestOrInviteToMember($tenantId, $uid)) {
+                    return [
+                        'ok' => false,
+                        'message' => 'Rôle « membre » introuvable pour ce compte.',
+                        'staff_summary' => '',
+                        'candidate_scenario' => 'existing',
+                        'warn' => null,
+                    ];
+                }
+
+                return [
+                    'ok' => true,
+                    'message' => null,
+                    'staff_summary' => 'Compte local retrouvé via l’e-mail de la candidature : lien mis à jour et rôle membre appliqué.',
+                    'candidate_scenario' => 'existing',
+                    'warn' => null,
+                ];
+            }
         }
 
         if (!$this->featureGateService->canAddMember($tenantId)) {
             return [
                 'ok' => false,
+                'message' => 'Limite de membres du plan atteinte : impossible de dupliquer le compte dans cette communauté.',
+                'staff_summary' => '',
+                'candidate_scenario' => 'existing',
+                'warn' => null,
+            ];
+        }
+
+        $memberRoleId = $this->roleRepository->getIdBySlug($tenantId, 'member');
+        if (!$memberRoleId) {
+            return [
+                'ok' => false,
+                'message' => 'Rôle « membre » introuvable pour cette communauté.',
+                'staff_summary' => '',
+                'candidate_scenario' => 'existing',
+                'warn' => null,
+            ];
+        }
+
+        try {
+            $newId = $this->userRepository->cloneUserToTenant($submitterId, $tenantId, $memberRoleId, 0);
+        } catch (Throwable $e) {
+            return [
+                'ok' => false,
+                'message' => 'Impossible de créer le compte dans cette communauté : ' . $this->shortExceptionMessage($e),
+                'staff_summary' => '',
+                'candidate_scenario' => 'existing',
+                'warn' => null,
+            ];
+        }
+
+        if (!$this->enlistmentRepository->linkSubmitterUserId($tenantId, $enlistmentId, $newId)) {
+            return [
+                'ok' => false,
+                'message' => 'Compte créé dans la communauté, mais la candidature n’a pas pu être liée automatiquement.',
+                'staff_summary' => '',
+                'candidate_scenario' => 'existing',
+                'warn' => null,
+            ];
+        }
+
+        $this->personnelProfileRepository->ensureRecord($newId);
+        $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $newId, $srcEmail);
+
+        return [
+            'ok' => true,
+            'message' => null,
+            'staff_summary' => 'Compte dupliqué depuis un autre espace : le membre peut se connecter avec ses identifiants habituels.',
+            'candidate_scenario' => 'existing',
+            'warn' => null,
+        ];
+    }
+
+    private function shortExceptionMessage(Throwable $e): string
+    {
+        $m = trim(preg_replace('/\s+/u', ' ', $e->getMessage()) ?? $e->getMessage());
+
+        return function_exists('mb_substr') ? mb_substr($m, 0, 200) : substr($m, 0, 200);
+    }
+
+    /**
+     * @return array{ok: bool, message: ?string, staff_summary: string, candidate_scenario: string, warn: ?string}
+     */
+    private function createFreshTenantUser(int $tenantId, int $enlistmentId, array $row, string $email, int $actorUserId): array
+    {
+        if (!$this->featureGateService->canAddMember($tenantId)) {
+            return [
+                'ok' => false,
                 'message' => 'Limite de membres du plan atteinte : le compte n’a pas été créé. Augmentez le quota ou créez l’utilisateur manuellement.',
+                'staff_summary' => '',
+                'candidate_scenario' => 'new_password_pending',
+                'warn' => null,
             ];
         }
 
@@ -144,9 +431,16 @@ final class EnlistmentAcceptanceProvisioningService
         if (!$memberRoleId || $memberRoleId < 1) {
             return [
                 'ok' => false,
-                'message' => 'Rôle « member » introuvable pour cette communauté — création du compte annulée.',
+                'message' => 'Rôle « membre » introuvable pour cette communauté — création du compte annulée.',
+                'staff_summary' => '',
+                'candidate_scenario' => 'new_password_pending',
+                'warn' => null,
             ];
         }
+
+        $first = trim((string) ($row['first_name'] ?? ''));
+        $last = trim((string) ($row['last_name'] ?? ''));
+        $fullName = trim($first . ' ' . $last) ?: '—';
 
         $pdo = Database::getPdo();
         $userId = 0;
@@ -155,8 +449,6 @@ final class EnlistmentAcceptanceProvisioningService
         try {
             $passwordPlaceholder = password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID);
             $displayName = $fullName !== '—' ? $fullName : null;
-            // Statut « active » : l’e-mail est validé côté métier par l’acceptation recrutement ; comptabilisé comme membre
-            // (KPI / quotas / « membres actifs ») comme les autres comptes tenant, le mot de passe reste à définir via le lien.
             $userId = $this->userRepository->create($tenantId, [
                 'email' => $email,
                 'password_hash' => $passwordPlaceholder,
@@ -166,7 +458,7 @@ final class EnlistmentAcceptanceProvisioningService
                 'grade_id' => null,
                 'status' => 'active',
             ]);
-            $this->userRepository->syncOrganizationRoles($userId, $tenantId, [$memberRoleId]);
+            $this->userRepository->syncOrganizationRoles($userId, $tenantId, [$memberRoleId], null, true);
             $this->personnelProfileRepository->ensureRecord($userId);
 
             if (!$this->enlistmentRepository->linkSubmitterUserId($tenantId, $enlistmentId, $userId)) {
@@ -186,10 +478,16 @@ final class EnlistmentAcceptanceProvisioningService
             return [
                 'ok' => false,
                 'message' => 'Erreur lors de la création du compte. La candidature reste « acceptée » mais vous devez créer l’utilisateur à la main.',
+                'staff_summary' => '',
+                'candidate_scenario' => 'new_password_pending',
+                'warn' => null,
             ];
         }
 
         $this->userRepository->markEmailVerifiedWithoutStatusChange($userId, $tenantId);
+
+        $tenantRow = $this->tenantRepository->findById($tenantId);
+        $tenantName = trim((string) ($tenantRow['name'] ?? 'Communauté'));
 
         $setupUrl = url('reset-password') . '?token=' . rawurlencode($rawToken);
         $setupSent = $this->emailService->sendTenantUserSetupInvite(
@@ -199,17 +497,6 @@ final class EnlistmentAcceptanceProvisioningService
             $tenantName,
             $tenantId,
             'recruitment_accepted'
-        );
-
-        $this->notifyCandidateAccepted($email, $tenantName, $tenantId, $reviewerComment, $dashboardUrl, 'new_password_pending');
-        $this->notifyStaffAccepted(
-            $tenantId,
-            $tenantName,
-            $enlistmentId,
-            $fullName,
-            $email,
-            'Un nouveau compte a été créé pour ce candidat (e-mail avec lien de définition du mot de passe).',
-            $reviewUrl
         );
 
         $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, $email);
@@ -224,7 +511,45 @@ final class EnlistmentAcceptanceProvisioningService
             }
         }
 
-        return ['ok' => true, 'message' => $warn];
+        return [
+            'ok' => true,
+            'message' => null,
+            'staff_summary' => 'Un nouveau compte a été créé pour ce candidat (e-mail avec lien de définition du mot de passe).',
+            'candidate_scenario' => 'new_password_pending',
+            'warn' => $warn,
+        ];
+    }
+
+    private function roleSlugNeedsPromotion(int $tenantId, int $userId): bool
+    {
+        $u = $this->userRepository->findById($userId, $tenantId);
+        if (!$u) {
+            return true;
+        }
+        $slug = strtolower(trim((string) ($this->userRepository->getRoleSlugForUser($userId) ?? '')));
+
+        return $slug !== '' && in_array($slug, self::PROMOTABLE_ROLE_SLUGS, true);
+    }
+
+    private function promoteGuestOrInviteToMember(int $tenantId, int $userId): bool
+    {
+        $user = $this->userRepository->findById($userId, $tenantId);
+        if (!$user) {
+            return false;
+        }
+        $slug = strtolower(trim((string) ($this->userRepository->getRoleSlugForUser($userId) ?? '')));
+        if ($slug === '' || !in_array($slug, self::PROMOTABLE_ROLE_SLUGS, true)) {
+            return true;
+        }
+        $memberRoleId = $this->roleRepository->getIdBySlug($tenantId, 'member');
+        if (!$memberRoleId) {
+            return false;
+        }
+        $this->userRepository->syncOrganizationRoles($userId, $tenantId, [$memberRoleId], null, true);
+        $this->personnelProfileRepository->ensureRecord($userId);
+        $this->userRepository->markEmailVerifiedWithoutStatusChange($userId, $tenantId);
+
+        return true;
     }
 
     private function staffEmails(int $tenantId): array

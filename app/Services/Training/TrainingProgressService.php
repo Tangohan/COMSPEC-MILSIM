@@ -27,7 +27,8 @@ class TrainingProgressService
         private EmailService $emailService,
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
-        private TrainingCourseRepository $courseRepository
+        private TrainingCourseRepository $courseRepository,
+        private TrainingStaffAlertService $staffAlertService
     ) {}
 
     public function startEnrollment(int $enrollmentId, int $tenantId, int $userId): void
@@ -81,13 +82,13 @@ class TrainingProgressService
                     'status' => 'completed',
                     'completed_at' => date('Y-m-d H:i:s'),
                 ]);
-                $this->notifyCourseCompleted($tenantId, $userId, (int) $enrollment['course_id']);
+                $this->notifyCourseCompleted($tenantId, $userId, (int) $enrollment['course_id'], $enrollmentId);
             }
         }
     }
 
     /** Félicitations par e-mail (échec d’envoi ignoré). */
-    private function notifyCourseCompleted(int $tenantId, int $userId, int $courseId): void
+    private function notifyCourseCompleted(int $tenantId, int $userId, int $courseId, int $enrollmentId): void
     {
         try {
             $course = $this->courseRepository->findById($courseId, $tenantId);
@@ -129,20 +130,139 @@ class TrainingProgressService
             );
         } catch (\Throwable) {
         }
+        try {
+            $this->staffAlertService->recordCourseCompletedByLearner($tenantId, $userId, $enrollmentId, $courseId);
+        } catch (\Throwable) {
+        }
+    }
+
+    /**
+     * Synthèse d’un module pour la page bilan apprenant.
+     *
+     * @return array{
+     *   module: array<string, mixed>,
+     *   lessons: list<array<string, mixed>>,
+     *   quizzes: list<array<string, mixed>>,
+     *   module_validated: bool,
+     *   course_completed: bool,
+     *   gaps: list<string>
+     * }|null
+     */
+    public function getModuleBilan(int $enrollmentId, int $moduleId, int $tenantId, int $userId): ?array
+    {
+        $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
+        if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
+            return null;
+        }
+        if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired'], true)) {
+            return null;
+        }
+        $courseId = (int) $enrollment['course_id'];
+        $module = $this->moduleRepository->findById($moduleId);
+        if (!$module || (int) ($module['course_id'] ?? 0) !== $courseId) {
+            return null;
+        }
+
+        $lessonsOut = [];
+        $lessons = $this->lessonRepository->listByModuleId($moduleId);
+        foreach ($lessons as $l) {
+            $lid = (int) ($l['id'] ?? 0);
+            $p = $this->progressRepository->findByEnrollmentAndLesson($enrollmentId, $lid);
+            $st = (string) ($p['status'] ?? 'not_started');
+            $lessonsOut[] = [
+                'lesson' => $l,
+                'status' => $st,
+                'status_label' => $this->lessonStatusLabelFr($st),
+                'title' => (string) ($l['title'] ?? ''),
+                'is_required' => (int) ($l['is_required'] ?? 1) === 1,
+            ];
+        }
+
+        $quizzesOut = [];
+        foreach ($this->quizRepository->listQuizzesByModuleId($moduleId) as $q) {
+            if ((int) ($q['is_final_exam'] ?? 0) === 1) {
+                continue;
+            }
+            $qid = (int) ($q['id'] ?? 0);
+            $attempts = $this->quizRepository->listAttemptsByEnrollmentAndQuiz($enrollmentId, $qid);
+            $best = null;
+            $passed = false;
+            $submitted = 0;
+            foreach ($attempts as $a) {
+                if (in_array((string) ($a['status'] ?? ''), ['submitted', 'graded'], true)) {
+                    $submitted++;
+                }
+                if ((int) ($a['passed'] ?? 0) === 1) {
+                    $passed = true;
+                }
+                if (isset($a['score']) && $a['score'] !== null && $a['score'] !== '') {
+                    $sc = (float) $a['score'];
+                    $best = $best === null ? $sc : max($best, $sc);
+                }
+            }
+            $quizzesOut[] = [
+                'quiz' => $q,
+                'attempts_count' => count($attempts),
+                'submitted_attempts' => $submitted,
+                'best_score' => $best,
+                'passed' => $passed,
+                'passing_score' => (float) ($q['passing_score'] ?? 80),
+                'title' => (string) ($q['title'] ?? 'Quiz'),
+            ];
+        }
+
+        $moduleValidated = $this->isModuleValidated($enrollmentId, $moduleId);
+        $courseState = $this->computeCourseProgress($enrollmentId);
+
+        $gaps = [];
+        foreach ($lessonsOut as $row) {
+            if (!$row['is_required']) {
+                continue;
+            }
+            if (($row['status'] ?? '') !== 'completed') {
+                $gaps[] = 'Leçon « ' . $row['title'] . ' » : ' . ($row['status_label'] ?? 'non validée');
+            }
+        }
+        foreach ($quizzesOut as $qz) {
+            if ($qz['passed']) {
+                continue;
+            }
+            $t = $qz['title'];
+            $thr = $qz['passing_score'];
+            if ($qz['attempts_count'] === 0) {
+                $gaps[] = 'Évaluation « ' . $t . ' » : aucune tentative terminée (réussite attendue : au moins ' . round($thr, 1) . ' %).';
+            } elseif ($qz['best_score'] !== null) {
+                $gaps[] = 'Évaluation « ' . $t . ' » : meilleur résultat ' . round($qz['best_score'], 1) . ' % pour un seuil de ' . round($thr, 1) . ' %.';
+            } else {
+                $gaps[] = 'Évaluation « ' . $t . ' » : à valider (seuil ' . round($thr, 1) . ' %).';
+            }
+        }
+
+        return [
+            'module' => $module,
+            'lessons' => $lessonsOut,
+            'quizzes' => $quizzesOut,
+            'module_validated' => $moduleValidated,
+            'course_completed' => (bool) ($courseState['completed'] ?? false),
+            'gaps' => $gaps,
+        ];
+    }
+
+    private function lessonStatusLabelFr(string $status): string
+    {
+        return match ($status) {
+            'completed' => 'Validée',
+            'in_progress' => 'En cours',
+            'skipped' => 'Ignorée',
+            default => 'Pas encore validée',
+        };
     }
 
     /** @return array{progress: list<array>, percent: float, completed: bool} */
     public function getProgressForEnrollment(int $enrollmentId): array
     {
         $progress = $this->progressRepository->listByEnrollmentId($enrollmentId);
-        $total = count($progress);
-        $completed = 0;
-        foreach ($progress as $p) {
-            if (($p['status'] ?? '') === 'completed') {
-                $completed++;
-            }
-        }
-        $percent = $total > 0 ? round(100.0 * $completed / $total, 2) : 0.0;
+        $percent = $this->trainingService->getGlobalProgress($enrollmentId);
         $courseProgress = $this->computeCourseProgress($enrollmentId);
         return [
             'progress' => $progress,

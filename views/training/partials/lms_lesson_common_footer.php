@@ -9,15 +9,41 @@ declare(strict_types=1);
 /** @var string $csrf */
 /** @var array<string, mixed>|null $prevLesson */
 /** @var array<string, mixed>|null $nextLesson */
+/** @var array<string, mixed>|null $footerNext */
 $enrId = (int) $enrollment['id'];
 $prevUrl = $prevLesson ? url('formations/lesson/' . (int) $prevLesson['id'] . '?enrollment_id=' . $enrId) : '';
-$nextUrl = $nextLesson ? url('formations/lesson/' . (int) $nextLesson['id'] . '?enrollment_id=' . $enrId) : '';
 $c = $course ?? [];
 $courseSlugNav = trim((string) ($c['slug'] ?? $enrollment['course_slug'] ?? ''));
 $echangesUrl = $courseSlugNav !== ''
     ? url('formations/' . rawurlencode($courseSlugNav) . '/echanges')
     : '';
-$showFinParcours = $echangesUrl !== '' && $nextLesson === null;
+$footerNext = is_array($footerNext ?? null) ? $footerNext : null;
+$nextUrl = '';
+$footerQuiz = null;
+$showFinParcours = false;
+$footerNextLessonTitle = '';
+if ($footerNext !== null) {
+    $k = (string) ($footerNext['kind'] ?? '');
+    if ($k === 'lesson' && !empty($footerNext['lesson']) && is_array($footerNext['lesson'])) {
+        $nl = $footerNext['lesson'];
+        $nid = (int) ($nl['id'] ?? 0);
+        if ($nid > 0) {
+            $nextUrl = url('formations/lesson/' . $nid . '?enrollment_id=' . $enrId);
+            $footerNextLessonTitle = (string) ($nl['title'] ?? '');
+        }
+    } elseif ($k === 'quiz' && !empty($footerNext['quiz']) && is_array($footerNext['quiz'])) {
+        $footerQuiz = $footerNext['quiz'];
+    } elseif ($k === 'echanges') {
+        $showFinParcours = $echangesUrl !== '';
+    }
+} else {
+    $nextUrl = $nextLesson ? url('formations/lesson/' . (int) $nextLesson['id'] . '?enrollment_id=' . $enrId) : '';
+    $footerNextLessonTitle = (string) ($nextLesson['title'] ?? '');
+    $showFinParcours = $echangesUrl !== '' && $nextLesson === null;
+}
+$currentModule = $currentModule ?? null;
+$midNav = $currentModule ? (int) ($currentModule['id'] ?? 0) : 0;
+$bilanModuleUrl = ($midNav > 0) ? url('formations/bilan-module?enrollment_id=' . $enrId . '&module_id=' . $midNav) : '';
 ?>
                 <?php if (!empty($resources)): ?>
                 <div class="mt-10 border-t border-slate-200 pt-8">
@@ -63,9 +89,12 @@ $showFinParcours = $echangesUrl !== '' && $nextLesson === null;
                             <span id="lms-btn-complete" class="sr-only">Leçon validée</span>
                             <?php endif; ?>
                             <a href="<?= url('formations/' . ($enrollment['course_slug'] ?? '')) ?>" class="rounded-xl border border-slate-300 px-6 py-3 text-sm font-bold uppercase text-slate-700 hover:bg-slate-100">Retour à la formation</a>
+                            <?php if ($bilanModuleUrl !== ''): ?>
+                            <a href="<?= htmlspecialchars($bilanModuleUrl) ?>" class="rounded-xl border border-indigo-200 bg-indigo-50 px-6 py-3 text-sm font-bold uppercase text-indigo-950 hover:bg-indigo-100">Synthèse du module</a>
+                            <?php endif; ?>
                             </div>
                         </div>
-                        <?php if ($prevUrl !== '' || $nextUrl !== '' || $showFinParcours): ?>
+                        <?php if ($prevUrl !== '' || $nextUrl !== '' || $footerQuiz !== null || $showFinParcours): ?>
                         <nav class="mt-8 flex flex-wrap items-stretch justify-between gap-6 border-t border-slate-200 pt-6" aria-label="Navigation du parcours">
                             <div class="min-w-0 max-w-[48%]">
                                 <?php if ($prevUrl !== ''): ?>
@@ -77,10 +106,20 @@ $showFinParcours = $echangesUrl !== '' && $nextLesson === null;
                             </div>
                             <div class="ml-auto min-w-0 max-w-[48%] text-right">
                                 <?php if ($nextUrl !== ''): ?>
-                                <a href="<?= htmlspecialchars($nextUrl) ?>" title="<?= htmlspecialchars((string) ($nextLesson['title'] ?? '')) ?>" class="group inline-flex flex-col items-end gap-1">
+                                <a href="<?= htmlspecialchars($nextUrl) ?>" title="<?= htmlspecialchars($footerNextLessonTitle) ?>" class="group inline-flex flex-col items-end gap-1">
                                     <span class="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-black uppercase tracking-wide text-white group-hover:bg-emerald-700">Suivant →</span>
-                                    <span class="line-clamp-2 text-right text-xs text-slate-500"><?= htmlspecialchars((string) ($nextLesson['title'] ?? '')) ?></span>
+                                    <span class="line-clamp-2 text-right text-xs text-slate-500"><?= htmlspecialchars($footerNextLessonTitle) ?></span>
                                 </a>
+                                <?php elseif ($footerQuiz !== null && (int) ($footerQuiz['id'] ?? 0) > 0): ?>
+                                <div class="group inline-flex flex-col items-end gap-1">
+                                    <form method="post" action="<?= url('formations/quiz/start') ?>" class="inline">
+                                        <?= \App\Core\Csrf::field() ?>
+                                        <input type="hidden" name="quiz_id" value="<?= (int) $footerQuiz['id'] ?>">
+                                        <input type="hidden" name="enrollment_id" value="<?= $enrId ?>">
+                                        <button type="submit" class="rounded-xl bg-violet-700 px-5 py-2.5 text-sm font-black uppercase tracking-wide text-white hover:bg-violet-800">Évaluation suivante →</button>
+                                    </form>
+                                    <span class="line-clamp-2 text-right text-xs text-slate-500"><?= htmlspecialchars((string) ($footerQuiz['title'] ?? 'Évaluation')) ?></span>
+                                </div>
                                 <?php elseif ($showFinParcours): ?>
                                 <a href="<?= htmlspecialchars($echangesUrl) ?>" class="group inline-flex flex-col items-end gap-1">
                                     <span class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-black uppercase tracking-wide text-white group-hover:bg-slate-800">Fin du parcours — Avis &amp; échanges →</span>

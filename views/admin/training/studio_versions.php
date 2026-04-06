@@ -23,8 +23,16 @@ $lmsPlatformLabel = (string) ($lmsPlatformLabel ?? '');
                 Les formations mémorisent la version sous laquelle elles ont été <strong>créées</strong> et celle du <strong>dernier enregistrement</strong> dans le Studio.
                 Si une formation a été initiée avant une montée de version, un rappel s’affiche sur sa fiche d’édition.
             </p>
+            <div class="training-studio-panel p-4 md:p-5 mt-5 border border-emerald-100 bg-emerald-50/40 text-sm text-slate-700 leading-relaxed">
+                <p class="font-bold text-slate-900 mb-2">Dernière montée notable (v<?= htmlspecialchars($lmsPlatformVersion) ?>)</p>
+                <ul class="list-disc pl-5 space-y-1.5">
+                    <li><strong>Apprenants</strong> : questionnaires avec limite de temps plus lisible, vérifications avant envoi, propositions mélangées à l’affichage.</li>
+                    <li><strong>Parcours d’accueil « portail »</strong> : si votre communauté utilisait la graine par défaut, le passage des <strong>migrations</strong> peut ajouter le bilan de mi-parcours et des fiches de synthèse — sans action dans le Studio pour cela.</li>
+                    <li><strong>Auteurs</strong> : pour actualiser la mention de version sur une formation existante, ouvrez-la dans le Studio et enregistrez une modification mineure si besoin.</li>
+                </ul>
+            </div>
             <p class="text-sm text-slate-500 mt-3">
-                <a href="<?= url('admin/training/studio') ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Tableau des formations</a>
+                <a href="<?= training_studio_url() ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Tableau des formations</a>
             </p>
         </div>
     </header>

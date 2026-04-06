@@ -2,89 +2,171 @@
  * Training Studio — shell type « créateur » (sidebar sombre + zone principale claire).
  */
 
-.training-studio-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 55;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(248, 250, 252, 0.92);
-  backdrop-filter: blur(10px);
-}
-
-.training-studio-topbar__inner {
+/* Plein écran — sortie par glissement vers le haut */
+.training-studio-bootsplash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  max-width: 90rem;
-  margin: 0 auto;
-  padding: 0.65rem 1rem;
-}
-
-.training-studio-topbar__toggle {
-  flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  background: #fff;
-  color: #0f172a;
-  font-weight: 900;
-  font-size: 1.1rem;
-  cursor: pointer;
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, border-color 0.15s;
+  background: linear-gradient(145deg, #020617 0%, #064e3b 42%, #0f172a 100%);
+  transition:
+    transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.55s ease 0.08s;
+  will-change: transform, opacity;
 }
 
-.training-studio-topbar__toggle:hover {
-  background: #f1f5f9;
-  border-color: rgba(16, 185, 129, 0.45);
+.training-studio-bootsplash--exit {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
-.training-studio-topbar__titles {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
+.training-studio-bootsplash__shine {
+  position: absolute;
+  inset: -40% -20%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(52, 211, 153, 0.12) 38%,
+    rgba(16, 185, 129, 0.08) 50%,
+    transparent 62%
+  );
+  animation: training-studio-bootsplash-shine 2.2s ease-in-out infinite;
+  pointer-events: none;
 }
 
-.training-studio-topbar__kicker {
-  font-size: 0.5625rem;
+@keyframes training-studio-bootsplash-shine {
+  0%,
+  100% {
+    transform: translateX(-12%) skewX(-12deg);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translateX(12%) skewX(-12deg);
+    opacity: 1;
+  }
+}
+
+.training-studio-bootsplash__inner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+
+.training-studio-bootsplash__brand {
+  margin: 0;
+  font-size: clamp(1.75rem, 5vw, 2.35rem);
+  font-weight: 900;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  color: #f8fafc;
+  text-shadow: 0 0 40px rgba(52, 211, 153, 0.35);
+}
+
+.training-studio-bootsplash__sub {
+  margin: 0.85rem 0 0;
+  font-size: 0.6875rem;
   font-weight: 800;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #64748b;
+  color: rgba(248, 250, 252, 0.72);
 }
 
-.training-studio-topbar__title {
-  font-size: 0.95rem;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  color: #0f172a;
-  white-space: nowrap;
+.training-studio-bootsplash__track {
+  margin: 1.75rem auto 0;
+  width: min(200px, 55vw);
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.training-studio-topbar__portal {
+.training-studio-bootsplash__slider {
+  display: block;
+  height: 100%;
+  width: 42%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #059669, #34d399, #6ee7b7);
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.6);
+  animation: training-studio-bootsplash-slide 1.05s ease-in-out infinite;
+}
+
+@keyframes training-studio-bootsplash-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.training-studio-bootsplash--exit .training-studio-bootsplash__shine,
+.training-studio-bootsplash--exit .training-studio-bootsplash__slider {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .training-studio-bootsplash {
+    transition-duration: 0.2s;
+  }
+
+  .training-studio-bootsplash__shine,
+  .training-studio-bootsplash__slider {
+    animation: none;
+  }
+
+  .training-studio-bootsplash__track {
+    opacity: 0.85;
+  }
+}
+
+/* Bannière d’info (remplace l’ancienne barre du haut) */
+.training-studio-banner {
+  position: sticky;
+  top: 0;
+  z-index: 60;
   flex-shrink: 0;
-  font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #059669;
-  text-decoration: none;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  background: rgba(16, 185, 129, 0.06);
-  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: var(--ts-banner-height);
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(90deg, #0f172a 0%, #134e4a 55%, #0f172a 100%);
+  color: #ecfdf5;
 }
 
-.training-studio-topbar__portal:hover {
-  background: rgba(16, 185, 129, 0.12);
-  color: #047857;
+.training-studio-banner__label {
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.92);
+}
+
+.training-studio-banner__portal {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a7f3d0;
+  text-decoration: none;
+  padding: 0.4rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.training-studio-banner__portal:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ecfdf5;
+  border-color: rgba(110, 231, 183, 0.55);
 }
 
 .training-studio-intro {
@@ -102,14 +184,19 @@
 }
 
 .training-studio-app {
+  --ts-banner-height: 2.75rem;
   position: relative;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Mobile : sidebar en overlay (fixed), une seule colonne pour le contenu */
+/* Sidebar toujours visible : pile sur mobile, grille à partir de lg */
 .training-studio-app__grid {
-  display: block;
-  min-height: inherit;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   position: relative;
 }
 
@@ -118,23 +205,6 @@
     display: grid;
     grid-template-columns: 280px minmax(0, 1fr);
     align-items: stretch;
-  }
-
-  .training-studio-app:not(.training-studio-app--sidebar-open) .training-studio-app__grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  /* Sans ceci, la zone principale reste en « colonne 2 » (lg:col-start-2) : la 1re colonne reste vide. */
-  .training-studio-app:not(.training-studio-app--sidebar-open) .training-studio-main {
-    grid-column: 1 / -1;
-  }
-
-  .training-studio-app:not(.training-studio-app--sidebar-open) .training-studio-sidebar-host {
-    display: none;
-  }
-
-  .training-studio-app:not(.training-studio-app--sidebar-open) .training-studio-sidebar--drawer {
-    display: none;
   }
 }
 
@@ -147,6 +217,12 @@
   flex-direction: column;
   min-height: 100%;
   z-index: 45;
+}
+
+@media (max-width: 1023px) {
+  .training-studio-sidebar {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
 }
 
 .training-studio-sidebar__brand {
@@ -368,85 +444,13 @@
   flex-shrink: 0;
 }
 
-/* Bouton flottant : réouvrir le menu quand la barre latérale est fermée */
-.training-studio-drawer-toggle--fab {
-  position: fixed;
-  bottom: 1.25rem;
-  right: 1.25rem;
-  z-index: 50;
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 999px;
-  border: none;
-  background: linear-gradient(135deg, #059669, #10b981);
-  color: #fff;
-  font-weight: 900;
-  font-size: 1.1rem;
-  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.45);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.training-studio-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  background: rgba(2, 6, 23, 0.55);
-}
-
-.training-studio-sidebar--drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: min(300px, 92vw);
-  transform: translateX(-102%);
-  transition: transform 0.22s ease;
-  box-shadow: 8px 0 40px rgba(0, 0, 0, 0.35);
-}
-
-.training-studio-sidebar--drawer.is-open {
-  transform: translateX(0);
-}
-
 @media (min-width: 1024px) {
-  .training-studio-sidebar--drawer {
-    position: relative;
-    transform: none !important;
-    width: auto;
-    box-shadow: none;
-  }
-
   .training-studio-sidebar {
     position: sticky;
-    top: 4.75rem;
+    top: var(--ts-banner-height);
     align-self: start;
-    max-height: calc(100vh - 5.25rem);
+    max-height: calc(100vh - var(--ts-banner-height));
     overflow-y: auto;
-  }
-}
-
-.training-studio-close-drawer {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 2;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-  font-size: 1.25rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-@media (min-width: 1024px) {
-  .training-studio-close-drawer {
-    display: none;
   }
 }
 

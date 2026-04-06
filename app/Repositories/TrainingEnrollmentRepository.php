@@ -143,4 +143,30 @@ class TrainingEnrollmentRepository
         $stmt->execute([$tenantId, $daysAhead]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Inscriptions terminées pour export conformité (jointure certificat si présent).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listCompletedForComplianceExport(int $tenantId, int $limit = 2000): array
+    {
+        $lim = max(1, min(5000, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT e.id AS enrollment_id, e.user_id, e.completed_at, e.course_id,
+                    c.title AS course_title,
+                    u.display_name, u.email,
+                    cert.certificate_number, cert.id AS certificate_id, cert.pdf_path
+             FROM training_enrollments e
+             INNER JOIN training_courses c ON c.id = e.course_id AND c.tenant_id = e.tenant_id
+             INNER JOIN users u ON u.id = e.user_id
+             LEFT JOIN training_certificates cert ON cert.enrollment_id = e.id AND cert.tenant_id = e.tenant_id AND cert.status = 'valid'
+             WHERE e.tenant_id = ? AND e.status = 'completed'
+             ORDER BY e.completed_at DESC
+             LIMIT {$lim}"
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }

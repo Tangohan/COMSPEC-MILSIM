@@ -1,70 +1,11 @@
 <?php
-$unitsTree = $unitsTree ?? [];
-$unitMemberCounts = $unitMemberCounts ?? [];
-$unitCommanderLabels = $unitCommanderLabels ?? [];
-$unitRosterByUnit = $unitRosterByUnit ?? [];
+$rosterData = $orbatRosterData ?? null;
+$showOrbatEditTools = (bool) ($orbatCanManage ?? false);
+$orbatCommanderOptions = $orbatCommanderOptions ?? [];
+$orbatCsrfToken = $orbatCsrfToken ?? '';
 $baseUrl = rtrim(url(''), '/');
-
-/**
- * Normalise un nœud unité (DB) vers le format attendu par le JS orbat (label, role, type, status, strength, leader, mission, children, members).
- *
- * @param array<int, int> $unitMemberCounts
- * @param array<int, string> $unitCommanderLabels
- * @param array<int, list<array{user_id: int, label: string}>> $unitRosterByUnit
- */
-function normalizeOrbatNode(array $u, array $unitMemberCounts, array $unitCommanderLabels, array $unitRosterByUnit): array {
-    $type = isset($u['type']) && in_array((string)$u['type'], ['command', 'alpha', 'bravo', 'support', 'special'], true)
-        ? (string) $u['type'] : 'command';
-    $uid = (int) ($u['id'] ?? 0);
-    $children = [];
-    foreach ($u['children'] ?? [] as $c) {
-        $children[] = normalizeOrbatNode($c, $unitMemberCounts, $unitCommanderLabels, $unitRosterByUnit);
-    }
-    $mission = '—';
-    if (!empty(trim((string) ($u['public_blurb'] ?? '')))) {
-        $mission = trim((string) $u['public_blurb']);
-    }
-
-    return [
-        'id' => 'unit-' . $uid,
-        'unitId' => $uid,
-        'label' => $u['name'] ?? 'Unité',
-        'role' => !empty($u['code']) ? (string) $u['code'] : 'Unité',
-        'type' => $type,
-        'status' => 'active',
-        'strength' => (int) ($unitMemberCounts[$uid] ?? 0),
-        'leader' => $unitCommanderLabels[$uid] ?? '—',
-        'mission' => $mission,
-        'members' => $unitRosterByUnit[$uid] ?? [],
-        'children' => $children,
-    ];
-}
-
-$rosterData = null;
-if (!empty($unitsTree)) {
-    if (count($unitsTree) === 1) {
-        $rosterData = normalizeOrbatNode($unitsTree[0], $unitMemberCounts, $unitCommanderLabels, $unitRosterByUnit);
-    } else {
-        $children = [];
-        foreach ($unitsTree as $root) {
-            $children[] = normalizeOrbatNode($root, $unitMemberCounts, $unitCommanderLabels, $unitRosterByUnit);
-        }
-        $rosterData = [
-            'id' => 'command',
-            'unitId' => 0,
-            'label' => 'Command',
-            'role' => 'Structure organique',
-            'type' => 'command',
-            'status' => 'active',
-            'strength' => 0,
-            'leader' => '—',
-            'mission' => 'Direction des unités et coordination.',
-            'members' => [],
-            'children' => $children,
-        ];
-    }
-}
-$rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) : 'null';
+$rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) : 'null';
+$orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
 ?>
 <style>
     .orbat-page {
@@ -152,6 +93,9 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
                 <p class="text-[10px] font-black tracking-[0.32em] uppercase text-slate-400 mb-2">Command Structure</p>
                 <h1 class="text-3xl font-black tracking-tight uppercase leading-none">ORBAT</h1>
                 <p class="text-sm text-slate-500 mt-3 font-medium">Structure organique, disponibilité des unités, consultation dynamique.</p>
+                <?php if ($showOrbatEditTools): ?>
+                <p class="mt-2 max-w-2xl text-xs font-semibold leading-relaxed text-emerald-900">Vous gérez cette communauté : les champs à droite permettent de modifier une unité sélectionnée ; l’enregistrement est automatique après une courte pause dans la saisie, et l’organigramme se met à jour sans recharger la page.</p>
+                <?php endif; ?>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 min-w-[320px]">
                 <div class="orbat-panel rounded-2xl p-4">
@@ -244,6 +188,44 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
                         <p class="mt-1 text-[10px] text-slate-500 leading-snug">Affectations actives, dossier personnel ou unité principale.</p>
                         <div id="detail-members" class="mt-3 space-y-1.5 max-h-52 overflow-y-auto text-sm"></div>
                     </div>
+                    <?php if ($showOrbatEditTools): ?>
+                    <div id="orbat-edit-panel" class="hidden rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-3">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-950">Modifier l’unité sélectionnée</p>
+                        <p class="text-[11px] text-emerald-900/85 leading-snug">Choisissez une carte dans l’organigramme (pas la racine « Command »). Les modifications sont envoyées automatiquement après une courte pause.</p>
+                        <div>
+                            <label for="orbat-ed-name" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Nom affiché</label>
+                            <input id="orbat-ed-name" type="text" maxlength="255" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label for="orbat-ed-code" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Sigle ou code court</label>
+                            <input id="orbat-ed-code" type="text" maxlength="20" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label for="orbat-ed-type" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Type sur l’organigramme</label>
+                            <select id="orbat-ed-type" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <option value="command">Commandement</option>
+                                <option value="alpha">Alpha</option>
+                                <option value="bravo">Bravo</option>
+                                <option value="support">Soutien</option>
+                                <option value="special">Spécial</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="orbat-ed-mission" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Mission ou description courte</label>
+                            <textarea id="orbat-ed-mission" rows="3" maxlength="8000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></textarea>
+                        </div>
+                        <div>
+                            <label for="orbat-ed-commander" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Chef d’unité référent</label>
+                            <select id="orbat-ed-commander" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <option value="">— Non renseigné —</option>
+                                <?php foreach ($orbatCommanderOptions as $opt): ?>
+                                <option value="<?= (int) ($opt['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($opt['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <p id="orbat-save-status" class="min-h-[1.25rem] text-xs font-medium" role="status" aria-live="polite"></p>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </aside>
         </div>
@@ -254,9 +236,19 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
 <script>
 (function() {
     const appBaseUrl = <?= json_encode($baseUrl, JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE) ?>;
-    const rosterData = <?= $rosterJson ?>;
+    let rosterData = <?= $rosterJson ?>;
+    const showOrbatEditTools = <?= $showOrbatEditTools ? 'true' : 'false' ?>;
+    const orbatCsrf = <?= json_encode($orbatCsrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE) ?>;
+    const apiUnitUrl = appBaseUrl + "/api/orbat/unit";
+    const apiRosterUrl = appBaseUrl + "/api/orbat/roster";
 
     const collapsedState = new Map();
+    let lastRosterSnapshot = JSON.stringify(rosterData);
+    let currentSelectedUnitId = 0;
+    let saveTimer = null;
+    let editorsBound = false;
+    let saveInFlight = false;
+    let isHydratingForm = false;
 
     function getStatusLabel(status) {
         if (status === "active") return "Active";
@@ -265,8 +257,108 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
     }
 
     function getTypeLabel(type) {
-        const labels = { command: "Command", alpha: "Alpha", bravo: "Bravo", support: "Support", special: "Special" };
+        const labels = { command: "Commandement", alpha: "Alpha", bravo: "Bravo", support: "Soutien", special: "Spécial" };
         return labels[type] || (type || "—");
+    }
+
+    function findNodeByUnitId(node, unitId) {
+        if (!node) return null;
+        if ((node.unitId || 0) === unitId) return node;
+        for (let i = 0; i < (node.children || []).length; i++) {
+            const f = findNodeByUnitId(node.children[i], unitId);
+            if (f) return f;
+        }
+        return null;
+    }
+
+    function applyRosterFromServer(root) {
+        if (!root) return;
+        rosterData = root;
+        lastRosterSnapshot = JSON.stringify(root);
+        renderTree(filteredTree(currentSearch));
+        const n = findNodeByUnitId(rosterData, currentSelectedUnitId);
+        if (n) selectNode(n);
+    }
+
+    function bindEditors() {
+        if (!showOrbatEditTools || editorsBound) return;
+        editorsBound = true;
+        ["orbat-ed-name", "orbat-ed-code", "orbat-ed-type", "orbat-ed-mission", "orbat-ed-commander"].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener("input", scheduleSave);
+            el.addEventListener("change", scheduleSave);
+        });
+    }
+
+    function scheduleSave() {
+        if (!showOrbatEditTools || isHydratingForm || saveInFlight) return;
+        const uid = currentSelectedUnitId;
+        if (uid < 1) return;
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(function() { doSave(uid); }, 550);
+    }
+
+    async function doSave(unitId) {
+        if (saveInFlight) return;
+        const statusEl = document.getElementById("orbat-save-status");
+        const nameEl = document.getElementById("orbat-ed-name");
+        const codeEl = document.getElementById("orbat-ed-code");
+        const typeEl = document.getElementById("orbat-ed-type");
+        const missionEl = document.getElementById("orbat-ed-mission");
+        const cmdEl = document.getElementById("orbat-ed-commander");
+        const name = nameEl ? nameEl.value.trim() : "";
+        if (!name) {
+            if (statusEl) { statusEl.textContent = "Le nom affiché est obligatoire."; statusEl.className = "min-h-[1.25rem] text-xs font-medium text-red-600"; }
+            return;
+        }
+        saveInFlight = true;
+        if (statusEl) { statusEl.textContent = "Enregistrement…"; statusEl.className = "min-h-[1.25rem] text-xs font-medium text-slate-500"; }
+        const body = new FormData();
+        body.append("_csrf_token", orbatCsrf);
+        body.append("unit_id", String(unitId));
+        body.append("name", name);
+        body.append("code", codeEl ? codeEl.value.trim() : "");
+        body.append("public_blurb", missionEl ? missionEl.value.trim() : "");
+        body.append("orbat_type", typeEl ? typeEl.value : "command");
+        body.append("commander_user_id", cmdEl && cmdEl.value ? cmdEl.value : "");
+        try {
+            const res = await fetch(apiUnitUrl, { method: "POST", body: body, credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } });
+            const j = await res.json().catch(function() { return {}; });
+            if (!res.ok || !j.success) throw new Error(j.message || "Enregistrement impossible.");
+            if (j.roster) applyRosterFromServer(j.roster);
+            if (statusEl) { statusEl.textContent = "Enregistré"; statusEl.className = "min-h-[1.25rem] text-xs font-medium text-emerald-700"; }
+            setTimeout(function() { if (statusEl && statusEl.textContent === "Enregistré") statusEl.textContent = ""; }, 2400);
+        } catch (err) {
+            if (statusEl) { statusEl.textContent = err.message || "Erreur"; statusEl.className = "min-h-[1.25rem] text-xs font-medium text-red-600"; }
+        } finally {
+            saveInFlight = false;
+        }
+    }
+
+    function fillEditForm(node) {
+        if (!showOrbatEditTools) return;
+        const panel = document.getElementById("orbat-edit-panel");
+        if (!panel) return;
+        const uid = node.unitId || 0;
+        if (uid < 1) {
+            panel.classList.add("hidden");
+            return;
+        }
+        panel.classList.remove("hidden");
+        isHydratingForm = true;
+        const name = document.getElementById("orbat-ed-name");
+        const code = document.getElementById("orbat-ed-code");
+        const typ = document.getElementById("orbat-ed-type");
+        const mission = document.getElementById("orbat-ed-mission");
+        const cmd = document.getElementById("orbat-ed-commander");
+        if (name) name.value = node.label || "";
+        if (code) code.value = (node.role && node.role !== "Unité") ? node.role : "";
+        if (typ) typ.value = node.type || "command";
+        if (mission) mission.value = (node.mission && node.mission !== "—") ? node.mission : "";
+        if (cmd) cmd.value = (node.commanderUserId && node.commanderUserId > 0) ? String(node.commanderUserId) : "";
+        isHydratingForm = false;
+        bindEditors();
     }
 
     function countStats(node) {
@@ -367,6 +459,7 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
     }
 
     function selectNode(node) {
+        currentSelectedUnitId = node.unitId || 0;
         var el;
         if (el = document.getElementById("detail-name")) el.textContent = node.label || "—";
         if (el = document.getElementById("detail-role")) el.textContent = node.role || "—";
@@ -416,6 +509,7 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
                 });
             }
         }
+        fillEditForm(node);
     }
 
     function nodeMatches(node, term) {
@@ -425,7 +519,13 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
 
     function filterNode(node, term) {
         var children = (node.children || []).map(function(c) { return filterNode(c, term); }).filter(Boolean);
-        if (nodeMatches(node, term) || children.length > 0) return { id: node.id, unitId: node.unitId, label: node.label, role: node.role, type: node.type, status: node.status, strength: node.strength, leader: node.leader, mission: node.mission, members: node.members || [], children: children };
+        if (nodeMatches(node, term) || children.length > 0) {
+            return {
+                id: node.id, unitId: node.unitId, label: node.label, role: node.role, type: node.type, status: node.status,
+                strength: node.strength, leader: node.leader, mission: node.mission, commanderUserId: node.commanderUserId || 0,
+                members: node.members || [], children: children
+            };
+        }
         return null;
     }
 
@@ -454,6 +554,27 @@ $rosterJson = $rosterData !== null ? json_encode($rosterData, JSON_HEX_TAG | JSO
     flattenNodes(rosterData).forEach(function(n) { collapsedState.set(n.id, false); });
     renderTree(JSON.parse(JSON.stringify(rosterData)));
     selectNode(rosterData);
+
+    if (showOrbatEditTools) {
+        setInterval(function() {
+            if (document.hidden || saveInFlight) return;
+            var panel = document.getElementById("orbat-edit-panel");
+            if (panel && document.activeElement && panel.contains(document.activeElement)) return;
+            fetch(apiRosterUrl, { credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function(r) { return r.json(); })
+                .then(function(j) {
+                    if (!j || !j.success || !j.roster) return;
+                    var snap = JSON.stringify(j.roster);
+                    if (snap === lastRosterSnapshot) return;
+                    lastRosterSnapshot = snap;
+                    rosterData = j.roster;
+                    renderTree(filteredTree(currentSearch));
+                    var nn = findNodeByUnitId(rosterData, currentSelectedUnitId);
+                    if (nn) selectNode(nn);
+                })
+                .catch(function() {});
+        }, 32000);
+    }
 })();
 </script>
 <?php endif; ?>

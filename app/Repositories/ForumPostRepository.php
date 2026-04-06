@@ -16,6 +16,8 @@ class ForumPostRepository
 
     private ?bool $hasDisplaySettingsTable = null;
 
+    private ?bool $hasPreferredDisplayRoleColumn = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -30,6 +32,21 @@ class ForumPostRepository
         $this->hasDisplaySettingsTable = (bool) ($stmt && $stmt->fetchColumn());
 
         return $this->hasDisplaySettingsTable;
+    }
+
+    private function hasPreferredDisplayRoleColumn(): bool
+    {
+        if ($this->hasPreferredDisplayRoleColumn !== null) {
+            return $this->hasPreferredDisplayRoleColumn;
+        }
+        try {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'preferred_display_role_id' LIMIT 1");
+            $this->hasPreferredDisplayRoleColumn = (bool) ($stmt && $stmt->fetchColumn());
+        } catch (\Throwable) {
+            $this->hasPreferredDisplayRoleColumn = false;
+        }
+
+        return $this->hasPreferredDisplayRoleColumn;
     }
 
     /**
@@ -102,9 +119,14 @@ class ForumPostRepository
         $upsJoin = $this->hasDisplaySettingsTable()
             ? 'LEFT JOIN user_profile_display_settings ups ON ups.user_id = u.id'
             : '';
-        $roleJoinSql = $this->hasDisplaySettingsTable()
-            ? 'LEFT JOIN roles r ON r.id = COALESCE(NULLIF(ups.forum_visible_role_id, 0), u.role_id)'
-            : 'LEFT JOIN roles r ON r.id = u.role_id';
+        $roleJoinSql = 'LEFT JOIN roles r ON r.id = u.role_id';
+        if ($this->hasDisplaySettingsTable()) {
+            if ($this->hasPreferredDisplayRoleColumn()) {
+                $roleJoinSql = 'LEFT JOIN roles r ON r.id = COALESCE(NULLIF(u.preferred_display_role_id, 0), NULLIF(ups.forum_visible_role_id, 0), u.role_id)';
+            } else {
+                $roleJoinSql = 'LEFT JOIN roles r ON r.id = COALESCE(NULLIF(ups.forum_visible_role_id, 0), u.role_id)';
+            }
+        }
         $fullSql = "SELECT fp.*,
                     u.display_name AS author_name, u.callsign AS author_callsign, u.role_id AS author_role_id, u.avatar_url AS author_avatar_url, u.created_at AS author_created_at,
                     $identityCols
@@ -308,5 +330,23 @@ class ForumPostRepository
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
+    }
+
+    /**
+     * Dernière date de message du membre dans le tenant (pause entre envois).
+     */
+    public function latestPostCreatedAtForUser(int $tenantId, int $userId): ?string
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT MAX(created_at) FROM forum_posts WHERE tenant_id = ? AND user_id = ?'
+        );
+        $stmt->execute([$tenantId, $userId]);
+        $v = $stmt->fetchColumn();
+        if ($v === false || $v === null) {
+            return null;
+        }
+        $s = (string) $v;
+
+        return $s !== '' ? $s : null;
     }
 }

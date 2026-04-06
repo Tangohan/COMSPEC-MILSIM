@@ -54,6 +54,8 @@ CREATE TABLE IF NOT EXISTS `clearance_levels` (
   CONSTRAINT `clr_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Rôles : colonnes étendues (semantic_tier, category, subcategory, label_en, display_*, badge_style, etc.)
+-- appliquées par les migrations bootstrap PHP (roles_organic_architecture_migration, military_role_catalog_schema_migration).
 CREATE TABLE IF NOT EXISTS `roles` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned DEFAULT NULL,

@@ -33,6 +33,7 @@ final class TenantPermissionCatalog
             self::adminDefinitions(),
             self::dashboardDefinitions(),
             self::forumDefinitions(),
+            self::interteamDefinitions(),
             self::documentsDefinitions(),
             self::trainingDefinitions(),
             self::personnelDefinitions(),
@@ -102,6 +103,7 @@ final class TenantPermissionCatalog
             ['slug' => 'admin.roles.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer les rôles'],
             ['slug' => 'admin.permissions.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer les permissions'],
             ['slug' => 'admin.audit.view', 'module' => 'admin', 'action' => 'view', 'name' => 'Voir les journaux d’audit'],
+            ['slug' => 'admin.compliance.export', 'module' => 'admin', 'action' => 'export', 'name' => 'Exporter les dossiers conformité (formations)'],
             ['slug' => 'admin.settings.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer les paramètres de la communauté'],
             ['slug' => 'admin.branding.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer l’identité visuelle / branding'],
             ['slug' => 'admin.integrations.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer les intégrations / API / webhooks'],
@@ -116,6 +118,20 @@ final class TenantPermissionCatalog
     {
         return [
             ['slug' => 'dashboard.pins.manage', 'module' => 'dashboard', 'action' => 'manage', 'name' => 'Gérer les raccourcis du tableau de bord'],
+        ];
+    }
+
+    /**
+     * @return list<array{slug: string, module: string, action: string|null, name: string}>
+     */
+    /**
+     * @return list<array{slug: string, module: string, action: string|null, name: string}>
+     */
+    private static function interteamDefinitions(): array
+    {
+        return [
+            ['slug' => 'interteam.missions.manage', 'module' => 'interteam', 'action' => 'manage', 'name' => 'Piloter les missions inter-unités (invitations, partages)'],
+            ['slug' => 'interteam.missions.respond', 'module' => 'interteam', 'action' => 'approve', 'name' => 'Accepter ou refuser une mission inter-unités'],
         ];
     }
 

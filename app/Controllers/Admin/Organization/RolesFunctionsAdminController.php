@@ -55,11 +55,11 @@ class RolesFunctionsAdminController
         $roleRelations = [];
         try {
             $st = $pdo->prepare(
-                'SELECT rr.id, rr.relation_type, rf.slug AS from_slug, rf.name AS from_name, rt.slug AS to_slug, rt.name AS to_name
+                "SELECT rr.id, rr.relation_type, rf.slug AS from_slug, rf.name AS from_name, rt.slug AS to_slug, rt.name AS to_name
                  FROM role_relations rr
-                 INNER JOIN roles rf ON rf.id = rr.from_role_id
-                 INNER JOIN roles rt ON rt.id = rr.to_role_id
-                 WHERE rr.tenant_id = ?'
+                 INNER JOIN roles rf ON rf.id = rr.from_role_id AND rf.tenant_id = rr.tenant_id AND rf.role_layer IN ('community','intra')
+                 INNER JOIN roles rt ON rt.id = rr.to_role_id AND rt.tenant_id = rr.tenant_id AND rt.role_layer IN ('community','intra')
+                 WHERE rr.tenant_id = ?"
             );
             $st->execute([$tenantId]);
             $roleRelations = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -100,12 +100,12 @@ class RolesFunctionsAdminController
         $edges = [];
         try {
             $st = $pdo->prepare(
-                'SELECT rr.relation_type, rf.id AS from_id, rf.slug AS from_slug, rf.name AS from_name,
+                "SELECT rr.relation_type, rf.id AS from_id, rf.slug AS from_slug, rf.name AS from_name,
                         rt.id AS to_id, rt.slug AS to_slug, rt.name AS to_name
                  FROM role_relations rr
-                 INNER JOIN roles rf ON rf.id = rr.from_role_id
-                 INNER JOIN roles rt ON rt.id = rr.to_role_id
-                 WHERE rr.tenant_id = ?'
+                 INNER JOIN roles rf ON rf.id = rr.from_role_id AND rf.tenant_id = rr.tenant_id AND rf.role_layer IN ('community','intra')
+                 INNER JOIN roles rt ON rt.id = rr.to_role_id AND rt.tenant_id = rr.tenant_id AND rt.role_layer IN ('community','intra')
+                 WHERE rr.tenant_id = ?"
             );
             $st->execute([$tenantId]);
             $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];

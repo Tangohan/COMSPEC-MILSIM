@@ -134,4 +134,94 @@ class PersonnelCompletenessService
 
         return $base;
     }
+
+    /**
+     * Complétude dossier pour l’admin : version « communauté » sans doublons avec le bloc compte
+     * (e-mail, prénom/nom déjà suivis côté compte) ni jargon superflu ; version « plateforme » exhaustive.
+     *
+     * @return array{score: int, sections_critiques: list<string>, details: array<string, bool>, missing_labels: list<string>}
+     */
+    public function getScoreWithMissingLabelsForAudience(
+        int $userId,
+        array $user,
+        ?array $userProfile,
+        ?array $personnelExtras,
+        ?int $tenantId,
+        bool $forPlatformOperator
+    ): array {
+        $base = $this->getScore($userId, $user, $userProfile, $personnelExtras, $tenantId);
+
+        $labelsFull = [
+            'identity_name' => 'Nom opérateur / RP',
+            'identity_callsign' => 'Indicatif',
+            'identity_matricule' => 'Matricule',
+            'identity_role' => 'Rôle principal (dossier)',
+            'identity_unit' => 'Affectation / unité (sélection dossier ou ORBAT)',
+            'identity_enlistment' => 'Date d’incorporation',
+            'assignment_role' => 'Rôle d’affectation (ORBAT ou rôle principal dossier)',
+            'security_clearance' => 'Niveau de clearance',
+            'security_review' => 'Clearance revue (date)',
+            'qualifications' => 'Qualification OU formation certifiée',
+            'readiness' => 'Disponibilité (score dossier ou formation certifiée)',
+            'contact_email' => 'Email de contact',
+            'civil_identity' => 'Prénom & nom (dossier compte ou candidature)',
+        ];
+
+        $labelsCommunity = [
+            'identity_name' => 'Nom opérateur / RP',
+            'identity_callsign' => 'Indicatif',
+            'identity_matricule' => 'Matricule',
+            'identity_role' => 'Rôle principal sur la fiche',
+            'identity_unit' => 'Affectation ou unité (dossier / organigramme)',
+            'identity_enlistment' => 'Date d’incorporation',
+            'assignment_role' => 'Rôle d’affectation (organigramme ou fiche)',
+            'security_clearance' => 'Niveau de clearance',
+            'security_review' => 'Date de revue de la clearance',
+            'qualifications' => 'Qualification ou parcours de formation certifié',
+            'readiness' => 'Indicateur de disponibilité',
+            'contact_email' => 'Email de contact',
+            'civil_identity' => 'Prénom & nom (dossier compte ou candidature)',
+        ];
+
+        $labels = $forPlatformOperator ? $labelsFull : $labelsCommunity;
+
+        $details = $base['details'];
+        if (!$forPlatformOperator) {
+            foreach (['contact_email', 'civil_identity'] as $ek) {
+                unset($details[$ek]);
+            }
+        }
+
+        $total = count($details);
+        $filled = count(array_filter($details));
+        $score = $total > 0 ? (int) round($filled / $total * 100) : 0;
+
+        $missingLabels = [];
+        foreach ($details as $key => $ok) {
+            if (empty($ok) && isset($labels[$key])) {
+                $missingLabels[] = $labels[$key];
+            }
+        }
+
+        $critical = [
+            'identity_matricule' => $forPlatformOperator ? 'Matricule non défini' : 'Matricule non renseigné',
+            'identity_unit' => 'Affectation absente',
+            'security_clearance' => 'Clearance non définie',
+            'assignment_role' => 'Rôle d\'affectation absent',
+        ];
+
+        $sectionsCritiques = [];
+        foreach ($critical as $key => $label) {
+            if (isset($details[$key]) && empty($details[$key])) {
+                $sectionsCritiques[] = $label;
+            }
+        }
+
+        return [
+            'score' => min(100, $score),
+            'sections_critiques' => $sectionsCritiques,
+            'details' => $details,
+            'missing_labels' => $missingLabels,
+        ];
+    }
 }

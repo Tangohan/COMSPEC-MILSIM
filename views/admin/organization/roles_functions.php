@@ -8,12 +8,16 @@ $rolePresetMeta = $rolePresetMeta ?? [];
 $graphJsonUrl = url('back-office/roles-functions/graph.json');
 ?>
 <div class="max-w-6xl mx-auto px-6 py-10 space-y-10">
+    <div class="rounded-lg border border-blue-100 bg-blue-50/90 px-4 py-3 text-sm text-slate-800">
+        Cette page décrit les liens entre les rôles de <strong class="font-semibold">votre communauté</strong> et le référentiel des fonctions.
+        Seuls les rôles internes à la communauté apparaissent dans le graphe ; les habilitations plateforme sont gérées ailleurs.
+    </div>
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Gestion des rôles et fonctions</h1>
             <p class="text-sm text-slate-600 mt-2 max-w-2xl">
-                Catalogue global (FR / US), graphe des relations, unités du tenant et liens vers l’attribution multi-rôles par utilisateur.
-                Les droits effectifs combinent le pivot <code class="text-xs bg-slate-100 px-1 rounded">tenant_user_roles</code>, les permissions et les overrides.
+                Catalogue des fonctions de référence, graphe des relations entre rôles, unités de l’organigramme et raccourcis vers l’attribution de plusieurs rôles par membre.
+                Les droits effectifs combinent les rôles attribués, les permissions et les spécificités par unité.
             </p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -30,8 +34,8 @@ $graphJsonUrl = url('back-office/roles-functions/graph.json');
     </section>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-900 mb-3">B. Contexte tenant &amp; unité</h2>
-        <p class="text-sm text-slate-600 mb-4">Unités ORBAT du tenant (affectations contextualisées via <code class="text-xs bg-slate-100 px-1 rounded">tenant_user_roles.org_unit_id</code>).</p>
+        <h2 class="text-lg font-bold text-slate-900 mb-3">B. Contexte communauté et unité</h2>
+        <p class="text-sm text-slate-600 mb-4">Unités de l’organigramme : les rôles peuvent être précisés selon l’affectation d’un membre à une unité donnée.</p>
         <?php if ($units === []): ?>
             <p class="text-sm text-amber-800 bg-amber-50 rounded-lg px-3 py-2">Aucune unité définie. Créez des groupes dans l’ORBAT.</p>
         <?php else: ?>

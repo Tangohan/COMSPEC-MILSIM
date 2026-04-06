@@ -10,6 +10,13 @@ use App\Services\Personnel\PersonnelJobRoleBootstrapService;
  * Tables rôles métier dossier + colonnes personnel_profiles ; seed par tenant.
  */
 return function (PDO $pdo): void {
+    require_once __DIR__ . '/personnel_profile_job_roles_migration.php';
+    try {
+        run_personnel_profile_job_roles_migration($pdo);
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] personnel_profile_job_roles migration : ' . $e->getMessage() . "\n";
+    }
+
     $chk = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_job_roles'");
     if (!$chk || !$chk->fetch()) {
         $root = dirname(__DIR__);

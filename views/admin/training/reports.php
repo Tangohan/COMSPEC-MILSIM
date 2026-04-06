@@ -15,7 +15,7 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                     <ul class="space-y-3">
                         <?php foreach ($courses as $c): ?>
                         <li>
-                            <a href="<?= url('admin/training/enrollments?course_id=' . (int) $c['id']) ?>" class="text-emerald-700 font-semibold hover:underline"><?= htmlspecialchars($c['title']) ?></a>
+                            <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments') . '?course_id=' . (int) $c['id']) ?>" class="text-emerald-700 font-semibold hover:underline"><?= htmlspecialchars($c['title']) ?></a>
                             <span class="text-slate-500 text-sm"> — assignations &amp; progression</span>
                         </li>
                         <?php endforeach; ?>
@@ -23,6 +23,6 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                 </div>
 
                 <p class="text-sm text-slate-500">
-                    <a href="<?= url('admin/training') ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Vue d’ensemble</a>
+                    <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Vue d’ensemble</a>
                 </p>
 <?php require base_path('views/admin/training/partials/command_shell_close.php'); ?>

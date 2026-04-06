@@ -44,6 +44,47 @@ if ($checks['.env']) {
     echo "[ATTENTION] Pas de fichier .env — utilisation des variables d'environnement ou valeurs par défaut.\n";
 }
 
+/** Affiche tout de suite en mode web (évite l’impression que « rien ne s’exécute » tant que le tampon n’est pas plein). */
+$migrationFlush = static function (): void {
+    if (PHP_SAPI !== 'cli') {
+        @ini_set('zlib.output_compression', '0');
+        @ini_set('implicit_flush', '1');
+    }
+    while (ob_get_level() > 0) {
+        @ob_end_flush();
+    }
+    @flush();
+};
+
+if (PHP_SAPI !== 'cli') {
+    $migrationFlush();
+    @set_time_limit(0);
+    @ini_set('max_execution_time', '0');
+    @ini_set('output_buffering', '0');
+    @ini_set('zlib.output_compression', '0');
+    if (!headers_sent()) {
+        header('X-Accel-Buffering: no');
+    }
+    echo "[INFO] Mode navigateur : la sortie défile au fil de l’eau ; le script peut prendre plusieurs minutes.\n";
+    // Remplissage : certains reverse-proxy / hébergeurs n’envoient la réponse au navigateur qu’après ~2–4 Ko.
+    echo str_repeat(' ', 2048) . "\n";
+    $migrationFlush();
+
+    register_shutdown_function(static function (): void {
+        $err = error_get_last();
+        if ($err === null) {
+            return;
+        }
+        $t = (int) ($err['type'] ?? 0);
+        if (!in_array($t, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+            return;
+        }
+        $msg = ($err['message'] ?? '') . ' — ' . ($err['file'] ?? '') . ':' . (string) ($err['line'] ?? '');
+        echo "\n[ERREUR FATALE] " . $msg . "\n";
+        @flush();
+    });
+}
+
 // Connexion DB
 $host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: '127.0.0.1';
 $name = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: '';
@@ -65,24 +106,41 @@ try {
     exit(1);
 }
 echo "[OK] Connexion base : $name\n";
-@flush();
-@ob_flush();
+$migrationFlush();
 
-require_once $root . '/bootstrap/community_platform_migration.php';
-require_once $root . '/bootstrap/platform_unit_commander_migration.php';
-require_once $root . '/bootstrap/prod_import_gaps.php';
-require_once $root . '/bootstrap/rbac_three_layer_migration.php';
-require_once $root . '/bootstrap/user_roles_migration.php';
-require_once $root . '/bootstrap/tenant_user_roles_graph_catalog_migration.php';
-require_once $root . '/bootstrap/co_unit_rbac_triggers_migration.php';
-require_once $root . '/bootstrap/permissions_action_migration.php';
+echo "[→] Chargement des fichiers bootstrap (plateforme / RBAC)…\n";
+$migrationFlush();
+
+$bootstrapFiles = [
+    'community_platform_migration.php',
+    'platform_unit_commander_migration.php',
+    'prod_import_gaps.php',
+    'rbac_three_layer_migration.php',
+    'user_roles_migration.php',
+    'tenant_user_roles_graph_catalog_migration.php',
+    'co_unit_rbac_triggers_migration.php',
+    'permissions_action_migration.php',
+    'roles_organic_architecture_migration.php',
+    'military_role_catalog_schema_migration.php',
+    'moderation_granular_sanctions_migration.php',
+];
+foreach ($bootstrapFiles as $bf) {
+    $path = $root . '/bootstrap/' . $bf;
+    echo "    … {$bf}\n";
+    $migrationFlush();
+    require_once $path;
+    echo "      [chargé]\n";
+    $migrationFlush();
+}
+
+echo "[OK] Fichiers bootstrap chargés.\n";
+$migrationFlush();
 
 // ----- Schéma (exécution statement par statement : PDO::exec ne gère qu'une requête) -----
-set_time_limit(300);
+set_time_limit(PHP_SAPI === 'cli' ? 300 : 0);
 $schemaPath = $root . '/migrations/schema.sql';
 echo "Exécution du schéma...\n";
-@flush();
-@ob_flush();
+$migrationFlush();
 
 $sql = @file_get_contents($schemaPath);
 if ($sql === false || $sql === '') {
@@ -90,15 +148,13 @@ if ($sql === false || $sql === '') {
     exit(1);
 }
 echo "  Fichier lu (" . strlen($sql) . " octets)\n";
-@flush();
-@ob_flush();
+$migrationFlush();
 
 $sql = preg_replace('/--[^\r\n]*/s', '', $sql);
 $chunks = preg_split('/;\s*[\r\n]+/', $sql);
 $statements = array_filter(array_map('trim', $chunks), function ($s) { return $s !== ''; });
 echo "  " . count($statements) . " instructions à exécuter\n";
-@flush();
-@ob_flush();
+$migrationFlush();
 
 $done = 0;
 $errors = [];
@@ -108,10 +164,10 @@ foreach ($statements as $stmt) {
     try {
         $pdo->exec($stmt . (str_ends_with($stmt, ';') ? '' : ';'));
         $done++;
-        if ($done % 10 === 0) {
+        // Premières instructions souvent lentes (DDL) : feedback plus fréquent pour éviter l’impression de blocage.
+        if ($done <= 25 || $done % 10 === 0) {
             echo "  … {$done}\n";
-            @flush();
-            @ob_flush();
+            $migrationFlush();
         }
     } catch (PDOException $e) {
         $errors[] = $e->getMessage() . ' (extrait: ' . substr($stmt, 0, 80) . '…)';
@@ -122,15 +178,14 @@ if (!empty($errors)) {
     foreach (array_slice($errors, 0, 5) as $err) echo "  - $err\n";
 }
 echo "Schéma OK. ({$done} instructions exécutées)\n";
-@flush();
-@ob_flush();
+$migrationFlush();
 
 // Plans Stripe, colonnes tenants, invitations, modération, événements, usage, codes communauté, parrainage — idempotent.
 echo "Migrations bootstrap plateforme (community_platform + unit_commander + rbac_three_layer)...\n";
-@flush();
-@ob_flush();
+$migrationFlush();
 run_community_platform_migration($pdo);
 run_platform_unit_commander_migration($pdo);
+run_moderation_granular_sanctions_migration($pdo);
 run_production_import_gap_migrations($pdo, $root);
 run_rbac_three_layer_migration($pdo);
 run_user_roles_migration($pdo);
@@ -141,15 +196,23 @@ try {
     echo '  [ATTENTION] co_unit_rbac_triggers : ' . $e->getMessage() . "\n";
 }
 run_permissions_action_migration($pdo);
+try {
+    run_roles_organic_architecture_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] roles_organic_architecture : ' . $e->getMessage() . "\n";
+}
+try {
+    run_military_role_catalog_schema_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] military_role_catalog_schema : ' . $e->getMessage() . "\n";
+}
 echo "Bootstrap plateforme OK (subscription_plans, tenants.*, RBAC 3 couches, community_invitations, moderation_*, security_*, community_code, referral_*…).\n";
-@flush();
-@ob_flush();
+$migrationFlush();
 
 // LMS formations : colonnes training_courses + tables engagement — exécuté tôt (idempotent). Anciennement en fin de fichier :
 // si le script s’arrêtait avant (timeout, erreur), colonnes comme enrollment_policy_json manquaient en prod.
 echo "Migrations LMS formation (training_courses, politique d’inscription, vitrine)...\n";
-@flush();
-@ob_flush();
+$migrationFlush();
 $trainingCourseLmsThemeMigrateEarly = require $root . '/bootstrap/training_course_lms_theme_migration.php';
 $trainingCourseLmsThemeMigrateEarly($pdo);
 $trainingShowcaseMigrateEarly = require $root . '/bootstrap/training_showcase_migration.php';
@@ -173,8 +236,7 @@ try {
     echo '  [ATTENTION] training_course_lms_platform_version : ' . $e->getMessage() . "\n";
 }
 echo "Migrations LMS formation (première passe) OK.\n";
-@flush();
-@ob_flush();
+$migrationFlush();
 
 require_once $root . '/bootstrap/training_onboarding_course_seed.php';
 try {
@@ -1164,6 +1226,77 @@ if ($hasOldGrades && $hasRef && $oldGradesHasTenant) {
                 echo "Référentiel grades : ajout SO / MdR ({$added} lignes) dans {$gradeTable}.\n";
             }
         }
+
+        // Officiers généraux, entrées civiles et hors grade (idempotent, même table cible)
+        if (isset($cat['OFFICIER'], $sys['FR_CLASSIC'], $sys['US_CLASSIC'])) {
+            $existsGen = $pdo->prepare("SELECT 1 FROM `{$gradeTable}` WHERE grade_system_id = ? AND code = ? LIMIT 1");
+            $insOff = $pdo->prepare("INSERT INTO `{$gradeTable}` (grade_system_id, grade_category_id, code, label_short, label_long, label_otan, sort_order, is_commissioned, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, NOW(), NOW())");
+            $rowsOff = [
+                ['FR_CLASSIC', 'GBR', 'Gén. bde', 'Général de brigade', 'OF-6', 17],
+                ['FR_CLASSIC', 'GDV', 'Gén. div.', 'Général de division', 'OF-7', 18],
+                ['FR_CLASSIC', 'GCA', 'Gén. c. a.', 'Général de corps d’armée', 'OF-8', 19],
+                ['FR_CLASSIC', 'GAR', 'Gén. armée', 'Général d’armée', 'OF-9', 20],
+                ['US_CLASSIC', 'BG', 'Brig. Gen.', 'Brigadier General', 'O-7', 17],
+                ['US_CLASSIC', 'MG', 'Maj. Gen.', 'Major General', 'O-8', 18],
+                ['US_CLASSIC', 'LTG', 'Lt Gen.', 'Lieutenant General', 'O-9', 19],
+                ['US_CLASSIC', 'GEN', 'Gen.', 'General', 'O-10', 20],
+            ];
+            $addedOff = 0;
+            foreach ($rowsOff as $ro) {
+                [$sc, $code, $ls, $ll, $lo, $so] = $ro;
+                $existsGen->execute([$sys[$sc], $code]);
+                if ($existsGen->fetchColumn()) {
+                    continue;
+                }
+                $insOff->execute([$sys[$sc], $cat['OFFICIER'], $code, $ls, $ll, $lo, $so]);
+                $addedOff++;
+            }
+            if ($addedOff > 0) {
+                echo "Référentiel grades : ajout officiers généraux ({$addedOff} lignes) dans {$gradeTable}.\n";
+            }
+        }
+        if (isset($cat['CIVIL'], $sys['FR_CLASSIC'], $sys['US_CLASSIC'])) {
+            $existsCiv = $pdo->prepare("SELECT 1 FROM `{$gradeTable}` WHERE grade_system_id = ? AND code = ? LIMIT 1");
+            $insCiv = $pdo->prepare("INSERT INTO `{$gradeTable}` (grade_system_id, grade_category_id, code, label_short, label_long, label_otan, sort_order, is_commissioned, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NULL, ?, 0, 1, NOW(), NOW())");
+            $rowsCiv = [
+                ['FR_CLASSIC', 'CIV', 'Civil', 'Personnel civil', 80],
+                ['US_CLASSIC', 'CIV', 'Civilian', 'Civilian (non-military)', 80],
+            ];
+            $addedCiv = 0;
+            foreach ($rowsCiv as $rc) {
+                [$sc, $code, $ls, $ll, $so] = $rc;
+                $existsCiv->execute([$sys[$sc], $code]);
+                if ($existsCiv->fetchColumn()) {
+                    continue;
+                }
+                $insCiv->execute([$sys[$sc], $cat['CIVIL'], $code, $ls, $ll, $so]);
+                $addedCiv++;
+            }
+            if ($addedCiv > 0) {
+                echo "Référentiel grades : ajout entrées civiles ({$addedCiv} lignes) dans {$gradeTable}.\n";
+            }
+        }
+        if (isset($cat['HORS_GRADE'], $sys['FR_CLASSIC'], $sys['US_CLASSIC'])) {
+            $existsHg = $pdo->prepare("SELECT 1 FROM `{$gradeTable}` WHERE grade_system_id = ? AND code = ? LIMIT 1");
+            $insHg = $pdo->prepare("INSERT INTO `{$gradeTable}` (grade_system_id, grade_category_id, code, label_short, label_long, label_otan, sort_order, is_commissioned, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NULL, ?, 0, 1, NOW(), NOW())");
+            $rowsHg = [
+                ['FR_CLASSIC', 'HG', 'Hors grade', 'Sans grade militaire', 90],
+                ['US_CLASSIC', 'HG', 'No grade', 'No military grade', 90],
+            ];
+            $addedHg = 0;
+            foreach ($rowsHg as $rh) {
+                [$sc, $code, $ls, $ll, $so] = $rh;
+                $existsHg->execute([$sys[$sc], $code]);
+                if ($existsHg->fetchColumn()) {
+                    continue;
+                }
+                $insHg->execute([$sys[$sc], $cat['HORS_GRADE'], $code, $ls, $ll, $so]);
+                $addedHg++;
+            }
+            if ($addedHg > 0) {
+                echo "Référentiel grades : ajout hors grade ({$addedHg} lignes) dans {$gradeTable}.\n";
+            }
+        }
     }
 }
 
@@ -1456,7 +1589,28 @@ try {
     echo '  [ATTENTION] tenant_dashboard_pins : ' . $e->getMessage() . "\n";
 }
 
+$tenantCommunityFeedMigrate = require $root . '/bootstrap/tenant_community_feed_migration.php';
+try {
+    $tenantCommunityFeedMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_community_feed : ' . $e->getMessage() . "\n";
+}
+
+$briefPlatformInterteamMigrate = require $root . '/bootstrap/brief_platform_interteam_migration.php';
+try {
+    $briefPlatformInterteamMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] brief_platform_interteam : ' . $e->getMessage() . "\n";
+}
+
 require_once $root . '/bootstrap/autoload.php';
+
+try {
+    \App\Services\Rbac\MilitaryRoleCatalogSyncService::syncAllTenants($pdo);
+    echo "Catalogue rôles militaires (synchronisation tenants) OK.\n";
+} catch (Throwable $e) {
+    echo '  [ATTENTION] military_role_catalog_sync : ' . $e->getMessage() . "\n";
+}
 
 $trainingOnboardingBulk = $root . '/bootstrap/training_onboarding_bulk_assign.php';
 if (is_file($trainingOnboardingBulk)) {
@@ -1487,6 +1641,16 @@ if (is_file($msgSql)) {
     if ($chk && !$chk->fetch()) {
         echo "Migration community_messaging.sql...\n";
         $pdo->exec(file_get_contents($msgSql));
+    }
+}
+
+$platformIntPath = $root . '/migrations/platform_integrations.sql';
+if (is_file($platformIntPath)) {
+    echo "Migration platform_integrations.sql (idempotent)...\n";
+    try {
+        $pdo->exec(file_get_contents($platformIntPath));
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] platform_integrations.sql : ' . $e->getMessage() . "\n";
     }
 }
 
@@ -1938,6 +2102,13 @@ if ($stmt && $stmt->fetch()) {
         echo '  [ATTENTION] Catalogue permissions : ' . $e->getMessage() . "\n";
     }
 
+    try {
+        \App\Services\Rbac\MilitaryRoleCatalogSyncService::syncAllTenants($pdo);
+        echo "Catalogue rôles militaires (post-permissions) OK.\n";
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] military_role_catalog_sync (post-permissions) : ' . $e->getMessage() . "\n";
+    }
+
     // LMS : type de leçon canvas (slides / modales)
     try {
         $tc = $pdo->query("SHOW TABLES LIKE 'training_lessons'");
@@ -1969,6 +2140,9 @@ if ($stmt && $stmt->fetch()) {
     }
 
     echo "Migrations terminées.\n";
+    echo "\n--- Pipeline exécuté (résumé) ---\n";
+    echo "Schéma SQL (migrations/schema.sql) ; bootstrap plateforme et RBAC ; migrations LMS et annexes ; compléments seed (tenant default déjà présent).\n";
+    echo "Si vous ne voyez que les premières lignes dans le navigateur, le script a tout de même pu aller au bout côté serveur — préférez : php setup-database.php en SSH pour une sortie complète.\n";
     exit(0);
 }
 
@@ -2022,6 +2196,13 @@ try {
     echo "Catalogue permissions tenant synchronisé.\n";
 } catch (Throwable $e) {
     echo '  [ATTENTION] Catalogue permissions : ' . $e->getMessage() . "\n";
+}
+
+try {
+    \App\Services\Rbac\MilitaryRoleCatalogSyncService::syncAllTenants($pdo);
+    echo "Catalogue rôles militaires (seed tenant) OK.\n";
+} catch (Throwable $e) {
+    echo '  [ATTENTION] military_role_catalog_sync (seed) : ' . $e->getMessage() . "\n";
 }
 
 echo "Seed OK. Compte : admin@athena.local / admin\n";

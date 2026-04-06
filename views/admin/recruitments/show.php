@@ -15,6 +15,7 @@ $statusLabels = [
 $statusLabel = $statusLabels[$statusRaw] ?? $statusRaw;
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
+$membershipRepairHint = $membershipRepairHint ?? null;
 ?>
 <div class="max-w-4xl mx-auto px-6 py-12">
     <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
@@ -76,6 +77,26 @@ $flashErr = \App\Core\Session::getFlash('error');
             <?php endif; ?>
         </dl>
     </div>
+
+    <?php if ($statusRaw === 'reviewed'): ?>
+    <div class="mb-6 rounded-2xl border border-sky-200 bg-sky-50/90 p-5 shadow-sm">
+        <h2 class="text-sm font-black uppercase tracking-widest text-sky-950 mb-2">Rattachement du compte membre</h2>
+        <?php if (!empty($membershipRepairHint)): ?>
+            <p class="text-sm text-sky-950/90 leading-relaxed mb-4"><?= htmlspecialchars((string) $membershipRepairHint) ?></p>
+        <?php else: ?>
+            <p class="text-sm text-sky-900/85 leading-relaxed mb-4">
+                Si le membre ne voit pas encore votre communauté comme prévu (par exemple accès encore limité ou compte lié à un autre espace), vous pouvez relancer le rattachement : le dossier accepté sera de nouveau aligné sur le compte de cette communauté.
+            </p>
+        <?php endif; ?>
+        <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/finalize-membership')) ?>" class="inline">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+            <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-sky-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-sky-800">
+                Forcer le rattachement au compte de la communauté
+            </button>
+        </form>
+        <p class="mt-3 text-xs text-sky-900/75">Aucun nouvel e-mail n’est envoyé automatiquement par cette action. Le membre peut se connecter s’il avait déjà un accès.</p>
+    </div>
+    <?php endif; ?>
 
     <?php if ($statusRaw === 'submitted'): ?>
     <div class="bg-amber-50/90 border border-amber-200 rounded-2xl p-6 shadow-sm mb-6">

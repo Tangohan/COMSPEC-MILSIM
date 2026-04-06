@@ -264,4 +264,20 @@ class TenantRepository
         $stmt = $this->pdo->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([json_encode($merged, JSON_THROW_ON_ERROR), $tenantId]);
     }
+
+    /**
+     * Liste minimale des autres communautés (missions inter-équipes, sélecteurs admin).
+     *
+     * @return list<array{id: int, name: string, slug: string}>
+     */
+    public function listBasicExcluding(int $excludeTenantId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, name, slug FROM tenants WHERE id != ? AND id > 1 ORDER BY name ASC'
+        );
+        $stmt->execute([$excludeTenantId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
 }

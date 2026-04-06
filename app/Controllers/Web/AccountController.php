@@ -43,10 +43,20 @@ class AccountController
         if (!$user) {
             return Response::redirect(url('login'));
         }
+        $uid = (int) $user['id'];
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        $freshUser = $tenantId > 0 ? $this->userRepository->findById($uid, $tenantId) : null;
+        $accountUser = $freshUser ?? $user;
+        $accountProfile = $this->userProfileRepository->getByUserId($uid) ?? [];
+        $accountSnapshot = $this->buildAccountSnapshot($accountUser, $accountProfile);
+
         return Response::view('layout.main', [
             'content' => 'account.index',
             'title' => 'Mon compte',
-            'systemHealth' => $this->getSystemHealth((int) $user['tenant_id']),
+            'accountUser' => $accountUser,
+            'accountProfile' => $accountProfile,
+            'accountSnapshot' => $accountSnapshot,
+            'systemHealth' => $this->getSystemHealth($tenantId),
         ]);
     }
 
@@ -64,10 +74,10 @@ class AccountController
             $pdo = Database::getPdo();
             $pdo->query('SELECT 1');
             $health['database']['ok'] = true;
-            $health['database']['message'] = 'Connecté';
-        } catch (\Throwable $e) {
+            $health['database']['message'] = 'Les services de données répondent normalement.';
+        } catch (\Throwable) {
             $health['database']['ok'] = false;
-            $health['database']['message'] = $e->getMessage();
+            $health['database']['message'] = 'Les services de données sont momentanément indisponibles. Réessayez plus tard ou contactez le support.';
         }
 
         if ($health['database']['ok']) {
@@ -80,7 +90,7 @@ class AccountController
                 $health['api']['url'] = $nodeUrl ?: null;
 
                 if ($nodeUrl === null || $nodeUrl === '') {
-                    $health['api']['message'] = 'Non configurée (node_url vide)';
+                    $health['api']['message'] = 'Aucun serveur cartographique n’est renseigné pour votre unité. Un administrateur peut compléter ce réglage.';
                 } else {
                     $base = rtrim($nodeUrl, '/');
                     $testUrl = $base . '/api/atak/markers?mapId=default';
@@ -90,16 +100,16 @@ class AccountController
                     $body = @file_get_contents($testUrl, false, $ctx);
                     if ($body !== false) {
                         $health['api']['ok'] = true;
-                        $health['api']['message'] = 'Réponse OK';
+                        $health['api']['message'] = 'Le service cartographique répond.';
                     } else {
-                        $health['api']['message'] = 'Pas de réponse (timeout ou erreur)';
+                        $health['api']['message'] = 'Le service cartographique ne répond pas pour l’instant (réseau ou maintenance).';
                     }
                 }
-            } catch (\Throwable $e) {
-                $health['api']['message'] = $e->getMessage();
+            } catch (\Throwable) {
+                $health['api']['message'] = 'La vérification du service cartographique a échoué.';
             }
         } else {
-            $health['api']['message'] = 'Non vérifiée (base indisponible)';
+            $health['api']['message'] = 'Vérification impossible tant que les données ne sont pas accessibles.';
         }
 
         return $health;

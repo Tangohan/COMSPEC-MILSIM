@@ -22,18 +22,18 @@ class TrainingQuizService
     {
         $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
-            throw new \InvalidArgumentException('Enrollment not found or access denied.');
+            throw new \InvalidArgumentException('Inscription introuvable ou accès refusé.');
         }
         if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired', 'pending_approval'], true)) {
             throw new \InvalidArgumentException('Accès au quiz indisponible pour cette inscription.');
         }
         $quiz = $this->quizRepository->findQuizById($quizId);
         if (!$quiz) {
-            throw new \InvalidArgumentException('Quiz not found.');
+            throw new \InvalidArgumentException('Questionnaire introuvable.');
         }
         $module = $this->moduleRepository->findById((int) $quiz['module_id']);
         if (!$module || (int) $module['course_id'] !== (int) $enrollment['course_id']) {
-            throw new \InvalidArgumentException('Quiz does not belong to this course.');
+            throw new \InvalidArgumentException('Ce questionnaire ne fait pas partie de cette formation.');
         }
 
         $inProgress = $this->quizRepository->getInProgressAttempt($enrollmentId, $quizId);
@@ -49,7 +49,7 @@ class TrainingQuizService
         }
         $maxAttempts = (int) ($quiz['max_attempts'] ?? 3);
         if ($submitted >= $maxAttempts) {
-            throw new \RuntimeException('Maximum attempts reached for this quiz.');
+            throw new \RuntimeException('Nombre maximal de tentatives atteint pour ce questionnaire.');
         }
         $attemptId = $this->quizRepository->createAttempt($quizId, $enrollmentId);
         return $this->quizRepository->findAttemptById($attemptId);
@@ -58,29 +58,35 @@ class TrainingQuizService
     /** Soumet la tentative et corrige (auto pour choix / vrai-faux). */
     public function submitAttempt(int $attemptId, array $responses, int $tenantId, int $userId): array
     {
+        $norm = [];
+        foreach ($responses as $k => $v) {
+            $norm[(int) $k] = $v;
+        }
+        $responses = $norm;
+
         $attempt = $this->quizRepository->findAttemptById($attemptId);
         if (!$attempt) {
-            throw new \InvalidArgumentException('Attempt not found.');
+            throw new \InvalidArgumentException('Tentative introuvable.');
         }
         if ($attempt['status'] !== 'in_progress') {
-            throw new \RuntimeException('Attempt already submitted.');
+            throw new \RuntimeException('Cette tentative a déjà été envoyée.');
         }
         $enrollment = $this->enrollmentRepository->findById((int) $attempt['enrollment_id'], $tenantId);
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
-            throw new \InvalidArgumentException('Access denied.');
+            throw new \InvalidArgumentException('Accès refusé.');
         }
         if (in_array((string) ($enrollment['status'] ?? ''), ['revoked', 'expired', 'pending_approval'], true)) {
             throw new \InvalidArgumentException('Accès au quiz indisponible pour cette inscription.');
         }
         $quiz = $this->quizRepository->findQuizById((int) $attempt['quiz_id']);
         if (!$quiz) {
-            throw new \InvalidArgumentException('Quiz not found.');
+            throw new \InvalidArgumentException('Questionnaire introuvable.');
         }
         if ($quiz['time_limit_minutes']) {
             $start = strtotime($attempt['started_at']);
             if ($start + (int) $quiz['time_limit_minutes'] * 60 < time()) {
                 $this->quizRepository->updateAttempt($attemptId, ['status' => 'expired']);
-                throw new \RuntimeException('Time limit exceeded.');
+                throw new \RuntimeException('Le temps imparti pour ce questionnaire est écoulé.');
             }
         }
 
@@ -109,8 +115,8 @@ class TrainingQuizService
                 $answers = $this->quizRepository->listAnswersByQuestionId($qid);
                 foreach ($answers as $a) {
                     if ((int) $a['id'] === $answerId) {
-                        $isCorrect = (int) ($a['is_correct'] ?? 0) === 1;
-                        $pointsAwarded = $isCorrect ? (float) ($q['points'] ?? 1) : 0;
+                        $isCorrect = ((int) ($a['is_correct'] ?? 0) === 1) ? 1 : 0;
+                        $pointsAwarded = $isCorrect === 1 ? (float) ($q['points'] ?? 1) : 0;
                         break;
                     }
                 }

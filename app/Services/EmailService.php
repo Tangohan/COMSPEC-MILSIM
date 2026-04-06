@@ -37,6 +37,26 @@ final class EmailService
         ?array $payloadSummary = null
     ): bool {
         $this->lastSendError = null;
+        if (filter_var((string) env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN)) {
+            try {
+                $repo = \App\Core\Container::get(\App\Repositories\AsyncJobRepository::class);
+                if ($repo->tableExists()) {
+                    $repo->enqueue('email_send', json_encode([
+                        'eventCode' => $eventCode,
+                        'to' => $to,
+                        'subject' => $subject,
+                        'htmlBody' => $htmlBody,
+                        'textBody' => $textBody,
+                        'tenantId' => $tenantId,
+                        'replyTo' => $replyTo,
+                        'payloadSummary' => $payloadSummary,
+                    ], JSON_UNESCAPED_UNICODE));
+
+                    return true;
+                }
+            } catch (\Throwable) {
+            }
+        }
         $to = trim($to);
         if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
             $this->lastSendError = 'Adresse e-mail du destinataire invalide.';
@@ -699,6 +719,39 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'training_self_enroll_declined', 'course_title' => $courseTitle]
+        );
+    }
+
+    public function sendTrainingModuleBlockedStaff(
+        string $to,
+        string $staffDisplayName,
+        string $learnerDisplayName,
+        string $learnerEmail,
+        string $tenantName,
+        string $courseTitle,
+        string $moduleTitle,
+        string $summaryText,
+        string $enrollmentsAdminUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_MODULE_BLOCKED_STAFF,
+            'training_module_blocked_staff',
+            $to,
+            'Aide formation — module « ' . $moduleTitle . ' »',
+            [
+                'staffDisplayName' => $staffDisplayName,
+                'learnerDisplayName' => $learnerDisplayName,
+                'learnerEmail' => $learnerEmail,
+                'tenantName' => $tenantName,
+                'courseTitle' => $courseTitle,
+                'moduleTitle' => $moduleTitle,
+                'summaryText' => $summaryText,
+                'enrollmentsAdminUrl' => $enrollmentsAdminUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_module_blocked', 'course_title' => $courseTitle]
         );
     }
 }

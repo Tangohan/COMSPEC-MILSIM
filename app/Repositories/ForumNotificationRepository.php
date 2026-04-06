@@ -75,4 +75,23 @@ class ForumNotificationRepository
             'UPDATE forum_notifications SET read_at = NOW() WHERE tenant_id = ? AND user_id = ? AND read_at IS NULL'
         )->execute([$tenantId, $userId]);
     }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listRecentForUser(int $tenantId, int $userId, int $limit = 40): array
+    {
+        if (!$this->tableExists()) {
+            return [];
+        }
+        $lim = max(1, min(80, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT id, type, payload_json, read_at, created_at FROM forum_notifications
+             WHERE tenant_id = ? AND user_id = ?
+             ORDER BY created_at DESC LIMIT {$lim}"
+        );
+        $stmt->execute([$tenantId, $userId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }

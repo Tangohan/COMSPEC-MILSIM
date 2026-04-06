@@ -14,6 +14,7 @@ $lessonType = $lesson['lesson_type'] ?? 'richtext';
 $currentModule = $currentModule ?? null;
 $prevLesson = $prevLesson ?? null;
 $nextLesson = $nextLesson ?? null;
+$footerNext = $footerNext ?? null;
 $lessonStep = $lessonStep ?? null;
 $moduleLessonStep = $moduleLessonStep ?? null;
 $levelLabels = function_exists('training_course_level_labels_fr') ? training_course_level_labels_fr() : [];

@@ -64,6 +64,12 @@
         }),
       })
         .then(function (r) {
+          var ct = (r.headers.get('content-type') || '').toLowerCase();
+          if (ct.indexOf('application/json') === -1) {
+            return r.text().then(function () {
+              throw new Error('Réponse inattendue du serveur. Rechargez la page.');
+            });
+          }
           return r.json().then(function (j) {
             if (!r.ok) {
               throw new Error((j && j.error) || 'Erreur');
@@ -74,12 +80,15 @@
         .then(function (data) {
           markUiSuccess(typeof data.percent === 'number' ? data.percent : null);
         })
-        .catch(function () {
+        .catch(function (err) {
           posted = false;
           var hint = document.getElementById('lms-progress-status');
           if (hint) {
-            hint.textContent =
-              'La validation automatique a échoué. Rechargez la page ou réessayez dans un instant.';
+            var msg =
+              err && err.message
+                ? err.message
+                : 'La validation automatique a échoué. Rechargez la page ou réessayez dans un instant.';
+            hint.textContent = msg;
             hint.classList.remove('text-slate-600', 'text-emerald-700');
             hint.classList.add('text-rose-600', 'font-semibold');
           }

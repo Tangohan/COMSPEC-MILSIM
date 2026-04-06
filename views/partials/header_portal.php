@@ -37,7 +37,7 @@ $defaultAccent = 'slate';
                 </div>
 
                 <nav class="relative z-[1] hidden min-w-0 justify-center justify-self-center xl:flex xl:w-full" aria-label="Navigation principale" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
-                    <ul class="flex h-full items-center gap-1">
+                    <ul class="flex h-full items-center gap-1.5 sm:gap-2">
                         <?php foreach ($nav['menu'] as $item): ?>
                             <?php
                             $active = nav_item_is_active($item, $currentPath);
@@ -105,7 +105,7 @@ $defaultAccent = 'slate';
                     </ul>
                 </nav>
 
-                <div class="flex w-full min-w-0 shrink-0 items-center justify-end justify-self-end gap-2.5 sm:gap-4 lg:ml-auto lg:w-auto xl:ml-0">
+                <div class="flex w-full min-w-0 shrink-0 items-center justify-end justify-self-end gap-3 sm:gap-4 pl-2 lg:ml-auto lg:w-auto xl:ml-0 xl:pl-3">
                     <?php if (!empty($nav['search']['shortcut'])): ?>
                         <a href="<?= htmlspecialchars($nav['search']['action']) ?>"
                            class="hidden shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 md:inline-flex"

@@ -13,6 +13,7 @@ use App\Repositories\TrainingRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingLessonRepository;
+use App\Repositories\TrainingQuizRepository;
 use App\Repositories\TrainingResourceRepository;
 use App\Services\Training\TrainingService;
 use App\Services\Training\TrainingProgressService;
@@ -20,6 +21,7 @@ use App\Services\Training\TrainingCertificateService;
 use App\Services\Training\TrainingQuizService;
 use App\Services\Training\TrainingAssignmentService;
 use App\Services\Training\TrainingEnrollmentPolicyService;
+use App\Services\Training\TrainingStaffAlertService;
 use App\Repositories\TrainingCourseLmsSocialRepository;
 use App\Services\Platform\FeatureGateService;
 use App\Core\Csrf;
@@ -41,8 +43,22 @@ class TrainingController
         private TrainingAssignmentService $assignmentService,
         private TrainingEnrollmentPolicyService $enrollmentPolicyService,
         private TrainingCourseLmsSocialRepository $lmsSocialRepository,
-        private TrainingCourseRepository $trainingCourseRepository
+        private TrainingCourseRepository $trainingCourseRepository,
+        private TrainingStaffAlertService $trainingStaffAlertService,
+        private TrainingQuizRepository $trainingQuizRepository
     ) {}
+
+    private function trainingQuizHasPassingAttempt(int $enrollmentId, int $quizId): bool
+    {
+        $attempts = $this->trainingQuizRepository->listAttemptsByEnrollmentAndQuiz($enrollmentId, $quizId);
+        foreach ($attempts as $a) {
+            if ((int) ($a['passed'] ?? 0) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /** Catalogue des formations (nouveau LMS + legacy). */
     public function index(Request $request, array $params = []): Response
@@ -606,6 +622,20 @@ class TrainingController
             $lessonStep = ['current' => $idx + 1, 'total' => count($orderedLessons)];
         }
 
+        $footerNext = null;
+        if (function_exists('training_lms_footer_next_step')) {
+            $footerNext = training_lms_footer_next_step(
+                $course,
+                $lessonId,
+                fn (int $qid): bool => $this->trainingQuizHasPassingAttempt($enrollmentId, $qid)
+            );
+        }
+        if ($footerNext === null) {
+            $footerNext = $nextLesson !== null
+                ? ['kind' => 'lesson', 'lesson' => $nextLesson]
+                : ['kind' => 'echanges'];
+        }
+
         $moduleLessonStep = null;
         if ($currentModule !== null) {
             $modLessons = $currentModule['lessons'] ?? [];
@@ -631,9 +661,130 @@ class TrainingController
             'currentModule' => $currentModule,
             'prevLesson' => $prevLesson,
             'nextLesson' => $nextLesson,
+            'footerNext' => $footerNext,
             'lessonStep' => $lessonStep,
             'moduleLessonStep' => $moduleLessonStep,
         ]);
+    }
+
+    /** Synthèse de fin de module : leçons, évaluations, attestation si parcours terminé. */
+    public function moduleBilan(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) $tenantId;
+        $userId = (int) $userId;
+        if (!$this->featureGate->allows($tenantId, 'training')) {
+            return Response::redirect(url('formations'));
+        }
+        $enrollmentId = (int) $request->query('enrollment_id', 0);
+        $moduleId = (int) $request->query('module_id', 0);
+        if ($enrollmentId < 1 || $moduleId < 1) {
+            Session::flash('error', 'Paramètres manquants pour afficher la synthèse du module.');
+
+            return Response::redirect(url('formations/mes-formations'));
+        }
+        $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
+        if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
+        }
+        $courseId = (int) $enrollment['course_id'];
+        if (!$this->trainingService->canAccessCourse($userId, $courseId, $tenantId)) {
+            Session::flash('error', 'Votre accès à cette formation n’est pas actif.');
+
+            return Response::redirect(url('formations/mes-formations'));
+        }
+        $bilan = $this->progressService->getModuleBilan($enrollmentId, $moduleId, $tenantId, $userId);
+        if ($bilan === null) {
+            return (new Response())->setStatusCode(404)->setBody('Module introuvable pour cette formation.');
+        }
+        $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId);
+        $certificate = null;
+        $cp = $this->progressService->computeCourseProgress($enrollmentId);
+        if (!empty($cp['completed']) && ($enrollment['status'] ?? '') === 'completed') {
+            $certificate = $this->certificateService->getByEnrollment($enrollmentId);
+            $courseRow = $this->trainingCourseRepository->findById($courseId, $tenantId);
+            if (!$certificate && $courseRow && (int) ($courseRow['is_certifying'] ?? 0) === 1) {
+                $certificate = $this->certificateService->issueCertificate($enrollmentId, $tenantId, $userId);
+            }
+        }
+        $waitSec = $this->trainingStaffAlertService->secondsBeforeNextModuleNotify($enrollmentId, $moduleId);
+        $canNotifyStaff = $waitSec === null;
+
+        return Response::view('training.module_bilan', [
+            'title' => 'Synthèse du module',
+            'course' => $course,
+            'enrollment' => $enrollment,
+            'bilan' => $bilan,
+            'certificate' => $certificate,
+            'canNotifyStaff' => $canNotifyStaff,
+            'notifyCooldownHours' => $waitSec !== null ? max(1, (int) ceil($waitSec / 3600)) : null,
+        ]);
+    }
+
+    public function moduleBilanNotifyStaff(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) $tenantId;
+        $userId = (int) $userId;
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée, réessayez.');
+
+            return Response::redirect(url('formations/mes-formations'));
+        }
+        $enrollmentId = (int) $request->input('enrollment_id', 0);
+        $moduleId = (int) $request->input('module_id', 0);
+        if ($enrollmentId < 1 || $moduleId < 1) {
+            Session::flash('error', 'Données invalides.');
+
+            return Response::redirect(url('formations/mes-formations'));
+        }
+        $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
+        if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
+            return Response::redirect(url('formations/mes-formations'));
+        }
+        $courseId = (int) $enrollment['course_id'];
+        $courseRow = $this->trainingCourseRepository->findById($courseId, $tenantId);
+        if (!$courseRow) {
+            Session::flash('error', 'Formation introuvable.');
+
+            return Response::redirect(url('formations/mes-formations'));
+        }
+        $bilan = $this->progressService->getModuleBilan($enrollmentId, $moduleId, $tenantId, $userId);
+        if ($bilan === null) {
+            Session::flash('error', 'Module introuvable.');
+
+            return Response::redirect(url('formations/mes-formations'));
+        }
+        if (!empty($bilan['module_validated'])) {
+            Session::flash('success', 'Ce module est déjà entièrement validé — aucune alerte nécessaire.');
+
+            return Response::redirect(url('formations/bilan-module?enrollment_id=' . $enrollmentId . '&module_id=' . $moduleId));
+        }
+        $moduleTitle = (string) ($bilan['module']['title'] ?? 'Module');
+        $sent = $this->trainingStaffAlertService->notifyModuleBlockedByLearner(
+            $tenantId,
+            $userId,
+            $courseRow,
+            $moduleId,
+            $moduleTitle,
+            $enrollmentId,
+            $bilan['gaps']
+        );
+        if ($sent) {
+            Session::flash('success', 'Votre demande a été transmise au personnel pédagogique. Vous recevrez une réponse par les canaux habituels de la communauté.');
+        } else {
+            Session::flash('error', 'Une alerte a déjà été envoyée récemment pour ce module. Réessayez plus tard si la situation n’a pas évolué.');
+        }
+
+        return Response::redirect(url('formations/bilan-module?enrollment_id=' . $enrollmentId . '&module_id=' . $moduleId));
     }
 
     /** Démarre une tentative quiz (formulaire web) et redirige vers la page de passage. */
