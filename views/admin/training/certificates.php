@@ -14,7 +14,7 @@ $statusFr = static function (string $s): string {
                 <header class="tc-panel p-6 md:p-8">
                     <p class="tc-kicker">Attestations</p>
                     <h1 class="tc-hero-title mb-3">Certificats délivrés</h1>
-                    <p class="text-slate-600 text-sm">Dernières émissions (affichage limité à 200). <a href="<?= htmlspecialchars(training_lms_admin_url('certificates/gabarit')) ?>" class="font-semibold text-emerald-700 hover:underline">Personnaliser le gabarit PDF</a></p>
+                    <p class="text-slate-600 text-sm">Dernières émissions (affichage limité à 200).<?php if (!empty($trainingCmdCanEditContent)): ?> <a href="<?= htmlspecialchars(training_lms_admin_url('certificates/gabarit')) ?>" class="font-semibold text-emerald-700 hover:underline">Personnaliser le gabarit PDF</a><?php endif; ?></p>
                 </header>
 
                 <?php if (empty($certificates)): ?>

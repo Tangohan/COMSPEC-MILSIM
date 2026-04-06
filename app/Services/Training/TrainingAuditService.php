@@ -67,6 +67,12 @@ class TrainingAuditService
         $this->log('course_published', 'training_course', $courseId, $tenantId, $userId);
     }
 
+    /** @param array<string, mixed> $snapshot Titre, slug, etc. pour trace après suppression. */
+    public function logCourseDeleted(int $tenantId, int $userId, int $courseId, array $snapshot): void
+    {
+        $this->log('course_deleted', 'training_course', $courseId, $tenantId, $userId, $snapshot, null);
+    }
+
     public function logEnrollmentAssigned(int $tenantId, ?int $userId, int $enrollmentId, array $newValue): void
     {
         $this->log('enrollment_assigned', 'training_enrollment', $enrollmentId, $tenantId, $userId, null, $newValue);

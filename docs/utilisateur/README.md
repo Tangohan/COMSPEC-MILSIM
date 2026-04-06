@@ -37,6 +37,7 @@ Les droits visibles à l’écran peuvent varier : un même écran peut être **
 14. [Back-office organisation](back-office-organisation.md) — administration de la communauté (pour profils autorisés).
 15. [Recherche et raccourcis](recherche-et-raccourcis.md) — recherche portail, efficacité.
 16. [FAQ](faq.md) — questions courantes.
+17. [Journal des révisions du guide intégré](JOURNAL-GUIDE.md) — jalons du guide affiché sur le portail (équipe & traçabilité).
 
 ## Convention de lecture
 

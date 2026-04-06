@@ -36,6 +36,11 @@ $visLabels = [
 
 $vis = $course ? ($visLabels[$course['visibility'] ?? ''] ?? (string) ($course['visibility'] ?? '')) : '';
 
+$gateStudio = \App\Core\Gate::getInstance();
+$studioCanEditVitrine = $gateStudio->allows('admin.access') || $gateStudio->allows('training.manage')
+    || $gateStudio->allows('training.create') || $gateStudio->allows('training.update')
+    || $gateStudio->allows('training.delete') || $gateStudio->allows('training.publish');
+
 ?>
 
 <aside class="training-studio-sidebar"
@@ -180,11 +185,13 @@ $vis = $course ? ($visLabels[$course['visibility'] ?? ''] ?? (string) ($course['
 
         </a>
 
+        <?php if ($studioCanEditVitrine): ?>
         <a href="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/showcase')) ?>">
 
             <span>Vitrine</span>
 
         </a>
+        <?php endif; ?>
 
         <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments') . '?course_id=' . (int) $cid) ?>">
 

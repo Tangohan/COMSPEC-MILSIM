@@ -294,12 +294,10 @@ class AdminTrainingStudioExchangeController
             || $gate->allows('training.delete') || $gate->allows('training.publish');
     }
 
+    /** Même périmètre que l’accès Studio : toute personne habilitée à ouvrir le Studio peut récupérer une sauvegarde JSON du parcours. */
     private function canExport(): bool
     {
-        $gate = Gate::getInstance();
-
-        return $gate->allows('admin.access') || $gate->allows('training.manage')
-            || $gate->allows('training.create') || $gate->allows('training.update');
+        return $this->hasTrainingAccess();
     }
 
     private function canImportNew(): bool

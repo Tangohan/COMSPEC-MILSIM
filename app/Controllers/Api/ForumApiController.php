@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Core\Container;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -422,15 +423,18 @@ class ForumApiController
             if ($forumVisibleRoleId < 1) {
                 $forumVisibleRoleId = null;
             } else {
-                $allowed = false;
-                foreach ($this->userRepository->listOrganizationRoleIdsForUser($userId) as $rid) {
-                    if ((int) $rid === $forumVisibleRoleId) {
-                        $allowed = true;
-                        break;
-                    }
-                }
+                $email = (string) Session::get('email', '');
+                $siteRoleRepo = Container::get(\App\Repositories\SiteRoleAssignmentRepository::class);
+                $allowed = function_exists('forum_user_may_set_visible_role_id')
+                    && forum_user_may_set_visible_role_id(
+                        $userId,
+                        $email,
+                        $forumVisibleRoleId,
+                        $this->userRepository,
+                        $siteRoleRepo
+                    );
                 if (!$allowed) {
-                    return Response::json(['success' => false, 'error' => 'Rôle non autorisé pour votre compte'], 400);
+                    return Response::json(['success' => false, 'error' => 'Ce rôle ne correspond pas à votre compte.'], 400);
                 }
             }
         }

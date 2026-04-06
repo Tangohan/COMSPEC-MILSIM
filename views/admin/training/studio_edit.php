@@ -9,6 +9,11 @@ $cid = (int) ($course['id'] ?? 0);
 $slug = (string) ($course['slug'] ?? '');
 $modules = $course['modules'] ?? [];
 
+$gateEdit = \App\Core\Gate::getInstance();
+$studioEditCanVitrine = $gateEdit->allows('admin.access') || $gateEdit->allows('training.manage')
+    || $gateEdit->allows('training.create') || $gateEdit->allows('training.update')
+    || $gateEdit->allows('training.delete') || $gateEdit->allows('training.publish');
+
 $visLabels = [
     'draft' => 'Brouillon',
     'private' => 'Privé',
@@ -173,7 +178,9 @@ $defaultCanvasJson = json_encode([
                 </p>
             </div>
             <div class="flex flex-wrap gap-2 shrink-0">
+                <?php if ($studioEditCanVitrine): ?>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/showcase')) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm">Vitrine</a>
+                <?php endif; ?>
                 <a href="<?= training_studio_url($cid . '/preview') ?>" class="px-3 py-2 border border-amber-200 bg-amber-50 text-amber-950 text-xs font-bold rounded-xl hover:bg-amber-100 shadow-sm">Aperçu caviardé</a>
                 <a href="<?= url('formations/' . rawurlencode($slug)) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm" target="_blank" rel="noopener">Aperçu public</a>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments') . '?course_id=' . (int) $cid) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm">Assignations</a>
@@ -263,7 +270,8 @@ $defaultCanvasJson = json_encode([
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1">Validité (jours)</label>
-                    <input type="number" name="validity_days" min="0" step="1" value="<?= $course['validity_days'] !== null && $course['validity_days'] !== '' ? (int) $course['validity_days'] : '' ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Vide = illimité">
+                    <?php $validityDaysField = $course['validity_days'] ?? null; ?>
+                    <input type="number" name="validity_days" min="0" step="1" value="<?= $validityDaysField !== null && $validityDaysField !== '' ? (int) $validityDaysField : '' ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Vide = illimité">
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-xs font-bold text-slate-600 mb-1">Accroche courte</label>

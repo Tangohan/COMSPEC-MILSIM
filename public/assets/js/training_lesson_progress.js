@@ -1,11 +1,18 @@
 /**
- * Validation automatique de leçon LMS (toutes les étapes parcourues, quiz réussi, média terminé, etc.).
+ * Validation automatique de leçon LMS : critères plus stricts pour éviter une validation
+ * sans parcours réel (scroll bref, slides enchaînées trop vite, saut en fin de vidéo, etc.).
  */
 (function () {
   'use strict';
 
   function cfg() {
     return window.__LMS_LESSON_PROGRESS__;
+  }
+
+  function strictNum(key, def) {
+    var c = cfg();
+    var v = c && c.strict && c.strict[key];
+    return typeof v === 'number' && !isNaN(v) && v > 0 ? v : def;
   }
 
   function updateProgressBars(percent) {
@@ -42,6 +49,31 @@
   }
 
   var posted = false;
+
+  function warnMediaSkip() {
+    if (typeof window.lmsTrainingToastShow === 'function') {
+      window.lmsTrainingToastShow(
+        'La leçon ne peut pas être validée : le média doit être lu sur la majeure partie de sa durée (évitez de sauter directement à la fin).',
+        'warning'
+      );
+    }
+  }
+
+  /** Part du temps réellement lue (TimeRanges HTML5), entre 0 et 1. */
+  function mediaPlayedRatio(el) {
+    if (!el || !el.duration || !isFinite(el.duration) || el.duration <= 0) {
+      return 0;
+    }
+    var played = el.played;
+    if (!played || typeof played.length !== 'number' || played.length < 1) {
+      return 0;
+    }
+    var t = 0;
+    for (var i = 0; i < played.length; i++) {
+      t += played.end(i) - played.start(i);
+    }
+    return t / el.duration;
+  }
 
   window.LmsLessonProgress = {
     signalComplete: function () {
@@ -111,28 +143,85 @@
 
     if (lt === 'richtext') {
       var sent = document.getElementById('lms-richtext-sentinel');
-      if (sent && typeof IntersectionObserver !== 'undefined') {
-        var io = new IntersectionObserver(
-          function (entries) {
-            entries.forEach(function (e) {
-              if (e.isIntersecting) {
-                io.disconnect();
-                window.LmsLessonProgress.signalComplete();
-              }
-            });
-          },
-          { root: null, threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
-        );
-        io.observe(sent);
+      var root = document.querySelector('[data-lms-richtext-root="1"]');
+      if (!sent || typeof IntersectionObserver === 'undefined') {
+        return;
       }
+      var SENT_MS = strictNum('richtextSentinelMs', 2800);
+      var SCROLL_R = strictNum('richtextScrollRatio', 0.86);
+      var sustainTimer = null;
+      var sentinelOk = false;
+
+      function docScrollRatio() {
+        var de = document.documentElement;
+        var body = document.body;
+        var sh = Math.max(de.scrollHeight, body.scrollHeight);
+        var vh = window.innerHeight || de.clientHeight;
+        var maxScroll = Math.max(1, sh - vh);
+        return Math.min(1, (window.scrollY || window.pageYOffset || 0) / maxScroll);
+      }
+
+      function scrollEnough() {
+        if (docScrollRatio() >= SCROLL_R) {
+          return true;
+        }
+        if (root && root.getBoundingClientRect) {
+          var r = root.getBoundingClientRect();
+          var vh = window.innerHeight || 0;
+          if (vh > 0 && r.bottom <= vh * 0.92) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function tryRichtextComplete() {
+        if (!sentinelOk || !scrollEnough()) {
+          return;
+        }
+        window.LmsLessonProgress.signalComplete();
+      }
+
+      function clearSustain() {
+        if (sustainTimer) {
+          clearTimeout(sustainTimer);
+          sustainTimer = null;
+        }
+      }
+
+      var io = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting && e.intersectionRatio >= 0.32) {
+              if (!sustainTimer) {
+                sustainTimer = setTimeout(function () {
+                  sentinelOk = true;
+                  tryRichtextComplete();
+                }, SENT_MS);
+              }
+            } else {
+              clearSustain();
+              sentinelOk = false;
+            }
+          });
+        },
+        { root: null, threshold: [0, 0.32, 0.55], rootMargin: '0px 0px -10% 0px' }
+      );
+      io.observe(sent);
+      window.addEventListener('scroll', tryRichtextComplete, { passive: true });
       return;
     }
 
     if (lt === 'video' || lt === 'video_integrated') {
       var v = document.getElementById('lms-lesson-video');
       if (v) {
+        var minR = strictNum('mediaPlayedMinRatio', 0.88);
         v.addEventListener('ended', function () {
-          window.LmsLessonProgress.signalComplete();
+          if (mediaPlayedRatio(v) >= minR) {
+            window.LmsLessonProgress.signalComplete();
+          } else {
+            warnMediaSkip();
+          }
         });
       }
       return;
@@ -141,8 +230,13 @@
     if (lt === 'audio') {
       var a = document.getElementById('lms-lesson-audio');
       if (a) {
+        var minRa = strictNum('mediaPlayedMinRatio', 0.88);
         a.addEventListener('ended', function () {
-          window.LmsLessonProgress.signalComplete();
+          if (mediaPlayedRatio(a) >= minRa) {
+            window.LmsLessonProgress.signalComplete();
+          } else {
+            warnMediaSkip();
+          }
         });
       }
     }

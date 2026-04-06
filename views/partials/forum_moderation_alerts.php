@@ -47,7 +47,7 @@ if ($pendingReportsCount < 1 && $contentQueue < 1) {
     <div class="flex flex-wrap gap-2 shrink-0">
       <a href="<?= htmlspecialchars($baseUrl) ?>/back-office/forum-moderation" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-[10px] font-black uppercase tracking-wider">Console modération</a>
       <?php if ($contentQueue > 0): ?>
-      <a href="<?= htmlspecialchars($baseUrl) ?>/back-office/content-moderation" class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-amber-300 bg-white text-amber-900 text-[10px] font-black uppercase tracking-wider hover:bg-amber-50">File contenu</a>
+      <a href="<?= htmlspecialchars($baseUrl) ?>/admin/content-moderation" class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-amber-300 bg-white text-amber-900 text-[10px] font-black uppercase tracking-wider hover:bg-amber-50">File contenu</a>
       <?php endif; ?>
     </div>
   </div>

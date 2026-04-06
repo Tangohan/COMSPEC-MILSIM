@@ -27,6 +27,8 @@ $canAccessLearning = $canAccessLearning ?? false;
 $lmsCommentsEnabled = $lmsCommentsEnabled ?? true;
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
+$lmsShowCompletionBanner = !empty($lmsShowCompletionBanner);
+$lmsCourseCertifying = (int) ($course['is_certifying'] ?? 0) === 1;
 $modules = $course['modules'] ?? [];
 $theme = function_exists('training_lms_parse_theme') ? training_lms_parse_theme((string) ($course['theme_json'] ?? '')) : [];
 $objectives = function_exists('training_lms_learning_objectives') ? training_lms_learning_objectives($course) : [];
@@ -63,6 +65,38 @@ $headHtml = ob_get_clean();
                 <?php endif; ?>
                 <?php if ($flashErr): ?>
                 <div class="lms-panel rounded-2xl p-4 bg-rose-50 border border-rose-200 text-rose-950 text-sm font-medium"><?= htmlspecialchars((string) $flashErr) ?></div>
+                <?php endif; ?>
+                <?php if ($lmsShowCompletionBanner): ?>
+                <section class="lms-panel relative overflow-hidden rounded-[2rem] border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-teal-50/90 p-6 md:p-8 shadow-sm" role="status" aria-live="polite">
+                    <div class="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-400/15 blur-2xl" aria-hidden="true"></div>
+                    <div class="pointer-events-none absolute -bottom-12 -left-8 h-40 w-40 rounded-full bg-teal-400/10 blur-2xl" aria-hidden="true"></div>
+                    <div class="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                        <div class="flex gap-4 min-w-0">
+                            <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md shadow-emerald-600/25" aria-hidden="true">
+                                <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700/90">Parcours réussi</p>
+                                <h2 class="mt-1 text-xl md:text-2xl font-black tracking-tight text-slate-900">Bravo — tout est validé</h2>
+                                <?php if ($lmsCourseCertifying): ?>
+                                <p class="mt-2 text-sm text-slate-600 max-w-xl">Vous avez terminé l’ensemble du parcours. Vous pouvez consulter votre attestation<?php if ($certificate): ?> et enregistrer le document officiel<?php endif; ?> depuis la page dédiée.</p>
+                                <?php else: ?>
+                                <p class="mt-2 text-sm text-slate-600 max-w-xl">Vous avez terminé l’ensemble du parcours. Merci pour votre engagement.</p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row flex-wrap gap-3 shrink-0 md:justify-end">
+                            <?php if ($lmsCourseCertifying && $certificate): ?>
+                            <a href="<?= url('formations/certificate/' . (int) $certificate['id']) ?>" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
+                                Voir l’attestation et le certificat
+                            </a>
+                            <?php elseif ($lmsCourseCertifying): ?>
+                            <p class="text-sm font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 max-w-md">Si l’attestation n’apparaît pas tout de suite, actualisez la page dans un instant.</p>
+                            <?php endif; ?>
+                            <a href="<?= url('formations/mes-formations') ?>" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white/80 px-6 py-3.5 text-xs font-black uppercase tracking-wider text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2">Mes formations</a>
+                        </div>
+                    </div>
+                </section>
                 <?php endif; ?>
                 <?php
                 $bp = trim((string) ($course['banner_path'] ?? ''));

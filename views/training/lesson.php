@@ -327,7 +327,7 @@ $headHtml = ob_get_clean();
                         <div class="lms-lesson-meta-cell" id="parcours-sequence">
                             <h2 class="lms-lesson-meta-cell__title">Séquence</h2>
                             <p class="lms-lesson-meta-sequence-copy"><?= $autoLessonComplete
-                                ? 'Parcourez le contenu ci-dessous : la leçon se valide lorsque le parcours est terminé (ou le quiz réussi, selon le type de contenu).'
+                                ? 'Chaque étape doit rester affichée un court instant, le bas du texte être visible assez longtemps en ayant fait défiler la page, ou les médias être lus sur presque toute leur durée — sans cela la leçon ne se valide pas automatiquement. Les quiz se valident sur une note suffisante.'
                                 : 'Lisez le contenu, puis indiquez que la leçon est terminée lorsque c’est pertinent pour vous.' ?></p>
                         </div>
                     </div>
@@ -352,7 +352,7 @@ $headHtml = ob_get_clean();
                 <?php $deck = $showDeck;
                 require base_path('views/training/partials/lesson_slideshow_player.php'); ?>
                 <?php elseif ($lessonType === 'richtext' && !empty($lesson['content'])): ?>
-                <div class="prose prose-slate max-w-none">
+                <div class="prose prose-slate max-w-none" <?= $autoLessonComplete ? 'data-lms-richtext-root="1"' : '' ?>>
                     <?= $lesson['content'] ?>
                     <?php if ($autoLessonComplete): ?>
                     <div id="lms-richtext-sentinel" class="h-3 w-full mt-10 clear-both" aria-hidden="true"></div>
@@ -448,6 +448,13 @@ window.__LMS_LESSON_PROGRESS__ = <?= json_encode([
     'alreadyCompleted' => $lessonAlreadyCompleted,
     'auto' => $autoLessonComplete,
     'lessonType' => $lessonType,
+    'strict' => [
+        'slideDwellMs' => 2600,
+        'richtextSentinelMs' => 2800,
+        'richtextScrollRatio' => 0.86,
+        'mediaPlayedMinRatio' => 0.88,
+        'modalMinOpenMs' => 2600,
+    ],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 </script>
 <script src="<?= htmlspecialchars($base) ?>/assets/js/lms_training_toast.js"></script>

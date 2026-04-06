@@ -36,6 +36,7 @@ class AdminRecruitmentsController
             'enlistments' => $enlistments,
             'statusFilter' => $statusFilter,
             'enlistmentCounts' => $enlistmentCounts,
+            'showPortalFooter' => false,
         ]);
     }
 
@@ -62,6 +63,7 @@ class AdminRecruitmentsController
             'enlistment' => $row,
             'enlistmentCannedMessages' => $canned,
             'membershipRepairHint' => $this->enlistmentAcceptanceProvisioningService->membershipRepairHint((int) $tenantId, $row),
+            'showPortalFooter' => false,
         ]);
     }
 
@@ -115,6 +117,7 @@ class AdminRecruitmentsController
             'title' => 'Messages préfaits — recrutement',
             'cannedMessages' => $rows,
             'cannedMessagesTableMissing' => !$this->cannedMessageRepository->tableExists(),
+            'showPortalFooter' => false,
         ]);
     }
 

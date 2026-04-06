@@ -5,6 +5,10 @@ $active = $trainingAdminNav ?? 'dashboard';
 $is = fn (string $k): string => $active === $k ? ' is-active' : '';
 $coursesNavActive = ($active === 'courses' || $active === 'showcase') ? ' is-active' : '';
 $certNavActive = ($active === 'certificates' || $active === 'certificates_gabarit') ? ' is-active' : '';
+$gateNav = \App\Core\Gate::getInstance();
+$trainingCmdCanEditContent = $gateNav->allows('admin.access') || $gateNav->allows('training.manage')
+    || $gateNav->allows('training.create') || $gateNav->allows('training.update')
+    || $gateNav->allows('training.delete') || $gateNav->allows('training.publish');
 ?>
 <link rel="stylesheet" href="<?= htmlspecialchars(url('assets/css/training_admin_command.css')) ?>">
 <div class="training-cmd relative overflow-hidden rounded-2xl border border-slate-200/90 shadow-xl shadow-slate-900/[0.06] mb-10">
@@ -41,10 +45,12 @@ $certNavActive = ($active === 'certificates' || $active === 'certificates_gabari
                     <span>Certificats</span>
                     <span class="tc-nav-meta">06</span>
                 </a>
+                <?php if ($trainingCmdCanEditContent): ?>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('certificates/gabarit')) ?>" class="<?= trim($is('certificates_gabarit')) ?>">
                     <span>Gabarit PDF</span>
                     <span class="tc-nav-meta">06b</span>
                 </a>
+                <?php endif; ?>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('audit')) ?>" class="<?= trim($is('audit')) ?>">
                     <span>Audit</span>
                     <span class="tc-nav-meta">07</span>

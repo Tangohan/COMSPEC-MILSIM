@@ -42,6 +42,13 @@
     if (bar) bar.style.width = pct + '%';
   }
 
+  /** Temps minimum sur chaque étape (configurable via window.__LMS_LESSON_PROGRESS__.strict.slideDwellMs). */
+  function getSlideDwellMs() {
+    var c = window.__LMS_LESSON_PROGRESS__;
+    var v = c && c.strict && c.strict.slideDwellMs;
+    return typeof v === 'number' && v > 0 ? v : 2600;
+  }
+
   function validateFillBlanksInSlideEl(slideEl) {
     if (!slideEl) return true;
     var root = slideEl.closest('[data-lms-canvas-player]');
@@ -106,13 +113,48 @@
     wireModals();
 
     if (swiperEl && typeof window.Swiper === 'function' && total > 0) {
-      var visited = new Set();
-      function noteVisit(swIn) {
-        visited.add(swIn.activeIndex);
-        updateSlideProgress(root, swIn.activeIndex, total);
-        if (visited.size >= total && window.LmsLessonProgress && typeof window.LmsLessonProgress.signalComplete === 'function') {
+      var MIN_DWELL = getSlideDwellMs();
+      var slideEnterTime = Object.create(null);
+      var slideConfirmed = new Set();
+      var lastSlideTimer = null;
+
+      function confirmIfDwelt(index) {
+        if (typeof index !== 'number' || index < 0 || index >= total) return;
+        var t0 = slideEnterTime[index];
+        if (t0 != null && Date.now() - t0 >= MIN_DWELL) {
+          slideConfirmed.add(index);
+        }
+      }
+
+      function scheduleLastDwell(activeIndex) {
+        clearTimeout(lastSlideTimer);
+        if (activeIndex !== total - 1) return;
+        lastSlideTimer = setTimeout(function () {
+          confirmIfDwelt(total - 1);
+          trySignalLessonComplete();
+        }, MIN_DWELL + 120);
+      }
+
+      function trySignalLessonComplete() {
+        if (slideConfirmed.size < total) return;
+        for (var k = 0; k < total; k++) {
+          if (!slideConfirmed.has(k)) return;
+        }
+        if (window.LmsLessonProgress && typeof window.LmsLessonProgress.signalComplete === 'function') {
           window.LmsLessonProgress.signalComplete();
         }
+      }
+
+      function onSwiperSlideChange(swIn) {
+        var i = swIn.activeIndex;
+        var prev = swIn.previousIndex;
+        if (typeof prev === 'number' && prev >= 0 && prev !== i) {
+          confirmIfDwelt(prev);
+        }
+        slideEnterTime[i] = Date.now();
+        updateSlideProgress(root, i, total);
+        scheduleLastDwell(i);
+        trySignalLessonComplete();
       }
 
       var sw = new window.Swiper(swiperEl, {
@@ -126,13 +168,18 @@
         a11y: { enabled: true },
         on: {
           init: function (swIn) {
-            noteVisit(swIn);
+            slideEnterTime[swIn.activeIndex] = Date.now();
+            updateSlideProgress(root, swIn.activeIndex, total);
+            scheduleLastDwell(swIn.activeIndex);
+            trySignalLessonComplete();
+            if (prevBtn) prevBtn.disabled = swIn.activeIndex === 0;
+            if (nextBtn) nextBtn.disabled = total <= 1;
           },
           slideChange: function (swIn) {
             var i = swIn.activeIndex;
             if (prevBtn) prevBtn.disabled = i === 0;
             if (nextBtn) nextBtn.disabled = i >= total - 1;
-            noteVisit(swIn);
+            onSwiperSlideChange(swIn);
           },
         },
       });
@@ -168,32 +215,58 @@
         }
         if (e.key === 'ArrowLeft') sw.slidePrev();
       });
-      if (prevBtn) prevBtn.disabled = true;
-      if (nextBtn) nextBtn.disabled = total <= 1;
-      updateSlideProgress(root, 0, total);
       return;
     }
 
     /* Fallback sans Swiper */
-    var idx = 0;
-    var visitedFb = new Set();
+    var idx = -1;
+    var MIN_DWELL_FB = getSlideDwellMs();
+    var slideEnterTimeFb = Object.create(null);
+    var slideConfirmedFb = new Set();
+    var lastTimerFb = null;
 
-    function checkAllVisited() {
-      if (visitedFb.size >= total && window.LmsLessonProgress && typeof window.LmsLessonProgress.signalComplete === 'function') {
+    function confirmIfDweltFb(index) {
+      if (typeof index !== 'number' || index < 0 || index >= total) return;
+      var t0 = slideEnterTimeFb[index];
+      if (t0 != null && Date.now() - t0 >= MIN_DWELL_FB) {
+        slideConfirmedFb.add(index);
+      }
+    }
+
+    function scheduleLastFb(activeIndex) {
+      clearTimeout(lastTimerFb);
+      if (activeIndex !== total - 1) return;
+      lastTimerFb = setTimeout(function () {
+        confirmIfDweltFb(total - 1);
+        tryCompleteFb();
+      }, MIN_DWELL_FB + 120);
+    }
+
+    function tryCompleteFb() {
+      if (slideConfirmedFb.size < total) return;
+      for (var k = 0; k < total; k++) {
+        if (!slideConfirmedFb.has(k)) return;
+      }
+      if (window.LmsLessonProgress && typeof window.LmsLessonProgress.signalComplete === 'function') {
         window.LmsLessonProgress.signalComplete();
       }
     }
 
     function show(i) {
-      idx = Math.max(0, Math.min(i, total - 1));
-      visitedFb.add(idx);
-      checkAllVisited();
+      var newI = Math.max(0, Math.min(i, total - 1));
+      if (newI !== idx) {
+        if (idx >= 0) confirmIfDweltFb(idx);
+        idx = newI;
+        slideEnterTimeFb[idx] = Date.now();
+        scheduleLastFb(idx);
+      }
       slides.forEach(function (el, j) {
         el.classList.toggle('hidden', j !== idx);
       });
       if (prevBtn) prevBtn.disabled = idx === 0;
       if (nextBtn) nextBtn.disabled = idx >= total - 1;
       updateSlideProgress(root, idx, total);
+      tryCompleteFb();
     }
 
     if (prevBtn)

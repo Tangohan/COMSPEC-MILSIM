@@ -57,6 +57,14 @@ class Request
             }
         }
 
+        // Filet : APP_BASE_PATH incohérent avec l’URI (ex. valeur erronée) laisse /public/… alors que les routes sont sans ce segment → 404.
+        while ($path !== '/' && ($path === '/public' || str_starts_with($path, '/public/'))) {
+            $path = $path === '/public' ? '/' : ('/' . ltrim(substr($path, strlen('/public')), '/'));
+            if ($path !== '/') {
+                $path = rtrim($path, '/') ?: '/';
+            }
+        }
+
         return $path;
     }
 

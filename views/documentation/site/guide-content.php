@@ -273,6 +273,19 @@ declare(strict_types=1);
     <p>
         Les formations sont souvent étiquetées par <strong>niveau</strong> (initiation à expert) et catégorie pour faciliter le filtrage du catalogue.
     </p>
+    <h3>Traçabilité côté administration</h3>
+    <p>
+        Les personnes chargées du <strong>pôle formation</strong> ou de la <strong>conformité</strong> peuvent disposer d’un <strong>journal d’audit</strong> listant les actions sensibles
+        sur les parcours : création ou modification importante, changement de visibilité, publication, assignation à des membres, etc.
+    </p>
+    <p>
+        Chaque ligne indique <strong>quand</strong> l’action a eu lieu, <strong>qui</strong> l’a effectuée, une <strong>formulation claire</strong> du type d’action, l’<strong>objet</strong> concerné
+        (formation, module ou leçon selon le cas), le <strong>référent pédagogique</strong> associé au parcours lorsque c’est pertinent, et un <strong>résumé</strong> du détail utile au contrôle interne.
+        Si vous ne voyez pas cet écran, votre rôle ne couvre pas la supervision pédagogique ou l’audit.
+    </p>
+    <div class="site-docs__callout site-docs__callout--tip">
+        <strong>À retenir.</strong> Ce journal sert à l’<strong>explicabilité</strong> en interne (qui a publié quoi, quand) ; il ne remplace pas les rapports pédagogiques ou les exports statistiques s’ils existent ailleurs dans l’outil.
+    </div>
 </section>
 
 <section id="documents" class="site-docs__section">
@@ -341,12 +354,33 @@ declare(strict_types=1);
 
 <section id="recrutement-et-enrolement" class="site-docs__section">
     <h2>Recrutement &amp; enrôlement</h2>
+    <h3>Côté candidat</h3>
     <p>
-        Le parcours d’<strong>enrôlement</strong> permet aux candidats de soumettre un dossier, de répondre à un formulaire et de suivre l’état de leur demande.
-        Les équipes de recrutement voient les dossiers en attente et peuvent envoyer des messages types ou des demandes de complément.
+        Le parcours d’<strong>enrôlement</strong> permet de soumettre un dossier via le formulaire prévu par votre communauté, puis de suivre l’état de la demande depuis votre espace lorsque c’est activé.
+        Après envoi, un message de confirmation vous indique que la candidature est bien enregistrée.
     </p>
     <p>
-        Si vous candidatez, soyez précis dans vos réponses : les validateurs s’appuient sur ces informations pour vous orienter vers la bonne unité.
+        Soyez précis dans vos réponses : les validateurs s’appuient sur ces informations pour vous orienter vers la bonne unité.
+    </p>
+    <h3>Côté staff : la liste des dossiers</h3>
+    <p>
+        Les membres habilités ouvrent la <strong>liste des dossiers de candidature</strong> depuis le back-office : chaque ligne correspond à une demande reçue.
+        Les filtres ou tris éventuels permettent de prioriser les dossiers à traiter.
+    </p>
+    <h3>Ouvrir un dossier</h3>
+    <p>
+        En ouvrant un dossier, vous arrivez sur une <strong>fiche structurée</strong> : un fil d’orientation en tête de page vous indique que vous consultez un dossier individuel et permet de <strong>revenir à la liste</strong>.
+        Un bandeau visuel rappelle le <strong>statut</strong> affiché pour ce dossier, par exemple : <em>à traiter</em>, <em>acceptée</em>, <em>refusée</em> ou <em>non admis</em> — les libellés à l’écran font foi.
+    </p>
+    <p>
+        Le contenu est regroupé en <strong>rubriques</strong> (identité et réception, éléments du formulaire, pièces ou champs spécifiques selon le modèle utilisé).
+        Lorsque le candidat s’est identifié avec un <strong>compte portail</strong>, un lien permet d’ouvrir directement la <strong>fiche membre</strong> associée pour croiser les informations sans quitter le flux de recrutement.
+        Pour une candidature déposée sans compte au moment du dépôt, l’écran l’indique clairement.
+    </p>
+    <h3>Instruction et échanges</h3>
+    <p>
+        Lorsqu’une décision ou un commentaire a été enregistré, la zone <strong>instruction du dossier</strong> peut afficher la date, une note laissée par le traitant et l’historique utile à la relecture.
+        Des <strong>messages prédéfinis</strong> peuvent être proposés pour accélérer les réponses standard aux candidats, selon la configuration de votre unité.
     </p>
 </section>
 

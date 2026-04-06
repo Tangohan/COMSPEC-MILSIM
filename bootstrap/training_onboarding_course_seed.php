@@ -5,8 +5,10 @@ declare(strict_types=1);
 /**
  * Formation LMS obligatoire « guide du portail » : publiée, certifiante, ouverte à tous (policy vide).
  * Idempotent par tenant + slug `parcours-portail`.
- * À chaque exécution des migrations : durées, contenu des leçons « canvas », fiches « À retenir » et texte d’introduction
- * du bilan de mi-parcours sont resynchronisés. Les quiz et leurs questions (tentatives) ne sont pas réécrits.
+ * À chaque exécution des migrations : durées, contenu des leçons « canvas », fiches « À retenir », texte d’introduction
+ * du bilan de mi-parcours, descriptions et objectifs des modules sont resynchronisés. Les quiz et leurs questions
+ * (tentatives) ne sont pas réécrits pour les tenants déjà provisionnés — seule la création initiale d’une nouvelle
+ * communauté insère les questionnaires enrichis.
  * Une extension idempotente peut insérer le module « Bilan à mi-parcours » et les leçons de synthèse sur les anciens parcours à 5 modules.
  *
  * @param PDO $pdo Connexion SQL (comme run-migrations.php)
@@ -101,37 +103,65 @@ function training_onboarding_uuid_v4(): string
 function training_onboarding_course_description(): string
 {
     return <<<'TXT'
-Ce parcours d’accueil est la base commune pour travailler correctement dans le portail de votre communauté. Il ne remplace ni le règlement intérieur ni les consignes d’emploi de votre unité : il explique où vit l’information sur le site, comment la retrouver sans perdre de temps, et quels gestes minimaux protègent votre compte et celle des autres.
+Ce parcours d’accueil fixe le socle commun pour utiliser le portail de votre communauté de manière correcte et prévisible. Il ne remplace ni le règlement intérieur ni les consignes d’emploi de votre unité : il précise où vit l’information sur le site, comment la retrouver sans perdre de temps, et quels gestes minimaux protègent votre compte et celui des autres.
 
-Vous y verrez concrètement le rôle du tableau de bord après connexion, la logique du menu (y compris l’accès aux modules d’opérations lorsqu’ils sont proposés), la mise à jour du profil et des préférences, la différence entre documents officiels et échanges sur le forum, le fonctionnement du catalogue des formations avec obligation et attestation, ainsi que les usages attendus sur le forum et pour les événements.
+La progression suit une montée en puissance : finalité du portail, repérage après connexion, actions sur le compte, lieux où l’information stable coexiste avec la coordination vivante, logique des formations et de la progression enregistrée, règles de vie collective (forum, événements), puis validation par questionnaires. Vous y verrez des situations types, des erreurs fréquentes et des procédures pas à pas lorsque c’est utile.
 
-Le contenu est volontairement dense : chaque diapositive se lit comme un court article. Prenez le temps de parcourir les exemples et les encadrés « à retenir ». Un questionnaire à mi-parcours vérifie les premiers acquis ; un quiz final contrôle l’ensemble des réflexes utiles — en cas d’échec, vous pouvez reprendre les modules concernés puis retenter.
+Le ton est institutionnel et concret. Prenez le temps de lire les encadrés de vigilance et les synthèses de fin de module. Un bilan interrogé à mi-parcours ancre les acquis des trois premiers blocs ; un questionnaire final porte sur l’ensemble du parcours. En cas d’échec, les explications affichées servent de plan de révision avant une nouvelle tentative.
 TXT;
 }
 
 function training_onboarding_course_objectives(): string
 {
-    return "Situer le portail dans la vie de la communauté et comprendre ce que chaque grande rubrique apporte\n"
-        . "Naviguer efficacement (accueil, tableau de bord, menu Opérations, recherche, multi-organisations)\n"
-        . "Tenir son compte à jour : profil, préférences, sécurité, adresse de contact\n"
-        . "Utiliser le personnel, l’organigramme, les documents et le catalogue des formations selon les droits\n"
-        . "Distinguer documents officiels et fils de discussion, participer correctement au forum et aux événements\n"
-        . "Comprendre obligation, certificat, quiz, tentatives et reprise de parcours\n"
-        . "Valider les acquis à mi-parcours avant d’aborder la vie collective et l’évaluation finale";
+    return "Comprendre la finalité du portail : information stabilisée, coordination, suivi pédagogique — et ce qu’il ne remplace pas\n"
+        . "Se repérer après connexion : tableau de bord, menu, zone Opérations selon les droits, multi-communautés\n"
+        . "Agir sur son compte : profil, préférences, sécurité, contact à jour\n"
+        . "Savoir où vit l’information : dossier personnel, organigramme, documents de référence, catalogue des formations\n"
+        . "Comprendre la logique LMS : progression réelle, obligation, attestation, reprise de parcours\n"
+        . "Adopter les règles de vie collective : forum, annonces, événements, signalements, présence\n"
+        . "Réussir le bilan à mi-parcours puis le questionnaire final, et distinguer validation de parcours et habilitation métier";
 }
 
 function training_onboarding_course_short_description(): string
 {
-    return 'Accueil opérationnel du portail : navigation réelle, compte, contenus, communauté, formations et validation.';
+    return 'Parcours structuré : finalité du portail, navigation et compte, contenus et formations, communauté, validation.';
+}
+
+/**
+ * @param list<string> $lines
+ */
+function training_onboarding_module_objectives_json(array $lines): string
+{
+    $clean = array_values(array_filter(array_map(static fn (string $x): string => trim($x), $lines), static fn (string $x): bool => $x !== ''));
+
+    return json_encode($clean, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
 }
 
 function training_onboarding_mid_module_intro_html(): string
 {
     return <<<'HTML'
 <div class="prose prose-slate max-w-none">
-<p>Ce court bilan porte sur les <strong>trois premiers modules</strong> : vision d’ensemble du portail, navigation quotidienne, personnel, documents et catalogue des formations. Il n’est pas une punition : il vous aide à repérer ce qu’il vaut mieux relire avant la suite.</p>
-<p>Lisez chaque énoncé jusqu’au bout : plusieurs réponses peuvent sembler crédibles, une seule est attendue. Les propositions sont mélangées à chaque affichage.</p>
-<p>Lorsque vous aurez terminé cette étape, vous poursuivrez avec le module sur le <strong>forum</strong>, les <strong>événements</strong>, puis la <strong>validation finale</strong>.</p>
+<h3 class="text-base font-bold text-slate-900">Portée du bilan</h3>
+<p>Ce bilan porte sur les <strong>trois premiers modules</strong> : finalité du portail et cadre, navigation et compte, organisation des contenus (personnel, documents, formations). Il permet de vérifier que vous maîtrisez le vocabulaire et les réflexes avant le module <strong>Communauté</strong> et la <strong>validation finale</strong>.</p>
+<h3 class="text-base font-bold text-slate-900 mt-4">Fiche de révision — rappels utiles</h3>
+<ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed">
+<li><strong>Information stabilisée</strong> : documents (ou équivalent) — version de référence contrôlée par le staff.</li>
+<li><strong>Coordination vivante</strong> : forum, annonces, fils — échanges, pas stockage de la version finale d’un texte officiel.</li>
+<li><strong>Tableau de bord</strong> : synthèse après connexion ; ne remplace ni ordre écrit ni carte tactique.</li>
+<li><strong>Compte</strong> : profil, préférences, sécurité — à jour pour éviter erreurs d’affectation et perte d’accès.</li>
+<li><strong>Multi-communautés</strong> : vérifier le contexte actif avant toute action engageante.</li>
+<li><strong>Progression LMS</strong> : une formation n’est achevée que lorsque toutes les étapes requises le sont ; l’affichage reflète le parcours réel.</li>
+<li><strong>Attestation</strong> : atteste la validation du parcours sur le portail selon les règles affichées ; elle ne remplace pas une habilitation métier décidée par l’unité.</li>
+</ul>
+<h3 class="text-base font-bold text-slate-900 mt-4">Erreurs fréquentes à éviter</h3>
+<ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed">
+<li>Publier ou chercher la « version finale » d’une note uniquement dans un fil de discussion ancien.</li>
+<li>Conclure à une panne du site sans avoir vérifié la communauté active ou les droits de son rôle.</li>
+<li>Ignorer le tableau de bord et rater des rappels de formation ou d’événement.</li>
+<li>Laisser une session ouverte sur un poste partagé après utilisation du portail.</li>
+</ul>
+<h3 class="text-base font-bold text-slate-900 mt-4">Méthode pour le questionnaire</h3>
+<p>Lisez chaque question en entier. Plusieurs réponses peuvent sembler raisonnables ; une seule correspond à la conduite ou au réflexe attendu dans ce parcours. Les propositions sont mélangées à chaque affichage. En cas de doute, revoyez les synthèses « À retenir » des trois premiers modules.</p>
 </div>
 HTML;
 }
@@ -142,61 +172,97 @@ function training_onboarding_portal_module_specs(): array
     return [
         [
             'title' => 'Vue d’ensemble',
-            'subtitle' => 'Pourquoi ce parcours',
-            'minutes' => 22,
+            'subtitle' => 'Finalité du portail et cadre',
+            'minutes' => 26,
+            'module_description' => 'Ce module pose pourquoi le portail existe, ce qu’il centralise (information stable, coordination, formations) et ce qu’il ne remplace pas. Il introduit la méthode de lecture du parcours, les risques d’une mauvaise utilisation et les réflexes de sécurité du compte.',
+            'module_learning_objectives' => [
+                'Expliquer en une phrase la différence entre information stabilisée, échanges vivants et suivi pédagogique sur le site.',
+                'Identifier ce que le portail n’est pas (substitut à la chaîne de commandement, stockage anarchique sur le forum).',
+                'Citer au moins trois erreurs d’usage fréquentes et leur correction.',
+            ],
             'deck' => training_onboarding_deck_overview(),
             'lesson_summary' => 'Rôle du portail, déroulé pédagogique, méthode de travail, sécurité du compte, liens vers l’aide.',
             'recap_html' => <<<'HTML'
-<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">À retenir</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li>Le portail regroupe documents stabilisés, échanges, formations et votre dossier — ce ne sont pas des usages interchangeables.</li><li>Le tableau de bord et le menu reflètent ce que votre rôle permet de voir.</li><li>Mot de passe, déconnexion sur poste partagé et adresse de contact à jour sont des gestes collectifs, pas seulement personnels.</li></ul></div>
+<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">Synthèse du module</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li><strong>Règle</strong> : documents, forum, formations et dossier personnel ont des rôles distincts.</li><li><strong>Bonne pratique</strong> : lire le tableau de bord en premier après connexion.</li><li><strong>Point de vigilance</strong> : une rubrique absente peut venir des droits ou de la communauté active, pas d’une « panne » systématique.</li><li><strong>Erreur fréquente</strong> : confondre conversation sur le forum et version de référence d’un texte.</li></ul></div>
 HTML,
         ],
         [
             'title' => 'Navigation et compte',
-            'subtitle' => 'Menus, tableau de bord, profil',
-            'minutes' => 24,
+            'subtitle' => 'Se repérer et agir sur son compte',
+            'minutes' => 28,
+            'module_description' => 'Menus, tableau de bord, zone Opérations, profil, préférences, sécurité et multi-communautés : ce module décrit ce que vous faites réellement sur le portail au quotidien et comment éviter les erreurs de contexte.',
+            'module_learning_objectives' => [
+                'Décrire le rôle du tableau de bord par rapport au menu principal.',
+                'Enchaîner les étapes pour mettre à jour le profil et les préférences dans la rubrique compte.',
+                'Expliquer pourquoi le poste partagé impose une déconnexion explicite.',
+            ],
             'deck' => training_onboarding_deck_navigation(),
             'lesson_summary' => 'Menu principal, zone Opérations, tableau de bord, compte, préférences, recherche, bonnes pratiques.',
             'recap_html' => <<<'HTML'
-<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">À retenir</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li>Commencez souvent par le tableau de bord : c’est la synthèse utile pour votre session.</li><li>Profil, préférences et sécurité se gèrent dans la rubrique compte.</li><li>Avec plusieurs communautés, vérifiez toujours le contexte actif avant une action engageante.</li></ul></div>
+<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">Synthèse du module</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li><strong>Règle</strong> : le menu n’affiche que ce que votre rôle autorise.</li><li><strong>Bonne pratique</strong> : vérifier la communauté active avant une action engageante.</li><li><strong>Procédure</strong> : compte → profil / préférences / sécurité selon le besoin.</li><li><strong>Vigilance</strong> : contact (e-mail) valide pour les vérifications et la récupération d’accès.</li></ul></div>
 HTML,
         ],
         [
             'title' => 'Organisation et contenus',
-            'subtitle' => 'Personnel, documents, formations',
-            'minutes' => 26,
+            'subtitle' => 'Où vit l’information et le LMS',
+            'minutes' => 32,
+            'module_description' => 'Personnel, organigramme, documents, catalogue des formations, progression et attestations : le cœur opérationnel du portail. Le module distingue référence documentaire et discussion, et clarifie ce qu’une attestation prouve ou ne prouve pas.',
+            'module_learning_objectives' => [
+                'Distinguer dossier personnel, organigramme et documents officiels.',
+                'Traiter correctement un document sensible ou une version obsolète.',
+                'Expliquer pourquoi une formation assignée mais incomplète reste « non validée ».',
+            ],
             'deck' => training_onboarding_deck_org(),
             'lesson_summary' => 'Fiche personnelle, organigramme, documents officiels, catalogue LMS, progression et erreurs fréquentes.',
             'recap_html' => <<<'HTML'
-<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">À retenir</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li>Documents = version de référence ; forum = conversation : ne les inversez pas.</li><li>La progression LMS reflète le parcours réellement achevé, pas l’intention.</li><li>L’organigramme oriente ; il ne remplace pas une consigne écrite ou un ordre de mission.</li></ul></div>
+<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">Synthèse du module</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li><strong>Règle</strong> : la version de référence vit dans les documents, pas dans un fil ancien du forum.</li><li><strong>Bonne pratique</strong> : signaler une erreur au responsable plutôt que rediffuser hors canal.</li><li><strong>Point clé</strong> : l’attestation atteste du parcours sur le portail, pas une habilitation métier tacite.</li><li><strong>Visibilité</strong> : l’absence d’un contenu peut être normale selon le rôle.</li></ul></div>
 HTML,
         ],
         [
             'title' => 'Bilan à mi-parcours',
-            'subtitle' => 'Vérifier ses acquis',
-            'minutes' => 12,
+            'subtitle' => 'Ancrer les acquis (modules 1 à 3)',
+            'minutes' => 18,
+            'module_description' => 'Révision structurée des trois premiers blocs puis questionnaire à choix multiples. L’objectif est de consolider le vocabulaire et les réflexes avant la vie collective et la validation finale.',
+            'module_learning_objectives' => [
+                'Relier les notions de tableau de bord, compte, documents et formations.',
+                'Repérer les pièges classiques (forum vs documents, multi-communautés).',
+                'Aborder le questionnaire avec une méthode de lecture complète des énoncés.',
+            ],
             'deck' => null,
-            'lesson_summary' => 'Questionnaire court sur les trois premiers blocs avant la suite du parcours.',
+            'lesson_summary' => 'Fiche de révision puis questionnaire sur les trois premiers blocs avant la suite du parcours.',
             'intro_html' => training_onboarding_mid_module_intro_html(),
             'mid_quiz' => true,
         ],
         [
             'title' => 'Communauté',
-            'subtitle' => 'Forum et événements',
-            'minutes' => 20,
+            'subtitle' => 'Forum, annonces, événements',
+            'minutes' => 26,
+            'module_description' => 'Règles de participation au forum, distinction annonce officielle et conversation, inscriptions aux événements, présence et signalements. Le module vise à réduire le bruit informationnel et à sécuriser les canaux sensibles.',
+            'module_learning_objectives' => [
+                'Choisir entre message public et canal dédié selon le type de sujet.',
+                'Rédiger un titre de sujet utile et éviter les doublons.',
+                'Adopter la conduite attendue en cas d’empêchement à un événement inscrit.',
+            ],
             'deck' => training_onboarding_deck_community(),
             'lesson_summary' => 'Forum, annonces, événements, pointage, signalements, résumé des bons réflexes.',
             'recap_html' => <<<'HTML'
-<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">À retenir</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li>Recherchez ou parcourez la catégorie avant d’ouvrir un doublon sur le forum.</li><li>Inscription à un événement = engagement logistique : prévenez en cas d’empêchement.</li><li>Les annonces officielles et les canaux de signalement ont une fonction : utilisez-les plutôt que le bruit public.</li></ul></div>
+<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">Synthèse du module</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li><strong>Règle</strong> : rechercher avant d’ouvrir un nouveau sujet.</li><li><strong>Bonne pratique</strong> : prévenir en cas d’absence à un créneau où vous étiez inscrit.</li><li><strong>Vigilance</strong> : sujets sensibles → canal prévu, pas tribune publique désordonnée.</li><li><strong>Différence</strong> : annonce officielle ≠ conversation libre.</li></ul></div>
 HTML,
         ],
         [
-            'title' => 'Validation',
-            'subtitle' => 'Quiz final',
-            'minutes' => 16,
+            'title' => 'Validation finale',
+            'subtitle' => 'Questionnaire, attestation, limites',
+            'minutes' => 22,
+            'module_description' => 'Préparation au questionnaire final, logique du score et des tentatives, obtention de l’attestation lorsque le parcours est certifiant, et rappel de la différence entre validation LMS et compétence opérationnelle reconnue par l’unité.',
+            'module_learning_objectives' => [
+                'Expliquer l’usage des explications après une réponse incorrecte.',
+                'Décrire ce que couvre une attestation de fin de parcours sur le portail.',
+                'Organiser une reprise de révision avant une nouvelle tentative de quiz.',
+            ],
             'deck' => training_onboarding_deck_validation_intro(),
             'lesson_summary' => 'Quiz, score, tentatives, attestation, reprise de parcours et gestion du stress de l’évaluation.',
             'recap_html' => <<<'HTML'
-<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">Avant le questionnaire final</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li>Prévoyez un moment calme : lisez chaque énoncé jusqu’au bout.</li><li>Le seuil et le nombre de tentatives sont rappelés sur la fiche formation.</li><li>En cas d’échec, utilisez les explications comme liste de révision puis retentez.</li></ul></div>
+<div class="prose prose-slate max-w-none"><h3 class="text-base font-bold text-slate-900">Avant le questionnaire final</h3><ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm leading-relaxed"><li><strong>Méthode</strong> : lire l’énoncé jusqu’au bout ; plusieurs réponses peuvent sembler crédibles.</li><li><strong>Règle</strong> : le seuil et les tentatives sont fixés sur la fiche formation.</li><li><strong>Pédagogie</strong> : en cas d’échec, utiliser les explications comme liste de révision.</li><li><strong>Clarification</strong> : la validation du parcours ne dispense pas des exigences métier de l’organisation.</li></ul></div>
 HTML,
         ],
     ];
@@ -251,15 +317,24 @@ function training_onboarding_upgrade_portal_legacy_five_modules(PDO $pdo, int $c
 
         $modIns = $pdo->prepare(
             'INSERT INTO training_modules (course_id, title, description, subtitle, learning_objectives, estimated_minutes, position, is_required, created_at, updated_at)
-             VALUES (?, ?, ?, ?, NULL, ?, ?, 1, ?, ?)'
+             VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)'
         );
-        $midTitle = 'Bilan à mi-parcours';
+        $midSpec = $specs[3];
+        $midTitle = (string) ($midSpec['title'] ?? 'Bilan à mi-parcours');
+        $midSub = (string) ($midSpec['subtitle'] ?? 'Vérifier ses acquis');
+        $midDesc = trim((string) ($midSpec['module_description'] ?? ''));
+        if ($midDesc === '') {
+            $midDesc = 'Module 4 — ' . $midSub;
+        }
+        $midLo = training_onboarding_module_objectives_json($midSpec['module_learning_objectives'] ?? []);
+        $midMin = (int) ($midSpec['minutes'] ?? 18);
         $modIns->execute([
             $courseId,
             $midTitle,
-            'Module 4 — Vérifier ses acquis',
-            'Vérifier ses acquis',
-            12,
+            $midDesc,
+            $midSub,
+            $midLo,
+            $midMin,
             4,
             $now,
             $now,
@@ -408,7 +483,9 @@ function training_onboarding_refresh_portal_canvas_for_tenant(PDO $pdo, int $ten
     }
     $moduleIds = array_map('intval', $moduleIds);
 
-    $modUpd = $pdo->prepare('UPDATE training_modules SET estimated_minutes = ?, updated_at = ? WHERE id = ?');
+    $modUpd = $pdo->prepare(
+        'UPDATE training_modules SET estimated_minutes = ?, description = ?, subtitle = ?, learning_objectives = ?, updated_at = ? WHERE id = ?'
+    );
     $lesUpd = $pdo->prepare('UPDATE training_lessons SET content = ?, duration_minutes = ?, summary = ?, updated_at = ? WHERE id = ?');
     $lessonIdSt = $pdo->prepare(
         "SELECT id FROM training_lessons WHERE module_id = ? AND lesson_type = 'canvas' ORDER BY position ASC, id ASC LIMIT 1"
@@ -428,7 +505,13 @@ function training_onboarding_refresh_portal_canvas_for_tenant(PDO $pdo, int $ten
         $mid = $moduleIds[$idx];
         $minutes = (int) $spec['minutes'];
         $totalMin += $minutes;
-        $modUpd->execute([$minutes, $now, $mid]);
+        $sub = (string) ($spec['subtitle'] ?? '');
+        $desc = trim((string) ($spec['module_description'] ?? ''));
+        if ($desc === '') {
+            $desc = 'Module ' . ($idx + 1) . ' — ' . $sub;
+        }
+        $loJson = training_onboarding_module_objectives_json($spec['module_learning_objectives'] ?? []);
+        $modUpd->execute([$minutes, $desc, $sub, $loJson, $now, $mid]);
 
         if (!empty($spec['deck']) && is_array($spec['deck'])) {
             $lessonIdSt->execute([$mid]);
@@ -469,8 +552,16 @@ function training_onboarding_refresh_portal_canvas_for_tenant(PDO $pdo, int $ten
         }
     }
 
-    $pdo->prepare('UPDATE training_courses SET estimated_minutes = ?, updated_at = ? WHERE id = ?')
-        ->execute([$totalMin, $now, $courseId]);
+    $pdo->prepare(
+        'UPDATE training_courses SET description = ?, short_description = ?, learning_objectives = ?, estimated_minutes = ?, updated_at = ? WHERE id = ?'
+    )->execute([
+        training_onboarding_course_description(),
+        training_onboarding_course_short_description(),
+        training_onboarding_course_objectives(),
+        $totalMin,
+        $now,
+        $courseId,
+    ]);
 }
 
 /** @return array{version:int,modals:list<array<string,mixed>>,slides:list<array<string,mixed>>} */
@@ -490,22 +581,23 @@ function training_onboarding_deck_overview(): array
             'title' => '',
             'lead' => 'Ce module pose le cadre : à quoi sert le portail, comment lire ce parcours, et quels réflexes de sécurité garder en tête.',
             'stats' => [
-                ['label' => 'Durée indicative', 'value' => '~22 min'],
+                ['label' => 'Durée indicative', 'value' => '~26 min'],
                 ['label' => 'Format', 'value' => 'Parcours visuel'],
-                ['label' => 'Objectif', 'value' => 'Repères + sécurité'],
+                ['label' => 'Objectif', 'value' => 'Finalité + risques + sécurité'],
             ],
         ],
         'closure' => [
             'title' => 'Synthèse — Vue d’ensemble',
             'seen' => [
-                'Le portail centralise documents, forum, formations, événements et dossier personnel.',
-                'La lecture attentive vaut mieux qu’un survol rapide des étapes.',
+                'Finalité institutionnelle : information stable, coordination vivante, suivi pédagogique — avec des lieux distincts sur le site.',
+                'Ce que le portail n’est pas : ni substitut à la chaîne de commandement, ni dépôt anarchique des notes officielles sur le forum.',
+                'Erreurs fréquentes (forum = tout, panne imaginaire, session laissée ouverte) et comment les corriger.',
             ],
             'acquired' => [
-                'Vous savez distinguer information stabilisée et échanges sur le forum.',
-                'Vous connaissez les gestes simples qui protègent votre compte et la communauté.',
+                'Vous savez réagir de façon raisonnable si une rubrique manque : contexte, rôle, puis demande au staff.',
+                'Vous distinguez référence documentaire et discussion ; vous connaissez les gestes de sécurité du compte.',
             ],
-            'nextHint' => 'Poursuivez avec le module sur la navigation quotidienne et les réglages du compte.',
+            'nextHint' => 'Enchaînez avec le module « Navigation et compte » : tableau de bord, menus, profil, préférences et multi-communautés.',
         ],
         'slides' => [
             [
@@ -582,6 +674,57 @@ HTML
 <p>Ce n’est pas une liste à décorer : c’est le socle minimal attendu d’un membre qui utilise le portail au quotidien.</p>
 HTML
                 ,
+            ],
+            [
+                'template' => 'reading_article',
+                'title' => 'Ce que le portail n’est pas',
+                'subtitle' => 'Éviter les malentendus d’usage',
+                'contextKicker' => 'Étape 03 · Cadrage',
+                'body' => <<<'HTML'
+<p>Le portail <strong>n’est pas</strong> un substitut à la chaîne de commandement ni au jugement sur le terrain : il porte l’information et la formation, pas l’autorité opérationnelle.</p>
+<p>Il <strong>n’est pas</strong> un espace où toute note officielle peut rester définitivement dans un fil de discussion : la version stabilisée appartient aux documents (ou équivalent) lorsque le staff y procède.</p>
+<p>Il <strong>n’est pas</strong> une messagerie personnelle : les échanges publics ou de service suivent des règles de canal ; les sujets sensibles passent par les procédures prévues.</p>
+<p>Enfin, une formation validée sur le site <strong>n’est pas</strong>, à elle seule, une reconnaissance tacite de toutes les compétences métier : elle atteste du parcours réalisé selon les règles affichées.</p>
+HTML
+                ,
+            ],
+            [
+                'template' => 'common_mistakes',
+                'title' => 'Erreurs d’usage les plus fréquentes',
+                'mistakes' => [
+                    [
+                        'error' => 'Tout centraliser sur le forum',
+                        'why' => 'Le forum est conçu pour la conversation et les relais, pas pour remplacer la rubrique documents.',
+                        'consequence' => 'Versions multiples, fils longs, nouveaux membres qui ne retrouvent pas la référence.',
+                        'correction' => 'Demander ou attendre la publication dans les documents lorsque le staff valide un texte de référence.',
+                    ],
+                    [
+                        'error' => 'Conclure trop vite à une « panne » du site',
+                        'why' => 'Souvent, une rubrique absente correspond à des droits, à une autre communauté active ou à une fonction non activée.',
+                        'consequence' => 'Messages d’alerte publics inutiles et temps perdu pour le staff.',
+                        'correction' => 'Vérifier le contexte (communauté, rôle), puis s’adresser au canal prévu pour le support.',
+                    ],
+                    [
+                        'error' => 'Négliger la déconnexion sur poste partagé',
+                        'why' => 'La session peut rester ouverte pour le prochain utilisateur du même équipement.',
+                        'consequence' => 'Accès au compte et aux contenus au nom de la mauvaise personne.',
+                        'correction' => 'Utiliser la déconnexion explicite du portail en fin de session.',
+                    ],
+                ],
+            ],
+            [
+                'template' => 'scenario_decision',
+                'title' => 'Je ne trouve pas une rubrique mentionnée dans ce parcours',
+                'context' => 'Vous suivez la formation ; un encadré cite une page (documents, organigramme, etc.) que vous ne voyez pas dans votre menu.',
+                'situation' => '<p>Vous devez agir rapidement pour un sujet opérationnel. Vous pensez que le site est « cassé ».</p>',
+                'options' => [
+                    ['id' => 'a', 'text' => 'Vérifier la communauté active et, si besoin, demander au staff si l’accès est normal pour votre rôle avant de conclure.'],
+                    ['id' => 'b', 'text' => 'Publier immédiatement un message d’alerte dans toutes les catégories du forum.'],
+                    ['id' => 'c', 'text' => 'Partager vos identifiants avec un camarade pour qu’il teste depuis son compte.'],
+                    ['id' => 'd', 'text' => 'Abandonner toute utilisation du portail jusqu’à nouvel ordre.'],
+                ],
+                'correctOptionId' => 'a',
+                'explanation' => '<p>La première démarche raisonnable est de contrôler le <strong>contexte</strong> (communauté, rôle) puis de solliciter le staff sur le canal prévu. Les autres options créent du bruit, un risque de sécurité ou une interruption inutile de travail.</p>',
             ],
             [
                 'template' => 'title_hero',
@@ -1015,6 +1158,12 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
         'font' => "'IBM Plex Sans', system-ui, sans-serif",
         'radius' => '1.25rem',
         'variant' => 'default',
+        'pedagogy_meta' => [
+            'target_audience' => ['nouveaux membres', 'membres en reprise'],
+            'pedagogical_style' => 'guided_onboarding',
+            'completion_message' => 'Parcours portail terminé : vous disposez des repères pour naviguer, tenir votre compte à jour et participer correctement à la vie du site. Les consignes spécifiques de votre unité restent prioritaires.',
+            'tags' => ['portail', 'onboarding', 'compte', 'forum', 'documents', 'formations'],
+        ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
     $uuid = training_onboarding_uuid_v4();
@@ -1069,7 +1218,7 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
 
         $modIns = $pdo->prepare(
             'INSERT INTO training_modules (course_id, title, description, subtitle, learning_objectives, estimated_minutes, position, is_required, created_at, updated_at)
-             VALUES (?, ?, ?, ?, NULL, ?, ?, 1, ?, ?)'
+             VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)'
         );
         $lesIns = $pdo->prepare(
             'INSERT INTO training_lessons (module_id, title, summary, learning_objectives, instructor_notes, lesson_type, content, external_url, duration_minutes, difficulty, position, is_required)
@@ -1087,12 +1236,17 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
             $title = (string) $m['title'];
             $sub = (string) $m['subtitle'];
             $minutes = (int) $m['minutes'];
-            $descMod = 'Module ' . ($mi + 1) . ' — ' . $sub;
+            $descMod = trim((string) ($m['module_description'] ?? ''));
+            if ($descMod === '') {
+                $descMod = 'Module ' . ($mi + 1) . ' — ' . $sub;
+            }
+            $modLo = training_onboarding_module_objectives_json($m['module_learning_objectives'] ?? []);
             $modIns->execute([
                 $courseId,
                 $title,
                 $descMod,
                 $sub,
+                $modLo,
                 $minutes,
                 $position,
                 $now,

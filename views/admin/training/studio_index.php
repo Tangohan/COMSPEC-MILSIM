@@ -106,6 +106,9 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
                             <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide rounded-full bg-amber-100 text-amber-900 border border-amber-200/80" title="Créée avant la version actuelle du Studio">Création — ancienne version</span>
                             <?php endif; ?>
                             <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide rounded-full <?= $isPub ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700' ?>"><?= htmlspecialchars($visLabels[$c['visibility']] ?? (string) ($c['visibility'] ?? '')) ?></span>
+                            <a href="<?= htmlspecialchars(training_studio_url((string) (int) $c['id'] . '/echange/export')) ?>"
+                               class="inline-flex items-center justify-center px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-lg hover:bg-slate-50 shadow-sm transition-colors"
+                               title="Télécharger une sauvegarde complète du parcours (fichier structuré réimportable dans le Studio)">Exporter</a>
                             <a href="<?= training_studio_url((string) (int) $c['id']) ?>" class="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 shadow-sm transition-colors">Éditer</a>
                         </div>
                     </div>

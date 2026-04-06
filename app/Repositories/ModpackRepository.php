@@ -19,7 +19,15 @@ class ModpackRepository
     public function listForTenant(int $tenantId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM modpacks WHERE tenant_id = ? ORDER BY updated_at DESC, released_at DESC, id DESC'
+            'SELECT m.*, (
+                SELECT mi.id FROM modpack_images mi
+                WHERE mi.modpack_id = m.id
+                ORDER BY mi.display_order ASC, mi.id ASC
+                LIMIT 1
+            ) AS cover_image_id
+            FROM modpacks m
+            WHERE m.tenant_id = ?
+            ORDER BY m.updated_at IS NULL, m.updated_at DESC, m.released_at DESC, m.id DESC'
         );
         $stmt->execute([$tenantId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

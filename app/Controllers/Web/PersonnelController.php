@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Container;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -436,17 +437,18 @@ class PersonnelController
         }
         $forumPreHideLevel = (string) $request->query('forum_hide_level', '') === '1';
 
-        $forumOrgRoleChoices = [];
-        foreach ($this->userRepository->listOrganizationRoleIdsForUser($uid) as $rid) {
-            $rrow = $this->roleRepository->findById($rid, $tenantId);
-            if ($rrow !== null) {
-                $forumOrgRoleChoices[] = [
-                    'id' => $rid,
-                    'name' => trim((string) ($rrow['name'] ?? '')),
-                ];
-            }
-        }
-        usort($forumOrgRoleChoices, static fn (array $a, array $b): int => strcmp($a['name'], $b['name']));
+        $targetEmail = strtolower(trim((string) ($target['email'] ?? '')));
+        $siteRoleRepo = Container::get(\App\Repositories\SiteRoleAssignmentRepository::class);
+        $forumOrgRoleChoices = function_exists('forum_build_visible_role_choices')
+            ? forum_build_visible_role_choices(
+                $uid,
+                $tenantId,
+                $targetEmail,
+                $this->userRepository,
+                $this->roleRepository,
+                $siteRoleRepo
+            )
+            : [];
 
         $settings = $this->tenantRepository->getSettings($tenantId);
         $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
@@ -645,8 +647,16 @@ class PersonnelController
             if ($forumVisibleRoleId !== null && $forumVisibleRoleId <= 0) {
                 $forumVisibleRoleId = null;
             }
-            if ($forumVisibleRoleId !== null && !$this->userRepository->userHasTenantRole((int) $target['id'], $forumVisibleRoleId)) {
-                Session::flash('error', 'Le rôle affiché sur le forum doit être l’un de vos rôles communauté pour ce compte.');
+            $targetMail = strtolower(trim((string) ($target['email'] ?? '')));
+            $siteRoleRepo = Container::get(\App\Repositories\SiteRoleAssignmentRepository::class);
+            if ($forumVisibleRoleId !== null && !forum_user_may_set_visible_role_id(
+                (int) $target['id'],
+                $targetMail,
+                $forumVisibleRoleId,
+                $this->userRepository,
+                $siteRoleRepo
+            )) {
+                Session::flash('error', 'Le rôle affiché sur le forum doit correspondre à un rôle réellement attribué à ce compte (communauté ou plateforme).');
 
                 return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
             }

@@ -242,6 +242,9 @@ class Container
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Repositories\BlockedIndicatorRepository::class)
             ),
+            \App\Controllers\Admin\System\SystemUserLookupApiController::class => new \App\Controllers\Admin\System\SystemUserLookupApiController(
+                self::get(UserRepository::class)
+            ),
             \App\Controllers\Admin\Organization\OrganizationAnalyticsController::class => new \App\Controllers\Admin\Organization\OrganizationAnalyticsController(
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Repositories\PlatformUsageRepository::class)
@@ -851,7 +854,8 @@ class Container
                 self::get(\App\Services\Forum\ForumPostAttachmentService::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
-                self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class)
+                self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class),
+                self::get(\App\Repositories\SiteRoleAssignmentRepository::class)
             ),
             \App\Controllers\Web\ForumNewTopicController::class => new \App\Controllers\Web\ForumNewTopicController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),

@@ -72,6 +72,26 @@ $filterLink = static function (?string $key, ?string $current, string $label, in
 
 $baseList = url('back-office/recruitments');
 ?>
+<style>
+    /* Affichage exclusif tableau / cartes (filet si utilitaires Tailwind absents ou surchargés par le layout admin). */
+    .recruitment-bureau .recruitment-bureau__view-table {
+        display: none;
+    }
+    .recruitment-bureau .recruitment-bureau__view-cards {
+        display: block;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    @media (min-width: 768px) {
+        .recruitment-bureau .recruitment-bureau__view-table {
+            display: block;
+        }
+        .recruitment-bureau .recruitment-bureau__view-cards {
+            display: none;
+        }
+    }
+</style>
 <div class="recruitment-bureau min-h-[calc(100vh-3.5rem)] bg-gradient-to-b from-[#ebe6dc] via-[#f5f2eb] to-[#e8e4db]">
     <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
 
@@ -161,7 +181,7 @@ $baseList = url('back-office/recruitments');
                         </a>
                     </div>
                 <?php else: ?>
-                    <div class="hidden md:block overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+                    <div class="recruitment-bureau__view-table overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
                         <table class="w-full text-left text-sm">
                             <thead>
                                 <tr class="border-b border-stone-200 bg-[#f4f1ea] text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">
@@ -220,7 +240,7 @@ $baseList = url('back-office/recruitments');
                         </table>
                     </div>
 
-                    <ul class="md:hidden space-y-3">
+                    <ul class="recruitment-bureau__view-cards space-y-3">
                         <?php foreach ($enlistments as $e): ?>
                             <?php
                             $st = (string) ($e['status'] ?? '');

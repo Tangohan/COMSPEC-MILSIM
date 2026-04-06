@@ -17,6 +17,12 @@
     { id: 'text_rich', label: 'Texte libre' },
     { id: 'knowledge_check', label: 'Repères (liste à puces)' },
     { id: 'scorm_sequence', label: 'Séquence type SCORM' },
+    { id: 'scenario_decision', label: 'Mise en situation — décision' },
+    { id: 'dos_donts', label: 'À faire / à ne pas faire' },
+    { id: 'process_steps', label: 'Procédure pas à pas' },
+    { id: 'role_scope_compare', label: 'Membre / staff / droits' },
+    { id: 'common_mistakes', label: 'Erreurs fréquentes' },
+    { id: 'case_review', label: 'Analyse de cas' },
   ];
 
   var PREVIEW_DEBOUNCE_MS = 80;
@@ -93,6 +99,208 @@
     }
   }
 
+  function isStructuredTemplate(tpl) {
+    return (
+      [
+        'scenario_decision',
+        'dos_donts',
+        'process_steps',
+        'role_scope_compare',
+        'common_mistakes',
+        'case_review',
+      ].indexOf(String(tpl || '')) >= 0
+    );
+  }
+
+  /** Initialise les champs propres aux modèles structurés (édition + import JSON). */
+  function ensureStructuredSlideShape(sl) {
+    if (!sl || typeof sl !== 'object') {
+      return;
+    }
+    var t = String(sl.template || '');
+    if (t === 'scenario_decision') {
+      if (sl.context == null) {
+        sl.context = '';
+      }
+      if (sl.situation == null) {
+        sl.situation = '';
+      }
+      if (sl.explanation == null) {
+        sl.explanation = '';
+      }
+      if (sl.correctOptionId == null) {
+        sl.correctOptionId = '';
+      }
+      if (!Array.isArray(sl.options)) {
+        sl.options = [];
+      }
+    } else if (t === 'dos_donts') {
+      if (!Array.isArray(sl.dos)) {
+        sl.dos = [];
+      }
+      if (!Array.isArray(sl.donts)) {
+        sl.donts = [];
+      }
+      if (sl.synthesis == null) {
+        sl.synthesis = '';
+      }
+    } else if (t === 'process_steps') {
+      if (!Array.isArray(sl.steps)) {
+        sl.steps = [];
+      }
+    } else if (t === 'role_scope_compare') {
+      ['memberView', 'staffView', 'rightsNote', 'notAnomaly'].forEach(function (k) {
+        if (sl[k] == null) {
+          sl[k] = '';
+        }
+      });
+    } else if (t === 'common_mistakes') {
+      if (!Array.isArray(sl.mistakes)) {
+        sl.mistakes = [];
+      }
+    } else if (t === 'case_review') {
+      ['caseText', 'analysis', 'goodConduct', 'conclusion'].forEach(function (k) {
+        if (sl[k] == null) {
+          sl[k] = '';
+        }
+      });
+    }
+  }
+
+  function structuredFieldsHtml(tpl, s) {
+    tpl = String(tpl || '');
+    if (tpl === 'scenario_decision') {
+      var optsJson = '';
+      try {
+        optsJson = JSON.stringify(s.options || [], null, 2);
+      } catch (e) {
+        optsJson = '[]';
+      }
+      return (
+        '<div data-struct-wrap class="mt-3 rounded-lg border border-sky-200 bg-sky-50/40 p-3 space-y-2">' +
+        '<p class="text-[11px] font-bold text-sky-900">Champs du scénario</p>' +
+        '<p class="text-[10px] text-slate-600">Options : tableau JSON <code class="bg-white px-1 rounded">id</code> + <code class="bg-white px-1 rounded">text</code> pour chaque proposition.</p>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Contexte (texte simple)</label>' +
+        '<input type="text" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-struct-sd-context value="' +
+        escapeHtml(String(s.context || '')) +
+        '" /></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Situation (HTML léger)</label>' +
+        '<textarea rows="3" class="w-full border rounded px-2 py-1 text-xs font-mono mt-0.5" data-struct-sd-situation>' +
+        escapeHtml(String(s.situation || '')) +
+        '</textarea></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Identifiant de la bonne option (ex. a)</label>' +
+        '<input type="text" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-struct-sd-correct value="' +
+        escapeHtml(String(s.correctOptionId || '')) +
+        '" /></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Options (JSON)</label>' +
+        '<textarea rows="6" class="w-full border rounded px-2 py-1 text-[10px] font-mono mt-0.5" data-struct-sd-options>' +
+        escapeHtml(optsJson) +
+        '</textarea></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Explication (HTML léger)</label>' +
+        '<textarea rows="4" class="w-full border rounded px-2 py-1 text-xs font-mono mt-0.5" data-struct-sd-explain>' +
+        escapeHtml(String(s.explanation || '')) +
+        '</textarea></div></div>'
+      );
+    }
+    if (tpl === 'dos_donts') {
+      var dosTxt = Array.isArray(s.dos) ? s.dos.join('\n') : '';
+      var dontsTxt = Array.isArray(s.donts) ? s.donts.join('\n') : '';
+      return (
+        '<div data-struct-wrap class="mt-3 rounded-lg border border-teal-200 bg-teal-50/30 p-3 space-y-2">' +
+        '<p class="text-[11px] font-bold text-teal-900">À faire / à ne pas faire</p>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">À faire (une ligne par item)</label>' +
+        '<textarea rows="5" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-struct-dd-dos>' +
+        escapeHtml(dosTxt) +
+        '</textarea></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">À ne pas faire (une ligne par item)</label>' +
+        '<textarea rows="5" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-struct-dd-donts>' +
+        escapeHtml(dontsTxt) +
+        '</textarea></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Synthèse (HTML léger)</label>' +
+        '<textarea rows="3" class="w-full border rounded px-2 py-1 text-xs font-mono mt-0.5" data-struct-dd-syn>' +
+        escapeHtml(String(s.synthesis || '')) +
+        '</textarea></div></div>'
+      );
+    }
+    if (tpl === 'process_steps') {
+      var stepsJson = '';
+      try {
+        stepsJson = JSON.stringify(s.steps || [], null, 2);
+      } catch (e2) {
+        stepsJson = '[]';
+      }
+      return (
+        '<div data-struct-wrap class="mt-3 rounded-lg border border-indigo-200 bg-indigo-50/30 p-3 space-y-2">' +
+        '<p class="text-[11px] font-bold text-indigo-900">Étapes (JSON)</p>' +
+        '<p class="text-[10px] text-slate-600">Tableau d’objets : <code class="bg-white px-1 rounded">title</code>, <code class="bg-white px-1 rounded">action</code>, <code class="bg-white px-1 rounded">vigilance</code>.</p>' +
+        '<textarea rows="10" class="w-full border rounded px-2 py-1 text-[10px] font-mono mt-0.5" data-struct-ps-steps>' +
+        escapeHtml(stepsJson) +
+        '</textarea></div>'
+      );
+    }
+    if (tpl === 'role_scope_compare') {
+      return (
+        '<div data-struct-wrap class="mt-3 rounded-lg border border-violet-200 bg-violet-50/30 p-3 space-y-2">' +
+        '<p class="text-[11px] font-bold text-violet-900">Comparaison des vues (HTML léger)</p>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Ce que voit un membre</label>' +
+        '<textarea rows="3" class="w-full border rounded px-2 py-1 text-xs font-mono mt-0.5" data-struct-rsc-mem>' +
+        escapeHtml(String(s.memberView || '')) +
+        '</textarea></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Ce que voit le staff</label>' +
+        '<textarea rows="3" class="w-full border rounded px-2 py-1 text-xs font-mono mt-0.5" data-struct-rsc-stf>' +
+        escapeHtml(String(s.staffView || '')) +
+        '</textarea></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Droits et rôle</label>' +
+        '<textarea rows="3" class="w-full border rounded px-2 py-1 text-xs font-mono mt-0.5" data-struct-rsc-rights>' +
+        escapeHtml(String(s.rightsNote || '')) +
+        '</textarea></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Pas une anomalie</label>' +
+        '<textarea rows="3" class="w-full border rounded px-2 py-1 text-xs font-mono mt-0.5" data-struct-rsc-ok>' +
+        escapeHtml(String(s.notAnomaly || '')) +
+        '</textarea></div></div>'
+      );
+    }
+    if (tpl === 'common_mistakes') {
+      var mistJson = '';
+      try {
+        mistJson = JSON.stringify(s.mistakes || [], null, 2);
+      } catch (e3) {
+        mistJson = '[]';
+      }
+      return (
+        '<div data-struct-wrap class="mt-3 rounded-lg border border-rose-200 bg-rose-50/30 p-3 space-y-2">' +
+        '<p class="text-[11px] font-bold text-rose-900">Erreurs (JSON)</p>' +
+        '<p class="text-[10px] text-slate-600">Tableau : <code class="bg-white px-1 rounded">error</code>, <code class="bg-white px-1 rounded">why</code>, <code class="bg-white px-1 rounded">consequence</code>, <code class="bg-white px-1 rounded">correction</code>.</p>' +
+        '<textarea rows="12" class="w-full border rounded px-2 py-1 text-[10px] font-mono mt-0.5" data-struct-cm-mist>' +
+        escapeHtml(mistJson) +
+        '</textarea></div>'
+      );
+    }
+    if (tpl === 'case_review') {
+      return (
+        '<div data-struct-wrap class="mt-3 rounded-lg border border-slate-300 bg-slate-50/50 p-3 space-y-2">' +
+        '<p class="text-[11px] font-bold text-slate-800">Analyse de cas (HTML léger)</p>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Cas</label>' +
+        '<textarea rows="4" class="w-full border rounded px-2 py-1 text-xs font-mono mt-0.5" data-struct-cr-case>' +
+        escapeHtml(String(s.caseText || '')) +
+        '</textarea></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Analyse</label>' +
+        '<textarea rows="3" class="w-full border rounded px-2 py-1 text-xs font-mono mt-0.5" data-struct-cr-an>' +
+        escapeHtml(String(s.analysis || '')) +
+        '</textarea></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Bonne conduite</label>' +
+        '<textarea rows="3" class="w-full border rounded px-2 py-1 text-xs font-mono mt-0.5" data-struct-cr-good>' +
+        escapeHtml(String(s.goodConduct || '')) +
+        '</textarea></div>' +
+        '<div><label class="text-[10px] font-bold text-slate-600">Conclusion</label>' +
+        '<textarea rows="3" class="w-full border rounded px-2 py-1 text-xs font-mono mt-0.5" data-struct-cr-conc>' +
+        escapeHtml(String(s.conclusion || '')) +
+        '</textarea></div></div>'
+      );
+    }
+    return '';
+  }
+
   function defaultDeck() {
     return {
       version: 1,
@@ -138,6 +346,7 @@
           sl.resources = [];
         }
         ensureSlideMissionFields(sl);
+        ensureStructuredSlideShape(sl);
       });
       return d;
     } catch (e) {
@@ -644,6 +853,113 @@
         (sub ? '<p class="text-sm text-violet-700 font-semibold mb-4">' + sub + '</p>' : '') +
         intro +
         lis +
+        actionsHtml() +
+        denseBottomPreviewHtml(sl) +
+        '</div>'
+      );
+    }
+
+    if (tpl === 'scenario_decision') {
+      var ctx = escapeHtml(String(sl.context || '').slice(0, 400));
+      var optsP =
+        Array.isArray(sl.options) && sl.options.length
+          ? sl.options
+              .map(function (o) {
+                if (!o || typeof o !== 'object') {
+                  return '';
+                }
+                return (
+                  '<li class="text-xs text-slate-800 border border-slate-200 rounded px-2 py-1">' +
+                  escapeHtml(String(o.id || '')) +
+                  '. ' +
+                  escapeHtml(String(o.text || '').slice(0, 200)) +
+                  '</li>'
+                );
+              })
+              .filter(Boolean)
+              .join('')
+          : '';
+      return (
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
+        '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-sky-700/90 mb-2">Mise en situation</p>' +
+        (title ? '<h2 class="text-lg font-black text-slate-900 mb-3">' + title + '</h2>' : '') +
+        (ctx ? '<p class="text-xs text-slate-600 mb-2"><strong>Contexte</strong> — ' + ctx + '</p>' : '') +
+        (optsP ? '<ul class="space-y-1 mb-2">' + optsP + '</ul>' : '<p class="text-xs text-slate-500">Définissez le contexte et les options.</p>') +
+        actionsHtml() +
+        denseBottomPreviewHtml(sl) +
+        '</div>'
+      );
+    }
+    if (tpl === 'dos_donts') {
+      var d1 = Array.isArray(sl.dos) ? sl.dos : [];
+      var d2 = Array.isArray(sl.donts) ? sl.donts : [];
+      return (
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
+        '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-teal-800/90 mb-2">À faire / à ne pas faire</p>' +
+        (title ? '<h2 class="text-lg font-black text-slate-900 mb-3">' + title + '</h2>' : '') +
+        '<div class="grid grid-cols-2 gap-2 text-[11px]">' +
+        '<div class="border border-emerald-200 rounded p-2 bg-emerald-50/50"><strong>À faire</strong><br>' +
+        escapeHtml(d1.slice(0, 4).join(' · ') || '—') +
+        '</div>' +
+        '<div class="border border-rose-200 rounded p-2 bg-rose-50/50"><strong>À ne pas faire</strong><br>' +
+        escapeHtml(d2.slice(0, 4).join(' · ') || '—') +
+        '</div></div>' +
+        actionsHtml() +
+        denseBottomPreviewHtml(sl) +
+        '</div>'
+      );
+    }
+    if (tpl === 'process_steps') {
+      var stL = Array.isArray(sl.steps) ? sl.steps.length : 0;
+      return (
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
+        '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-indigo-800/90 mb-2">Procédure</p>' +
+        (title ? '<h2 class="text-lg font-black text-slate-900 mb-2">' + title + '</h2>' : '') +
+        '<p class="text-xs text-slate-600">' +
+        (stL ? stL + ' étape(s) définie(s) en JSON.' : 'Ajoutez le tableau d’étapes.') +
+        '</p>' +
+        actionsHtml() +
+        denseBottomPreviewHtml(sl) +
+        '</div>'
+      );
+    }
+    if (tpl === 'role_scope_compare') {
+      return (
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
+        '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-violet-800/90 mb-2">Membre / staff</p>' +
+        (title ? '<h2 class="text-lg font-black text-slate-900 mb-2">' + title + '</h2>' : '') +
+        '<p class="text-xs text-slate-600">Quatre blocs HTML (membre, staff, droits, pas une anomalie).</p>' +
+        actionsHtml() +
+        denseBottomPreviewHtml(sl) +
+        '</div>'
+      );
+    }
+    if (tpl === 'common_mistakes') {
+      var mc = Array.isArray(sl.mistakes) ? sl.mistakes.length : 0;
+      return (
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
+        '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-rose-800/90 mb-2">Erreurs fréquentes</p>' +
+        (title ? '<h2 class="text-lg font-black text-slate-900 mb-2">' + title + '</h2>' : '') +
+        '<p class="text-xs text-slate-600">' +
+        (mc ? mc + ' fiche(s) en JSON.' : 'Ajoutez le tableau d’erreurs.') +
+        '</p>' +
+        actionsHtml() +
+        denseBottomPreviewHtml(sl) +
+        '</div>'
+      );
+    }
+    if (tpl === 'case_review') {
+      return (
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
+        '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-600 mb-2">Analyse de cas</p>' +
+        (title ? '<h2 class="text-lg font-black text-slate-900 mb-2">' + title + '</h2>' : '') +
+        '<p class="text-xs text-slate-600">Cas, analyse, bonne conduite, conclusion (HTML).</p>' +
         actionsHtml() +
         denseBottomPreviewHtml(sl) +
         '</div>'
@@ -1281,7 +1597,11 @@
       bodyLabel = 'Texte d’introduction (optionnel, mise en forme simple)';
       bodyRows = 4;
       resourcesSection = self._resourcesEditorHtml(s);
+    } else if (isStructuredTemplate(tpl)) {
+      bodyLabel = 'Corps optionnel (HTML léger — souvent inutilisé pour ce modèle)';
+      bodyRows = 3;
     }
+    var structSection = structuredFieldsHtml(tpl, s);
     var el = this._fieldsEl;
     var tplOpts = TEMPLATES.map(function (t) {
       return '<option value="' + t.id + '"' + (s.template === t.id ? ' selected' : '') + '>' + escapeHtml(t.label) + '</option>';
@@ -1348,6 +1668,7 @@
       '" class="w-full border border-slate-200 rounded-lg px-2 py-2 text-sm font-mono text-xs mt-0.5" data-field="body">' +
       escapeHtml(s.body || '') +
       '</textarea></div>' +
+      structSection +
       resourcesSection +
       readingFormatHelp +
       '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">' +
@@ -1433,8 +1754,135 @@
     bindAction('primaryAction', 'primary');
     bindAction('secondaryAction', 'secondary');
 
+    (function bindStructured() {
+      var st = String(s.template || '');
+      var n;
+      function parseJsonArr(ta, setter) {
+        if (!ta) {
+          return;
+        }
+        ta.addEventListener('change', function () {
+          try {
+            var j = JSON.parse(ta.value || '[]');
+            setter(Array.isArray(j) ? j : []);
+          } catch (err) {
+            setter([]);
+          }
+          self.sync();
+          self.schedulePreview();
+        });
+      }
+      if (st === 'scenario_decision') {
+        n = el.querySelector('[data-struct-sd-context]');
+        if (n) {
+          n.addEventListener('input', function (e) {
+            s.context = e.target.value;
+            self.sync();
+            self.schedulePreview();
+          });
+        }
+        n = el.querySelector('[data-struct-sd-situation]');
+        if (n) {
+          n.addEventListener('input', function (e) {
+            s.situation = e.target.value;
+            self.sync();
+            self.schedulePreview();
+          });
+        }
+        n = el.querySelector('[data-struct-sd-correct]');
+        if (n) {
+          n.addEventListener('input', function (e) {
+            s.correctOptionId = e.target.value;
+            self.sync();
+            self.schedulePreview();
+          });
+        }
+        parseJsonArr(el.querySelector('[data-struct-sd-options]'), function (arr) {
+          s.options = arr;
+        });
+        n = el.querySelector('[data-struct-sd-explain]');
+        if (n) {
+          n.addEventListener('input', function (e) {
+            s.explanation = e.target.value;
+            self.sync();
+            self.schedulePreview();
+          });
+        }
+      } else if (st === 'dos_donts') {
+        n = el.querySelector('[data-struct-dd-dos]');
+        if (n) {
+          n.addEventListener('input', function (e) {
+            s.dos = e.target.value.split(/\r\n|\r|\n/).map(function (x) {
+              return x.trim();
+            }).filter(Boolean);
+            self.sync();
+            self.schedulePreview();
+          });
+        }
+        n = el.querySelector('[data-struct-dd-donts]');
+        if (n) {
+          n.addEventListener('input', function (e) {
+            s.donts = e.target.value.split(/\r\n|\r|\n/).map(function (x) {
+              return x.trim();
+            }).filter(Boolean);
+            self.sync();
+            self.schedulePreview();
+          });
+        }
+        n = el.querySelector('[data-struct-dd-syn]');
+        if (n) {
+          n.addEventListener('input', function (e) {
+            s.synthesis = e.target.value;
+            self.sync();
+            self.schedulePreview();
+          });
+        }
+      } else if (st === 'process_steps') {
+        parseJsonArr(el.querySelector('[data-struct-ps-steps]'), function (arr) {
+          s.steps = arr;
+        });
+      } else if (st === 'role_scope_compare') {
+        [
+          ['[data-struct-rsc-mem]', 'memberView'],
+          ['[data-struct-rsc-stf]', 'staffView'],
+          ['[data-struct-rsc-rights]', 'rightsNote'],
+          ['[data-struct-rsc-ok]', 'notAnomaly'],
+        ].forEach(function (pair) {
+          n = el.querySelector(pair[0]);
+          if (n) {
+            n.addEventListener('input', function (e) {
+              s[pair[1]] = e.target.value;
+              self.sync();
+              self.schedulePreview();
+            });
+          }
+        });
+      } else if (st === 'common_mistakes') {
+        parseJsonArr(el.querySelector('[data-struct-cm-mist]'), function (arr) {
+          s.mistakes = arr;
+        });
+      } else if (st === 'case_review') {
+        [
+          ['[data-struct-cr-case]', 'caseText'],
+          ['[data-struct-cr-an]', 'analysis'],
+          ['[data-struct-cr-good]', 'goodConduct'],
+          ['[data-struct-cr-conc]', 'conclusion'],
+        ].forEach(function (pair) {
+          n = el.querySelector(pair[0]);
+          if (n) {
+            n.addEventListener('input', function (e) {
+              s[pair[1]] = e.target.value;
+              self.sync();
+              self.schedulePreview();
+            });
+          }
+        });
+      }
+    })();
+
     el.querySelector('[data-field="template"]').addEventListener('change', function (e) {
       s.template = e.target.value;
+      ensureStructuredSlideShape(s);
       self.sync();
       self._renderFields();
       self.schedulePreview();

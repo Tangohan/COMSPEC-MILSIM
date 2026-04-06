@@ -182,8 +182,9 @@ $interteamMissionSlug = trim((string) ($interteamMissionSlug ?? ''));
         }
         $roleNameRaw = isset($post['author_role_name']) && trim((string) $post['author_role_name']) !== '' ? trim($post['author_role_name']) : null;
         $roleSlug = isset($post['author_role_slug']) && trim((string) $post['author_role_slug']) !== '' ? trim((string) $post['author_role_slug']) : null;
+        $roleLayerRaw = isset($post['author_role_layer']) && trim((string) $post['author_role_layer']) !== '' ? trim((string) $post['author_role_layer']) : null;
         $roleName = function_exists('forum_forum_role_display')
-            ? forum_forum_role_display($roleNameRaw, $roleSlug)
+            ? forum_forum_role_display($roleNameRaw, $roleSlug, $roleLayerRaw)
             : ($roleNameRaw !== null && strtolower($roleNameRaw) === 'administrator' ? 'Administrateur' : $roleNameRaw);
         $slugLow = strtolower(trim((string) ($roleSlug ?? '')));
         $rl = trim((string) ($forumConfig['forum_role_read_label'] ?? ''));
@@ -469,8 +470,8 @@ $interteamMissionSlug = trim((string) ($interteamMissionSlug ?? ''));
     <?php endif; ?>
     <?php if (!empty($forumOrgRoleChoices)): ?>
     <div class="mb-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
-      <label for="forum-modal-visible-role" class="block text-[9px] font-black uppercase tracking-wider text-slate-600 mb-1.5">Rôle visible sur le forum</label>
-      <p class="text-[10px] text-slate-600 mb-2 leading-snug">Choisissez le rôle communauté affiché sur votre carte auteur (à la place du rôle principal).</p>
+      <label for="forum-modal-visible-role" class="block text-[9px] font-black uppercase tracking-wider text-slate-600 mb-1.5">Rôle affiché sur le forum</label>
+      <p class="text-[10px] text-slate-600 mb-2 leading-snug">Intitulé de rôle sur votre carte auteur : rôles du portail (communauté et, si concerné, plateforme). Par défaut, le rôle principal du compte.</p>
       <div class="flex flex-col sm:flex-row gap-2">
         <select id="forum-modal-visible-role" class="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900">
           <option value=""<?= $forumVisibleRoleCurrent === 0 ? ' selected' : '' ?>>Rôle principal (défaut)</option>

@@ -789,6 +789,42 @@ class UserRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Recherche transverse (toutes communautés) pour assistance opérateur site — liste de restriction, etc.
+     * Minimum 2 caractères ; comptes techniques exclus lorsque la colonne existe.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function searchAccountsForPlatformOperator(string $query, int $limit = 20): array
+    {
+        $q = trim($query);
+        $len = function_exists('mb_strlen') ? mb_strlen($q) : strlen($q);
+        if ($len < 2) {
+            return [];
+        }
+        $q = function_exists('mb_substr') ? mb_substr($q, 0, 120) : substr($q, 0, 120);
+        $term = '%' . $q . '%';
+        $limit = max(1, min(30, $limit));
+        $svcSql = '';
+        if ($this->hasServiceAccountColumn()) {
+            $svcSql = ' AND (u.is_service_account IS NULL OR u.is_service_account = 0)';
+        }
+        $sql = 'SELECT u.id, u.email, u.display_name, u.callsign, t.name AS tenant_name, u.status
+             FROM users u
+             INNER JOIN tenants t ON t.id = u.tenant_id
+             WHERE (
+                 u.email LIKE ?
+                 OR u.display_name LIKE ?
+                 OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
+             )' . $svcSql . '
+             ORDER BY t.name ASC, u.email ASC
+             LIMIT ' . $limit;
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$term, $term, $term]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /** @return list<int> User IDs ayant le rôle donné (pour assignation formation par rôle). */
     public function getIdsByRole(int $tenantId, int $roleId): array
     {

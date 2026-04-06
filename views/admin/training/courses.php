@@ -1,8 +1,18 @@
 <?php
 $courses = $courses ?? [];
 $trainingCanExportFull = !empty($trainingCanExportFull);
+$trainingCanEditShowcaseOrCatalog = !empty($trainingCanEditShowcaseOrCatalog);
+$trainingCanDeleteCourse = !empty($trainingCanDeleteCourse);
+$flashOk = \App\Core\Session::getFlash('success');
+$flashErr = \App\Core\Session::getFlash('error');
 require base_path('views/admin/training/partials/command_shell_open.php');
 ?>
+                <?php if ($flashOk): ?>
+                <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-950" role="status"><?= htmlspecialchars((string) $flashOk) ?></div>
+                <?php endif; ?>
+                <?php if ($flashErr): ?>
+                <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950" role="alert"><?= htmlspecialchars((string) $flashErr) ?></div>
+                <?php endif; ?>
                 <header class="tc-panel p-6 md:p-8">
                     <p class="tc-kicker">Catalogue</p>
                     <h1 class="tc-hero-title mb-3">Toutes les formations</h1>
@@ -58,7 +68,9 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                                     <div class="flex flex-col gap-1.5 text-xs font-bold">
                                         <div class="flex flex-wrap gap-x-2 gap-y-1">
                                             <a href="<?= url('formations/' . rawurlencode((string) $c['slug'])) ?>" class="text-emerald-700 hover:underline" target="_blank" rel="noopener">Voir</a>
+                                            <?php if ($trainingCanEditShowcaseOrCatalog): ?>
                                             <a href="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/showcase')) ?>" class="text-slate-700 hover:underline">Vitrine</a>
+                                            <?php endif; ?>
                                             <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments') . '?course_id=' . (int) $cid) ?>" class="text-slate-700 hover:underline">Inscriptions</a>
                                             <a href="<?= training_studio_url((string) $cid) ?>" class="text-violet-700 hover:underline">Studio</a>
                                         </div>
@@ -66,6 +78,22 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                                         <a href="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/export')) ?>" class="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-500 hover:text-emerald-700 w-fit border border-slate-200 rounded-lg px-2 py-1 bg-white hover:border-emerald-200">
                                             Télécharger le dossier
                                         </a>
+                                        <?php endif; ?>
+                                        <?php if ($trainingCanEditShowcaseOrCatalog && $vis === 'published'): ?>
+                                        <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/unpublish')) ?>" class="inline" onsubmit="return confirm('Retirer cette formation du catalogue public ? Elle restera modifiable dans le studio.');">
+                                            <?= \App\Core\Csrf::field() ?>
+                                            <button type="submit" class="mt-0.5 text-[10px] font-black uppercase tracking-wider text-amber-800 hover:text-amber-950 underline decoration-amber-300 underline-offset-2">
+                                                Retirer du catalogue
+                                            </button>
+                                        </form>
+                                        <?php endif; ?>
+                                        <?php if ($trainingCanDeleteCourse): ?>
+                                        <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/delete')) ?>" class="inline" onsubmit="return confirm('Supprimer définitivement ce parcours, les inscriptions et la progression associées ? Cette action est irréversible.');">
+                                            <?= \App\Core\Csrf::field() ?>
+                                            <button type="submit" class="text-[10px] font-black uppercase tracking-wider text-rose-700 hover:text-rose-900 underline decoration-rose-300 underline-offset-2">
+                                                Supprimer
+                                            </button>
+                                        </form>
                                         <?php endif; ?>
                                     </div>
                                 </td>

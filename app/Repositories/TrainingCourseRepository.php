@@ -197,6 +197,15 @@ class TrainingCourseRepository
         $stmt->execute($params);
     }
 
+    /** Suppression définitive (cascade modules, inscriptions, etc. selon schéma BDD). */
+    public function deleteByIdForTenant(int $id, int $tenantId): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM training_courses WHERE id = ? AND tenant_id = ?');
+        $stmt->execute([$id, $tenantId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
     private function generateUuid(): string
     {
         $data = random_bytes(16);

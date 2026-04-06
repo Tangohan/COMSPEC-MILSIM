@@ -269,6 +269,21 @@ class TrainingController
             : false;
         $progressPercent = ($enrollment && $canAccessLearning) ? $this->trainingService->getGlobalProgress((int) $enrollment['id']) : 0;
         $certificate = ($enrollment && $canAccessLearning) ? $this->certificateService->getByEnrollment((int) $enrollment['id']) : null;
+        $lmsShowCompletionBanner = false;
+        if ($enrollment && $canAccessLearning && $userId
+            && (string) ($enrollment['status'] ?? '') === 'completed'
+            && (int) $progressPercent >= 100) {
+            $lmsShowCompletionBanner = true;
+            if ((int) ($course['is_certifying'] ?? 0) === 1) {
+                $cpDone = $this->progressService->computeCourseProgress((int) $enrollment['id']);
+                if (!empty($cpDone['completed']) && !$certificate) {
+                    $issued = $this->certificateService->issueCertificate((int) $enrollment['id'], $tenantId, (int) $userId);
+                    if ($issued) {
+                        $certificate = $issued;
+                    }
+                }
+            }
+        }
         $policyEval = $userId
             ? $this->enrollmentPolicyService->evaluateSelfEnroll((int) $userId, $tenantId, $course)
             : ['allowed' => false, 'messages' => []];
@@ -300,6 +315,7 @@ class TrainingController
             'enrollment' => $enrollment,
             'progressPercent' => $progressPercent,
             'certificate' => $certificate,
+            'lmsShowCompletionBanner' => $lmsShowCompletionBanner,
             'policyEval' => $policyEval,
             'policyDisplay' => $policyDisplay,
             'isFavorite' => $isFavorite,
@@ -901,7 +917,8 @@ class TrainingController
             return (new Response())->setStatusCode(403)->setBody('Ce lien de consultation n’est plus valide ou a expiré.');
         }
         $cert = $this->certificateService->getById($id, null);
-        if (!$cert || ($cert['status'] ?? '') !== 'valid') {
+        $statusRaw = (string) ($cert['status'] ?? 'valid');
+        if (!$cert || $statusRaw !== 'valid') {
             return (new Response())->setStatusCode(404)->setBody('Document introuvable.');
         }
         $canonical = $this->certificateShareService->buildConsultationUrl($id, $token, $exp);

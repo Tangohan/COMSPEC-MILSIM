@@ -86,7 +86,89 @@ class AdminTrainingController
             'trainingAdminNav' => 'courses',
             'courses' => $courses,
             'trainingCanExportFull' => $this->userCanExportFullCourse(),
+            'trainingCanDeleteCourse' => $this->userCanDeleteTrainingCourse(),
+            'trainingCanEditShowcaseOrCatalog' => $this->userCanManageTrainingCourseEditorially(),
         ]);
+    }
+
+    /** Retrait du catalogue public : passage en visibilité « privé » (le contenu reste dans le studio). */
+    public function courseUnpublish(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        if (!$this->userCanManageTrainingCourseEditorially()) {
+            throw new \RuntimeException('Accès refusé.', 403);
+        }
+        if (!$request->isPost()) {
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        $courseId = (int) ($params['id'] ?? 0);
+        $course = $this->courseRepository->findById($courseId, $tenantId);
+        if (!$course) {
+            Session::flash('error', 'Formation introuvable.');
+
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        if ((string) ($course['visibility'] ?? '') !== 'published') {
+            Session::flash('error', 'Cette formation n’était pas visible sur le catalogue public.');
+
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        $this->courseRepository->update($courseId, [
+            'visibility' => 'private',
+            'updated_by' => $userId > 0 ? $userId : null,
+        ]);
+        $this->auditService->logCourseUpdated($tenantId, $userId, $courseId, ['visibility' => 'published'], ['visibility' => 'private']);
+        Session::flash('success', 'La formation a été retirée du catalogue. Elle reste accessible depuis le studio et l’administration.');
+
+        return Response::redirect(training_lms_admin_url('courses'));
+    }
+
+    /** Suppression définitive du parcours et des données associées (inscriptions, progression, etc.). */
+    public function courseDelete(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        if (!$this->userCanDeleteTrainingCourse()) {
+            throw new \RuntimeException('Accès refusé.', 403);
+        }
+        if (!$request->isPost()) {
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        $courseId = (int) ($params['id'] ?? 0);
+        $course = $this->courseRepository->findById($courseId, $tenantId);
+        if (!$course) {
+            Session::flash('error', 'Formation introuvable.');
+
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        $snapshot = [
+            'title' => (string) ($course['title'] ?? ''),
+            'slug' => (string) ($course['slug'] ?? ''),
+            'visibility' => (string) ($course['visibility'] ?? ''),
+        ];
+        $ok = $this->courseRepository->deleteByIdForTenant($courseId, $tenantId);
+        if (!$ok) {
+            Session::flash('error', 'Suppression impossible.');
+
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        $this->auditService->logCourseDeleted($tenantId, $userId, $courseId, $snapshot);
+        Session::flash('success', 'La formation et les données liées (inscriptions, contenu) ont été supprimées.');
+
+        return Response::redirect(training_lms_admin_url('courses'));
     }
 
     /**
@@ -288,6 +370,9 @@ class AdminTrainingController
     public function certificateGabarit(Request $request, array $params = []): Response
     {
         $this->requireTrainingAccess();
+        if (!$this->userCanManageTrainingCourseEditorially()) {
+            throw new \RuntimeException('Accès refusé.', 403);
+        }
         $tenantId = (int) Session::get('tenant_id');
         $tpl = $this->certificateTemplateRepository->findByTenantId($tenantId) ?? [];
 
@@ -302,6 +387,9 @@ class AdminTrainingController
     public function certificateGabaritSave(Request $request, array $params = []): Response
     {
         $this->requireTrainingAccess();
+        if (!$this->userCanManageTrainingCourseEditorially()) {
+            throw new \RuntimeException('Accès refusé.', 403);
+        }
         $redirect = Response::redirect(training_lms_admin_url('certificates/gabarit'));
         if ($request->method() !== 'POST') {
             return $redirect;
@@ -380,6 +468,9 @@ class AdminTrainingController
     public function courseShowcase(Request $request, array $params = []): Response
     {
         $this->requireTrainingAccess();
+        if (!$this->userCanManageTrainingCourseEditorially()) {
+            throw new \RuntimeException('Accès refusé.', 403);
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         $course = $this->courseRepository->findById($id, $tenantId);
@@ -449,11 +540,21 @@ class AdminTrainingController
             || $gate->allows('training.create') || $gate->allows('training.update');
     }
 
-    /** Accès au back-office formations : admin, training.manage ou droits de création / édition LMS. */
+    private function userCanDeleteTrainingCourse(): bool
+    {
+        $gate = Gate::getInstance();
+
+        return $gate->allows('admin.access') || $gate->allows('training.manage') || $gate->allows('training.delete');
+    }
+
+    /**
+     * Accès au shell Training Command (tenant) : aligné sur {@see AdminTrainingStudioController::hasTrainingAccess()}
+     * — inclut training.assign (vue communauté, pas administration site).
+     */
     private function requireTrainingAccess(): void
     {
         $gate = Gate::getInstance();
-        if ($gate->allows('admin.access') || $gate->allows('training.manage')
+        if ($gate->allows('admin.access') || $gate->allows('training.manage') || $gate->allows('training.assign')
             || $gate->allows('training.create') || $gate->allows('training.update')
             || $gate->allows('training.delete') || $gate->allows('training.publish')) {
             return;
@@ -461,14 +562,16 @@ class AdminTrainingController
         throw new \RuntimeException('Accès refusé.', 403);
     }
 
-    /** Assignations : admin, training.manage ou training.assign (assignation seule). */
-    private function requireTrainingAssignOrManage(): void
+    /**
+     * Édition contenu / vitrine / gabarit attestations : hors seul rôle « assignation ».
+     */
+    private function userCanManageTrainingCourseEditorially(): bool
     {
         $gate = Gate::getInstance();
-        if ($gate->allows('admin.access') || $gate->allows('training.manage') || $gate->allows('training.assign')) {
-            return;
-        }
-        throw new \RuntimeException('Accès refusé.', 403);
+
+        return $gate->allows('admin.access') || $gate->allows('training.manage')
+            || $gate->allows('training.create') || $gate->allows('training.update')
+            || $gate->allows('training.delete') || $gate->allows('training.publish');
     }
 
     /** Liste des inscriptions : staff formation, ou formateur habilité pour la formation déjà sélectionnée. */

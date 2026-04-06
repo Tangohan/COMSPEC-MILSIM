@@ -198,6 +198,221 @@ $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
                     <?php endif; ?>
                 </figure>
             </div>
+            <?php elseif ($tpl === 'scenario_decision'): ?>
+            <p class="lms-canvas-template-label mb-3 text-sky-800/90">Mise en situation</p>
+            <?php if (!empty($sl['title'])): ?>
+            <h2 class="text-xl md:text-2xl font-semibold text-slate-900 mb-4"><?= htmlspecialchars((string) $sl['title']) ?></h2>
+            <?php endif; ?>
+            <?php if (!empty($sl['context'])): ?>
+            <div class="rounded-xl border border-slate-200 bg-slate-50/90 px-4 py-3 mb-4 text-sm text-slate-800">
+                <p class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Contexte</p>
+                <p class="leading-relaxed"><?= nl2br(htmlspecialchars((string) $sl['context'])) ?></p>
+            </div>
+            <?php endif; ?>
+            <?php if (!empty($sl['situation'])): ?>
+            <div class="rounded-xl border border-sky-200 bg-sky-50/60 px-4 py-3 mb-5">
+                <p class="text-[10px] font-black uppercase tracking-wider text-sky-800 mb-2">Situation</p>
+                <div class="prose prose-slate prose-sm max-w-none text-slate-800"><?= training_canvas_sanitize_html((string) $sl['situation']) ?></div>
+            </div>
+            <?php endif; ?>
+            <?php
+            $opts = isset($sl['options']) && is_array($sl['options']) ? $sl['options'] : [];
+            $correctId = trim((string) ($sl['correctOptionId'] ?? ''));
+            ?>
+            <?php if ($opts !== []): ?>
+            <p class="text-xs font-bold text-slate-600 mb-2">Options possibles</p>
+            <ul class="space-y-2 mb-6">
+                <?php foreach ($opts as $opt):
+                    if (!is_array($opt)) {
+                        continue;
+                    }
+                    $oid = trim((string) ($opt['id'] ?? ''));
+                    $otext = trim((string) ($opt['text'] ?? ''));
+                    if ($otext === '') {
+                        continue;
+                    }
+                    $isOk = $correctId !== '' && $oid === $correctId;
+                    ?>
+                <li class="rounded-lg border px-3 py-2 text-sm leading-relaxed <?= $isOk ? 'border-emerald-300 bg-emerald-50 text-emerald-950' : 'border-slate-200 bg-white text-slate-800' ?>">
+                    <?php if ($oid !== ''): ?><span class="font-mono text-xs text-slate-500 mr-2"><?= htmlspecialchars($oid) ?>.</span><?php endif; ?>
+                    <?= htmlspecialchars($otext) ?>
+                    <?php if ($isOk): ?><span class="ml-2 text-xs font-bold text-emerald-800">(décision attendue)</span><?php endif; ?>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
+            <?php if (!empty($sl['explanation'])): ?>
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3">
+                <p class="text-[10px] font-black uppercase tracking-wider text-emerald-800 mb-2">Explication</p>
+                <div class="prose prose-slate prose-sm max-w-none text-slate-800"><?= training_canvas_sanitize_html((string) $sl['explanation']) ?></div>
+            </div>
+            <?php endif; ?>
+            <?php elseif ($tpl === 'dos_donts'): ?>
+            <p class="lms-canvas-template-label mb-3 text-teal-800/90">À faire / à ne pas faire</p>
+            <?php if (!empty($sl['title'])): ?>
+            <h2 class="text-xl md:text-2xl font-semibold text-slate-900 mb-6"><?= htmlspecialchars((string) $sl['title']) ?></h2>
+            <?php endif; ?>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5">
+                    <p class="text-[10px] font-black uppercase tracking-wider text-emerald-800 mb-3">À faire</p>
+                    <ul class="list-disc pl-5 space-y-2 text-sm text-slate-800">
+                        <?php
+                        $dos = isset($sl['dos']) && is_array($sl['dos']) ? $sl['dos'] : [];
+                        foreach ($dos as $d):
+                            if (!is_string($d) || trim($d) === '') {
+                                continue;
+                            }
+                            ?>
+                        <li><?= htmlspecialchars(trim($d)) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <div class="rounded-2xl border border-rose-200 bg-rose-50/50 p-5">
+                    <p class="text-[10px] font-black uppercase tracking-wider text-rose-800 mb-3">À ne pas faire</p>
+                    <ul class="list-disc pl-5 space-y-2 text-sm text-slate-800">
+                        <?php
+                        $donts = isset($sl['donts']) && is_array($sl['donts']) ? $sl['donts'] : [];
+                        foreach ($donts as $d):
+                            if (!is_string($d) || trim($d) === '') {
+                                continue;
+                            }
+                            ?>
+                        <li><?= htmlspecialchars(trim($d)) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </div>
+            <?php if (!empty($sl['synthesis'])): ?>
+            <div class="mt-6 rounded-xl border border-slate-200 bg-white p-4 prose prose-slate prose-sm max-w-none text-slate-800">
+                <p class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Synthèse</p>
+                <?= training_canvas_sanitize_html((string) $sl['synthesis']) ?>
+            </div>
+            <?php endif; ?>
+            <?php elseif ($tpl === 'process_steps'): ?>
+            <p class="lms-canvas-template-label mb-3 text-indigo-800/90">Procédure pas à pas</p>
+            <?php if (!empty($sl['title'])): ?>
+            <h2 class="text-xl md:text-2xl font-semibold text-slate-900 mb-6"><?= htmlspecialchars((string) $sl['title']) ?></h2>
+            <?php endif; ?>
+            <?php
+            $psteps = isset($sl['steps']) && is_array($sl['steps']) ? $sl['steps'] : [];
+            $stepNum = 0;
+            foreach ($psteps as $stRow):
+                if (!is_array($stRow)) {
+                    continue;
+                }
+                $stTitle = trim((string) ($stRow['title'] ?? ''));
+                $stAction = trim((string) ($stRow['action'] ?? ''));
+                $stVig = trim((string) ($stRow['vigilance'] ?? ''));
+                if ($stTitle === '' && $stAction === '' && $stVig === '') {
+                    continue;
+                }
+                $stepNum++;
+                ?>
+            <div class="flex gap-4 mb-5 last:mb-0">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white"><?= (int) $stepNum ?></div>
+                <div class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                    <?php if ($stTitle !== ''): ?>
+                    <p class="text-sm font-bold text-slate-900"><?= htmlspecialchars($stTitle) ?></p>
+                    <?php endif; ?>
+                    <?php if ($stAction !== ''): ?>
+                    <p class="mt-2 text-sm text-slate-700 leading-relaxed"><?= nl2br(htmlspecialchars($stAction)) ?></p>
+                    <?php endif; ?>
+                    <?php if ($stVig !== ''): ?>
+                    <p class="mt-3 text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2"><?= htmlspecialchars($stVig) ?></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+            <?php if ($stepNum === 0): ?>
+            <p class="text-sm text-slate-500">Ajoutez des étapes dans la structure de la slide (éditeur).</p>
+            <?php endif; ?>
+            <?php elseif ($tpl === 'role_scope_compare'): ?>
+            <p class="lms-canvas-template-label mb-3 text-violet-800/90">Membre et staff</p>
+            <?php if (!empty($sl['title'])): ?>
+            <h2 class="text-xl md:text-2xl font-semibold text-slate-900 mb-6"><?= htmlspecialchars((string) $sl['title']) ?></h2>
+            <?php endif; ?>
+            <div class="grid gap-4 md:grid-cols-2">
+                <div class="rounded-2xl border border-slate-200 bg-white p-5">
+                    <p class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Ce que voit un membre</p>
+                    <div class="prose prose-slate prose-sm max-w-none text-slate-800"><?= training_canvas_sanitize_html((string) ($sl['memberView'] ?? '')) ?></div>
+                </div>
+                <div class="rounded-2xl border border-violet-200 bg-violet-50/40 p-5">
+                    <p class="text-[10px] font-black uppercase tracking-wider text-violet-800 mb-2">Ce que voit le staff</p>
+                    <div class="prose prose-slate prose-sm max-w-none text-slate-800"><?= training_canvas_sanitize_html((string) ($sl['staffView'] ?? '')) ?></div>
+                </div>
+                <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-5 md:col-span-2">
+                    <p class="text-[10px] font-black uppercase tracking-wider text-amber-900 mb-2">Ce qui dépend des droits et du rôle</p>
+                    <div class="prose prose-slate prose-sm max-w-none text-slate-800"><?= training_canvas_sanitize_html((string) ($sl['rightsNote'] ?? '')) ?></div>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:col-span-2">
+                    <p class="text-[10px] font-black uppercase tracking-wider text-slate-600 mb-2">Ce qui n’est pas forcément une anomalie</p>
+                    <div class="prose prose-slate prose-sm max-w-none text-slate-800"><?= training_canvas_sanitize_html((string) ($sl['notAnomaly'] ?? '')) ?></div>
+                </div>
+            </div>
+            <?php elseif ($tpl === 'common_mistakes'): ?>
+            <p class="lms-canvas-template-label mb-3 text-rose-800/90">Erreurs fréquentes</p>
+            <?php if (!empty($sl['title'])): ?>
+            <h2 class="text-xl md:text-2xl font-semibold text-slate-900 mb-6"><?= htmlspecialchars((string) $sl['title']) ?></h2>
+            <?php endif; ?>
+            <div class="space-y-4">
+                <?php
+                $mist = isset($sl['mistakes']) && is_array($sl['mistakes']) ? $sl['mistakes'] : [];
+                foreach ($mist as $row):
+                    if (!is_array($row)) {
+                        continue;
+                    }
+                    $e = trim((string) ($row['error'] ?? ''));
+                    if ($e === '') {
+                        continue;
+                    }
+                    ?>
+                <div class="rounded-2xl border border-rose-200/80 bg-white p-5 shadow-sm">
+                    <p class="text-xs font-black uppercase tracking-wider text-rose-700 mb-2">Erreur</p>
+                    <p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($e) ?></p>
+                    <?php if (!empty($row['why'])): ?>
+                    <p class="mt-3 text-[10px] font-black uppercase tracking-wider text-slate-500">Pourquoi elle arrive</p>
+                    <p class="text-sm text-slate-700 mt-1"><?= nl2br(htmlspecialchars((string) $row['why'])) ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($row['consequence'])): ?>
+                    <p class="mt-3 text-[10px] font-black uppercase tracking-wider text-slate-500">Conséquence</p>
+                    <p class="text-sm text-slate-700 mt-1"><?= nl2br(htmlspecialchars((string) $row['consequence'])) ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($row['correction'])): ?>
+                    <p class="mt-3 text-[10px] font-black uppercase tracking-wider text-emerald-800">Bonne correction</p>
+                    <p class="text-sm text-emerald-950 mt-1 font-medium"><?= nl2br(htmlspecialchars((string) $row['correction'])) ?></p>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php elseif ($tpl === 'case_review'): ?>
+            <p class="lms-canvas-template-label mb-3 text-slate-700">Analyse de cas</p>
+            <?php if (!empty($sl['title'])): ?>
+            <h2 class="text-xl md:text-2xl font-semibold text-slate-900 mb-6"><?= htmlspecialchars((string) $sl['title']) ?></h2>
+            <?php endif; ?>
+            <?php if (!empty($sl['caseText'])): ?>
+            <div class="rounded-xl border border-slate-300 bg-slate-50 p-5 mb-5">
+                <p class="text-[10px] font-black uppercase tracking-wider text-slate-600 mb-2">Cas</p>
+                <div class="prose prose-slate prose-sm max-w-none text-slate-900"><?= training_canvas_sanitize_html((string) $sl['caseText']) ?></div>
+            </div>
+            <?php endif; ?>
+            <?php if (!empty($sl['analysis'])): ?>
+            <div class="mb-5">
+                <p class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Analyse</p>
+                <div class="prose prose-slate prose-sm max-w-none text-slate-800"><?= training_canvas_sanitize_html((string) $sl['analysis']) ?></div>
+            </div>
+            <?php endif; ?>
+            <?php if (!empty($sl['goodConduct'])): ?>
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 mb-5">
+                <p class="text-[10px] font-black uppercase tracking-wider text-emerald-900 mb-2">Bonne conduite</p>
+                <div class="prose prose-slate prose-sm max-w-none text-slate-900"><?= training_canvas_sanitize_html((string) $sl['goodConduct']) ?></div>
+            </div>
+            <?php endif; ?>
+            <?php if (!empty($sl['conclusion'])): ?>
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Conclusion</p>
+                <div class="prose prose-slate prose-sm max-w-none text-slate-800"><?= training_canvas_sanitize_html((string) $sl['conclusion']) ?></div>
+            </div>
+            <?php endif; ?>
             <?php else: ?>
             <div class="space-y-4">
                 <?php if (!empty($sl['title'])): ?>

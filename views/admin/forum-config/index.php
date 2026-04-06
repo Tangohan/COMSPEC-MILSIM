@@ -8,6 +8,8 @@ $csrfToken = \App\Core\Csrf::token();
 $success = \App\Core\Session::getFlash('success');
 $error = \App\Core\Session::getFlash('error');
 $forumName = $forumConfig['name'] ?? 'Forum';
+/** Accès au brief / forum pour les membres (réglage plateforme — aligné sur forum_disabled_for_member_response). */
+$forumEnabled = function_exists('forum_is_enabled') ? forum_is_enabled() : true;
 $communitySectionOn = !empty($forumConfig['community_section_enabled']);
 
 if (!function_exists('forum_admin_setting_bool')) {

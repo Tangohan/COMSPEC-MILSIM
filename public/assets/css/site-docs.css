@@ -55,12 +55,62 @@
   color: rgb(15 23 42);
 }
 
-.site-docs__hero p {
+.site-docs__hero > p {
   margin-top: 0.75rem;
   max-width: 42rem;
   font-size: 0.95rem;
   line-height: 1.65;
   color: rgb(71 85 105);
+}
+
+.site-docs__revision {
+  margin-top: 0.5rem !important;
+  margin-bottom: 0 !important;
+  max-width: 42rem;
+  font-size: 0.8125rem !important;
+  line-height: 1.55 !important;
+  color: rgb(100 116 139) !important;
+}
+
+.site-docs__revision strong {
+  color: rgb(51 65 85);
+  font-weight: 700;
+}
+
+.site-docs__toolbar {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.site-docs__toolbar .site-docs__search {
+  margin-top: 0;
+  flex: 1 1 12rem;
+  max-width: 28rem;
+}
+
+.site-docs__toc-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: rgb(30 41 59);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.site-docs__toc-toggle:hover,
+.site-docs__toc-toggle:focus-visible {
+  border-color: rgb(125 211 252);
+  color: rgb(3 105 161);
+  outline: none;
 }
 
 .site-docs__search {
@@ -95,10 +145,20 @@
 }
 
 @media (max-width: 1023px) {
+  .site-docs__toc-toggle {
+    display: inline-flex;
+  }
+
   .site-docs__sidebar {
     position: relative;
     top: 0;
     max-height: none;
+    display: none;
+    margin-bottom: 0;
+  }
+
+  .site-docs__sidebar.site-docs__sidebar--open {
+    display: block;
     margin-bottom: 1.5rem;
   }
 }
@@ -169,6 +229,7 @@
 
 .site-docs__main {
   min-width: 0;
+  max-width: 48rem;
   padding-bottom: 3rem;
 }
 
@@ -196,8 +257,27 @@
   font-size: 1.05rem;
   font-weight: 700;
   color: rgb(30 41 59);
-  margin-top: 1.5rem;
+  margin-top: 1.65rem;
   margin-bottom: 0.5rem;
+}
+
+.site-docs__section h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgb(51 65 85);
+  margin-top: 1.2rem;
+  margin-bottom: 0.4rem;
+}
+
+.site-docs__section a {
+  color: rgb(2 132 199);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-docs__section a:hover {
+  color: rgb(3 105 161);
 }
 
 .site-docs__section p {
@@ -241,6 +321,15 @@
   color: rgb(15 23 42);
 }
 
+.site-docs__callout ul,
+.site-docs__callout ol {
+  margin: 0.5rem 0 0.25rem 1.1rem;
+}
+
+.site-docs__callout--tip strong {
+  color: rgb(21 94 117);
+}
+
 .site-docs__kbd {
   display: inline-block;
   padding: 0.1rem 0.35rem;
@@ -251,4 +340,184 @@
   font-size: 0.7rem;
   font-weight: 700;
   color: rgb(71 85 105);
+}
+
+/* Références projet & fiches sources (même peau que le guide) */
+.site-docs__shell--refs {
+  display: block;
+  max-width: 72rem;
+  padding-top: 1.5rem;
+  padding-bottom: 3rem;
+}
+
+.site-docs__refs-back {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(2 132 199);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-docs__refs-back:hover {
+  color: rgb(3 105 161);
+}
+
+.site-docs__refs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+
+.site-docs__refs-nav .site-docs__refs-back {
+  margin-bottom: 0;
+}
+
+.site-docs__refs-hero {
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgb(226 232 240);
+}
+
+.site-docs__refs-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(14 165 233);
+}
+
+.site-docs__refs-hero h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: rgb(15 23 42);
+}
+
+.site-docs__refs-lead {
+  margin: 0.75rem 0 0;
+  max-width: 40rem;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: rgb(71 85 105);
+}
+
+.site-docs__refs-lead a {
+  color: rgb(2 132 199);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-docs__refs-section-title {
+  margin: 0 0 0.85rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(100 116 139);
+}
+
+.site-docs__refs-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+
+@media (min-width: 640px) {
+  .site-docs__refs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+.site-docs__refs-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+  padding: 1rem 1.1rem;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.site-docs__refs-card:hover {
+  border-color: rgb(125 211 252);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+}
+
+.site-docs__refs-card-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: rgb(15 23 42);
+}
+
+.site-docs__refs-card:hover .site-docs__refs-card-title {
+  color: rgb(3 105 161);
+}
+
+.site-docs__refs-card-hint {
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: rgb(100 116 139);
+}
+
+.site-docs__refs-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.site-docs__file-card {
+  border-radius: 1rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.site-docs__file-card header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgb(241 245 249);
+  background: rgb(248 250 252);
+}
+
+.site-docs__file-card h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: rgb(15 23 42);
+}
+
+.site-docs__file-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: rgb(100 116 139);
+}
+
+.site-docs__file-body {
+  padding: 1rem 1.25rem 1.25rem;
+  overflow-x: auto;
+}
+
+.site-docs__file-body pre {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: rgb(51 65 85);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
 }

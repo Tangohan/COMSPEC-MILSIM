@@ -10,6 +10,17 @@ if ($slides === []) {
 
     return;
 }
+$slideshowImageCount = 0;
+foreach ($slides as $sl) {
+    if (is_array($sl) && !empty($sl['imageUrl'])) {
+        $slideshowImageCount++;
+    }
+}
+if ($slideshowImageCount < 1) {
+    echo '<p class="text-slate-500">Aucune diapositive.</p>';
+
+    return;
+}
 $sid = 'lmsSlideshow' . bin2hex(random_bytes(3));
 ?>
 <div id="<?= htmlspecialchars($sid, ENT_QUOTES, 'UTF-8') ?>" class="swiper rounded-xl overflow-hidden border border-slate-200 bg-slate-900 shadow-lg">
@@ -41,23 +52,56 @@ $sid = 'lmsSlideshow' . bin2hex(random_bytes(3));
 document.addEventListener('DOMContentLoaded', function () {
   var el = document.getElementById(<?= json_encode($sid, JSON_UNESCAPED_UNICODE) ?>);
   if (!el || typeof Swiper === 'undefined') return;
-  var slideCount = el.querySelectorAll('.swiper-slide').length;
-  if (slideCount < 1) return;
-  var visited = new Set();
-  function note(sw) {
-    if (sw && typeof sw.realIndex === 'number') {
-      visited.add(sw.realIndex);
+  var uniqueSlideCount = <?= (int) $slideshowImageCount ?>;
+  if (uniqueSlideCount < 1) return;
+  var cfg = window.__LMS_LESSON_PROGRESS__;
+  var MIN_DWELL =
+    cfg && cfg.strict && typeof cfg.strict.slideDwellMs === 'number' && cfg.strict.slideDwellMs > 0
+      ? cfg.strict.slideDwellMs
+      : 2600;
+  var enterTime = Object.create(null);
+  var confirmed = new Set();
+  var lastTimer = null;
+  var lastReal = null;
+
+  function confirmIfDwelt(r) {
+    if (typeof r !== 'number' || r < 0 || r >= uniqueSlideCount) return;
+    var t0 = enterTime[r];
+    if (t0 != null && Date.now() - t0 >= MIN_DWELL) confirmed.add(r);
+  }
+
+  function scheduleLast(r) {
+    clearTimeout(lastTimer);
+    if (r !== uniqueSlideCount - 1) return;
+    lastTimer = setTimeout(function () {
+      confirmIfDwelt(uniqueSlideCount - 1);
+      tryComplete();
+    }, MIN_DWELL + 120);
+  }
+
+  function tryComplete() {
+    if (confirmed.size < uniqueSlideCount) return;
+    for (var i = 0; i < uniqueSlideCount; i++) {
+      if (!confirmed.has(i)) return;
     }
-    if (
-      visited.size >= slideCount &&
-      window.LmsLessonProgress &&
-      typeof window.LmsLessonProgress.signalComplete === 'function'
-    ) {
+    if (window.LmsLessonProgress && typeof window.LmsLessonProgress.signalComplete === 'function') {
       window.LmsLessonProgress.signalComplete();
     }
   }
+
+  function onTransitionEnd(sw) {
+    var r = sw.realIndex;
+    if (lastReal !== null && lastReal !== r) {
+      confirmIfDwelt(lastReal);
+    }
+    lastReal = r;
+    enterTime[r] = Date.now();
+    scheduleLast(r);
+    tryComplete();
+  }
+
   new Swiper(el, {
-    loop: slideCount > 1,
+    loop: uniqueSlideCount > 1,
     pagination: { el: el.querySelector('.swiper-pagination'), clickable: true },
     navigation: {
       nextEl: el.querySelector('.swiper-button-next'),
@@ -65,10 +109,13 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     on: {
       init: function (sw) {
-        note(sw);
+        lastReal = sw.realIndex;
+        enterTime[lastReal] = Date.now();
+        scheduleLast(lastReal);
+        tryComplete();
       },
-      slideChange: function (sw) {
-        note(sw);
+      slideChangeTransitionEnd: function (sw) {
+        onTransitionEnd(sw);
       },
     },
   });

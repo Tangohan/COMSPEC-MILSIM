@@ -32,6 +32,10 @@ Vue « **Mes formations** » : parcours **assignés** ou **démarrés** par vous
 
 Les profils disposant des droits de **gestion** ou **publication** des formations accèdent à des écrans d’administration (catalogue éditorial, inscriptions, rapports, studio de contenu selon configuration). Ces écrans permettent de créer ou modifier des parcours **pour la communauté courante**.
 
+## Journal d’audit (supervision)
+
+Pour les habilitations correspondantes, un **journal d’audit** recense les actions sensibles sur les parcours (création, publication, assignation, etc.). Chaque entrée est présentée avec une **date**, l’**auteur** de l’action, un **libellé clair** du type d’opération, l’**objet** concerné, le **référent pédagogique** du parcours le cas échéant, et un **résumé** du détail utile au contrôle interne. Si cet écran n’apparaît pas pour vous, votre rôle ne couvre pas cette supervision.
+
 ## Voir aussi
 
 - [Documents](documents.md) — supports liés aux parcours.

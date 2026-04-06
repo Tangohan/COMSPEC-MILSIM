@@ -54,26 +54,49 @@ $mid = 'lms-mod-' . bin2hex(random_bytes(4));
   if (!root) return;
   var dialogs = document.querySelectorAll('dialog[data-lms-modal]');
   var total = dialogs.length;
-  var opened = new Set();
+  if (total < 1) return;
+  var cfg = window.__LMS_LESSON_PROGRESS__;
+  var MIN_OPEN =
+    cfg && cfg.strict && typeof cfg.strict.modalMinOpenMs === 'number' && cfg.strict.modalMinOpenMs > 0
+      ? cfg.strict.modalMinOpenMs
+      : 2600;
+  var openAt = Object.create(null);
+  var validClose = new Set();
+
   function checkDone() {
-    if (
-      total > 0 &&
-      opened.size >= total &&
-      window.LmsLessonProgress &&
-      typeof window.LmsLessonProgress.signalComplete === 'function'
-    ) {
+    if (validClose.size < total) return;
+    for (var i = 0; i < total; i++) {
+      var dlg = dialogs[i];
+      var mid = dlg && dlg.getAttribute('data-lms-modal');
+      if (mid == null || !validClose.has(String(mid))) return;
+    }
+    if (window.LmsLessonProgress && typeof window.LmsLessonProgress.signalComplete === 'function') {
       window.LmsLessonProgress.signalComplete();
     }
   }
+
   root.querySelectorAll('[data-lms-modal-open]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = btn.getAttribute('data-lms-modal-open');
       var dlg = document.querySelector('dialog[data-lms-modal="' + id + '"]');
       if (dlg && typeof dlg.showModal === 'function') {
         dlg.showModal();
-        opened.add(String(id));
-        checkDone();
+        openAt[String(id)] = Date.now();
       }
+    });
+  });
+
+  dialogs.forEach(function (dlg) {
+    dlg.addEventListener('close', function () {
+      var id = dlg.getAttribute('data-lms-modal');
+      if (id == null) return;
+      var key = String(id);
+      var t0 = openAt[key];
+      if (t0 != null && Date.now() - t0 >= MIN_OPEN) {
+        validClose.add(key);
+      }
+      delete openAt[key];
+      checkDone();
     });
   });
 })();

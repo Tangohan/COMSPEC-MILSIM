@@ -850,3 +850,22 @@ body.layout-light .enlist-decision-actions .enlist-decision-btn--block:hover {
   background-color: #450a0a !important;
   color: #ffffff !important;
 }
+
+/* Fiche candidature — rattachement membre (même cause : utilitaires Tailwind arbitraires parfois absents du build) */
+body.layout-light .enlist-membership-repair-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  background-color: #0c4a6e !important;
+  color: #ffffff !important;
+  border: 1px solid #0a3d5c !important;
+  -webkit-text-fill-color: #ffffff;
+}
+body.layout-light .enlist-membership-repair-btn:hover {
+  background-color: #0a3d5c !important;
+  color: #ffffff !important;
+}
+body.layout-light .enlist-membership-repair-btn:focus-visible {
+  outline: 2px solid #0369a1;
+  outline-offset: 2px;
+}

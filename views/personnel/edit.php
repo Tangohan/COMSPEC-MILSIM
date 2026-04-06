@@ -370,7 +370,7 @@ $bloodOptions = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Inconnu'
             </div>
             <?php if (!empty($forumOrgRoleChoices)): ?>
             <div class="md:col-span-2">
-              <label for="forum_visible_role_id" class="mb-1 block text-xs font-bold text-slate-600">Rôle organisation affiché sur le forum</label>
+              <label for="forum_visible_role_id" class="mb-1 block text-xs font-bold text-slate-600">Rôle affiché sur le forum (carte auteur)</label>
               <select name="forum_visible_role_id" id="forum_visible_role_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
                 <?php
                 $fvRole = isset($d['forum_visible_role_id']) && $d['forum_visible_role_id'] !== null && $d['forum_visible_role_id'] !== ''
@@ -386,7 +386,7 @@ $bloodOptions = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Inconnu'
                     echo '<option value="' . $oid . '"' . ($fvRole === $oid ? ' selected' : '') . '>' . htmlspecialchars($oname !== '' ? $oname : ('#' . $oid)) . '</option>';
                 } ?>
               </select>
-              <p class="mt-1 text-[11px] text-slate-500">Si vous avez plusieurs rôles communauté, choisissez celui qui apparaît sur la carte auteur des messages (sinon : rôle principal).</p>
+              <p class="mt-1 text-[11px] text-slate-500">Parmi vos rôles réellement attribués (communauté et, le cas échéant, plateforme), choisissez l’intitulé affiché sur la carte auteur ; sinon le rôle principal s’applique.</p>
             </div>
             <?php endif; ?>
             <?php if ($isMe && $memberCanChooseDisplayRole && !empty($forumOrgRoleChoices)): ?>

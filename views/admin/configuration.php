@@ -249,7 +249,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
                 <?php $card(url('back-office/audit'), 'Journal d’activité', 'Traçabilité des actions administratives.'); ?>
                 <?php if ($gate->allows('forum.moderate') || $gate->allows('forum.moderate_organization') || $gate->allows('admin.organization') || $gate->allows('admin.access')): ?>
                 <?php $card(url('back-office/forum-moderation'), 'Modération forum', 'Files et outils modérateur forum.'); ?>
-                <?php $card(url('back-office/content-moderation'), 'Modération fichiers', 'Approbation des pièces jointes et médias.'); ?>
+                <?php $card(url('admin/content-moderation'), 'Modération fichiers', 'Approbation des pièces jointes et médias.'); ?>
                 <?php endif; ?>
             </div>
         </section>

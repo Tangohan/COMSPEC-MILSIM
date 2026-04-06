@@ -26,6 +26,7 @@ Destiné aux **membres**, **référents** et **administrateurs d’organisation*
 | [Back-office organisation](utilisateur/back-office-organisation.md) | Paramétrage communauté (pour profils autorisés) |
 | [Recherche et raccourcis](utilisateur/recherche-et-raccourcis.md) | Portail, clavier |
 | [FAQ](utilisateur/faq.md) | Questions fréquentes |
+| [Journal des révisions du guide](utilisateur/JOURNAL-GUIDE.md) | Jalons du guide intégré au portail |
 
 ## Documentation technique (équipe projet / exploitation)
 

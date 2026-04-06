@@ -43,7 +43,7 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
     <?php if (is_file(base_path('public/assets/css/portal-nav.css'))): ?>
     <link href="<?= $baseUrl ?>/assets/css/portal-nav.css" rel="stylesheet">
     <?php endif; ?>
-    <?php if (!empty($siteDocsPage) && is_file(base_path('public/assets/css/site-docs.css'))): ?>
+    <?php if ((!empty($siteDocsPage) || !empty($siteDocsRefsPage)) && is_file(base_path('public/assets/css/site-docs.css'))): ?>
     <link href="<?= $baseUrl ?>/assets/css/site-docs.css" rel="stylesheet">
     <?php endif; ?>
     <?php
@@ -140,7 +140,7 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
         ?>
         <?php endif; ?>
     </main>
-    <?php if (empty($trainingAdminNav)): ?>
+    <?php if (empty($trainingAdminNav) && ($showPortalFooter ?? true)): ?>
     <footer class="border-t border-slate-200 py-6 mt-12">
         <div class="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-center text-xs text-slate-500">
             <span>Athena — SaaS RH tactique MILSIM Arma 3</span>

@@ -408,10 +408,19 @@ if (!function_exists('forum_render_content')) {
 
 if (!function_exists('forum_forum_role_display')) {
     /**
-     * Libellé carte auteur forum : privilégie l’intitulé défini pour l’organisation (table des rôles).
+     * Libellé carte auteur forum : intitulés courts alignés sur le sélecteur « rôle affiché » (slug / couche rôle).
+     *
+     * @param string|null $roleLayer Valeur roles.role_layer si disponible (ex. site, intra, community).
      */
-    function forum_forum_role_display(?string $name, ?string $slug): string
+    function forum_forum_role_display(?string $name, ?string $slug, ?string $roleLayer = null): string
     {
+        if (function_exists('forum_visible_role_choice_label')) {
+            return forum_visible_role_choice_label([
+                'slug' => (string) ($slug ?? ''),
+                'name' => (string) ($name ?? ''),
+                'role_layer' => (string) ($roleLayer ?? ''),
+            ]);
+        }
         $n = trim((string) $name);
         if ($n !== '') {
             return $n;
@@ -428,6 +437,138 @@ if (!function_exists('forum_forum_role_display')) {
         ];
 
         return $fallback[$slugNorm] ?? 'Membre';
+    }
+}
+
+if (!function_exists('forum_visible_role_choice_label')) {
+    /**
+     * Libellé court « rôle du site » pour le sélecteur carte auteur (évite les intitulés métiers longs en base).
+     *
+     * @param array<string, mixed> $r Ligne roles (slug, name, role_layer).
+     */
+    function forum_visible_role_choice_label(array $r): string
+    {
+        $slug = strtolower(trim((string) ($r['slug'] ?? '')));
+        $layer = (string) ($r['role_layer'] ?? '');
+
+        $siteLabels = [
+            'site_super_admin' => 'Gestionnaire de plateforme',
+            'platform_admin' => 'Gestionnaire de plateforme',
+        ];
+        if ($layer === 'site') {
+            if ($slug !== '' && isset($siteLabels[$slug])) {
+                return $siteLabels[$slug];
+            }
+            $n = trim((string) ($r['name'] ?? ''));
+
+            return $n !== '' ? $n : 'Rôle plateforme';
+        }
+
+        $tenantLabels = [
+            'forum_moderator' => 'Modérateur',
+            'community_owner' => 'Gestionnaire d’organisation',
+            'tenant_admin' => 'Administrateur organisation',
+            'member' => 'Membre',
+            'officer' => 'Cadre',
+            'hr' => 'Ressources humaines',
+            'recruiter' => 'Recruteur',
+            'invite' => 'Visiteur',
+            'instructor' => 'Instructeur',
+            'medic' => 'OPSAN',
+            'logistics' => 'Logistique',
+            'rto' => 'R2 (transmissions)',
+            'probation' => 'Période d’essai',
+            'administrator' => 'Administrateur',
+        ];
+        if ($slug !== '' && isset($tenantLabels[$slug])) {
+            return $tenantLabels[$slug];
+        }
+        $n = trim((string) ($r['name'] ?? ''));
+
+        return $n !== '' ? $n : 'Rôle';
+    }
+}
+
+if (!function_exists('forum_build_visible_role_choices')) {
+    /**
+     * Rôles autorisés pour la préférence « carte auteur » : rôles communauté du membre + rôles plateforme (site) liés à son e-mail.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    function forum_build_visible_role_choices(
+        int $userId,
+        int $tenantId,
+        string $userEmail,
+        \App\Repositories\UserRepository $userRepository,
+        \App\Repositories\RoleRepository $roleRepository,
+        \App\Repositories\SiteRoleAssignmentRepository $siteRoleAssignmentRepository
+    ): array {
+        $seen = [];
+        $out = [];
+        foreach ($userRepository->listOrganizationRoleIdsForUser($userId) as $rid) {
+            $rid = (int) $rid;
+            if ($rid < 1 || isset($seen[$rid])) {
+                continue;
+            }
+            $row = $roleRepository->findById($rid, $tenantId);
+            if ($row === null) {
+                continue;
+            }
+            $seen[$rid] = true;
+            $out[] = [
+                'id' => $rid,
+                'name' => forum_visible_role_choice_label($row),
+            ];
+        }
+        $email = strtolower(trim($userEmail));
+        if ($email !== '') {
+            foreach ($siteRoleAssignmentRepository->activeRoleIdsForEmail($email) as $srid) {
+                $srid = (int) $srid;
+                if ($srid < 1 || isset($seen[$srid])) {
+                    continue;
+                }
+                $row = $roleRepository->findById($srid, null);
+                if ($row === null || (string) ($row['role_layer'] ?? '') !== 'site') {
+                    continue;
+                }
+                $seen[$srid] = true;
+                $out[] = [
+                    'id' => $srid,
+                    'name' => forum_visible_role_choice_label($row),
+                ];
+            }
+        }
+        usort($out, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+
+        return $out;
+    }
+}
+
+if (!function_exists('forum_user_may_set_visible_role_id')) {
+    function forum_user_may_set_visible_role_id(
+        int $userId,
+        string $userEmail,
+        int $roleId,
+        \App\Repositories\UserRepository $userRepository,
+        \App\Repositories\SiteRoleAssignmentRepository $siteRoleAssignmentRepository
+    ): bool {
+        if ($roleId < 1) {
+            return false;
+        }
+        if ($userRepository->userHasTenantRole($userId, $roleId)) {
+            return true;
+        }
+        $email = strtolower(trim($userEmail));
+        if ($email === '') {
+            return false;
+        }
+        foreach ($siteRoleAssignmentRepository->activeRoleIdsForEmail($email) as $rid) {
+            if ((int) $rid === $roleId) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 

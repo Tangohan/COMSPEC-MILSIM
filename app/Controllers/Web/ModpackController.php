@@ -22,6 +22,18 @@ class ModpackController
             return Response::redirect(url('login'));
         }
         $modpacks = $this->modpackRepository->listForTenant((int) $tenantId);
+        foreach ($modpacks as &$m) {
+            $m['size_formatted'] = $this->formatSize((int) ($m['size'] ?? 0));
+            $desc = trim((string) ($m['description'] ?? ''));
+            if ($desc !== '') {
+                $m['excerpt'] = mb_strlen($desc) > 160 ? mb_substr($desc, 0, 160) . '…' : $desc;
+            } else {
+                $m['excerpt'] = '';
+            }
+            $coverId = isset($m['cover_image_id']) ? (int) $m['cover_image_id'] : 0;
+            $m['cover_url'] = $coverId > 0 ? url('modpacks/images/' . $coverId) : null;
+        }
+        unset($m);
         if (count($modpacks) === 1) {
             return Response::redirect(url('modpacks/' . $modpacks[0]['slug']));
         }
@@ -45,6 +57,11 @@ class ModpackController
         }
         $modpack['download_url'] = url('modpacks/' . $modpack['id'] . '/download');
         $modpack['size_formatted'] = $this->formatSize((int) ($modpack['size'] ?? 0));
+        $ext = trim((string) ($modpack['url'] ?? ''));
+        $modpack['external_href'] = (str_starts_with($ext, 'http://') || str_starts_with($ext, 'https://')) ? $ext : '';
+        $images = $modpack['images'] ?? [];
+        $firstImg = $images[0] ?? null;
+        $modpack['hero_image_id'] = is_array($firstImg) && !empty($firstImg['id']) ? (int) $firstImg['id'] : null;
         return Response::view('layout.main', [
             'content' => 'modpacks.show',
             'title' => $modpack['name'] . ' — Modpack',

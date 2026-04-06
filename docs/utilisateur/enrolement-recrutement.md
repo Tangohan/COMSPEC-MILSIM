@@ -28,7 +28,14 @@ Pour accélérer les dépôts répétés, votre compte peut permettre d’enregi
 
 ## Côté staff (recrutement)
 
-Les membres habilités accèdent à une **file de candidatures** dans le back-office : consultation d’un dossier, **décision** (accepter, refuser), parfois **messages prédéfinis** pour répondre aux candidats.
+Les membres habilités accèdent à la **liste des dossiers de candidature** dans le back-office. Depuis cette liste, ils ouvrent un **dossier individuel** présenté sous forme de fiche structurée :
+
+- Un **fil d’orientation** en haut de page indique le contexte et permet de **revenir à la liste**.
+- Un **bandeau** ou badge rappelle le **statut** affiché pour le dossier (par exemple *à traiter*, *acceptée*, *refusée*, *non admis* — les libellés à l’écran font foi).
+- Les informations sont regroupées en **rubriques** (identité, formulaire, éventuelles pièces selon le modèle utilisé).
+- Lorsque le candidat est lié à un **compte portail**, un lien permet d’ouvrir la **fiche membre** associée. Sinon, l’écran précise qu’il s’agit d’un dépôt sans compte au moment de la candidature.
+- La zone **instruction du dossier** peut afficher la date de traitement, un **commentaire** laissé par le validateur et les éléments utiles à la relecture.
+- Des **messages prédéfinis** peuvent être proposés pour accélérer les réponses types aux candidats, selon la configuration de l’unité.
 
 ## Invitations
 

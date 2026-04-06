@@ -503,7 +503,9 @@ class TrainingApiController
         if (!$cert || (int) ($cert['user_id'] ?? 0) !== $userId) {
             return Response::json(['error' => 'Non autorisé.'], 403);
         }
-        if (($cert['status'] ?? '') !== 'valid') {
+        // Aligné sur l’affichage attestation : statut absent en BDD = traité comme valide (lignes historiques).
+        $statusRaw = (string) ($cert['status'] ?? 'valid');
+        if ($statusRaw !== 'valid') {
             return Response::json(['error' => 'Document indisponible.'], 404);
         }
         $mint = $this->certificateShareService->mint($id);

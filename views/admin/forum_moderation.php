@@ -67,7 +67,7 @@ $forumModerationLogsAvailable = $forumModerationLogsAvailable ?? false;
     </div>
     <div class="col-span-2 sm:col-span-1 rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm">
       <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">File fichiers</p>
-      <a href="<?= $baseUrl ?>/back-office/content-moderation" class="mt-2 inline-flex text-sm font-bold text-emerald-700 hover:text-emerald-600">
+      <a href="<?= $baseUrl ?>/admin/content-moderation" class="mt-2 inline-flex text-sm font-bold text-emerald-700 hover:text-emerald-600">
         Quarantaine &amp; scan →
       </a>
     </div>
@@ -219,7 +219,7 @@ $forumModerationLogsAvailable = $forumModerationLogsAvailable ?? false;
           <p class="mt-0.5 text-[12px] text-slate-600">Entrées de <code class="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">forum_moderation_logs</code> (moteur <span class="text-slate-500">ForumModerationEngine</span>).</p>
         </div>
       </div>
-      <a href="<?= $baseUrl ?>/back-office/content-moderation" class="mt-4 sm:mt-0 inline-flex shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-600 px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white shadow-sm hover:bg-emerald-500">
+      <a href="<?= $baseUrl ?>/admin/content-moderation" class="mt-4 sm:mt-0 inline-flex shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-600 px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white shadow-sm hover:bg-emerald-500">
         File quarantaine fichiers
       </a>
     </div>

@@ -25,9 +25,10 @@
     RewriteRule ^compte\.html$ /account [R=301,L]
     RewriteRule ^mot-de-passe-oublie\.html$ /forgot-password [R=301,L]
 
-    # Fichiers et répertoires réels (pas de réécriture)
-    RewriteCond %{REQUEST_FILENAME} -f [OR]
-    RewriteCond %{REQUEST_FILENAME} -d
+    # Fichiers réels uniquement (CSS, JS, images, etc.). Ne pas exclure les répertoires :
+    # sinon un dossier physique du même nom qu’un segment d’URL (ex. …/certificates/)
+    # court-circuite index.php et les sous-chemins (ex. …/certificates/gabarit) tombent en 404 Apache.
+    RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
     # Front controller

@@ -138,7 +138,7 @@ $statusBand = match ($statusRaw) {
                     <?php endif; ?>
                     <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/finalize-membership')) ?>" class="mt-5">
                         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
-                        <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-[#0c4a6e] px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#0a3d5c]">
+                        <button type="submit" class="enlist-membership-repair-btn inline-flex min-h-[2.75rem] items-center justify-center rounded-xl px-6 py-2.5 text-sm font-bold shadow-md transition">
                             Forcer le rattachement au compte de la communauté
                         </button>
                     </form>

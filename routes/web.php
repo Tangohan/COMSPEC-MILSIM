@@ -68,6 +68,7 @@ use App\Controllers\Admin\System\SystemAuditController;
 use App\Controllers\Admin\System\SystemSiteRoleAssignmentController;
 use App\Controllers\Admin\System\SystemMaintenanceController;
 use App\Controllers\Admin\System\SystemIndicatorBlocklistController;
+use App\Controllers\Admin\System\SystemUserLookupApiController;
 use App\Controllers\Admin\Organization\OrganizationDashboardController;
 use App\Controllers\Admin\Organization\OrganizationAuditController;
 use App\Controllers\Admin\Organization\UserAdminController;
@@ -293,6 +294,9 @@ return function (Router $router) {
     $router->post('/admin/roles/{id}/update', [SystemRoleController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/settings', [SystemSettingsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/brief', [\App\Controllers\Admin\System\SystemBriefSettingsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/blocklist', [SystemIndicatorBlocklistController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/blocklist/add', [SystemIndicatorBlocklistController::class, 'add'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/blocklist/revoke', [SystemIndicatorBlocklistController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/alerts/create', [SystemPlatformAlertsController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/alerts', [SystemPlatformAlertsController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/alerts/{id}/edit', [SystemPlatformAlertsController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -308,9 +312,7 @@ return function (Router $router) {
     $router->post('/admin/maintenance/{id}/delete', [SystemMaintenanceController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance/{id}/toggle', [SystemMaintenanceController::class, 'toggle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
-    $router->get('/admin/system/blocklist', [SystemIndicatorBlocklistController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
-    $router->post('/admin/system/blocklist/add', [SystemIndicatorBlocklistController::class, 'add'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
-    $router->post('/admin/system/blocklist/revoke', [SystemIndicatorBlocklistController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/api/admin/user-search', [SystemUserLookupApiController::class, 'search'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/site-roles', [SystemSiteRoleAssignmentController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/assign', [SystemSiteRoleAssignmentController::class, 'assign'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -518,6 +520,8 @@ return function (Router $router) {
     $router->get('/back-office/ressources/training/courses/{id}/showcase', [AdminTrainingController::class, 'courseShowcase'], $trainingResMw);
     $router->post('/back-office/ressources/training/courses/{id}/showcase', [AdminTrainingController::class, 'courseShowcase'], $trainingResMw);
     $router->get('/back-office/ressources/training/courses/{id}/export', [AdminTrainingController::class, 'exportCourse'], $trainingResMw);
+    $router->post('/back-office/ressources/training/courses/{id}/unpublish', [AdminTrainingController::class, 'courseUnpublish'], $trainingResMw);
+    $router->post('/back-office/ressources/training/courses/{id}/delete', [AdminTrainingController::class, 'courseDelete'], $trainingResMw);
     $router->get('/back-office/ressources/training/courses', [AdminTrainingController::class, 'courses'], $trainingResMw);
     $router->post('/back-office/ressources/training/enrollments/{id}/approve', [AdminTrainingController::class, 'approveEnrollment'], $trainingResMw);
     $router->post('/back-office/ressources/training/enrollments/{id}/decline', [AdminTrainingController::class, 'declineEnrollment'], $trainingResMw);
@@ -572,7 +576,11 @@ return function (Router $router) {
     $router->get('/forum/new-topic', [ForumNewTopicController::class, 'form'], $mwForum);
     $router->post('/forum/new-topic', [ForumNewTopicController::class, 'store'], $mwForum);
     $router->get('/back-office/forum-moderation', [ForumModerationDashboardController::class, 'index'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->get('/back-office/content-moderation', [ContentModerationController::class, 'index'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
+    /** Console modération fichiers / quarantaine : URL canonique /admin/… (alias /back-office/… pour anciens liens). */
+    $router->get('/admin/content-moderation', [ContentModerationController::class, 'index'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
+    $router->post('/admin/content-moderation/{id}/approve', [ContentModerationController::class, 'approve'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
+    $router->post('/admin/content-moderation/{id}/reject', [ContentModerationController::class, 'reject'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
+    $router->get('/back-office/content-moderation', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/content-moderation')), [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->post('/back-office/content-moderation/{id}/approve', [ContentModerationController::class, 'approve'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->post('/back-office/content-moderation/{id}/reject', [ContentModerationController::class, 'reject'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->get('/admin/forum-moderation', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/forum-moderation')), [AuthMiddleware::class]);

@@ -13,6 +13,11 @@ use App\Core\Session;
  */
 final class DocumentationController
 {
+    /** Révision affichée sur le guide intégré (incrémenter lors d’une mise à jour de fond). */
+    public const SITE_DOCS_REVISION_NUMBER = 3;
+
+    public const SITE_DOCS_REVISION_DATE_LABEL = '6 avril 2026';
+
     /** @var array<string, array{rel: string, title: string, section: string}> */
     private const ENTRIES = [
         'routes' => ['rel' => 'ROUTES.md', 'title' => 'Référence des routes HTTP', 'section' => 'Technique'],
@@ -20,6 +25,8 @@ final class DocumentationController
         'navigation' => ['rel' => 'utilisateur/tableau-de-bord-et-navigation.md', 'title' => 'Tableau de bord & navigation', 'section' => 'Utilisateur'],
         'back-office' => ['rel' => 'utilisateur/back-office-organisation.md', 'title' => 'Back-office organisation', 'section' => 'Utilisateur'],
         'premiers-pas' => ['rel' => 'utilisateur/premiers-pas.md', 'title' => 'Premiers pas', 'section' => 'Utilisateur'],
+        'connexion-compte' => ['rel' => 'utilisateur/connexion-et-compte.md', 'title' => 'Connexion et compte', 'section' => 'Utilisateur'],
+        'faq' => ['rel' => 'utilisateur/faq.md', 'title' => 'FAQ utilisateur', 'section' => 'Utilisateur'],
         'formations' => ['rel' => 'utilisateur/formations.md', 'title' => 'Formations (LMS)', 'section' => 'Utilisateur'],
         'forum' => ['rel' => 'utilisateur/forum.md', 'title' => 'Forum', 'section' => 'Utilisateur'],
         'recherche' => ['rel' => 'utilisateur/recherche-et-raccourcis.md', 'title' => 'Recherche & raccourcis', 'section' => 'Utilisateur'],
@@ -39,6 +46,8 @@ final class DocumentationController
             'content' => 'documentation.site.index',
             'title' => 'Guide du portail',
             'siteDocsPage' => true,
+            'siteDocsRevisionNumber' => self::SITE_DOCS_REVISION_NUMBER,
+            'siteDocsRevisionDateLabel' => self::SITE_DOCS_REVISION_DATE_LABEL,
         ]);
     }
 
@@ -54,6 +63,7 @@ final class DocumentationController
             'content' => 'documentation.references.index',
             'title' => 'Références projet',
             'docEntries' => self::ENTRIES,
+            'siteDocsRefsPage' => true,
         ]);
     }
 
@@ -78,6 +88,7 @@ final class DocumentationController
                 'content' => 'documentation.missing',
                 'title' => 'Document introuvable',
                 'docTitle' => $title,
+                'siteDocsRefsPage' => true,
             ]);
         }
         $body = (string) file_get_contents($full);
@@ -88,6 +99,7 @@ final class DocumentationController
             'docTitle' => $title,
             'docKey' => $key,
             'docBody' => $body,
+            'siteDocsRefsPage' => true,
         ]);
     }
 }

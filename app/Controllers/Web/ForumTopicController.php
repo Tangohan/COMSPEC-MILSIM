@@ -19,6 +19,7 @@ use App\Repositories\ForumAuthorIdentityRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\RoleRepository;
+use App\Repositories\SiteRoleAssignmentRepository;
 use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Services\Forum\ForumPostAttachmentService;
 use App\Services\Profile\ProfilePublicIdentityService;
@@ -39,7 +40,8 @@ class ForumTopicController
         private ForumPostAttachmentService $forumPostAttachmentService,
         private UserRepository $userRepository,
         private RoleRepository $roleRepository,
-        private UserProfileDisplaySettingsRepository $userProfileDisplaySettingsRepository
+        private UserProfileDisplaySettingsRepository $userProfileDisplaySettingsRepository,
+        private SiteRoleAssignmentRepository $siteRoleAssignmentRepository,
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -148,17 +150,17 @@ class ForumTopicController
         $topicStaleNotice = $topicCreatedTs !== false && $topicCreatedTs < strtotime('-3 months');
         $topicAutoLockedNotice = !empty($topic['auto_locked_at']);
 
-        $forumOrgRoleChoices = [];
-        foreach ($this->userRepository->listOrganizationRoleIdsForUser((int) $userId) as $rid) {
-            $rrow = $this->roleRepository->findById($rid, (int) $tenantId);
-            if ($rrow !== null) {
-                $forumOrgRoleChoices[] = [
-                    'id' => $rid,
-                    'name' => trim((string) ($rrow['name'] ?? '')),
-                ];
-            }
-        }
-        usort($forumOrgRoleChoices, static fn (array $a, array $b): int => strcmp($a['name'], $b['name']));
+        $userEmail = (string) Session::get('email', '');
+        $forumOrgRoleChoices = function_exists('forum_build_visible_role_choices')
+            ? forum_build_visible_role_choices(
+                (int) $userId,
+                (int) $tenantId,
+                $userEmail,
+                $this->userRepository,
+                $this->roleRepository,
+                $this->siteRoleAssignmentRepository
+            )
+            : [];
         $displaySettings = $this->userProfileDisplaySettingsRepository->getOrDefaults((int) $userId);
         $forumVisibleRoleCurrent = isset($displaySettings['forum_visible_role_id']) && $displaySettings['forum_visible_role_id'] !== null && $displaySettings['forum_visible_role_id'] !== ''
             ? (int) $displaySettings['forum_visible_role_id'] : 0;
