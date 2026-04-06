@@ -60,6 +60,7 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
     <?php require base_path('views/partials/header_portal.php'); ?>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>
     <?php require base_path('views/partials/alert_banners.php'); ?>
+    <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <main class="<?= !empty($isBackOfficeShell) ? 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]' : 'min-h-[80vh]' ?>">
         <?php if (!empty($isBackOfficeShell)): ?>
         <div

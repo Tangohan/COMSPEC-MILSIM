@@ -23,13 +23,19 @@ final class RateLimitMiddleware
         $path = $request->path();
         $method = $request->method();
         $ip = $this->clientIp();
-        $rules = $this->ruleFor($path, $method);
+        $rules = $this->ruleFor($path, $method, $ip);
         if ($rules === null) {
             return $next($request);
         }
-        [$max, $window] = $rules;
-        $key = 'rl:' . $path . ':' . $method . ':' . $ip;
-        if ($this->limiter->tooManyAttempts($key, $max, $window)) {
+        [$max, $window, $rateKey] = $rules;
+        if ($this->limiter->tooManyAttempts($rateKey, $max, $window)) {
+            if (str_starts_with($path, '/api/')) {
+                return Response::json([
+                    'error' => 'too_many_requests',
+                    'message' => 'Trop de requêtes. Merci de patienter un instant.',
+                ], 429);
+            }
+
             return Response::view('errors.429', [
                 'title' => 'Trop de requêtes',
             ])->setStatusCode(429);
@@ -38,10 +44,12 @@ final class RateLimitMiddleware
         return $next($request);
     }
 
-    /** @return array{0: int, 1: int}|null [max, windowSeconds] */
-    private function ruleFor(string $path, string $method): ?array
+    /**
+     * @return array{0: int, 1: int, 2: string}|null [max, windowSeconds, rateLimiterKey]
+     */
+    private function ruleFor(string $path, string $method, string $ip): ?array
     {
-        if ($method !== 'POST') {
+        if (!in_array($method, ['POST', 'PATCH', 'PUT', 'DELETE'], true)) {
             return null;
         }
         $routes = [
@@ -51,6 +59,7 @@ final class RateLimitMiddleware
             '/reset-password' => [20, 3600],
             '/enlistment' => [40, 600],
             '/register' => [10, 3600],
+            '/resend-verification' => [15, 3600],
             '/communities/create' => [15, 3600],
             '/invitations/accept' => [30, 600],
             '/community/resolve-code' => [20, 600],
@@ -59,13 +68,29 @@ final class RateLimitMiddleware
             '/api/forum-upload' => [40, 300],
             '/forum/new-topic' => [25, 600],
         ];
-        foreach ($routes as $prefix => $rule) {
-            if ($path === $prefix) {
-                return $rule;
+        foreach ($routes as $routePath => $rule) {
+            if ($path === $routePath) {
+                [$max, $window] = $rule;
+
+                return [$max, $window, 'rl:' . $path . ':' . $method . ':' . $ip];
             }
         }
         if (str_starts_with($path, '/forum/topic/') && str_ends_with($path, '/reply')) {
-            return [50, 300];
+            return [50, 300, 'rl:' . $path . ':' . $method . ':' . $ip];
+        }
+
+        $prefixRules = [
+            '/api/training/' => [300, 300],
+            '/api/me/' => [120, 300],
+            '/api/admin/' => [200, 300],
+            '/api/back-office/' => [200, 300],
+        ];
+        foreach ($prefixRules as $prefix => $rule) {
+            if (str_starts_with($path, $prefix)) {
+                [$max, $window] = $rule;
+
+                return [$max, $window, 'rl:prefix:' . $prefix . ':' . $method . ':' . $ip];
+            }
         }
 
         return null;

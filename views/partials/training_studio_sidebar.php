@@ -143,11 +143,11 @@ $studioCanEditVitrine = $gateStudio->allows('admin.access') || $gateStudio->allo
 
         </a>
 
-        <a href="<?= htmlspecialchars(training_studio_url($cid . '/structure#studio-structure')) ?>"
+        <a href="<?= htmlspecialchars(training_studio_url($cid . '/structure#studio-ressources-aide')) ?>"
 
            class="pl-3 border-l-2 border-emerald-500/40">
 
-            <span>Modules &amp; leçons</span>
+            <span>Modules, leçons &amp; ressources</span>
 
         </a>
 

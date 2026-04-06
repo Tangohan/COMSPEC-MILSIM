@@ -1048,7 +1048,8 @@ class AdminTrainingStudioController
                 return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
             }
             $type = trim((string) $request->input('resource_type', 'attachment'));
-            if (!in_array($type, self::RESOURCE_TYPES, true)) {
+            $fileTypes = ['pdf', 'image', 'video', 'audio', 'zip', 'attachment'];
+            if (!in_array($type, $fileTypes, true)) {
                 $type = 'attachment';
             }
             $file = isset($_FILES['resource_upload']) && is_array($_FILES['resource_upload']) ? $_FILES['resource_upload'] : null;
@@ -1095,19 +1096,15 @@ class AdminTrainingStudioController
 
             return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
         }
-        $type = trim((string) $request->input('resource_type', 'link'));
-        if (!in_array($type, self::RESOURCE_TYPES, true)) {
-            $type = 'link';
-        }
         $url = trim((string) $request->input('resource_external_url', ''));
         $extUrl = $url === '' ? null : substr($url, 0, 500);
         if ($extUrl === null) {
-            Session::flash('error', 'Renseignez une adresse web complète (https://…).');
+            Session::flash('error', 'Indiquez une adresse web (de préférence en https://).');
 
             return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
         }
         $this->resourceRepository->create($lessonId, [
-            'resource_type' => $type,
+            'resource_type' => 'link',
             'title' => mb_substr($title, 0, 255),
             'external_url' => $extUrl,
             'file_path' => null,

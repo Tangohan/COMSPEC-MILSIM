@@ -18,19 +18,50 @@ if ($showErrors) {
     ini_set('display_startup_errors', '0');
 }
 
-// Erreur fatale : journaliser ; afficher le détail seulement en mode debug
-register_shutdown_function(function () use ($showErrors) {
+// Erreur fatale : journaliser, alerte e-mail, réponse HTTP
+register_shutdown_function(function () use ($showErrors, $root) {
     $err = error_get_last();
     if ($err === null || !in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
         return;
     }
     $msg = 'ERREUR FATALE: ' . ($err['message'] ?? '') . ' — ' . ($err['file'] ?? '') . ':' . ($err['line'] ?? '');
     error_log($msg);
-    if (!$showErrors) {
+
+    if (class_exists(\App\Services\Monitoring\ErrorReportMailer::class)) {
+        try {
+            $rid = (string) (getenv('REQUEST_ID') ?: ($_ENV['REQUEST_ID'] ?? ''));
+            (new \App\Services\Monitoring\ErrorReportMailer())->reportFatal($err, $rid !== '' ? $rid : null);
+        } catch (Throwable) {
+        }
+    }
+
+    if (headers_sent()) {
         return;
     }
-    if (!headers_sent()) {
-        header('Content-Type: text/html; charset=utf-8');
+
+    $path = class_exists(\App\Core\Request::class)
+        ? \App\Core\Request::normalizePathFromServer()
+        : '/';
+    $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+    $wantsJson = str_starts_with($path, '/api/') || str_contains($accept, 'application/json');
+
+    if ($wantsJson) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'error' => 'server_error',
+            'message' => 'Une erreur est survenue. Merci de réessayer plus tard.',
+        ], JSON_UNESCAPED_UNICODE);
+
+        return;
+    }
+
+    header('Content-Type: text/html; charset=utf-8');
+    if (!$showErrors) {
+        http_response_code(500);
+        echo '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Erreur</title></head><body><p>Une erreur est survenue. Réessayez plus tard.</p></body></html>';
+
+        return;
     }
     echo '<pre style="background:#fdd;padding:1em;white-space:pre-wrap;">';
     echo 'ERREUR FATALE: ' . htmlspecialchars($err['message'] ?? '') . "\n";
@@ -93,10 +124,31 @@ try {
     $app->run();
 } catch (Throwable $e) {
     error_log($e->getMessage() . ' — ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
-    if (!headers_sent()) {
-        header('Content-Type: text/html; charset=utf-8');
+    try {
+        $rid = (string) (getenv('REQUEST_ID') ?: ($_ENV['REQUEST_ID'] ?? ''));
+        (new \App\Services\Monitoring\ErrorReportMailer())->reportThrowable($e, $rid !== '' ? $rid : null);
+    } catch (Throwable) {
     }
-    if ($showErrors) {
+
+    $path = \App\Core\Request::normalizePathFromServer();
+    $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+    $wantsJson = str_starts_with($path, '/api/') || str_contains($accept, 'application/json');
+
+    if (!headers_sent()) {
+        if ($wantsJson) {
+            header('Content-Type: application/json; charset=utf-8');
+        } else {
+            header('Content-Type: text/html; charset=utf-8');
+        }
+    }
+
+    if ($wantsJson) {
+        http_response_code(500);
+        echo json_encode([
+            'error' => 'server_error',
+            'message' => 'Une erreur est survenue. Merci de réessayer plus tard.',
+        ], JSON_UNESCAPED_UNICODE);
+    } elseif ($showErrors) {
         echo '<pre style="background:#fdd;padding:1em;white-space:pre-wrap;">';
         echo 'ERREUR: ' . htmlspecialchars($e->getMessage()) . "\n\n";
         echo htmlspecialchars($e->getFile() . ':' . $e->getLine() . "\n\n" . $e->getTraceAsString());

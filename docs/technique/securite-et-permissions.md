@@ -13,13 +13,20 @@
 
 ## API tactiques et clé
 
-- Le middleware global **`ComspecTacticalApiMiddleware`** appelle **`ComspecApiKeyAuth::enforceForTacticalPath`** pour les chemins d’API tactiques : en environnement strict, une **clé API** valide doit être fournie (configuration dans `config/tactical_api.php`, secrets côté environnement).
+- Le middleware global **`ComspecTacticalApiMiddleware`** appelle **`ComspecApiKeyAuth::enforceForTacticalPath`** pour les chemins d’API tactiques : en **production** (`APP_ENV=production`), ou si **`TACTICAL_API_STRICT=true`**, une **clé API** valide doit être fournie (configuration dans `config/tactical_api.php`, secrets `X_COMSPEC_KEY` / `ATAK_INTEL_SECRET` côté environnement). Sans secret configuré dans ces modes, les chemins protégés répondent **503** ; clé invalide → **401**.
+- Hors production et sans `TACTICAL_API_STRICT`, l’absence de secret laisse les chemins protégés accessibles (pratique de dev uniquement) ; dès qu’un secret est défini, la clé est exigée.
+- Les contrôles inline ATAK (`armaInlineAuthOk`) suivent la même logique que le middleware (y compris `hash_equals` sur Bearer / en-têtes).
 - Objectif : ne pas exposer les endpoints simulation / tactiques sans authentification applicative.
 
 ## En-têtes et limites
 
 - **`SecurityHeadersMiddleware`** renforce les en-têtes HTTP (politique de sécurité du navigateur selon configuration).
-- **`RateLimitMiddleware`** limite le débit des requêtes pour atténuer les abus.
+- **`RateLimitMiddleware`** limite le débit des requêtes pour atténuer les abus (formulaires sensibles, forum, et par préfixes **`POST` / `PATCH` / `PUT` / `DELETE`** sur `/api/training/`, `/api/me/`, `/api/admin/`, `/api/back-office/`). Les dépassements sur les routes `/api/*` renvoient une réponse **JSON** 429.
+
+## Alertes erreurs (exploitation)
+
+- Les exceptions non gérées et certaines erreurs fatales déclenchent un envoi optionnel via **`ErrorReportMailer`** (événement `error_alert`), si **`ERROR_ALERT_EMAIL`** est renseigné et **`ERROR_ALERT_ENABLED`** activé. Le corps du message contient la trace et le contexte (identifiants de session, `Request-ID`, etc.) ; les réponses **`/api/*`** restent génériques (JSON 500 sans stack).
+- Anti-spam : **`ERROR_ALERT_COOLDOWN_SECONDS`** et **`ERROR_ALERT_MAX_PER_HOUR`** (fichiers sous `storage/cache/error-alerts/`).
 
 ## Courriel et sécurité compte
 

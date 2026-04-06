@@ -254,7 +254,8 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Repositories\ForumNotificationRepository::class)
             ),
             \App\Controllers\Admin\Organization\CommunityEventsAdminController::class => new \App\Controllers\Admin\Organization\CommunityEventsAdminController(
                 self::get(\App\Repositories\CommunityEventRepository::class),
@@ -479,13 +480,18 @@ class Container
                 self::get(\App\Repositories\RoleSetRepository::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class)
             ),
+            \App\Services\Documents\DocumentTrainingReferencesService::class => new \App\Services\Documents\DocumentTrainingReferencesService(
+                self::get(\App\Repositories\TrainingResourceRepository::class),
+                self::get(\App\Repositories\TrainingRepository::class),
+            ),
             \App\Controllers\Web\DocumentsController::class => new \App\Controllers\Web\DocumentsController(
                 self::get(\App\Repositories\DocumentRepository::class),
                 self::get(\App\Repositories\DocumentCategoryRepository::class),
                 self::get(\App\Repositories\DocumentLinkRepository::class),
                 self::get(\App\Services\Documents\DocumentAccessService::class),
                 self::get(\App\Services\Audit\AuditService::class),
-                self::get(\App\Repositories\ModerationArtifactRepository::class)
+                self::get(\App\Repositories\ModerationArtifactRepository::class),
+                self::get(\App\Services\Documents\DocumentTrainingReferencesService::class)
             ),
             \App\Controllers\Web\PortalSearchController::class => new \App\Controllers\Web\PortalSearchController(
                 self::get(\App\Repositories\DocumentRepository::class),
@@ -666,7 +672,8 @@ class Container
                 self::get(\App\Repositories\ForumBlacklistedDomainRepository::class)
             ),
             \App\Controllers\Admin\ForumCategoriesApiController::class => new \App\Controllers\Admin\ForumCategoriesApiController(
-                self::get(\App\Repositories\ForumCategoryRepository::class)
+                self::get(\App\Repositories\ForumCategoryRepository::class),
+                self::get(TenantRepository::class),
             ),
             \App\Controllers\Admin\SiteSettingsApiController::class => new \App\Controllers\Admin\SiteSettingsApiController(
                 self::get(\App\Repositories\SiteSettingsRepository::class)
@@ -843,7 +850,8 @@ class Container
                 self::get(\App\Repositories\ModerationArtifactRepository::class),
                 self::get(\App\Repositories\ForumAuthorIdentityRepository::class),
                 self::get(\App\Services\Profile\ProfilePublicIdentityService::class),
-                self::get(\App\Repositories\InterteamMissionRepository::class)
+                self::get(\App\Repositories\InterteamMissionRepository::class),
+                self::get(TenantRepository::class)
             ),
             \App\Controllers\Web\ForumCoopTopicController::class => new \App\Controllers\Web\ForumCoopTopicController(
                 self::get(\App\Repositories\ForumTopicRepository::class),
@@ -888,11 +896,17 @@ class Container
                 self::get(\App\Repositories\ForumCategoryRepository::class),
                 self::get(\App\Repositories\ForumTopicRepository::class),
                 self::get(\App\Repositories\ForumPostRepository::class),
-                self::get(\App\Repositories\UserForumStatsRepository::class)
+                self::get(\App\Repositories\UserForumStatsRepository::class),
+                self::get(TenantRepository::class)
             ),
             \App\Controllers\Web\ForumModerationController::class => new \App\Controllers\Web\ForumModerationController(
                 self::get(\App\Repositories\ForumTopicRepository::class),
-                self::get(\App\Repositories\ForumReportRepository::class)
+                self::get(\App\Repositories\ForumReportRepository::class),
+                self::get(\App\Repositories\ForumPostRepository::class),
+                self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Services\Moderation\ModerationService::class),
+                self::get(UserRepository::class),
+                self::get(\App\Services\Community\CommunityReportNotificationService::class)
             ),
             \App\Controllers\Web\ForumModerationDashboardController::class => new \App\Controllers\Web\ForumModerationDashboardController(
                 self::get(\App\Repositories\ForumReportRepository::class),
@@ -921,7 +935,17 @@ class Container
                 self::get(\App\Repositories\ForumNotificationRepository::class),
                 self::get(\App\Services\Forum\ForumPostAttachmentService::class),
                 self::get(\App\Repositories\UserForumStatsRepository::class),
-                self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class)
+                self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class),
+                self::get(\App\Services\Community\CommunityReportNotificationService::class),
+                self::get(TenantRepository::class)
+            ),
+            \App\Services\Community\CommunityReportNotificationService::class => new \App\Services\Community\CommunityReportNotificationService(
+                self::get(\App\Services\EmailService::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Repositories\ForumNotificationRepository::class),
+                self::get(\App\Repositories\TenantCommunityFeedRepository::class),
+                self::get(TenantRepository::class)
             ),
             \App\Services\Community\CommunityReportService::class => new \App\Services\Community\CommunityReportService(
                 self::get(\App\Repositories\ForumReportRepository::class),
@@ -930,6 +954,7 @@ class Container
             ),
             \App\Controllers\Api\CommunityReportController::class => new \App\Controllers\Api\CommunityReportController(
                 self::get(\App\Services\Community\CommunityReportService::class),
+                self::get(\App\Services\Community\CommunityReportNotificationService::class)
             ),
             \App\Controllers\Api\ForumRestController::class => new \App\Controllers\Api\ForumRestController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
@@ -951,7 +976,8 @@ class Container
             \App\Controllers\Api\ForumUploadController::class => new \App\Controllers\Api\ForumUploadController(
                 self::get(\App\Services\Moderation\ContentModerationOrchestrator::class),
                 self::get(\App\Repositories\ModerationArtifactRepository::class),
-                self::get(\App\Services\Moderation\ContentModerationConfig::class)
+                self::get(\App\Services\Moderation\ContentModerationConfig::class),
+                self::get(TenantRepository::class)
             ),
             \App\Services\Forum\ForumPostAttachmentService::class => new \App\Services\Forum\ForumPostAttachmentService(
                 self::get(\App\Repositories\ForumAttachmentRepository::class),

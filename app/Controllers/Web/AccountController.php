@@ -246,7 +246,7 @@ class AccountController
      */
     private function notificationEmailCatalog(): array
     {
-        return [
+        $items = [
             [
                 'key' => EmailEvents::NEW_DEVICE_LOGIN,
                 'label' => 'Nouvel appareil ou navigateur',
@@ -289,7 +289,35 @@ class AccountController
                 'hint' => 'Validation de votre présence enregistrée.',
                 'group' => 'Événements',
             ],
+            [
+                'key' => EmailEvents::ATTENDANCE_RSVP_ORGANIZER,
+                'label' => 'Participation mise à jour sur vos activités',
+                'hint' => 'Lorsqu’un membre change sa réponse pour une activité que vous avez créée.',
+                'group' => 'Événements',
+            ],
+            [
+                'key' => EmailEvents::COMMUNITY_REPORT_RECEIPT,
+                'label' => 'Accusé de réception de votre signalement',
+                'hint' => 'Confirmation que votre signalement ou demande a bien été transmis à l’équipe.',
+                'group' => 'Signalements et modération',
+            ],
+            [
+                'key' => EmailEvents::COMMUNITY_REPORT_HANDLED,
+                'label' => 'Clôture de votre signalement',
+                'hint' => 'Lorsque l’équipe marque votre demande comme traitée.',
+                'group' => 'Signalements et modération',
+            ],
         ];
+        if (function_exists('forum_user_can_moderate') && forum_user_can_moderate()) {
+            $items[] = [
+                'key' => EmailEvents::COMMUNITY_REPORT_NEW_STAFF,
+                'label' => 'Nouveaux signalements pour l’équipe',
+                'hint' => 'Lorsqu’un membre envoie un signalement ou une demande à traiter.',
+                'group' => 'Signalements et modération',
+            ];
+        }
+
+        return $items;
     }
 
     /**

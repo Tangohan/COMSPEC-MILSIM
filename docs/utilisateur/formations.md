@@ -8,8 +8,9 @@ La disponibilité du module peut dépendre de l’**offre** souscrite par la com
 
 ## Catalogue
 
-- Liste des **parcours publiés** accessibles dans la communauté active.
-- Filtres possibles par **thème** ou **recherche** selon l’interface.
+- Liste des **parcours publiés** accessibles depuis la communauté active, éventuellement complétée par des parcours **proposés sur l’ensemble du site** (selon configuration).
+- Filtres par **origine** : tous les parcours, **communauté uniquement**, ou **toute la plateforme** ; combinables avec le filtre par **thème** et la **recherche**.
+- Les parcours « toute la plateforme » sont en général **repérés visuellement** dans le catalogue.
 - Chaque parcours mène à une **fiche détaillée** : objectifs, durée indicative, modules ou leçons.
 
 ## Mes formations
@@ -30,7 +31,14 @@ Vue « **Mes formations** » : parcours **assignés** ou **démarrés** par vous
 
 ## Administration pédagogique (rôles autorisés)
 
-Les profils disposant des droits de **gestion** ou **publication** des formations accèdent à des écrans d’administration (catalogue éditorial, inscriptions, rapports, studio de contenu selon configuration). Ces écrans permettent de créer ou modifier des parcours **pour la communauté courante**.
+Les profils disposant des droits de **gestion** ou **publication** des formations accèdent à des écrans d’administration (catalogue éditorial, inscriptions, rapports, studio de contenu selon configuration). Ces écrans permettent de créer ou modifier des parcours **rattachés à la communauté courante**.
+
+Les **administrateurs de la plateforme** peuvent en outre définir qu’un parcours est **proposé sur toute la plateforme** (portée catalogue) depuis le Studio ; les autres rôles voient cette information sans pouvoir la changer.
+
+## Portée « communauté » ou « toute la plateforme »
+
+- **Communauté** : le parcours est pensé pour le catalogue et les règles d’accès de **votre organisation**.
+- **Toute la plateforme** : le parcours peut apparaître dans le catalogue des organisations éligibles ; l’**adresse courte** du lien doit être unique sur l’ensemble du site.
 
 ## Journal d’audit (supervision)
 

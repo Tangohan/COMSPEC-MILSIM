@@ -24,10 +24,13 @@ if (!function_exists('forum_user_can_moderate')) {
      */
     function forum_user_can_moderate(): bool
     {
+        $gate = \App\Core\Gate::getInstance();
+        if ($gate->allows('admin.system')) {
+            return true;
+        }
         if (!function_exists('can')) {
             return false;
         }
-        $gate = \App\Core\Gate::getInstance();
         if (can('forum.moderate') || can('forum.moderate_organization')) {
             return true;
         }
@@ -54,6 +57,42 @@ if (!function_exists('forum_viewer_is_moderator')) {
     function forum_viewer_is_moderator(): bool
     {
         return forum_user_can_moderate();
+    }
+}
+
+if (!function_exists('forum_report_resolve_target_user_id')) {
+    /**
+     * Membre visé par un signalement hors fil (fiche, photo, dossier opérateur) quand l’identifiant
+     * n’est pas stocké en colonne dédiée — dérivé du texte du signalement.
+     */
+    function forum_report_resolve_target_user_id(array $report): ?int
+    {
+        if (!empty($report['reported_user_id'])) {
+            $u = (int) $report['reported_user_id'];
+
+            return $u > 0 ? $u : null;
+        }
+        $reporter = (int) ($report['reporter_id'] ?? 0);
+        if (!empty($report['post_author_id'])) {
+            $u = (int) $report['post_author_id'];
+            if ($u > 0 && $u !== $reporter) {
+                return $u;
+            }
+        }
+        $reason = (string) ($report['reason'] ?? '');
+        $kind = (string) ($report['content_kind'] ?? '');
+        if ($reason === '') {
+            return null;
+        }
+        if (preg_match('/compte\s+n°\s*(\d+)/iu', $reason, $m)) {
+            return (int) $m[1];
+        }
+        if (in_array($kind, ['member_profile', 'profile_picture', 'operator_visual'], true)
+            && preg_match('/\(\s*n°\s*(\d+)\s*\)/u', $reason, $m)) {
+            return (int) $m[1];
+        }
+
+        return null;
     }
 }
 
@@ -202,6 +241,10 @@ if (!function_exists('forum_community_section_open_for_current_viewer')) {
      */
     function forum_community_section_open_for_current_viewer(int $tenantId): bool
     {
+        $gate = \App\Core\Gate::getInstance();
+        if ($gate->allows('admin.system') || $gate->allows('admin.access') || $gate->allows('admin.organization')) {
+            return true;
+        }
         if (function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator()) {
             return true;
         }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Attendance;
 
 use App\Repositories\CommunityEventRepository;
+use App\Repositories\ForumNotificationRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
@@ -27,7 +28,8 @@ final class CommunityEventAttendanceService
         private EmailService $emailService,
         private TenantRepository $tenants,
         private UserRepository $users,
-        private UserNotificationPreferencesRepository $notificationPreferencesRepository
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository,
+        private ForumNotificationRepository $forumNotificationRepository,
     ) {}
 
     /**
@@ -185,6 +187,43 @@ final class CommunityEventAttendanceService
                 $eventId,
                 $tenantId
             );
+        }
+
+        $labels = ['yes' => 'Présent', 'maybe' => 'Peut-être', 'no' => 'Absent'];
+        $statusLabel = $labels[$status] ?? $status;
+        $organizerId = (int) ($event['created_by_user_id'] ?? 0);
+        if ($organizerId > 0 && $organizerId !== $userId) {
+            $organizer = $this->users->findById($organizerId, $tenantId);
+            $orgEmail = $organizer ? trim((string) ($organizer['email'] ?? '')) : '';
+            $organizerName = $organizer ? (string) ($organizer['display_name'] ?? 'Membre') : 'Membre';
+            if ($orgEmail !== '' && filter_var($orgEmail, FILTER_VALIDATE_EMAIL)
+                && $this->notificationPreferencesRepository->isEmailEventEnabled($organizerId, EmailEvents::ATTENDANCE_RSVP_ORGANIZER)) {
+                try {
+                    $this->emailService->sendAttendanceRsvpOrganizer(
+                        $orgEmail,
+                        $organizerName,
+                        $tenantName,
+                        (string) ($event['title'] ?? ''),
+                        (string) ($event['starts_at'] ?? ''),
+                        $displayName,
+                        $statusLabel,
+                        $eventId,
+                        $tenantId
+                    );
+                } catch (\Throwable) {
+                }
+            }
+            if ($this->forumNotificationRepository->tableExists()) {
+                try {
+                    $this->forumNotificationRepository->create($tenantId, $organizerId, 'event_rsvp_change', [
+                        'event_id' => $eventId,
+                        'title' => (string) ($event['title'] ?? ''),
+                        'participant' => $displayName,
+                        'status_label' => $statusLabel,
+                    ]);
+                } catch (\Throwable) {
+                }
+            }
         }
 
         return ['ok' => true, 'previous' => $previousStatus];

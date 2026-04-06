@@ -1,5 +1,5 @@
 /**
- * Studio LMS — affiche le panneau d’ajout de ressource selon le mode (lien / fichier / bibliothèque).
+ * Studio LMS — panneau ressources leçon : modes lien / fichier / centre documentaire + filtre liste documents.
  */
 (function () {
   function syncForm(form) {
@@ -17,6 +17,44 @@
     });
   }
 
+  function bindDocFilter(form) {
+    var panel = form.querySelector('[data-lms-res-panel="library"]');
+    if (!panel) return;
+    var filterInp = panel.querySelector('[data-lms-doc-filter]');
+    var docSel = panel.querySelector('[data-lms-doc-select]');
+    if (!filterInp || !docSel) return;
+    filterInp.addEventListener('input', function () {
+      var q = filterInp.value.trim().toLowerCase();
+      if (q === '') {
+        docSel.querySelectorAll('option, optgroup').forEach(function (n) {
+          n.hidden = false;
+        });
+        return;
+      }
+      Array.prototype.forEach.call(docSel.children, function (node) {
+        if (node.tagName === 'OPTION') {
+          node.hidden = false;
+        }
+      });
+      docSel.querySelectorAll('optgroup').forEach(function (og) {
+        var any = false;
+        Array.prototype.forEach.call(og.querySelectorAll('option'), function (opt) {
+          var t = (opt.textContent || '').toLowerCase();
+          var show = t.indexOf(q) !== -1;
+          opt.hidden = !show;
+          if (show) {
+            any = true;
+          }
+        });
+        og.hidden = !any;
+      });
+      var cur = docSel.options[docSel.selectedIndex];
+      if (cur && cur.hidden) {
+        docSel.selectedIndex = 0;
+      }
+    });
+  }
+
   document.addEventListener('change', function (e) {
     if (e.target.matches('[data-lms-resource-mode]')) {
       var form = e.target.closest('form[data-lms-lesson-resource-form]');
@@ -24,5 +62,8 @@
     }
   });
 
-  document.querySelectorAll('form[data-lms-lesson-resource-form]').forEach(syncForm);
+  document.querySelectorAll('form[data-lms-lesson-resource-form]').forEach(function (form) {
+    syncForm(form);
+    bindDocFilter(form);
+  });
 })();

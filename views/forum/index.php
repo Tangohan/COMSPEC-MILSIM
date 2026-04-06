@@ -11,6 +11,11 @@ $forumFullCategoryAdmin = !empty($forumFullCategoryAdmin);
 $forumCsrfToken = $forumCsrfToken ?? '';
 $forumCategoriesApiUrl = $forumCategoriesApiUrl ?? '';
 $forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('admin/forum-config');
+$forumContextTenantId = (int) ($forumContextTenantId ?? \App\Core\Session::get('tenant_id') ?? 0);
+$forumSessionTenantId = (int) ($forumSessionTenantId ?? $forumContextTenantId);
+$forumViewTenantSwitcher = is_array($forumViewTenantSwitcher ?? null) ? $forumViewTenantSwitcher : [];
+$forumEffectiveTenantName = trim((string) ($forumEffectiveTenantName ?? ''));
+$forumCanDeleteCategoryMenu = !empty($forumCanDeleteCategoryMenu);
 ?>
 <div class="w-full px-4 sm:px-6 lg:px-8 py-10 bg-[#f8fafc]">
   <!-- Hero -->
@@ -47,12 +52,42 @@ $forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('admin/forum-config
     <?php endif; ?>
   </div>
 
+  <?php if ($forumViewTenantSwitcher !== []): ?>
+  <div class="mb-6 rounded-xl border border-amber-200/90 bg-amber-50/90 px-4 py-3 shadow-sm flex flex-col sm:flex-row sm:items-center gap-3">
+    <div class="min-w-0 flex-1">
+      <p class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-900">Vue opérateur site</p>
+      <p class="text-xs text-amber-950/90 mt-0.5">Consultez et modérez le forum d’une autre communauté. Les actions s’appliquent à la communauté choisie.</p>
+    </div>
+    <form method="get" action="<?= htmlspecialchars($baseUrl . '/forum', ENT_QUOTES, 'UTF-8') ?>" class="flex flex-wrap items-center gap-2 shrink-0">
+      <?php if (($searchQuery ?? '') !== ''): ?>
+        <input type="hidden" name="q" value="<?= htmlspecialchars((string) $searchQuery, ENT_QUOTES, 'UTF-8') ?>">
+      <?php endif; ?>
+      <label class="sr-only" for="forum-tenant-switch">Communauté</label>
+      <select name="forum_tenant" id="forum-tenant-switch" class="rounded-lg border border-amber-300/80 bg-white px-3 py-2 text-sm font-semibold text-slate-900 max-w-[min(100%,20rem)]" onchange="this.form.submit()">
+        <?php foreach ($forumViewTenantSwitcher as $topt):
+            $tid = (int) ($topt['id'] ?? 0);
+            if ($tid < 2) {
+                continue;
+            }
+            ?>
+          <option value="<?= $tid ?>" <?= $tid === $forumContextTenantId ? 'selected' : '' ?>><?= htmlspecialchars((string) ($topt['name'] ?? ('#' . $tid)), ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
+      </select>
+      <noscript><button type="submit" class="rounded-lg bg-amber-700 px-3 py-2 text-xs font-bold text-white">Afficher</button></noscript>
+    </form>
+  </div>
+  <?php elseif ($forumEffectiveTenantName !== '' && $forumContextTenantId !== $forumSessionTenantId): ?>
+  <div class="mb-6 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600">
+    Vue : <span class="font-bold text-slate-900"><?= htmlspecialchars($forumEffectiveTenantName, ENT_QUOTES, 'UTF-8') ?></span>
+  </div>
+  <?php endif; ?>
+
   <?php if ($forumContextMenuEnabled): ?>
   <div class="mb-6 rounded-xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50/90 via-white to-slate-50 px-4 py-3 shadow-sm flex flex-wrap items-center gap-3">
     <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white text-xs font-black" title="Staff">⌁</span>
     <div class="min-w-0 flex-1">
-      <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">Création rapide</p>
-      <p class="text-xs text-slate-700 mt-0.5"><span class="font-semibold text-slate-900">Clic droit</span> sur une catégorie racine pour ajouter une <span class="font-semibold">sous-catégorie</span> sans quitter le forum.</p>
+      <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">Raccourcis encadrement</p>
+      <p class="text-xs text-slate-700 mt-0.5"><span class="font-semibold text-slate-900">Clic droit</span> sur une catégorie racine : <span class="font-semibold">sous-catégorie</span><?= $forumCanDeleteCategoryMenu ? ', <span class="font-semibold">suppression</span> si la catégorie est vide' : '' ?> (selon vos droits).</p>
     </div>
     <?php if ($forumFullCategoryAdmin): ?>
     <a href="<?= htmlspecialchars($forumAdminForumConfigUrl, ENT_QUOTES, 'UTF-8') ?>" class="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-800 shadow-sm hover:border-emerald-400 hover:text-emerald-900 transition">Configuration forum</a>
@@ -63,6 +98,9 @@ $forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('admin/forum-config
   <!-- Search -->
   <div class="border border-slate-200 bg-white rounded-lg shadow-sm p-4 mb-8">
     <form method="get" action="<?= $baseUrl ?>/forum" class="flex flex-wrap gap-3">
+      <?php if ($forumViewTenantSwitcher !== []): ?>
+      <input type="hidden" name="forum_tenant" value="<?= (int) $forumContextTenantId ?>">
+      <?php endif; ?>
       <input type="search" name="q" value="<?= htmlspecialchars($searchQuery ?? '') ?>" placeholder="<?= htmlspecialchars($labels['search_placeholder'] ?? 'Recherche forum (titre + contenu)') ?>" class="flex-1 min-w-[200px] bg-slate-50 border border-slate-200 px-4 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 rounded-md">
       <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-2 transition rounded-md">Rechercher</button>
     </form>
@@ -437,7 +475,7 @@ $forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('admin/forum-config
 </div>
 
 <?php if ($forumContextMenuEnabled): ?>
-<div id="forum-context-menu-config" class="hidden" data-enabled="1" data-api-url="<?= htmlspecialchars($forumCategoriesApiUrl, ENT_QUOTES, 'UTF-8') ?>" data-csrf="<?= htmlspecialchars($forumCsrfToken, ENT_QUOTES, 'UTF-8') ?>" data-full-admin="<?= $forumFullCategoryAdmin ? '1' : '0' ?>" data-admin-url="<?= htmlspecialchars($forumAdminForumConfigUrl, ENT_QUOTES, 'UTF-8') ?>"></div>
+<div id="forum-context-menu-config" class="hidden" data-enabled="1" data-api-url="<?= htmlspecialchars($forumCategoriesApiUrl, ENT_QUOTES, 'UTF-8') ?>" data-csrf="<?= htmlspecialchars($forumCsrfToken, ENT_QUOTES, 'UTF-8') ?>" data-full-admin="<?= $forumFullCategoryAdmin ? '1' : '0' ?>" data-admin-url="<?= htmlspecialchars($forumAdminForumConfigUrl, ENT_QUOTES, 'UTF-8') ?>" data-context-tenant-id="<?= (int) $forumContextTenantId ?>" data-delete-menu="<?= $forumCanDeleteCategoryMenu ? '1' : '0' ?>"></div>
 
 <div id="forum-subcategory-modal" class="forum-modal-backdrop fixed inset-0 z-[10000] hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" aria-hidden="true">
   <div class="forum-modal-panel w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="forum-subcat-modal-title">

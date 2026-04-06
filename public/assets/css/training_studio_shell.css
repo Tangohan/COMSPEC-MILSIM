@@ -468,6 +468,23 @@
   background: rgba(248, 250, 252, 0.9);
 }
 
+@media (min-width: 1280px) {
+  .training-studio-course-row {
+    flex-wrap: nowrap;
+  }
+
+  .training-studio-course-row .ts-course-row__main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .training-studio-course-row .ts-course-row__meta {
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
 .training-studio-thumb {
   width: 3rem;
   height: 3rem;

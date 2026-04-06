@@ -7,6 +7,8 @@ $documentType = $documentType ?? '';
 $sort = $sort ?? 'title_asc';
 $entity_type = $entity_type ?? null;
 $entity_id = $entity_id ?? null;
+/** @var array<int, list<array{label: string, href: string}>> $documentTrainingRefs */
+$documentTrainingRefs = $documentTrainingRefs ?? [];
 $totalDocs = count($documents);
 $totalCategories = count($categories);
 $documentTypes = [
@@ -223,6 +225,21 @@ $baseUrlList = url('documents');
                     <p class="mt-2 flex-1 text-sm leading-relaxed text-slate-600 line-clamp-3"><?= htmlspecialchars($snippet, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php else: ?>
                     <p class="mt-2 flex-1 text-sm text-slate-500">Document consultable en ligne ou téléchargeable.</p>
+                    <?php endif; ?>
+                    <?php
+                    $trainingRefs = $documentTrainingRefs[(int) ($doc['id'] ?? 0)] ?? [];
+                    if ($trainingRefs !== []):
+                    ?>
+                    <div class="mt-3 rounded-xl border border-violet-200/90 bg-violet-50/70 px-3 py-2.5">
+                        <p class="text-[10px] font-black uppercase tracking-[0.14em] text-violet-900/85">Référencé dans des formations</p>
+                        <ul class="mt-1.5 space-y-1">
+                            <?php foreach ($trainingRefs as $tr): ?>
+                            <li>
+                                <a href="<?= htmlspecialchars($tr['href'], ENT_QUOTES, 'UTF-8') ?>" class="text-xs font-semibold text-violet-950 underline decoration-violet-300 underline-offset-2 hover:text-violet-800"><?= htmlspecialchars($tr['label'], ENT_QUOTES, 'UTF-8') ?></a>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
                     <?php endif; ?>
                     <?php if ($updated !== ''): ?>
                     <p class="mt-3 text-[11px] font-medium text-slate-400">Mise à jour <?= htmlspecialchars($updated) ?></p>

@@ -244,10 +244,18 @@ declare(strict_types=1);
         Le <strong>catalogue</strong> liste les parcours auxquels vous avez accès : consultation libre, inscription selon règles, ou <strong>assignation</strong> par un formateur ou l’administration.
         Une fois inscrit, votre <strong>progression</strong> est enregistrée ; les parcours peuvent imposer un score minimal ou des leçons obligatoires selon la configuration de la formation.
     </p>
+    <p>
+        Selon la configuration de la plateforme, le catalogue peut mêler des parcours <strong>publiés par votre communauté</strong> et des parcours <strong>proposés sur l’ensemble du site</strong> (repérés par une pastille).
+        Des filtres permettent d’afficher <strong>tous</strong> les parcours, <strong>uniquement ceux de la communauté</strong>, ou <strong>uniquement ceux proposés sur toute la plateforme</strong>, en complément du filtre par thème et de la recherche.
+    </p>
     <h3>Création : le Studio</h3>
     <p>
         Les équipes habilitées créent les formations dans l’espace d’édition (Studio) : <strong>fiche</strong> de la formation (titre, résumé, niveau, durée indicative, objectifs),
         puis structuration en <strong>modules</strong> et <strong>leçons</strong>. Chaque leçon a un type de contenu (texte enrichi, vidéo, fichier, audio, parcours type liste de contrôle, lien externe, parcours visuel type présentation, etc.).
+    </p>
+    <p>
+        Les <strong>administrateurs de la plateforme</strong> peuvent indiquer si un parcours est destiné <strong>à la communauté courante</strong> ou <strong>proposé sur toute la plateforme</strong> (choix à la création et sur la fiche).
+        Les autres rôles voient la portée actuelle sans pouvoir la modifier. Les adresses courtes des parcours proposés sur toute la plateforme doivent rester <strong>uniques</strong> à l’échelle du site.
     </p>
     <h3>États de visibilité d’une formation</h3>
     <p>

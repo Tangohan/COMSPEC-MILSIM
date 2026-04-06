@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Core\Container;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -18,6 +19,8 @@ use App\Repositories\ForumVoteRepository;
 use App\Repositories\ForumNotificationRepository;
 use App\Repositories\UserForumStatsRepository;
 use App\Repositories\UserProfileDisplaySettingsRepository;
+use App\Repositories\TenantRepository;
+use App\Services\Community\CommunityReportNotificationService;
 use App\Services\Forum\ForumPostAttachmentService;
 use App\Support\ForumReportReason;
 
@@ -33,7 +36,9 @@ class ForumApiController
         private ForumNotificationRepository $notificationRepository,
         private ForumPostAttachmentService $postAttachmentService,
         private UserForumStatsRepository $userForumStatsRepository,
-        private UserProfileDisplaySettingsRepository $userProfileDisplaySettingsRepository
+        private UserProfileDisplaySettingsRepository $userProfileDisplaySettingsRepository,
+        private CommunityReportNotificationService $communityReportNotificationService,
+        private TenantRepository $tenantRepository,
     ) {}
 
     public function handle(Request $request, array $params = []): Response
@@ -69,7 +74,7 @@ class ForumApiController
         return match ($action) {
             'subscribe' => $this->subscribe($input, $userId, $tenantId),
             'unsubscribe' => $this->unsubscribe($input, $userId, $tenantId),
-            'create_topic' => $this->createTopic($input, $userId, $tenantId),
+            'create_topic' => $this->createTopic($input, $userId, (int) $tenantId),
             'create_post' => $this->createPost($input, $userId, $tenantId),
             'edit_post' => $this->editPost($input, $userId, $tenantId),
             'delete_post' => $this->deletePost($input, $userId, $tenantId),
@@ -138,17 +143,36 @@ class ForumApiController
         return Response::json(['success' => false, 'error' => 'Cible invalide'], 400);
     }
 
-    private function createTopic(array $input, int $userId, int $tenantId): Response
+    private function resolveForumApiTenantId(array $input, int $sessionTenantId): int
+    {
+        if (!Gate::getInstance()->allows('admin.system')) {
+            return $sessionTenantId;
+        }
+        $ctx = (int) ($input['forum_tenant'] ?? $input['context_tenant_id'] ?? 0);
+        if ($ctx > 1 && $this->tenantRepository->findById($ctx)) {
+            return $ctx;
+        }
+
+        return $sessionTenantId;
+    }
+
+    private function createTopic(array $input, int $userId, int $sessionTenantId): Response
     {
         if (!function_exists('can') || !can('forum.create_topic')) {
             return Response::json(['success' => false, 'error' => 'Non autorisé'], 403);
         }
+        $tenantId = $this->resolveForumApiTenantId($input, $sessionTenantId);
         $categoryId = (int) ($input['category_id'] ?? 0);
         $title = trim((string) ($input['title'] ?? ''));
         $content = trim((string) ($input['content'] ?? ''));
         $category = $this->categoryRepository->findById($categoryId, $tenantId);
         if (!$category) {
             return Response::json(['success' => false, 'error' => 'Catégorie invalide'], 400);
+        }
+        $newScope = (string) ($category['scope'] ?? 'general');
+        if (function_exists('forum_organization_scope_accessible_for_current_viewer')
+            && !forum_organization_scope_accessible_for_current_viewer($tenantId, $newScope)) {
+            return Response::json(['success' => false, 'error' => 'Ce canal unité n’accepte pas de nouveaux sujets pour le moment.'], 403);
         }
         if (strlen($title) < 3 || strlen($title) > 255) {
             return Response::json(['success' => false, 'error' => 'Titre entre 3 et 255 caractères'], 400);
@@ -402,7 +426,12 @@ class ForumApiController
             return Response::json(['success' => false, 'error' => 'Cible invalide'], 400);
         }
 
-        $this->reportRepository->create($tenantId, $userId, $postId, $topicId, $reasonText !== '' ? $reasonText : 'Signalement', $reportType, $comment, $urlForDb);
+        $reasonForDb = $reasonText !== '' ? $reasonText : 'Signalement';
+        $reportId = $this->reportRepository->create($tenantId, $userId, $postId, $topicId, $reasonForDb, $reportType, $comment, $urlForDb);
+        try {
+            $this->communityReportNotificationService->notifyReportCreated($tenantId, $reportId, $userId, $reasonForDb);
+        } catch (\Throwable) {
+        }
 
         return Response::json(['success' => true]);
     }

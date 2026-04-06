@@ -280,4 +280,20 @@ class TenantRepository
 
         return is_array($rows) ? $rows : [];
     }
+
+    /**
+     * Liste des communautés (hors tenant technique id = 1) pour sélecteurs opérateur.
+     *
+     * @return list<array{id: int, name: string, slug: string}>
+     */
+    public function listBasicAll(): array
+    {
+        $stmt = $this->pdo->query('SELECT id, name, slug FROM tenants WHERE id > 1 ORDER BY name ASC');
+        if ($stmt === false) {
+            return [];
+        }
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
 }

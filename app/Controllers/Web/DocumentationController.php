@@ -14,7 +14,7 @@ use App\Core\Session;
 final class DocumentationController
 {
     /** Révision affichée sur le guide intégré (incrémenter lors d’une mise à jour de fond). */
-    public const SITE_DOCS_REVISION_NUMBER = 3;
+    public const SITE_DOCS_REVISION_NUMBER = 4;
 
     public const SITE_DOCS_REVISION_DATE_LABEL = '6 avril 2026';
 

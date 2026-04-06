@@ -44,6 +44,15 @@ final class EmailEvents
     /** Nouveau créneau (session) sur une formation — apprenants inscrits dont le parcours n’est pas terminé. */
     public const TRAINING_COURSE_SESSION_SCHEDULED_LEARNER = 'TRAINING_COURSE_SESSION_SCHEDULED_LEARNER';
 
+    /** Accusé de réception — signalement transmis (signaleur). */
+    public const COMMUNITY_REPORT_RECEIPT = 'COMMUNITY_REPORT_RECEIPT';
+    /** Signalement marqué traité — suivi pour le signaleur. */
+    public const COMMUNITY_REPORT_HANDLED = 'COMMUNITY_REPORT_HANDLED';
+    /** Nouveau signalement — alerte équipe de modération. */
+    public const COMMUNITY_REPORT_NEW_STAFF = 'COMMUNITY_REPORT_NEW_STAFF';
+    /** Changement de participation (RSVP) — activité créée par le destinataire. */
+    public const ATTENDANCE_RSVP_ORGANIZER = 'ATTENDANCE_RSVP_ORGANIZER';
+
     /** @var list<string> */
     public const EMAIL_EVENTS = [
         self::USER_REGISTER_CONFIRMATION,
@@ -71,5 +80,9 @@ final class EmailEvents
         self::TRAINING_SELF_ENROLL_DECLINED,
         self::TRAINING_MODULE_BLOCKED_STAFF,
         self::TRAINING_COURSE_SESSION_SCHEDULED_LEARNER,
+        self::COMMUNITY_REPORT_RECEIPT,
+        self::COMMUNITY_REPORT_HANDLED,
+        self::COMMUNITY_REPORT_NEW_STAFF,
+        self::ATTENDANCE_RSVP_ORGANIZER,
     ];
 }

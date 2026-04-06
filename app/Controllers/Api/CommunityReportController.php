@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Services\Community\CommunityReportNotificationService;
 use App\Services\Community\CommunityReportService;
 
 /**
@@ -17,6 +18,7 @@ final class CommunityReportController
 {
     public function __construct(
         private CommunityReportService $communityReportService,
+        private CommunityReportNotificationService $communityReportNotificationService,
     ) {}
 
     public function submit(Request $request, array $params = []): Response
@@ -48,6 +50,16 @@ final class CommunityReportController
         $result = $this->communityReportService->submit($tenantId, $userId, $targetType, $input, $host);
         if (!$result['ok']) {
             return Response::json(['success' => false, 'error' => $result['error']], 400);
+        }
+
+        try {
+            $this->communityReportNotificationService->notifyReportCreated(
+                $tenantId,
+                (int) ($result['report_id'] ?? 0),
+                $userId,
+                (string) ($result['reason_preview'] ?? '')
+            );
+        } catch (\Throwable) {
         }
 
         return Response::json(['success' => true]);

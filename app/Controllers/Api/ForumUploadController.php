@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\ModerationArtifactRepository;
+use App\Repositories\TenantRepository;
 use App\Services\Moderation\ContentModerationConfig;
 use App\Services\Moderation\ContentModerationOrchestrator;
 use App\Services\Moderation\ModerationArtifactState;
@@ -23,16 +25,23 @@ class ForumUploadController
     public function __construct(
         private ContentModerationOrchestrator $moderationOrchestrator,
         private ModerationArtifactRepository $moderationArtifactRepository,
-        private ContentModerationConfig $moderationConfig
+        private ContentModerationConfig $moderationConfig,
+        private TenantRepository $tenantRepository,
     ) {
     }
 
     public function handle(Request $request, array $params = []): Response
     {
-        $tenantId = Session::get('tenant_id');
+        $tenantId = (int) Session::get('tenant_id');
         $userId = Session::get('user_id');
         if (!$tenantId || !$userId) {
             return Response::json(['success' => false, 'error' => 'Non authentifié'], 401);
+        }
+        if (Gate::getInstance()->allows('admin.system')) {
+            $ctx = (int) $request->input('forum_tenant', 0);
+            if ($ctx > 1 && $this->tenantRepository->findById($ctx)) {
+                $tenantId = $ctx;
+            }
         }
         if ($request->method() !== 'POST') {
             return Response::json(['success' => false, 'error' => 'Méthode non autorisée'], 405);

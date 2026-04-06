@@ -49,7 +49,25 @@ final class ComspecApiKeyAuth
     }
 
     /**
-     * En production : clé requise sur les chemins protégés ; 503 si non configurée, 401 si invalide.
+     * Même logique que les en-têtes vérifiés par le middleware tactique (hash_equals, Bearer).
+     */
+    public static function armaInlineAuthOk(): bool
+    {
+        $secret = self::expectedSecret();
+        if ($secret === '') {
+            if (self::isAppProduction() || self::tacticalStrictFromEnv()) {
+                return false;
+            }
+
+            return true;
+        }
+
+        return self::requestPresentsValidKey();
+    }
+
+    /**
+     * Production ou TACTICAL_API_STRICT=true : clé obligatoire sur les chemins protégés ; 503 si non configurée, 401 si invalide.
+     * Hors production sans strict : ouvert si aucun secret n’est défini ; sinon clé requise.
      */
     public static function enforceForTacticalPath(string $path): ?Response
     {
@@ -57,23 +75,32 @@ final class ComspecApiKeyAuth
         if (!self::pathRequiresProtection($path, $cfg)) {
             return null;
         }
-        if (!self::isAppProduction()) {
-            $secret = self::expectedSecret();
+        $secret = self::expectedSecret();
+        $strict = self::isAppProduction() || self::tacticalStrictFromEnv();
+
+        if ($strict) {
             if ($secret === '') {
-                return null;
+                return Response::json([
+                    'error' => 'api_key_not_configured',
+                    'message' => 'Définissez X_COMSPEC_KEY (ou ATAK_INTEL_SECRET) dans l’environnement pour les API tactiques.',
+                ], 503);
             }
 
             return self::requestPresentsValidKey() ? null : self::json401();
         }
-        $secret = self::expectedSecret();
+
         if ($secret === '') {
-            return Response::json([
-                'error' => 'api_key_not_configured',
-                'message' => 'Définissez X_COMSPEC_KEY (ou ATAK_INTEL_SECRET) dans l’environnement pour les API tactiques en production.',
-            ], 503);
+            return null;
         }
 
         return self::requestPresentsValidKey() ? null : self::json401();
+    }
+
+    private static function tacticalStrictFromEnv(): bool
+    {
+        $raw = (string) (($_ENV['TACTICAL_API_STRICT'] ?? null) ?: (getenv('TACTICAL_API_STRICT') ?: ''));
+
+        return filter_var($raw, FILTER_VALIDATE_BOOLEAN);
     }
 
     private static function json401(): Response

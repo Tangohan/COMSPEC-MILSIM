@@ -2,6 +2,11 @@
 
 Le **guide du portail** (page « Guide du portail », connecté) est la référence principale pour les membres. Ce fichier trace les **révisions** du contenu et les grands thèmes couverts ; le détail à jour est toujours dans l’interface.
 
+## Révision 4 — 2026-04-06
+
+- **Formations (guide intégré + Markdown)** : catalogue pouvant mêler parcours **communauté** et **toute la plateforme** ; filtres par **origine** ; pastilles sur les parcours globaux ; rôle des **administrateurs de la plateforme** pour la **portée catalogue** dans le Studio et unicité des adresses courtes à l’échelle du site.
+- **Version LMS** : passage à **v1.2.0** (journal des évolutions du Studio consultable depuis le menu du Studio).
+
 ## Révision 3 — 2026-04-06
 
 - **Formations** : précisions sur la **traçabilité** réservée aux équipes habilitées (journal des actions sensibles : création, publication, assignation, etc.), avec libellés lisibles à l’écran.

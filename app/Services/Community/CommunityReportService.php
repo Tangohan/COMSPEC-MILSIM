@@ -27,7 +27,7 @@ final class CommunityReportService
     ) {}
 
     /**
-     * @return array{ok: true}|array{ok: false, error: string}
+     * @return array{ok: true, report_id: int, reason_preview: string}|array{ok: false, error: string}
      */
     public function submit(
         int $tenantId,
@@ -144,7 +144,7 @@ final class CommunityReportService
             $reasonBody = 'Signalement';
         }
 
-        $this->reportRepository->create(
+        $reportId = $this->reportRepository->create(
             $tenantId,
             $reporterId,
             null,
@@ -156,7 +156,7 @@ final class CommunityReportService
             $contentKind
         );
 
-        return ['ok' => true];
+        return ['ok' => true, 'report_id' => $reportId, 'reason_preview' => $reasonBody];
     }
 
     private function isTrustedSiteUrl(string $url, string $httpHost): bool

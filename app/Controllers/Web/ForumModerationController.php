@@ -10,12 +10,23 @@ use App\Core\Session;
 use App\Core\Csrf;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumReportRepository;
+use App\Repositories\ForumPostRepository;
+use App\Repositories\UserRepository;
+use App\Services\Audit\AuditAction;
+use App\Services\Audit\AuditService;
+use App\Services\Community\CommunityReportNotificationService;
+use App\Services\Moderation\ModerationService;
 
 class ForumModerationController
 {
     public function __construct(
         private ForumTopicRepository $topicRepository,
-        private ForumReportRepository $reportRepository
+        private ForumReportRepository $reportRepository,
+        private ForumPostRepository $postRepository,
+        private AuditService $auditService,
+        private ModerationService $moderationService,
+        private UserRepository $userRepository,
+        private CommunityReportNotificationService $communityReportNotificationService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -28,17 +39,19 @@ class ForumModerationController
         $ok = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
         if (!$ok) {
             Session::flash('error', 'Accès refusé.');
+
             return Response::redirect(url('forum'));
         }
 
-        $tenantId = Session::get('tenant_id');
-        $userId = Session::get('user_id');
-        if (!$tenantId || !$userId) {
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
             return Response::redirect(url('login'));
         }
 
-        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+        if ($request->method() !== 'POST' || !Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
+
             return Response::redirect(url('back-office/forum-moderation'));
         }
 
@@ -46,12 +59,288 @@ class ForumModerationController
         $report = $this->reportRepository->findById($id, $tenantId);
         if (!$report) {
             Session::flash('error', 'Signalement introuvable.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+
+        $pid = (int) ($report['post_id'] ?? 0);
+        if ($pid > 0) {
+            $post = $this->postRepository->findById($pid, $tenantId);
+            if ($post) {
+                $report['post_author_id'] = (int) ($post['user_id'] ?? 0);
+                if ((int) ($report['topic_id'] ?? 0) < 1) {
+                    $report['post_topic_id'] = (int) ($post['topic_id'] ?? 0);
+                }
+            }
+        }
+
+        $followUp = trim((string) $request->input('follow_up', 'close'));
+        $note = trim((string) $request->input('moderator_note', ''));
+        if (strlen($note) > 500) {
+            $note = mb_substr($note, 0, 500);
+        }
+
+        $outcomes = [];
+
+        try {
+            $this->applyFollowUp($followUp, $report, $tenantId, $userId, $id, $note, $outcomes);
+        } catch (\Throwable) {
+            Session::flash('error', 'L’action n’a pas pu être enregistrée. Vérifiez les droits ou réessayez.');
+
             return Response::redirect(url('back-office/forum-moderation'));
         }
 
         $this->reportRepository->markHandled($id, $tenantId, $userId);
-        Session::flash('success', 'Signalement traité.');
+
+        try {
+            $this->communityReportNotificationService->notifyReportHandled(
+                $tenantId,
+                $id,
+                (int) ($report['reporter_id'] ?? 0),
+                $userId
+            );
+        } catch (\Throwable) {
+        }
+
+        $summary = $outcomes !== [] ? implode(' ', $outcomes) . ' ' : '';
+        Session::flash('success', $summary . 'Dossier clôturé.');
+
         return Response::redirect(url('back-office/forum-moderation'));
+    }
+
+    /**
+     * @param list<string> $outcomes
+     */
+    private function applyFollowUp(
+        string $followUp,
+        array $report,
+        int $tenantId,
+        int $actorUserId,
+        int $reportId,
+        string $moderatorNote,
+        array &$outcomes
+    ): void {
+        if ($followUp === '' || $followUp === 'close') {
+            return;
+        }
+
+        $logModeration = function (string $action, ?string $detail = null) use ($tenantId, $actorUserId, $reportId): void {
+            $payload = ['report_id' => $reportId, 'follow_up' => $action];
+            if ($detail !== null && $detail !== '') {
+                $payload['detail'] = $detail;
+            }
+            $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+            $this->auditService->log(
+                AuditAction::FORUM_MODERATION,
+                $tenantId,
+                $actorUserId,
+                'forum_report_resolution',
+                $reportId,
+                null,
+                $json !== false ? $json : $action
+            );
+        };
+
+        $canModerateContent = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
+
+        match ($followUp) {
+            'hide_post' => $this->followUpHidePost($report, $tenantId, $canModerateContent, $logModeration, $outcomes),
+            'delete_post' => $this->followUpDeletePost($report, $tenantId, $logModeration, $outcomes),
+            'lock_topic' => $this->followUpLockTopic($report, $tenantId, $canModerateContent, $logModeration, $outcomes),
+            'hide_topic' => $this->followUpHideTopic($report, $tenantId, $canModerateContent, $logModeration, $outcomes),
+            'sanction_warn' => $this->followUpSanctionWarn($report, $tenantId, $actorUserId, $reportId, $moderatorNote, $logModeration, $outcomes),
+            default => throw new \InvalidArgumentException('Action non reconnue.'),
+        };
+    }
+
+    /**
+     * @param callable(string, ?string): void $logModeration
+     * @param list<string> $outcomes
+     */
+    private function followUpHidePost(
+        array $report,
+        int $tenantId,
+        bool $canModerateContent,
+        callable $logModeration,
+        array &$outcomes
+    ): void {
+        if (!$canModerateContent) {
+            throw new \RuntimeException('hide_post denied');
+        }
+        $postId = (int) ($report['post_id'] ?? 0);
+        if ($postId < 1) {
+            throw new \RuntimeException('no post');
+        }
+        $post = $this->postRepository->findById($postId, $tenantId);
+        if (!$post) {
+            throw new \RuntimeException('post missing');
+        }
+        $this->postRepository->setHidden($postId, $tenantId, true);
+        $logModeration('hide_post', (string) $postId);
+        $outcomes[] = 'Le message a été masqué pour les membres.';
+    }
+
+    /**
+     * @param callable(string, ?string): void $logModeration
+     * @param list<string> $outcomes
+     */
+    private function followUpDeletePost(
+        array $report,
+        int $tenantId,
+        callable $logModeration,
+        array &$outcomes
+    ): void {
+        if (!function_exists('can') || !can('forum.post.delete_any')) {
+            throw new \RuntimeException('delete denied');
+        }
+        $postId = (int) ($report['post_id'] ?? 0);
+        if ($postId < 1) {
+            throw new \RuntimeException('no post');
+        }
+        $post = $this->postRepository->findById($postId, $tenantId);
+        if (!$post) {
+            throw new \RuntimeException('post missing');
+        }
+        $topicId = (int) $post['topic_id'];
+        $this->postRepository->delete($postId, $tenantId);
+        $this->topicRepository->touchUpdatedAt($topicId);
+        $logModeration('delete_post', (string) $postId);
+        $outcomes[] = 'Le message a été supprimé.';
+    }
+
+    /**
+     * @param callable(string, ?string): void $logModeration
+     * @param list<string> $outcomes
+     */
+    private function followUpLockTopic(
+        array $report,
+        int $tenantId,
+        bool $canModerateContent,
+        callable $logModeration,
+        array &$outcomes
+    ): void {
+        if (!$canModerateContent) {
+            throw new \RuntimeException('lock denied');
+        }
+        $topicId = $this->resolveTopicIdFromReport($report, $tenantId);
+        if ($topicId < 1) {
+            throw new \RuntimeException('no topic');
+        }
+        $topic = $this->topicRepository->findById($topicId, $tenantId);
+        if (!$topic) {
+            throw new \RuntimeException('topic missing');
+        }
+        $this->topicRepository->update($topicId, $tenantId, ['is_locked' => 1]);
+        $logModeration('lock_topic', (string) $topicId);
+        $outcomes[] = 'Le sujet a été verrouillé.';
+    }
+
+    /**
+     * @param callable(string, ?string): void $logModeration
+     * @param list<string> $outcomes
+     */
+    private function followUpHideTopic(
+        array $report,
+        int $tenantId,
+        bool $canModerateContent,
+        callable $logModeration,
+        array &$outcomes
+    ): void {
+        if (!$canModerateContent) {
+            throw new \RuntimeException('hide topic denied');
+        }
+        $topicId = $this->resolveTopicIdFromReport($report, $tenantId);
+        if ($topicId < 1) {
+            throw new \RuntimeException('no topic');
+        }
+        $topic = $this->topicRepository->findById($topicId, $tenantId);
+        if (!$topic) {
+            throw new \RuntimeException('topic missing');
+        }
+        $this->topicRepository->update($topicId, $tenantId, ['is_hidden' => 1]);
+        $logModeration('hide_topic', (string) $topicId);
+        $outcomes[] = 'Le sujet a été retiré de la vue des membres.';
+    }
+
+    /**
+     * @param callable(string, ?string): void $logModeration
+     * @param list<string> $outcomes
+     */
+    private function followUpSanctionWarn(
+        array $report,
+        int $tenantId,
+        int $actorUserId,
+        int $reportId,
+        string $moderatorNote,
+        callable $logModeration,
+        array &$outcomes
+    ): void {
+        if (!$this->mayApplyFormalMemberWarning()) {
+            throw new \RuntimeException('sanction denied');
+        }
+        $targetId = function_exists('forum_report_resolve_target_user_id')
+            ? forum_report_resolve_target_user_id($report)
+            : null;
+        if ($targetId === null || $targetId < 1) {
+            throw new \RuntimeException('no target user');
+        }
+        if ($targetId === $actorUserId) {
+            throw new \RuntimeException('self target');
+        }
+        if ((int) ($report['reporter_id'] ?? 0) === $targetId) {
+            throw new \RuntimeException('reporter is target');
+        }
+        $user = $this->userRepository->findById($targetId, $tenantId);
+        if (!$user) {
+            throw new \RuntimeException('user missing');
+        }
+        $reason = 'Suite au signalement n° ' . $reportId . '.';
+        if ($moderatorNote !== '') {
+            $reason .= "\n" . $moderatorNote;
+        }
+        $this->moderationService->applySanction(
+            $tenantId,
+            $actorUserId,
+            $targetId,
+            'warn',
+            $reason,
+            null,
+            []
+        );
+        $logModeration('sanction_warn', (string) $targetId);
+        $outcomes[] = 'Un avertissement formel a été enregistré sur la fiche du membre.';
+    }
+
+    private function mayApplyFormalMemberWarning(): bool
+    {
+        if (!function_exists('can')) {
+            return false;
+        }
+        $gate = \App\Core\Gate::getInstance();
+
+        return can('admin.members.moderate')
+            || $gate->allows('admin.organization')
+            || $gate->allows('admin.access');
+    }
+
+    private function resolveTopicIdFromReport(array $report, int $tenantId): int
+    {
+        $tid = (int) ($report['topic_id'] ?? 0);
+        if ($tid > 0) {
+            return $tid;
+        }
+        $tid = (int) ($report['post_topic_id'] ?? 0);
+        if ($tid > 0) {
+            return $tid;
+        }
+        $pid = (int) ($report['post_id'] ?? 0);
+        if ($pid < 1) {
+            return 0;
+        }
+        $post = $this->postRepository->findById($pid, $tenantId);
+
+        return $post ? (int) $post['topic_id'] : 0;
     }
 
     public function lockTopic(Request $request, array $params = []): Response
@@ -78,6 +367,7 @@ class ForumModerationController
     {
         if (!function_exists('can') || !can('forum.topic.lock')) {
             Session::flash('error', 'Accès refusé.');
+
             return Response::redirect(url('forum'));
         }
 
@@ -86,6 +376,7 @@ class ForumModerationController
         $topic = $this->topicRepository->findById($id, $tenantId);
         if (!$topic) {
             Session::flash('error', 'Sujet introuvable.');
+
             return Response::redirect(url('forum'));
         }
 
@@ -101,6 +392,7 @@ class ForumModerationController
     {
         if (!function_exists('can') || !can('forum.topic.pin')) {
             Session::flash('error', 'Accès refusé.');
+
             return Response::redirect(url('forum'));
         }
 
@@ -109,6 +401,7 @@ class ForumModerationController
         $topic = $this->topicRepository->findById($id, $tenantId);
         if (!$topic) {
             Session::flash('error', 'Sujet introuvable.');
+
             return Response::redirect(url('forum'));
         }
 

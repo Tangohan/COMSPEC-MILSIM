@@ -11,6 +11,8 @@
   const csrf = cfg.dataset.csrf || '';
   const fullAdmin = cfg.dataset.fullAdmin === '1';
   const adminUrl = cfg.dataset.adminUrl || '';
+  const contextTenantId = cfg.dataset.contextTenantId || '';
+  const deleteMenu = cfg.dataset.deleteMenu === '1';
 
   const modal = document.getElementById('forum-subcategory-modal');
   const form = document.getElementById('forum-subcategory-form');
@@ -67,6 +69,16 @@
         openModal();
       })
     );
+
+    if (deleteMenu) {
+      menuEl.appendChild(
+        mkBtn('Supprimer cette catégorie…', () => {
+          const id = pendingParent.id;
+          const name = pendingParent.name || '';
+          void runDeleteCategory(id, name);
+        })
+      );
+    }
 
     if (fullAdmin && adminUrl) {
       menuEl.appendChild(
@@ -152,6 +164,48 @@
 
   btnCancel.addEventListener('click', closeModal);
 
+  async function runDeleteCategory(categoryId, categoryName) {
+    if (!categoryId) {
+      return;
+    }
+    const label = categoryName ? '« ' + categoryName + ' »' : 'cette catégorie';
+    if (
+      !confirm(
+        'Supprimer ' +
+          label +
+          ' ? Cette action est définitive. La catégorie doit être vide (aucun sujet, aucune sous-catégorie).'
+      )
+    ) {
+      return;
+    }
+    const body = new URLSearchParams();
+    body.set('_csrf_token', csrf);
+    body.set('action', 'delete');
+    body.set('id', String(categoryId));
+    if (contextTenantId) {
+      body.set('context_tenant_id', contextTenantId);
+    }
+    try {
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          Accept: 'application/json',
+        },
+        body: body.toString(),
+        credentials: 'same-origin',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        window.alert(data.message || 'La suppression n’a pas pu être effectuée.');
+        return;
+      }
+      window.location.reload();
+    } catch (_err) {
+      window.alert('Erreur réseau. Réessayez.');
+    }
+  }
+
   modal.querySelector('.forum-modal-panel').addEventListener('click', function (e) {
     e.stopPropagation();
   });
@@ -187,6 +241,9 @@
       body.set('description', description);
     }
     body.set('scope', pendingParent.scope);
+    if (contextTenantId) {
+      body.set('context_tenant_id', contextTenantId);
+    }
 
     btnSubmit.disabled = true;
     btnSubmit.textContent = 'Création…';

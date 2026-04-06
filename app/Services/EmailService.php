@@ -788,4 +788,106 @@ final class EmailService
             ['purpose' => 'training_session_scheduled', 'course_title' => $courseTitle]
         );
     }
+
+    public function sendCommunityReportReceipt(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        int $reportId,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::COMMUNITY_REPORT_RECEIPT,
+            'community_report_receipt',
+            $to,
+            'Votre demande a bien été transmise — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'activityUrl' => \url('activite'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'community_report_receipt', 'report_id' => $reportId]
+        );
+    }
+
+    public function sendCommunityReportHandled(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        int $reportId,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::COMMUNITY_REPORT_HANDLED,
+            'community_report_handled',
+            $to,
+            'Votre signalement a été traité — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'activityUrl' => \url('activite'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'community_report_handled', 'report_id' => $reportId]
+        );
+    }
+
+    public function sendCommunityReportNewStaff(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $summaryLine,
+        int $reportId,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::COMMUNITY_REPORT_NEW_STAFF,
+            'community_report_new_staff',
+            $to,
+            'Nouveau signalement — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'summaryLine' => $summaryLine,
+                'moderationUrl' => \url('back-office/forum-moderation'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'community_report_staff', 'report_id' => $reportId]
+        );
+    }
+
+    public function sendAttendanceRsvpOrganizer(
+        string $to,
+        string $organizerName,
+        string $tenantName,
+        string $eventTitle,
+        string $startsAt,
+        string $participantName,
+        string $statusLabel,
+        int $eventId,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::ATTENDANCE_RSVP_ORGANIZER,
+            'attendance_rsvp_organizer',
+            $to,
+            'Participation mise à jour — ' . $eventTitle,
+            [
+                'organizerName' => $organizerName,
+                'tenantName' => $tenantName,
+                'eventTitle' => $eventTitle,
+                'startsAt' => $startsAt,
+                'participantName' => $participantName,
+                'statusLabel' => $statusLabel,
+                'eventsUrl' => \url('evenements'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'attendance_rsvp_organizer', 'event_id' => $eventId]
+        );
+    }
 }

@@ -13,9 +13,21 @@ declare(strict_types=1);
  * }
  */
 return [
-    'version' => '1.1.1',
+    'version' => '1.2.0',
     'label' => 'Studio & parcours formation',
     'changelog' => [
+        [
+            'version' => '1.2.0',
+            'date' => '2026-04-06',
+            'title' => 'Catalogue : parcours communauté et parcours plateforme',
+            'items' => [
+                'Le catalogue apprenant peut afficher à la fois les parcours publiés par votre communauté et des parcours proposés sur l’ensemble du site, selon la configuration.',
+                'Filtres par origine : tous les parcours, ceux de la communauté uniquement, ou ceux proposés sur toute la plateforme ; les filtres par thème et la recherche restent combinables.',
+                'Les parcours « toute la plateforme » sont repérés par une pastille dans le catalogue.',
+                'Dans le Studio, les administrateurs de la plateforme choisissent la portée du parcours (communauté ou toute la plateforme) et les adresses courtes des parcours globaux sont uniques à l’échelle du site.',
+                'L’export d’une formation inclut désormais l’information de portée dans le fichier structuré (réimport : parcours créé en communauté par défaut).',
+            ],
+        ],
         [
             'version' => '1.1.1',
             'date' => '2026-04-06',

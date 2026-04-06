@@ -128,7 +128,7 @@ class ForumReportRepository
     {
         $stmt = $this->pdo->prepare(
             'SELECT fr.*, u.display_name AS reporter_name,
-                    fp.body AS post_excerpt, fp.topic_id AS post_topic_id,
+                    fp.body AS post_excerpt, fp.topic_id AS post_topic_id, fp.user_id AS post_author_id,
                     ft.title AS topic_title,
                     COALESCE(fc.scope, \'general\') AS category_scope
              FROM forum_reports fr

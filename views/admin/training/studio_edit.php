@@ -54,6 +54,15 @@ $resourceTypeLabels = function_exists('training_lms_resource_type_labels_fr') ? 
 if ($resourceTypeLabels === []) {
     $resourceTypeLabels = ['link' => 'Lien web'];
 }
+$fileResourceTypeLabels = array_intersect_key(
+    $resourceTypeLabels,
+    array_flip(['pdf', 'image', 'video', 'audio', 'zip', 'attachment'])
+);
+if ($fileResourceTypeLabels === []) {
+    $fileResourceTypeLabels = ['attachment' => 'Fichier joint'];
+}
+$studioDocPickerCount = count($libraryDocumentsForPicker);
+$studioCanDocsAdmin = $gateEdit->allows('documents.upload') || $gateEdit->allows('documents.view') || $gateEdit->allows('admin.access');
 $studioOtherCourses = $studioOtherCourses ?? [];
 $studioRoles = $studioRoles ?? [];
 $studioGrades = $studioGrades ?? [];
@@ -204,7 +213,7 @@ $defaultCanvasJson = json_encode([
     <nav class="mb-8 flex flex-wrap gap-2 rounded-2xl border border-slate-200/80 bg-slate-100/60 p-1.5 shadow-inner" aria-label="Sections du studio">
         <a href="<?= htmlspecialchars($studioU('fiche')) ?>" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'fiche' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Données &amp; inscription</a>
         <a href="<?= htmlspecialchars($studioU('presentation')) ?>" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'presentation' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Présentation apprenant</a>
-        <a href="<?= htmlspecialchars($studioU('structure')) ?>" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'structure' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Modules &amp; leçons</a>
+        <a href="<?= htmlspecialchars($studioU('structure')) ?>#studio-ressources-aide" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'structure' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Modules, leçons &amp; ressources</a>
     </nav>
 
     <?php if ($trainingStudioSection === 'fiche'): ?>
@@ -216,6 +225,10 @@ $defaultCanvasJson = json_encode([
         <section id="studio-fiche" class="training-studio-panel scroll-mt-28 p-6 md:p-8 space-y-4 shadow-sm">
             <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Fiche formation</h2>
             <p class="text-xs text-slate-500">Les formations <strong>publiées</strong> apparaissent dans le catalogue apprenant. Les brouillons restent réservés au Studio.</p>
+            <div class="rounded-xl border border-sky-200 bg-sky-50/90 p-4 text-sm text-sky-950 shadow-sm">
+                <p class="font-bold text-sky-950">Pièces jointes et liens par leçon</p>
+                <p class="mt-1 text-xs leading-relaxed text-sky-900/90">Pour ajouter des <strong class="font-semibold">liens web</strong>, des <strong class="font-semibold">fichiers</strong> ou des <strong class="font-semibold">documents du centre documentaire</strong> visibles sous chaque leçon, ouvrez l’onglet <a href="<?= htmlspecialchars($studioU('structure')) ?>#studio-ressources-aide" class="font-bold text-sky-900 underline decoration-sky-400 hover:decoration-sky-700">Modules, leçons &amp; ressources</a> : le panneau bleu <strong class="font-semibold">Ressources</strong> se trouve à droite de chaque leçon (sur grand écran).</p>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
                     <label class="block text-xs font-bold text-slate-600 mb-1">Titre</label>
@@ -522,7 +535,7 @@ $defaultCanvasJson = json_encode([
 
         <section id="studio-presentation" class="training-studio-panel scroll-mt-28 p-6 md:p-8 space-y-6 shadow-sm">
             <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Présentation côté apprenant</h2>
-            <p class="text-xs text-slate-500 max-w-3xl">Apparence du parcours, visuels de couverture et consignes audio. Les textes, visibilité et règles d’inscription se gèrent dans l’onglet <a href="<?= htmlspecialchars($studioU('fiche')) ?>" class="font-semibold text-emerald-800 underline decoration-emerald-200 hover:text-emerald-950">Données &amp; inscription</a>.</p>
+            <p class="text-xs text-slate-500 max-w-3xl">Apparence du parcours, visuels de couverture et consignes audio. Les textes, visibilité et règles d’inscription se gèrent dans l’onglet <a href="<?= htmlspecialchars($studioU('fiche')) ?>" class="font-semibold text-emerald-800 underline decoration-emerald-200 hover:text-emerald-950">Données &amp; inscription</a>. Les ressources téléchargeables ou liens par leçon se gèrent dans <a href="<?= htmlspecialchars($studioU('structure')) ?>#studio-ressources-aide" class="font-semibold text-emerald-800 underline decoration-emerald-200 hover:text-emerald-950">Modules, leçons &amp; ressources</a>.</p>
 
             <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
                 <label class="inline-flex items-center gap-2 text-sm font-bold text-slate-800">
@@ -619,6 +632,10 @@ $defaultCanvasJson = json_encode([
         <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-800 text-[11px] font-black tracking-tight" title="Modules">M</span>
         Structure pédagogique
     </h2>
+    <div id="studio-ressources-aide" class="scroll-mt-28 rounded-xl border border-sky-300/80 bg-gradient-to-br from-sky-50 to-white p-4 md:p-5 mb-6 text-sm text-slate-800 shadow-sm ring-1 ring-sky-100">
+        <p class="font-black text-xs uppercase tracking-wider text-sky-900">Où ajouter liens, fichiers et documents ?</p>
+        <p class="mt-2 text-sm leading-relaxed text-slate-700">Ouvrez une <strong class="font-semibold text-slate-900">leçon</strong> ci-dessous : à <strong class="font-semibold text-slate-900">droite</strong> du formulaire principal (sur ordinateur) ou <strong class="font-semibold text-slate-900">sous</strong> celui-ci (sur mobile), le panneau bleu <strong class="font-semibold text-sky-900">Ressources</strong> est déjà déplié — vous y choisissez une adresse web, un fichier ou un document du centre documentaire.</p>
+    </div>
     <p class="text-sm text-slate-600 mb-3 max-w-2xl">Réordonnez les <strong>modules</strong> depuis la <strong>frise</strong> ci-dessous ou depuis chaque carte (poignée ⠿). Dans chaque module, réordonnez les <strong>leçons</strong> de la même façon. L’ordre est enregistré tout de suite.</p>
     <p class="text-xs text-slate-500 mb-6 max-w-2xl">Les diapositives d’un <strong>parcours visuel</strong> se déplacent dans l’éditeur de la leçon concernée, pas sur cette frise.</p>
 
@@ -847,12 +864,12 @@ $defaultCanvasJson = json_encode([
                         </form>
                     </div>
                     <aside class="order-2 lg:sticky lg:top-28 self-start w-full max-lg:max-w-xl">
-                        <details class="rounded-lg border border-sky-200 bg-sky-50/60 text-slate-800 shadow-sm" id="<?= htmlspecialchars($lessonResAnchor) ?>"<?= $resCount > 0 ? ' open' : '' ?>>
+                        <details class="rounded-lg border border-sky-200 bg-sky-50/60 text-slate-800 shadow-sm" id="<?= htmlspecialchars($lessonResAnchor) ?>" open>
                             <summary class="cursor-pointer select-none px-3 py-2.5 text-xs font-black uppercase tracking-wide text-sky-900">
                                 Ressources<?= $resCount > 0 ? ' (' . (int) $resCount . ')' : '' ?>
                             </summary>
                             <div class="px-3 pb-3 pt-1 border-t border-sky-100 space-y-3">
-                                <p class="text-[10px] text-sky-900/85 leading-snug">Fichiers, liens ou documents de la bibliothèque affichés en bas de page pour les apprenants inscrits.</p>
+                                <p class="text-[10px] text-sky-900/85 leading-snug">Ajoutez des <strong class="font-semibold">liens web</strong>, des <strong class="font-semibold">fichiers</strong> (dépôt ou emplacement serveur) ou des <strong class="font-semibold">documents du centre documentaire</strong> : ils apparaissent en bas de leçon pour les apprenants inscrits.</p>
                                 <?php if ($studioRes !== []): ?>
                                 <ul class="text-xs space-y-2">
                                     <?php foreach ($studioRes as $sr):
@@ -889,64 +906,91 @@ $defaultCanvasJson = json_encode([
                                         <input type="text" name="resource_title" maxlength="255" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Laisser vide pour reprendre le titre du document">
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Type d’ajout</label>
+                                        <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Que souhaitez-vous lier ?</label>
                                         <select name="resource_add_mode" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" data-lms-resource-mode>
-                                            <option value="link">Lien web</option>
-                                            <option value="file">Fichier</option>
-                                            <option value="library">Document de la bibliothèque</option>
+                                            <option value="link">Une adresse web (site, article, vidéo en ligne…)</option>
+                                            <option value="file">Un fichier (dépôt ou copie déjà sur le serveur)</option>
+                                            <option value="library">Un document du centre documentaire de la communauté</option>
                                         </select>
                                     </div>
                                     <div class="space-y-2" data-lms-res-panel="link">
-                                        <div>
-                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nature du lien</label>
-                                            <select name="resource_type" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
-                                                <?php foreach ($resourceTypeLabels as $rk => $rlab): ?>
-                                                <option value="<?= htmlspecialchars($rk) ?>"><?= htmlspecialchars($rlab) ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
+                                        <input type="hidden" name="resource_type" value="link">
                                         <div>
                                             <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Adresse web</label>
-                                            <input type="url" name="resource_external_url" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="https://…">
+                                            <input type="text" name="resource_external_url" inputmode="url" autocomplete="off" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="https://…">
+                                            <p class="mt-0.5 text-[10px] text-slate-500">Collez l’adresse complète affichée dans le navigateur (de préférence en https).</p>
                                         </div>
                                     </div>
                                     <div class="space-y-2 hidden" data-lms-res-panel="file">
                                         <div>
-                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Type de pièce</label>
+                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Type de fichier pour l’apprenant</label>
                                             <select name="resource_type" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
-                                                <?php foreach ($resourceTypeLabels as $rk => $rlab): ?>
+                                                <?php foreach ($fileResourceTypeLabels as $rk => $rlab): ?>
                                                 <option value="<?= htmlspecialchars($rk) ?>"<?= $rk === 'attachment' ? ' selected' : '' ?>><?= htmlspecialchars($rlab) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
                                         <div>
-                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Envoyer un fichier</label>
+                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Envoyer un fichier depuis votre poste</label>
                                             <input type="file" name="resource_upload" class="block w-full text-xs text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-sky-100 file:px-2 file:py-1">
                                         </div>
                                         <details class="text-[10px] text-slate-600">
-                                            <summary class="cursor-pointer font-bold text-slate-700">Emplacement sur le serveur (usage avancé)</summary>
-                                            <p class="mt-1 mb-1">Si vous ne pouvez pas envoyer le fichier ici, indiquez un chemin déjà présent sur le serveur.</p>
-                                            <input type="text" name="resource_file_path" maxlength="255" class="w-full border border-slate-200 rounded px-2 py-1.5 text-xs" placeholder="Chemin relatif au projet">
+                                            <summary class="cursor-pointer font-bold text-slate-700">Fichier déjà présent sur le serveur</summary>
+                                            <p class="mt-1 mb-1">Si le fichier a été placé manuellement sur l’hébergement, indiquez son chemin relatif à la racine du projet (réservé aux équipes techniques).</p>
+                                            <input type="text" name="resource_file_path" maxlength="255" class="w-full border border-slate-200 rounded px-2 py-1.5 text-xs" placeholder="Ex. storage/…">
                                         </details>
                                     </div>
                                     <div class="space-y-2 hidden" data-lms-res-panel="library">
+                                        <?php if ($studioDocPickerCount > 5): ?>
                                         <div>
-                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Document</label>
-                                            <select name="document_id" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
-                                                <option value="">— Choisir dans la bibliothèque —</option>
-                                                <?php foreach ($libraryDocumentsForPicker as $pickDoc):
-                                                    $pid = (int) ($pickDoc['id'] ?? 0);
-                                                    if ($pid < 1) {
-                                                        continue;
-                                                    }
-                                                    $pTitle = (string) ($pickDoc['title'] ?? 'Sans titre');
-                                                    $pSt = (string) ($pickDoc['status'] ?? '');
-                                                    $pStLab = $pSt !== '' && isset($docStatusLabels[$pSt]) ? $docStatusLabels[$pSt] : $pSt;
-                                                ?>
-                                                <option value="<?= $pid ?>"><?= htmlspecialchars($pTitle) ?><?= $pStLab !== '' ? ' — ' . htmlspecialchars($pStLab) : '' ?></option>
+                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Filtrer la liste</label>
+                                            <input type="search" data-lms-doc-filter class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Titre, statut…" autocomplete="off">
+                                        </div>
+                                        <?php endif; ?>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Document du centre</label>
+                                            <?php
+                                            $lmsDocsByStudioCat = [];
+                                            foreach ($libraryDocumentsForPicker as $lmsPickDoc) {
+                                                $lmsPid = (int) ($lmsPickDoc['id'] ?? 0);
+                                                if ($lmsPid < 1) {
+                                                    continue;
+                                                }
+                                                $lmsCn = trim((string) ($lmsPickDoc['category_name'] ?? ''));
+                                                $lmsGrp = $lmsCn !== '' ? $lmsCn : '— Sans classement —';
+                                                $lmsDocsByStudioCat[$lmsGrp][] = $lmsPickDoc;
+                                            }
+                                            uksort($lmsDocsByStudioCat, 'strnatcasecmp');
+                                            $lmsSelectSize = $studioDocPickerCount > 12 ? min(10, max(4, $studioDocPickerCount)) : null;
+                                            ?>
+                                            <select name="document_id" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" data-lms-doc-select<?= $lmsSelectSize !== null ? ' size="' . (int) $lmsSelectSize . '"' : '' ?>>
+                                                <option value="">— Choisir un document —</option>
+                                                <?php foreach ($lmsDocsByStudioCat as $lmsGrpLabel => $lmsGrpDocs): ?>
+                                                <optgroup label="<?= htmlspecialchars($lmsGrpLabel) ?>">
+                                                    <?php foreach ($lmsGrpDocs as $pickDoc):
+                                                        $pid = (int) ($pickDoc['id'] ?? 0);
+                                                        $pTitle = (string) ($pickDoc['title'] ?? 'Sans titre');
+                                                        $pSt = (string) ($pickDoc['status'] ?? '');
+                                                        $pStLab = $pSt !== '' && isset($docStatusLabels[$pSt]) ? $docStatusLabels[$pSt] : $pSt;
+                                                        ?>
+                                                    <option value="<?= $pid ?>"><?= htmlspecialchars($pTitle) ?><?= $pStLab !== '' ? ' — ' . htmlspecialchars($pStLab) : '' ?></option>
+                                                    <?php endforeach; ?>
+                                                </optgroup>
                                                 <?php endforeach; ?>
                                             </select>
+                                            <?php if ($studioDocPickerCount > 12): ?>
+                                            <p class="mt-0.5 text-[10px] text-slate-500">Liste déroulante élargie : faites défiler ou utilisez le filtre ci-dessus.</p>
+                                            <?php endif; ?>
                                         </div>
+                                        <?php if ($studioCanDocsAdmin): ?>
+                                        <p class="text-[10px] text-slate-600">
+                                            <a href="<?= htmlspecialchars(url('documents/gestion'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-sky-800 underline decoration-sky-200 hover:decoration-sky-600">Ouvrir la gestion documentaire</a>
+                                            pour publier ou mettre à jour des fichiers du centre.
+                                        </p>
+                                        <?php endif; ?>
+                                        <?php if ($studioDocPickerCount === 0): ?>
+                                        <p class="rounded border border-amber-200 bg-amber-50/80 px-2 py-1.5 text-[10px] text-amber-950">Aucun document dans le centre pour cette communauté. Ajoutez-en depuis la gestion documentaire, puis revenez ici.</p>
+                                        <?php endif; ?>
                                     </div>
                                     <button type="submit" class="w-full px-3 py-1.5 bg-sky-700 text-white text-xs font-bold rounded-lg hover:bg-sky-800">Ajouter la ressource</button>
                                 </form>

@@ -39,6 +39,31 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'report_opened' => [
+                'title' => 'Signalement à examiner',
+                'detail' => trim((string) ($payload['summary'] ?? 'Un membre a signalé un contenu ou envoyé une demande.')),
+                'href' => url('back-office/forum-moderation'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
+            'report_closed' => [
+                'title' => 'Votre signalement a été traité',
+                'detail' => 'L’équipe de modération a clos votre demande.',
+                'href' => url('activite'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
+            'event_rsvp_change' => [
+                'title' => 'Participation mise à jour',
+                'detail' => trim((string) ($payload['participant'] ?? 'Un membre')) . ' — '
+                    . trim((string) ($payload['status_label'] ?? ''))
+                    . (isset($payload['title']) && trim((string) $payload['title']) !== ''
+                        ? ' · ' . trim((string) $payload['title'])
+                        : ''),
+                'href' => url('evenements'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             default => [
                 'title' => 'Forum',
                 'detail' => 'Notification',

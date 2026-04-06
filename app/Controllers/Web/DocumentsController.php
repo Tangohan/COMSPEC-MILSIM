@@ -14,6 +14,7 @@ use App\Repositories\DocumentRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Services\Audit\AuditService;
 use App\Services\Documents\DocumentAccessService;
+use App\Services\Documents\DocumentTrainingReferencesService;
 use App\Services\Moderation\ModerationArtifactState;
 
 class DocumentsController
@@ -26,7 +27,8 @@ class DocumentsController
         private DocumentLinkRepository $linkRepository,
         private DocumentAccessService $documentAccessService,
         private AuditService $auditService,
-        private ModerationArtifactRepository $moderationArtifactRepository
+        private ModerationArtifactRepository $moderationArtifactRepository,
+        private DocumentTrainingReferencesService $documentTrainingReferencesService
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -64,6 +66,7 @@ class DocumentsController
         $userId = (int) Session::get('user_id');
         $docs = array_values(array_filter($docs, fn ($d) => $this->documentAccessService->canRead($d, $userId, $tenantId)));
         $categoriesList = $this->categoryRepository->listForTenant($tenantId);
+        $documentTrainingRefs = $this->documentTrainingReferencesService->mapByDocumentId($tenantId, $docs);
         return Response::view('layout.main', [
             'content' => 'documents.index',
             'title' => 'Documents',
@@ -75,6 +78,7 @@ class DocumentsController
             'sort' => $sort,
             'entity_type' => $entityType,
             'entity_id' => $entityId,
+            'documentTrainingRefs' => $documentTrainingRefs,
         ]);
     }
 

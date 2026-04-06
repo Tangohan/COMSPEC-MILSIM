@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakDataRepository;
+use App\Support\ComspecApiKeyAuth;
 use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
 use App\Repositories\MapShapeRepository;
@@ -108,21 +109,9 @@ class AtakApiController
         return $this->jsonBodyCache;
     }
 
-    private function authArma(Request $request): bool
+    private function authArma(): bool
     {
-        $secret = getenv('X_COMSPEC_KEY') ?: getenv('ATAK_INTEL_SECRET') ?: '';
-        if ($secret === '') {
-            return true;
-        }
-        $header = $_SERVER['HTTP_X_COMSPEC_KEY'] ?? $_SERVER['HTTP_X_ATAK_TOKEN'] ?? null;
-        if ($header !== null && $header !== '') {
-            return $header === $secret;
-        }
-        $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        if (str_starts_with($auth, 'Bearer ')) {
-            return trim(substr($auth, 7)) === $secret;
-        }
-        return false;
+        return ComspecApiKeyAuth::armaInlineAuthOk();
     }
 
     public function ping(Request $request, array $params = []): Response
@@ -215,7 +204,7 @@ class AtakApiController
 
     public function markerUpsert(Request $request, array $params = []): Response
     {
-        if (!$this->authArma($request)) {
+        if (!$this->authArma()) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
         $r = $this->requireTenant($request);
@@ -278,7 +267,7 @@ class AtakApiController
 
     public function position(Request $request, array $params = []): Response
     {
-        if (!$this->authArma($request)) {
+        if (!$this->authArma()) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
         $r = $this->requireTenant($request);
@@ -529,7 +518,7 @@ class AtakApiController
 
     public function flightManifestStore(Request $request, array $params = []): Response
     {
-        if (!$this->authArma($request)) {
+        if (!$this->authArma()) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
         $r = $this->requireTenant($request);
@@ -695,7 +684,7 @@ class AtakApiController
 
     public function reconImagesStore(Request $request, array $params = []): Response
     {
-        if (!$this->authArma($request)) {
+        if (!$this->authArma()) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
         $r = $this->requireTenant($request);
@@ -850,7 +839,7 @@ class AtakApiController
 
     public function laserCodesStore(Request $request, array $params = []): Response
     {
-        if (!$this->authArma($request)) {
+        if (!$this->authArma()) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
         $r = $this->requireTenant($request);
@@ -906,7 +895,7 @@ class AtakApiController
 
     public function airAssetsPilotStatus(Request $request, array $params = []): Response
     {
-        if (!$this->authArma($request)) {
+        if (!$this->authArma()) {
             return Response::json(['error' => 'Unauthorized'], 401);
         }
         $r = $this->requireTenant($request);

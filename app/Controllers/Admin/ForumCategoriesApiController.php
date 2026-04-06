@@ -10,27 +10,49 @@ use App\Core\Session;
 use App\Core\Csrf;
 use App\Core\Gate;
 use App\Repositories\ForumCategoryRepository;
+use App\Repositories\TenantRepository;
 
 class ForumCategoriesApiController
 {
     public function __construct(
-        private ForumCategoryRepository $forumCategoryRepository
+        private ForumCategoryRepository $forumCategoryRepository,
+        private TenantRepository $tenantRepository,
     ) {}
 
     /**
-     * Admin / gestionnaire de catégories : toutes les actions.
-     * Modérateurs forum : création de sous-catégorie (parent_id racine) uniquement.
+     * Résout le tenant cible : session, ou `context_tenant_id` pour les super-administrateurs.
      */
-    private function authorize(Request $request): bool
+    private function resolveTenantId(Request $request): int
+    {
+        $sessionTid = (int) Session::get('tenant_id');
+        if ($sessionTid < 1) {
+            return 0;
+        }
+        $gate = Gate::getInstance();
+        if ($gate->allows('admin.system')) {
+            $ctx = (int) $request->input('context_tenant_id', 0);
+            if ($ctx > 1 && $this->tenantRepository->findById($ctx)) {
+                return $ctx;
+            }
+        }
+
+        return $sessionTid;
+    }
+
+    /**
+     * Gestionnaire / admin catégories : actions complètes.
+     * Modérateurs forum : création sous-catégorie ; suppression d’une sous-catégorie vide uniquement.
+     */
+    private function authorize(Request $request, int $tenantId): bool
     {
         $gate = Gate::getInstance();
-        if ($gate->allows('admin.access')) {
+        $action = (string) $request->input('action', '');
+        if ($gate->allows('admin.access') || $gate->allows('admin.system')) {
             return true;
         }
         if (function_exists('can') && can('forum.categories.manage')) {
             return true;
         }
-        $action = (string) $request->input('action', '');
         if ($action === 'create') {
             $parentRaw = $request->input('parent_id');
             $parentId = $parentRaw !== null && $parentRaw !== '' ? (int) $parentRaw : 0;
@@ -38,32 +60,52 @@ class ForumCategoriesApiController
                 return true;
             }
         }
+        if ($action === 'delete' && function_exists('forum_user_can_moderate') && forum_user_can_moderate()) {
+            $id = (int) $request->input('id', 0);
+
+            return $id > 0 && $this->moderatorMayDeleteCategory($id, $tenantId);
+        }
 
         return false;
     }
 
+    private function moderatorMayDeleteCategory(int $categoryId, int $tenantId): bool
+    {
+        $cat = $this->forumCategoryRepository->findById($categoryId, $tenantId);
+        if (!$cat) {
+            return false;
+        }
+        $pid = $cat['parent_id'] ?? null;
+
+        return $pid !== null && (int) $pid > 0;
+    }
+
     public function handle(Request $request, array $params = []): Response
     {
-        $tenantId = Session::get('tenant_id');
-        if (!$tenantId) {
+        if (!Session::get('tenant_id')) {
             return Response::json(['success' => false, 'message' => 'Non authentifié'], 401);
-        }
-        if (!$this->authorize($request)) {
-            return Response::json(['success' => false, 'message' => 'Non autorisé'], 403);
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             return Response::json(['success' => false, 'message' => 'Jeton CSRF invalide'], 403);
         }
 
+        $effectiveTenantId = $this->resolveTenantId($request);
+        if ($effectiveTenantId < 1) {
+            return Response::json(['success' => false, 'message' => 'Communauté invalide'], 400);
+        }
+
+        if (!$this->authorize($request, $effectiveTenantId)) {
+            return Response::json(['success' => false, 'message' => 'Non autorisé'], 403);
+        }
+
         $action = $request->input('action', '');
-        $tenantId = (int) $tenantId;
 
         return match ($action) {
-            'create' => $this->create($request, $tenantId),
-            'update' => $this->update($request, $tenantId),
-            'lock' => $this->lock($request, $tenantId),
-            'delete' => $this->delete($request, $tenantId),
-            'reorder' => $this->reorder($request, $tenantId),
+            'create' => $this->create($request, $effectiveTenantId),
+            'update' => $this->update($request, $effectiveTenantId),
+            'lock' => $this->lock($request, $effectiveTenantId),
+            'delete' => $this->delete($request, $effectiveTenantId),
+            'reorder' => $this->reorder($request, $effectiveTenantId),
             default => Response::json(['success' => false, 'message' => 'Action inconnue'], 400),
         };
     }
@@ -105,6 +147,7 @@ class ForumCategoriesApiController
             }
             throw $e;
         }
+
         return Response::json(['success' => true, 'id' => $id]);
     }
 
@@ -143,6 +186,7 @@ class ForumCategoriesApiController
             }
             throw $e;
         }
+
         return $ok ? Response::json(['success' => true]) : Response::json(['success' => false, 'message' => 'Catégorie introuvable'], 404);
     }
 
@@ -154,6 +198,7 @@ class ForumCategoriesApiController
             return Response::json(['success' => false, 'message' => 'ID requis'], 400);
         }
         $ok = $this->forumCategoryRepository->setLocked($id, $tenantId, $locked);
+
         return $ok ? Response::json(['success' => true]) : Response::json(['success' => false, 'message' => 'Catégorie introuvable'], 404);
     }
 
@@ -170,6 +215,7 @@ class ForumCategoriesApiController
             return Response::json(['success' => false, 'message' => 'La catégorie contient encore des sujets.'], 400);
         }
         $ok = $this->forumCategoryRepository->delete($id, $tenantId);
+
         return $ok ? Response::json(['success' => true]) : Response::json(['success' => false, 'message' => 'Catégorie introuvable'], 404);
     }
 
@@ -183,6 +229,7 @@ class ForumCategoriesApiController
             return Response::json(['success' => false, 'message' => 'Ordre invalide'], 400);
         }
         $this->forumCategoryRepository->reorder($tenantId, array_values($order));
+
         return Response::json(['success' => true]);
     }
 }

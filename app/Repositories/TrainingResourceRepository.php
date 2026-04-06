@@ -87,4 +87,48 @@ class TrainingResourceRepository
         $stmt = $this->pdo->prepare('DELETE FROM training_resources WHERE id = ?');
         $stmt->execute([$id]);
     }
+
+    /**
+     * Parcours LMS publiés qui référencent un document de la bibliothèque (ressource library_document).
+     *
+     * @param list<int> $documentIds
+     * @return list<array{document_id: int, course_title: string, course_slug: string}>
+     */
+    public function listPublishedLmsCourseRefsForDocumentIds(int $tenantId, array $documentIds): array
+    {
+        $documentIds = array_values(array_unique(array_filter(array_map('intval', $documentIds), static fn (int $i): bool => $i > 0)));
+        if ($documentIds === []) {
+            return [];
+        }
+        try {
+            $ph = implode(',', array_fill(0, count($documentIds), '?'));
+            $sql = "SELECT DISTINCT tr.document_id, c.title AS course_title, c.slug AS course_slug
+                    FROM training_resources tr
+                    INNER JOIN training_lessons tl ON tl.id = tr.lesson_id
+                    INNER JOIN training_modules tm ON tm.id = tl.module_id
+                    INNER JOIN training_courses c ON c.id = tm.course_id
+                    WHERE tr.resource_type = 'library_document'
+                      AND tr.document_id IS NOT NULL
+                      AND tr.document_id IN ($ph)
+                      AND c.visibility = 'published'
+                      AND (
+                          (c.tenant_id = ? AND COALESCE(c.lms_scope, 'tenant') = 'tenant')
+                          OR c.lms_scope = 'platform'
+                      )";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([...$documentIds, $tenantId]);
+            $out = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $out[] = [
+                    'document_id' => (int) ($row['document_id'] ?? 0),
+                    'course_title' => (string) ($row['course_title'] ?? ''),
+                    'course_slug' => (string) ($row['course_slug'] ?? ''),
+                ];
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
 }
