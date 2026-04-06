@@ -382,6 +382,10 @@ if (is_file(base_path('app/Support/training_lms.php'))) {
     require_once base_path('app/Support/training_lms.php');
 }
 
+if (is_file(base_path('app/Support/lms_platform_version.php'))) {
+    require_once base_path('app/Support/lms_platform_version.php');
+}
+
 if (!function_exists('training_legacy_enabled')) {
     /**
      * Modules legacy_training_* dans le catalogue et liaisons documentaires (désactivable en prod).

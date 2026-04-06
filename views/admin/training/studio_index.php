@@ -2,6 +2,8 @@
 $courses = $courses ?? [];
 $visibilityFilter = $visibilityFilter ?? '';
 $canPublish = $canPublish ?? false;
+$lmsPlatformVersion = (string) ($lmsPlatformVersion ?? '');
+$lmsChangelogUrl = (string) ($lmsChangelogUrl ?? url('admin/training/studio/versions'));
 
 $visLabels = [
     'draft' => 'Brouillon',
@@ -31,6 +33,11 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
                 <p class="text-slate-600 text-sm mt-3 max-w-2xl leading-relaxed">Créez des parcours, ajoutez des modules et des leçons, puis publiez-les dans le catalogue apprenant — comme un espace créateur dédié.</p>
                 <p class="text-sm text-slate-500 mt-2">
                     <a href="<?= url('admin/training') ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:decoration-emerald-600 hover:text-emerald-800">← Tableau de bord formations</a>
+                    <span class="text-slate-300 mx-2">·</span>
+                    <a href="<?= htmlspecialchars($lmsChangelogUrl) ?>" class="text-slate-600 underline decoration-slate-200 hover:text-emerald-800">Journal du Studio</a>
+                    <?php if ($lmsPlatformVersion !== ''): ?>
+                    <span class="text-slate-400 ml-1">(v<?= htmlspecialchars($lmsPlatformVersion) ?>)</span>
+                    <?php endif; ?>
                 </p>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0 w-full sm:w-auto max-w-md">
@@ -89,7 +96,13 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
                                 <p class="text-xs font-mono text-slate-500 truncate"><?= htmlspecialchars((string) ($c['slug'] ?? '')) ?></p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                        <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+                            <?php
+                            $lmsBehind = function_exists('lms_course_studio_created_before_current') && lms_course_studio_created_before_current($c);
+                            ?>
+                            <?php if ($lmsBehind): ?>
+                            <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide rounded-full bg-amber-100 text-amber-900 border border-amber-200/80" title="Créée avant la version actuelle du Studio">Création — ancienne version</span>
+                            <?php endif; ?>
                             <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide rounded-full <?= $isPub ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700' ?>"><?= htmlspecialchars($visLabels[$c['visibility']] ?? (string) ($c['visibility'] ?? '')) ?></span>
                             <a href="<?= url('admin/training/studio/' . (int) $c['id']) ?>" class="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 shadow-sm transition-colors">Éditer</a>
                         </div>

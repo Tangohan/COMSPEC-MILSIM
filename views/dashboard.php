@@ -37,15 +37,43 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
     <script defer src="https://unpkg.com/alpinejs@3/dist/cdn.min.js"></script>
     <?php endif; ?>
 </head>
-<body class="bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
+<body class="dashboard-shell bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
     <?php $__dashGate = \App\Core\Gate::getInstance(); ?>
     <style>
         #dashDrawerTrack { will-change: transform; }
+        /* Fenêtre de défilement : sans ceci, le track 200 % peut laisser voir les deux colonnes */
+        #dashDrawerViewport {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        /* Grand écran : navigation latérale toujours visible (pas seulement en tiroir) */
+        @media (min-width: 1024px) {
+            .dashboard-shell #navDrawer.drawer-translate {
+                transform: translateX(0) !important;
+            }
+            .dashboard-shell #bodyOverlay {
+                display: none !important;
+                pointer-events: none !important;
+            }
+            .dashboard-main-shift {
+                margin-left: 18rem; /* 288px = w-72 */
+            }
+        }
+        .dash-vers-details > summary {
+            list-style: none;
+        }
+        .dash-vers-details > summary::-webkit-details-marker {
+            display: none;
+        }
     </style>
     <script>
         function dashDrawerGoRoot() {
             var tr = document.getElementById('dashDrawerTrack');
-            if (tr) tr.style.transform = 'translateX(0)';
+            if (tr) tr.style.transform = 'translate3d(0,0,0)';
+        }
+        function dashDrawerIsWideLayout() {
+            return window.matchMedia('(min-width: 1024px)').matches;
         }
         function toggleMenu() {
             document.body.classList.toggle('drawer-open');
@@ -61,27 +89,43 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
             var host = document.getElementById('dashDrawerSubLinks');
             var subTitle = document.getElementById('dashDrawerSubTitle');
             var tr = document.getElementById('dashDrawerTrack');
+            var vp = document.getElementById('dashDrawerViewport');
             if (!tpl || !host || !subTitle || !tr) return;
             subTitle.textContent = title;
             host.innerHTML = tpl.innerHTML;
-            tr.style.transform = 'translateX(-50%)';
+            /* Décalage d’exactement une « page » de tiroir (largeur du viewport), pas -50 % du track (plus fiable) */
+            var w = vp ? vp.offsetWidth : tr.parentElement ? tr.parentElement.offsetWidth : 0;
+            tr.style.transform = w ? ('translate3d(-' + w + 'px,0,0)') : 'translate3d(-50%,0,0)';
         }
         document.addEventListener('DOMContentLoaded', function () {
             var back = document.getElementById('dashDrawerBack');
             if (back) back.addEventListener('click', dashDrawerGoRoot);
+            if (dashDrawerIsWideLayout()) {
+                dashDrawerGoRoot();
+            }
+            var mq = window.matchMedia('(min-width: 1024px)');
+            var lastWide = mq.matches;
+            window.addEventListener('resize', function () {
+                var wide = window.matchMedia('(min-width: 1024px)').matches;
+                if (wide !== lastWide) {
+                    lastWide = wide;
+                    dashDrawerGoRoot();
+                }
+            });
         });
     </script>
-    <div id="bodyOverlay" class="overlay fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110]" onclick="toggleMenu()"></div>
+    <div id="bodyOverlay" class="overlay fixed inset-0 z-[110] bg-slate-900/40 backdrop-blur-sm lg:hidden" onclick="toggleMenu()"></div>
 
     <aside id="navDrawer"
-           class="drawer-translate fixed top-0 left-0 z-[120] flex h-full w-[min(100%,340px)] flex-col border-r border-slate-200/80 bg-gradient-to-b from-slate-50 to-slate-100/90 shadow-[8px_0_40px_-12px_rgba(15,23,42,0.35)]"
+           class="drawer-translate fixed top-0 left-0 z-[120] flex h-full w-[min(100%,340px)] flex-col overflow-x-hidden border-r border-slate-200/80 bg-gradient-to-b from-slate-50 to-slate-100/90 shadow-[8px_0_40px_-12px_rgba(15,23,42,0.35)] lg:w-72 lg:max-w-none lg:shadow-md"
            aria-label="Menu latéral">
-        <div class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-            <div id="dashDrawerTrack" class="flex h-full w-[200%] transition-transform duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]" style="transform:translateX(0)">
-                <div class="flex w-1/2 flex-col overflow-hidden">
+        <div class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <div id="dashDrawerViewport" class="min-h-0 flex-1 w-full max-w-full overflow-hidden">
+            <div id="dashDrawerTrack" class="flex h-full w-[200%] shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]" style="transform:translate3d(0,0,0)">
+                <div class="flex h-full w-1/2 min-w-0 shrink-0 grow-0 basis-1/2 flex-col overflow-hidden">
                     <div class="flex shrink-0 items-center justify-between border-b border-slate-200/60 px-5 pb-4 pt-5">
                         <span class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Menu</span>
-                        <button type="button" onclick="toggleMenu()" class="rounded-xl p-2 text-slate-500 transition hover:bg-slate-200/80 hover:text-slate-900" aria-label="Fermer le menu">
+                        <button type="button" onclick="toggleMenu()" class="rounded-xl p-2 text-slate-500 transition hover:bg-slate-200/80 hover:text-slate-900 lg:hidden" aria-label="Fermer le menu">
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
@@ -125,9 +169,9 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                         </div>
                     </div>
                 </div>
-                <div class="flex w-1/2 flex-col overflow-hidden bg-white">
+                <div class="flex h-full w-1/2 min-w-0 shrink-0 grow-0 basis-1/2 flex-col overflow-hidden bg-white">
                     <div class="flex shrink-0 items-center gap-2 border-b border-slate-100 px-3 py-4">
-                        <button type="button" id="dashDrawerBack" class="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                        <button type="button" id="dashDrawerBack" class="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900" aria-label="Retour au menu principal">
                             <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/></svg>
                             Retour
                         </button>
@@ -135,6 +179,7 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                     <p id="dashDrawerSubTitle" class="shrink-0 px-5 pb-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400"></p>
                     <div id="dashDrawerSubLinks" class="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 pb-6"></div>
                 </div>
+            </div>
             </div>
         </div>
     </aside>
@@ -166,6 +211,7 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         <?php endif; ?>
     </template>
 
+    <div class="dashboard-main-shift min-h-screen">
     <div class="w-full border-b border-white/5 bg-slate-900 text-white/30 select-none">
         <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 sm:px-8">
             <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[8px] uppercase tracking-[0.15em]">
@@ -243,7 +289,7 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
     <header class="sticky top-0 z-[100] w-full border-b border-slate-200/80 bg-slate-50/95 backdrop-blur-md">
         <div class="relative mx-auto flex h-[3.75rem] max-w-5xl items-center justify-between px-4 text-slate-900 sm:px-8">
             <div class="flex flex-1 items-center">
-                <button type="button" onclick="toggleMenu()" class="group flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-xl outline-none transition hover:bg-slate-200/60" aria-label="Ouvrir le menu">
+                <button type="button" onclick="toggleMenu()" class="group flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-xl outline-none transition hover:bg-slate-200/60 lg:hidden" aria-label="Ouvrir le menu">
                     <span class="h-0.5 w-5 rounded-full bg-slate-900 transition group-hover:translate-x-0.5"></span>
                     <span class="h-0.5 w-3 self-end rounded-full bg-slate-900 transition group-hover:w-5"></span>
                 </button>
@@ -286,8 +332,8 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                         Rejoignez une unité ou une communauté
                     </h2>
                     <p class="text-sm md:text-base text-emerald-100/90 leading-relaxed mb-8">
-                        Vous êtes sur l’espace générique (tenant 1). Parcourez le registre des organisations présentes sur Athena,
-                        ou entrez un code communauté pour être rattaché à une unité.
+                        Vous n’êtes rattaché à aucune organisation pour l’instant. Parcourez le registre des communautés,
+                        ou utilisez un code d’invitation pour rejoindre votre unité.
                     </p>
                     <div class="flex flex-col sm:flex-row flex-wrap gap-4">
                         <a href="<?= url('communities') ?>" class="inline-flex items-center justify-center px-8 py-4 bg-emerald-500 text-[#022c22] text-xs font-black uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 transition-colors shadow-lg shadow-black/20">
@@ -312,12 +358,12 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         $dashCtxTrial = $showFounderTrialBanner && is_string($founderTrialEndsAt) && $founderTrialEndsAt !== '';
         ?>
         <?php if ($dashCtxCommunity || $dashCtxTrial): ?>
-        <section class="border-b border-slate-200/90 bg-gradient-to-r from-slate-50 via-white to-slate-50" aria-label="Contexte de session">
-            <div class="mx-auto flex max-w-5xl flex-col gap-2.5 px-4 py-2.5 text-[11px] leading-snug sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-6 sm:gap-y-2 sm:px-8">
+        <section class="border-b border-slate-200/90 bg-gradient-to-b from-slate-50/95 to-white" aria-label="Contexte de session">
+            <div class="mx-auto max-w-5xl space-y-3 px-4 py-3 sm:px-8">
                 <?php if ($dashCtxCommunity): ?>
-                <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
+                <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-[11px] leading-snug">
                     <span class="shrink-0 text-[10px] font-black uppercase tracking-wider text-slate-500">Communauté</span>
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                         <?php foreach ($communityMemberships as $m): ?>
                             <?php if ((int) $m['tenant_id'] === $currentTid): ?>
                                 <span class="rounded-lg bg-emerald-100 px-2.5 py-1 font-bold text-emerald-900"><?= htmlspecialchars(community_display_name($m)) ?></span>
@@ -330,16 +376,36 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </div>
-                    <span class="hidden text-slate-300 sm:inline" aria-hidden="true">·</span>
-                    <a href="<?= url('platform/invite-unit') ?>" class="font-semibold text-slate-600 hover:text-emerald-700">Inviter une unité</a>
-                    <a href="<?= url('communities/create') ?>" class="font-black uppercase tracking-wide text-emerald-700 hover:text-slate-900 sm:ml-1">Nouvelle communauté</a>
+                    <details class="dash-vers-details relative shrink-0">
+                        <summary class="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200/90 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/50 hover:text-emerald-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">
+                            <svg class="h-4 w-4 shrink-0 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+                            </svg>
+                            Vers
+                        </summary>
+                        <div class="absolute right-0 z-30 mt-1.5 min-w-[14rem] overflow-hidden rounded-xl border border-slate-200/90 bg-white py-1 shadow-lg shadow-slate-900/10 ring-1 ring-black/[0.03]" role="menu">
+                            <a href="<?= url('platform/invite-unit') ?>" class="block px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-emerald-800" role="menuitem">Inviter une unité</a>
+                            <a href="<?= url('communities/create') ?>" class="block border-t border-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-emerald-50/80 hover:text-emerald-900" role="menuitem">Nouvelle communauté</a>
+                        </div>
+                    </details>
                 </div>
                 <?php endif; ?>
                 <?php if ($dashCtxTrial): ?>
-                <div class="flex flex-wrap items-center gap-2 rounded-lg border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-slate-800 sm:max-w-xl sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 <?= $dashCtxCommunity ? 'sm:border-l sm:border-slate-200 sm:pl-5' : '' ?>">
-                    <span class="shrink-0 rounded-md bg-amber-200/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-950">Essai étendu</span>
-                    <span class="min-w-0">Offre fondateur · fonctions avancées jusqu’au <strong class="font-bold text-slate-900"><?= htmlspecialchars(date('d/m/Y', strtotime($founderTrialEndsAt))) ?></strong>.</span>
-                    <a href="<?= url('platform/upgrade') ?>" class="shrink-0 font-bold text-amber-900 underline decoration-amber-600/40 underline-offset-2 hover:text-slate-900">Voir les offres</a>
+                <div class="flex flex-col gap-3 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/95 via-white to-amber-50/40 p-4 shadow-sm sm:flex-row sm:items-center sm:gap-5 sm:p-5">
+                    <div class="flex shrink-0 items-center justify-center rounded-xl bg-amber-100/80 p-2.5 text-amber-900 ring-1 ring-amber-200/60 sm:p-3" aria-hidden="true">
+                        <svg class="h-7 w-7 sm:h-8 sm:w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                        </svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-amber-900/90">Essai étendu</p>
+                        <p class="mt-1 text-sm leading-snug text-slate-700">
+                            En tant que fondateur, vous bénéficiez des fonctions avancées jusqu’au <strong class="font-bold text-slate-900"><?= htmlspecialchars(date('d/m/Y', strtotime($founderTrialEndsAt))) ?></strong>.
+                        </p>
+                    </div>
+                    <a href="<?= url('platform/upgrade') ?>" class="inline-flex shrink-0 items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80 sm:self-stretch sm:py-0 sm:min-h-[2.75rem]">
+                        Découvrir les offres
+                    </a>
                 </div>
                 <?php endif; ?>
             </div>
@@ -419,7 +485,7 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                             </span>
     
                             <span class="inline-flex items-center px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-[0.2em]">
-                                Niveau d'accès : Opérateur
+                                Niveau d’accès : opérateur
                             </span>
                         </div>
     
@@ -437,8 +503,8 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                             </h1>
     
                             <p class="mt-5 max-w-2xl text-sm md:text-base text-slate-600 leading-relaxed">
-                                Point d’entrée centralisé pour les opérations, la formation, le suivi individuel, la documentation, les modules tactiques et les dossiers d’accréditation. 
-                                L’interface doit permettre une lecture immédiate des priorités, des accès critiques et des activités récentes.
+                                Votre point d’entrée pour la vie de l’unité : cartographie, organigramme, formations, documents et outils tactiques.
+                                Les raccourcis ci-dessous regroupent l’essentiel ; le menu latéral donne accès au reste du portail.
                             </p>
                         </div>
     
@@ -461,28 +527,28 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                             <a href="<?= url('formations') ?>" class="group flex items-center justify-between p-5 bg-white border border-slate-200 hover:shadow-xl hover:shadow-slate-100 transition-all">
                                 <div class="space-y-1">
                                     <span class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Instruction</span>
-                                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-800">Formation Continue</h3>
+                                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-800">Formations</h3>
                                 </div>
-                                <span class="text-[10px] font-mono text-blue-600 font-bold bg-blue-50 px-2 py-1 italic">96%</span>
+                                <svg class="h-5 w-5 shrink-0 text-slate-300 transition-colors group-hover:text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                             </a>
                             <a href="<?= url('documents') ?>" class="group flex items-center justify-between p-5 bg-white border border-slate-200 hover:shadow-xl hover:shadow-slate-100 transition-all">
                                 <div class="space-y-1">
-                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Data_Ref</span>
-                                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-800">Documentation</h3>
+                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Référence</span>
+                                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-800">Documents</h3>
                                 </div>
-                                <svg class="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                <svg class="w-4 h-4 text-slate-300 group-hover:text-emerald-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             </a>
                         </div>
                     </div>
     
                     <!-- Bloc situation Modpack -->
-                    <aside class="bg-slate-900 text-white p-6 md:p-7 border border-slate-800 shadow-2xl relative overflow-hidden group">
+                    <aside class="bg-slate-900 text-white p-6 md:p-7 border border-slate-800 shadow-2xl relative overflow-hidden group xl:sticky xl:top-24 xl:self-start">
                         <div class="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
                         <div class="relative z-10">
                             <div class="flex items-center justify-between gap-4">
                                 <div>
                                     <p class="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-500">Infrastructure</p>
-                                    <h2 class="mt-2 text-xl font-black uppercase italic tracking-tight text-white">État du Modpack</h2>
+                                    <h2 class="mt-2 text-xl font-black uppercase italic tracking-tight text-white">Modpack Arma 3</h2>
                                 </div>
                                 <div class="w-10 h-10 border border-white/10 flex items-center justify-center bg-white/5">
                                     <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -516,18 +582,18 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                                         <span class="text-sm font-mono font-bold text-white"><?= $sizeFormatted ?></span>
                                     </div>
                                     <div class="p-3 border border-white/5 bg-white/[0.02]">
-                                        <span class="text-[9px] font-black text-white/30 uppercase tracking-widest block">Update Last</span>
+                                        <span class="text-[9px] font-black text-white/30 uppercase tracking-widest block">Dernière mise à jour</span>
                                         <span class="text-sm font-mono font-bold text-white"><?= $updatedAt ?></span>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-3 p-3 text-[10px] tracking-wider text-white/60">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-                                    REPOS_A3_SYNC: NOMINAL
+                                    Dépôt synchronisé — prêt à l’emploi
                                 </div>
                             </div>
                             <div class="mt-8">
                                 <a href="<?= $downloadUrl ?>" class="flex items-center justify-center gap-3 w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white transition-all duration-300 shadow-lg shadow-emerald-900/20 group/btn">
-                                    <span class="text-[11px] font-black uppercase tracking-[0.3em]">Sync Modpack Arma 3</span>
+                                    <span class="text-[11px] font-black uppercase tracking-[0.3em]">Télécharger le modpack</span>
                                     <svg class="w-4 h-4 transition-transform duration-500 group-hover/btn:translate-y-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
                                     </svg>
@@ -538,9 +604,9 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                             </div>
                             <?php else: ?>
                             <div class="mt-8 space-y-4">
-                                <p class="text-sm text-white/60">Aucun modpack configuré.</p>
+                                <p class="text-sm text-white/60">Aucun pack n’est encore publié pour votre communauté.</p>
                                 <?php if (function_exists('can') && can('admin.access')): ?>
-                                <a href="<?= url('admin/modpacks/create') ?>" class="inline-block px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded border border-white/20">Créer un modpack</a>
+                                <a href="<?= url('admin/modpacks/create') ?>" class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20">Configurer un modpack</a>
                                 <?php endif; ?>
                             </div>
                             <?php endif; ?>
@@ -949,5 +1015,6 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
             </div>
         </section>
     </main>
+    </div>
 </body>
 </html>

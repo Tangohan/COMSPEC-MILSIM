@@ -33,6 +33,17 @@
     var csrf = root.getAttribute('data-csrf') || '';
     if (!url || !csrf) return;
 
+    function reorderModulesFromIds(ids) {
+      postReorder(url, csrf, 'reorder_modules', { ids: ids })
+        .then(function (r) {
+          if (r.ok) window.location.reload();
+          else window.alert('Impossible de réordonner les modules.');
+        })
+        .catch(function () {
+          window.alert('Erreur réseau.');
+        });
+    }
+
     new Sortable(root, {
       animation: 165,
       handle: '.studio-module-drag-handle',
@@ -42,16 +53,25 @@
         var ids = Array.prototype.map.call(root.querySelectorAll('.studio-sort-module-card'), function (el) {
           return el.getAttribute('data-module-id');
         });
-        postReorder(url, csrf, 'reorder_modules', { ids: ids })
-          .then(function (r) {
-            if (r.ok) window.location.reload();
-            else window.alert('Impossible de réordonner les modules.');
-          })
-          .catch(function () {
-            window.alert('Erreur réseau.');
-          });
+        reorderModulesFromIds(ids);
       },
     });
+
+    var timelineTrack = document.getElementById('studio-timeline-track');
+    if (timelineTrack && timelineTrack.querySelectorAll('[data-timeline-node]').length > 0) {
+      new Sortable(timelineTrack, {
+        animation: 165,
+        handle: '.studio-timeline-node__grip',
+        draggable: '[data-timeline-node]',
+        ghostClass: 'studio-sort-ghost',
+        onEnd: function () {
+          var tids = Array.prototype.map.call(timelineTrack.querySelectorAll('[data-timeline-node]'), function (el) {
+            return el.getAttribute('data-module-id');
+          });
+          reorderModulesFromIds(tids);
+        },
+      });
+    }
 
     Array.prototype.forEach.call(root.querySelectorAll('.studio-sort-lessons'), function (listEl) {
       var mid = listEl.getAttribute('data-module-id');

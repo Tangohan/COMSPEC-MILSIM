@@ -483,7 +483,7 @@ class Container
                 self::get(\App\Repositories\TrainingQuizRepository::class),
                 self::get(\App\Services\Training\TrainingService::class),
                 self::get(\App\Services\Training\TrainingAuditService::class),
-                self::get(EmailService::class),
+                self::get(\App\Services\EmailService::class),
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\TrainingCourseRepository::class)
@@ -513,7 +513,7 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Services\Training\TrainingAuditService::class),
                 self::get(\App\Services\Training\TrainingEnrollmentPolicyService::class),
-                self::get(EmailService::class),
+                self::get(\App\Services\EmailService::class),
                 self::get(TenantRepository::class)
             ),
             \App\Controllers\Web\TrainingController::class => new \App\Controllers\Web\TrainingController(
@@ -613,7 +613,7 @@ class Container
                 self::get(\App\Services\Training\TrainingAuditService::class),
                 self::get(TenantRepository::class),
                 self::get(\App\Services\Training\TrainingProgressService::class),
-                self::get(EmailService::class),
+                self::get(\App\Services\EmailService::class),
                 self::get(UserRepository::class),
                 self::get(\App\Services\Training\TrainingEnrollmentPolicyService::class)
             ),

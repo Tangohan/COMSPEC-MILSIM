@@ -119,6 +119,23 @@ class AdminTrainingStudioController
         return $v === '' ? null : $v;
     }
 
+    /** Met à jour la trace « dernière sauvegarde sous version X » du Studio (structure ou contenu). */
+    private function markCourseSavedWithCurrentStudioVersion(int $courseId): void
+    {
+        if (!function_exists('lms_platform_version')) {
+            return;
+        }
+        $userId = (int) Session::get('user_id');
+        try {
+            $this->courseRepository->update($courseId, [
+                'lms_last_saved_with_version' => lms_platform_version(),
+                'updated_by' => $userId > 0 ? $userId : null,
+            ]);
+        } catch (\Throwable) {
+            /* colonnes LMS version absentes ou BDD partielle */
+        }
+    }
+
     public function __construct(
         private TrainingCourseRepository $courseRepository,
         private TrainingModuleRepository $moduleRepository,
@@ -156,6 +173,32 @@ class AdminTrainingStudioController
             'trainingStudioMode' => 'index',
             'trainingStudioCourseCount' => count($courses),
             'trainingStudioCourse' => null,
+            'lmsPlatformVersion' => function_exists('lms_platform_version') ? lms_platform_version() : '',
+            'lmsChangelogUrl' => url('admin/training/studio/versions'),
+        ]);
+    }
+
+    public function versionsGuide(Request $request, array $params = []): Response
+    {
+        $denied = $this->assertTrainingFeatureAndAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $entries = function_exists('lms_platform_changelog') ? lms_platform_changelog() : [];
+        $tid = (int) Session::get('tenant_id');
+        $courseCount = $tid > 0 ? count($this->courseRepository->listForTenant($tid, null)) : 0;
+
+        return Response::view('layout.training_studio', [
+            'content' => 'admin.training.studio_versions',
+            'title' => 'Journal du Studio & versions',
+            'trainingStudioMode' => 'index',
+            'trainingStudioShowIntro' => false,
+            'trainingStudioCourseCount' => $courseCount,
+            'trainingStudioCourse' => null,
+            'lmsPlatformVersion' => function_exists('lms_platform_version') ? lms_platform_version() : '',
+            'lmsChangelogUrl' => url('admin/training/studio/versions'),
+            'lmsChangelogEntries' => $entries,
+            'lmsPlatformLabel' => function_exists('lms_platform_config') ? (string) (lms_platform_config()['label'] ?? '') : '',
         ]);
     }
 
@@ -196,6 +239,7 @@ class AdminTrainingStudioController
             return Response::redirect(url('admin/training/studio'));
         }
 
+        $lmsVer = function_exists('lms_platform_version') ? lms_platform_version() : '1.0.0';
         $newId = $this->courseRepository->create($tenantId, [
             'title' => $title,
             'slug' => $slug,
@@ -206,6 +250,8 @@ class AdminTrainingStudioController
             'visibility' => $visibility,
             'created_by' => $userId,
             'updated_by' => $userId,
+            'lms_created_with_version' => $lmsVer,
+            'lms_last_saved_with_version' => $lmsVer,
         ]);
         $this->auditService->logCourseCreated($tenantId, $userId, $newId, [
             'title' => $title,
@@ -270,6 +316,10 @@ class AdminTrainingStudioController
             'canPublish' => $this->canPublish(),
             'trainingStudioMode' => 'edit',
             'trainingStudioCourseCount' => count($allCourses),
+            'lmsPlatformVersion' => function_exists('lms_platform_version') ? lms_platform_version() : '',
+            'lmsChangelogUrl' => url('admin/training/studio/versions'),
+            'lmsCourseCreatedBeforeCurrent' => function_exists('lms_course_studio_created_before_current') ? lms_course_studio_created_before_current($course) : false,
+            'lmsCourseLastSaveBehind' => function_exists('lms_course_studio_last_save_behind_current') ? lms_course_studio_last_save_behind_current($course) : false,
             'trainingStudioCourse' => [
                 'id' => (int) $course['id'],
                 'title' => (string) ($course['title'] ?? ''),
@@ -444,6 +494,9 @@ class AdminTrainingStudioController
             'visibility' => $newVis,
             'updated_by' => $userId,
         ];
+        if (function_exists('lms_platform_version')) {
+            $patch['lms_last_saved_with_version'] = lms_platform_version();
+        }
 
         $oldSnapshot = [
             'title' => $course['title'],
@@ -480,10 +533,14 @@ class AdminTrainingStudioController
             return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');
         }
         try {
-            $this->courseRepository->update($courseId, [
+            $upd = [
                 'enrollment_share_code' => $code,
                 'updated_by' => $userId,
-            ]);
+            ];
+            if (function_exists('lms_platform_version')) {
+                $upd['lms_last_saved_with_version'] = lms_platform_version();
+            }
+            $this->courseRepository->update($courseId, $upd);
         } catch (\Throwable) {
             Session::flash('error', 'Enregistrement du code impossible (migration appliquée ?).');
 
@@ -549,6 +606,7 @@ class AdminTrainingStudioController
             'is_required' => $request->input('module_is_required') ? 1 : 0,
         ]);
         $this->auditService->logCourseUpdated($tenantId, $userId, $courseId, null, ['module_created' => $mid]);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Module ajouté.');
 
         return Response::redirect(url('admin/training/studio/' . $courseId));
@@ -577,6 +635,7 @@ class AdminTrainingStudioController
             'estimated_minutes' => max(0, min(99999, (int) $request->input('module_estimated_minutes', 0))),
             'is_required' => $request->input('module_is_required') ? 1 : 0,
         ]);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Module enregistré.');
 
         return Response::redirect(url('admin/training/studio/' . $courseId));
@@ -592,6 +651,7 @@ class AdminTrainingStudioController
             return Response::redirect(url('admin/training/studio/' . $courseId));
         }
         $this->moduleRepository->delete($moduleId);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Module supprimé.');
 
         return Response::redirect(url('admin/training/studio/' . $courseId));
@@ -613,6 +673,7 @@ class AdminTrainingStudioController
             return Response::redirect(url('admin/training/studio/' . $courseId));
         }
         $this->moduleRepository->reorder($courseId, $ids);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Ordre des modules mis à jour.');
 
         return Response::redirect(url('admin/training/studio/' . $courseId));
@@ -641,6 +702,7 @@ class AdminTrainingStudioController
             return Response::redirect(url('admin/training/studio/' . $courseId));
         }
         $this->lessonRepository->reorder($moduleId, $ids);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Ordre des leçons mis à jour.');
 
         return Response::redirect(url('admin/training/studio/' . $courseId));
@@ -671,6 +733,7 @@ class AdminTrainingStudioController
             $ids[$idx] = $tmp;
             $this->moduleRepository->reorder($courseId, $ids);
         }
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
 
         return Response::redirect(url('admin/training/studio/' . $courseId));
     }
@@ -713,6 +776,7 @@ class AdminTrainingStudioController
             'difficulty' => $this->normalizeLessonDifficulty((string) $request->input('lesson_difficulty', '')),
             'is_required' => $request->input('lesson_is_required') ? 1 : 0,
         ]);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Leçon ajoutée.');
 
         return Response::redirect(url('admin/training/studio/' . $courseId));
@@ -756,6 +820,7 @@ class AdminTrainingStudioController
             'difficulty' => $this->normalizeLessonDifficulty((string) $request->input('lesson_difficulty', '')),
             'is_required' => $request->input('lesson_is_required') ? 1 : 0,
         ]);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Leçon enregistrée.');
 
         return Response::redirect(url('admin/training/studio/' . $courseId));
@@ -771,6 +836,7 @@ class AdminTrainingStudioController
             return Response::redirect(url('admin/training/studio/' . $courseId));
         }
         $this->lessonRepository->delete($lessonId);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Leçon supprimée.');
 
         return Response::redirect(url('admin/training/studio/' . $courseId));
@@ -812,6 +878,7 @@ class AdminTrainingStudioController
             'external_url' => $extUrl,
             'file_path' => $filePath,
         ]);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Ressource ajoutée à la leçon.');
 
         return Response::redirect(url('admin/training/studio/' . $courseId) . '#lesson-res-' . $lessonId);
@@ -834,6 +901,7 @@ class AdminTrainingStudioController
             return Response::redirect(url('admin/training/studio/' . $courseId));
         }
         $this->resourceRepository->delete($rid);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
         Session::flash('success', 'Ressource retirée.');
 
         return Response::redirect(url('admin/training/studio/' . $courseId) . '#lesson-res-' . $lessonId);
@@ -865,6 +933,7 @@ class AdminTrainingStudioController
             $this->lessonRepository->update((int) $a['id'], ['position' => (int) $b['position']]);
             $this->lessonRepository->update((int) $b['id'], ['position' => (int) $a['position']]);
         }
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
 
         return Response::redirect(url('admin/training/studio/' . $courseId));
     }
@@ -994,6 +1063,7 @@ class AdminTrainingStudioController
             Session::flash('error', 'Créneau non enregistré — vérifiez la migration LMS engagement.');
         } else {
             Session::flash('success', 'Créneau ajouté.');
+            $this->markCourseSavedWithCurrentStudioVersion($courseId);
         }
 
         return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');
@@ -1006,6 +1076,7 @@ class AdminTrainingStudioController
             Session::flash('error', 'Créneau introuvable.');
         } else {
             Session::flash('success', 'Créneau supprimé.');
+            $this->markCourseSavedWithCurrentStudioVersion($courseId);
         }
 
         return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');
@@ -1024,6 +1095,7 @@ class AdminTrainingStudioController
             Session::flash('error', 'Réponse non enregistrée.');
         } else {
             Session::flash('success', 'Réponse publiée.');
+            $this->markCourseSavedWithCurrentStudioVersion($courseId);
         }
 
         return Response::redirect(url('admin/training/studio/' . $courseId) . '#studio-engagement');

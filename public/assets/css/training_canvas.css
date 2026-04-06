@@ -39,6 +39,19 @@
   }
 }
 
+.lms-canvas-hero-grid {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+.lms-canvas-slide--elevated {
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: linear-gradient(to bottom right, #ffffff 0%, #f8fafc 45%, rgba(236, 253, 245, 0.5) 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
 /* —— Article de lecture (canvas) : encadrés, code, console —— */
 .lms-reading-article pre.lms-reading-code {
   margin: 1.25rem 0;

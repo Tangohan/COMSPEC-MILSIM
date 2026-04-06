@@ -99,6 +99,13 @@ $themeFontLabels = function_exists('training_lms_theme_font_labels_fr') ? traini
 $themeRadiusPresets = function_exists('training_lms_theme_radius_presets') ? training_lms_theme_radius_presets() : [];
 $themeRadiusLabels = function_exists('training_lms_theme_radius_labels_fr') ? training_lms_theme_radius_labels_fr() : [];
 
+$lmsPlatformVersion = (string) ($lmsPlatformVersion ?? '');
+$lmsChangelogUrl = (string) ($lmsChangelogUrl ?? url('admin/training/studio/versions'));
+$lmsCourseCreatedBeforeCurrent = (bool) ($lmsCourseCreatedBeforeCurrent ?? false);
+$lmsCourseLastSaveBehind = (bool) ($lmsCourseLastSaveBehind ?? false);
+$lmsCreatedLabel = function_exists('lms_course_studio_created_version_label') ? lms_course_studio_created_version_label($course) : '';
+$lmsLastSavedLabel = function_exists('lms_course_studio_last_saved_version_label') ? lms_course_studio_last_saved_version_label($course) : null;
+
 $defaultCanvasJson = json_encode([
     'version' => 1,
     'modals' => [],
@@ -128,6 +135,27 @@ $defaultCanvasJson = json_encode([
     <?php endif; ?>
     <?php if ($flashErr): ?>
     <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-950 text-sm font-medium shadow-sm"><?= htmlspecialchars((string) $flashErr) ?></div>
+    <?php endif; ?>
+
+    <?php if ($lmsPlatformVersion !== ''): ?>
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <span>Studio — version <strong class="text-slate-700">v<?= htmlspecialchars($lmsPlatformVersion) ?></strong></span>
+        <a href="<?= htmlspecialchars($lmsChangelogUrl) ?>" class="font-semibold text-emerald-700 underline decoration-emerald-200 hover:text-emerald-900">Journal des évolutions</a>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($lmsCourseCreatedBeforeCurrent): ?>
+    <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200/90 text-amber-950 text-sm leading-relaxed shadow-sm">
+        <p class="font-bold text-amber-950 mb-1">Version du Studio à la création</p>
+        <p>Cette formation a été créée avec une <strong>version antérieure</strong> de l’outil Studio (référence enregistrée : <?= htmlspecialchars($lmsCreatedLabel) ?>).
+        Le rendu apprenant ou les options d’édition peuvent avoir évolué depuis. Consultez le <a href="<?= htmlspecialchars($lmsChangelogUrl) ?>" class="font-semibold underline decoration-amber-400 hover:text-amber-900">journal des évolutions</a>, puis enregistrez à nouveau la fiche ou le contenu pour actualiser la trace de version.</p>
+    </div>
+    <?php elseif ($lmsCourseLastSaveBehind && $lmsLastSavedLabel !== null): ?>
+    <div class="mb-6 p-4 rounded-xl bg-sky-50 border border-sky-200/90 text-sky-950 text-sm leading-relaxed shadow-sm">
+        <p class="font-bold text-sky-950 mb-1">Enregistrement sous une version précédente</p>
+        <p>La dernière sauvegarde dans le Studio date de <strong><?= htmlspecialchars($lmsLastSavedLabel) ?></strong> alors que l’outil est en <strong>v<?= htmlspecialchars($lmsPlatformVersion) ?></strong>.
+        Enregistrez à nouveau la fiche formation ou modifiez une leçon pour aligner la trace sur la version actuelle. <a href="<?= htmlspecialchars($lmsChangelogUrl) ?>" class="font-semibold underline decoration-sky-400 hover:text-sky-900">Voir ce qui a changé</a>.</p>
+    </div>
     <?php endif; ?>
 
     <header class="training-studio-hero mb-8">
@@ -519,7 +547,38 @@ $defaultCanvasJson = json_encode([
         <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-800 text-[11px] font-black tracking-tight" title="Modules">M</span>
         Structure pédagogique
     </h2>
-    <p class="text-sm text-slate-600 mb-6 max-w-2xl">Réordonnez les <strong>modules</strong> et les <strong>leçons</strong> par glisser-déposer (poignée ⠿). Les changements sont enregistrés tout de suite.</p>
+    <p class="text-sm text-slate-600 mb-3 max-w-2xl">Réordonnez les <strong>modules</strong> depuis la <strong>frise</strong> ci-dessous ou depuis chaque carte (poignée ⠿). Dans chaque module, réordonnez les <strong>leçons</strong> de la même façon. L’ordre est enregistré tout de suite.</p>
+    <p class="text-xs text-slate-500 mb-6 max-w-2xl">Les diapositives d’un <strong>parcours visuel</strong> se déplacent dans l’éditeur de la leçon concernée, pas sur cette frise.</p>
+
+    <?php if (count($modules) > 0): ?>
+    <nav class="studio-parcours-timeline mb-8" id="studio-parcours-timeline" aria-label="Frise du parcours — ordre des modules">
+        <div class="studio-parcours-timeline__head">
+            <span class="studio-parcours-timeline__label">Frise du parcours</span>
+            <span class="studio-parcours-timeline__hint">Poignée ⠿ pour réordonner · clic sur le titre pour accéder au module</span>
+        </div>
+        <div id="studio-timeline-track" class="studio-timeline-track">
+            <?php
+            $tIdx = 0;
+            foreach ($modules as $tMod):
+                $tIdx++;
+                $tMid = (int) ($tMod['id'] ?? 0);
+                $tLessons = $tMod['lessons'] ?? [];
+                $tLc = count($tLessons);
+                $tTitle = (string) ($tMod['title'] ?? '');
+                $tTitleShort = function_exists('mb_strimwidth') ? mb_strimwidth($tTitle, 0, 40, '…', 'UTF-8') : (strlen($tTitle) > 40 ? substr($tTitle, 0, 37) . '…' : $tTitle);
+                ?>
+            <div class="studio-timeline-node" data-module-id="<?= $tMid ?>" data-timeline-node>
+                <span class="studio-timeline-node__grip" title="Déplacer ce module dans le parcours" aria-hidden="true">⠿</span>
+                <a href="#studio-mod-<?= $tMid ?>" class="studio-timeline-node__body">
+                    <span class="studio-timeline-node__n"><?= (int) $tIdx ?></span>
+                    <span class="studio-timeline-node__title"><?= htmlspecialchars($tTitleShort !== '' ? $tTitleShort : 'Module') ?></span>
+                    <span class="studio-timeline-node__meta"><?= $tLc === 0 ? 'Sans leçon' : ((int) $tLc . ' leçon' . ($tLc > 1 ? 's' : '')) ?></span>
+                </a>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </nav>
+    <?php endif; ?>
 
     <div id="studio-modules-list" class="space-y-4" data-studio-url="<?= htmlspecialchars(url('admin/training/studio/' . $cid)) ?>" data-csrf="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
     <?php
@@ -535,7 +594,7 @@ $defaultCanvasJson = json_encode([
             $modObjectiveLines = [''];
         }
     ?>
-    <div class="studio-sort-module-card training-studio-panel rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm" data-module-id="<?= (int) $mid ?>">
+    <div id="studio-mod-<?= (int) $mid ?>" class="studio-sort-module-card training-studio-panel rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm scroll-mt-36" data-module-id="<?= (int) $mid ?>">
         <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
                 <span class="studio-module-drag-handle cursor-grab text-slate-400 hover:text-slate-600 select-none px-0.5 text-lg leading-none" title="Glisser pour déplacer le module" aria-hidden="true">⠿</span>

@@ -8,8 +8,43 @@
     return root.querySelector(sel);
   }
 
+  function showCanvasToast(root, message) {
+    if (!root || !message) return;
+    var t = root.querySelector('[data-lms-canvas-toast]');
+    if (!t) return;
+    t.textContent = message;
+    t.classList.remove('hidden');
+    var wrong = root.querySelector('[data-lms-blank].ring-rose-400');
+    if (wrong && typeof wrong.focus === 'function') {
+      try {
+        wrong.focus();
+      } catch (e) {}
+    }
+    if (t._hideT) clearTimeout(t._hideT);
+    t._hideT = setTimeout(function () {
+      t.classList.add('hidden');
+      t.textContent = '';
+    }, 7000);
+  }
+
+  function updateSlideProgress(root, activeIndex, totalSlides) {
+    if (!root) return;
+    var total = totalSlides;
+    if (!total) {
+      total = parseInt(root.getAttribute('data-lms-canvas-slide-count') || '0', 10) || 0;
+    }
+    if (!total) return;
+    var cur = (activeIndex | 0) + 1;
+    var label = qs(root, '[data-lms-canvas-slide-label]');
+    var bar = qs(root, '[data-lms-canvas-slide-progress-bar]');
+    if (label) label.textContent = 'Étape ' + cur + ' sur ' + total;
+    var pct = Math.min(100, Math.round((100 * cur) / total));
+    if (bar) bar.style.width = pct + '%';
+  }
+
   function validateFillBlanksInSlideEl(slideEl) {
     if (!slideEl) return true;
+    var root = slideEl.closest('[data-lms-canvas-player]');
     var host = slideEl.querySelector('[data-lms-fill-blanks-slide]');
     if (!host) return true;
     var inputs = host.querySelectorAll('[data-lms-blank]');
@@ -28,8 +63,11 @@
         inp.classList.add('ring-2', 'ring-emerald-400');
       }
     });
-    if (!ok && window.alert) {
-      window.alert('Complétez correctement tous les champs avant de passer à l’étape suivante.');
+    if (!ok && root) {
+      showCanvasToast(
+        root,
+        'Vérifiez les champs surlignés : ils doivent correspondre exactement aux termes attendus avant de passer à l’étape suivante.'
+      );
     }
     return ok;
   }
@@ -71,6 +109,7 @@
       var visited = new Set();
       function noteVisit(swIn) {
         visited.add(swIn.activeIndex);
+        updateSlideProgress(root, swIn.activeIndex, total);
         if (visited.size >= total && window.LmsLessonProgress && typeof window.LmsLessonProgress.signalComplete === 'function') {
           window.LmsLessonProgress.signalComplete();
         }
@@ -131,6 +170,7 @@
       });
       if (prevBtn) prevBtn.disabled = true;
       if (nextBtn) nextBtn.disabled = total <= 1;
+      updateSlideProgress(root, 0, total);
       return;
     }
 
@@ -153,6 +193,7 @@
       });
       if (prevBtn) prevBtn.disabled = idx === 0;
       if (nextBtn) nextBtn.disabled = idx >= total - 1;
+      updateSlideProgress(root, idx, total);
     }
 
     if (prevBtn)

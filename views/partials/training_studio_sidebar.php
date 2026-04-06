@@ -46,6 +46,11 @@ $vis = $course ? ($visLabels[$course['visibility'] ?? ''] ?? (string) ($course['
             <span>Tableau de bord admin</span>
             <span class="ts-meta">·</span>
         </a>
+        <a href="<?= url('admin/training/studio/versions') ?>"
+           @click="navOpen = false">
+            <span>Journal &amp; versions</span>
+            <span class="ts-meta">v</span>
+        </a>
         <?php if ($mode === 'edit' && $course && $cid > 0): ?>
         <p class="training-studio-nav__label mt-4">Formation en cours</p>
         <a href="<?= url('admin/training/studio') ?>"
@@ -71,6 +76,11 @@ $vis = $course ? ($visLabels[$course['visibility'] ?? ''] ?? (string) ($course['
            class="pl-3 border-l-2 border-emerald-500/40"
            @click="navOpen = false">
             <span>Modules &amp; leçons</span>
+        </a>
+        <a href="#studio-parcours-timeline"
+           class="pl-3 border-l-2 border-violet-500/40"
+           @click="navOpen = false">
+            <span>Frise du parcours</span>
         </a>
         <a href="<?= url('admin/training/studio/' . $cid . '/preview') ?>"
            @click="navOpen = false">
@@ -112,7 +122,10 @@ $vis = $course ? ($visLabels[$course['visibility'] ?? ''] ?? (string) ($course['
     </div>
     <?php endif; ?>
 
-    <div class="training-studio-sidebar__footer mt-auto">
-        Athena · studio LMS
+    <div class="training-studio-sidebar__footer mt-auto text-[11px] text-slate-500">
+        Athena · Studio LMS
+        <?php if (function_exists('lms_platform_version')): ?>
+        <span class="block mt-1 font-semibold text-slate-600">v<?= htmlspecialchars(lms_platform_version()) ?></span>
+        <?php endif; ?>
     </div>
 </aside>

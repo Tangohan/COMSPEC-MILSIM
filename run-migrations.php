@@ -166,6 +166,12 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_enrollment_features : ' . $e->getMessage() . "\n";
 }
+$trainingCourseLmsPlatformVersionMigrate = require $root . '/bootstrap/training_course_lms_platform_version_migration.php';
+try {
+    $trainingCourseLmsPlatformVersionMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_course_lms_platform_version : ' . $e->getMessage() . "\n";
+}
 echo "Migrations LMS formation (première passe) OK.\n";
 @flush();
 @ob_flush();

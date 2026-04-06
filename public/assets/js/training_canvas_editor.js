@@ -15,7 +15,7 @@
     { id: 'quote', label: 'Citation' },
     { id: 'file_block', label: 'Fichier / pièce jointe' },
     { id: 'text_rich', label: 'Texte libre' },
-    { id: 'knowledge_check', label: 'Knowledge check (lignes)' },
+    { id: 'knowledge_check', label: 'Repères (liste à puces)' },
     { id: 'scorm_sequence', label: 'Séquence type SCORM' },
   ];
 
@@ -25,10 +25,80 @@
     return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
   }
 
+  function ensureOpening(o) {
+    if (!o || typeof o !== 'object') {
+      return { eyebrow: '', title: '', lead: '', stats: [] };
+    }
+    if (!Array.isArray(o.stats)) {
+      o.stats = [];
+    }
+    if (o.eyebrow == null) {
+      o.eyebrow = '';
+    }
+    if (o.title == null) {
+      o.title = '';
+    }
+    if (o.lead == null) {
+      o.lead = '';
+    }
+    return o;
+  }
+
+  function ensureClosure(c) {
+    if (!c || typeof c !== 'object') {
+      return { title: '', seen: [], acquired: [], nextHint: '' };
+    }
+    if (!Array.isArray(c.seen)) {
+      c.seen = [];
+    }
+    if (!Array.isArray(c.acquired)) {
+      c.acquired = [];
+    }
+    if (c.title == null) {
+      c.title = '';
+    }
+    if (c.nextHint == null) {
+      c.nextHint = '';
+    }
+    return c;
+  }
+
+  function ensureSlideMissionFields(sl) {
+    if (!sl || typeof sl !== 'object') {
+      return;
+    }
+    if (sl.contextKicker == null) {
+      sl.contextKicker = '';
+    }
+    var surf = String(sl.surface || 'default');
+    if (surf !== 'elevated' && surf !== 'default') {
+      sl.surface = 'default';
+    }
+    if (!Array.isArray(sl.cards)) {
+      sl.cards = [];
+    }
+    if (!Array.isArray(sl.insights)) {
+      sl.insights = [];
+    }
+    if (sl.metric != null && typeof sl.metric !== 'object') {
+      sl.metric = null;
+    }
+    if (sl.metric && typeof sl.metric === 'object') {
+      if (sl.metric.label == null) {
+        sl.metric.label = '';
+      }
+      if (sl.metric.value == null) {
+        sl.metric.value = '';
+      }
+    }
+  }
+
   function defaultDeck() {
     return {
       version: 1,
       modals: [],
+      opening: ensureOpening(null),
+      closure: ensureClosure(null),
       slides: [
         {
           id: uid('slide'),
@@ -43,6 +113,11 @@
           resources: [],
           primaryAction: null,
           secondaryAction: null,
+          contextKicker: '',
+          surface: 'default',
+          cards: [],
+          insights: [],
+          metric: null,
         },
       ],
     };
@@ -53,10 +128,16 @@
     try {
       var d = JSON.parse(raw);
       if (!d || !Array.isArray(d.slides) || d.slides.length === 0) return defaultDeck();
+      if (!Array.isArray(d.modals)) {
+        d.modals = [];
+      }
+      d.opening = ensureOpening(d.opening);
+      d.closure = ensureClosure(d.closure);
       d.slides.forEach(function (sl) {
         if (!Array.isArray(sl.resources)) {
           sl.resources = [];
         }
+        ensureSlideMissionFields(sl);
       });
       return d;
     } catch (e) {
@@ -170,9 +251,186 @@
     return r;
   }
 
+  function denseBottomPreviewHtml(sl) {
+    var out = '';
+    var m = sl.metric;
+    if (m && typeof m === 'object') {
+      var ml = String(m.label || '').trim();
+      var mv = String(m.value || '').trim();
+      if (ml || mv) {
+        out +=
+          '<div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">' +
+          '<p class="text-[8px] font-black uppercase tracking-wide text-slate-400">' +
+          escapeHtml(ml || 'Indicateur') +
+          '</p>' +
+          '<p class="text-sm font-bold text-slate-900">' +
+          escapeHtml(mv || '—') +
+          '</p></div>';
+      }
+    }
+    var cards = Array.isArray(sl.cards) ? sl.cards : [];
+    if (cards.length) {
+      var cells = '';
+      cards.forEach(function (c) {
+        if (!c || typeof c !== 'object') {
+          return;
+        }
+        var lab = String(c.label || '').trim();
+        var bod = String(c.body || '').trim();
+        if (!lab && !bod) {
+          return;
+        }
+        cells +=
+          '<div class="rounded-lg border border-slate-200 bg-white p-2 text-[11px]">' +
+          (lab ? '<p class="font-bold text-slate-600">' + escapeHtml(lab) + '</p>' : '') +
+          (bod
+            ? '<p class="text-slate-700 mt-1">' + escapeHtml(bod).replace(/\n/g, '<br/>') + '</p>'
+            : '') +
+          '</div>';
+      });
+      if (cells) {
+        out += '<div class="mt-3 grid gap-2 md:grid-cols-3">' + cells + '</div>';
+      }
+    }
+    var insights = Array.isArray(sl.insights) ? sl.insights.slice() : [];
+    if (insights.length === 0 && sl.highlight && typeof sl.highlight === 'object') {
+      insights = [sl.highlight];
+    }
+    if (insights.length) {
+      var insHtml = '';
+      insights.forEach(function (ins) {
+        if (!ins || typeof ins !== 'object') {
+          return;
+        }
+        var v = String(ins.variant || 'retain').toLowerCase();
+        var title = String(ins.title || '').trim();
+        var body = String(ins.body || '').trim();
+        var defTitle = 'À retenir';
+        var boxCls = 'border-emerald-200 bg-emerald-50 text-emerald-900';
+        if (v === 'key' || v === 'point') {
+          defTitle = 'Point clé';
+          boxCls = 'border-sky-200 bg-sky-50 text-sky-950';
+        } else if (v === 'vigilance' || v === 'warn') {
+          defTitle = 'Vigilance';
+          boxCls = 'border-amber-200 bg-amber-50 text-amber-950';
+        } else if (v === 'result') {
+          defTitle = 'Résultat attendu';
+          boxCls = 'border-emerald-200 bg-emerald-50 text-emerald-950';
+        }
+        if (!title) {
+          title = defTitle;
+        }
+        if (!title && !body) {
+          return;
+        }
+        insHtml +=
+          '<div class="rounded-lg border p-2 text-[11px] ' +
+          boxCls +
+          '">' +
+          '<p class="font-bold mb-1">' +
+          escapeHtml(title) +
+          '</p>' +
+          (body ? '<p>' + escapeHtml(body).replace(/\n/g, '<br/>') + '</p>' : '') +
+          '</div>';
+      });
+      if (insHtml) {
+        out += '<div class="mt-3 grid gap-2 md:grid-cols-3">' + insHtml + '</div>';
+      }
+    }
+    return out;
+  }
+
+  function denseCardsRowsHtml(s) {
+    if (!Array.isArray(s.cards)) {
+      s.cards = [];
+    }
+    var rows = '';
+    s.cards.forEach(function (c, idx) {
+      var row = c && typeof c === 'object' ? c : { label: '', body: '' };
+      rows +=
+        '<div class="flex flex-wrap gap-2 mb-2 items-end border-t border-violet-100 pt-2" data-card-row="' +
+        idx +
+        '">' +
+        '<div class="flex-1 min-w-[6rem]"><label class="text-[10px] text-slate-500">Titre court</label>' +
+        '<input type="text" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-card-lab value="' +
+        escapeHtml(String(row.label || '')) +
+        '" /></div>' +
+        '<div class="w-full min-w-[12rem]"><label class="text-[10px] text-slate-500">Texte</label>' +
+        '<textarea rows="2" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-card-body>' +
+        escapeHtml(String(row.body || '')) +
+        '</textarea></div>' +
+        '<button type="button" class="text-xs text-rose-600 font-semibold underline shrink-0 h-8 px-1" data-card-rm>Retirer</button></div>';
+    });
+    return (
+      '<div data-dense-cards-wrap class="mt-2">' +
+      '<p class="text-[10px] font-bold text-slate-600 mb-1">Cartes (affichage en colonnes sur grand écran)</p>' +
+      '<div data-dense-cards-rows>' +
+      rows +
+      '</div>' +
+      '<button type="button" class="text-xs font-bold text-violet-700 underline" data-card-add>Ajouter une carte</button></div>'
+    );
+  }
+
+  function denseInsightsRowsHtml(s) {
+    if (!Array.isArray(s.insights)) {
+      s.insights = [];
+    }
+    var rows = '';
+    s.insights.forEach(function (ins, idx) {
+      var row = ins && typeof ins === 'object' ? ins : { variant: 'retain', title: '', body: '' };
+      var v = String(row.variant || 'retain');
+      rows +=
+        '<div class="flex flex-wrap gap-2 mb-2 items-end border-t border-violet-100 pt-2" data-ins-row="' +
+        idx +
+        '">' +
+        '<div><label class="text-[10px] text-slate-500">Type</label>' +
+        '<select class="border rounded px-2 py-1 text-xs block mt-0.5 min-w-[9rem]" data-ins-var>' +
+        '<option value="retain"' +
+        (v === 'retain' ? ' selected' : '') +
+        '>À retenir</option>' +
+        '<option value="key"' +
+        (v === 'key' ? ' selected' : '') +
+        '>Point clé</option>' +
+        '<option value="vigilance"' +
+        (v === 'vigilance' ? ' selected' : '') +
+        '>Vigilance</option>' +
+        '<option value="result"' +
+        (v === 'result' ? ' selected' : '') +
+        '>Résultat attendu</option>' +
+        '</select></div>' +
+        '<div class="flex-1 min-w-[8rem]"><label class="text-[10px] text-slate-500">Titre (optionnel)</label>' +
+        '<input type="text" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-ins-title value="' +
+        escapeHtml(String(row.title || '')) +
+        '" /></div>' +
+        '<div class="w-full"><label class="text-[10px] text-slate-500">Texte</label>' +
+        '<textarea rows="2" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-ins-body>' +
+        escapeHtml(String(row.body || '')) +
+        '</textarea></div>' +
+        '<button type="button" class="text-xs text-rose-600 font-semibold underline shrink-0 h-8 px-1" data-ins-rm>Retirer</button></div>';
+    });
+    return (
+      '<div data-dense-ins-wrap class="mt-2">' +
+      '<p class="text-[10px] font-bold text-slate-600 mb-1">Encadrés d’insight</p>' +
+      '<div data-dense-ins-rows>' +
+      rows +
+      '</div>' +
+      '<button type="button" class="text-xs font-bold text-violet-700 underline" data-ins-add>Ajouter un encadré</button></div>'
+    );
+  }
+
   function renderSlidePreviewHtml(sl) {
     if (!sl) return '<p class="text-slate-400 text-sm">—</p>';
     var tpl = String(sl.template || 'title_hero');
+    var slideBg =
+      String(sl.surface || 'default') === 'elevated'
+        ? 'bg-gradient-to-br from-slate-50 to-violet-50/40'
+        : 'bg-white';
+    var ck = String(sl.contextKicker || '').trim();
+    var ckHtml = ck
+      ? '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-3">' +
+        escapeHtml(ck) +
+        '</p>'
+      : '';
     var title = escapeHtml(sl.title || '');
     var sub = escapeHtml(sl.subtitle || '');
     var bodyRaw = String(sl.body || '');
@@ -221,13 +479,15 @@
         })
         .join('');
       return (
-        '<div class="p-5 md:p-8 min-h-[200px] bg-white rounded-xl border border-slate-100 shadow-inner">' +
-        '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-3">SCORM sequence</p>' +
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
+        '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-3">Déroulé type</p>' +
         '<div class="flex flex-wrap items-center gap-1 text-sm">' +
         strip +
         '</div>' +
         (title ? '<h2 class="text-xl font-black text-slate-900 mt-6">' + title + '</h2>' : '') +
         actionsHtml() +
+        denseBottomPreviewHtml(sl) +
         '</div>'
       );
     }
@@ -237,20 +497,21 @@
         return l.trim();
       });
       lines = lines.filter(Boolean);
-      var items = lines
-        .map(function (line) {
-          return '<div class="check-item text-sm">' + escapeHtml(line) + '</div>';
-        })
-        .join('');
-      if (!items) items = '<p class="text-sm text-slate-500">Ajoutez des lignes dans le corps.</p>';
+      var items = lines.map(function (line) {
+        return '<li class="text-sm text-slate-800 leading-relaxed">' + escapeHtml(line) + '</li>';
+      });
+      var listBody =
+        items.length === 0
+          ? '<p class="text-sm text-slate-500">Ajoutez des lignes dans le corps.</p>'
+          : '<ul class="list-disc pl-5 space-y-2 max-w-3xl">' + items.join('') + '</ul>';
       return (
-        '<div class="p-5 md:p-8 min-h-[200px] bg-white rounded-xl border border-slate-100 shadow-inner">' +
-        '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-3">Knowledge check</p>' +
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
+        '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-3">Repères</p>' +
         (title ? '<h2 class="text-lg font-black text-slate-900 mb-4">' + title + '</h2>' : '') +
-        '<div class="check-grid space-y-2">' +
-        items +
-        '</div>' +
+        listBody +
         actionsHtml() +
+        denseBottomPreviewHtml(sl) +
         '</div>'
       );
     }
@@ -294,18 +555,21 @@
               .join('') +
             '</ol>';
       return (
-        '<div class="p-5 md:p-8 min-h-[200px] bg-white rounded-xl border border-slate-100 shadow-inner">' +
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
         '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-4">Frise chronologique</p>' +
         (title ? '<h2 class="text-xl font-black text-slate-900 mb-6">' + title + '</h2>' : '') +
         items +
         actionsHtml() +
+        denseBottomPreviewHtml(sl) +
         '</div>'
       );
     }
 
     if (tpl === 'reading_article') {
       return (
-        '<div class="p-5 md:p-8 min-h-[200px] bg-white rounded-xl border border-slate-100 shadow-inner">' +
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
         '<div class="max-w-3xl mx-auto">' +
         '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700/90 mb-3">Article de lecture</p>' +
         (title
@@ -323,6 +587,7 @@
           : '') +
         '</div>' +
         actionsHtml() +
+        denseBottomPreviewHtml(sl) +
         '</div>'
       );
     }
@@ -336,7 +601,8 @@
         );
       });
       return (
-        '<div class="p-5 md:p-8 min-h-[200px] bg-white rounded-xl border border-slate-100 shadow-inner">' +
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
         '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-amber-700/90 mb-3">Texte à trous</p>' +
         (title ? '<h2 class="text-lg font-black text-slate-900 mb-4">' + title + '</h2>' : '') +
         (fbPrev
@@ -344,6 +610,7 @@
           : '<p class="text-sm text-slate-500">Saisissez du texte avec des segments [[réponse]].</p>') +
         '<p class="text-xs text-slate-500 mt-4">Côté apprenant, des champs vérifient les réponses avant le passage à l’étape suivante.</p>' +
         actionsHtml() +
+        denseBottomPreviewHtml(sl) +
         '</div>'
       );
     }
@@ -356,45 +623,50 @@
       var lis =
         res.length === 0
           ? '<p class="text-sm text-slate-500">Ajoutez des liens ci-contre (liste de ressources).</p>'
-          : '<ul class="space-y-3">' +
+          : '<ul class="space-y-2 max-w-2xl">' +
             res
               .map(function (rr) {
                 return (
-                  '<li class="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 flex flex-wrap items-center justify-between gap-3">' +
-                  '<span class="text-sm font-semibold text-slate-900">' +
+                  '<li class="text-sm text-slate-800">' +
+                  '<span class="font-semibold text-violet-800">' +
                   escapeHtml(rr.title) +
                   '</span>' +
-                  '<span class="shrink-0 px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold opacity-90 pointer-events-none">Ouvrir</span></li>'
+                  '<span class="text-slate-500"> — lien dans l’aperçu public</span></li>'
                 );
               })
               .join('') +
             '</ul>';
       return (
-        '<div class="p-5 md:p-8 min-h-[200px] bg-white rounded-xl border border-slate-100 shadow-inner">' +
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
         '<p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-3">Ressources</p>' +
         (title ? '<h2 class="text-xl font-black text-slate-900 mb-2">' + title + '</h2>' : '') +
         (sub ? '<p class="text-sm text-violet-700 font-semibold mb-4">' + sub + '</p>' : '') +
         intro +
         lis +
         actionsHtml() +
+        denseBottomPreviewHtml(sl) +
         '</div>'
       );
     }
 
     if (tpl === 'quote') {
       return (
-        '<div class="p-5 md:p-8 min-h-[200px] bg-white rounded-xl border border-slate-100 shadow-inner">' +
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
         '<blockquote class="text-lg md:text-xl font-serif italic text-slate-800 border-l-4 border-violet-500 pl-6">' +
         escapeHtml(bodySafe) +
         '</blockquote>' +
         actionsHtml() +
+        denseBottomPreviewHtml(sl) +
         '</div>'
       );
     }
 
     if (tpl === 'image_full' && img) {
       return (
-        '<div class="p-2 bg-white rounded-xl border border-slate-100 shadow-inner">' +
+        '<div class="p-2 ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
         '<figure class="space-y-2">' +
         '<img src="' +
         img +
@@ -402,13 +674,15 @@
         (cap ? '<figcaption class="text-xs text-slate-500 text-center">' + cap + '</figcaption>' : '') +
         '</figure>' +
         actionsHtml() +
+        denseBottomPreviewHtml(sl) +
         '</div>'
       );
     }
 
     if (tpl === 'split_text_image' && img) {
       return (
-        '<div class="p-5 md:p-8 min-h-[200px] bg-white rounded-xl border border-slate-100 shadow-inner">' +
+        '<div class="p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+        ckHtml +
         '<div class="grid md:grid-cols-2 gap-6 items-start">' +
         '<div class="prose prose-sm max-w-none text-slate-700">' +
         (title ? '<h2 class="text-xl font-black text-slate-900 mb-2">' + title + '</h2>' : '') +
@@ -421,12 +695,14 @@
         (cap ? '<figcaption class="text-xs text-slate-500 mt-2">' + cap + '</figcaption>' : '') +
         '</figure></div>' +
         actionsHtml() +
+        denseBottomPreviewHtml(sl) +
         '</div>'
       );
     }
 
     var block =
-      '<div class="space-y-4 p-5 md:p-8 min-h-[220px] bg-white rounded-xl border border-slate-100 shadow-inner">' +
+      '<div class="space-y-4 p-5 md:p-8 min-h-[220px] ' + slideBg + ' rounded-xl border border-slate-100 shadow-inner">' +
+      ckHtml +
       (title ? '<h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">' + title + '</h2>' : '') +
       (sub ? '<p class="text-lg text-violet-700 font-semibold">' + sub + '</p>' : '') +
       (bodyRaw
@@ -447,6 +723,7 @@
           '<span class="text-xs font-bold text-emerald-700">↗ Aperçu lien</span></div>'
         : '') +
       actionsHtml() +
+      denseBottomPreviewHtml(sl) +
       '</div>';
     return block;
   }
@@ -479,6 +756,160 @@
     return this.deck.slides[this.activeSlide];
   };
 
+  LmsCanvasEditor.prototype._renderMissionPanel = function () {
+    var self = this;
+    var host = this._missionEl;
+    if (!host) {
+      return;
+    }
+    this.deck.opening = ensureOpening(this.deck.opening);
+    this.deck.closure = ensureClosure(this.deck.closure);
+    var op = this.deck.opening;
+    var cl = this.deck.closure;
+
+    var statsRows = '';
+    op.stats.forEach(function (st, idx) {
+      var row = st && typeof st === 'object' ? st : { label: '', value: '' };
+      statsRows +=
+        '<div class="flex flex-wrap gap-2 mb-2 items-end" data-stat-row="' +
+        idx +
+        '">' +
+        '<div class="flex-1 min-w-[6rem]"><label class="text-[10px] text-slate-500">Libellé</label>' +
+        '<input type="text" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-stat-lab value="' +
+        escapeHtml(String(row.label || '')) +
+        '" /></div>' +
+        '<div class="flex-1 min-w-[6rem]"><label class="text-[10px] text-slate-500">Valeur affichée</label>' +
+        '<input type="text" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-stat-val value="' +
+        escapeHtml(String(row.value || '')) +
+        '" /></div>' +
+        '<button type="button" class="text-xs text-rose-600 font-semibold underline h-8 shrink-0 px-1" data-stat-rm>Retirer</button></div>';
+    });
+
+    host.innerHTML =
+      '<details class="rounded-xl border border-slate-200 bg-slate-50/80 p-3 open:bg-white open:shadow-sm">' +
+      '<summary class="cursor-pointer text-xs font-black uppercase tracking-wider text-slate-600 select-none">Bandeau d’ouverture</summary>' +
+      '<p class="text-[11px] text-slate-500 mt-2 mb-3">Textes du haut de page pour les parcours visuels. Champs vides : le site propose des libellés adaptés à la leçon.</p>' +
+      '<div class="grid gap-3">' +
+      '<div><label class="text-[10px] font-bold text-slate-600">Sur-titre</label>' +
+      '<input type="text" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-op-eyebrow value="' +
+      escapeHtml(String(op.eyebrow || '')) +
+      '" /></div>' +
+      '<div><label class="text-[10px] font-bold text-slate-600">Titre</label>' +
+      '<input type="text" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-op-title value="' +
+      escapeHtml(String(op.title || '')) +
+      '" /></div>' +
+      '<div><label class="text-[10px] font-bold text-slate-600">Accroche</label>' +
+      '<textarea rows="2" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-op-lead>' +
+      escapeHtml(String(op.lead || '')) +
+      '</textarea></div>' +
+      '<div><p class="text-[10px] font-bold text-slate-600 mb-1">Vignettes chiffres (optionnel)</p>' +
+      '<div data-mis-op-stats-rows>' +
+      statsRows +
+      '</div>' +
+      '<button type="button" class="mt-1 text-xs font-bold text-violet-700 underline" data-mis-op-stat-add>Ajouter une vignette</button></div>' +
+      '</div></details>' +
+      '<details class="rounded-xl border border-slate-200 bg-slate-50/80 p-3 mt-3 open:bg-white open:shadow-sm">' +
+      '<summary class="cursor-pointer text-xs font-black uppercase tracking-wider text-slate-600 select-none">Synthèse de fin</summary>' +
+      '<p class="text-[11px] text-slate-500 mt-2 mb-3">Résumé affiché après le défilement des étapes, avant les boutons de navigation.</p>' +
+      '<div class="grid gap-3">' +
+      '<div><label class="text-[10px] font-bold text-slate-600">Titre du bloc</label>' +
+      '<input type="text" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-cl-title value="' +
+      escapeHtml(String(cl.title || '')) +
+      '" /></div>' +
+      '<div><label class="text-[10px] font-bold text-slate-600">Ce qui a été parcouru (une ligne par point)</label>' +
+      '<textarea rows="3" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-cl-seen>' +
+      escapeHtml((cl.seen || []).join('\n')) +
+      '</textarea></div>' +
+      '<div><label class="text-[10px] font-bold text-slate-600">Ce que vous retenez (une ligne par point)</label>' +
+      '<textarea rows="3" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-cl-acq>' +
+      escapeHtml((cl.acquired || []).join('\n')) +
+      '</textarea></div>' +
+      '<div><label class="text-[10px] font-bold text-slate-600">Pour la suite</label>' +
+      '<textarea rows="2" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-cl-hint>' +
+      escapeHtml(String(cl.nextHint || '')) +
+      '</textarea></div>' +
+      '</div></details>';
+
+    function linesToArr(ta) {
+      return String(ta.value || '')
+        .split(/\r\n|\r|\n/)
+        .map(function (x) {
+          return x.trim();
+        })
+        .filter(Boolean);
+    }
+
+    host.querySelector('[data-mis-op-eyebrow]').addEventListener('input', function (e) {
+      op.eyebrow = e.target.value;
+      self.sync();
+    });
+    host.querySelector('[data-mis-op-title]').addEventListener('input', function (e) {
+      op.title = e.target.value;
+      self.sync();
+    });
+    host.querySelector('[data-mis-op-lead]').addEventListener('input', function (e) {
+      op.lead = e.target.value;
+      self.sync();
+    });
+    host.querySelector('[data-mis-cl-title]').addEventListener('input', function (e) {
+      cl.title = e.target.value;
+      self.sync();
+    });
+    host.querySelector('[data-mis-cl-seen]').addEventListener('input', function (e) {
+      cl.seen = linesToArr(e.target);
+      self.sync();
+    });
+    host.querySelector('[data-mis-cl-acq]').addEventListener('input', function (e) {
+      cl.acquired = linesToArr(e.target);
+      self.sync();
+    });
+    host.querySelector('[data-mis-cl-hint]').addEventListener('input', function (e) {
+      cl.nextHint = e.target.value;
+      self.sync();
+    });
+
+    function bindStatRows() {
+      host.querySelectorAll('[data-stat-row]').forEach(function (rowEl) {
+        var idx = parseInt(rowEl.getAttribute('data-stat-row'), 10);
+        if (isNaN(idx) || !op.stats[idx]) {
+          return;
+        }
+        var labIn = rowEl.querySelector('[data-stat-lab]');
+        var valIn = rowEl.querySelector('[data-stat-val]');
+        var rm = rowEl.querySelector('[data-stat-rm]');
+        if (labIn) {
+          labIn.addEventListener('input', function (e) {
+            op.stats[idx].label = e.target.value;
+            self.sync();
+          });
+        }
+        if (valIn) {
+          valIn.addEventListener('input', function (e) {
+            op.stats[idx].value = e.target.value;
+            self.sync();
+          });
+        }
+        if (rm) {
+          rm.addEventListener('click', function () {
+            op.stats.splice(idx, 1);
+            self.sync();
+            self._renderMissionPanel();
+          });
+        }
+      });
+    }
+    bindStatRows();
+
+    var addStat = host.querySelector('[data-mis-op-stat-add]');
+    if (addStat) {
+      addStat.addEventListener('click', function () {
+        op.stats.push({ label: '', value: '' });
+        self.sync();
+        self._renderMissionPanel();
+      });
+    }
+  };
+
   LmsCanvasEditor.prototype.schedulePreview = function () {
     var self = this;
     if (this._previewTimer) clearTimeout(this._previewTimer);
@@ -506,6 +937,12 @@
       '<button type="button" class="lms-canvas-del-slide px-3 py-1.5 text-xs font-bold rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50">Supprimer</button>' +
       '</div>';
     this.uiRoot.appendChild(top);
+
+    var mission = document.createElement('div');
+    mission.setAttribute('data-lms-mission-panel', '');
+    mission.className = 'mb-4 space-y-3';
+    this.uiRoot.appendChild(mission);
+    this._missionEl = mission;
 
     var strip = document.createElement('div');
     strip.setAttribute('data-lms-slide-strip', '');
@@ -562,6 +999,11 @@
         resources: [],
         primaryAction: null,
         secondaryAction: null,
+        contextKicker: '',
+        surface: 'default',
+        cards: [],
+        insights: [],
+        metric: null,
       });
       self.activeSlide = self.deck.slides.length - 1;
       self.sync();
@@ -612,11 +1054,19 @@
         var d = JSON.parse(self.textarea.value);
         if (d && Array.isArray(d.slides) && d.slides.length > 0) {
           self.deck = d;
-          if (!self.deck.modals) self.deck.modals = [];
+          if (!Array.isArray(self.deck.modals)) {
+            self.deck.modals = [];
+          }
+          self.deck.opening = ensureOpening(self.deck.opening);
+          self.deck.closure = ensureClosure(self.deck.closure);
           self.deck.slides.forEach(function (sl) {
-            if (!Array.isArray(sl.resources)) sl.resources = [];
+            if (!Array.isArray(sl.resources)) {
+              sl.resources = [];
+            }
+            ensureSlideMissionFields(sl);
           });
           self.activeSlide = Math.min(self.activeSlide, self.deck.slides.length - 1);
+          self._renderMissionPanel();
           self._renderAll();
         }
       } catch (err) {
@@ -624,6 +1074,7 @@
       }
     });
 
+    this._renderMissionPanel();
     this._renderAll();
   };
 
@@ -789,6 +1240,7 @@
     var self = this;
     var s = this._slide();
     if (!s) return;
+    ensureSlideMissionFields(s);
     if (!Array.isArray(s.resources)) {
       s.resources = [];
     }
@@ -918,6 +1370,34 @@
       escapeHtml(s.fileLabel || '') +
       '" /></div>' +
       '</div>' +
+      '<div class="mt-4 rounded-lg border border-violet-100 bg-violet-50/40 p-3">' +
+      '<p class="text-[11px] font-bold text-slate-700">Compléments visuels (parcours visuel)</p>' +
+      '<p class="text-[10px] text-slate-500 mb-2">S’affichent sous le contenu de l’étape.</p>' +
+      '<div><label class="text-[10px] font-bold text-slate-600">Repère de contexte</label>' +
+      '<input type="text" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-dense-kicker value="' +
+      escapeHtml(String(s.contextKicker || '')) +
+      '" placeholder="Ex. Étape 1 · Découverte" /></div>' +
+      '<div class="mt-2"><label class="text-[10px] font-bold text-slate-600">Style de fond</label>' +
+      '<select class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-dense-surface>' +
+      '<option value="default"' +
+      (String(s.surface || 'default') !== 'elevated' ? ' selected' : '') +
+      '>Standard</option>' +
+      '<option value="elevated"' +
+      (String(s.surface || '') === 'elevated' ? ' selected' : '') +
+      '>Mise en avant douce</option>' +
+      '</select></div>' +
+      '<div class="grid grid-cols-2 gap-2 mt-2">' +
+      '<div><label class="text-[10px] font-bold text-slate-600">Indicateur — libellé</label>' +
+      '<input type="text" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-dense-mlab value="' +
+      escapeHtml(String((s.metric && s.metric.label) || '')) +
+      '" /></div>' +
+      '<div><label class="text-[10px] font-bold text-slate-600">Indicateur — valeur</label>' +
+      '<input type="text" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-dense-mval value="' +
+      escapeHtml(String((s.metric && s.metric.value) || '')) +
+      '" /></div></div>' +
+      denseCardsRowsHtml(s) +
+      denseInsightsRowsHtml(s) +
+      '</div>' +
       '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">' +
       actionBlock('primary', s.primaryAction, 'Action principale') +
       actionBlock('secondary', s.secondaryAction, 'Action secondaire') +
@@ -968,6 +1448,149 @@
         self.schedulePreview();
       });
     });
+
+    var dk = el.querySelector('[data-dense-kicker]');
+    if (dk) {
+      dk.addEventListener('input', function (e) {
+        s.contextKicker = e.target.value;
+        self.sync();
+        self.schedulePreview();
+      });
+    }
+    var ds = el.querySelector('[data-dense-surface]');
+    if (ds) {
+      ds.addEventListener('change', function (e) {
+        s.surface = e.target.value;
+        self.sync();
+        self.schedulePreview();
+      });
+    }
+    function touchMetric() {
+      if (!s.metric || typeof s.metric !== 'object') {
+        s.metric = { label: '', value: '' };
+      }
+    }
+    function maybeClearMetric() {
+      if (
+        s.metric &&
+        typeof s.metric === 'object' &&
+        !String(s.metric.label || '').trim() &&
+        !String(s.metric.value || '').trim()
+      ) {
+        s.metric = null;
+      }
+    }
+    var mlab = el.querySelector('[data-dense-mlab]');
+    var mval = el.querySelector('[data-dense-mval]');
+    if (mlab) {
+      mlab.addEventListener('input', function (e) {
+        touchMetric();
+        s.metric.label = e.target.value;
+        maybeClearMetric();
+        self.sync();
+        self.schedulePreview();
+      });
+    }
+    if (mval) {
+      mval.addEventListener('input', function (e) {
+        touchMetric();
+        s.metric.value = e.target.value;
+        maybeClearMetric();
+        self.sync();
+        self.schedulePreview();
+      });
+    }
+
+    el.querySelectorAll('[data-card-row]').forEach(function (rowEl) {
+      var idx = parseInt(rowEl.getAttribute('data-card-row'), 10);
+      if (isNaN(idx) || !s.cards[idx]) {
+        return;
+      }
+      var labIn = rowEl.querySelector('[data-card-lab]');
+      var bodyTa = rowEl.querySelector('[data-card-body]');
+      var rm = rowEl.querySelector('[data-card-rm]');
+      if (labIn) {
+        labIn.addEventListener('input', function (e) {
+          s.cards[idx].label = e.target.value;
+          self.sync();
+          self.schedulePreview();
+        });
+      }
+      if (bodyTa) {
+        bodyTa.addEventListener('input', function (e) {
+          s.cards[idx].body = e.target.value;
+          self.sync();
+          self.schedulePreview();
+        });
+      }
+      if (rm) {
+        rm.addEventListener('click', function () {
+          s.cards.splice(idx, 1);
+          self.sync();
+          self._renderFields();
+          self.schedulePreview();
+        });
+      }
+    });
+    var cardAdd = el.querySelector('[data-card-add]');
+    if (cardAdd) {
+      cardAdd.addEventListener('click', function () {
+        s.cards.push({ label: '', body: '' });
+        self.sync();
+        self._renderFields();
+        self.schedulePreview();
+      });
+    }
+
+    el.querySelectorAll('[data-ins-row]').forEach(function (rowEl) {
+      var idx = parseInt(rowEl.getAttribute('data-ins-row'), 10);
+      if (isNaN(idx) || !s.insights[idx]) {
+        return;
+      }
+      var varSel = rowEl.querySelector('[data-ins-var]');
+      var titIn = rowEl.querySelector('[data-ins-title]');
+      var bodyTa = rowEl.querySelector('[data-ins-body]');
+      var rm = rowEl.querySelector('[data-ins-rm]');
+      if (varSel) {
+        varSel.addEventListener('change', function (e) {
+          s.insights[idx].variant = e.target.value;
+          self.sync();
+          self.schedulePreview();
+        });
+      }
+      if (titIn) {
+        titIn.addEventListener('input', function (e) {
+          s.insights[idx].title = e.target.value;
+          self.sync();
+          self.schedulePreview();
+        });
+      }
+      if (bodyTa) {
+        bodyTa.addEventListener('input', function (e) {
+          s.insights[idx].body = e.target.value;
+          self.sync();
+          self.schedulePreview();
+        });
+      }
+      if (rm) {
+        rm.addEventListener('click', function () {
+          s.insights.splice(idx, 1);
+          self.sync();
+          self._renderFields();
+          self.schedulePreview();
+        });
+      }
+    });
+    var insAdd = el.querySelector('[data-ins-add]');
+    if (insAdd) {
+      insAdd.addEventListener('click', function () {
+        s.insights.push({ variant: 'retain', title: '', body: '' });
+        self.sync();
+        self._renderFields();
+        self.schedulePreview();
+      });
+    }
+
     self._bindResourcesEditor(s, el);
   };
 

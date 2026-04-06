@@ -399,6 +399,7 @@ return function (Router $router) {
     $router->get('/admin/training/audit', [AdminTrainingController::class, 'audit'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
     $router->get('/admin/training/studio', [AdminTrainingStudioController::class, 'index'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
     $router->post('/admin/training/studio', [AdminTrainingStudioController::class, 'store'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
+    $router->get('/admin/training/studio/versions', [AdminTrainingStudioController::class, 'versionsGuide'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
     $router->get('/admin/training/studio/{id}/preview', [AdminTrainingStudioController::class, 'preview'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
     $router->get('/admin/training/studio/{id}', [AdminTrainingStudioController::class, 'edit'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
     $router->post('/admin/training/studio/{id}', [AdminTrainingStudioController::class, 'handle'], [AuthMiddleware::class, NonDefaultTenantMiddleware::class]);
@@ -413,6 +414,7 @@ return function (Router $router) {
     $router->get('/back-office/ressources/atak-config', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-config')), $tenantResMw);
     $router->get('/back-office/ressources/atak-mod', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-mod')), $tenantResMw);
     $router->get('/back-office/ressources/forum-config', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/forum-config')), $tenantResMw);
+    $router->get('/back-office/ressources/training/studio/versions', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/training/studio/versions')), $trainingResMw);
     $router->get('/back-office/ressources/training/studio/{id}/preview', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/training/studio/' . ($p['id'] ?? '') . '/preview')), $trainingResMw);
     $router->get('/back-office/ressources/training/studio/{id}', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/training/studio/' . ($p['id'] ?? ''))), $trainingResMw);
     $router->get('/back-office/ressources/training/studio', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/training/studio')), $trainingResMw);

@@ -606,6 +606,20 @@ class TrainingController
             $lessonStep = ['current' => $idx + 1, 'total' => count($orderedLessons)];
         }
 
+        $moduleLessonStep = null;
+        if ($currentModule !== null) {
+            $modLessons = $currentModule['lessons'] ?? [];
+            if (is_array($modLessons) && $modLessons !== []) {
+                $totalInModule = count($modLessons);
+                foreach ($modLessons as $mi => $l) {
+                    if ((int) ($l['id'] ?? 0) === $lessonId) {
+                        $moduleLessonStep = ['current' => (int) $mi + 1, 'total' => $totalInModule];
+                        break;
+                    }
+                }
+            }
+        }
+
         return Response::view('training.lesson', [
             'title' => $lesson['title'],
             'lesson' => $lesson,
@@ -618,6 +632,7 @@ class TrainingController
             'prevLesson' => $prevLesson,
             'nextLesson' => $nextLesson,
             'lessonStep' => $lessonStep,
+            'moduleLessonStep' => $moduleLessonStep,
         ]);
     }
 

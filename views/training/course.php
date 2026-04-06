@@ -70,8 +70,9 @@ $headHtml = ob_get_clean();
                 $bannerPick = $bp !== '' ? $bp : ($tp !== '' ? $tp : null);
                 $bannerSrc = training_media_url($bannerPick);
                 ?>
-                <div class="lms-panel rounded-[2rem] overflow-hidden aspect-[3/1] max-h-72 bg-slate-800">
-                    <img src="<?= htmlspecialchars($bannerSrc) ?>" alt="" class="w-full h-full object-cover">
+                <div class="lms-course-hero">
+                    <img src="<?= htmlspecialchars($bannerSrc) ?>" alt="" class="lms-course-hero__media" loading="eager" decoding="async" fetchpriority="high">
+                    <div class="lms-course-hero__veil" aria-hidden="true"></div>
                 </div>
 
                 <header class="lms-panel rounded-[2rem] p-6 md:p-8 relative">
