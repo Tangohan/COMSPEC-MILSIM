@@ -12,6 +12,10 @@ $progressPercent = (float) ($progressPercent ?? 0);
 $currentLessonId = isset($currentLessonId) ? (int) $currentLessonId : null;
 $lmsHideEchangesSidebarLink = !empty($lmsHideEchangesSidebarLink);
 $canWithdrawEnrollment = !empty($canWithdrawEnrollment);
+/** Ressources de la leçon courante (vue leçon uniquement ; sinon tableau vide). */
+if (!isset($lessonResources)) {
+    $lessonResources = (isset($resources) && is_array($resources)) ? $resources : [];
+}
 $modules = $course['modules'] ?? [];
 $courseSlug = (string) ($course['slug'] ?? '');
 $code = (string) ($course['course_code'] ?? '');
@@ -92,6 +96,49 @@ if ($code === '') {
             </ul>
         </div>
         <?php endforeach; ?>
+
+        <?php if (!empty($lessonResources)): ?>
+        <div class="pt-2 border-t border-white/10" aria-label="Ressources de la leçon">
+            <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/30 mb-2">Ressources</p>
+            <p class="text-[9px] text-white/45 font-medium normal-case mb-2 leading-snug -mt-1">Documents et liens utiles pour cette leçon</p>
+            <ul class="space-y-1">
+                <?php foreach ($lessonResources as $r):
+                    $resId = (int) ($r['id'] ?? 0);
+                    $resTitle = trim((string) ($r['title'] ?? ''));
+                    if ($resId < 1 || $resTitle === '') {
+                        continue;
+                    }
+                    $openBlank = false;
+                    if (($r['resource_type'] ?? '') === 'library_document' && !empty($r['document_id'])) {
+                        $resHref = url('api/training/resource/' . $resId . '/document?inline=1');
+                        $openBlank = true;
+                    } elseif (!empty($r['file_path'])) {
+                        $resHref = url('api/training/resource/' . $resId . '/download');
+                    } elseif (!empty($r['external_url'])) {
+                        $extH = training_lms_resource_external_href((string) $r['external_url']);
+                        if ($extH !== null) {
+                            $resHref = $extH;
+                            $openBlank = true;
+                        } else {
+                            $resHref = '';
+                        }
+                    } else {
+                        $resHref = '';
+                    }
+                ?>
+                <li>
+                    <?php if ($resHref !== ''): ?>
+                    <a href="<?= htmlspecialchars($resHref, ENT_QUOTES, 'UTF-8') ?>"<?= $openBlank ? ' target="_blank" rel="noopener noreferrer"' : '' ?> class="block rounded-xl px-3 py-2 text-[11px] font-semibold uppercase tracking-wide border border-emerald-500/30 text-emerald-200/95 hover:bg-emerald-500/10 leading-snug">
+                        <?= htmlspecialchars($resTitle) ?>
+                    </a>
+                    <?php else: ?>
+                    <span class="block rounded-xl px-3 py-2 text-[11px] text-white/45 leading-snug"><?= htmlspecialchars($resTitle) ?></span>
+                    <?php endif; ?>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?php endif; ?>
     </nav>
 
     <?php if ($enrollment && $courseSlug !== '' && !$lmsHideEchangesSidebarLink): ?>

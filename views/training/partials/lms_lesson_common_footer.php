@@ -53,7 +53,12 @@ if ($footerNext !== null) {
                             <?php elseif (!empty($r['file_path'])): ?>
                             <a href="<?= url('api/training/resource/' . (int) $r['id'] . '/download') ?>" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>
                             <?php elseif (!empty($r['external_url'])): ?>
-                            <a href="<?= htmlspecialchars((string) $r['external_url']) ?>" target="_blank" rel="noopener" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>
+                            <?php $extResHref = training_lms_resource_external_href((string) $r['external_url']); ?>
+                            <?php if ($extResHref !== null): ?>
+                            <a href="<?= htmlspecialchars($extResHref, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>
+                            <?php else: ?>
+                            <span class="text-slate-600"><?= htmlspecialchars((string) $r['title']) ?></span>
+                            <?php endif; ?>
                             <?php else: ?>
                             <span class="text-slate-600"><?= htmlspecialchars((string) $r['title']) ?></span>
                             <?php endif; ?>

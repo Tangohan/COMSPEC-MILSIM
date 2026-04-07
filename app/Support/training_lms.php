@@ -783,3 +783,20 @@ function training_lms_generate_enrollment_share_code(): string
 
     return $out;
 }
+
+/**
+ * Lien web de ressource pédagogique : même site en direct, sinon interstitiel /leave signé.
+ */
+function training_lms_resource_external_href(string $rawUrl): ?string
+{
+    $svc = new \App\Services\Forum\ExternalLeaveService();
+    $clean = $svc->sanitizeHttpUrl(trim($rawUrl));
+    if ($clean === null) {
+        return null;
+    }
+    if ($svc->isInternalUrl($clean)) {
+        return $clean;
+    }
+
+    return $svc->buildSignedLeaveUrl($clean);
+}

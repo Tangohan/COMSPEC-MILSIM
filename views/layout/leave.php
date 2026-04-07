@@ -16,16 +16,17 @@ $forumConfig = $forumConfig ?? config('forum') ?? [];
     <link href="<?= $baseUrl ?>/assets/css/styles.css" rel="stylesheet">
     <?php endif; ?>
     <style>
+        :root { color-scheme: light; }
         @keyframes leave-warn-pulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.45); }
-            50% { box-shadow: 0 0 0 12px rgba(248, 113, 113, 0); }
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35); }
+            50% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
         }
         .leave-warn-pulse {
             animation: leave-warn-pulse 2.2s ease-in-out infinite;
         }
     </style>
 </head>
-<body class="min-h-screen overflow-x-hidden font-sans antialiased bg-[#0a0a0c] text-slate-100" style="font-family: 'Inter', sans-serif;">
+<body class="min-h-screen overflow-x-hidden font-sans antialiased bg-white text-slate-800" style="font-family: 'Inter', sans-serif;">
     <main class="min-h-screen flex flex-col">
         <?php
         $contentPath = str_replace('.', '/', $content);
@@ -33,7 +34,7 @@ $forumConfig = $forumConfig ?? config('forum') ?? [];
         if (is_file($innerPath)) {
             require $innerPath;
         } else {
-            echo '<div class="w-full px-4 py-12 text-neutral-400"><p>Vue non trouvée.</p></div>';
+            echo '<div class="w-full px-4 py-12 text-slate-500"><p>Vue non trouvée.</p></div>';
         }
         ?>
     </main>

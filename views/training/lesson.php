@@ -371,7 +371,8 @@ $headHtml = ob_get_clean();
                     <iframe class="w-full h-full min-h-[240px]" src="<?= htmlspecialchars($embedSrc) ?>" title="Vidéo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
                 </div>
                 <?php elseif ($lessonType === 'video_embed' && !empty($lesson['external_url'])): ?>
-                <p class="text-rose-600 text-sm">URL non reconnue pour l’intégration. <a href="<?= htmlspecialchars((string) $lesson['external_url']) ?>" class="underline font-bold" target="_blank" rel="noopener">Ouvrir le lien</a></p>
+                <?php $videoEmbedLeave = training_lms_resource_external_href((string) $lesson['external_url']); ?>
+                <p class="text-rose-600 text-sm">URL non reconnue pour l’intégration. <?php if ($videoEmbedLeave !== null): ?><a href="<?= htmlspecialchars($videoEmbedLeave, ENT_QUOTES, 'UTF-8') ?>" class="underline font-bold" target="_blank" rel="noopener noreferrer">Ouvrir le lien</a><?php else: ?>Le lien fourni n’est pas utilisable depuis cette page.<?php endif; ?></p>
                 <?php elseif ($lessonType === 'audio' && !empty($lesson['external_url'])): ?>
                 <div class="rounded-xl overflow-hidden bg-slate-100 p-4">
                     <audio id="lms-lesson-audio" controls crossorigin src="<?= htmlspecialchars((string) $lesson['external_url']) ?>" class="w-full"></audio>
@@ -383,8 +384,13 @@ $headHtml = ob_get_clean();
                     <p class="text-xs text-slate-500"><a href="<?= htmlspecialchars($pdfUrl) ?>" class="text-emerald-600 font-semibold hover:underline" target="_blank" rel="noopener">Ouvrir / télécharger le PDF</a></p>
                 </div>
                 <?php elseif ($lessonType === 'external_link' && !empty($lesson['external_url'])): ?>
+                <?php $externalLessonHref = training_lms_resource_external_href((string) $lesson['external_url']); ?>
+                <?php if ($externalLessonHref !== null): ?>
                 <p class="mb-4">Lien externe :</p>
-                <a href="<?= htmlspecialchars((string) $lesson['external_url']) ?>" target="_blank" rel="noopener" class="text-emerald-600 font-bold hover:underline"><?= htmlspecialchars((string) $lesson['external_url']) ?></a>
+                <a href="<?= htmlspecialchars($externalLessonHref, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="text-emerald-600 font-bold hover:underline"><?= htmlspecialchars((string) $lesson['external_url']) ?></a>
+                <?php else: ?>
+                <p class="text-rose-600 text-sm">Le lien indiqué pour cette leçon n’est pas utilisable.</p>
+                <?php endif; ?>
                 <?php else: ?>
                 <p class="text-slate-500">Contenu à afficher (type : <?= htmlspecialchars($lessonType) ?>).</p>
                 <?php endif; ?>
