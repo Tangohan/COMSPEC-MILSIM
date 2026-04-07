@@ -1,11 +1,25 @@
-<?php $role = $role ?? null; $rolePermissions = $rolePermissions ?? []; if (!$role) { echo '<p>Rôle introuvable.</p>'; return; } $rid = (int) $role['id']; ?>
+<?php
+$role = $role ?? null;
+$rolePermissions = $rolePermissions ?? [];
+if (!$role) {
+    echo '<p>Rôle introuvable.</p>';
+    return;
+}
+$rid = (int) $role['id'];
+$__g = \App\Core\Gate::getInstance();
+$roleLocked = (int) ($role['is_locked'] ?? 0) !== 0;
+$canEditPermissions = ($__g->allows('admin.organization') || $__g->allows('admin.roles.manage') || $__g->allows('admin.permissions.manage')) && !$roleLocked;
+?>
 <div class="max-w-4xl mx-auto px-6 py-12">
     <div class="mb-6 rounded-lg border border-blue-100 bg-blue-50/90 px-4 py-3 text-sm text-slate-800">
         Habilitations du rôle au sein de <strong class="font-semibold">votre communauté</strong>. Les rôles réservés à la plateforme ne sont pas modifiables depuis cet espace.
     </div>
     <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h1 class="text-2xl font-black text-slate-900"><?= htmlspecialchars($role['name']) ?></h1>
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-4">
+            <?php if ($canEditPermissions): ?>
+            <a href="<?= url('back-office/roles/' . $rid . '/permissions') ?>" class="text-sm font-semibold text-emerald-700 hover:underline">Modifier les habilitations</a>
+            <?php endif; ?>
             <a href="<?= url('back-office/roles/' . $rid . '/edit-presentation') ?>" class="text-sm font-semibold text-blue-700 hover:underline">Modifier présentation</a>
             <a href="<?= url('back-office/roles') ?>" class="text-sm font-medium text-slate-600 hover:underline">Liste des rôles</a>
         </div>

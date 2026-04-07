@@ -48,7 +48,7 @@ $appendQuery = static function (string $baseUrl, array $params): string {
         </div>
     </div>
     <p class="text-slate-600 text-sm mb-2">Liste structurée par famille opérationnelle (catégorie et sous-ensemble), puis par type de rôle. L’ordre reflète une hiérarchie d’emplois, pas un grade automatique.</p>
-    <p class="text-slate-500 text-xs mb-4">Le <strong class="font-semibold text-slate-700">nombre de droits</strong> indique combien d’habilitations sont actives pour ce rôle. Utilisez <a href="<?= url('back-office/roles/presets') ?>" class="font-semibold text-blue-700 underline">Profils de permissions</a> pour harmoniser les jeux de droits.</p>
+    <p class="text-slate-500 text-xs mb-4">Le <strong class="font-semibold text-slate-700">nombre de droits</strong> indique combien d’habilitations sont actives pour ce rôle. Utilisez <a href="<?= url('back-office/roles/presets') ?>" class="font-semibold text-blue-700 underline">Profils de permissions</a> pour harmoniser les jeux de droits<?php if ($canPresets): ?>, ou ouvrez un rôle puis <strong class="font-semibold text-slate-700">Modifier les habilitations</strong> pour un réglage précis<?php endif; ?>.</p>
     <?php
     $layerTousParams = [];
     if ($roleTierFilter !== '') {
@@ -113,6 +113,7 @@ $appendQuery = static function (string $baseUrl, array $params): string {
                     $layer = (string) ($r['role_layer'] ?? 'community');
                     $stier = (string) ($r['semantic_tier'] ?? 'function');
                     [$tLab, $tClass] = $tierChip($stier);
+                    $rowLocked = (int) ($r['is_locked'] ?? 0) !== 0;
                     ?>
                 <tr class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors <?= $layer === 'community' ? 'bg-white' : 'bg-slate-50/40' ?>">
                     <td class="p-3">
@@ -134,7 +135,14 @@ $appendQuery = static function (string $baseUrl, array $params): string {
                         </span>
                     </td>
                     <td class="p-3 align-top tabular-nums text-slate-800"><?= $count ?></td>
-                    <td class="p-3 align-top"><a href="<?= url('back-office/roles/' . $rid) ?>" class="text-blue-800 hover:underline text-sm font-semibold">Configurer</a></td>
+                    <td class="p-3 align-top">
+                        <div class="flex flex-col gap-1">
+                            <a href="<?= url('back-office/roles/' . $rid) ?>" class="text-blue-800 hover:underline text-sm font-semibold">Fiche</a>
+                            <?php if ($canPresets && !$rowLocked): ?>
+                            <a href="<?= url('back-office/roles/' . $rid . '/permissions') ?>" class="text-emerald-800 hover:underline text-xs font-semibold">Habilitations</a>
+                            <?php endif; ?>
+                        </div>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

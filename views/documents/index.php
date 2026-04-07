@@ -30,7 +30,7 @@ $sortLabels = [
 $hasActiveFilters = ($search !== '' || $currentCategoryId !== null || $documentType !== '' || $sort !== 'title_asc');
 $baseUrlList = url('documents');
 ?>
-<div class="min-h-screen bg-slate-100 text-slate-900">
+<div class="min-h-screen bg-slate-100 text-slate-900" data-doc-protect>
     <div class="mx-auto max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8">
 
         <!-- En-tête -->
@@ -259,3 +259,4 @@ $baseUrlList = url('documents');
         </p>
     </div>
 </div>
+<?php require base_path('views/partials/documents_copy_protection.php'); ?>

@@ -11,7 +11,9 @@ $buildUrl = $buildCategoryUrl ?? function ($o = []) use ($baseUrl, $categorySlug
 $newTopicParams = array_merge(['category_id' => $categoryId], $forumTenantQuery);
 $newTopicHref = $baseUrl . '/forum/new-topic?' . http_build_query(array_filter($newTopicParams, fn ($v) => $v !== null && $v !== ''));
 $categoryScope = htmlspecialchars((string) ($category['scope'] ?? 'general'), ENT_QUOTES, 'UTF-8');
+$categoryScopeRaw = (string) ($category['scope'] ?? 'general');
 $hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activity' || ($q ?? '') !== '';
+$forumCtxEnabled = !empty($forumContextMenuEnabled);
 ?>
 <main class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-[#f8fafc] min-h-[60vh]">
   <!-- Fil d'Ariane -->
@@ -20,6 +22,16 @@ $hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activit
     <span class="text-slate-400">›</span>
     <span class="text-slate-800"><?= htmlspecialchars($category['name'] ?? '') ?></span>
   </nav>
+
+  <?php if ($forumCtxEnabled && $categoryScopeRaw === 'organization'): ?>
+  <div class="mb-6 rounded-xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50/90 via-white to-slate-50 px-4 py-3 shadow-sm flex flex-wrap items-center gap-3 header-anim" style="animation-delay:20ms">
+    <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white text-xs font-black" title="Encadrement">⌁</span>
+    <div class="min-w-0 flex-1">
+      <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">Espace organisation de la communauté</p>
+      <p class="text-xs text-slate-700 mt-0.5"><span class="font-semibold text-slate-900">Clic droit</span> sur l’en-tête de cette page (carte titre ci-dessous) : créer une sous-catégorie<?php if (!empty($forumCanDeleteCategoryMenu)): ?>, supprimer une sous-catégorie vide<?php endif; ?> — selon vos droits.</p>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <!-- En-tête catégorie (clic droit : sous-catégorie / modération, si autorisé) -->
   <div class="forum-category-root rounded-xl border border-slate-200 bg-white shadow-sm p-5 sm:p-6 mb-10 header-anim transition hover:border-emerald-400/60 hover:shadow-md" style="animation-delay:40ms" data-forum-category-root="1" data-category-id="<?= $categoryId ?>" data-category-name="<?= htmlspecialchars($category['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= $categoryScope ?>">
@@ -184,7 +196,12 @@ $hasActiveFilters = ($filter ?? '') !== '' || ($sort ?? 'activity') !== 'activit
       </div>
       <div class="grid gap-4 md:grid-cols-2">
         <?php foreach ($subcategories as $sub): ?>
-          <a href="<?= htmlspecialchars(forum_build_category_url((string) ($sub['slug'] ?? ''), array_merge($forumTenantQuery, ['page' => 1])), ENT_QUOTES, 'UTF-8') ?>" class="border border-slate-200 bg-white p-4 hover:border-emerald-300 transition flex items-center justify-between group rounded-lg shadow-sm">
+          <?php
+            $subId = (int) ($sub['id'] ?? 0);
+            $subScope = htmlspecialchars((string) ($sub['scope'] ?? 'general'), ENT_QUOTES, 'UTF-8');
+            $subNameEsc = htmlspecialchars((string) ($sub['name'] ?? ''), ENT_QUOTES, 'UTF-8');
+          ?>
+          <a href="<?= htmlspecialchars(forum_build_category_url((string) ($sub['slug'] ?? ''), array_merge($forumTenantQuery, ['page' => 1])), ENT_QUOTES, 'UTF-8') ?>" class="forum-category-root border border-slate-200 bg-white p-4 hover:border-emerald-300 transition flex items-center justify-between group rounded-lg shadow-sm" data-forum-category-root="1" data-category-id="<?= $subId ?>" data-category-name="<?= $subNameEsc ?>" data-category-scope="<?= $subScope ?>">
             <div class="flex items-center gap-3 min-w-0">
               <span class="w-10 h-10 bg-slate-100 border border-slate-200 flex items-center justify-center text-lg flex-shrink-0 rounded-md"><?= !empty($sub['icon']) ? htmlspecialchars($sub['icon']) : '📁' ?></span>
               <div class="min-w-0">

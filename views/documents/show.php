@@ -10,7 +10,7 @@ $title = htmlspecialchars($document['title']);
 $fileUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/file';
 $downloadUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/download';
 ?>
-<div class="max-w-6xl mx-auto px-6 py-8">
+<div class="max-w-6xl mx-auto px-6 py-8" data-doc-protect>
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
             <a href="<?= url('documents') ?>" class="text-sm text-slate-500 hover:text-slate-900 mb-2 inline-block">← Retour aux documents</a>
@@ -27,28 +27,37 @@ $downloadUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/download';
 
     <?php if ($viewType === 'image'): ?>
     <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div class="p-4 flex justify-center bg-slate-50 min-h-[60vh]" x-data="{ open: false }">
-            <button type="button" @click="open = true" class="cursor-zoom-in">
-                <img src="<?= $fileUrl ?>" alt="<?= $title ?>" class="max-w-full max-h-[75vh] object-contain rounded shadow" />
-            </button>
+        <div class="relative p-4 flex justify-center bg-slate-50 min-h-[60vh]" data-doc-viewport x-data="{ open: false }">
+            <div class="doc-viewport-inner relative w-full flex justify-center min-h-[50vh]">
+                <button type="button" @click="open = true" class="cursor-zoom-in">
+                    <img src="<?= $fileUrl ?>" alt="<?= $title ?>" draggable="false" class="doc-protect-asset max-w-full max-h-[75vh] object-contain rounded shadow" />
+                </button>
+            </div>
+            <?php require base_path('views/partials/document_screenshot_shield.php'); ?>
             <template x-teleport="body">
-                <div x-show="open" x-cloak class="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4" @click="open = false">
-                    <img src="<?= $fileUrl ?>" alt="<?= $title ?>" class="max-w-full max-h-full object-contain" @click.stop />
+                <div x-show="open" x-cloak class="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4" data-doc-protect data-doc-viewport @click="open = false">
+                    <div class="doc-viewport-inner relative max-w-full max-h-full flex items-center justify-center">
+                        <img src="<?= $fileUrl ?>" alt="<?= $title ?>" draggable="false" class="doc-protect-asset max-w-full max-h-full object-contain" @click.stop />
+                    </div>
+                    <?php require base_path('views/partials/document_screenshot_shield.php'); ?>
                 </div>
             </template>
         </div>
     </div>
     <?php else: ?>
-    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div class="flex items-center gap-2 p-2 border-b border-slate-200 bg-slate-50">
-            <button type="button" id="doc-prev" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50">Préc.</button>
-            <span class="text-sm text-slate-600"><span id="doc-page-num">1</span> / <span id="doc-page-count">—</span></span>
-            <button type="button" id="doc-next" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50">Suiv.</button>
-            <button type="button" id="doc-zoom-out" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50">−</button>
-            <span id="doc-zoom-level" class="text-sm text-slate-600 w-12 text-center">100%</span>
-            <button type="button" id="doc-zoom-in" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50">+</button>
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden relative" data-doc-viewport>
+        <div class="doc-viewport-inner">
+            <div class="flex items-center gap-2 p-2 border-b border-slate-200 bg-slate-50">
+                <button type="button" id="doc-prev" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50">Préc.</button>
+                <span class="text-sm text-slate-600"><span id="doc-page-num">1</span> / <span id="doc-page-count">—</span></span>
+                <button type="button" id="doc-next" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50">Suiv.</button>
+                <button type="button" id="doc-zoom-out" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50">−</button>
+                <span id="doc-zoom-level" class="text-sm text-slate-600 w-12 text-center">100%</span>
+                <button type="button" id="doc-zoom-in" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50">+</button>
+            </div>
+            <div class="p-4 overflow-auto bg-slate-100 min-h-[70vh] flex justify-center" id="doc-viewer" data-doc-protect></div>
         </div>
-        <div class="p-4 overflow-auto bg-slate-100 min-h-[70vh] flex justify-center" id="doc-viewer"></div>
+        <?php require base_path('views/partials/document_screenshot_shield.php'); ?>
     </div>
     <script type="module">
       /**
@@ -75,6 +84,8 @@ $downloadUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/download';
           const ctx = canvas.getContext('2d');
           canvas.height = viewport.height;
           canvas.width = viewport.width;
+          canvas.classList.add('doc-protect-asset');
+          canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); }, true);
           container.innerHTML = '';
           container.appendChild(canvas);
           const task = page.render({ canvasContext: ctx, viewport });
@@ -116,3 +127,4 @@ $downloadUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/download';
     </script>
     <?php endif; ?>
 </div>
+<?php require base_path('views/partials/documents_copy_protection.php'); ?>

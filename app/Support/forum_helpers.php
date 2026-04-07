@@ -50,6 +50,24 @@ if (!function_exists('forum_user_can_moderate')) {
     }
 }
 
+if (!function_exists('forum_user_is_tenant_org_stakeholder')) {
+    /**
+     * Gérant d’espace communauté (back-office organisation), aligné sur OrganizationAdminMiddleware.
+     * Sert à structurer le forum « organisation » (ex. canal org-…) sans donner toute la modération forum.
+     */
+    function forum_user_is_tenant_org_stakeholder(): bool
+    {
+        $gate = \App\Core\Gate::getInstance();
+        if ($gate->allows('admin.system')) {
+            return true;
+        }
+
+        return $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('site.support');
+    }
+}
+
 if (!function_exists('forum_viewer_is_moderator')) {
     /**
      * Aligné sur ForumModerationConsoleMiddleware : accès outils / identité renforcée modération.

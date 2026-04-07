@@ -174,18 +174,20 @@ if (is_array($grade)) {
                     <?php endif; ?>
                 </div>
                 <div class="flex items-center gap-4 md:gap-6">
-                    <div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 border-slate-600/50 bg-slate-800 flex-shrink-0" title="Avatar compte">
+                    <div class="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 border-slate-600/50 bg-slate-800 flex-shrink-0" title="Avatar compte" x-data="{ ready: false }">
                         <?php if ($avatarUrl): ?>
-                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Avatar" class="w-full h-full object-cover" />
+                        <div class="absolute inset-0 z-0 bg-slate-700 animate-pulse" x-show="!ready" x-transition.opacity.duration.200ms></div>
+                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Avatar" loading="eager" decoding="async" draggable="false" width="96" height="96" @load="ready = true" class="relative z-[1] h-full w-full object-cover transition-opacity duration-300" :class="ready ? 'opacity-100' : 'opacity-0'" />
                         <?php else: ?>
                         <div class="w-full h-full flex items-center justify-center text-slate-500">
                             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                         </div>
                         <?php endif; ?>
                     </div>
-                    <div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 border-slate-600/50 bg-slate-800 flex-shrink-0" title="Portrait opérateur">
+                    <div class="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 border-slate-600/50 bg-slate-800 flex-shrink-0" title="Portrait opérateur" x-data="{ ready: false }">
                         <?php if ($portraitUrl): ?>
-                        <img src="<?= htmlspecialchars($portraitUrl) ?>" alt="Portrait opérateur" class="w-full h-full object-cover" />
+                        <div class="absolute inset-0 z-0 bg-slate-700 animate-pulse" x-show="!ready" x-transition.opacity.duration.200ms></div>
+                        <img src="<?= htmlspecialchars($portraitUrl) ?>" alt="Portrait opérateur" loading="eager" decoding="async" draggable="false" width="96" height="96" @load="ready = true" class="relative z-[1] h-full w-full object-cover transition-opacity duration-300" :class="ready ? 'opacity-100' : 'opacity-0'" />
                         <?php else: ?>
                         <div class="w-full h-full flex items-center justify-center text-slate-500">
                             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -254,7 +256,7 @@ if (is_array($grade)) {
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-2">Photo de compte</p>
                     <div class="aspect-square max-w-[140px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 mb-4">
                         <?php if ($avatarUrl): ?>
-                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Avatar" class="w-full h-full object-cover" />
+                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Avatar" class="w-full h-full object-cover" loading="lazy" decoding="async" />
                         <?php else: ?>
                         <div class="w-full h-full flex items-center justify-center text-slate-300"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>
                         <?php endif; ?>
@@ -262,7 +264,7 @@ if (is_array($grade)) {
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-2">Portrait opérateur</p>
                     <div class="aspect-[3/4] max-w-[140px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 mb-4">
                         <?php if ($portraitUrl): ?>
-                        <img src="<?= htmlspecialchars($portraitUrl) ?>" alt="Portrait" class="w-full h-full object-cover" />
+                        <img src="<?= htmlspecialchars($portraitUrl) ?>" alt="Portrait" class="w-full h-full object-cover" loading="lazy" decoding="async" />
                         <?php else: ?>
                         <div class="w-full h-full flex items-center justify-center text-slate-300"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>
                         <?php endif; ?>

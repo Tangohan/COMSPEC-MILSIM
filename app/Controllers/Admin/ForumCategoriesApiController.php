@@ -59,14 +59,42 @@ class ForumCategoriesApiController
             if ($parentId > 0 && function_exists('forum_user_can_moderate') && forum_user_can_moderate()) {
                 return true;
             }
-        }
-        if ($action === 'delete' && function_exists('forum_user_can_moderate') && forum_user_can_moderate()) {
-            $id = (int) $request->input('id', 0);
+            if ($parentId > 0 && function_exists('forum_user_is_tenant_org_stakeholder') && forum_user_is_tenant_org_stakeholder()) {
+                $parent = $this->forumCategoryRepository->findById($parentId, $tenantId);
 
-            return $id > 0 && $this->moderatorMayDeleteCategory($id, $tenantId);
+                return $parent !== null && (string) ($parent['scope'] ?? '') === 'organization';
+            }
+        }
+        if ($action === 'delete') {
+            $id = (int) $request->input('id', 0);
+            if ($id <= 0) {
+                return false;
+            }
+            if (function_exists('forum_user_can_moderate') && forum_user_can_moderate()) {
+                return $this->moderatorMayDeleteCategory($id, $tenantId);
+            }
+            if (function_exists('forum_user_is_tenant_org_stakeholder') && forum_user_is_tenant_org_stakeholder()) {
+                return $this->tenantStakeholderMayDeleteOrgSubcategory($id, $tenantId);
+            }
         }
 
         return false;
+    }
+
+    /**
+     * Suppression d’une sous-branche du forum « organisation » par un gérant communauté (pas la racine).
+     */
+    private function tenantStakeholderMayDeleteOrgSubcategory(int $categoryId, int $tenantId): bool
+    {
+        $cat = $this->forumCategoryRepository->findById($categoryId, $tenantId);
+        if (!$cat) {
+            return false;
+        }
+        if ((int) ($cat['parent_id'] ?? 0) <= 0) {
+            return false;
+        }
+
+        return (string) ($cat['scope'] ?? '') === 'organization';
     }
 
     private function moderatorMayDeleteCategory(int $categoryId, int $tenantId): bool

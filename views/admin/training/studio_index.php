@@ -138,35 +138,39 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
             <section class="training-studio-panel p-6 md:p-8 border-t-4 border-t-violet-500 shadow-lg shadow-slate-900/5 w-full">
                 <h2 class="text-xs font-black uppercase tracking-[0.22em] text-violet-900/80 mb-1">Nouvelle formation</h2>
                 <p class="text-sm text-slate-600 mb-6 max-w-3xl">Créée en brouillon par défaut ; vous pourrez compléter la fiche ensuite.</p>
-                <form method="post" action="<?= training_studio_url() ?>" class="flex flex-col gap-4 xl:flex-row xl:flex-wrap xl:items-end xl:gap-5">
+                <?php
+                $studioNewTitleCol = $studioCanSetPlatformScope ? 'xl:col-span-4' : 'xl:col-span-6';
+                $studioNewVisibilityMdCol = $studioCanSetPlatformScope ? 'md:col-span-2' : 'md:col-span-1';
+                ?>
+                <form method="post" action="<?= training_studio_url() ?>" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12 xl:gap-x-5 xl:gap-y-4 xl:items-end">
                     <?= \App\Core\Csrf::field() ?>
-                    <div class="w-full min-w-0 xl:flex-1 xl:min-w-[12rem]">
-                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Titre</label>
-                        <input type="text" name="title" required class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400" placeholder="Ex. Introduction tactique">
+                    <div class="flex flex-col gap-1.5 min-w-0 md:col-span-2 <?= $studioNewTitleCol ?>">
+                        <label class="text-xs font-bold text-slate-600" for="studio-new-course-title">Titre</label>
+                        <input id="studio-new-course-title" type="text" name="title" required class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400" placeholder="Ex. Introduction tactique">
                     </div>
-                    <div class="w-full min-w-0 xl:w-[11rem] shrink-0">
-                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Adresse courte <span class="font-normal text-slate-400">(optionnel)</span></label>
-                        <input type="text" name="slug" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono shadow-inner focus:ring-2 focus:ring-violet-400/40" placeholder="généré si vide">
+                    <div class="flex flex-col gap-1.5 min-w-0 md:col-span-1 xl:col-span-2">
+                        <label class="text-xs font-bold text-slate-600" for="studio-new-course-slug">Adresse courte <span class="font-normal text-slate-400">(optionnel)</span></label>
+                        <input id="studio-new-course-slug" type="text" name="slug" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono shadow-inner focus:ring-2 focus:ring-violet-400/40" placeholder="généré si vide">
                     </div>
                     <?php if ($studioCanSetPlatformScope): ?>
-                    <div class="w-full min-w-0 xl:w-[12rem] shrink-0">
-                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Portée du catalogue</label>
-                        <select name="lms_scope" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40 bg-white">
+                    <div class="flex flex-col gap-1.5 min-w-0 md:col-span-1 xl:col-span-2">
+                        <label class="text-xs font-bold text-slate-600" for="studio-new-course-scope">Portée du catalogue</label>
+                        <select id="studio-new-course-scope" name="lms_scope" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40 bg-white">
                             <option value="tenant" selected>Communauté</option>
                             <option value="platform">Toute la plateforme</option>
                         </select>
                     </div>
                     <?php endif; ?>
-                    <div class="w-full min-w-0 xl:w-[11rem] shrink-0">
-                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Visibilité initiale</label>
-                        <select name="visibility" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40">
+                    <div class="flex flex-col gap-1.5 min-w-0 <?= $studioNewVisibilityMdCol ?> xl:col-span-2">
+                        <label class="text-xs font-bold text-slate-600" for="studio-new-course-visibility">Visibilité initiale</label>
+                        <select id="studio-new-course-visibility" name="visibility" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40">
                             <?php foreach ($visLabels as $k => $lab): ?>
                             <option value="<?= htmlspecialchars($k) ?>" <?= $k === 'draft' ? 'selected' : '' ?> <?= ($k === 'published' && !$canPublish) ? 'disabled' : '' ?>><?= htmlspecialchars($lab) ?><?= ($k === 'published' && !$canPublish) ? ' (permission requise)' : '' ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="w-full xl:w-auto xl:shrink-0 pt-1 xl:pt-0">
-                        <button type="submit" class="w-full xl:w-auto min-w-[10rem] px-5 py-3 bg-gradient-to-br from-violet-600 to-violet-800 text-white text-sm font-black rounded-xl hover:from-violet-500 hover:to-violet-700 shadow-md shadow-violet-900/20 transition-all">Créer la formation</button>
+                    <div class="flex min-w-0 md:col-span-2 xl:col-span-2 xl:items-end">
+                        <button type="submit" class="w-full min-h-[2.75rem] px-5 py-3 bg-gradient-to-br from-violet-600 to-violet-800 text-white text-sm font-black rounded-xl hover:from-violet-500 hover:to-violet-700 shadow-md shadow-violet-900/20 transition-all">Créer la formation</button>
                     </div>
                 </form>
                 <?php if ($studioCanSetPlatformScope): ?>

@@ -422,7 +422,8 @@ class Container
                 self::get(\App\Services\Admin\RolePermissionService::class),
                 self::get(\App\Repositories\PermissionRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
-                self::get(\App\Services\Admin\TenantRolePermissionPresetService::class)
+                self::get(\App\Services\Admin\TenantRolePermissionPresetService::class),
+                self::get(\App\Services\Audit\AuditService::class)
             ),
             \App\Controllers\Admin\Organization\OrganizationPositionsController::class => new \App\Controllers\Admin\Organization\OrganizationPositionsController(
                 self::get(\App\Repositories\PositionRepository::class)

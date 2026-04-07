@@ -57,9 +57,10 @@ $title = $title ?? 'Mot de passe oublié';
             <form method="post" action="<?= url('login') ?>" class="space-y-6">
                 <?= \App\Core\Csrf::field() ?>
                 <div class="space-y-2">
-                    <label for="email" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Identifiant_ID</label>
-                    <input type="email" name="email" id="email" required autocomplete="email" placeholder="NOM.P_00"
-                           class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs font-bold tracking-widest focus:outline-none focus:border-emerald-500 transition-colors uppercase">
+                    <label for="email" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Identifiant (e-mail)</label>
+                    <input type="email" name="email" id="email" required autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="nom.prenom@exemple.fr"
+                           class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs font-medium tracking-normal normal-case focus:outline-none focus:border-emerald-500 transition-colors"
+                           oninput="this.value = this.value.toLowerCase()">
                 </div>
 
                 <div class="space-y-2">
@@ -92,9 +93,10 @@ $title = $title ?? 'Mot de passe oublié';
             <form method="post" action="<?= url('forgot-password') ?>" class="space-y-6">
                 <?= \App\Core\Csrf::field() ?>
                 <div class="space-y-2">
-                    <label for="forgot-email" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Email de secours</label>
-                    <input type="email" name="email" id="forgot-email" required autocomplete="email" placeholder="vous@exemple.fr"
-                           class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs font-bold tracking-widest focus:outline-none focus:border-emerald-500 transition-colors">
+                    <label for="forgot-email" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">E-mail de secours</label>
+                    <input type="email" name="email" id="forgot-email" required autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="vous@exemple.fr"
+                           class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs font-medium tracking-normal normal-case focus:outline-none focus:border-emerald-500 transition-colors"
+                           oninput="this.value = this.value.toLowerCase()">
                 </div>
 
                 <button type="submit" class="w-full py-5 bg-emerald-600 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-slate-900 transition-all hover:translate-y-[-2px]">

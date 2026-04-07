@@ -14,6 +14,8 @@ use App\Repositories\PermissionRepository;
 use App\Repositories\RoleRepository;
 use App\Services\Admin\RolePermissionService;
 use App\Services\Admin\TenantRolePermissionPresetService;
+use App\Services\Audit\AuditAction;
+use App\Services\Audit\AuditService;
 use App\Services\Rbac\RoleCoherenceValidator;
 
 class RoleAdminController
@@ -22,8 +24,11 @@ class RoleAdminController
         private RolePermissionService $rolePermissionService,
         private PermissionRepository $permissionRepository,
         private RoleRepository $roleRepository,
-        private TenantRolePermissionPresetService $presetService
-    ) {}
+        private TenantRolePermissionPresetService $presetService,
+        private ?AuditService $auditService = null
+    ) {
+        $this->auditService ??= new AuditService();
+    }
 
     public function index(Request $request, array $params = []): Response
     {
@@ -427,6 +432,121 @@ class RoleAdminController
             }
         }
         Session::flash('success', $msg);
+
+        return Response::redirect(url('back-office/roles/' . $id));
+    }
+
+    /**
+     * Formulaire : cocher les habilitations accordées à un rôle communauté / intra.
+     */
+    public function editPermissions(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        if (!$tenantId || !$id) {
+            return Response::redirect(url('back-office/roles'));
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
+            Session::flash('error', 'Vous n’avez pas la permission de modifier les habilitations des rôles.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        if ($this->rolePermissionService->isRoleLocked($id)) {
+            Session::flash('error', 'Ce rôle est verrouillé : les habilitations ne peuvent pas être modifiées manuellement.');
+
+            return Response::redirect(url('back-office/roles/' . $id));
+        }
+        $roles = $this->rolePermissionService->listOrganizationRoles($tenantId);
+        $role = null;
+        foreach ($roles as $r) {
+            if ((int) $r['id'] === $id) {
+                $role = $r;
+                break;
+            }
+        }
+        if (!$role) {
+            Session::flash('error', 'Rôle introuvable.');
+
+            return Response::redirect(url('back-office/roles'));
+        }
+        $permissionIds = $this->rolePermissionService->getPermissionIdsForRole($id);
+        $allPermissions = $this->permissionRepository->allForTenant($tenantId);
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.roles.edit_permissions',
+            'title' => 'Habilitations du rôle',
+            'role' => $role,
+            'permissionIds' => $permissionIds,
+            'allPermissions' => $allPermissions,
+            'moduleLabels' => TenantRolePermissionPresetService::permissionModuleLabelsFr(),
+        ]);
+    }
+
+    public function updatePermissions(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        if (!$tenantId || !$id) {
+            return Response::redirect(url('back-office/roles'));
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/roles/' . $id . '/permissions'));
+        }
+        if ($this->rolePermissionService->isRoleLocked($id)) {
+            Session::flash('error', 'Ce rôle est verrouillé.');
+
+            return Response::redirect(url('back-office/roles/' . $id));
+        }
+        $roles = $this->rolePermissionService->listOrganizationRoles($tenantId);
+        $role = null;
+        foreach ($roles as $r) {
+            if ((int) $r['id'] === $id) {
+                $role = $r;
+                break;
+            }
+        }
+        if (!$role) {
+            Session::flash('error', 'Rôle introuvable.');
+
+            return Response::redirect(url('back-office/roles'));
+        }
+        $raw = $request->input('permission_ids');
+        $permissionIds = is_array($raw) ? array_map('intval', array_filter($raw)) : [];
+        $allowedIds = array_map(static fn ($p) => (int) $p['id'], $this->permissionRepository->allForTenant($tenantId));
+        $permissionIds = array_values(array_intersect($permissionIds, $allowedIds));
+
+        try {
+            $this->rolePermissionService->setPermissionsForOrganizationTenantRole($tenantId, $id, $permissionIds);
+        } catch (\InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect(url('back-office/roles/' . $id . '/permissions'));
+        }
+
+        $actorId = (int) Session::get('user_id');
+        if ($actorId > 0) {
+            $payload = json_encode(['permission_count' => count($permissionIds), 'scope' => 'tenant_organization'], JSON_UNESCAPED_UNICODE);
+            $this->auditService->log(
+                AuditAction::ROLE_PERMISSIONS_UPDATED,
+                $tenantId,
+                $actorId,
+                'role',
+                $id,
+                null,
+                $payload !== false ? $payload : null
+            );
+        }
+
+        Session::flash('success', 'Habilitations du rôle enregistrées.');
 
         return Response::redirect(url('back-office/roles/' . $id));
     }

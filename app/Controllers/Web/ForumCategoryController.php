@@ -147,7 +147,10 @@ class ForumCategoryController
             return forum_build_category_url($slug, $merged);
         };
 
-        $forumCanCreateSubcategory = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
+        $catScopeRaw = (string) ($category['scope'] ?? 'general');
+        $orgStakeholder = function_exists('forum_user_is_tenant_org_stakeholder') && forum_user_is_tenant_org_stakeholder();
+        $forumCanCreateSubcategory = (function_exists('forum_user_can_moderate') && forum_user_can_moderate())
+            || ($orgStakeholder && $catScopeRaw === 'organization');
         $forumFullCategoryAdmin = $gate->allows('admin.access')
             || $gate->allows('admin.system')
             || (function_exists('can') && can('forum.categories.manage'));

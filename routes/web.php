@@ -376,6 +376,8 @@ return function (Router $router) {
     $router->post('/back-office/roles/presets/apply', [RoleAdminController::class, 'presetsApply'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/{id}/edit-presentation', [RoleAdminController::class, 'editPresentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles/{id}/edit-presentation', [RoleAdminController::class, 'updatePresentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/roles/{id}/permissions', [RoleAdminController::class, 'editPermissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roles/{id}/permissions', [RoleAdminController::class, 'updatePermissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/{id}', [RoleAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/positions', [OrganizationPositionsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/positions', [OrganizationPositionsController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
