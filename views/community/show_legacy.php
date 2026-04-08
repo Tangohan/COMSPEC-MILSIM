@@ -109,15 +109,18 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
 
     <div class="flex flex-wrap gap-3 mb-10">
         <?php if ($showForumCta): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/forum')) ?>" class="inline-flex items-center px-4 py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-emerald-700">Accéder au forum</a>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/forum')) ?>" class="inline-flex items-center px-4 py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-emerald-700">Découvrir le forum</a>
         <?php else: ?>
             <span class="inline-flex items-center px-4 py-2.5 bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-xl cursor-not-allowed" title="Forum réservé aux membres">Forum (réservé membres)</span>
         <?php endif; ?>
 
         <?php if (!$isLocked): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center px-4 py-2.5 <?= $publicAudience === 'platform' ? 'border border-dashed border-slate-300 text-slate-600' : 'border border-slate-300' ?> text-xs font-bold uppercase rounded-xl hover:bg-slate-50"><?= $publicAudience === 'platform' ? 'Candidature' : 'Inscription' ?></a>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center px-4 py-2.5 <?= $publicAudience === 'platform' ? 'border border-dashed border-slate-300 text-slate-600' : 'border border-slate-300' ?> text-xs font-bold uppercase rounded-xl hover:bg-slate-50"><?= $publicAudience === 'platform' ? 'Candidater' : 'Rejoindre (candidature)' ?></a>
         <?php else: ?>
             <span class="inline-flex items-center px-4 py-2.5 border border-slate-200 text-slate-400 text-xs font-bold uppercase rounded-xl"><?= $publicAudience === 'platform' ? 'Candidatures fermées' : 'Inscription fermée' ?></span>
+        <?php endif; ?>
+        <?php if ($discordUrl !== '' || $contactEmail !== '' || $contactFormEnabled): ?>
+            <a href="#community-contact" class="inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50">Contacter l'équipe</a>
         <?php endif; ?>
 
         <?php if (!\App\Core\Session::get('user_id')): ?>
@@ -136,7 +139,7 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
     <?php endif; ?>
 
     <?php if ($discordUrl !== '' || $contactEmail !== '' || ($userId && $hasMembershipInTenant)): ?>
-        <div class="mt-10 rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-sm">
+        <div id="community-contact" class="mt-10 rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-sm">
             <h2 class="text-sm font-black uppercase tracking-widest text-slate-900 mb-4">Contact</h2>
             <?php if ($contactIntro !== ''): ?>
                 <p class="text-sm text-slate-600 mb-4"><?= htmlspecialchars($contactIntro) ?></p>

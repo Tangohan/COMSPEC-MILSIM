@@ -37,6 +37,33 @@ $publicAudienceSel = ($c['public_audience'] ?? 'unit') === 'platform' ? 'platfor
 $regionBadgesLines = implode("\n", is_array($c['public_region_badges'] ?? null) ? $c['public_region_badges'] : []);
 $specialtiesLines = implode("\n", is_array($c['public_specialties'] ?? null) ? $c['public_specialties'] : []);
 $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed' : 'manual';
+$hasMilitaryContent = false;
+foreach ($military as $sec) {
+    if (!is_array($sec)) {
+        continue;
+    }
+    if (trim((string) ($sec['title'] ?? '')) !== '' || trim((string) ($sec['body'] ?? '')) !== '') {
+        $hasMilitaryContent = true;
+        break;
+    }
+}
+$profileChecklist = [
+    'Nom de communauté' => trim((string) ($tenant['name'] ?? '')) !== '',
+    'Sous-titre public (hero)' => trim((string) ($c['public_hero_subtitle'] ?? '')) !== '',
+    'Présentation (texte ou sections)' => trim((string) ($c['simple_body'] ?? '')) !== '' || $hasMilitaryContent,
+    'Attentes recrutement' => trim((string) ($c['expectations'] ?? '')) !== '',
+    'Code communauté' => trim((string) ($tenant['community_code'] ?? '')) !== '',
+    'Canal de contact (Discord ou e-mail)' => trim((string) ($c['contact_discord_url'] ?? '')) !== '' || trim((string) ($c['contact_email'] ?? '')) !== '',
+    'Tags registre / style de jeu' => $selectedBadges !== [] || $selectedRegistryTags !== [],
+];
+$profileChecklistDone = 0;
+foreach ($profileChecklist as $isDone) {
+    if ($isDone) {
+        $profileChecklistDone++;
+    }
+}
+$profileChecklistTotal = count($profileChecklist);
+$profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChecklistDone / $profileChecklistTotal) * 100) : 0;
 ?>
 <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 lg:py-12">
     <header class="mb-6 lg:mb-8">
@@ -47,6 +74,25 @@ $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed
 
     <?php if ($err): ?><p class="text-red-600 text-sm mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3"><?= htmlspecialchars($err) ?></p><?php endif; ?>
     <?php if ($ok): ?><p class="text-emerald-800 text-sm mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3"><?= htmlspecialchars($ok) ?></p><?php endif; ?>
+
+    <section class="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-sm">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-700">Complétion profil public</p>
+                <h2 class="mt-1 text-lg font-black tracking-tight text-slate-900"><?= $profileChecklistDone ?>/<?= $profileChecklistTotal ?> éléments renseignés</h2>
+                <p class="mt-1 text-sm text-slate-600">Recommandations automatiques pour améliorer la conversion visiteur → candidat/membre.</p>
+            </div>
+            <span class="inline-flex items-center rounded-full border border-emerald-300 bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-800"><?= $profileChecklistPercent ?>%</span>
+        </div>
+        <ul class="mt-4 grid gap-2 sm:grid-cols-2">
+            <?php foreach ($profileChecklist as $label => $isDone): ?>
+                <li class="flex items-center gap-2 rounded-xl border <?= $isDone ? 'border-emerald-200 bg-white text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-900' ?> px-3 py-2 text-sm">
+                    <span aria-hidden="true"><?= $isDone ? '✅' : '⚠️' ?></span>
+                    <span><?= htmlspecialchars($label) ?></span>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    </section>
 
     <nav class="cp-presentation-tabs sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-8 border-y border-slate-200/90 bg-slate-50/95 backdrop-blur-md shadow-sm" aria-label="Parties de la fiche">
         <p class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 lg:hidden">Navigation</p>
