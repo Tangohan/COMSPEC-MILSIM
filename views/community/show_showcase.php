@@ -151,14 +151,15 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
 
           <div class="mt-8 flex flex-wrap gap-3">
             <?php if (!$isLocked && $publicAudience !== 'platform'): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-slate-950 transition hover:bg-emerald-400">Rejoindre la communauté</a>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-slate-950 transition hover:bg-emerald-400">Rejoindre (candidature)</a>
             <?php elseif (!$isLocked && $publicAudience === 'platform'): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Candidature</a>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Candidater</a>
             <?php endif; ?>
             <?php if (!empty($sv['publicRosterEnabled'])): ?>
             <a href="#roster" class="inline-flex items-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Consulter le roster</a>
             <?php endif; ?>
             <a href="#units" class="inline-flex items-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Explorer les unités</a>
+            <a href="#actions-contact" class="inline-flex items-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Contacter l'équipe</a>
           </div>
         </div>
 
@@ -497,14 +498,14 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
       <?php endif; ?>
     </section>
 
-    <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft">
+    <section id="actions-contact" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft">
       <h2 class="text-sm font-black uppercase tracking-widest text-slate-900 mb-4">Actions & contact</h2>
       <div class="flex flex-wrap gap-3">
         <?php if ($showForumCta): ?>
         <a href="<?= htmlspecialchars(url('c/' . $slug . '/forum')) ?>" class="inline-flex items-center px-4 py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-emerald-700">Forum</a>
         <?php endif; ?>
         <?php if (!$isLocked): ?>
-        <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50">Candidature</a>
+        <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50"><?= $publicAudience === 'platform' ? 'Candidater' : 'Rejoindre (candidature)' ?></a>
         <?php endif; ?>
         <a href="<?= url('communities') ?>" class="inline-flex items-center px-4 py-2.5 text-xs font-bold uppercase text-slate-500">Registre</a>
       </div>
