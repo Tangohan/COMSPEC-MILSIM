@@ -200,6 +200,7 @@ if ($showPlatformEnv) {
                 <a href="<?= url('back-office/invitations') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-amber-300 hover:bg-amber-50/40">Invitations</a>
                 <?php endif; ?>
                 <a href="<?= url('back-office/moderation') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-rose-200 hover:bg-rose-50/40">Modération</a>
+                <a href="<?= url('back-office/centre-operations') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-emerald-300 hover:bg-emerald-50/40">Centre des opérations</a>
                 <a href="<?= url('back-office/integrations') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-violet-200 hover:bg-violet-50/40">Intégrations</a>
                 <?php if (\App\Core\Gate::getInstance()->allows('admin.compliance.export')): ?>
                 <a href="<?= url('back-office/conformite/export-dossier') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-emerald-200 hover:bg-emerald-50/40">Export conformité</a>

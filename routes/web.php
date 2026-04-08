@@ -323,6 +323,7 @@ return function (Router $router) {
     $router->get('/admin', [SystemDashboardController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Back-office communauté (tenant) — préfixe /back-office
     $router->get('/back-office', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/centre-operations', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation-effectifs', [OrganizationDashboardController::class, 'effectifsHub'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/community', [OrganizationCommunityController::class, 'settings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community', [OrganizationCommunityController::class, 'settingsUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

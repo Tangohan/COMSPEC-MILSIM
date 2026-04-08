@@ -9,8 +9,10 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AuditLogRepository;
+use App\Repositories\CommunityEventRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\ModerationRepository;
+use App\Repositories\TenantAlertRepository;
 use App\Repositories\TenantCommunityFeedRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
@@ -22,13 +24,17 @@ class OrganizationDashboardController
         private ?AuditLogRepository $auditLogs = null,
         private ?ModerationRepository $moderationRepository = null,
         private ?EnlistmentRepository $enlistmentRepository = null,
-        private ?TenantCommunityFeedRepository $communityFeed = null
+        private ?TenantCommunityFeedRepository $communityFeed = null,
+        private ?CommunityEventRepository $eventRepository = null,
+        private ?TenantAlertRepository $tenantAlertRepository = null
     ) {
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
         $this->moderationRepository ??= new ModerationRepository();
         $this->enlistmentRepository ??= new EnlistmentRepository();
         $this->communityFeed ??= new TenantCommunityFeedRepository();
+        $this->eventRepository ??= new CommunityEventRepository();
+        $this->tenantAlertRepository ??= new TenantAlertRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -102,6 +108,97 @@ class OrganizationDashboardController
             'orgTrainingFeed' => $orgTrainingFeed,
             'orgTrainingFeedError' => $orgTrainingFeedError,
             'tenantName' => $tenantName,
+        ]);
+    }
+
+
+    public function operationsCenter(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId <= 0) {
+            return Response::redirect(url('login'));
+        }
+
+        $profile = strtolower(trim((string) $request->query('profile', 'commandement')));
+        $allowedProfiles = ['commandement', 'rh', 'moderation', 'formation'];
+        if (!in_array($profile, $allowedProfiles, true)) {
+            $profile = 'commandement';
+        }
+
+        $workQueue = $this->metrics->getOrganizationWorkQueue($tenantId);
+        $kpis = $this->metrics->getOrganizationMetrics($tenantId)['kpis'] ?? [];
+
+        $moderationOpen = 0;
+        foreach ($kpis as $kpi) {
+            if (($kpi['id'] ?? '') === 'moderation_open' && empty($kpi['error']) && isset($kpi['value']) && is_numeric((string) $kpi['value'])) {
+                $moderationOpen = (int) $kpi['value'];
+                break;
+            }
+        }
+
+        $pendingRecruitments = [];
+        $pendingRecruitmentsError = null;
+        try {
+            $pendingRecruitments = $this->enlistmentRepository->listPendingSubmittedForTenant($tenantId, 6);
+        } catch (\Throwable) {
+            $pendingRecruitmentsError = 'Candidatures indisponibles.';
+        }
+
+        $upcomingEvents = [];
+        $eventsError = null;
+        try {
+            $upcomingEvents = $this->eventRepository->upcomingForTenant($tenantId, 20);
+        } catch (\Throwable) {
+            $eventsError = 'Événements indisponibles.';
+        }
+
+        $eventsJ1 = [];
+        $eventsJ7 = [];
+        $now = time();
+        foreach ($upcomingEvents as $event) {
+            $startsAt = strtotime((string) ($event['starts_at'] ?? ''));
+            if (!$startsAt) {
+                continue;
+            }
+            $days = (int) floor(($startsAt - $now) / 86400);
+            if ($days <= 1) {
+                $eventsJ1[] = $event;
+            }
+            if ($days <= 7) {
+                $eventsJ7[] = $event;
+            }
+        }
+
+        $alerts = [];
+        $alertsError = null;
+        try {
+            $alerts = $this->tenantAlertRepository->listActiveForTenantDisplay($tenantId);
+        } catch (\Throwable) {
+            $alertsError = 'Alertes locales indisponibles.';
+        }
+
+        $onboardingAnomalies = [
+            'profils_incomplets' => count($workQueue['incomplete_profiles'] ?? []),
+            'membres_sans_unite' => count($workQueue['users_without_unit'] ?? []),
+            'membres_sans_role' => count($workQueue['users_without_role'] ?? []),
+            'invitations_expirees' => count($workQueue['expired_invitations'] ?? []),
+        ];
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.operations_center',
+            'title' => 'Centre des opérations',
+            'operationsProfile' => $profile,
+            'operationsProfiles' => $allowedProfiles,
+            'operationsModerationOpen' => $moderationOpen,
+            'operationsPendingRecruitments' => $pendingRecruitments,
+            'operationsPendingRecruitmentsError' => $pendingRecruitmentsError,
+            'operationsEventsJ1' => $eventsJ1,
+            'operationsEventsJ7' => $eventsJ7,
+            'operationsEventsError' => $eventsError,
+            'operationsActiveAlerts' => $alerts,
+            'operationsAlertsError' => $alertsError,
+            'operationsOnboardingAnomalies' => $onboardingAnomalies,
+            'operationsWorkQueue' => $workQueue,
         ]);
     }
 
