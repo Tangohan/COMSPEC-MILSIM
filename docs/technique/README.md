@@ -12,6 +12,7 @@ Ce sommaire s’adresse aux **développeurs** et à l’**exploitation** : archi
 | [Modules fonctionnels](modules-fonctionnels.md) | Cartographie fonctionnalités ↔ zones du code |
 | [Sécurité et permissions](securite-et-permissions.md) | Auth, RBAC, API tactiques, en-têtes |
 | [Intégrations externes](integrations.md) | Courriel, Stripe, clients tactiques |
+| [Blueprint LMS compétences](lms-competency-system-blueprint.md) | Schéma multi-tenant compétences/modules et prompt enrichi |
 
 ## Liens utiles
 
