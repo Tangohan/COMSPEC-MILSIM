@@ -41,6 +41,10 @@ Destinée aux **développeurs** et **exploitants** : architecture, configuration
 | [Modules fonctionnels (cartographie)](technique/modules-fonctionnels.md) | Fonctionnalités ↔ zones du code |
 | [Sécurité et permissions](technique/securite-et-permissions.md) | Authentification, rôles, API tactiques |
 | [Intégrations externes](technique/integrations.md) | Courriel, paiement, clients tactiques |
+| [Plan d’amélioration — Back-office TENANT](technique/plan-amelioration-back-office-tenant.md) | Audit et priorisation des améliorations du back-office organisation |
+| [Plan d’amélioration — Features Communautés](technique/plan-amelioration-features-communautes.md) | Audit et priorisation des évolutions communautaires plateforme |
+| [Plan d’amélioration — Admin site (Mod/Admin/Support)](technique/plan-amelioration-administration-site-mod-admin-support.md) | Audit et priorisation des évolutions de l’administration plateforme |
+| [Plan d’exécution — Admin site (Mod/Admin/Support)](technique/plan-execution-administration-site-mod-admin-support.md) | Plan opérationnel par rôle modération, support et administration |
 
 ---
 
