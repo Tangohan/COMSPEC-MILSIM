@@ -60,6 +60,7 @@ use App\Controllers\Courrier\CourrierSnippetController;
 use App\Controllers\Courrier\CourrierSignatureController;
 use App\Controllers\Courrier\CourrierNotificationController;
 use App\Controllers\Admin\System\SystemDashboardController;
+use App\Controllers\Admin\System\SystemOpsCenterController;
 use App\Controllers\Admin\System\SystemRoleController;
 use App\Controllers\Admin\System\SystemSettingsController;
 use App\Controllers\Admin\System\SystemPlatformAlertsController;
@@ -321,6 +322,7 @@ return function (Router $router) {
     $router->post('/admin/site-roles/assign', [SystemSiteRoleAssignmentController::class, 'assign'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin', [SystemDashboardController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/ops-center', [SystemOpsCenterController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Back-office communauté (tenant) — préfixe /back-office
     $router->get('/back-office', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/centre-operations', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
