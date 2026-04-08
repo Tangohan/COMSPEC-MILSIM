@@ -122,3 +122,34 @@ Objectif: implémenter un système de progression doctrinale multi-tenant, réal
 ## 5) Prochaine étape conseillée
 
 Après exécution de la migration SQL, implémenter un cron quotidien qui bascule automatiquement `user_progress.status` à `EXPIRED` quand `expires_at < NOW()` et déclenche la création des modules de recyclage requis.
+
+
+## 6) Journalisation renforcée (tenant + formateur)
+
+Migration complémentaire livrée :
+
+- `migrations/20260408000002_competency_progression_logs.sql`
+
+Tables ajoutées :
+
+- `tenant_training_logs` : journal d’administration tenant (activation module, changement de récurrence, exigences de rôle/certification, etc.).
+- `trainer_validation_logs` : décisions formateur/instructeur (validation, rejet, override score, observation terrain).
+- `user_progress_event_logs` : événements de cycle de vie progression (expiration automatique, réassignation recyclage, changement statut).
+
+Événements minimum à tracer côté applicatif :
+
+1. Activation/désactivation module tenant.
+2. Changement `recurrence_rules` ou override tenant.
+3. Validation DELTA par instructeur avec commentaire.
+4. Passage automatique `COMPLETED -> EXPIRED` (job planifié).
+5. Assignation automatique d’un module de recyclage.
+
+## 7) Intégration applicative recommandée (prochaine itération)
+
+- Ajouter un `TrainingAuditService` qui écrit simultanément dans `tenant_training_logs` et `trainer_validation_logs` selon le contexte.
+- Brancher les écritures dans les actions API admin/instructeur (évaluation, validation, override).
+- Ajouter une tâche planifiée quotidienne qui :
+  - détecte les progressions expirées,
+  - met à jour `user_progress.status`,
+  - écrit un événement `AUTO_EXPIRED` dans `user_progress_event_logs`.
+- Exposer une vue commandement filtrée par tenant sur les 3 journaux (timeline + filtres module/instructeur/utilisateur).
