@@ -9,6 +9,7 @@ use App\Controllers\Web\EnlistmentController;
 use App\Controllers\Web\DocumentsController;
 use App\Controllers\Web\EquipmentController;
 use App\Controllers\Web\TrainingController;
+use App\Controllers\Web\TrainingCompetencyController;
 use App\Controllers\Web\AtakController;
 use App\Controllers\Web\AccountController;
 use App\Controllers\Web\ModpackController;
@@ -271,6 +272,7 @@ return function (Router $router) {
     $router->post('/formations/question', [TrainingController::class, 'postQuestion'], $mwTraining);
     $router->post('/formations/comment', [TrainingController::class, 'postComment'], $mwTraining);
     $router->get('/formations/mes-formations', [TrainingController::class, 'myTraining'], $mwTraining);
+    $router->get('/formations/competences', [TrainingCompetencyController::class, 'userJourney'], $mwTraining);
     $router->get('/formations/code-acces', [TrainingController::class, 'accessCodeForm'], $mwTraining);
     $router->post('/formations/code-acces', [TrainingController::class, 'accessCodeSubmit'], $mwTraining);
     /** Doit rester avant /formations/{slug} pour que « …/echanges » ne soit pas confondu avec un slug. */
@@ -542,6 +544,9 @@ return function (Router $router) {
     $router->post('/back-office/ressources/training/certificates/gabarit', [AdminTrainingController::class, 'certificateGabaritSave'], $trainingResMw);
     $router->get('/back-office/ressources/training/audit', [AdminTrainingController::class, 'audit'], $trainingResMw);
     $router->get('/back-office/ressources/training', [AdminTrainingController::class, 'dashboard'], $trainingResMw);
+
+    $router->get('/back-office/ressources/training/competences/commandement', [TrainingCompetencyController::class, 'commandCenter'], $trainingResMw);
+    $router->get('/back-office/ressources/training/competences/instructeur', [TrainingCompetencyController::class, 'instructorCenter'], $trainingResMw);
 
     // Bureau Courrier / Correspondance Officielle
     $router->get('/courrier', [CourrierDashboardController::class, 'index'], $mwCourrier);
