@@ -13,6 +13,8 @@ Ce sommaire s’adresse aux **développeurs** et à l’**exploitation** : archi
 | [Sécurité et permissions](securite-et-permissions.md) | Auth, RBAC, API tactiques, en-têtes |
 | [Intégrations externes](integrations.md) | Courriel, Stripe, clients tactiques |
 | [Blueprint LMS compétences](lms-competency-system-blueprint.md) | Schéma multi-tenant compétences/modules et prompt enrichi |
+| [Plan amélioration administration site](plan-amelioration-administration-site-mod-admin-support.md) | Diagnostic et axes d'amélioration modération/support/admin |
+| [Plan exécution administration site](plan-execution-administration-site-mod-admin-support.md) | Roadmap exécutable par lots, RACI, DoD, KPI et run |
 
 ## Liens utiles
 
