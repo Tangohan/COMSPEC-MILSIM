@@ -100,7 +100,7 @@ Contrôle d’accès documentaire : [`DocumentAccessService`](../app/Services/Do
 | Parcours | Routes |
 |----------|--------|
 | **Apprenant** | `/formations`, `/formations/mes-formations`, `/formations/{slug}`, leçons, quiz, certificats. |
-| **Admin** | `/admin/training` (dashboard, cours, inscriptions, rapports, certificats, audit). |
+| **Pilotage communauté** | Canonique : `/back-office/ressources/training` (tableau de bord, catalogue, inscriptions, rapports, certificats, journal). Studio : `/back-office/ressources/training/studio`. Les **GET** `/admin/training/…` ne font que **rediriger** vers ces chemins ; les écritures (POST) passent par le back-office. |
 | **API JSON** | Préfixe `/api/training/*` — catalogue, inscription, progression, quiz, certificats, endpoints admin cours / assignation. |
 
 Schéma : `migrations/lms_training.sql` et tables associées.

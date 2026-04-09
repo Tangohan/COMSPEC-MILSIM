@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>CERBERE | Paramétrage des Flux</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #000a12; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .rule-card { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(51, 65, 85, 0.3); transition: all 0.2s; }
+        .rule-card:hover { border-color: #2563eb; background: rgba(37, 99, 235, 0.02); }
+        .input-inline { background: transparent; border-bottom: 1px dashed #334155; font-family: 'JetBrains Mono'; color: #3b82f6; outline: none; }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-6xl mx-auto">
+        
+        <header class="mb-12 border-b border-slate-800 pb-8 flex justify-between items-end">
+            <div>
+                <h2 class="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em] mb-2">// RULES_CONFIG_ENGINE</h2>
+                <h1 class="text-3xl font-black italic uppercase">Critères d'<span class="text-blue-600">Eligibilité</span></h1>
+            </div>
+            <button class="bg-blue-600 text-white px-4 py-2 text-[10px] font-black uppercase italic">+ Ajouter un flux</button>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div class="rule-card rounded-2xl p-6">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <p class="text-[9px] font-mono text-slate-500 uppercase">Flux ID: #042</p>
+                        <h3 class="text-lg font-black uppercase italic">Sergent <span class="text-blue-500">➜</span> Sergent-Chef</h3>
+                    </div>
+                    <span class="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-1 border border-blue-500/20 font-bold uppercase">Actif</span>
+                </div>
+
+                <div class="space-y-4 text-xs">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-800/50">
+                        <span class="text-slate-400">Ancienneté de grade minimale</span>
+                        <div class="flex items-center gap-2">
+                            <input type="number" value="3" class="input-inline w-10 text-center">
+                            <span class="text-slate-500 font-bold uppercase text-[9px]">Années</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-800/50">
+                        <span class="text-slate-400">Ancienneté de service totale</span>
+                        <div class="flex items-center gap-2">
+                            <input type="number" value="5" class="input-inline w-10 text-center">
+                            <span class="text-slate-500 font-bold uppercase text-[9px]">Années</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-800/50">
+                        <span class="text-slate-400">Seuil sanction (Max jours)</span>
+                        <div class="flex items-center gap-2">
+                            <input type="number" value="10" class="input-inline w-10 text-center text-red-500">
+                            <span class="text-slate-500 font-bold uppercase text-[9px]">Jours</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-slate-400">Moyenne Notation requise</span>
+                        <div class="flex items-center gap-2">
+                            <input type="number" value="14.5" class="input-inline w-12 text-center">
+                            <span class="text-slate-500 font-bold uppercase text-[9px]">/ 20</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-2">
+                    <button class="text-[9px] font-black text-slate-500 hover:text-white uppercase">Mettre à jour</button>
+                    <button class="text-[9px] font-black text-red-900 hover:text-red-500 uppercase">Supprimer</button>
+                </div>
+            </div>
+
+            <div class="rule-card rounded-2xl p-6">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <p class="text-[9px] font-mono text-slate-500 uppercase">Flux ID: #088</p>
+                        <h3 class="text-lg font-black uppercase italic tracking-tighter">Lieutenant <span class="text-blue-500">➜</span> Capitaine</h3>
+                    </div>
+                    <span class="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-1 border border-amber-500/20 font-bold uppercase">En révision</span>
+                </div>
+
+                <div class="space-y-4 text-xs opacity-60">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-800/50">
+                        <span class="text-slate-400">Ancienneté de grade minimale</span>
+                        <span class="font-mono text-blue-400">4 ans</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-800/50">
+                        <span class="text-slate-400">Temps de commandement</span>
+                        <span class="font-mono text-emerald-500 uppercase">Requis</span>
+                    </div>
+                </div>
+                
+                <p class="mt-8 text-[9px] text-slate-600 italic">Dernière modification par SYS_ADMIN le 09/01/2026</p>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

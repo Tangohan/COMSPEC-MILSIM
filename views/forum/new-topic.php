@@ -91,29 +91,49 @@ if ($forumNewTopicTenantContext > 1) {
           <p class="text-[9px] text-neutral-500 mt-1"><span id="title-count">0</span> / 255</p>
         </div>
 
+        <input type="hidden" name="attachment_ids" id="nt-attachment-ids" value="[]">
         <div>
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
             <label for="topic-content" class="block text-[10px] font-black uppercase tracking-wider text-neutral-500">Corps du flux *</label>
-            <span class="text-[8px] text-neutral-600 lg:hidden">Aperçu en direct à droite (desktop)</span>
+            <div class="flex items-center gap-2">
+              <span id="nt-draft-badge" class="hidden text-[8px] font-bold text-emerald-700">Brouillon enregistré</span>
+              <span class="text-[8px] text-neutral-600 lg:hidden">Aperçu à droite (grand écran)</span>
+            </div>
           </div>
-          <!-- Barre d'outils Markdown -->
-          <div id="toolbar" class="flex flex-wrap gap-1 p-2 bg-slate-100 border border-slate-200 border-b-0 rounded-t-md">
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition rounded" data-wrap="**" data-wrap-end="**" title="Gras (Ctrl+B)"><strong>G</strong></button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 italic transition" data-wrap="_" data-wrap-end="_" title="Italique (Ctrl+I)">I</button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" data-wrap="~~" data-wrap-end="~~" title="Barré"><del>S</del></button>
+          <div id="nt-drop-zone" class="rounded-lg border border-dashed border-slate-200 transition-colors relative">
+          <div id="nt-toolbar-root" class="flex flex-wrap gap-1 p-2 bg-slate-100 border border-slate-200 border-b-0 rounded-t-md">
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition rounded" data-fc-wrap="**" data-fc-end="**" title="Gras (Ctrl+B)"><strong>G</strong></button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 italic transition rounded" data-fc-wrap="_" data-fc-end="_" title="Italique (Ctrl+I)">I</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition rounded" data-fc-wrap="~~" data-fc-end="~~" title="Barré"><del>S</del></button>
             <span class="w-px h-5 bg-slate-300 mx-1 self-center"></span>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" data-wrap="> " data-wrap-end="" title="Citation">Citation</button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" data-wrap="\n- " data-wrap-end="" title="Liste à puces">Liste</button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" data-wrap="\n1. " data-wrap-end="" title="Liste numérotée">1.</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 rounded" data-fc-wrap="## " data-fc-end="\n\n" title="Titre">Titre</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" data-fc-wrap="> " data-fc-end="" title="Citation">Citation</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" data-fc-wrap="\n- " data-fc-end="" title="Liste">Liste</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" data-fc-wrap="\n1. " data-fc-end="" title="Numéros">1.</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 rounded" data-fc-wrap="\n---\n\n" data-fc-end="" title="Séparateur">—</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 rounded" data-fc-wrap=":::spoiler\n" data-fc-end="\n:::\n" title="Spoiler">Spoiler</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 rounded" data-fc-wrap=":::info\n" data-fc-end="\n:::\n" title="Info">Info</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 rounded" data-fc-wrap=":::warning\n" data-fc-end="\n:::\n" title="Attention">Alerte</button>
             <span class="w-px h-5 bg-slate-300 mx-1 self-center"></span>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 font-mono transition" data-wrap="`" data-wrap-end="`" title="Code inline">`</button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 font-mono transition" data-wrap="\n```\n" data-wrap-end="\n```" title="Bloc code">```</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 font-mono transition rounded" data-fc-wrap="`" data-fc-end="`" title="Code inline">`</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 font-mono transition rounded" data-fc-wrap="\n```\n" data-fc-end="\n```\n" title="Bloc code">{ }</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 rounded" data-fc-wrap="| Colonne A | Colonne B |\n| --- | --- |\n| " data-fc-end=" |  |\n" title="Tableau">Tableau</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition rounded" id="toolbar-link" data-fc-link="1" title="Lien (Ctrl+K)">Lien</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-emerald-700 text-[10px] hover:bg-emerald-50 transition rounded" data-fc-wrap="@" data-fc-end=" " title="Mention">@</button>
             <span class="w-px h-5 bg-slate-300 mx-1 self-center"></span>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-slate-800 text-[10px] hover:bg-slate-50 transition" id="toolbar-link" title="Lien (Ctrl+K)">Lien</button>
-            <button type="button" class="toolbar-btn rtb px-2 py-1.5 border border-slate-200 bg-white text-emerald-700 text-[10px] hover:bg-emerald-50 transition" data-wrap="@" data-wrap-end=" " title="Mention">@</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-700 text-[9px] font-bold hover:bg-slate-50 rounded" data-fc-action="structure" title="Structurer">Structurer</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-700 text-[9px] font-bold hover:bg-slate-50 rounded" data-fc-action="bullets" title="Points">Points</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-700 text-[9px] font-bold hover:bg-slate-50 rounded" data-fc-action="title" title="Titre">+Titre</button>
+            <button type="button" class="px-2 py-1.5 border border-slate-200 bg-white text-slate-700 text-[9px] font-bold hover:bg-slate-50 rounded" data-fc-action="format" title="Nettoyer">Forme</button>
           </div>
-          <textarea name="body" id="topic-content" rows="14" maxlength="<?= $maxLen ?>" required class="w-full bg-slate-50 border border-slate-200 text-slate-900 px-4 py-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 resize-y rounded-b-md font-mono text-sm leading-relaxed" placeholder="Votre message… Markdown : **gras**, *italique*, `code`, > citation, - liste"></textarea>
-          <p class="text-[9px] text-neutral-500 mt-1"><span id="content-count">0</span> / <?= $maxLen ?></p>
+          <p class="text-[9px] text-slate-500 px-2 py-1 bg-slate-50 border border-slate-200 border-b-0">Glissez-déposez des fichiers ici ou utilisez le bouton ci-dessous.</p>
+          <textarea name="body" id="topic-content" rows="14" maxlength="<?= $maxLen ?>" required class="w-full bg-slate-50 border border-slate-200 text-slate-900 px-4 py-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 resize-y rounded-b-md rounded-t-none border-t-0 font-mono text-sm leading-relaxed" placeholder="Votre message…"></textarea>
+          </div>
+          <div id="nt-quality" class="flex flex-wrap gap-1 min-h-[1.25rem] mt-1"></div>
+          <div class="text-[9px] text-neutral-500 mt-1 space-y-0.5">
+            <div id="content-count" class="tabular-nums">0 / <?= $maxLen ?></div>
+            <div id="nt-smart-meta" class="text-neutral-400 font-semibold"></div>
+          </div>
           <p class="text-[9px] text-neutral-600 mt-1">Raccourcis : Ctrl+B (gras), Ctrl+I (italique), Ctrl+K (lien), Ctrl+Shift+X (barré).</p>
         </div>
 
@@ -134,7 +154,7 @@ if ($forumNewTopicTenantContext > 1) {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
             Joindre des fichiers (images / PDF, max 5 × 5 Mo)
           </label>
-          <div id="nt-upload-preview" class="flex flex-wrap gap-2 mt-2 min-h-0"></div>
+          <div id="nt-attach-list" class="flex flex-col gap-2 mt-2 min-h-0"></div>
         </div>
 
         <div class="border-l-4 border-emerald-500/60 pl-4 py-2 text-[11px] text-slate-600 bg-emerald-50/50 rounded-r-md">
@@ -174,6 +194,7 @@ if ($forumNewTopicTenantContext > 1) {
 
 <div id="forum-toast-nt" class="fixed bottom-4 right-4 z-50 hidden px-4 py-3 rounded-lg border border-slate-200 bg-slate-900 text-sm text-white shadow-lg"></div>
 
+<script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/forum-composer.js"></script>
 <script>
 (function() {
   var baseUrl = '<?= $baseUrl ?>';
@@ -182,51 +203,11 @@ if ($forumNewTopicTenantContext > 1) {
   var forumTenantCtx = <?= (int) $forumNewTopicTenantContext ?>;
   var tags = [];
   var MAX_TAGS = 5;
-  var ntAttachmentIds = [];
 
   function escapeHtml(s) {
     var d = document.createElement('div');
     d.textContent = s;
     return d.innerHTML;
-  }
-
-  // Rendu Markdown côté client (aligné avec le PHP)
-  function markdownToHtml(text) {
-    if (!text || !text.trim()) return '<p class="text-slate-500 italic">Le rendu s\'affichera ici au fur et à mesure.</p>';
-    var s = escapeHtml(text);
-    // Code blocks
-    s = s.replace(/```(\w*)\s*([\s\S]*?)```/g, function(_, lang, code) {
-      return '<pre class="my-2 p-3 bg-slate-100 border border-slate-200 rounded text-sm overflow-x-auto text-slate-900"><code>' + code + '</code></pre>';
-    });
-    // Inline code
-    s = s.replace(/`([^`\n]+)`/g, '<code class="px-1 py-0.5 bg-slate-100 border border-slate-200 rounded text-xs text-slate-900">$1</code>');
-    // Bold
-    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    s = s.replace(/__([^_]+)__/g, '<strong>$1</strong>');
-    // Italic
-    s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    s = s.replace(/_([^_]+)_/g, '<em>$1</em>');
-    // Strikethrough
-    s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
-    // Links
-    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" rel="noopener noreferrer" class="text-emerald-700 hover:text-emerald-600 underline">$1</a>');
-    // URLs brutes (aperçu : ouverture directe ; le message publié utilise /leave pour les externes)
-    s = s.replace(/\bhttps?:\/\/[^\s<>"'\[\]]+/gi, function(raw) {
-      var trail = '';
-      var u = raw;
-      var pm = raw.match(/([.,;:!?]+)$/);
-      if (pm) { trail = pm[1]; u = raw.slice(0, -trail.length); }
-      return '<a href="' + u + '" target="_blank" rel="noopener noreferrer" class="text-orange-400 hover:text-orange-300 underline break-all">' + u + '</a>' + trail;
-    });
-    // Blockquote
-    s = s.replace(/^&gt;\s?(.*)$/gm, '<blockquote class="border-l-2 border-emerald-400 pl-4 my-1.5 text-slate-600">$1</blockquote>');
-    // Unordered list
-    s = s.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
-    s = s.replace(/(<li>.*?<\/li>\n?)+/gs, function(m) { return '<ul class="list-disc list-inside space-y-0.5 my-2 text-slate-700 pl-2">' + m + '</ul>'; });
-    // Ordered list
-    s = s.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
-    s = s.replace(/(<li>.*?<\/li>\n?)+/gs, function(m) { return '<ol class="list-decimal list-inside space-y-0.5 my-2 text-slate-700 pl-2">' + m + '</ol>'; });
-    return s.replace(/\n/g, '<br>');
   }
 
   function toast(msg) {
@@ -281,61 +262,45 @@ if ($forumNewTopicTenantContext > 1) {
     titleEl.addEventListener('input', function() { titleCount.textContent = titleEl.value.length; });
   }
   var contentEl = document.getElementById('topic-content');
-  var contentCount = document.getElementById('content-count');
   var livePreview = document.getElementById('live-preview');
-  if (contentEl && contentCount) {
-    contentEl.addEventListener('input', function() {
-      contentCount.textContent = contentEl.value.length;
-      if (livePreview) livePreview.innerHTML = markdownToHtml(contentEl.value);
+  var ntComposer = null;
+  if (window.ForumComposer && contentEl) {
+    var extra = {};
+    if (forumTenantCtx > 1) extra.forum_tenant = String(forumTenantCtx);
+    ntComposer = window.ForumComposer.init({
+      textarea: contentEl,
+      previewEl: livePreview,
+      maxLen: maxLen,
+      uploadUrl: baseUrl + '/api/forum-upload',
+      csrf: csrf,
+      baseUrl: baseUrl,
+      toast: toast,
+      charCountEl: document.getElementById('content-count'),
+      smartMetaEl: document.getElementById('nt-smart-meta'),
+      draftBadgeEl: document.getElementById('nt-draft-badge'),
+      qualityEl: document.getElementById('nt-quality'),
+      fileInput: document.getElementById('nt-file-input'),
+      attachmentListEl: document.getElementById('nt-attach-list'),
+      hiddenAttachmentInput: document.getElementById('nt-attachment-ids'),
+      dropZone: document.getElementById('nt-drop-zone'),
+      draftKey: 'forum:draft:new-topic',
+      toolbarRoot: document.getElementById('nt-toolbar-root'),
+      mentionSearchUrl: baseUrl + '/api/forum?action=mention_search&q=',
+      extraFormData: extra,
     });
   }
-  if (livePreview && contentEl) {
-    contentEl.addEventListener('focus', function() { livePreview.innerHTML = markdownToHtml(contentEl.value); });
-  }
-
-  // Toolbar: wrap selection
-  document.querySelectorAll('.toolbar-btn.rtb').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var wrap = btn.getAttribute('data-wrap') || '';
-      var wrapEnd = btn.getAttribute('data-wrap-end');
-      if (wrapEnd === null) wrapEnd = wrap;
-      wrap = wrap.replace(/\\n/g, '\n');
-      wrapEnd = (wrapEnd || '').replace(/\\n/g, '\n');
-      var ta = contentEl;
-      if (!ta) return;
-      var start = ta.selectionStart, end = ta.selectionEnd;
-      var text = ta.value;
-      var before = text.slice(0, start), selected = text.slice(start, end), after = text.slice(end);
-      ta.value = before + wrap + selected + wrapEnd + after;
-      ta.selectionStart = ta.selectionEnd = start + wrap.length + selected.length;
-      ta.focus();
-      if (livePreview) livePreview.innerHTML = markdownToHtml(ta.value);
-      contentCount.textContent = ta.value.length;
-    });
-  });
-  document.getElementById('toolbar-link') && document.getElementById('toolbar-link').addEventListener('click', function() {
-    var url = prompt('URL du lien :', 'https://');
-    if (url === null) return;
-    var text = prompt('Texte du lien :', contentEl && contentEl.value.slice(contentEl.selectionStart, contentEl.selectionEnd) || '');
-    if (text === null) return;
-    var insert = '[' + (text || 'lien') + '](' + url + ')';
-    var ta = contentEl;
-    var start = ta.selectionStart, end = ta.selectionEnd;
-    ta.value = ta.value.slice(0, start) + insert + ta.value.slice(end);
-    ta.selectionStart = ta.selectionEnd = start + insert.length;
-    ta.focus();
-    if (livePreview) livePreview.innerHTML = markdownToHtml(ta.value);
-    contentCount.textContent = ta.value.length;
-  });
-
   document.addEventListener('keydown', function(e) {
     if (!contentEl || document.activeElement !== contentEl) return;
     if (e.ctrlKey || e.metaKey) {
-      if (e.key === 'b') { e.preventDefault(); document.querySelector('.toolbar-btn[data-wrap="**"]') && document.querySelector('.toolbar-btn[data-wrap="**"]').click(); }
-      if (e.key === 'i') { e.preventDefault(); document.querySelector('.toolbar-btn[data-wrap="_"]') && document.querySelector('.toolbar-btn[data-wrap="_"]').click(); }
-      if (e.key === 'k') { e.preventDefault(); document.getElementById('toolbar-link') && document.getElementById('toolbar-link').click(); }
+      if (e.key === 'b') { e.preventDefault(); var b = document.querySelector('#nt-toolbar-root [data-fc-wrap="**"]'); if (b) b.click(); }
+      if (e.key === 'i') { e.preventDefault(); var i = document.querySelector('#nt-toolbar-root [data-fc-wrap="_"]'); if (i) i.click(); }
+      if (e.key === 'k') { e.preventDefault(); var lk = document.getElementById('toolbar-link'); if (lk) lk.click(); }
     }
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'X') { e.preventDefault(); document.querySelector('.toolbar-btn[data-wrap-end="~~"]') && document.querySelector('.toolbar-btn[data-wrap-end="~~"]').click(); }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'X') {
+      e.preventDefault();
+      var st = document.querySelector('#nt-toolbar-root [data-fc-wrap="~~"]');
+      if (st) st.click();
+    }
   });
 
   var tagInput = document.getElementById('tag-input');
@@ -373,43 +338,6 @@ if ($forumNewTopicTenantContext > 1) {
     tagInput.addEventListener('blur', function() { if (tagInput.value.trim()) addTag(tagInput.value); });
   }
 
-  var ntFileInput = document.getElementById('nt-file-input');
-  var ntUploadPreview = document.getElementById('nt-upload-preview');
-  if (ntFileInput && ntUploadPreview) {
-    ntFileInput.addEventListener('change', function() {
-      var files = ntFileInput.files;
-      if (!files || !files.length) return;
-      var fd = new FormData();
-      fd.append('_csrf_token', csrf);
-      if (forumTenantCtx > 1) fd.append('forum_tenant', String(forumTenantCtx));
-      for (var i = 0; i < files.length; i++) fd.append('files[]', files[i]);
-      fetch(baseUrl + '/api/forum-upload', { method: 'POST', body: fd, credentials: 'same-origin' })
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-          ntFileInput.value = '';
-          if (!d.success || !d.files || !d.files.length) {
-            showError(d.error || 'Envoi fichier impossible');
-            return;
-          }
-          d.files.forEach(function(f) {
-            if (ntAttachmentIds.length >= 5) return;
-            ntAttachmentIds.push(f.id);
-            var wrap = document.createElement('span');
-            wrap.className = 'inline-flex items-center gap-1 text-[9px] font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 rounded px-2 py-1';
-            var id = f.id;
-            wrap.innerHTML = '<span class="truncate max-w-[140px]">' + id.replace(/</g, '') + '</span><button type="button" class="text-rose-600" data-nt-rm="' + id.replace(/"/g, '') + '">×</button>';
-            wrap.querySelector('button').addEventListener('click', function() {
-              var rm = this.getAttribute('data-nt-rm');
-              ntAttachmentIds = ntAttachmentIds.filter(function(x) { return x !== rm; });
-              wrap.remove();
-            });
-            ntUploadPreview.appendChild(wrap);
-          });
-          if (d.warnings && d.warnings.length) toast(d.warnings.join(' '));
-        });
-    });
-  }
-
   document.getElementById('new-topic-form').addEventListener('submit', function(e) {
     e.preventDefault();
     hideError();
@@ -418,7 +346,8 @@ if ($forumNewTopicTenantContext > 1) {
     var content = (contentEl && contentEl.value) ? contentEl.value.trim() : '';
     if (!catId) { showError('Choisissez un secteur.'); return; }
     if (title.length < 3 || title.length > 255) { showError('Le titre doit faire entre 3 et 255 caractères.'); return; }
-    if ((content.length < 5 && ntAttachmentIds.length === 0) || content.length > maxLen) { showError('Le contenu doit faire au moins 5 caractères (ou joindre des fichiers), max ' + maxLen + '.'); return; }
+    var ntIds = ntComposer && ntComposer.getAttachmentIds ? ntComposer.getAttachmentIds() : [];
+    if ((content.length < 5 && ntIds.length === 0) || content.length > maxLen) { showError('Le contenu doit faire au moins 5 caractères (ou joindre des fichiers), max ' + maxLen + '.'); return; }
     var submitBtn = document.getElementById('submit-topic-btn');
     if (submitBtn) submitBtn.disabled = true;
     var createPayload = {
@@ -428,7 +357,7 @@ if ($forumNewTopicTenantContext > 1) {
       title: title,
       content: content,
       tags: tags.join(','),
-      attachment_ids: ntAttachmentIds
+      attachment_ids: ntIds
     };
     if (forumTenantCtx > 1) createPayload.forum_tenant = forumTenantCtx;
     fetch(baseUrl + '/api/forum', {
@@ -438,6 +367,7 @@ if ($forumNewTopicTenantContext > 1) {
     }).then(function(r) { return r.json(); }).then(function(d) {
       if (submitBtn) submitBtn.disabled = false;
       if (d.success && d.topic_id) {
+        if (ntComposer && ntComposer.clearDraft) ntComposer.clearDraft();
         window.location.href = baseUrl + '/forum/topic/' + d.topic_id;
       } else {
         showError(d.error || 'Erreur lors de l\'envoi.');

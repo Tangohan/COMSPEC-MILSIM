@@ -324,6 +324,13 @@ class AccountController
         }
 
         $items[] = [
+            'key' => EmailEvents::TENANT_INTERNAL_MESSAGE_THREAD,
+            'label' => 'Messagerie interne (nouveaux messages)',
+            'hint' => 'Lorsqu’un autre participant écrit dans une conversation dont vous faites partie.',
+            'group' => 'Communauté',
+        ];
+
+        $items[] = [
             'key' => EmailEvents::NEW_COMMUNITY_MEMBER,
             'label' => 'Nouveaux membres (équipe)',
             'hint' => 'Résumé pour les responsables lorsqu’un membre rejoint la communauté ou confirme son inscription.',

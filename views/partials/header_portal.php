@@ -306,7 +306,12 @@ $defaultAccent = 'slate';
                                     } ?>
                                     <a href="<?= htmlspecialchars((string) ($link['href'] ?? '#')) ?>"
                                        class="block rounded-2xl border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-800 transition hover:border-slate-200 hover:bg-slate-50">
-                                        <?= htmlspecialchars((string) ($link['label'] ?? '')) ?>
+                                        <span class="inline-flex flex-wrap items-center gap-2">
+                                            <?= htmlspecialchars((string) ($link['label'] ?? '')) ?>
+                                            <?php if (!empty($link['badge'])): ?>
+                                                <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[9px] font-black tabular-nums text-white"><?= htmlspecialchars((string) $link['badge']) ?></span>
+                                            <?php endif; ?>
+                                        </span>
                                         <?php if (!empty($link['description'])): ?>
                                             <span class="mt-0.5 block text-xs font-normal leading-5 text-slate-500">
                                                 <?= htmlspecialchars((string) $link['description']) ?>

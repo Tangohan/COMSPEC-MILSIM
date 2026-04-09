@@ -232,6 +232,35 @@ final class EmailService
         );
     }
 
+    public function sendInterteamCooperationOtp(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $code,
+        int $ttlMinutes,
+        string $missionTitle,
+        int $tenantId,
+        ?string $sharingSummary = null
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::INTERTEAM_COOPERATION_OTP,
+            'interteam_consent_otp',
+            $to,
+            'Code de confirmation — coopération inter-unités — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'code' => $code,
+                'ttlMinutes' => $ttlMinutes,
+                'missionTitle' => $missionTitle,
+                'sharingSummary' => $sharingSummary ?? '',
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'interteam_consent_otp']
+        );
+    }
+
     public function sendCommunityInvitation(
         string $to,
         string $tenantName,
@@ -888,6 +917,35 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'attendance_rsvp_organizer', 'event_id' => $eventId]
+        );
+    }
+
+    public function sendTenantInternalMessageThread(
+        string $to,
+        string $recipientDisplayName,
+        string $tenantName,
+        string $senderLabel,
+        string $previewLine,
+        int $threadId,
+        int $tenantId
+    ): bool {
+        $subject = 'Nouveau message — ' . $tenantName;
+
+        return $this->sendTemplated(
+            EmailEvents::TENANT_INTERNAL_MESSAGE_THREAD,
+            'tenant_internal_message_thread',
+            $to,
+            $subject,
+            [
+                'displayName' => $recipientDisplayName,
+                'tenantName' => $tenantName,
+                'senderLabel' => $senderLabel,
+                'previewLine' => $previewLine,
+                'conversationUrl' => \url('messages/' . $threadId),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'tenant_internal_message', 'thread_id' => $threadId]
         );
     }
 }

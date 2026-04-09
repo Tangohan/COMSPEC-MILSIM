@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Serveur CERBERE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #1e3a8a;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+        .success {
+            background: #dcfce7;
+            border: 2px solid #16a34a;
+            color: #15803d;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+        .info-box {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .info-box h3 {
+            color: #374151;
+            margin-bottom: 10px;
+        }
+        .info-box ul {
+            list-style: none;
+        }
+        .info-box li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+            color: #6b7280;
+        }
+        .info-box li:last-child {
+            border-bottom: none;
+        }
+        .info-box li strong {
+            color: #1f2937;
+            display: inline-block;
+            width: 150px;
+        }
+        .next-steps {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .next-steps h3 {
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        .next-steps ol {
+            margin-left: 20px;
+            color: #1e40af;
+        }
+        .next-steps li {
+            margin: 5px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Serveur CERBERE Fonctionnel</h1>
+        
+        <div class="success">
+            🎉 Félicitations ! Le serveur web répond correctement.
+        </div>
+
+        <div class="info-box">
+            <h3>📊 Informations Serveur</h3>
+            <ul>
+                <li><strong>URL:</strong> <span id="url"></span></li>
+                <li><strong>Protocole:</strong> <span id="protocol"></span></li>
+                <li><strong>Hôte:</strong> <span id="host"></span></li>
+                <li><strong>Date:</strong> <span id="date"></span></li>
+            </ul>
+        </div>
+
+        <div class="next-steps">
+            <h3>🚀 Prochaines Étapes</h3>
+            <ol>
+                <li>Supprimez ce fichier <code>test-server.html</code></li>
+                <li>Uploadez le contenu de <code>frontend/cerbere-admin/dist/</code></li>
+                <li>Vérifiez que <code>index.html</code> est à la racine</li>
+                <li>Créez le fichier <code>.htaccess</code></li>
+                <li>Testez l'application complète</li>
+            </ol>
+        </div>
+
+        <div class="info-box">
+            <h3>📁 Structure Attendue</h3>
+            <ul>
+                <li>public_html/index.html</li>
+                <li>public_html/assets/</li>
+                <li>public_html/.htaccess</li>
+                <li>public_html/vite.svg</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            © 2026 CERBERE - Système de Gestion Militaire
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('url').textContent = window.location.href;
+        document.getElementById('protocol').textContent = window.location.protocol;
+        document.getElementById('host').textContent = window.location.host;
+        document.getElementById('date').textContent = new Date().toLocaleString('fr-FR');
+    </script>
+</body>
+</html>

@@ -63,6 +63,73 @@ class ForumCategoryRepository
         return $row ?: null;
     }
 
+    /** Racine forum (`parent_id` NULL) par slug exact. */
+    public function findRootBySlug(int $tenantId, string $slug): ?array
+    {
+        if ($slug === '') {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM forum_categories WHERE tenant_id = ? AND parent_id IS NULL AND slug = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
+     * Première racine « grand public » : de préférence slug general, sinon première racine hors organisation / modération / plateforme.
+     */
+    public function findPreferredGeneralRoot(int $tenantId): ?array
+    {
+        $roots = $this->listForTenant($tenantId);
+        $fallback = null;
+        foreach ($roots as $r) {
+            $scope = (string) ($r['scope'] ?? 'general');
+            if (in_array($scope, ['organization', 'moderation', 'platform'], true)) {
+                continue;
+            }
+            if (($r['slug'] ?? '') === 'general') {
+                return $r;
+            }
+            if ($fallback === null) {
+                $fallback = $r;
+            }
+        }
+
+        return $fallback;
+    }
+
+    /** Racine section organisation (forum v2), sans parent. */
+    public function findOrganizationRoot(int $tenantId): ?array
+    {
+        if (!$this->hasScopeColumn()) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM forum_categories WHERE tenant_id = ? AND parent_id IS NULL AND scope = 'organization' LIMIT 1"
+        );
+        $stmt->execute([$tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function findChildByParentAndSlug(int $tenantId, int $parentId, string $slug): ?array
+    {
+        if ($slug === '' || $parentId < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM forum_categories WHERE tenant_id = ? AND parent_id = ? AND slug = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $parentId, $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function getSubcategories(int $parentId, int $tenantId): array
     {
         $stmt = $this->pdo->prepare(

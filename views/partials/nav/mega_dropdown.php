@@ -13,9 +13,16 @@ if (!isset($currentPath)) {
 $variant = (string) ($item['variant'] ?? 'operations');
 $layoutClass = 'nav-mega-layout nav-mega-layout--' . preg_replace('/[^a-z0-9_-]/', '', $variant);
 $slots = navigation_group_sections_by_slot($item['sections'] ?? []);
+$orderedSections = array_merge($slots['primary'], $slots['center'], $slots['secondary']);
 $feat = is_array($item['featured'] ?? null) ? $item['featured'] : null;
+$hasFeatured = is_array($feat) && trim((string) ($feat['title'] ?? '')) !== '';
 
-$renderLinks = static function (array $section) use ($currentPath): void {
+$megaId = preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($item['id'] ?? 'nav-mega'));
+if ($megaId === '') {
+    $megaId = 'nav-mega';
+}
+
+$renderLinksFragment = static function (array $section) use ($currentPath): void {
     foreach ($section['links'] ?? [] as $link) {
         if (!is_array($link)) {
             continue;
@@ -26,8 +33,11 @@ $renderLinks = static function (array $section) use ($currentPath): void {
            class="nav-mega-link group/item flex items-start justify-between gap-2 rounded-xl px-2.5 py-2 sm:gap-3 sm:px-3 sm:py-2.5"
            data-active="<?= $isActive ?>">
             <div class="min-w-0">
-                <p class="text-[13px] font-bold leading-snug text-slate-950 sm:text-sm">
-                    <?= htmlspecialchars((string) ($link['label'] ?? '')) ?>
+                <p class="flex flex-wrap items-center gap-1.5 text-[13px] font-bold leading-snug text-slate-950 sm:text-sm">
+                    <span><?= htmlspecialchars((string) ($link['label'] ?? '')) ?></span>
+                    <?php if (!empty($link['badge'])): ?>
+                        <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[9px] font-black tabular-nums text-white"><?= htmlspecialchars((string) $link['badge']) ?></span>
+                    <?php endif; ?>
                 </p>
                 <?php if (!empty($link['description'])): ?>
                     <p class="mt-1 text-[11px] leading-snug text-slate-500 sm:text-xs sm:leading-5">
@@ -41,29 +51,6 @@ $renderLinks = static function (array $section) use ($currentPath): void {
         </a>
         <?php
     }
-};
-
-$renderSectionColumn = static function (array $sections, string $colClass) use ($renderLinks): void {
-    if ($sections === []) {
-        return;
-    }
-    ?>
-    <div class="<?= htmlspecialchars($colClass) ?>">
-        <?php foreach ($sections as $section): ?>
-            <?php if (!is_array($section)) {
-                continue;
-            } ?>
-            <div class="nav-mega-col border-b border-slate-200/80 p-4 last:border-b-0 sm:p-5">
-                <p class="mb-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:mb-3 sm:text-[11px]">
-                    <?= htmlspecialchars((string) ($section['title'] ?? '')) ?>
-                </p>
-                <div class="space-y-1">
-                    <?php $renderLinks($section); ?>
-                </div>
-            </div>
-        <?php endforeach; ?>
-    </div>
-    <?php
 };
 
 $renderFeatured = static function (?array $f): void {
@@ -141,22 +128,91 @@ $renderFeatured = static function (?array $f): void {
     <?php
 };
 
-$primary = $slots['primary'];
-$center = $slots['center'];
-$secondary = $slots['secondary'];
-
 ?>
 <div class="nav-mega-surface overflow-hidden rounded-[1.75rem] border border-slate-200/90">
-    <div class="<?= htmlspecialchars($layoutClass) ?>">
-        <div class="nav-mega-col nav-mega-col--muted border-b border-slate-200/80 lg:border-b-0 lg:border-r">
-            <?php $renderSectionColumn($primary, ''); ?>
+    <?php if ($orderedSections === []): ?>
+        <div class="<?= htmlspecialchars($layoutClass) ?> nav-mega-layout--featured-only">
+            <?php $renderFeatured($feat); ?>
         </div>
-        <div class="nav-mega-col border-b border-slate-200/80 lg:border-b-0 lg:border-r">
-            <?php $renderSectionColumn($center, ''); ?>
-            <?php if ($secondary !== []) {
-                $renderSectionColumn($secondary, '');
+    <?php else: ?>
+        <div class="<?= htmlspecialchars($layoutClass) ?> nav-mega-layout--drill<?= $hasFeatured ? '' : ' nav-mega-layout--drill-solo' ?>">
+            <div class="nav-mega-col nav-mega-col--muted border-b border-slate-200/80 lg:border-b-0 lg:border-r">
+                <div class="nav-mega-drill" data-nav-drill>
+                    <div class="nav-mega-drill__viewport">
+                        <div class="nav-mega-drill__pane nav-mega-drill__pane--root">
+                            <div class="p-4 sm:p-5">
+                                <p class="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:mb-3.5 sm:text-[11px]">
+                                    Parcourir par thème
+                                </p>
+                                <div class="space-y-1" role="list">
+                                    <?php foreach ($orderedSections as $si => $section): ?>
+                                        <?php
+                                        if (!is_array($section)) {
+                                            continue;
+                                        }
+                                        $secTitle = trim((string) ($section['title'] ?? ''));
+                                        if ($secTitle === '') {
+                                            $secTitle = 'Autres accès';
+                                        }
+                                        $tplId = $megaId . '-sec-' . (string) $si;
+                                        $btnId = $megaId . '-cat-' . (string) $si;
+                                        $linkCount = count($section['links'] ?? []);
+                                        $countLabel = $linkCount === 1 ? '1 accès' : $linkCount . ' accès';
+                                        ?>
+                                        <div role="listitem">
+                                            <button type="button"
+                                                    id="<?= htmlspecialchars($btnId) ?>"
+                                                    class="nav-mega-drill__category"
+                                                    data-nav-drill-target="<?= htmlspecialchars($tplId) ?>"
+                                                    data-nav-drill-label="<?= htmlspecialchars($secTitle) ?>"
+                                                    aria-expanded="false"
+                                                    aria-controls="<?= htmlspecialchars($megaId) ?>-drill-detail">
+                                                <span class="nav-mega-drill__category-text min-w-0">
+                                                    <span class="nav-mega-drill__category-title"><?= htmlspecialchars($secTitle) ?></span>
+                                                    <span class="nav-mega-drill__category-meta"><?= htmlspecialchars($countLabel) ?></span>
+                                                </span>
+                                                <svg class="nav-mega-drill__category-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M7.22 14.78a.75.75 0 010-1.06L10.94 10 7.22 6.28a.75.75 0 111.06-1.06l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06 0z" clip-rule="evenodd"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="nav-mega-drill__pane nav-mega-drill__pane--detail"
+                             aria-hidden="true"
+                             inert>
+                            <div class="p-4 sm:p-5">
+                                <button type="button" class="nav-mega-drill__back" data-nav-drill-back>
+                                    <svg class="nav-mega-drill__back-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M12.78 5.22a.75.75 0 010 1.06L9.06 10l3.72 3.72a.75.75 0 11-1.06 1.06l-4.25-4.25a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 0z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <span>Retour aux thèmes</span>
+                                </button>
+                                <h2 class="nav-mega-drill__detail-heading mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:text-[11px]"
+                                    id="<?= htmlspecialchars($megaId) ?>-drill-detail"
+                                    data-nav-drill-detail-title></h2>
+                                <div class="nav-mega-drill__detail-body mt-2 space-y-1 sm:mt-2.5" data-nav-drill-detail-body></div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php foreach ($orderedSections as $si => $section): ?>
+                        <?php
+                        if (!is_array($section)) {
+                            continue;
+                        }
+                        $tplId = $megaId . '-sec-' . (string) $si;
+                        ?>
+                        <template id="<?= htmlspecialchars($tplId) ?>">
+                            <?php $renderLinksFragment($section); ?>
+                        </template>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php if ($hasFeatured) {
+                $renderFeatured($feat);
             } ?>
         </div>
-        <?php $renderFeatured($feat); ?>
-    </div>
+    <?php endif; ?>
 </div>

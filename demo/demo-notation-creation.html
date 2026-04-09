@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIA CERBERE | Protocole de Notation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cerbere-blue: #2563eb;
+            --cerbere-bg: #001529;
+        }
+
+        body {
+            background-color: var(--cerbere-bg);
+            color: #cbd5e1;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            cursor: crosshair;
+        }
+
+        /* Texture de grain */
+        .grain {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 99;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Mouse Halo */
+        #halo {
+            position: fixed;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(37, 99, 235, 0.4);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .font-mono-tech {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Animation Scanline */
+        .scanline {
+            width: 100%;
+            height: 2px;
+            z-index: 100;
+            background: rgba(37, 99, 235, 0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            animation: scanline 8s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 0;
+            background: var(--cerbere-blue);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--cerbere-blue);
+        }
+    </style>
+</head>
+<body class="cerbere-grainy">
+
+    <div class="grain"></div>
+    <div id="halo"></div>
+    <div class="scanline"></div>
+
+    <div class="relative z-10 min-h-screen p-8">
+        
+        <header class="max-w-6xl mx-auto mb-12 flex justify-between items-end border-b border-slate-800/60 pb-10">
+            <div class="space-y-1">
+                <div class="flex items-center gap-3">
+                    <span class="px-2 py-0.5 bg-blue-600/10 border border-blue-500/30 text-[10px] font-black text-blue-500 tracking-widest uppercase">Secret Défense</span>
+                    <span class="text-[10px] text-slate-500 font-mono-tech">SIA-NODE-402</span>
+                </div>
+                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-[0.4em] pt-2">Système de Notation Opérationnelle</h2>
+                <h1 class="text-5xl font-black text-white italic uppercase tracking-tighter">
+                    Dossier <span class="text-blue-600">Alpha</span>-2026
+                </h1>
+            </div>
+            <div class="text-right font-mono-tech">
+                <p class="text-[10px] text-slate-500 uppercase tracking-widest">Horodatage Système</p>
+                <p class="text-sm text-blue-400 font-bold"><?= date('d.m.Y / H:i') ?></p>
+            </div>
+        </header>
+
+        <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
+            
+            <aside class="space-y-6">
+                <div class="glass-card p-8 rounded-2xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-blue-600/5 -rotate-45 translate-x-12 -translate-y-12"></div>
+                    
+                    <div class="flex flex-col items-center text-center mb-8">
+                        <div class="relative group">
+                            <div class="absolute -inset-1 bg-blue-600 rounded-none opacity-20 blur group-hover:opacity-40 transition"></div>
+                            <div class="relative w-24 h-24 bg-slate-900 border-2 border-slate-700 flex items-center justify-center font-black text-4xl italic text-white mb-4">
+                                <?= substr($user->nom ?? 'U', 0, 1) ?>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-black text-white uppercase tracking-tight italic"><?= $user->nom ?? 'NOM_INCONNU' ?></h3>
+                        <p class="text-blue-500 text-xs font-black uppercase tracking-widest mt-1"><?= $user->grade_label ?? 'GRADE_NON_DÉFINI' ?></p>
+                    </div>
+                    
+                    <div class="space-y-5 pt-6 border-t border-slate-800/50">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Unité</span>
+                            <span class="text-xs font-mono-tech text-slate-300"><?= $user->unite_nom ?? 'HORS-CADRE' ?></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Contrat</span>
+                            <span class="px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-500 font-bold uppercase"><?= $user->type_contrat ?? 'N/A' ?></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6 rounded-xl border-dashed border-slate-800">
+                    <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-blue-600 animate-ping"></span> Logs d'activité récents
+                    </h4>
+                    <ul class="space-y-3 font-mono-tech text-[10px] text-slate-500">
+                        <li class="flex gap-2"><span>[OK]</span> Authentification réussie</li>
+                        <li class="flex gap-2"><span>[!]</span> Accès mode rédaction</li>
+                    </ul>
+                </div>
+            </aside>
+
+            <section class="lg:col-span-2">
+                <form action="/api/notations/save" method="POST" class="space-y-8">
+                    
+                    <div class="glass-card p-10 rounded-2xl relative">
+                        <div class="flex flex-col md:flex-row justify-between md:items-center gap-8">
+                            <div>
+                                <h3 class="text-white font-black uppercase italic tracking-tighter text-2xl">Évaluation Globale</h3>
+                                <p class="text-slate-500 text-xs mt-1">Indice de performance brute basé sur le référentiel.</p>
+                            </div>
+                            <div class="flex items-center gap-4 bg-slate-950 p-2 rounded-lg border border-slate-800">
+                                <input type="number" step="0.5" max="20" min="0" name="note_globale" 
+                                       class="bg-blue-600 text-white text-4xl font-black w-24 h-20 text-center outline-none ring-offset-4 ring-offset-slate-950 focus:ring-2 focus:ring-blue-600 transition-all"
+                                       value="15.0">
+                                <span class="text-2xl font-black text-slate-700 pr-4">/ 20</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-12 space-y-6">
+                            <div class="group">
+                                <div class="flex justify-between mb-3">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Aptitude au commandement</label>
+                                    <span class="text-blue-500 font-mono-tech text-xs">VAL_AUTO</span>
+                                </div>
+                                <input type="range" class="w-full h-1.5 bg-slate-800 appearance-none cursor-pointer outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-10 rounded-2xl">
+                        <label class="block text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-6">Observations Littérales du Commandement</label>
+                        <textarea 
+                            name="appreciation_generale" 
+                            rows="10" 
+                            class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-6 text-slate-200 font-mono-tech text-sm focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all resize-none"
+                            placeholder="Entrez l'analyse comportementale et professionnelle..."></textarea>
+                        
+                        <div class="mt-6 p-4 bg-blue-600/5 border border-blue-600/10 rounded-lg flex gap-4">
+                            <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <p class="text-[10px] text-slate-400 leading-relaxed italic">
+                                <strong>Note technique :</strong> Les données saisies seront immédiatement archivées dans le registre matricule et envoyées pour validation à l'échelon supérieur (N+2).
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <button type="submit" class="flex-[2] bg-blue-600 hover:bg-blue-500 text-white font-black py-6 uppercase tracking-widest italic text-sm transition-all shadow-[0_10px_30px_rgba(37,99,235,0.2)] hover:-translate-y-1">
+                            Homologuer et Transmettre
+                        </button>
+                        <button type="button" class="flex-1 border border-slate-700 hover:bg-slate-800 text-slate-400 font-black py-6 uppercase tracking-widest text-xs transition-all">
+                            Archive Temporaire
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const halo = document.getElementById('halo');
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            halo.style.left = x + 'px';
+            halo.style.top = y + 'px';
+        });
+
+        // Feedback visuel sur le bouton
+        const mainBtn = document.querySelector('button[type="submit"]');
+        mainBtn.addEventListener('mouseenter', () => {
+            halo.style.width = '1200px';
+            halo.style.height = '1200px';
+        });
+        mainBtn.addEventListener('mouseleave', () => {
+            halo.style.width = '800px';
+            halo.style.height = '800px';
+        });
+    </script>
+</body>
+</html>

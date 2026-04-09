@@ -42,10 +42,13 @@ class TrainingCertificateService
         $existing = $this->certificateRepository->findByEnrollmentId($enrollmentId);
         if ($existing && ($existing['status'] ?? '') === 'valid') {
             $eid = (int) ($existing['id'] ?? 0);
-            if ($eid > 0 && empty($existing['pdf_path'])) {
-                $this->pdfService->generateAndStore($eid, $tenantId);
+            if ($eid > 0) {
+                $rel = trim((string) ($existing['pdf_path'] ?? ''));
+                if ($rel === '' || !is_file(base_path($rel))) {
+                    $this->generatePdfOrLogFailure($eid, $tenantId);
 
-                return $this->certificateRepository->findById($eid, $tenantId);
+                    return $this->certificateRepository->findById($eid, $tenantId);
+                }
             }
 
             return $existing;
@@ -71,7 +74,7 @@ class TrainingCertificateService
             'final_score' => $finalScore,
             'status' => 'valid',
         ]);
-        $this->pdfService->generateAndStore($id, $tenantId);
+        $this->generatePdfOrLogFailure($id, $tenantId);
         $cert = $this->certificateRepository->findById($id, $tenantId);
         $this->auditService->logCertificateIssued($tenantId, $userId, $id, [
             'certificate_number' => $certificateNumber,
@@ -113,5 +116,67 @@ class TrainingCertificateService
     public function getById(int $id, ?int $tenantId = null): ?array
     {
         return $this->certificateRepository->findById($id, $tenantId);
+    }
+
+    /**
+     * Tente de produire le PDF pour une attestation valide dont le fichier manque ou est absent du disque.
+     */
+    public function ensurePdfForCertificate(int $certificateId, int $tenantId): ?array
+    {
+        $cert = $this->certificateRepository->findById($certificateId, $tenantId);
+        if (!$cert || ($cert['status'] ?? '') !== 'valid') {
+            return null;
+        }
+        $rel = trim((string) ($cert['pdf_path'] ?? ''));
+        if ($rel !== '' && is_file(base_path($rel))) {
+            return $cert;
+        }
+        $this->generatePdfOrLogFailure($certificateId, $tenantId);
+
+        return $this->certificateRepository->findById($certificateId, $tenantId);
+    }
+
+    /**
+     * Régénère les PDF manquants pour le tenant (ordre chronologique, plafonné).
+     *
+     * @return int nombre de PDF effectivement créés
+     */
+    public function backfillPendingPdfDocuments(int $tenantId, int $max = 50): int
+    {
+        if (!class_exists(\Dompdf\Dompdf::class)) {
+            return 0;
+        }
+        $max = max(1, min(100, $max));
+        $rows = $this->certificateRepository->listForTenantAdmin($tenantId, 300);
+        $done = 0;
+        foreach ($rows as $row) {
+            if ($done >= $max) {
+                break;
+            }
+            if (($row['status'] ?? '') !== 'valid') {
+                continue;
+            }
+            $rel = trim((string) ($row['pdf_path'] ?? ''));
+            if ($rel !== '' && is_file(base_path($rel))) {
+                continue;
+            }
+            if ($this->pdfService->generateAndStore((int) $row['id'], $tenantId) !== null) {
+                $done++;
+            }
+        }
+
+        return $done;
+    }
+
+    private function generatePdfOrLogFailure(int $certificateId, int $tenantId): void
+    {
+        if (!class_exists(\Dompdf\Dompdf::class)) {
+            error_log('[training_certificate] Dompdf absent : impossible de générer le PDF (certificat id=' . $certificateId . ', tenant=' . $tenantId . ').');
+
+            return;
+        }
+        if ($this->pdfService->generateAndStore($certificateId, $tenantId) === null) {
+            error_log('[training_certificate] Échec génération PDF (certificat id=' . $certificateId . ', tenant=' . $tenantId . ').');
+        }
     }
 }

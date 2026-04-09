@@ -271,6 +271,7 @@ final class TenantRolePermissionPresetService
                 $this->resolveSlugs('member'),
                 [
                     'admin.organization', 'admin.backoffice.view', 'admin.members.view', 'admin.members.manage',
+                    'admin.members.moderate',
                     'invitations.send', 'documents.view', 'documents.upload', 'documents.metadata.update',
                     'forum.moderate_organization', 'dashboard.pins.manage',
                     'personnel.profile.view', 'personnel.profile.update', 'personnel.assignments.manage',
@@ -288,7 +289,8 @@ final class TenantRolePermissionPresetService
                 $this->resolveSlugs('hr_recruitment'),
                 [
                     'invitations.send', 'admin.members.view', 'personnel.profile.view',
-                    'organization.recruitment.manage', 'organization.effectifs.hub.view',
+                    'organization.recruitment.manage', 'organization.recruitment.openings.manage',
+                    'organization.effectifs.hub.view',
                 ]
             )));
         }
@@ -302,12 +304,14 @@ final class TenantRolePermissionPresetService
             ],
             'hr_recruitment' => [
                 'admin.organization', 'admin.backoffice.view', 'admin.members.view', 'admin.members.manage', 'admin.members.invite',
+                'admin.members.moderate',
                 'invitations.send',
                 'dashboard.pins.manage',
                 'personnel.profile.view', 'personnel.profile.update', 'personnel.sensitive.view',
                 'personnel.grades.manage', 'personnel.assignments.manage', 'personnel.status.manage',
                 'personnel.badges.manage', 'personnel.directory.export',
-                'organization.recruitment.manage', 'organization.effectifs.hub.view', 'organization.job_roles.referential.manage',
+                'organization.recruitment.manage', 'organization.recruitment.openings.manage',
+                'organization.effectifs.hub.view', 'organization.job_roles.referential.manage',
                 'organization.orbat.view',
             ],
             'doc_curator' => [

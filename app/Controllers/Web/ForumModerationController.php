@@ -317,11 +317,8 @@ class ForumModerationController
         if (!function_exists('can')) {
             return false;
         }
-        $gate = \App\Core\Gate::getInstance();
 
-        return can('admin.members.moderate')
-            || $gate->allows('admin.organization')
-            || $gate->allows('admin.access');
+        return can('admin.members.moderate');
     }
 
     private function resolveTopicIdFromReport(array $report, int $tenantId): int

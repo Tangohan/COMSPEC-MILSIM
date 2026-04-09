@@ -9,7 +9,7 @@ $platformRows = $adminSettingsPlatformRows ?? [];
 $envLabel = $adminSettingsEnvLabel ?? '—';
 $envRaw = (string) ($adminSettingsEnvRaw ?? '');
 ?>
-<div class="bg-slate-50 min-h-[calc(100vh-3.5rem)]">
+<div class="min-h-0 flex-1 bg-slate-50">
     <div class="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8">
 
         <header class="relative overflow-hidden rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/90 via-white to-slate-50 shadow-sm">

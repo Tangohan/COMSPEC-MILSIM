@@ -35,6 +35,43 @@ function navigation_infer_active_match(string $routePath): string
 }
 
 /**
+ * Compteur de conversations internes non lues (messagerie portail), pour badge menu.
+ */
+function navigation_unread_internal_messages_count(): int
+{
+    if (!(\App\Core\Session::get('user_id'))) {
+        return 0;
+    }
+    $tenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+    $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
+    if ($tenantId < 1 || $userId < 1) {
+        return 0;
+    }
+    try {
+        return \App\Core\Container::get(\App\Repositories\TenantMessageRepository::class)->unreadCountForUser($tenantId, $userId);
+    } catch (\Throwable) {
+        return 0;
+    }
+}
+
+/**
+ * @param array{label: string, href: string, path: string, active_match: string, description?: string|null, badge?: string} $resolved
+ * @return array{label: string, href: string, path: string, active_match: string, description?: string|null, badge?: string}
+ */
+function navigation_apply_internal_messages_badge(array $resolved): array
+{
+    if (($resolved['path'] ?? '') !== '/messages') {
+        return $resolved;
+    }
+    $n = navigation_unread_internal_messages_count();
+    if ($n > 0) {
+        $resolved['badge'] = (string) min(99, $n);
+    }
+
+    return $resolved;
+}
+
+/**
  * @param array{permission?: string, any_permissions?: string[], all_permissions?: string[]} $item
  */
 function navigation_item_allowed(array $item): bool
@@ -97,13 +134,15 @@ function navigation_resolve_link(array $link): ?array
     $routePath = navigation_route_path($pathFragment);
     $match = $link['active_match'] ?? navigation_infer_active_match($routePath);
 
-    return [
+    $out = [
         'label' => (string) ($link['label'] ?? ''),
         'href' => url($pathFragment),
         'path' => $routePath,
         'active_match' => $match,
         'description' => isset($link['description']) ? (string) $link['description'] : null,
     ];
+
+    return navigation_apply_internal_messages_badge($out);
 }
 
 function navigation_normalize_accent(?string $accent): string
@@ -238,6 +277,91 @@ function navigation_image_file_exists(string $relativePath): bool
     $relativePath = ltrim($relativePath, '/');
 
     return is_file(base_path('public/' . $relativePath));
+}
+
+/**
+ * Complète le méga-menu Opérations avec les rubriques et sous-rubriques forum visibles pour l’utilisateur.
+ *
+ * @param array<string, mixed> $megaItem
+ */
+function navigation_append_forum_rubric_links(array &$megaItem): void
+{
+    if (($megaItem['variant'] ?? '') !== 'operations') {
+        return;
+    }
+    if (!\App\Core\Gate::getInstance()->allows('forum.view')) {
+        return;
+    }
+    $tenantId = (int) \App\Core\Session::get('tenant_id');
+    $userId = (int) \App\Core\Session::get('user_id');
+    if ($tenantId < 1 || $userId < 1) {
+        return;
+    }
+    if (!function_exists('forum_filter_category_tree_for_user')) {
+        return;
+    }
+
+    try {
+        $repo = \App\Core\Container::get(\App\Repositories\ForumCategoryRepository::class);
+        $tree = $repo->listForTenantWithChildren($tenantId);
+        $tree = forum_filter_category_tree_for_user($tree, $userId);
+    } catch (\Throwable) {
+        return;
+    }
+
+    $resolved = [];
+    $max = 28;
+    $n = 0;
+    foreach ($tree as $root) {
+        if ($n >= $max) {
+            break;
+        }
+        $slug = trim((string) ($root['slug'] ?? ''));
+        if ($slug !== '') {
+            $link = navigation_resolve_link([
+                'label' => (string) ($root['name'] ?? 'Rubrique'),
+                'path' => 'forum/category/' . $slug,
+                'permission' => 'forum.view',
+            ]);
+            if ($link !== null) {
+                $resolved[] = $link;
+                $n++;
+            }
+        }
+        $parentName = trim((string) ($root['name'] ?? ''));
+        foreach ($root['children'] ?? [] as $ch) {
+            if ($n >= $max) {
+                break;
+            }
+            $cs = trim((string) ($ch['slug'] ?? ''));
+            if ($cs === '') {
+                continue;
+            }
+            $opts = [
+                'label' => (string) ($ch['name'] ?? 'Sous-rubrique'),
+                'path' => 'forum/category/' . $cs,
+                'permission' => 'forum.view',
+            ];
+            if ($parentName !== '') {
+                $opts['description'] = 'Rubrique « ' . $parentName . ' »';
+            }
+            $link = navigation_resolve_link($opts);
+            if ($link !== null) {
+                $resolved[] = $link;
+                $n++;
+            }
+        }
+    }
+
+    if ($resolved === []) {
+        return;
+    }
+
+    $megaItem['sections'][] = [
+        'title' => 'Rubriques du forum',
+        'slot' => 'secondary',
+        'links' => $resolved,
+    ];
 }
 
 /**
@@ -376,6 +500,13 @@ function build_navigation_menu(): array
             $menuOut[] = $megaItem;
         }
     }
+
+    foreach ($menuOut as &$builtItem) {
+        if (($builtItem['type'] ?? '') === 'mega' && ($builtItem['variant'] ?? '') === 'operations') {
+            navigation_append_forum_rubric_links($builtItem);
+        }
+    }
+    unset($builtItem);
 
     return [
         'brand' => $builtBrand,

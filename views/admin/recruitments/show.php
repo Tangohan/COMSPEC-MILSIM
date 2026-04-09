@@ -18,6 +18,58 @@ $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
 $membershipRepairHint = $membershipRepairHint ?? null;
 
+$linkedRo = is_array($linkedRecruitmentOpening ?? null) ? $linkedRecruitmentOpening : null;
+$submitterId = (int) ($e['submitter_user_id'] ?? 0);
+$isInternalOpeningApplication = $submitterId > 0 && $linkedRo !== null;
+
+$sharedFields = [];
+$sfRaw = $e['shared_fields'] ?? null;
+if (is_string($sfRaw) && $sfRaw !== '') {
+    $decodedSf = json_decode($sfRaw, true);
+    $sharedFields = is_array($decodedSf) ? $decodedSf : [];
+} elseif (is_array($sfRaw)) {
+    $sharedFields = $sfRaw;
+}
+
+$transmissionLines = [];
+if ($sharedFields !== []) {
+    if (!empty($sharedFields['share_name'])) {
+        $transmissionLines[] = 'Nom issu du profil portail';
+    }
+    if (!empty($sharedFields['share_email'])) {
+        $transmissionLines[] = 'Adresse e-mail de connexion';
+    }
+    if (!empty($sharedFields['share_callsign'])) {
+        $transmissionLines[] = 'Indicatif enregistré sur le profil';
+    }
+    $rpS = $sharedFields['rp_shares'] ?? null;
+    if (is_array($rpS)) {
+        $rpShareLabels = [
+            'character_name' => 'Nom du personnage',
+            'bio' => 'Biographie',
+            'cv' => 'Parcours (CV)',
+            'image_url' => 'Portrait (fichier)',
+            'image_external_url' => 'Lien vers un portrait',
+            'admin_notes' => 'Notes du profil',
+            'availability' => 'Synthèse des disponibilités',
+        ];
+        foreach ($rpShareLabels as $rk => $rlab) {
+            if (!empty($rpS[$rk])) {
+                $transmissionLines[] = $rlab;
+            }
+        }
+    }
+    if (!empty($sharedFields['include_milsim_from_preset'])) {
+        $transmissionLines[] = 'Réponses techniques du modèle (matériel, créneaux, motivation enregistrée dans le profil, etc.)';
+    }
+    $fm = $sharedFields['form_mode'] ?? null;
+    if ($fm === 'compact') {
+        $transmissionLines[] = 'Parcours de dépôt : formulaire court (avis ciblé)';
+    } elseif ($fm === 'full') {
+        $transmissionLines[] = 'Parcours de dépôt : questionnaire complet';
+    }
+}
+
 $statusBand = match ($statusRaw) {
     'submitted' => 'from-amber-500 to-amber-600',
     'reviewed' => 'from-emerald-600 to-emerald-700',
@@ -73,6 +125,12 @@ $statusBand = match ($statusRaw) {
                     <h2 class="text-[10px] font-bold uppercase tracking-[0.25em] text-stone-500">Rubrique 1 — Identité &amp; réception</h2>
                 </div>
                 <div class="divide-y divide-stone-100">
+                    <?php if ($isInternalOpeningApplication): ?>
+                    <div class="px-6 py-4 bg-violet-50/90 border-b border-violet-100">
+                        <p class="text-xs font-bold uppercase tracking-wide text-violet-900">Candidature interne ciblée</p>
+                        <p class="mt-1 text-sm leading-relaxed text-violet-950">Membre déjà rattaché à cette communauté, dossier positionné sur un avis de poste publié ici.</p>
+                    </div>
+                    <?php endif; ?>
                     <div class="px-6 py-4">
                         <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Nom complet</p>
                         <p class="mt-1 text-lg font-semibold text-stone-900"><?= htmlspecialchars(trim(($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? '')) ?: '—') ?></p>
@@ -90,14 +148,31 @@ $statusBand = match ($statusRaw) {
                     <div class="px-6 py-4">
                         <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Compte portail</p>
                         <div class="mt-1">
-                            <?php if (!empty($e['submitter_user_id'])): ?>
-                                <a href="<?= htmlspecialchars(url('personnel/' . (int) $e['submitter_user_id'])) ?>" class="font-semibold text-[#1c4d6e] underline decoration-[#1c4d6e]/30 underline-offset-2 hover:decoration-[#1c4d6e]">Ouvrir la fiche membre liée</a>
-                                <span class="mt-1 block text-xs text-stone-500">Canal de soumission : <?= htmlspecialchars((string) ($e['submitted_via'] ?? '—')) ?></span>
+                            <?php if ($submitterId > 0): ?>
+                                <a href="<?= htmlspecialchars(url('personnel/' . $submitterId)) ?>" class="font-semibold text-[#1c4d6e] underline decoration-[#1c4d6e]/30 underline-offset-2 hover:decoration-[#1c4d6e]">Ouvrir la fiche membre liée</a>
+                                <?php if ($isInternalOpeningApplication): ?>
+                                    <p class="mt-2 text-sm text-stone-700 leading-relaxed">Compte membre de la communauté — candidature associée à un avis interne (voir ci-dessous).</p>
+                                <?php else: ?>
+                                    <p class="mt-2 text-sm text-stone-600 leading-relaxed">Soumission avec compte — aucun avis de poste précis au dépôt.</p>
+                                <?php endif; ?>
+                                <span class="mt-2 block text-xs text-stone-500">Canal de soumission : <?= htmlspecialchars((string) ($e['submitted_via'] ?? '—')) ?></span>
+                            <?php elseif ($linkedRo !== null): ?>
+                                <span class="text-stone-700">Candidature reçue sans compte au moment du dépôt — dossier relié à un avis de poste.</span>
                             <?php else: ?>
                                 <span class="text-stone-500">Candidature invitée (sans compte au dépôt)</span>
                             <?php endif; ?>
                         </div>
                     </div>
+                    <?php if ($transmissionLines !== []): ?>
+                    <div class="px-6 py-4 bg-[#faf8f3]">
+                        <p class="text-xs font-bold uppercase tracking-wide text-stone-600">Éléments transmis par le candidat</p>
+                        <ul class="mt-2 list-disc pl-5 text-sm text-stone-800 space-y-1">
+                            <?php foreach ($transmissionLines as $line): ?>
+                                <li><?= htmlspecialchars($line, ENT_QUOTES, 'UTF-8') ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <?php endif; ?>
                     <?php if (!empty($e['reviewed_at']) || !empty($e['reviewer_comment']) || !empty($e['reviewed_by'])): ?>
                     <div class="border-t border-stone-200 bg-[#faf8f3]/60 px-6 py-4">
                         <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Instruction du dossier</p>
@@ -118,6 +193,22 @@ $statusBand = match ($statusRaw) {
                     <div class="px-6 py-4">
                         <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Modèle de formulaire utilisé</p>
                         <p class="mt-1 text-stone-700">Référence interne n°<?= (int) $e['recruitment_preset_id'] ?></p>
+                    </div>
+                    <?php endif; ?>
+                    <?php
+                    $cslug = trim((string) ($communitySlug ?? ''));
+                    $avisSlug = $linkedRo ? trim((string) ($linkedRo['public_page_slug'] ?? '')) : '';
+                    ?>
+                    <?php if ($linkedRo !== null): ?>
+                    <div class="px-6 py-4 bg-sky-50/50">
+                        <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Avis de poste associé</p>
+                        <p class="mt-1 font-semibold text-stone-900"><?= htmlspecialchars((string) ($linkedRo['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php if (trim((string) ($linkedRo['reference_public'] ?? '')) !== ''): ?>
+                            <p class="mt-1 text-sm text-stone-600">Référence affichée : <?= htmlspecialchars((string) $linkedRo['reference_public'], ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php endif; ?>
+                        <?php if ($cslug !== '' && $avisSlug !== ''): ?>
+                            <a href="<?= htmlspecialchars(url('c/' . rawurlencode($cslug) . '/avis/' . rawurlencode($avisSlug)), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 inline-block text-sm font-semibold text-sky-800 underline hover:text-sky-950" target="_blank" rel="noopener">Ouvrir la fiche publique</a>
+                        <?php endif; ?>
                     </div>
                     <?php endif; ?>
                 </div>

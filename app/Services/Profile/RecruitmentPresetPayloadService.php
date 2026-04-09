@@ -248,35 +248,74 @@ final class RecruitmentPresetPayloadService
     }
 
     /**
+     * Clés de partage RP (cases formulaire) — alignées sur buildRpSnapshotForEnlistment.
+     *
+     * @return list<string>
+     */
+    public static function rpShareSelectionKeys(): array
+    {
+        return [
+            'character_name',
+            'bio',
+            'cv',
+            'image_url',
+            'image_external_url',
+            'admin_notes',
+            'availability',
+        ];
+    }
+
+    /**
+     * @param array<string, bool|int|string> $raw
+     * @return array<string, bool>
+     */
+    public function normalizeRpShareSelections(array $raw): array
+    {
+        $out = [];
+        foreach (self::rpShareSelectionKeys() as $k) {
+            $out[$k] = !empty($raw[$k]);
+        }
+
+        return $out;
+    }
+
+    /**
      * Fusionne un preset normalisé dans le payload d'enlistment (POST / preset).
      *
      * @param array<string, mixed> $presetPayload
      * @param array<string, mixed> $enlistmentPayload
+     * @param array<string, mixed>|null $shareOptions null = comportement historique (tout fusionner)
      */
-    public function mergePresetIntoEnlistmentPayload(array $presetPayload, array &$enlistmentPayload): void
+    public function mergePresetIntoEnlistmentPayload(array $presetPayload, array &$enlistmentPayload, ?array $shareOptions = null): void
     {
         $p = $this->normalizeDecodedPayload($presetPayload);
         $derived = $this->deriveAvailabilityStrings($p);
 
-        $stringKeys = [
-            'timezone', 'system_config', 'microphone_quality', 'past_milsim_experience', 'ace_acre_level',
-            'motivation_why_join', 'motivation_accountability', 'commitment_effort', 'availability_wed_sat',
-        ];
-        foreach ($stringKeys as $k) {
-            if (isset($p[$k]) && trim((string) $p[$k]) !== '') {
-                $enlistmentPayload[$k] = trim((string) $p[$k]);
+        $includeMilsim = $shareOptions === null ? true : (bool) ($shareOptions['include_milsim_from_preset'] ?? true);
+        /** @var array<string, bool>|null $rpShares null = tout inclure dans les notes RP */
+        $rpShares = $shareOptions['rp_shares'] ?? null;
+
+        if ($includeMilsim) {
+            $stringKeys = [
+                'timezone', 'system_config', 'microphone_quality', 'past_milsim_experience', 'ace_acre_level',
+                'motivation_why_join', 'motivation_accountability', 'commitment_effort', 'availability_wed_sat',
+            ];
+            foreach ($stringKeys as $k) {
+                if (isset($p[$k]) && trim((string) $p[$k]) !== '') {
+                    $enlistmentPayload[$k] = trim((string) $p[$k]);
+                }
             }
-        }
 
-        if (!empty($p['age']) && ctype_digit((string) $p['age'])) {
-            $enlistmentPayload['age'] = (int) $p['age'];
-        }
+            if (!empty($p['age']) && ctype_digit((string) $p['age'])) {
+                $enlistmentPayload['age'] = (int) $p['age'];
+            }
 
-        if ($derived['availability'] !== '') {
-            $enlistmentPayload['availability'] = $derived['availability'];
-        }
-        if ($derived['weekly_availability'] !== '') {
-            $enlistmentPayload['weekly_availability'] = $derived['weekly_availability'];
+            if ($derived['availability'] !== '') {
+                $enlistmentPayload['availability'] = $derived['availability'];
+            }
+            if ($derived['weekly_availability'] !== '') {
+                $enlistmentPayload['weekly_availability'] = $derived['weekly_availability'];
+            }
         }
 
         $notesParts = [];
@@ -288,22 +327,29 @@ final class RecruitmentPresetPayloadService
         $ext = trim((string) ($rp['image_external_url'] ?? ''));
         $adm = trim((string) ($p['admin_notes'] ?? ''));
 
-        if ($cn !== '') {
+        $allowChar = $rpShares === null || !empty($rpShares['character_name']);
+        $allowBio = $rpShares === null || !empty($rpShares['bio']);
+        $allowCv = $rpShares === null || !empty($rpShares['cv']);
+        $allowImg = $rpShares === null || !empty($rpShares['image_url']);
+        $allowExt = $rpShares === null || !empty($rpShares['image_external_url']);
+        $allowAdm = $rpShares === null || !empty($rpShares['admin_notes']);
+
+        if ($allowChar && $cn !== '') {
             $notesParts[] = "— Personnage RP —\nNom : " . $cn;
         }
-        if ($bio !== '') {
+        if ($allowBio && $bio !== '') {
             $notesParts[] = "Bio :\n" . $bio;
         }
-        if ($cv !== '') {
+        if ($allowCv && $cv !== '') {
             $notesParts[] = "CV / historique :\n" . $cv;
         }
-        if ($img !== '') {
+        if ($allowImg && $img !== '') {
             $notesParts[] = 'Portrait (fichier) : ' . $img;
         }
-        if ($ext !== '') {
+        if ($allowExt && $ext !== '') {
             $notesParts[] = 'Portrait (lien) : ' . $ext;
         }
-        if ($adm !== '') {
+        if ($allowAdm && $adm !== '') {
             $notesParts[] = "— Notes (candidat) —\n" . $adm;
         }
         if ($notesParts !== []) {
@@ -319,12 +365,12 @@ final class RecruitmentPresetPayloadService
      * @param array<string, mixed> $presetPayload
      * @return array<string, mixed>
      */
-    public function buildRpSnapshotForEnlistment(array $presetPayload): array
+    public function buildRpSnapshotForEnlistment(array $presetPayload, ?array $rpShares = null): array
     {
         $p = $this->normalizeDecodedPayload($presetPayload);
         $rp = is_array($p['rp'] ?? null) ? $p['rp'] : [];
 
-        return [
+        $snap = [
             'payload_version' => $p['payload_version'] ?? self::PAYLOAD_VERSION,
             'character_name' => $rp['character_name'] ?? '',
             'bio' => $rp['bio'] ?? '',
@@ -335,6 +381,90 @@ final class RecruitmentPresetPayloadService
             'availability' => $p['availability'] ?? [],
             'derived_availability' => $this->deriveAvailabilityStrings($p),
         ];
+
+        if ($rpShares === null) {
+            return $snap;
+        }
+
+        return $this->filterRpSnapshotByShares($snap, $rpShares);
+    }
+
+    /**
+     * @param array<string, mixed> $snapshot
+     * @param array<string, bool> $rpShares
+     * @return array<string, mixed>
+     */
+    public function filterRpSnapshotByShares(array $snapshot, array $rpShares): array
+    {
+        $out = $snapshot;
+        if (empty($rpShares['character_name'])) {
+            $out['character_name'] = '';
+        }
+        if (empty($rpShares['bio'])) {
+            $out['bio'] = '';
+        }
+        if (empty($rpShares['cv'])) {
+            $out['cv'] = '';
+        }
+        if (empty($rpShares['image_url'])) {
+            $out['image_url'] = '';
+        }
+        if (empty($rpShares['image_external_url'])) {
+            $out['image_external_url'] = '';
+        }
+        if (empty($rpShares['admin_notes'])) {
+            $out['admin_notes'] = '';
+        }
+        if (empty($rpShares['availability'])) {
+            $out['availability'] = [];
+            $out['derived_availability'] = ['availability' => '', 'weekly_availability' => ''];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, bool> $rpShares
+     */
+    public function snapshotHasAnyRpContent(array $snapshot, array $rpShares): bool
+    {
+        foreach (self::rpShareSelectionKeys() as $k) {
+            if (empty($rpShares[$k])) {
+                continue;
+            }
+            if ($k === 'availability') {
+                $d = $snapshot['derived_availability'] ?? [];
+                if (is_array($d) && (trim((string) ($d['availability'] ?? '')) !== '' || trim((string) ($d['weekly_availability'] ?? '')) !== '')) {
+                    return true;
+                }
+                $av = $snapshot['availability'] ?? [];
+                if (is_array($av) && $av !== []) {
+                    return true;
+                }
+
+                continue;
+            }
+            if (trim((string) ($snapshot[$k] ?? '')) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Indique si le snapshot contient au moins une donnée RP affichable (après filtrage éventuel).
+     *
+     * @param array<string, mixed> $snapshot
+     */
+    public function snapshotHasVisibleRpContent(array $snapshot): bool
+    {
+        $allOn = [];
+        foreach (self::rpShareSelectionKeys() as $k) {
+            $allOn[$k] = true;
+        }
+
+        return $this->snapshotHasAnyRpContent($snapshot, $allOn);
     }
 
     /**

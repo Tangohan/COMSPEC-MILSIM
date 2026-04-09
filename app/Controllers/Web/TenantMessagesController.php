@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\TenantMessageRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Community\TenantInternalMessageNotificationService;
 use App\Services\Rbac\RbacService;
 
 final class TenantMessagesController
@@ -19,7 +20,8 @@ final class TenantMessagesController
         private AuthService $authService,
         private RbacService $rbacService,
         private UserRepository $userRepository,
-        private TenantMessageRepository $messageRepository
+        private TenantMessageRepository $messageRepository,
+        private TenantInternalMessageNotificationService $internalMessageNotifications,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -37,11 +39,13 @@ final class TenantMessagesController
             $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
         $threads = $this->messageRepository->listThreadsForUser($tenantId, $userId);
+        $staffIds = $this->messageRepository->findStaffUserIdsForTenant($tenantId);
 
         return Response::view('layout.main', [
             'title' => 'Messagerie',
             'content' => 'messages.index',
             'msgThreads' => $threads,
+            'msgRecipientsConfigured' => $staffIds !== [],
         ]);
     }
 
@@ -74,6 +78,7 @@ final class TenantMessagesController
             'content' => 'messages.thread',
             'msgThread' => $thread,
             'msgMessages' => $messages,
+            'msgCurrentUserId' => $userId,
         ]);
     }
 
@@ -100,8 +105,31 @@ final class TenantMessagesController
             return Response::redirect(url('messages'));
         }
         $staffIds = $this->messageRepository->findStaffUserIdsForTenant($tenantId);
-        $threadId = $this->messageRepository->createThread($tenantId, $userId, $subject !== '' ? $subject : 'Contact équipe', $staffIds);
+        if ($staffIds === []) {
+            Session::flash(
+                'error',
+                'Aucun contact n’est désigné pour recevoir les messages internes sur cette communauté. Utilisez le forum ou contactez un administrateur.'
+            );
+
+            return Response::redirect(url('messages'));
+        }
+
+        $threadId = null;
+        if ($subject === '') {
+            $threadId = $this->messageRepository->findRecentOpenAuthorOnlyThreadId($tenantId, $userId);
+        }
+        if ($threadId !== null) {
+            $this->messageRepository->addMessage($threadId, $userId, $body);
+            $this->internalMessageNotifications->notifyAfterMessage($tenantId, $threadId, $userId, $body);
+            Session::flash('success', 'Message envoyé.');
+
+            return Response::redirect(url('messages/' . $threadId));
+        }
+
+        $threadId = $this->messageRepository->createThread($tenantId, $userId, $subject !== '' ? $subject : 'Échange avec l’encadrement', $staffIds);
         $this->messageRepository->addMessage($threadId, $userId, $body);
+        $this->internalMessageNotifications->notifyAfterMessage($tenantId, $threadId, $userId, $body);
+        Session::flash('success', 'Votre message a été transmis à l’encadrement.');
 
         return Response::redirect(url('messages/' . $threadId));
     }
@@ -133,6 +161,8 @@ final class TenantMessagesController
             return Response::redirect(url('messages/' . $threadId));
         }
         $this->messageRepository->addMessage($threadId, $userId, $body);
+        $this->internalMessageNotifications->notifyAfterMessage($tenantId, $threadId, $userId, $body);
+        Session::flash('success', 'Réponse envoyée.');
 
         return Response::redirect(url('messages/' . $threadId));
     }

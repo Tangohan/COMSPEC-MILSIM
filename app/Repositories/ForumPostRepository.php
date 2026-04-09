@@ -220,19 +220,78 @@ class ForumPostRepository
         return $row ?: null;
     }
 
-    public function create(int $tenantId, int $topicId, int $userId, string $body, ?int $parentPostId = null): int
-    {
+    public function create(
+        int $tenantId,
+        int $topicId,
+        int $userId,
+        string $body,
+        ?int $parentPostId = null,
+        ?int $coopSourceTenantId = null,
+        ?string $coopOfficialKind = null,
+        bool $isDraft = false,
+        ?string $coopMissionRole = null
+    ): int {
+        $hasCoop = false;
+        $chkCoop = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_posts' AND COLUMN_NAME = 'coop_source_tenant_id' LIMIT 1");
+        if ($chkCoop && $chkCoop->fetchColumn()) {
+            $hasCoop = true;
+        }
+        $hasKind = false;
+        $chkK = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_posts' AND COLUMN_NAME = 'coop_official_kind' LIMIT 1");
+        if ($chkK && $chkK->fetchColumn()) {
+            $hasKind = true;
+        }
         $chk = $this->pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_posts' AND COLUMN_NAME = 'parent_post_id' LIMIT 1");
         if ($chk && $chk->fetchColumn()) {
-            $stmt = $this->pdo->prepare(
-                'INSERT INTO forum_posts (tenant_id, topic_id, parent_post_id, user_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())'
-            );
-            $stmt->execute([$tenantId, $topicId, $parentPostId, $userId, $body]);
+            if ($hasKind && $hasCoop && $coopSourceTenantId !== null && $coopSourceTenantId > 0) {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO forum_posts (tenant_id, topic_id, parent_post_id, user_id, body, coop_source_tenant_id, coop_official_kind, is_draft, coop_mission_role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([
+                    $tenantId, $topicId, $parentPostId, $userId, $body, $coopSourceTenantId,
+                    $coopOfficialKind, $isDraft ? 1 : 0, $coopMissionRole,
+                ]);
+            } elseif ($hasKind) {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO forum_posts (tenant_id, topic_id, parent_post_id, user_id, body, coop_official_kind, is_draft, coop_mission_role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([$tenantId, $topicId, $parentPostId, $userId, $body, $coopOfficialKind, $isDraft ? 1 : 0, $coopMissionRole]);
+            } elseif ($hasCoop && $coopSourceTenantId !== null && $coopSourceTenantId > 0) {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO forum_posts (tenant_id, topic_id, parent_post_id, user_id, body, coop_source_tenant_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([$tenantId, $topicId, $parentPostId, $userId, $body, $coopSourceTenantId]);
+            } else {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO forum_posts (tenant_id, topic_id, parent_post_id, user_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([$tenantId, $topicId, $parentPostId, $userId, $body]);
+            }
         } else {
-            $stmt = $this->pdo->prepare(
-                'INSERT INTO forum_posts (tenant_id, topic_id, user_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())'
-            );
-            $stmt->execute([$tenantId, $topicId, $userId, $body]);
+            if ($hasKind && $hasCoop && $coopSourceTenantId !== null && $coopSourceTenantId > 0) {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO forum_posts (tenant_id, topic_id, user_id, body, coop_source_tenant_id, coop_official_kind, is_draft, coop_mission_role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([
+                    $tenantId, $topicId, $userId, $body, $coopSourceTenantId,
+                    $coopOfficialKind, $isDraft ? 1 : 0, $coopMissionRole,
+                ]);
+            } elseif ($hasKind) {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO forum_posts (tenant_id, topic_id, user_id, body, coop_official_kind, is_draft, coop_mission_role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([$tenantId, $topicId, $userId, $body, $coopOfficialKind, $isDraft ? 1 : 0, $coopMissionRole]);
+            } elseif ($hasCoop && $coopSourceTenantId !== null && $coopSourceTenantId > 0) {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO forum_posts (tenant_id, topic_id, user_id, body, coop_source_tenant_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([$tenantId, $topicId, $userId, $body, $coopSourceTenantId]);
+            } else {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO forum_posts (tenant_id, topic_id, user_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())'
+                );
+                $stmt->execute([$tenantId, $topicId, $userId, $body]);
+            }
         }
 
         return (int) $this->pdo->lastInsertId();
@@ -242,6 +301,16 @@ class ForumPostRepository
     {
         $stmt = $this->pdo->prepare('UPDATE forum_posts SET body = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?');
         return $stmt->execute([$body, $id, $tenantId]);
+    }
+
+    public function updatePublicationBadge(int $id, int $tenantId, ?string $badge): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare('UPDATE forum_posts SET publication_badge = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?');
+            return $stmt->execute([$badge, $id, $tenantId]);
+        } catch (\PDOException) {
+            return false;
+        }
     }
 
     public function delete(int $id, int $tenantId): bool

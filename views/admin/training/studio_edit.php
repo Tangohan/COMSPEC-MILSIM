@@ -197,7 +197,7 @@ $defaultCanvasJson = json_encode([
                 <p class="text-sm text-slate-500 mt-3">
                     <a href="<?= training_studio_url() ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Toutes les formations</a>
                     <span class="text-slate-300 mx-2">·</span>
-                    <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="text-slate-600 underline decoration-slate-200 hover:text-slate-900">Admin formations</a>
+                    <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="text-slate-600 underline decoration-slate-200 hover:text-slate-900">Pilotage des formations</a>
                 </p>
             </div>
             <div class="flex flex-wrap gap-2 shrink-0">

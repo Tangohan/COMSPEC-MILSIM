@@ -6,13 +6,14 @@ $rules = $maintenanceRules ?? [];
 $missing = !empty($maintenanceTableMissing);
 $s = \App\Core\Session::getFlash('success');
 $e = \App\Core\Session::getFlash('error');
+$canManagePlatform = \App\Core\Gate::getInstance()->allows('admin.system');
 ?>
 <div class="max-w-6xl mx-auto px-6 py-12">
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 class="text-2xl font-black text-slate-900">Maintenance</h1>
         <div class="flex flex-wrap gap-3">
             <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Admin système</a>
-            <?php if (!$missing): ?>
+            <?php if ($canManagePlatform && !$missing): ?>
             <a href="<?= url('admin/maintenance/create') ?>" class="text-sm font-semibold text-white bg-slate-900 px-4 py-2 rounded-lg hover:bg-slate-800">Nouvelle règle</a>
             <?php endif; ?>
         </div>
@@ -26,9 +27,13 @@ $e = \App\Core\Session::getFlash('error');
     <?php endif; ?>
 
     <?php if ($missing): ?>
-        <p class="text-slate-600">Appliquez la migration <code class="bg-slate-100 px-1 rounded">migrations/maintenance.sql</code> ou Phinx <code class="bg-slate-100 px-1 rounded">20260404000001_create_app_maintenance</code>.</p>
+        <p class="text-slate-600"><?= $canManagePlatform
+            ? 'Les tables nécessaires sont absentes : appliquez la migration prévue pour le module maintenance (voir documentation technique déploiement).'
+            : 'Les informations de maintenance ne sont pas disponibles pour le moment.' ?></p>
     <?php elseif ($rules === []): ?>
-        <p class="text-slate-600 mb-6">Aucune règle. Créez une règle (global, <code class="bg-slate-100 px-1 rounded">route:/chemin</code>, <code class="bg-slate-100 px-1 rounded">module:forum</code>).</p>
+        <p class="text-slate-600 mb-6"><?= $canManagePlatform
+            ? 'Aucune règle. Créez une règle (global, périmètre par chemin ou par module).'
+            : 'Aucune règle de maintenance enregistrée pour le moment.' ?></p>
     <?php else: ?>
         <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
             <table class="min-w-full text-sm">
@@ -67,6 +72,7 @@ $e = \App\Core\Session::getFlash('error');
                                 <?= htmlspecialchars((string) ($r['ends_at'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
                             </td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
+                                <?php if ($canManagePlatform): ?>
                                 <a href="<?= url('admin/maintenance/' . $id . '/edit') ?>" class="text-emerald-700 hover:underline mr-3">Modifier</a>
                                 <a href="<?= url('admin/maintenance/' . $id . '/audit') ?>" class="text-slate-600 hover:underline mr-3">Historique</a>
                                 <form action="<?= url('admin/maintenance/' . $id . '/toggle') ?>" method="post" class="inline">
@@ -78,6 +84,9 @@ $e = \App\Core\Session::getFlash('error');
                                     <?= \App\Core\Csrf::field() ?>
                                     <button type="submit" class="text-red-600 hover:underline">Supprimer</button>
                                 </form>
+                                <?php else: ?>
+                                <span class="text-xs text-slate-400">Lecture seule</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

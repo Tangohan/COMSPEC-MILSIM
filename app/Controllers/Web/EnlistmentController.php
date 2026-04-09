@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\Csrf;
 use App\Repositories\EnlistmentRepository;
+use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\RecruitmentPresetRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
@@ -20,6 +21,10 @@ use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Services\Profile\RecruitmentPresetPayloadService;
+use App\Services\Analytics\AnalyticsEventCategory;
+use App\Services\Analytics\AnalyticsEventName;
+use App\Services\Analytics\AnalyticsEventService;
+use App\Services\Analytics\AnalyticsSubjectType;
 
 class EnlistmentController
 {
@@ -33,7 +38,9 @@ class EnlistmentController
         private RecruitmentPresetPayloadService $recruitmentPresetPayloadService,
         private EmailService $emailService,
         private IndicatorBlocklistService $indicatorBlocklist,
-        private UserNotificationPreferencesRepository $notificationPreferencesRepository
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository,
+        private RecruitmentOpeningRepository $recruitmentOpeningRepository,
+        private AnalyticsEventService $analyticsEventService,
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -65,11 +72,48 @@ class EnlistmentController
         $targetTenantId = (int) $tenant['id'];
         $enlistmentContext = $this->buildEnlistmentContext($request, $tenant, $targetTenantId);
 
+        $selectedRecruitmentOpening = null;
+        $ouvertureId = (int) $request->query('ouverture', 0);
+        if ($ouvertureId > 0 && $this->recruitmentOpeningRepository->tablesExist()) {
+            $ro = $this->recruitmentOpeningRepository->findByIdForTenant($ouvertureId, $targetTenantId);
+            if ($ro && (string) ($ro['status'] ?? '') === 'published') {
+                $selectedRecruitmentOpening = [
+                    'id' => (int) $ro['id'],
+                    'title' => trim((string) ($ro['title'] ?? '')),
+                ];
+            }
+        }
+
+        $openingProps = null;
+        if ($selectedRecruitmentOpening !== null && !empty($selectedRecruitmentOpening['id'])) {
+            $openingProps = ['opening_id' => (int) $selectedRecruitmentOpening['id']];
+        }
+        $this->analyticsEventService->record(
+            $targetTenantId,
+            $this->authService->check() && Session::get('user_id') ? (int) Session::get('user_id') : null,
+            AnalyticsEventCategory::RECRUITMENT,
+            AnalyticsEventName::ENLISTMENT_FORM_OPEN,
+            AnalyticsSubjectType::TENANT,
+            $targetTenantId,
+            null,
+            $openingProps
+        );
+
+        $beacon = [
+            'tenantId' => $targetTenantId,
+            'category' => AnalyticsEventCategory::TENANT_PUBLIC,
+            'durationEvent' => AnalyticsEventName::TENANT_PUBLIC_PAGE_DURATION,
+            'subjectType' => AnalyticsSubjectType::TENANT,
+            'subjectId' => $targetTenantId,
+        ];
+
         $viewData = [
             'tenant' => $tenant,
             'communityConfig' => $communityConfig,
             'formAction' => $formAction,
             'enlistmentContext' => $enlistmentContext,
+            'selectedRecruitmentOpening' => $selectedRecruitmentOpening,
+            'analyticsBeacon' => $beacon,
         ];
 
         if ($mode === 'simple') {
@@ -123,6 +167,18 @@ class EnlistmentController
 
         $targetTenantId = (int) $tenant['id'];
         $flow = trim((string) $request->input('enlistment_flow', 'guest'));
+
+        $formModeRaw = trim((string) $request->input('enlistment_form_mode', 'full'));
+        $formMode = $formModeRaw === 'compact' ? 'compact' : 'full';
+        $openingIdPost = (int) $request->input('enlistment_opening_id', 0);
+        $openingValidForCompact = false;
+        if ($openingIdPost > 0 && $this->recruitmentOpeningRepository->tablesExist()) {
+            $roCompact = $this->recruitmentOpeningRepository->findByIdForTenant($openingIdPost, $targetTenantId);
+            if ($roCompact && (string) ($roCompact['status'] ?? '') === 'published') {
+                $openingValidForCompact = true;
+            }
+        }
+        $isCompactAccount = $flow === 'account' && $formMode === 'compact' && $openingValidForCompact;
 
         if ($flow !== 'account') {
             $guestEmail = '';
@@ -230,14 +286,50 @@ class EnlistmentController
 
                 return Response::redirect(url('enlistment/error'));
             }
-            $pData = $presetRow['payload'] ?? [];
-            if (is_array($pData)) {
-                $this->recruitmentPresetPayloadService->mergePresetIntoEnlistmentPayload($pData, $payload);
-                if ($presetRow) {
-                    $payload['recruitment_rp_snapshot'] = $this->recruitmentPresetPayloadService->buildRpSnapshotForEnlistment($pData);
+            $pData = [];
+            if ($presetRow) {
+                $rawPayload = $presetRow['payload'] ?? [];
+                $pData = is_array($rawPayload) ? $rawPayload : [];
+            }
+
+            $rpSharesRaw = [];
+            foreach (RecruitmentPresetPayloadService::rpShareSelectionKeys() as $rk) {
+                $rpSharesRaw[$rk] = $request->input('share_rp_' . $rk);
+            }
+            $rpShares = $this->recruitmentPresetPayloadService->normalizeRpShareSelections($rpSharesRaw);
+            $includeMilsimFromPreset = (bool) $request->input('include_milsim_from_preset');
+
+            if ($presetRow !== null) {
+                $shareOptions = [
+                    'include_milsim_from_preset' => $includeMilsimFromPreset,
+                    'rp_shares' => $rpShares,
+                ];
+                $this->recruitmentPresetPayloadService->mergePresetIntoEnlistmentPayload($pData, $payload, $shareOptions);
+
+                $fullSnapForValidation = $this->recruitmentPresetPayloadService->buildRpSnapshotForEnlistment($pData, null);
+                if (!$includeMilsimFromPreset
+                    && !$this->recruitmentPresetPayloadService->snapshotHasAnyRpContent($fullSnapForValidation, $rpShares)) {
+                    Session::flash(
+                        'enlistment_error',
+                        'Pour utiliser ce profil enregistré, indiquez au moins un élément à transmettre au recrutement, ou cochez l’inclusion des réponses techniques du modèle.'
+                    );
+
+                    return Response::redirect(url('enlistment/error'));
+                }
+
+                $snap = $this->recruitmentPresetPayloadService->buildRpSnapshotForEnlistment($pData, $rpShares);
+                if ($this->recruitmentPresetPayloadService->snapshotHasVisibleRpContent($snap)) {
+                    $payload['recruitment_rp_snapshot'] = $snap;
                 }
             }
-            if ($callsign === null && is_array($pData)) {
+
+            if ($isCompactAccount && trim((string) ($payload['motivation_why_join'] ?? '')) === '') {
+                Session::flash('enlistment_error', 'Indiquez en quelques lignes votre motivation pour ce poste.');
+
+                return Response::redirect(url('enlistment/error'));
+            }
+
+            if ($callsign === null && $presetRow !== null) {
                 $pn = $this->recruitmentPresetPayloadService->normalizeDecodedPayload($pData);
                 if (trim((string) ($pn['callsign'] ?? '')) !== '') {
                     $callsign = trim((string) $pn['callsign']) ?: null;
@@ -256,6 +348,9 @@ class EnlistmentController
                 'share_name' => $shareName,
                 'share_email' => $shareEmail,
                 'share_callsign' => $shareCallsign,
+                'rp_shares' => $presetRow ? $rpShares : null,
+                'include_milsim_from_preset' => $presetRow ? $includeMilsimFromPreset : null,
+                'form_mode' => $isCompactAccount ? 'compact' : 'full',
             ];
         } else {
             $identityKind = trim((string) $request->input('identity_kind', 'admin'));
@@ -305,6 +400,14 @@ class EnlistmentController
             return Response::redirect(url('enlistment/error'));
         }
 
+        $openingId = (int) $request->input('enlistment_opening_id', 0);
+        if ($openingId > 0 && $this->recruitmentOpeningRepository->tablesExist()) {
+            $ro = $this->recruitmentOpeningRepository->findByIdForTenant($openingId, $targetTenantId);
+            if ($ro && (string) ($ro['status'] ?? '') === 'published') {
+                $payload['recruitment_opening_id'] = $openingId;
+            }
+        }
+
         try {
             $enlistmentId = $this->enlistmentRepository->create((int) $tenant['id'], $payload);
         } catch (\Throwable $e) {
@@ -312,6 +415,21 @@ class EnlistmentController
 
             return Response::redirect(url('enlistment/error'));
         }
+
+        $submittedProps = null;
+        if (!empty($payload['recruitment_opening_id'])) {
+            $submittedProps = ['opening_id' => (int) $payload['recruitment_opening_id']];
+        }
+        $this->analyticsEventService->record(
+            (int) $tenant['id'],
+            null,
+            AnalyticsEventCategory::RECRUITMENT,
+            AnalyticsEventName::ENLISTMENT_SUBMITTED,
+            AnalyticsSubjectType::TENANT,
+            (int) $tenant['id'],
+            null,
+            $submittedProps
+        );
 
         $this->notifyStaffNewEnlistment((int) $tenant['id'], $tenant, $enlistmentId, $payload);
 

@@ -16,6 +16,7 @@ $overwatchMapsConfigs = $overwatchMapsConfigs ?? [];
 $overwatchDefaultMapId = $overwatchDefaultMapId ?? 1;
 $overwatchDefaultMapSlug = $overwatchDefaultMapSlug ?? 'altis';
 $overwatchDefaultWorkspace = $overwatchDefaultWorkspace ?? ['mapId' => 1, 'label' => 'Principal', 'slug' => 'altis'];
+$overwatchPageCsrf = \App\Core\Csrf::token();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -23,10 +24,11 @@ $overwatchDefaultWorkspace = $overwatchDefaultWorkspace ?? ['mapId' => 1, 'label
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= htmlspecialchars($title) ?></title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="<?= htmlspecialchars($base) ?>/assets/css/tailwind.css" />
+  <link rel="stylesheet" href="<?= htmlspecialchars($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.css" />
+  <script src="<?= htmlspecialchars($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-map-crs.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/comspec-operational-map.js"></script>
   <style>
     #overwatch-map { height: 100%; min-height: 500px; }
     .panel-tab { display: none; }
@@ -61,6 +63,7 @@ $overwatchDefaultWorkspace = $overwatchDefaultWorkspace ?? ['mapId' => 1, 'label
           </label>
           <span class="text-xs text-slate-400 font-mono" id="overwatch-zulu">—:—:— Z</span>
           <span class="text-xs text-slate-400" id="overwatch-sync-indicator">—</span>
+          <button type="button" id="overwatch-access-request-open" class="text-xs font-bold uppercase px-2 py-1 rounded border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100">Demander l’accès</button>
           <nav class="flex gap-2">
             <a href="<?= htmlspecialchars(url('atak')) ?>" class="text-sm text-slate-500 hover:text-slate-800">ATAK</a>
             <a href="<?= htmlspecialchars(url('tacmap')) ?>" class="text-sm text-slate-500 hover:text-slate-800">TACMAP</a>
@@ -196,6 +199,20 @@ $overwatchDefaultWorkspace = $overwatchDefaultWorkspace ?? ['mapId' => 1, 'label
     </section>
   </div>
 
+  <div id="overwatch-access-modal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="overwatch-access-modal-title">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-4 border border-slate-200">
+      <h2 id="overwatch-access-modal-title" class="text-lg font-black uppercase tracking-tight text-slate-800 mb-1">Demande d’accès</h2>
+      <p class="text-xs text-slate-600 mb-3">Un message est envoyé par e-mail aux gestionnaires de <strong>votre communauté</strong> pour qu’ils puissent vous attribuer les habilitations adaptées.</p>
+      <label class="block text-xs font-bold text-slate-500 mb-1" for="overwatch-access-reason">Motif de la demande</label>
+      <textarea id="overwatch-access-reason" rows="4" class="w-full border border-slate-300 rounded px-2 py-1 text-sm mb-2" placeholder="Ex. : besoin de suivre l’exercice en tant que…"></textarea>
+      <p id="overwatch-access-feedback" class="text-xs mb-2 min-h-[1.25rem]" role="status"></p>
+      <div class="flex gap-2 justify-end">
+        <button type="button" id="overwatch-access-request-cancel" class="px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-700 hover:bg-slate-50">Annuler</button>
+        <button type="button" id="overwatch-access-request-submit" class="px-3 py-1.5 text-sm rounded bg-slate-800 text-white font-bold uppercase hover:bg-slate-900">Envoyer</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function() {
       const overwatchContext = <?= json_encode($overwatchContext) ?>;
@@ -240,6 +257,7 @@ $overwatchDefaultWorkspace = $overwatchDefaultWorkspace ?? ['mapId' => 1, 'label
       }
 
       const apiBase = getApiBase();
+      var overwatchPageCsrf = <?= json_encode($overwatchPageCsrf ?? '') ?>;
 
       const tabBtns = document.querySelectorAll('.tab-btn');
       const panels = document.querySelectorAll('.panel-tab');
@@ -272,6 +290,9 @@ $overwatchDefaultWorkspace = $overwatchDefaultWorkspace ?? ['mapId' => 1, 'label
       var overwatchHealthStatus = { db: '—', units: '—', fireSupport: '—', dangerZones: '—', logistics: '—', sitrep: '—', iff: '—', replay: '—', chat: '—' };
       var overwatchUnitsIntervalId = null;
       var syncIntervalMs = overwatchContext.syncIntervalMs || 8000;
+      var dangerZoneLayers = [];
+      var dzClickMarker = null;
+      var targetMarker = null;
 
       // Altis standard : 30720 m, 1 unit = 1 m, facteur = 212/30720 pour tuiles 212px (rayons et distances en m)
       var ALTIS_WORLD_SIZE = 30720;
@@ -438,6 +459,19 @@ $overwatchDefaultWorkspace = $overwatchDefaultWorkspace ?? ['mapId' => 1, 'label
       }
 
       function refreshOperationalContext() {
+        try {
+          if (typeof ComspecOperationalMap !== 'undefined' && ComspecOperationalMap.renderMapShapes && layerGroups.drawings && map) {
+            ComspecOperationalMap.renderMapShapes({
+              apiBase: apiBase,
+              mapId: window.OverwatchState.currentMapId,
+              missionId: getMissionId(),
+              map: map,
+              layerGroup: layerGroups.drawings,
+              isWorld: window.OverwatchState.currentMapType === 'world',
+              credentials: 'include',
+            });
+          }
+        } catch (e) { if (console && console.error) console.error('renderMapShapes', e); }
         try {
           loadDangerZones();
         } catch (e) { if (console && console.error) console.error('loadDangerZones', e); }
@@ -841,7 +875,6 @@ $overwatchDefaultWorkspace = $overwatchDefaultWorkspace ?? ['mapId' => 1, 'label
       window.focusUnitByCallsign = focusUnitByCallsign;
 
       let lastFireSolution = null;
-      let targetMarker = null;
 
       function loadFireSupportUnits() {
         var sel = document.getElementById('fire-support-unit');
@@ -937,9 +970,6 @@ $overwatchDefaultWorkspace = $overwatchDefaultWorkspace ?? ['mapId' => 1, 'label
           }
         });
       }
-
-      var dangerZoneLayers = [];
-      var dzClickMarker = null;
 
       function loadDangerZones() {
         fetch(apiBase + '/danger-zones?missionId=' + encodeURIComponent(getMissionId()), { credentials: 'include' })
@@ -1138,6 +1168,78 @@ $overwatchDefaultWorkspace = $overwatchDefaultWorkspace ?? ['mapId' => 1, 'label
       }
       document.querySelector('[data-tab="iff"]')?.addEventListener('click', loadIff);
       loadIff();
+
+      (function setupOverwatchAccessRequest() {
+        var modal = document.getElementById('overwatch-access-modal');
+        var openBtn = document.getElementById('overwatch-access-request-open');
+        var cancelBtn = document.getElementById('overwatch-access-request-cancel');
+        var submitBtn = document.getElementById('overwatch-access-request-submit');
+        var reasonEl = document.getElementById('overwatch-access-reason');
+        var feedbackEl = document.getElementById('overwatch-access-feedback');
+        if (!modal || !openBtn || !cancelBtn || !submitBtn || !reasonEl || !feedbackEl) return;
+        function closeModal() {
+          modal.classList.add('hidden');
+          feedbackEl.textContent = '';
+          feedbackEl.className = 'text-xs mb-2 min-h-[1.25rem]';
+        }
+        openBtn.addEventListener('click', function () {
+          reasonEl.value = '';
+          feedbackEl.textContent = '';
+          modal.classList.remove('hidden');
+          reasonEl.focus();
+        });
+        cancelBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', function (e) {
+          if (e.target === modal) closeModal();
+        });
+        submitBtn.addEventListener('click', function () {
+          var reason = (reasonEl.value || '').trim();
+          if (!reason) {
+            feedbackEl.textContent = 'Indiquez un court motif.';
+            feedbackEl.className = 'text-xs mb-2 min-h-[1.25rem] text-amber-800';
+            return;
+          }
+          if (!overwatchPageCsrf) {
+            feedbackEl.textContent = 'Session expirée : rechargez la page.';
+            feedbackEl.className = 'text-xs mb-2 min-h-[1.25rem] text-red-700';
+            return;
+          }
+          feedbackEl.textContent = 'Envoi en cours…';
+          feedbackEl.className = 'text-xs mb-2 min-h-[1.25rem] text-slate-600';
+          submitBtn.disabled = true;
+          fetch(apiBase + '/tenant/access-request', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': overwatchPageCsrf
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              area: 'overwatch',
+              reason: reason,
+              _csrf_token: overwatchPageCsrf
+            })
+          })
+            .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, status: r.status, data: d }; }); })
+            .then(function (res) {
+              submitBtn.disabled = false;
+              if (res.ok && res.data && res.data.ok) {
+                feedbackEl.textContent = 'Demande envoyée aux gestionnaires de la communauté.';
+                feedbackEl.className = 'text-xs mb-2 min-h-[1.25rem] text-green-800';
+                setTimeout(closeModal, 1800);
+                return;
+              }
+              var msg = (res.data && res.data.error) ? res.data.error : 'Envoi impossible pour le moment.';
+              feedbackEl.textContent = msg;
+              feedbackEl.className = 'text-xs mb-2 min-h-[1.25rem] text-red-700';
+            })
+            .catch(function () {
+              submitBtn.disabled = false;
+              feedbackEl.textContent = 'Erreur réseau. Réessayez.';
+              feedbackEl.className = 'text-xs mb-2 min-h-[1.25rem] text-red-700';
+            });
+        });
+      })();
     })();
   </script>
 </body>

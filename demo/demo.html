@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CERBERE | Administration Centrale & Tir</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cerbere-blue: #2563eb;
+            --cerbere-blue-glow: rgba(37, 99, 235, 0.15);
+            --bg-color: #050b14;
+            --panel-bg: rgba(15, 23, 42, 0.6);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --table-header: #0f172a;
+            --cursor-outline-color: var(--cerbere-blue);
+            --input-bg: rgba(15, 23, 42, 0.8);
+        }
+
+        :root.light-mode {
+            --bg-color: #f1f5f9;
+            --panel-bg: #ffffff;
+            --panel-border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --card-bg: #ffffff;
+            --table-header: #f8fafc;
+            --cursor-outline-color: #1e293b;
+            --input-bg: #ffffff;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            cursor: none; 
+            overflow: hidden; /* Empêche le scroll du body, on gère le scroll dans main */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        .grainy::before {
+            content: ""; position: fixed; inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.04; pointer-events: none; z-index: 50;
+        }
+        .light-mode.grainy::before { opacity: 0.02; filter: invert(1); }
+
+        .dynamic-panel { background: var(--panel-bg); border: 1px solid var(--panel-border); backdrop-filter: blur(10px); }
+        .dynamic-card { background: var(--card-bg); border: 1px solid var(--panel-border); }
+        .dynamic-text { color: var(--text-main); }
+        .dynamic-muted { color: var(--text-muted); }
+        .dynamic-header { background: var(--table-header); }
+
+        .folder-card { transition: all 0.2s; }
+        .folder-card:hover { border-color: var(--cerbere-blue); background: var(--cerbere-blue-glow); transform: translateY(-2px); }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Cursor */
+        .cursor-dot { width: 6px; height: 6px; background: var(--cerbere-blue); position: fixed; border-radius: 50%; z-index: 100; pointer-events: none; transform: translate(-50%, -50%); }
+        .cursor-outline { width: 30px; height: 30px; border: 1px solid var(--cursor-outline-color); position: fixed; border-radius: 50%; z-index: 99; pointer-events: none; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.4s; }
+
+        /* Layout specifique pour Sidebar */
+        .main-wrapper { display: flex; flex: 1; overflow: hidden; }
+        aside { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        aside.collapsed { width: 80px; }
+        aside.collapsed .nav-text, aside.collapsed .nav-header { display: none; }
+    </style>
+</head>
+<body class="grainy">
+
+    <header class="h-16 dynamic-panel border-b flex items-center justify-between px-8 z-40">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-7 h-7 bg-blue-600 flex items-center justify-center font-black text-[10px] italic text-white">C</div>
+                <span class="font-black tracking-tighter uppercase italic text-lg dynamic-text">Cerbere <span class="text-blue-500">SI</span></span>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="theme-toggle" class="flex items-center gap-2 px-4 py-2 border border-blue-500/20 rounded-lg hover:bg-blue-500/10 transition-all group">
+                <span id="theme-icon" class="text-blue-500">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                </span>
+                <span class="text-[9px] font-black uppercase tracking-widest dynamic-muted group-hover:text-blue-500">Mode Tactique</span>
+            </button>
+            <button class="bg-blue-600 text-white text-[10px] font-black px-5 py-2 hover:bg-blue-500 transition-all uppercase tracking-widest">
+                + Enrôler Personnel
+            </button>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        <aside id="sidebar" class="w-64 dynamic-panel border-r flex flex-col z-30 relative bg-opacity-90">
+            <div class="p-6 border-b border-white/5 flex items-center justify-between">
+                <div class="flex items-center gap-3 nav-text">
+                    <div class="w-8 h-8 rounded bg-blue-600/20 flex items-center justify-center font-black text-blue-500 text-[10px]">92</div>
+                    <span class="text-[10px] font-black dynamic-text uppercase tracking-widest">92ème R.I</span>
+                </div>
+                <button id="collapse-sidebar" class="p-1 hover:bg-blue-500/10 rounded transition-colors text-blue-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
+                </button>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-2">
+                <p class="nav-header text-[9px] font-black dynamic-muted uppercase tracking-[0.2em] px-2 mb-4">Commandement</p>
+                
+                <a href="#" class="flex items-center gap-4 px-3 py-3 rounded-lg bg-blue-600/10 text-blue-500 border border-blue-500/20 group">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                    <span class="nav-text text-[10px] font-black uppercase tracking-widest">Dashboard</span>
+                </a>
+
+                <a href="#" class="flex items-center gap-4 px-3 py-3 rounded-lg dynamic-muted hover:bg-white/5 hover:text-blue-500 transition-all group">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <span class="nav-text text-[10px] font-black uppercase tracking-widest">Effectifs</span>
+                </a>
+
+                <a href="#" class="flex items-center gap-4 px-3 py-3 rounded-lg dynamic-muted hover:bg-white/5 hover:text-blue-500 transition-all group">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                    <span class="nav-text text-[10px] font-black uppercase tracking-widest">Instruction Tir</span>
+                </a>
+
+                <div class="pt-4 mt-4 border-t border-white/5">
+                    <p class="nav-header text-[9px] font-black dynamic-muted uppercase tracking-[0.2em] px-2 mb-4">Système</p>
+                    <a href="#" class="flex items-center gap-4 px-3 py-3 rounded-lg dynamic-muted hover:bg-white/5 hover:text-blue-500 transition-all group">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        <span class="nav-text text-[10px] font-black uppercase tracking-widest">Paramètres SI</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="p-6 border-t border-white/5 bg-white/5">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span class="nav-text text-[8px] font-mono dynamic-muted uppercase tracking-tighter">Terminal : ACTIF</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-8 space-y-8 relative">
+            <div class="max-w-6xl mx-auto space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <a href="#" class="folder-card dynamic-card p-6 rounded-lg flex items-center gap-4 group">
+                        <div class="w-12 h-12 bg-blue-500/10 text-blue-500 rounded flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-black dynamic-text uppercase text-xs tracking-widest">Avancement</h3>
+                            <p class="text-[9px] dynamic-muted font-bold uppercase tracking-tighter">14 Dossiers en attente</p>
+                        </div>
+                    </a>
+                    <a href="#" class="folder-card dynamic-card p-6 rounded-lg flex items-center gap-4 group">
+                        <div class="w-12 h-12 bg-rose-500/10 text-rose-500 rounded flex items-center justify-center group-hover:bg-rose-500 group-hover:text-white transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-black dynamic-text uppercase text-xs tracking-widest">Chancellerie</h3>
+                            <p class="text-[9px] dynamic-muted font-bold uppercase tracking-tighter">Punitions TTA 121</p>
+                        </div>
+                    </a>
+                    <a href="#" class="folder-card dynamic-card p-6 rounded-lg flex items-center gap-4 group">
+                        <div class="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-black dynamic-text uppercase text-xs tracking-widest">ISTC</h3>
+                            <p class="text-[9px] dynamic-muted font-bold uppercase tracking-tighter">Modules ALPHA / BRAVO</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="dynamic-panel rounded-lg overflow-hidden shadow-2xl">
+                    <div class="p-6 border-b border-white/5 flex flex-wrap items-center justify-between gap-4 bg-white/5">
+                        <div class="flex gap-4">
+                            <input type="text" placeholder="Recherche..." class="pl-4 pr-4 py-2 bg-[var(--input-bg)] border border-[var(--panel-border)] rounded text-[10px] font-bold dynamic-text outline-none focus:border-blue-500 transition-all uppercase">
+                            <select class="text-[9px] font-black uppercase bg-[var(--input-bg)] border border-[var(--panel-border)] rounded px-3 py-2 dynamic-muted outline-none">
+                                <option>Toutes les subdivisions</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-black dynamic-muted uppercase tracking-widest italic">Monitorage Actif</span>
+                            <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                        </div>
+                    </div>
+
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="dynamic-header text-[10px] font-black dynamic-muted uppercase tracking-[0.2em] border-b border-white/5">
+                                <th class="p-4">Personnel & Identifiants</th>
+                                <th class="p-4">Grade / Spécialité</th>
+                                <th class="p-4">Affectation</th>
+                                <th class="p-4">Instruction Tir</th>
+                                <th class="p-4 text-right">Dossier</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 text-xs">
+                            <tr class="hover:bg-blue-500/5 transition-colors group">
+                                <td class="p-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-9 h-9 rounded bg-blue-600/20 border border-blue-500/30 flex items-center justify-center font-black text-blue-500 text-[10px]">MM</div>
+                                        <div>
+                                            <p class="font-black dynamic-text uppercase tracking-tight">Melvin Mesnel</p>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="mono text-[8px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded font-bold">MAT: 8874-92</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="p-4 dynamic-text">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-black uppercase italic">Lieutenant</span>
+                                        <span class="text-[8px] font-bold text-blue-500 uppercase tracking-tighter">Chef de Section (INF)</span>
+                                    </div>
+                                </td>
+                                <td class="p-4 dynamic-muted">
+                                    <p class="font-bold text-[10px] uppercase">92ème R.I</p>
+                                    <p class="text-[8px] font-black uppercase tracking-widest opacity-50">1ère Compagnie</p>
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex gap-3 text-center">
+                                        <div><p class="text-[8px] font-black dynamic-muted uppercase">ISTC</p><span class="text-[9px] font-black text-emerald-500">BRAVO</span></div>
+                                        <div class="border-x border-white/5 px-3"><p class="text-[8px] font-black dynamic-muted uppercase">Légal</p><span class="text-[9px] font-black text-emerald-500">VALIDE</span></div>
+                                    </div>
+                                </td>
+                                <td class="p-4 text-right">
+                                    <button class="dynamic-muted hover:text-blue-500 transition-all uppercase text-[9px] font-black tracking-widest">Consulter</button>
+                                </td>
+                            </tr>
+                        
+                            <tr class="hover:bg-blue-500/5 transition-colors group">
+                                <td class="p-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-9 h-9 rounded bg-slate-800 border border-white/5 flex items-center justify-center font-black dynamic-muted text-[10px]">AD</div>
+                                        <div>
+                                            <p class="font-black dynamic-text uppercase tracking-tight">Arthur Dubois</p>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="mono text-[8px] dynamic-card dynamic-muted px-1.5 py-0.5 rounded font-bold">MAT: 4512-01</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="p-4 dynamic-text">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-black uppercase italic">Sergent</span>
+                                        <span class="text-[8px] font-bold text-rose-500 uppercase tracking-tighter">Chef de Groupe (TP)</span>
+                                    </div>
+                                </td>
+                                <td class="p-4 dynamic-muted">
+                                    <p class="font-bold text-[10px] uppercase dynamic-text">1er R.C.P</p>
+                                    <p class="text-[8px] font-black uppercase tracking-widest opacity-50">Section Appui</p>
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex gap-3 text-center">
+                                        <div><p class="text-[8px] font-black dynamic-muted uppercase">ISTC</p><span class="text-[9px] font-black text-blue-500">ALPHA</span></div>
+                                        <div class="border-x border-white/5 px-3"><p class="text-[8px] font-black dynamic-muted uppercase">Légal</p><span class="text-[9px] font-black text-rose-500 animate-pulse">EXPIRÉ</span></div>
+                                    </div>
+                                </td>
+                                <td class="p-4 text-right">
+                                    <button class="dynamic-muted hover:text-blue-500 transition-all uppercase text-[9px] font-black tracking-widest">Consulter</button>
+                                </td>
+                            </tr>
+                        
+                            <tr class="hover:bg-blue-500/5 transition-colors group">
+                                <td class="p-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-9 h-9 rounded bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center font-black text-emerald-500 text-[10px]">KL</div>
+                                        <div>
+                                            <p class="font-black dynamic-text uppercase tracking-tight">Kévin Legrand</p>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="mono text-[8px] bg-emerald-500/5 text-emerald-600 px-1.5 py-0.5 rounded font-bold">MAT: 9920-44</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="p-4 dynamic-text">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-black uppercase italic">Caporal</span>
+                                        <span class="text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">Grenadier Voltigeur</span>
+                                    </div>
+                                </td>
+                                <td class="p-4 dynamic-muted">
+                                    <p class="font-bold text-[10px] uppercase">126ème R.I</p>
+                                    <p class="text-[8px] font-black uppercase tracking-widest opacity-50">2ème Compagnie</p>
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex gap-3 text-center">
+                                        <div><p class="text-[8px] font-black dynamic-muted uppercase">ISTC</p><span class="text-[9px] font-black text-emerald-500">BRAVO</span></div>
+                                        <div class="border-x border-white/5 px-3"><p class="text-[8px] font-black dynamic-muted uppercase">Légal</p><span class="text-[9px] font-black text-emerald-500">VALIDE</span></div>
+                                    </div>
+                                </td>
+                                <td class="p-4 text-right">
+                                    <button class="dynamic-muted hover:text-blue-500 transition-all uppercase text-[9px] font-black tracking-widest">Consulter</button>
+                                </td>
+                            </tr>
+                        
+                            <tr class="hover:bg-blue-500/5 transition-colors group">
+                                <td class="p-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-9 h-9 rounded bg-amber-500/10 border border-amber-500/20 flex items-center justify-center font-black text-amber-500 text-[10px]">JV</div>
+                                        <div>
+                                            <p class="font-black dynamic-text uppercase tracking-tight">Jean-Marc Vasseur</p>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="mono text-[8px] dynamic-card dynamic-muted px-1.5 py-0.5 rounded font-bold">MAT: 1022-88</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="p-4 dynamic-text">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-black uppercase italic">Adjudant-Chef</span>
+                                        <span class="text-[8px] font-bold text-amber-500 uppercase tracking-tighter">S/Officier Adjoint</span>
+                                    </div>
+                                </td>
+                                <td class="p-4 dynamic-muted">
+                                    <p class="font-bold text-[10px] uppercase">92ème R.I</p>
+                                    <p class="text-[8px] font-black uppercase tracking-widest opacity-50">Etat-Major</p>
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex gap-3 text-center">
+                                        <div><p class="text-[8px] font-black dynamic-muted uppercase">ISTC</p><span class="text-[9px] font-black text-blue-500">CHARLIE</span></div>
+                                        <div class="border-x border-white/5 px-3"><p class="text-[8px] font-black dynamic-muted uppercase">Légal</p><span class="text-[9px] font-black text-emerald-500">VALIDE</span></div>
+                                    </div>
+                                </td>
+                                <td class="p-4 text-right">
+                                    <button class="dynamic-muted hover:text-blue-500 transition-all uppercase text-[9px] font-black tracking-widest">Consulter</button>
+                                </td>
+                            </tr>
+                        
+                            <tr class="hover:bg-blue-500/5 transition-colors group opacity-60">
+                                <td class="p-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-9 h-9 rounded border-dashed border border-white/20 flex items-center justify-center font-black dynamic-muted text-[10px]">YB</div>
+                                        <div>
+                                            <p class="font-black dynamic-text uppercase tracking-tight">Yassin Bensaid</p>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="mono text-[8px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded font-bold italic">En cours...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="p-4 dynamic-text">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-black uppercase italic">Soldat</span>
+                                        <span class="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">En formation (CFIM)</span>
+                                    </div>
+                                </td>
+                                <td class="p-4 dynamic-muted">
+                                    <p class="font-bold text-[10px] uppercase">92ème R.I</p>
+                                    <p class="text-[8px] font-black uppercase tracking-widest opacity-50">Section Instruction</p>
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex gap-3 text-center">
+                                        <div><p class="text-[8px] font-black dynamic-muted uppercase">ISTC</p><span class="text-[9px] font-black text-slate-600">N/A</span></div>
+                                        <div class="border-x border-white/5 px-3"><p class="text-[8px] font-black dynamic-muted uppercase">Légal</p><span class="text-[9px] font-black text-amber-500">EN COURS</span></div>
+                                    </div>
+                                </td>
+                                <td class="p-4 text-right">
+                                    <button class="dynamic-muted hover:text-blue-500 transition-all uppercase text-[9px] font-black tracking-widest">Compléter</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="p-4 dynamic-header text-center border-t border-white/5">
+                        <span class="text-[9px] font-mono dynamic-muted uppercase tracking-[0.3em]">-- Base Cerbere SI v2.4 --</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <script>
+        // SIDEBAR COLLAPSE LOGIC
+        const sidebar = document.getElementById('sidebar');
+        const collapseBtn = document.getElementById('collapse-sidebar');
+        
+        collapseBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            // Rotation de l'icône
+            collapseBtn.style.transform = sidebar.classList.contains('collapsed') ? 'rotate(180deg)' : 'rotate(0deg)';
+        });
+
+        // CURSOR LOGIC
+        const dot = document.querySelector(".cursor-dot");
+        const outline = document.querySelector(".cursor-outline");
+        window.addEventListener("mousemove", (e) => {
+            dot.style.left = e.clientX + "px";
+            dot.style.top = e.clientY + "px";
+            outline.animate({ left: e.clientX + "px", top: e.clientY + "px" }, { duration: 450, fill: "forwards" });
+        });
+
+        // THEME LOGIC
+        const themeBtn = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+
+        themeBtn.addEventListener('click', () => {
+            const isLight = html.classList.toggle('light-mode');
+            localStorage.setItem('cerbere-theme', isLight ? 'light' : 'dark');
+            updateThemeUI(isLight);
+        });
+
+        function updateThemeUI(isLight) {
+            const themeText = themeBtn.querySelector('span:last-child');
+            const themeIcon = document.getElementById('theme-icon');
+            themeText.innerText = isLight ? "Mode Administratif" : "Mode Tactique";
+            themeIcon.innerHTML = isLight 
+                ? '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path></svg>'
+                : '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>';
+        }
+    </script>
+</body>
+</html>

@@ -9,7 +9,7 @@ $indicatorKindLabel = static function (string $t): string {
         <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Administration plateforme</p>
         <h1 class="text-2xl font-black text-slate-900">Liste de restriction (toute la plateforme)</h1>
         <p class="mt-2 text-sm text-slate-600 leading-relaxed">
-            Cette liste est <strong class="font-semibold text-slate-800">globale</strong> : elle s’ajoute aux éventuelles restrictions gérées par chaque communauté dans son espace modération, et elle prime pour tout le portail.
+            Cette liste est <strong class="font-semibold text-slate-800">globale</strong> : elle s’applique à tout le portail, en complément des restrictions gérées au niveau de chaque communauté ou des sanctions « site » sur les comptes.
         </p>
         <details class="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
             <summary class="cursor-pointer font-semibold text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-slate-300 rounded">Comment ça fonctionne ?</summary>

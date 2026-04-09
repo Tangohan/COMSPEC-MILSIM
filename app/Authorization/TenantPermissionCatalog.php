@@ -34,6 +34,7 @@ final class TenantPermissionCatalog
             self::dashboardDefinitions(),
             self::forumDefinitions(),
             self::interteamDefinitions(),
+            self::cooperationDefinitions(),
             self::documentsDefinitions(),
             self::trainingDefinitions(),
             self::personnelDefinitions(),
@@ -100,7 +101,7 @@ final class TenantPermissionCatalog
             ['slug' => 'admin.members.view', 'module' => 'admin', 'action' => 'view', 'name' => 'Voir les membres'],
             ['slug' => 'admin.members.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer les membres'],
             ['slug' => 'admin.members.invite', 'module' => 'admin', 'action' => 'create', 'name' => 'Inviter des membres'],
-            ['slug' => 'admin.members.moderate', 'module' => 'admin', 'action' => 'moderate', 'name' => 'Suspendre / exclure un membre'],
+            ['slug' => 'admin.members.moderate', 'module' => 'admin', 'action' => 'moderate', 'name' => 'Gérer les restrictions d’activité des membres (organisation)'],
             ['slug' => 'admin.roles.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer les rôles'],
             ['slug' => 'admin.permissions.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer les permissions'],
             ['slug' => 'admin.audit.view', 'module' => 'admin', 'action' => 'view', 'name' => 'Voir les journaux d’audit'],
@@ -130,6 +131,36 @@ final class TenantPermissionCatalog
         return [
             ['slug' => 'interteam.missions.manage', 'module' => 'interteam', 'action' => 'manage', 'name' => 'Piloter les missions inter-unités (invitations, partages)'],
             ['slug' => 'interteam.missions.respond', 'module' => 'interteam', 'action' => 'approve', 'name' => 'Accepter ou refuser une mission inter-unités'],
+        ];
+    }
+
+    /**
+     * @return list<array{slug: string, module: string, action: string|null, name: string}>
+     */
+    private static function cooperationDefinitions(): array
+    {
+        return [
+            ['slug' => 'cooperation.missions.view', 'module' => 'cooperation', 'action' => 'view', 'name' => 'Voir les coopérations inter-unités'],
+            ['slug' => 'cooperation.missions.create', 'module' => 'cooperation', 'action' => 'create', 'name' => 'Proposer une coopération inter-unités'],
+            ['slug' => 'cooperation.missions.manage', 'module' => 'cooperation', 'action' => 'manage', 'name' => 'Piloter une coopération (invitations, autorisations, liaisons)'],
+            ['slug' => 'cooperation.missions.respond', 'module' => 'cooperation', 'action' => 'approve', 'name' => 'Répondre à une proposition de coopération'],
+            ['slug' => 'cooperation.missions.activate', 'module' => 'cooperation', 'action' => 'approve', 'name' => 'Lancer une coopération validée'],
+            ['slug' => 'cooperation.missions.close', 'module' => 'cooperation', 'action' => 'archive', 'name' => 'Clôturer une coopération'],
+            ['slug' => 'cooperation.missions.archive', 'module' => 'cooperation', 'action' => 'archive', 'name' => 'Archiver une coopération clôturée'],
+            ['slug' => 'cooperation.exchange.read', 'module' => 'cooperation', 'action' => 'view', 'name' => 'Consulter l’espace commun de coopération'],
+            ['slug' => 'cooperation.exchange.write', 'module' => 'cooperation', 'action' => 'create', 'name' => 'Publier dans l’espace commun de coopération'],
+            ['slug' => 'cooperation.exchange.moderate', 'module' => 'cooperation', 'action' => 'moderate', 'name' => 'Modérer l’espace commun de coopération'],
+            ['slug' => 'cooperation.meeting.launch', 'module' => 'cooperation', 'action' => 'manage', 'name' => 'Organiser ou ouvrir une réunion de coopération'],
+            ['slug' => 'cooperation.data.request', 'module' => 'cooperation', 'action' => 'create', 'name' => 'Demander un partage de données dans une coopération'],
+            ['slug' => 'cooperation.data.approve', 'module' => 'cooperation', 'action' => 'approve', 'name' => 'Approuver un partage de données (autorisation de partage)'],
+            ['slug' => 'cooperation.data.revoke', 'module' => 'cooperation', 'action' => 'delete', 'name' => 'Révoquer un partage de données'],
+            ['slug' => 'cooperation.orbat.view', 'module' => 'cooperation', 'action' => 'view', 'name' => 'Voir les structures et liaisons de coopération'],
+            ['slug' => 'cooperation.readiness.view', 'module' => 'cooperation', 'action' => 'view', 'name' => 'Voir la préparation opérationnelle liée à une coopération'],
+            ['slug' => 'cooperation.audit.view', 'module' => 'cooperation', 'action' => 'view', 'name' => 'Voir le journal d’audit d’une coopération'],
+            ['slug' => 'cooperation.rex.submit', 'module' => 'cooperation', 'action' => 'create', 'name' => 'Rédiger un retour d’expérience de coopération'],
+            ['slug' => 'cooperation.rex.read', 'module' => 'cooperation', 'action' => 'view', 'name' => 'Lire les retours d’expérience consolidés'],
+            ['slug' => 'cooperation.catalog.manage', 'module' => 'cooperation', 'action' => 'manage', 'name' => 'Gérer le catalogue des types de coopération (communauté)'],
+            ['slug' => 'cooperation.announcements.manage', 'module' => 'cooperation', 'action' => 'manage', 'name' => 'Gérer les messages types d’annonces coopération (communauté)'],
         ];
     }
 
@@ -232,6 +263,7 @@ final class TenantPermissionCatalog
             ['slug' => 'organization.orbat.manage', 'module' => 'organization', 'action' => 'manage', 'name' => 'Gérer la structure ORBAT (unités, rattachements)'],
             ['slug' => 'organization.effectifs.hub.view', 'module' => 'organization', 'action' => 'view', 'name' => 'Accéder au hub effectifs'],
             ['slug' => 'organization.recruitment.manage', 'module' => 'organization', 'action' => 'manage', 'name' => 'Gérer le recrutement (dossiers, décisions)'],
+            ['slug' => 'organization.recruitment.openings.manage', 'module' => 'organization', 'action' => 'manage', 'name' => 'Gérer les offres publiées et le format des références'],
             ['slug' => 'organization.job_roles.referential.manage', 'module' => 'organization', 'action' => 'manage', 'name' => 'Gérer le référentiel des emplois métier'],
         ];
     }
@@ -242,6 +274,7 @@ final class TenantPermissionCatalog
     private static function commsDefinitions(): array
     {
         return [
+            ['slug' => 'comms.tenant_messages.receive', 'module' => 'comms', 'action' => 'view', 'name' => 'Recevoir les messages internes adressés à l’encadrement'],
             ['slug' => 'comms.announcement.send', 'module' => 'comms', 'action' => 'create', 'name' => 'Envoyer une annonce'],
             ['slug' => 'comms.email.broadcast', 'module' => 'comms', 'action' => 'manage', 'name' => 'Envoyer un email aux membres'],
             ['slug' => 'comms.email_templates.manage', 'module' => 'comms', 'action' => 'manage', 'name' => 'Gérer les modèles d’email'],

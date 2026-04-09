@@ -28,6 +28,7 @@ foreach ($kpis as $k) {
 
 $gate = \App\Core\Gate::getInstance();
 $canInv = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('invitations.send');
+$canMemberModeration = $gate->allows('admin.members.moderate');
 $canDocs = $gate->allows('documents.upload') || $gate->allows('admin.access');
 $canTraining = $gate->allows('training.manage') || $gate->allows('training.assign') || $gate->allows('admin.access');
 $canTenantTechModules = $gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access');
@@ -45,7 +46,7 @@ $kpiCardClass = static function (array $k): string {
     $id = (string) ($k['id'] ?? '');
     $valStr = $k['value'] ?? null;
     $n = is_numeric($valStr) ? (int) $valStr : null;
-    $base = 'rounded-xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-md ';
+    $base = 'rounded-2xl border-2 bg-white p-5 shadow-sm transition-all duration-200 hover:border-blue-200 hover:shadow-md ';
     switch ($id) {
         case 'invites_expired':
             return $base . 'border-slate-200 border-l-[3px] border-l-amber-500';
@@ -101,46 +102,110 @@ if ($showPlatformEnv) {
     $appEnv = function_exists('env') ? (string) env('APP_ENV', 'local') : 'local';
     $envLabel = app_environment_label_fr($appEnv);
 }
-?>
-<div class="min-h-0 flex-1">
-    <div class="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 space-y-8 lg:space-y-10">
 
-        <header class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <div class="min-w-0">
-                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700/90">Synthèse</p>
-                <h1 class="mt-1 text-2xl font-black tracking-tight text-slate-900">Centre de pilotage</h1>
-                <p class="mt-1 text-sm text-slate-600">
+$modActionLabelFr = static function (string $t): string {
+    $k = strtolower(trim($t));
+
+    return match ($k) {
+        'mute' => 'Limitation des échanges',
+        'suspend' => 'Suspension temporaire',
+        'ban' => 'Exclusion',
+        'warn', 'warning' => 'Avertissement',
+        '' => 'Mesure enregistrée',
+        default => 'Mesure enregistrée',
+    };
+};
+?>
+<style>
+    .org-dash-grain {
+        background-image: radial-gradient(circle at 20% 20%, rgba(15, 23, 42, 0.07) 0.5px, transparent 0.6px),
+            radial-gradient(circle at 80% 70%, rgba(15, 23, 42, 0.05) 0.5px, transparent 0.6px);
+        background-size: 18px 18px;
+    }
+</style>
+<div
+    class="relative min-h-0 flex-1 overflow-x-hidden"
+    x-data="{ tab: 'overview' }"
+    x-init="if (location.hash === '#rh') { tab = 'rh'; } else if (location.hash === '#watch') { tab = 'watch'; }"
+>
+    <div class="pointer-events-none absolute inset-0 org-dash-grain opacity-[0.45]" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 space-y-8 lg:space-y-10">
+
+        <header class="space-y-8">
+            <div class="text-center sm:text-left">
+                <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 sm:mx-0">
+                    <span class="h-2 w-2 shrink-0 animate-pulse rounded-full bg-blue-600" aria-hidden="true"></span>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-blue-700">Espace administration</span>
+                </div>
+                <h1 class="text-3xl font-black uppercase italic tracking-tighter text-[#0f172a] sm:text-4xl">
+                    Centre de <span class="text-blue-600">pilotage</span>
+                </h1>
+                <p class="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:mx-0">
                     Membres, structure, recrutement et modération pour
                     <?php if ($tenantName !== ''): ?>
                         <span class="font-semibold text-slate-800"><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></span>.
                     <?php else: ?>
                         votre communauté.
                     <?php endif; ?>
+                </p>
+                <div class="mx-auto mt-6 h-1.5 w-24 rounded-full bg-blue-600 sm:mx-0" aria-hidden="true"></div>
+                <div class="mt-6 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+                    <dl class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                        <div class="flex items-baseline gap-2">
+                            <dt class="font-bold uppercase tracking-wider">Affichage</dt>
+                            <dd class="font-semibold tabular-nums text-slate-800"><?= htmlspecialchars($nowLabel, ENT_QUOTES, 'UTF-8') ?></dd>
+                        </div>
+                        <?php if ($showPlatformEnv && $envLabel !== ''): ?>
+                        <div class="hidden h-4 w-px bg-slate-200 sm:block" aria-hidden="true"></div>
+                        <div class="flex items-baseline gap-2">
+                            <dt class="font-bold uppercase tracking-wider">Mode</dt>
+                            <dd><span class="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700"><?= htmlspecialchars($envLabel, ENT_QUOTES, 'UTF-8') ?></span></dd>
+                        </div>
+                        <?php endif; ?>
+                    </dl>
+                    <a href="<?= url('dashboard') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"/></svg>
+                        Portail membre
+                    </a>
                     <?php if ($gate->allows('admin.system')): ?>
-                        <span class="text-slate-500"> — outils globaux du site dans </span>
-                        <a href="<?= url('admin') ?>" class="font-semibold text-amber-900 underline decoration-amber-200 hover:text-amber-950">l’administration plateforme</a>.
+                    <a href="<?= url('admin') ?>" class="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-900 transition hover:bg-amber-100">
+                        Plateforme
+                    </a>
                     <?php endif; ?>
+                    <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 transition hover:bg-slate-100">
+                        Journal d’audit
+                    </a>
+                </div>
+            </div>
+
+            <div class="rounded-xl border-l-4 border-blue-600 bg-blue-50 p-5 sm:p-6">
+                <h2 class="text-lg font-black uppercase italic text-blue-950">Vue d’ensemble opérationnelle</h2>
+                <p class="mt-2 text-sm leading-relaxed text-slate-700">
+                    Ce tableau de bord regroupe les indicateurs utiles au quotidien : effectifs, candidatures, formations et signaux de modération.
+                    Utilisez les onglets pour vous concentrer sur la synthèse, le suivi RH ou la surveillance.
                 </p>
             </div>
-            <dl class="flex shrink-0 flex-wrap gap-4 text-sm sm:flex-col sm:gap-2 sm:text-right">
-                <div class="flex items-baseline justify-between gap-6 sm:justify-end">
-                    <dt class="text-slate-500">Mis à jour</dt>
-                    <dd class="font-semibold tabular-nums text-slate-900"><?= htmlspecialchars($nowLabel, ENT_QUOTES, 'UTF-8') ?></dd>
-                </div>
-                <?php if ($showPlatformEnv && $envLabel !== ''): ?>
-                <div class="flex items-baseline justify-between gap-6 sm:justify-end">
-                    <dt class="text-slate-500">Environnement</dt>
-                    <dd><span class="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700"><?= htmlspecialchars($envLabel, ENT_QUOTES, 'UTF-8') ?></span></dd>
-                </div>
-                <?php endif; ?>
-            </dl>
+
+            <nav class="flex flex-wrap gap-1 border-b border-slate-300 sm:gap-2" aria-label="Sections du tableau de bord">
+                <button type="button" @click="tab = 'overview'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search); }" :class="tab === 'overview' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-900'" class="border-b-2 px-4 py-3 text-sm font-black uppercase italic transition-colors sm:px-6">
+                    Synthèse
+                </button>
+                <button type="button" @click="tab = 'rh'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#rh'); }" :class="tab === 'rh' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-900'" class="border-b-2 px-4 py-3 text-sm font-black uppercase italic transition-colors sm:px-6">
+                    RH &amp; recrutement
+                </button>
+                <button type="button" @click="tab = 'watch'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#watch'); }" :class="tab === 'watch' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-900'" class="border-b-2 px-4 py-3 text-sm font-black uppercase italic transition-colors sm:px-6">
+                    Surveillance
+                </button>
+            </nav>
         </header>
 
+        <div x-show="tab === 'overview'" class="space-y-8 lg:space-y-10">
+
         <section aria-labelledby="org-kpi-heading">
-            <div class="flex items-end justify-between gap-4 mb-4">
+            <div class="mb-4 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h2 id="org-kpi-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Indicateurs stratégiques</h2>
-                    <p class="mt-1 text-sm text-slate-600">Synthèse opérationnelle et signaux de charge.</p>
+                    <h2 id="org-kpi-heading" class="text-xs font-black uppercase tracking-widest text-slate-500">Indicateurs stratégiques</h2>
+                    <p class="mt-1 text-sm text-slate-600">Synthèse opérationnelle et signaux de charge sur votre communauté.</p>
                 </div>
             </div>
 
@@ -189,21 +254,145 @@ if ($showPlatformEnv) {
             <?php endif; ?>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-labelledby="org-actions-rapides-heading">
-            <h2 id="org-actions-rapides-heading" class="text-sm font-bold text-slate-900">Actions rapides</h2>
-            <p class="mt-0.5 text-xs text-slate-500">Le détail des rubriques se trouve dans le menu latéral.</p>
-            <div class="mt-4 flex flex-wrap gap-2">
-                <a href="<?= url('back-office/users/create') ?>" class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-slate-800">Nouvel utilisateur</a>
-                <a href="<?= url('back-office/groups/create') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-blue-300 hover:bg-blue-50/50">Nouveau groupe</a>
-                <a href="<?= url('back-office/teams/create') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-blue-300 hover:bg-blue-50/50">Nouvelle équipe</a>
+        <section class="space-y-4" aria-labelledby="org-actions-rapides-heading">
+            <div>
+                <h2 id="org-actions-rapides-heading" class="text-xs font-black uppercase tracking-widest text-slate-500">Raccourcis</h2>
+                <p class="mt-1 text-sm text-slate-600">Accès direct aux tâches fréquentes — le menu latéral liste l’ensemble des rubriques.</p>
+            </div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <a href="<?= url('back-office/users/create') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center bg-blue-600 text-lg font-black italic text-white">+</div>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-blue-600">Effectifs</span>
+                        </div>
+                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Nouveau membre</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Créer un compte et préparer l’arrivée d’un opérateur.</p>
+                    </div>
+                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-blue-600">
+                        Ouvrir
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </span>
+                </a>
+                <a href="<?= url('back-office/groups/create') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center bg-slate-800 text-lg font-black italic text-white">G</div>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-500">Structure</span>
+                        </div>
+                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Nouveau groupe</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Organiser une sous-unité ou une cellule.</p>
+                    </div>
+                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-blue-600">
+                        Ouvrir
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </span>
+                </a>
+                <a href="<?= url('back-office/teams/create') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center bg-slate-800 text-lg font-black italic text-white">E</div>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-500">Équipes</span>
+                        </div>
+                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Nouvelle équipe</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Constituer une équipe pour une mission ou un créneau.</p>
+                    </div>
+                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-blue-600">
+                        Ouvrir
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </span>
+                </a>
                 <?php if ($canInv): ?>
-                <a href="<?= url('back-office/invitations') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-amber-300 hover:bg-amber-50/40">Invitations</a>
+                <a href="<?= url('back-office/invitations') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-amber-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-900/5">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center bg-amber-500 text-lg font-black italic text-amber-950">@</div>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-amber-700">Accès</span>
+                        </div>
+                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Invitations</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Inviter par e-mail et suivre les liens envoyés.</p>
+                    </div>
+                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-amber-700">
+                        Ouvrir
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </span>
+                </a>
                 <?php endif; ?>
-                <a href="<?= url('back-office/moderation') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-rose-200 hover:bg-rose-50/40">Modération</a>
-                <a href="<?= url('back-office/centre-operations') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-emerald-300 hover:bg-emerald-50/40">Centre des opérations</a>
-                <a href="<?= url('back-office/integrations') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-violet-200 hover:bg-violet-50/40">Intégrations</a>
+                <?php if ($canMemberModeration): ?>
+                <a href="<?= url('back-office/moderation') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-rose-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-rose-400 hover:shadow-lg hover:shadow-rose-900/5">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center bg-rose-600 text-lg font-black italic text-white">!</div>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-rose-600">Modération</span>
+                        </div>
+                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Restrictions</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Sanctions, limitations et suivi des comptes concernés.</p>
+                    </div>
+                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-rose-700">
+                        Ouvrir
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </span>
+                </a>
+                <?php endif; ?>
+                <a href="<?= url('back-office/centre-operations') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-emerald-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-900/5 sm:col-span-2 xl:col-span-1">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center bg-emerald-600 text-lg font-black italic text-white">⌁</div>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-emerald-700">Opérations</span>
+                        </div>
+                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Centre des opérations</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Vue transverse pour le commandement et le suivi.</p>
+                    </div>
+                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-emerald-700">
+                        Ouvrir
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </span>
+                </a>
+                <a href="<?= url('back-office/integrations') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-violet-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-900/5">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center bg-violet-600 text-lg font-black italic text-white">↗</div>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-violet-700">Connexions</span>
+                        </div>
+                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Intégrations</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Services liés et paramètres d’interopérabilité.</p>
+                    </div>
+                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-violet-700">
+                        Ouvrir
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </span>
+                </a>
                 <?php if (\App\Core\Gate::getInstance()->allows('admin.compliance.export')): ?>
-                <a href="<?= url('back-office/conformite/export-dossier') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-emerald-200 hover:bg-emerald-50/40">Export conformité</a>
+                <a href="<?= url('back-office/conformite/export-dossier') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-emerald-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-900/5">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center border-2 border-emerald-600 text-lg font-black italic text-emerald-700">D</div>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-emerald-800">Conformité</span>
+                        </div>
+                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Export dossier</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Assembler les pièces utiles à un contrôle ou une revue.</p>
+                    </div>
+                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-emerald-800">
+                        Ouvrir
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </span>
+                </a>
+                <?php endif; ?>
+                <?php if ($canTenantTechModules): ?>
+                <a href="<?= url('back-office/ressources/modpacks') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5 sm:col-span-2 xl:col-span-2">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center bg-slate-900 text-lg font-black italic text-white">R</div>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-blue-600">Ressources</span>
+                        </div>
+                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Modpacks &amp; outils terrain</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Packs mods, cartographie et configuration associée pour votre communauté.</p>
+                    </div>
+                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-blue-600">
+                        Ouvrir les ressources
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </span>
+                </a>
                 <?php endif; ?>
             </div>
         </section>
@@ -267,6 +456,8 @@ if ($showPlatformEnv) {
         </section>
         <?php endif; ?>
 
+        </div>
+
         <?php
         $orgEnlistmentCounts = $orgEnlistmentCounts ?? [];
         $orgEnlistmentRecent = $orgEnlistmentRecent ?? [];
@@ -281,10 +472,12 @@ if ($showPlatformEnv) {
                 'submitted' => ['En attente', 'bg-amber-100 text-amber-950 ring-1 ring-amber-200/80'],
                 'reviewed' => ['Traitée', 'bg-emerald-100 text-emerald-950 ring-1 ring-emerald-200/80'],
                 'rejected' => ['Rejetée', 'bg-rose-100 text-rose-950 ring-1 ring-rose-200/80'],
-                default => [$status, 'bg-slate-100 text-slate-800 ring-1 ring-slate-200/80'],
+                default => ['Autre état', 'bg-slate-100 text-slate-800 ring-1 ring-slate-200/80'],
             };
         };
         ?>
+        <div x-show="tab === 'rh'" x-cloak class="space-y-8 lg:space-y-10">
+
         <section aria-labelledby="org-recruitment-rh-heading" class="space-y-4">
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
@@ -473,13 +666,17 @@ if ($showPlatformEnv) {
             </div>
         </section>
 
+        </div>
+
+        <div x-show="tab === 'watch'" x-cloak class="space-y-8 lg:space-y-10">
+
         <div class="grid grid-cols-1 gap-6 lg:gap-8 items-start">
             <section class="w-full" aria-labelledby="org-journal-heading">
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                    <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+                <div class="overflow-hidden rounded-2xl border-2 border-blue-200/80 bg-white shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-blue-100 bg-gradient-to-r from-blue-50/80 to-white px-5 py-4">
                         <div>
-                            <h2 id="org-journal-heading" class="text-base font-bold text-slate-900">Journal opérationnel</h2>
-                            <p class="text-xs text-slate-500 mt-0.5">Derniers événements d’audit enregistrés pour cette organisation.</p>
+                            <h2 id="org-journal-heading" class="text-lg font-black uppercase italic tracking-tight text-slate-900">Journal opérationnel</h2>
+                            <p class="mt-0.5 text-xs text-slate-500">Derniers événements enregistrés pour cette organisation.</p>
                         </div>
                         <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 hover:text-blue-900">
                             Voir tout
@@ -507,7 +704,7 @@ if ($showPlatformEnv) {
                                     </div>
                                     <div class="min-w-0 flex-1">
                                         <?php $actionSlug = (string) ($row['action'] ?? ''); ?>
-                                        <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-800 mb-1" title="<?= htmlspecialchars($actionSlug, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(audit_action_label_fr($actionSlug), ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="mb-1 inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-800"><?= htmlspecialchars(audit_action_label_fr($actionSlug), ENT_QUOTES, 'UTF-8') ?></span>
                                         <p class="text-sm text-slate-700">
                                             <span class="text-slate-500">Acteur ·</span>
                                             <?= htmlspecialchars((string) ($row['actor_email'] ?? ('#' . (string) ($row['user_id'] ?? ''))), ENT_QUOTES, 'UTF-8') ?>
@@ -523,8 +720,8 @@ if ($showPlatformEnv) {
 
         <section aria-labelledby="org-watch-heading">
             <div class="mb-4">
-                <h2 id="org-watch-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Surveillance et signaux</h2>
-                <p class="mt-1 text-sm text-slate-600">Files à traiter et actions récentes de modération.</p>
+                <h2 id="org-watch-heading" class="text-xs font-black uppercase tracking-widest text-slate-500">Surveillance et signaux</h2>
+                <p class="mt-1 text-sm text-slate-600">Files à traiter et mesures de modération récentes.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
                 <div class="rounded-2xl border border-amber-200/80 bg-white p-5 shadow-sm flex flex-col min-h-[220px]">
@@ -614,7 +811,7 @@ if ($showPlatformEnv) {
                             <?php foreach ($mod as $a): ?>
                                 <li class="text-slate-700 border-b border-rose-50 pb-2 last:border-0 last:pb-0">
                                     <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                                        <span class="font-mono text-[11px] font-semibold text-slate-800"><?= htmlspecialchars((string) ($a['action_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="text-[11px] font-black uppercase tracking-wide text-slate-800"><?= htmlspecialchars($modActionLabelFr((string) ($a['action_type'] ?? '')), ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php if (!empty($a['created_at'])): ?>
                                             <span class="text-[10px] text-slate-400 tabular-nums"><?= htmlspecialchars($orgFormatDt((string) $a['created_at']), ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php endif; ?>
@@ -628,11 +825,15 @@ if ($showPlatformEnv) {
                                 </li>
                             <?php endforeach; ?>
                         </ul>
-                        <a href="<?= url('back-office/moderation') ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-rose-800 hover:text-rose-950">Ouvrir la modération →</a>
+                        <?php if ($canMemberModeration): ?>
+                        <a href="<?= url('back-office/moderation') ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-rose-800 hover:text-rose-950">Ouvrir les restrictions membres →</a>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>
         </section>
+
+        </div>
 
     </div>
 </div>

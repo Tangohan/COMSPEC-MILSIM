@@ -13,6 +13,7 @@ use App\Repositories\TrainingProgressRepository;
 use App\Repositories\TrainingQuizRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
+use App\Core\Container;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 
@@ -104,6 +105,22 @@ class TrainingProgressService
             'completed_at' => date('Y-m-d H:i:s'),
         ]);
         $this->notifyCourseCompleted($tenantId, $userId, (int) $enrollment['course_id'], $enrollmentId);
+        $this->issueCertifyingCertificateIfApplicable($enrollmentId, $tenantId, $userId, (int) $enrollment['course_id']);
+    }
+
+    /**
+     * Émet l’attestation dès que le parcours est clôturé (formation certifiante), sans attendre un passage ultérieur sur la fiche formation.
+     */
+    private function issueCertifyingCertificateIfApplicable(int $enrollmentId, int $tenantId, int $userId, int $courseId): void
+    {
+        try {
+            $course = $this->courseRepository->findByIdForViewer($courseId, $tenantId);
+            if (!$course || (int) ($course['is_certifying'] ?? 0) !== 1) {
+                return;
+            }
+            Container::get(TrainingCertificateService::class)->issueCertificate($enrollmentId, $tenantId, $userId, null);
+        } catch (\Throwable) {
+        }
     }
 
     /** Félicitations par e-mail (échec d’envoi ignoré). */

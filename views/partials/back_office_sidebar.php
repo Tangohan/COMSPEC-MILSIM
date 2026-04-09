@@ -11,8 +11,9 @@ $p = function_exists('back_office_path_suffix') ? back_office_path_suffix() : ''
 $gate = \App\Core\Gate::getInstance();
 $canInv = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('invitations.send');
 $canDocs = $gate->allows('documents.upload') || $gate->allows('admin.access');
-$canTraining = $gate->allows('training.manage') || $gate->allows('training.assign') || $gate->allows('admin.access');
+$canTraining = \App\Support\TrainingLmsStaffAccess::allows($gate);
 $canTenantModules = $gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access');
+$canForumModConsole = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
 
 $tenantLabel = '';
 try {
@@ -42,6 +43,9 @@ $boNavHome = $p === 'back-office';
 $boNavUsers = $p === 'back-office/users' || str_starts_with($p, 'back-office/users/');
 $boNavInv = str_starts_with($p, 'back-office/invitations');
 $boNavRec = str_starts_with($p, 'back-office/recruitments');
+$boNavRecOfferNew = str_starts_with($p, 'back-office/recruitment/offers/create');
+$boNavRecOffers = (str_starts_with($p, 'back-office/recruitment/offers') && !$boNavRecOfferNew) || str_starts_with($p, 'back-office/recruitment/reference-format');
+$canRecOffers = $gate->allows('organization.recruitment.openings.manage') || $gate->allows('organization.recruitment.manage');
 $boNavRoles = $p === 'back-office/roles' || str_starts_with($p, 'back-office/roles/');
 $boNavRolesFx = $p === 'back-office/roles-functions' || str_starts_with($p, 'back-office/roles-functions/');
 $boNavPjr = str_starts_with($p, 'back-office/personnel-job-roles');
@@ -56,14 +60,17 @@ $boNavAlerts = str_starts_with($p, 'back-office/alerts');
 $boNavConfig = str_starts_with($p, 'back-office/configuration');
 $boNavAnalytics = str_starts_with($p, 'back-office/analytics');
 $boNavPins = str_starts_with($p, 'back-office/dashboard-pins');
+$boNavCoop = str_starts_with($p, 'back-office/cooperation/');
 $boNavOnb = str_starts_with($p, 'back-office/onboarding-recovery');
 $boNavAudit = str_starts_with($p, 'back-office/audit');
 $boNavMod = str_starts_with($p, 'back-office/moderation');
+$canMemberModeration = $gate->allows('admin.members.moderate');
 $boNavEvents = str_starts_with($p, 'back-office/events');
 $studioPath = function_exists('training_studio_path') ? training_studio_path() : 'back-office/ressources/training/studio';
 $boNavStudioActive = str_starts_with($p, $studioPath . '/') || $p === $studioPath;
 $lmsResPath = function_exists('training_lms_admin_path') ? training_lms_admin_path() : 'back-office/ressources/training';
 $boNavLmsRes = $p === $lmsResPath || str_starts_with($p, $lmsResPath . '/');
+$boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request();
 ?>
 <div class="flex h-full min-h-0 flex-col border-r border-slate-800/80 bg-slate-950">
     <div class="border-b border-slate-800/80 px-4 py-5">
@@ -86,6 +93,10 @@ $boNavLmsRes = $p === $lmsResPath || str_starts_with($p, $lmsResPath . '/');
             <?php $boLink('back-office/invitations', 'Invitations', $boNavInv); ?>
         <?php endif; ?>
         <?php $boLink('back-office/recruitments', 'Candidatures', $boNavRec); ?>
+        <?php if ($canRecOffers): ?>
+            <?php $boLink('back-office/recruitment/offers', 'Offres publiées', $boNavRecOffers); ?>
+            <?php $boLink('back-office/recruitment/offers/create', 'Nouvelle offre', $boNavRecOfferNew); ?>
+        <?php endif; ?>
         <?php $boLink('back-office/roles', 'Rôles communautaires', $boNavRoles); ?>
         <?php $boLink('back-office/roles-functions', 'Rôles & fonctions', $boNavRolesFx); ?>
         <?php $boLink('back-office/personnel-job-roles', 'Emplois & missions', $boNavPjr); ?>
@@ -108,7 +119,9 @@ $boNavLmsRes = $p === $lmsResPath || str_starts_with($p, $lmsResPath . '/');
 
         <?php $boSection('Pilotage'); ?>
         <?php $boLink('back-office/audit', 'Journal d’activité', $boNavAudit); ?>
-        <?php $boLink('back-office/moderation', 'Modération', $boNavMod); ?>
+        <?php if ($canMemberModeration): ?>
+            <?php $boLink('back-office/moderation', 'Restrictions membres', $boNavMod); ?>
+        <?php endif; ?>
         <?php $boLink('back-office/events', 'RSVP & pointage', $boNavEvents); ?>
 
         <?php if ($canDocs || $canTraining || $canTenantModules): ?>
@@ -123,14 +136,23 @@ $boNavLmsRes = $p === $lmsResPath || str_starts_with($p, $lmsResPath . '/');
             <?php if ($canTenantModules): ?>
                 <?php $boLink('admin/modpacks', 'Modpacks', false); ?>
                 <?php $boLink('admin/forum-config', 'Briefing & forum', false); ?>
-                <?php $boLink('admin/interteam-missions', 'Missions inter-unités', false); ?>
+                <?php $boLink('back-office/cooperation/missions', 'Coopérations inter-unités', $boNavCoop); ?>
+                <?php if (function_exists('can') && (can('cooperation.catalog.manage') || can('cooperation.announcements.manage'))): ?>
+                    <?php $boLink('back-office/cooperation/catalog', 'Types de coopération (catalogue)', str_starts_with($p, 'back-office/cooperation/catalog')); ?>
+                    <?php $boLink('back-office/cooperation/announcements', 'Annonces coopération', str_starts_with($p, 'back-office/cooperation/announcements')); ?>
+                <?php endif; ?>
                 <?php $boLink('admin/atak-config', 'Cartographie & ATAK', false); ?>
             <?php endif; ?>
         <?php endif; ?>
 
-        <?php if ($gate->allows('admin.system')): ?>
+        <?php if ($gate->allows('admin.system') || $gate->allows('site.support')): ?>
             <?php $boSection('Plateforme'); ?>
-            <?php $boLink('admin', 'Administration site', false); ?>
+            <?php $boLink('admin', $gate->allows('admin.system') ? 'Administration site' : 'Pilotage site (vue assistance)', $boNavPlatformShell); ?>
+        <?php endif; ?>
+        <?php if ($canForumModConsole): ?>
+            <?php $boSection('Modération'); ?>
+            <?php $boLink('back-office/forum-moderation', 'Console modération forum', str_starts_with($p, 'back-office/forum-moderation')); ?>
+            <?php $boLink('admin/content-moderation', 'Fichiers et pièces jointes', str_starts_with($p, 'admin/content-moderation')); ?>
         <?php endif; ?>
     </nav>
 

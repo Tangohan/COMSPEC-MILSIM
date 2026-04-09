@@ -299,6 +299,27 @@
   margin-bottom: 0.35rem;
 }
 
+.site-docs__dl {
+  margin: 0.75rem 0 1.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: rgb(51 65 85);
+}
+
+.site-docs__dl dt {
+  font-weight: 700;
+  color: rgb(30 41 59);
+  margin-top: 0.85rem;
+}
+
+.site-docs__dl dt:first-child {
+  margin-top: 0;
+}
+
+.site-docs__dl dd {
+  margin: 0.35rem 0 0;
+}
+
 .site-docs__callout {
   margin: 1.25rem 0;
   padding: 1rem 1.1rem;

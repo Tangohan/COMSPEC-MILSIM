@@ -76,8 +76,20 @@ class EnlistmentRepository
             if (!empty($data['recruitment_rp_snapshot']) && is_array($data['recruitment_rp_snapshot'])) {
                 $this->updateRecruitmentRpJsonColumn($id, $data['recruitment_rp_snapshot']);
             }
+            if (!empty($data['recruitment_opening_id'])) {
+                $this->updateRecruitmentOpeningIdColumn($id, (int) $data['recruitment_opening_id']);
+            }
         }
         return $id;
+    }
+
+    private function updateRecruitmentOpeningIdColumn(int $enlistmentId, int $openingId): void
+    {
+        try {
+            $stmt = $this->pdo->prepare('UPDATE enlistments SET recruitment_opening_id = ? WHERE id = ?');
+            $stmt->execute([$openingId, $enlistmentId]);
+        } catch (\Throwable) {
+        }
     }
 
     /**

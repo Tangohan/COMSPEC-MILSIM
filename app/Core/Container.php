@@ -69,6 +69,12 @@ class Container
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),
                 self::get(\App\Services\EmailService::class),
                 new \App\Services\Community\CommunityWizardUploadService(),
+                self::get(\App\Repositories\RecruitmentOpeningRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Services\Analytics\AnalyticsEventService::class),
+            ),
+            \App\Controllers\Web\AnalyticsBeaconController::class => new \App\Controllers\Web\AnalyticsBeaconController(
+                self::get(\App\Services\Analytics\AnalyticsEventService::class)
             ),
             \App\Controllers\Web\JoinController::class => new \App\Controllers\Web\JoinController(
                 self::get(TenantRepository::class),
@@ -84,11 +90,19 @@ class Container
                 self::get(\App\Services\Community\TenantCommunityProfileService::class),
             ),
             \App\Repositories\TenantMessageRepository::class => new \App\Repositories\TenantMessageRepository(),
+            \App\Services\Community\TenantInternalMessageNotificationService::class => new \App\Services\Community\TenantInternalMessageNotificationService(
+                self::get(\App\Services\EmailService::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Repositories\TenantMessageRepository::class),
+                self::get(TenantRepository::class),
+            ),
             \App\Controllers\Web\TenantMessagesController::class => new \App\Controllers\Web\TenantMessagesController(
                 self::get(AuthService::class),
                 self::get(RbacService::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\TenantMessageRepository::class),
+                self::get(\App\Services\Community\TenantInternalMessageNotificationService::class),
             ),
             \App\Controllers\Api\StripeWebhookController::class => new \App\Controllers\Api\StripeWebhookController(
                 self::get(TenantRepository::class),
@@ -182,6 +196,11 @@ class Container
             ),
             \App\Repositories\CommunityInvitationRepository::class => new \App\Repositories\CommunityInvitationRepository(),
             \App\Repositories\PlatformUsageRepository::class => new \App\Repositories\PlatformUsageRepository(),
+            \App\Repositories\AnalyticsEventRepository::class => new \App\Repositories\AnalyticsEventRepository(),
+            \App\Services\Analytics\AnalyticsEventService::class => new \App\Services\Analytics\AnalyticsEventService(
+                self::get(\App\Repositories\AnalyticsEventRepository::class)
+            ),
+            \App\Repositories\TenantAnalyticsRepository::class => new \App\Repositories\TenantAnalyticsRepository(),
             \App\Repositories\CommunityEventRepository::class => new \App\Repositories\CommunityEventRepository(),
             \App\Controllers\Web\InvitationAcceptController::class => new \App\Controllers\Web\InvitationAcceptController(
                 self::get(\App\Repositories\CommunityInvitationRepository::class),
@@ -235,21 +254,27 @@ class Container
                 self::get(AuthService::class),
                 self::get(\App\Repositories\ModerationRepository::class),
                 self::get(\App\Services\Moderation\ModerationService::class),
-                self::get(UserRepository::class),
-                self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
-                self::get(\App\Repositories\BlockedIndicatorRepository::class)
+                self::get(UserRepository::class)
             ),
             \App\Controllers\Admin\System\SystemIndicatorBlocklistController::class => new \App\Controllers\Admin\System\SystemIndicatorBlocklistController(
                 self::get(AuthService::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Repositories\BlockedIndicatorRepository::class)
             ),
+            \App\Controllers\Admin\System\SystemMemberSanctionsController::class => new \App\Controllers\Admin\System\SystemMemberSanctionsController(
+                self::get(AuthService::class),
+                self::get(TenantRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\ModerationRepository::class),
+                self::get(\App\Services\Moderation\ModerationService::class)
+            ),
             \App\Controllers\Admin\System\SystemUserLookupApiController::class => new \App\Controllers\Admin\System\SystemUserLookupApiController(
                 self::get(UserRepository::class)
             ),
             \App\Controllers\Admin\Organization\OrganizationAnalyticsController::class => new \App\Controllers\Admin\Organization\OrganizationAnalyticsController(
                 self::get(\App\Services\Platform\FeatureGateService::class),
-                self::get(\App\Repositories\PlatformUsageRepository::class)
+                self::get(\App\Repositories\PlatformUsageRepository::class),
+                self::get(\App\Repositories\TenantAnalyticsRepository::class)
             ),
             \App\Services\Attendance\CommunityEventAttendanceService::class => new \App\Services\Attendance\CommunityEventAttendanceService(
                 self::get(\App\Repositories\CommunityEventRepository::class),
@@ -358,6 +383,8 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Repositories\RecruitmentOpeningRepository::class),
+                self::get(\App\Services\Analytics\AnalyticsEventService::class),
             ),
             \App\Repositories\DocumentRepository::class => new \App\Repositories\DocumentRepository(),
             \App\Repositories\DocumentVersionRepository::class => new \App\Repositories\DocumentVersionRepository(),
@@ -427,6 +454,15 @@ class Container
             ),
             \App\Controllers\Admin\Organization\OrganizationPositionsController::class => new \App\Controllers\Admin\Organization\OrganizationPositionsController(
                 self::get(\App\Repositories\PositionRepository::class)
+            ),
+            \App\Repositories\RecruitmentOpeningRepository::class => new \App\Repositories\RecruitmentOpeningRepository(),
+            \App\Services\Recruitment\RecruitmentOpeningForumPublisher::class => new \App\Services\Recruitment\RecruitmentOpeningForumPublisher(),
+            \App\Controllers\Admin\Organization\RecruitmentOffersController::class => new \App\Controllers\Admin\Organization\RecruitmentOffersController(
+                self::get(\App\Repositories\RecruitmentOpeningRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Services\Recruitment\RecruitmentOpeningForumPublisher::class)
             ),
             \App\Controllers\Admin\Organization\RolesFunctionsAdminController::class => new \App\Controllers\Admin\Organization\RolesFunctionsAdminController(
                 self::get(\App\Repositories\RoleRepository::class),
@@ -620,6 +656,13 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
             ),
+            \App\Repositories\CompetencyUserProgressRepository::class => new \App\Repositories\CompetencyUserProgressRepository(),
+            \App\Services\Training\CompetencyUserJourneyService::class => new \App\Services\Training\CompetencyUserJourneyService(
+                self::get(\App\Repositories\CompetencyUserProgressRepository::class),
+            ),
+            \App\Controllers\Web\TrainingCompetencyController::class => new \App\Controllers\Web\TrainingCompetencyController(
+                self::get(\App\Services\Training\CompetencyUserJourneyService::class),
+            ),
             \App\Controllers\Web\TrainingController::class => new \App\Controllers\Web\TrainingController(
                 self::get(\App\Repositories\TrainingRepository::class),
                 self::get(\App\Repositories\DocumentLinkRepository::class),
@@ -643,6 +686,7 @@ class Container
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(UserRepository::class),
+                self::get(\App\Services\Analytics\AnalyticsEventService::class),
             ),
             \App\Controllers\Web\EquipmentController::class => new \App\Controllers\Web\EquipmentController(
                 self::get(\App\Repositories\EquipmentClassRepository::class),
@@ -716,7 +760,9 @@ class Container
             \App\Controllers\Admin\AdminRecruitmentsController::class => new \App\Controllers\Admin\AdminRecruitmentsController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(\App\Repositories\EnlistmentCannedMessageRepository::class),
-                self::get(\App\Services\Recruitment\EnlistmentAcceptanceProvisioningService::class)
+                self::get(\App\Services\Recruitment\EnlistmentAcceptanceProvisioningService::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\RecruitmentOpeningRepository::class)
             ),
             \App\Controllers\Admin\AdminTrainingController::class => new \App\Controllers\Admin\AdminTrainingController(
                 self::get(\App\Repositories\TrainingCourseRepository::class),
@@ -733,7 +779,8 @@ class Container
                 self::get(\App\Services\Training\TrainingEnrollmentPolicyService::class),
                 self::get(\App\Services\Training\TrainingCourseExchangeService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
-                self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Services\Training\TrainingCertificateService::class)
             ),
             \App\Controllers\Admin\AdminTrainingStudioController::class => new \App\Controllers\Admin\AdminTrainingStudioController(
                 self::get(\App\Repositories\TrainingCourseRepository::class),
@@ -809,9 +856,35 @@ class Container
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Services\Profile\UserUiPreferencesValidationService::class)
             ),
+            \App\Controllers\Api\TenantAccessRequestApiController::class => new \App\Controllers\Api\TenantAccessRequestApiController(
+                self::get(AuthService::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\EmailService::class)
+            ),
             \App\Repositories\SiteSettingsRepository::class => new \App\Repositories\SiteSettingsRepository(),
             \App\Repositories\PlatformSettingsRepository::class => new \App\Repositories\PlatformSettingsRepository(),
             \App\Repositories\InterteamMissionRepository::class => new \App\Repositories\InterteamMissionRepository(),
+            \App\Repositories\CooperationCatalogRepository::class => new \App\Repositories\CooperationCatalogRepository(),
+            \App\Repositories\CooperationAnnouncementTemplateRepository::class => new \App\Repositories\CooperationAnnouncementTemplateRepository(),
+            \App\Repositories\CooperationForumAnnouncementLogRepository::class => new \App\Repositories\CooperationForumAnnouncementLogRepository(),
+            \App\Services\Cooperation\CooperationAnnouncementRenderer::class => new \App\Services\Cooperation\CooperationAnnouncementRenderer(),
+            \App\Services\Cooperation\CooperationCatalogService::class => new \App\Services\Cooperation\CooperationCatalogService(
+                self::get(\App\Repositories\CooperationCatalogRepository::class)
+            ),
+            \App\Services\Cooperation\CooperationAnnouncementDispatcher::class => new \App\Services\Cooperation\CooperationAnnouncementDispatcher(
+                self::get(\App\Repositories\InterteamMissionRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\CooperationAnnouncementTemplateRepository::class),
+                self::get(\App\Services\Cooperation\CooperationAnnouncementRenderer::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\ForumNotificationRepository::class),
+                self::get(\App\Repositories\ForumPostRepository::class),
+                self::get(\App\Repositories\ForumTopicRepository::class),
+                self::get(\App\Repositories\CooperationForumAnnouncementLogRepository::class)
+            ),
             \App\Controllers\Admin\System\SystemBriefSettingsController::class => new \App\Controllers\Admin\System\SystemBriefSettingsController(
                 self::get(\App\Repositories\PlatformSettingsRepository::class),
             ),
@@ -838,6 +911,9 @@ class Container
             ),
             \App\Controllers\Admin\System\SystemPlatformAlertsController::class => new \App\Controllers\Admin\System\SystemPlatformAlertsController(
                 self::get(\App\Repositories\PlatformAlertRepository::class),
+            ),
+            \App\Controllers\Admin\System\SystemAnalyticsController::class => new \App\Controllers\Admin\System\SystemAnalyticsController(
+                self::get(\App\Repositories\TenantAnalyticsRepository::class),
             ),
             \App\Controllers\Admin\Organization\TenantAlertsController::class => new \App\Controllers\Admin\Organization\TenantAlertsController(
                 self::get(\App\Repositories\TenantAlertRepository::class),
@@ -869,14 +945,49 @@ class Container
                 self::get(\App\Services\Profile\ProfilePublicIdentityService::class),
                 self::get(\App\Repositories\ForumAuthorIdentityRepository::class),
                 self::get(\App\Repositories\ForumVoteRepository::class),
+                self::get(\App\Repositories\ForumPostReactionRepository::class),
+                self::get(\App\Repositories\TrainingCertificateRepository::class),
                 self::get(\App\Repositories\ForumAttachmentRepository::class),
                 self::get(TenantRepository::class),
-                self::get(\App\Repositories\InterteamMissionRepository::class)
+                self::get(\App\Repositories\InterteamMissionRepository::class),
+                self::get(\App\Repositories\ForumNotificationRepository::class),
+                self::get(UserRepository::class)
+            ),
+            \App\Services\Cooperation\CooperationWorkflowService::class => new \App\Services\Cooperation\CooperationWorkflowService(
+                self::get(\App\Repositories\InterteamMissionRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+            ),
+            \App\Services\Interteam\InterteamCoopForumService::class => new \App\Services\Interteam\InterteamCoopForumService(
+                self::get(\App\Repositories\InterteamMissionRepository::class),
+                self::get(\App\Repositories\ForumCategoryRepository::class),
+                self::get(\App\Repositories\ForumTopicRepository::class),
+                self::get(\App\Repositories\ForumPostRepository::class),
+                self::get(\App\Services\Cooperation\CooperationWorkflowService::class)
             ),
             \App\Controllers\Web\InterteamMissionWebController::class => new \App\Controllers\Web\InterteamMissionWebController(
                 self::get(\App\Repositories\InterteamMissionRepository::class),
                 self::get(TenantRepository::class),
-                self::get(\App\Repositories\ForumTopicRepository::class)
+                self::get(\App\Repositories\ForumTopicRepository::class),
+                self::get(\App\Services\Interteam\InterteamCoopForumService::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\EmailTokenRepository::class),
+                self::get(\App\Services\Cooperation\CooperationWorkflowService::class),
+                self::get(\App\Services\Cooperation\CooperationCatalogService::class),
+                self::get(\App\Services\Cooperation\CooperationAnnouncementDispatcher::class)
+            ),
+            \App\Controllers\Admin\System\SystemCooperationCatalogController::class => new \App\Controllers\Admin\System\SystemCooperationCatalogController(
+                self::get(\App\Repositories\CooperationCatalogRepository::class)
+            ),
+            \App\Controllers\Admin\System\SystemCooperationAnnouncementsController::class => new \App\Controllers\Admin\System\SystemCooperationAnnouncementsController(
+                self::get(\App\Repositories\CooperationAnnouncementTemplateRepository::class)
+            ),
+            \App\Controllers\Web\CooperationCatalogWebController::class => new \App\Controllers\Web\CooperationCatalogWebController(
+                self::get(\App\Repositories\CooperationCatalogRepository::class)
+            ),
+            \App\Controllers\Web\CooperationAnnouncementsWebController::class => new \App\Controllers\Web\CooperationAnnouncementsWebController(
+                self::get(\App\Repositories\CooperationAnnouncementTemplateRepository::class)
             ),
             \App\Controllers\Web\ForumCategoryController::class => new \App\Controllers\Web\ForumCategoryController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
@@ -892,6 +1003,8 @@ class Container
                 self::get(\App\Services\Profile\ProfilePublicIdentityService::class),
                 self::get(\App\Repositories\ForumAuthorIdentityRepository::class),
                 self::get(\App\Repositories\ForumVoteRepository::class),
+                self::get(\App\Repositories\ForumPostReactionRepository::class),
+                self::get(\App\Repositories\TrainingCertificateRepository::class),
                 self::get(\App\Repositories\ForumAttachmentRepository::class),
                 self::get(\App\Repositories\ForumNotificationRepository::class),
                 self::get(\App\Repositories\UserForumStatsRepository::class),
@@ -928,6 +1041,7 @@ class Container
                 self::get(\App\Services\Documents\DocumentUploadService::class)
             ),
             \App\Repositories\ForumVoteRepository::class => new \App\Repositories\ForumVoteRepository(),
+            \App\Repositories\ForumPostReactionRepository::class => new \App\Repositories\ForumPostReactionRepository(),
             \App\Repositories\ForumAttachmentRepository::class => new \App\Repositories\ForumAttachmentRepository(),
             \App\Repositories\UserForumStatsRepository::class => new \App\Repositories\UserForumStatsRepository(),
             \App\Repositories\ForumNotificationRepository::class => new \App\Repositories\ForumNotificationRepository(),
@@ -942,6 +1056,7 @@ class Container
                 self::get(\App\Repositories\ForumReportRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\ForumVoteRepository::class),
+                self::get(\App\Repositories\ForumPostReactionRepository::class),
                 self::get(\App\Repositories\ForumNotificationRepository::class),
                 self::get(\App\Services\Forum\ForumPostAttachmentService::class),
                 self::get(\App\Repositories\UserForumStatsRepository::class),

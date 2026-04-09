@@ -8,6 +8,8 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\PersonnelJobRoleRepository;
+use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
@@ -25,6 +27,11 @@ use App\Services\Community\TenantBootstrapService;
 use App\Services\Community\TenantCommunityProfileService;
 use App\Services\EmailService;
 use App\Services\Rbac\RbacService;
+use App\Services\Recruitment\TenantRecruitmentSettings;
+use App\Services\Analytics\AnalyticsEventCategory;
+use App\Services\Analytics\AnalyticsEventName;
+use App\Services\Analytics\AnalyticsEventService;
+use App\Services\Analytics\AnalyticsSubjectType;
 
 class CommunityController
 {
@@ -40,7 +47,10 @@ class CommunityController
         private StripeCheckoutService $stripeCheckoutService,
         private SubscriptionPlanRepository $subscriptionPlanRepository,
         private EmailService $emailService,
-        private CommunityWizardUploadService $communityWizardUploadService
+        private CommunityWizardUploadService $communityWizardUploadService,
+        private RecruitmentOpeningRepository $recruitmentOpeningRepository,
+        private PersonnelJobRoleRepository $personnelJobRoleRepository,
+        private AnalyticsEventService $analyticsEventService,
     ) {}
 
     /** Registre des unités / communautés (hors tenant placeholder). */
@@ -132,6 +142,27 @@ class CommunityController
             }
         }
 
+        $recruitmentPublishedOpenings = [];
+        $recruitmentProspectionRef = '';
+        $recruitmentListUpdatedAt = '';
+        if ($publicLayout === 'showcase' && $this->recruitmentOpeningRepository->tablesExist()) {
+            $recruitmentPublishedOpenings = $this->recruitmentOpeningRepository->listPublishedForTenant($tid);
+            $recruitmentProspectionRef = TenantRecruitmentSettings::prospectionDocumentRef($settings);
+            $recruitmentListUpdatedAt = $this->recruitmentOpeningRepository->maxUpdatedAtPublished($tid) ?? '';
+        }
+
+        $fromRegistry = trim((string) $request->query('ref', '')) === 'registry';
+        $this->analyticsEventService->record(
+            $tid,
+            $this->authService->check() && Session::get('user_id') ? (int) Session::get('user_id') : null,
+            AnalyticsEventCategory::TENANT_PUBLIC,
+            AnalyticsEventName::TENANT_PUBLIC_VIEW,
+            AnalyticsSubjectType::TENANT,
+            $tid,
+            null,
+            $fromRegistry ? ['from_registry' => true] : null
+        );
+
         return Response::view('layout.main', [
             'title' => trim((string) ($tenant['name'] ?? 'Communauté')) . ' — Fiche publique',
             'content' => 'community.show',
@@ -149,6 +180,84 @@ class CommunityController
             'unitMemberCounts' => $unitMemberCounts,
             'commanderNames' => $commanderNames,
             'communityShowcasePage' => $publicLayout === 'showcase',
+            'recruitmentPublishedOpenings' => $recruitmentPublishedOpenings,
+            'recruitmentProspectionRef' => $recruitmentProspectionRef,
+            'recruitmentListUpdatedAt' => $recruitmentListUpdatedAt,
+            'analyticsBeacon' => [
+                'tenantId' => $tid,
+                'category' => AnalyticsEventCategory::TENANT_PUBLIC,
+                'durationEvent' => AnalyticsEventName::TENANT_PUBLIC_PAGE_DURATION,
+                'subjectType' => AnalyticsSubjectType::TENANT,
+                'subjectId' => $tid,
+            ],
+        ]);
+    }
+
+    /** Fiche publique « avis de vacance ». */
+    public function recruitmentOpeningShow(Request $request, array $params = []): Response
+    {
+        $slug = (string) ($params['slug'] ?? '');
+        $avis = (string) ($params['avis'] ?? '');
+        $tenant = $this->tenantRepository->findBySlug($slug);
+        if (!$tenant || $avis === '' || !$this->recruitmentOpeningRepository->tablesExist()) {
+            return Response::view('errors.404', ['title' => 'Avis introuvable'])->setStatusCode(404);
+        }
+        $tid = (int) ($tenant['id'] ?? 0);
+        $opening = $this->recruitmentOpeningRepository->findPublishedByPublicSlug($tid, $avis);
+        if (!$opening) {
+            return Response::view('errors.404', ['title' => 'Avis introuvable'])->setStatusCode(404);
+        }
+        $settings = [];
+        $rawSettings = $tenant['settings'] ?? null;
+        if (is_string($rawSettings) && trim($rawSettings) !== '') {
+            $decoded = json_decode($rawSettings, true);
+            if (is_array($decoded)) {
+                $settings = $decoded;
+            }
+        }
+        $jobRoleName = '';
+        if (!empty($opening['personnel_job_role_id'])) {
+            $jr = $this->personnelJobRoleRepository->findRoleById((int) $opening['personnel_job_role_id'], $tid);
+            if ($jr) {
+                $jobRoleName = trim((string) ($jr['name'] ?? ''));
+            }
+        }
+        $related = $this->recruitmentOpeningRepository->listRelatedPublished($tid, $opening, 5);
+        $print = $request->query('imprimer') === '1';
+        $communityConfig = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $communityLocked = !empty($communityConfig['community_locked']);
+
+        $oid = (int) ($opening['id'] ?? 0);
+        if ($oid > 0) {
+            $this->analyticsEventService->record(
+                $tid,
+                $this->authService->check() && Session::get('user_id') ? (int) Session::get('user_id') : null,
+                AnalyticsEventCategory::RECRUITMENT,
+                AnalyticsEventName::RECRUITMENT_OPENING_VIEW,
+                AnalyticsSubjectType::RECRUITMENT_OPENING,
+                $oid,
+                null,
+                null
+            );
+        }
+
+        return Response::view('layout.main', [
+            'title' => trim((string) ($opening['title'] ?? 'Avis')) . ' — ' . trim((string) ($tenant['name'] ?? '')),
+            'content' => 'community.recruitment_opening_show',
+            'tenant' => $tenant,
+            'opening' => $opening,
+            'jobRoleName' => $jobRoleName,
+            'relatedOpenings' => $related,
+            'printMode' => $print,
+            'communityRecruitmentOpeningPage' => true,
+            'communityLocked' => $communityLocked,
+            'analyticsBeacon' => $oid > 0 ? [
+                'tenantId' => $tid,
+                'category' => AnalyticsEventCategory::RECRUITMENT,
+                'durationEvent' => AnalyticsEventName::RECRUITMENT_OPENING_PAGE_DURATION,
+                'subjectType' => AnalyticsSubjectType::RECRUITMENT_OPENING,
+                'subjectId' => $oid,
+            ] : null,
         ]);
     }
 

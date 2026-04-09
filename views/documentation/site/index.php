@@ -14,6 +14,7 @@ $toc = [
     ['id' => 'personnel-et-orbat', 'title' => 'Personnel, ORBAT & profils métier'],
     ['id' => 'dossier-operateur', 'title' => 'Dossier opérateur'],
     ['id' => 'forum-et-briefings', 'title' => 'Forum & briefings'],
+    ['id' => 'cooperations-inter-unites', 'title' => 'Coopérations inter-unités'],
     ['id' => 'moderation-forum', 'title' => 'Modération & signalements'],
     ['id' => 'formations', 'title' => 'Formations (LMS & Studio)'],
     ['id' => 'documents', 'title' => 'Documents'],
@@ -39,7 +40,8 @@ $toc = [
             <?php endif; ?>
             <p>
                 Ce guide décrit le fonctionnement du portail <strong>Athena</strong> : parcours de création, droits et rôles, formations (brouillon, publication, catalogue),
-                modération, fiches personnel et profils métier. Il est destiné aux membres connectés ; les écrans exacts dépendent de vos habilitations.
+                modération, fiches personnel et profils métier, ainsi que les <strong>coopérations entre communautés</strong> (dossiers partagés, espace commun, autorisations de partage).
+                Il est destiné aux membres connectés ; les écrans exacts dépendent de vos habilitations.
             </p>
             <div class="site-docs__toolbar">
                 <button type="button" class="site-docs__toc-toggle" id="site-docs-toc-toggle" aria-expanded="false" aria-controls="site-docs-sidebar">

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CERBERE | Protocole d'Accréditation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0a0f1a;
+            color: #cbd5e1;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Effet de grain de texture (Portfolio Style) */
+        .grain {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Mouse Halo */
+        #halo {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.07) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+        }
+
+        .step-number {
+            @apply w-12 h-12 flex items-center justify-center rounded-xl border border-slate-700 text-slate-500 font-bold transition-all duration-500;
+        }
+        
+        .active-step .step-number {
+            @apply border-blue-500 text-blue-400 bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.2)];
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-slide { animation: slideUp 0.6s ease forwards; }
+    </style>
+</head>
+<body>
+
+    <div class="grain"></div>
+    <div id="halo"></div>
+
+    <nav class="relative z-10 flex justify-between items-center px-10 py-6 border-b border-slate-800/50">
+        <div class="text-white font-black tracking-tighter text-xl uppercase italic">
+            Cerbere<span class="text-blue-600">.</span>Architect
+        </div>
+        <div class="text-[10px] tracking-[0.3em] text-slate-500 uppercase font-bold">
+            Auth: Administrator_Root
+        </div>
+    </nav>
+
+    <main class="relative z-10 max-w-6xl mx-auto px-6 pt-20 pb-32">
+        
+        <header class="mb-20">
+            <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-blue-500/5 border border-blue-500/20 mb-6">
+                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Guide de Déploiement d'Unité</span>
+            </div>
+            <h1 class="text-6xl md:text-8xl font-black text-white italic tracking-tighter uppercase leading-none">
+                Initialiser le <br><span class="text-blue-600">Commandement.</span>
+            </h1>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-16">
+            
+            <aside class="lg:col-span-4 space-y-12">
+                <div class="step-item active-step flex items-center gap-6" id="nav-1">
+                    <div class="step-number italic text-xl">01</div>
+                    <div>
+                        <h4 class="text-white font-bold uppercase text-sm tracking-wider">Analyse</h4>
+                        <p class="text-xs text-slate-500">Vérification des prérequis</p>
+                    </div>
+                </div>
+                <div class="step-item opacity-30 flex items-center gap-6" id="nav-2">
+                    <div class="step-number italic text-xl">02</div>
+                    <div>
+                        <h4 class="text-white font-bold uppercase text-sm tracking-wider">Hiérarchie</h4>
+                        <p class="text-xs text-slate-500">Niveau de classification</p>
+                    </div>
+                </div>
+                <div class="step-item opacity-30 flex items-center gap-6" id="nav-3">
+                    <div class="step-number italic text-xl">03</div>
+                    <div>
+                        <h4 class="text-white font-bold uppercase text-sm tracking-wider">Activation</h4>
+                        <p class="text-xs text-slate-500">Génération du registre</p>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="lg:col-span-8 min-h-[400px]">
+                
+                <div id="step-1" class="step-pane animate-slide">
+                    <div class="glass-card rounded-3xl p-10">
+                        <h2 class="text-3xl font-bold text-white mb-6 italic">01. Avant de commencer</h2>
+                        <p class="text-slate-400 leading-relaxed mb-8">
+                            La création d'une unité dans le système <span class="text-slate-200 font-bold italic">CERBERE</span> nécessite une validation de la branche parente. Assurez-vous d'avoir les permissions <code class="text-blue-400 bg-blue-500/10 px-2 py-1 rounded text-sm font-mono">ROOT_LEVEL_ACCESS</code>.
+                        </p>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
+                                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span class="text-sm">Vérification de la base de données parente ok.</span>
+                            </div>
+                            <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
+                                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span class="text-sm">Disponibilité des identifiants ID_UNITE.</span>
+                            </div>
+                        </div>
+
+                        <button onclick="goToStep(2)" class="mt-12 w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest text-xs italic transition-all rounded-xl shadow-[0_10px_30px_rgba(37,99,235,0.2)]">
+                            Initialiser la configuration
+                        </button>
+                    </div>
+                </div>
+
+                <div id="step-2" class="step-pane hidden">
+                    <div class="glass-card rounded-3xl p-10 border-blue-500/30">
+                        <h2 class="text-3xl font-bold text-white mb-6 italic">02. Niveau de l'Unité</h2>
+                        <p class="text-slate-400 mb-8 text-sm">Sélectionnez la profondeur opérationnelle de la nouvelle structure.</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <label class="relative group cursor-pointer">
+                                <input type="radio" name="level" class="peer sr-only" checked>
+                                <div class="p-6 rounded-2xl border border-slate-700 bg-slate-900/50 peer-checked:border-blue-500 peer-checked:bg-blue-500/5 transition-all">
+                                    <div class="text-blue-500 font-black mb-1">NIVEAU 100</div>
+                                    <div class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">État-Major Général</div>
+                                </div>
+                            </label>
+                            <label class="relative group cursor-pointer">
+                                <input type="radio" name="level" class="peer sr-only">
+                                <div class="p-6 rounded-2xl border border-slate-700 bg-slate-900/50 peer-checked:border-blue-500 peer-checked:bg-blue-500/5 transition-all">
+                                    <div class="text-blue-500 font-black mb-1">NIVEAU 40</div>
+                                    <div class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Régiment Tactique</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="flex gap-4 mt-10">
+                            <button onclick="goToStep(1)" class="px-8 py-5 border border-slate-700 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-all">Retour</button>
+                            <button onclick="goToStep(3)" class="flex-1 py-5 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest text-xs italic transition-all rounded-xl shadow-[0_10px_30px_rgba(37,99,235,0.2)]">Confirmer la strate</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-3" class="step-pane hidden">
+                    <div class="glass-card rounded-3xl p-12 text-center border-green-500/20">
+                        <div class="w-24 h-24 bg-green-500/10 border border-green-500/30 rounded-full flex items-center justify-center mx-auto mb-8">
+                            <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <h2 class="text-4xl font-black text-white mb-4 italic uppercase">Prêt pour Injection</h2>
+                        <p class="text-slate-500 mb-10 max-w-sm mx-auto">La configuration est terminée. Le système est prêt à générer les entrées SQL et les fichiers de configuration associés.</p>
+                        
+                        <a href="#" class="inline-block px-12 py-5 bg-white text-black font-black uppercase tracking-[0.2em] text-xs italic rounded-xl hover:scale-105 transition-all">
+                            Exécuter l'enrôlement
+                        </a>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <footer class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-8">
+        <div class="text-[10px] text-slate-500 uppercase font-bold tracking-widest leading-loose">
+            &copy; 2026 Cerbere Systems <br> Architected for Performance
+        </div>
+        <div class="flex gap-10">
+            <a href="#" class="text-[10px] font-bold uppercase hover:text-blue-500 transition-colors">Documentation</a>
+            <a href="#" class="text-[10px] font-bold uppercase hover:text-blue-500 transition-colors">Support</a>
+        </div>
+    </footer>
+
+    <script>
+        // Halo mouse effect
+        const halo = document.getElementById('halo');
+        document.addEventListener('mousemove', (e) => {
+            halo.style.left = e.clientX + 'px';
+            halo.style.top = e.clientY + 'px';
+        });
+
+        // Navigation entre les étapes
+        function goToStep(stepNumber) {
+            // Cacher toutes les panes
+            document.querySelectorAll('.step-pane').forEach(pane => {
+                pane.classList.add('hidden');
+                pane.classList.remove('animate-slide');
+            });
+
+            // Afficher la pane active
+            const currentPane = document.getElementById('step-' + stepNumber);
+            currentPane.classList.remove('hidden');
+            // Trigger animation
+            setTimeout(() => currentPane.classList.add('animate-slide'), 10);
+
+            // Update Sidebar
+            document.querySelectorAll('.step-item').forEach((item, index) => {
+                if (index + 1 === stepNumber) {
+                    item.classList.add('active-step');
+                    item.classList.remove('opacity-30');
+                } else if (index + 1 < stepNumber) {
+                    item.classList.remove('active-step', 'opacity-30');
+                    item.classList.add('opacity-100');
+                    // Change le numéro par un check optionnel
+                } else {
+                    item.classList.remove('active-step');
+                    item.classList.add('opacity-30');
+                }
+            });
+
+            // Scroll to top of content for mobile
+            if(window.innerWidth < 1024) {
+                window.scrollTo({ top: 400, behavior: 'smooth' });
+            }
+        }
+    </script>
+</body>
+</html>

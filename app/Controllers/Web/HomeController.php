@@ -239,7 +239,10 @@ class HomeController
 
     public function recrutement(Request $request, array $params = []): Response
     {
-        return Response::view('recrutement');
+        return Response::view('layout.main', [
+            'title' => 'Recrutement',
+            'content' => 'portal.recruitment_global',
+        ]);
     }
 
     public function equipement(Request $request, array $params = []): Response
@@ -249,10 +252,24 @@ class HomeController
 
     public function tacmap(Request $request, array $params = []): Response
     {
-        return Response::view('tacmap');
+        return Response::view('tacmap', array_merge($this->buildOperationalMapPageData(), [
+            'title' => 'TACMAP — Athena',
+        ]));
     }
 
     public function overwatch(Request $request, array $params = []): Response
+    {
+        return Response::view('overwatch.index', array_merge($this->buildOperationalMapPageData(), [
+            'title' => 'COMSPEC Overwatch — C2',
+        ]));
+    }
+
+    /**
+     * Données communes aux vues carte opérationnelle (Overwatch, TACMAP) : cartes ATAK, workspaces, contexte API.
+     *
+     * @return array<string, mixed>
+     */
+    private function buildOperationalMapPageData(): array
     {
         $tenantId = (int) Session::get('tenant_id');
         $atakMapRepo = \App\Core\Container::get(\App\Repositories\AtakMapRepository::class);
@@ -263,7 +280,7 @@ class HomeController
         $defaultMapSlug = $defaultMap['slug'] ?? 'altis';
         $defaultMapLabel = $defaultMap['label'] ?? 'Principal';
 
-        $overwatchMapsList = [['slug' => 'world', 'label' => 'World (OSM)', 'type' => 'world']];
+        $overwatchMapsList = [['slug' => 'world', 'label' => 'Monde (OpenStreetMap)', 'type' => 'world']];
         foreach ($atakMapsList as $m) {
             $c = $m['config'] ?? [];
             $overwatchMapsList[] = [
@@ -317,8 +334,7 @@ class HomeController
             'syncIntervalMs' => 8000,
         ];
 
-        return Response::view('overwatch.index', [
-            'title' => 'COMSPEC Overwatch — C2',
+        return [
             'overwatchMapsList' => $overwatchMapsList,
             'overwatchWorkspaces' => $overwatchWorkspaces,
             'overwatchMapsConfigs' => $overwatchMapsConfigs,
@@ -330,6 +346,6 @@ class HomeController
                 'slug' => $defaultMapSlug,
             ],
             'overwatchContext' => $overwatchContext,
-        ]);
+        ];
     }
 }

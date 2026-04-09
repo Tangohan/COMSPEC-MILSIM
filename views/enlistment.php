@@ -26,6 +26,9 @@ $recruitmentPresets = $enlistmentContext['recruitmentPresets'] ?? [];
 $hasMembershipOnTarget = !empty($enlistmentContext['hasMembershipOnTarget']);
 $switchToTargetUrl = $enlistmentContext['switchToTargetUrl'] ?? null;
 $tenantSlugForForm = trim((string) ($tenant['slug'] ?? ''));
+$selectedRecruitmentOpening = is_array($selectedRecruitmentOpening ?? null) ? $selectedRecruitmentOpening : null;
+$analyticsBeacon = $analyticsBeacon ?? null;
+$compactAccountOpening = $canUseAccount && $selectedRecruitmentOpening !== null;
 $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/tailwind.css') : null;
 ?>
 <!DOCTYPE html>
@@ -48,6 +51,7 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
         .section-title::after { content: ""; flex: 1; height: 1px; background: #e2e8f0; }
         @keyframes scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
         .scan-line { animation: scan 4s linear infinite; opacity: 0.1; }
+        form.enlist-compact-default:not(.enlist-compact-expanded) .enlist-full-only { display: none !important; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen">
@@ -177,10 +181,19 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                     </div>
                 </div>
 
-                <form method="post" action="<?= htmlspecialchars($formAction) ?>" class="p-8 md:p-12 space-y-12 relative z-10" id="recruitment-form" data-can-use-account="<?= $canUseAccount ? '1' : '0' ?>">
+                <form method="post" action="<?= htmlspecialchars($formAction) ?>" class="p-8 md:p-12 space-y-12 relative z-10<?= $compactAccountOpening ? ' enlist-compact-default' : '' ?>" id="recruitment-form" data-can-use-account="<?= $canUseAccount ? '1' : '0' ?>" data-compact-opening="<?= $compactAccountOpening ? '1' : '0' ?>">
                     <?= \App\Core\Csrf::field() ?>
                     <?php if ($tenantSlugForForm !== ''): ?>
                         <input type="hidden" name="enlistment_tenant_slug" value="<?= htmlspecialchars($tenantSlugForForm) ?>">
+                    <?php endif; ?>
+                    <input type="hidden" name="enlistment_form_mode" id="enlistment_form_mode" value="<?= $compactAccountOpening ? 'compact' : 'full' ?>">
+                    <?php if ($selectedRecruitmentOpening !== null && !empty($selectedRecruitmentOpening['id'])): ?>
+                        <input type="hidden" name="enlistment_opening_id" value="<?= (int) $selectedRecruitmentOpening['id'] ?>">
+                        <div class="mb-8 rounded-xl border border-sky-200 bg-sky-50 p-5">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-sky-800">Candidature ciblée</p>
+                            <p class="mt-2 text-sm font-bold text-slate-900">Vous postulez pour : <?= htmlspecialchars((string) ($selectedRecruitmentOpening['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                            <p class="mt-1 text-xs text-sky-900/80 leading-relaxed">Votre dossier sera rattaché à cet avis pour le suivi côté équipe RH.</p>
+                        </div>
                     <?php endif; ?>
                     <div class="p-6 bg-slate-50 border-l-4 border-slate-900 mb-10">
                         <p class="text-[11px] leading-relaxed text-slate-600 font-medium">
@@ -245,6 +258,31 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
+                                    <?php
+                                    $rpShareLabels = [
+                                        'character_name' => 'Nom du personnage',
+                                        'bio' => 'Biographie',
+                                        'cv' => 'Parcours (CV)',
+                                        'image_url' => 'Portrait enregistré (fichier)',
+                                        'image_external_url' => 'Lien vers un portrait',
+                                        'admin_notes' => 'Notes personnelles du profil',
+                                        'availability' => 'Synthèse des disponibilités',
+                                    ];
+                                    ?>
+                                    <div id="enlist-rp-share-panel" class="hidden rounded-xl border border-emerald-100 bg-white/90 p-4 space-y-3 text-[11px] text-slate-700">
+                                        <p class="text-[10px] font-black uppercase tracking-wider text-emerald-800">Contenu du profil transmis au recrutement</p>
+                                        <p class="text-slate-600 leading-relaxed">Ne cochez que ce que vous acceptez d’ajouter à ce dossier. Le reste reste sur votre compte et n’est pas copié ici.</p>
+                                        <?php foreach ($rpShareLabels as $shareKey => $shareLabel): ?>
+                                            <label class="flex items-center gap-2 cursor-pointer">
+                                                <input type="checkbox" name="share_rp_<?= htmlspecialchars($shareKey) ?>" value="1" checked disabled class="rounded border-slate-300 enlist-rp-share-cb">
+                                                <span><?= htmlspecialchars($shareLabel) ?></span>
+                                            </label>
+                                        <?php endforeach; ?>
+                                        <label class="flex items-start gap-2 cursor-pointer pt-2 border-t border-emerald-100">
+                                            <input type="checkbox" name="include_milsim_from_preset" value="1" checked disabled class="mt-1 rounded border-slate-300 enlist-include-milsim-cb">
+                                            <span>Inclure aussi les <strong>réponses techniques</strong> enregistrées dans ce modèle (matériel, créneaux, motivation enregistrée dans le profil, etc.).</span>
+                                        </label>
+                                    </div>
                                 <?php endif; ?>
                                 <div class="rounded-xl bg-slate-900 text-white p-4">
                                     <label class="flex items-start gap-3 cursor-pointer">
@@ -253,6 +291,16 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                                     </label>
                                 </div>
                                 <p class="text-[10px] text-slate-500">Les champs « administratif » ci-dessous complètent votre profil pour l’état-major.</p>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($compactAccountOpening): ?>
+                            <div id="enlist-compact-toolbar" class="rounded-xl border border-sky-200 bg-sky-50/80 p-5 space-y-3 mb-6">
+                                <p class="text-[10px] font-black uppercase tracking-widest text-sky-900">Parcours court</p>
+                                <p class="text-[11px] text-sky-950/90 leading-relaxed">Seuls les éléments utiles à une candidature ciblée sont affichés. Vous pouvez à tout moment compléter le dossier comme pour une première inscription.</p>
+                                <button type="button" id="enlist-btn-expand-full" class="inline-flex items-center justify-center rounded-xl border-2 border-sky-800 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-sky-900 hover:bg-sky-100 transition-colors">
+                                    Fournir le questionnaire complet
+                                </button>
                             </div>
                         <?php endif; ?>
 
@@ -291,7 +339,7 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                                     autocomplete="email">
                             </div>
                         </div>
-                        <div class="grid md:grid-cols-2 gap-6">
+                        <div class="enlist-full-only grid md:grid-cols-2 gap-6">
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black tracking-wider uppercase"><?= htmlspecialchars($fld('age')['label']) ?></label>
                                 <input type="number" name="age" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('age')['placeholder']) ?>" min="16" max="99"
@@ -315,7 +363,7 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                         </div>
                     </section>
 
-                    <section>
+                    <section class="enlist-full-only">
                         <div class="section-title"><?= htmlspecialchars((string) $p['section_2']) ?></div>
                         <div class="space-y-6">
                             <?php $fieldName = 'system_config'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
@@ -331,11 +379,13 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                         <div class="section-title"><?= htmlspecialchars((string) $p['section_3']) ?></div>
                         <div class="space-y-6">
                             <?php $fieldName = 'motivation_why_join'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
-                            <?php $fieldName = 'motivation_accountability'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
+                            <div class="enlist-full-only">
+                                <?php $fieldName = 'motivation_accountability'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
+                            </div>
                         </div>
                     </section>
 
-                    <section class="bg-slate-50 p-6 rounded-2xl space-y-6 border border-slate-100">
+                    <section class="enlist-full-only bg-slate-50 p-6 rounded-2xl space-y-6 border border-slate-100">
                         <div class="section-title"><?= htmlspecialchars((string) $p['section_4']) ?></div>
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <span class="text-[11px] font-medium"><?= htmlspecialchars((string) $p['commitment_q13']) ?></span>
@@ -438,12 +488,15 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
             var form = document.getElementById('recruitment-form');
             if (!form) return;
             var canUseAccount = form.getAttribute('data-can-use-account') === '1';
+            var compactOpening = form.getAttribute('data-compact-opening') === '1';
             var flowInput = document.getElementById('enlistment_flow');
+            var modeInput = document.getElementById('enlistment_form_mode');
             var accPanel = document.getElementById('enlist-account-panel');
             var guestId = document.getElementById('enlist-guest-identity');
             var guestNames = document.getElementById('enlist-guest-names');
             var btnAcc = document.getElementById('enlist-btn-flow-account');
             var btnGuest = document.getElementById('enlist-btn-flow-guest');
+            var btnExpand = document.getElementById('enlist-btn-expand-full');
             var legalRow = document.getElementById('legal-full-row');
             var labelFull = document.getElementById('label-full-name');
             var LABEL_ADMIN = <?= json_encode($fld('full_name')['label'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
@@ -452,6 +505,26 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
             function setGuestFieldsRequired(isGuest) {
                 document.querySelectorAll('.guest-req-field').forEach(function(el) {
                     el.required = !!isGuest;
+                });
+            }
+
+            function syncMotivationRequired() {
+                var ta = document.querySelector('textarea[name="motivation_why_join"]');
+                if (!ta) return;
+                var flow = flowInput ? flowInput.value : 'guest';
+                var compact = form.classList.contains('enlist-compact-default') && !form.classList.contains('enlist-compact-expanded');
+                ta.required = (flow === 'account' && compact);
+            }
+
+            function syncRpSharePanel() {
+                var sel = document.getElementById('recruitment_preset_select');
+                var panel = document.getElementById('enlist-rp-share-panel');
+                if (!panel) return;
+                var guest = flowInput && flowInput.value === 'guest';
+                var picked = !guest && sel && sel.value && String(sel.value).length > 0;
+                panel.classList.toggle('hidden', !picked);
+                panel.querySelectorAll('input').forEach(function(inp) {
+                    inp.disabled = !picked;
                 });
             }
 
@@ -497,7 +570,19 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                         r.disabled = !guest;
                     });
                 }
+                if (guest) {
+                    form.classList.add('enlist-compact-expanded');
+                    if (modeInput) modeInput.value = 'full';
+                } else if (compactOpening) {
+                    form.classList.remove('enlist-compact-expanded');
+                    if (modeInput) modeInput.value = 'compact';
+                } else {
+                    form.classList.remove('enlist-compact-expanded');
+                    if (modeInput) modeInput.value = 'full';
+                }
                 setGuestFieldsRequired(guest || !canUseAccount);
+                syncRpSharePanel();
+                syncMotivationRequired();
             }
 
             if (canUseAccount && btnAcc && btnGuest) {
@@ -506,6 +591,20 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                 setFlow(flowInput && flowInput.value === 'guest' ? 'guest' : 'account');
             } else {
                 setGuestFieldsRequired(true);
+                syncRpSharePanel();
+                syncMotivationRequired();
+            }
+
+            if (btnExpand) {
+                btnExpand.addEventListener('click', function() {
+                    form.classList.add('enlist-compact-expanded');
+                    if (modeInput) modeInput.value = 'full';
+                    syncMotivationRequired();
+                    try {
+                        var s = document.querySelector('section .section-title');
+                        if (s) s.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } catch (e) {}
+                });
             }
 
             document.querySelectorAll('input[name="identity_kind"]').forEach(function(r) {
@@ -516,6 +615,7 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
             var presetSel = document.getElementById('recruitment_preset_select');
             if (presetSel) {
                 presetSel.addEventListener('change', function(ev) {
+                    syncRpSharePanel();
                     var opt = ev.target.selectedOptions[0];
                     var raw = opt && opt.getAttribute('data-payload');
                     if (!raw) return;
@@ -538,6 +638,7 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                 } else {
                     setGuestFieldsRequired(false);
                 }
+                syncMotivationRequired();
                 if (canUseAccount && flow === 'account') {
                     var c = document.getElementById('consent_data_sharing');
                     if (c && !c.checked) {
@@ -548,5 +649,6 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
             });
         })();
     </script>
+    <?php require base_path('views/partials/analytics_beacon.php'); ?>
 </body>
 </html>

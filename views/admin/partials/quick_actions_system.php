@@ -3,8 +3,12 @@ declare(strict_types=1);
 /**
  * Actions réservées à admin.system — périmètre plateforme uniquement.
  */
+$gate = \App\Core\Gate::getInstance();
+if (!$gate->allows('admin.system')) {
+    return;
+}
 ?>
-<section class="space-y-4" aria-labelledby="qa-platform-heading">
+<section class="space-y-4" aria-labelledby="qa-platform-heading" id="hub-plateforme-modules">
     <div>
         <h2 id="qa-platform-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Modules plateforme</h2>
         <p class="mt-1 text-sm text-slate-600">Accès direct aux fonctions <strong class="font-semibold text-slate-800">transverses</strong> (hors configuration d’une communauté précise).</p>
@@ -18,6 +22,7 @@ declare(strict_types=1);
                 <a href="<?= url('admin/roles') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800">Rôles système</a>
                 <a href="<?= url('admin/site-roles') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Affectations rôles site</a>
                 <a href="<?= url('admin/system/blocklist') ?>" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50/80 px-3 py-2.5 text-xs font-semibold text-rose-950 hover:bg-rose-100">Liste de restriction (site entier)</a>
+                <a href="<?= url('admin/system/member-sanctions') ?>" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-white px-3 py-2.5 text-xs font-semibold text-rose-900 hover:bg-rose-50">Sanctions à l’échelle du site</a>
             </div>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col">
@@ -28,6 +33,8 @@ declare(strict_types=1);
                 <a href="<?= url('admin/settings') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800">Paramètres système</a>
                 <a href="<?= url('admin/system/brief') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Brief (accès membres)</a>
                 <a href="<?= url('admin/system/alerts') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Alertes plateforme</a>
+                <a href="<?= url('admin/system/cooperation/catalog') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Types de coopération (référence)</a>
+                <a href="<?= url('admin/system/cooperation/announcements') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Annonces coopération (défauts)</a>
             </div>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col">

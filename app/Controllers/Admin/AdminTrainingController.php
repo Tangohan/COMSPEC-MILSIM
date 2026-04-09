@@ -24,7 +24,9 @@ use App\Services\Training\TrainingAssignmentService;
 use App\Services\Training\TrainingCourseExchangeService;
 use App\Services\Training\TrainingEnrollmentPolicyService;
 use App\Services\Training\TrainingProgressService;
+use App\Services\Training\TrainingCertificateService;
 use App\Services\Training\TrainingCertificateAssetStorageService;
+use App\Support\TrainingLmsStaffAccess;
 
 class AdminTrainingController
 {
@@ -44,6 +46,7 @@ class AdminTrainingController
         private TrainingCourseExchangeService $courseExchangeService,
         private FeatureGateService $featureGate,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
+        private TrainingCertificateService $certificateService,
     ) {}
 
     public function dashboard(Request $request, array $params = []): Response
@@ -65,7 +68,7 @@ class AdminTrainingController
         $expiring = $this->assignmentService->listOverdueOrExpiring($tenantId, 30);
         return Response::view('layout.main', [
             'content' => 'admin.training.dashboard',
-            'title' => 'Formations — Admin',
+            'title' => 'Pilotage des formations',
             'trainingAdminNav' => 'dashboard',
             'stats' => [
                 'courses' => count($courses),
@@ -361,13 +364,56 @@ class AdminTrainingController
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
         $certificates = $this->certificateRepository->listForTenantAdmin($tenantId, 200);
+        $pdfReady = class_exists(\Dompdf\Dompdf::class);
+        $pendingPdf = 0;
+        foreach ($certificates as $c) {
+            if (($c['status'] ?? '') !== 'valid') {
+                continue;
+            }
+            $rel = trim((string) ($c['pdf_path'] ?? ''));
+            if ($rel === '' || !is_file(base_path($rel))) {
+                $pendingPdf++;
+            }
+        }
 
         return Response::view('layout.main', [
             'content' => 'admin.training.certificates',
             'title' => 'Certificats',
             'trainingAdminNav' => 'certificates',
             'certificates' => $certificates,
+            'trainingCertificatesPdfReady' => $pdfReady,
+            'trainingCertificatesPendingPdf' => $pendingPdf,
         ]);
+    }
+
+    public function certificatesGeneratePendingPdfs(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        $redirect = Response::redirect(training_lms_admin_url('certificates'));
+        if (!$request->isPost()) {
+            return $redirect;
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return $redirect;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!class_exists(\Dompdf\Dompdf::class)) {
+            Session::flash('error', 'La génération des fichiers PDF n’est pas disponible sur ce serveur. Vérifiez l’installation du projet (dépendances Composer) ou contactez l’équipe technique.');
+
+            return $redirect;
+        }
+        $n = $this->certificateService->backfillPendingPdfDocuments($tenantId, 80);
+        if ($n > 0) {
+            Session::flash('success', $n === 1
+                ? 'Un document PDF a été généré.'
+                : $n . ' documents PDF ont été générés.');
+        } else {
+            Session::flash('success', 'Aucun document en attente : tout est à jour.');
+        }
+
+        return $redirect;
     }
 
     public function certificateGabarit(Request $request, array $params = []): Response
@@ -461,7 +507,7 @@ class AdminTrainingController
         $logs = $this->auditService->listLogsForTenantDisplay($tenantId, 200);
         return Response::view('layout.main', [
             'content' => 'admin.training.audit',
-            'title' => 'Audit Formations',
+            'title' => 'Journal des formations',
             'trainingAdminNav' => 'audit',
             'logs' => $logs,
         ]);
@@ -556,10 +602,7 @@ class AdminTrainingController
      */
     private function requireTrainingAccess(): void
     {
-        $gate = Gate::getInstance();
-        if ($gate->allows('admin.access') || $gate->allows('training.manage') || $gate->allows('training.assign')
-            || $gate->allows('training.create') || $gate->allows('training.update')
-            || $gate->allows('training.delete') || $gate->allows('training.publish')) {
+        if (TrainingLmsStaffAccess::allows(Gate::getInstance())) {
             return;
         }
         throw new \RuntimeException('Accès refusé.', 403);

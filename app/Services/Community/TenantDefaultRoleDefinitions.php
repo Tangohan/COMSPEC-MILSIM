@@ -180,6 +180,10 @@ final class TenantDefaultRoleDefinitions
                 'personnel.profile.view',
                 'dashboard.pins.manage',
                 'interteam.missions.respond',
+                'cooperation.missions.respond',
+                'cooperation.missions.view',
+                'cooperation.exchange.read',
+                'cooperation.exchange.write',
             ],
         ];
     }

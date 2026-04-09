@@ -24,6 +24,9 @@ $tzLabel = (string) ($sv['timezoneLabel'] ?? '');
 $communityCode = trim((string) ($tenant['community_code'] ?? ''));
 $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
+$recruitmentPublishedOpenings = is_array($recruitmentPublishedOpenings ?? null) ? $recruitmentPublishedOpenings : [];
+$recruitmentProspectionRef = trim((string) ($recruitmentProspectionRef ?? ''));
+$recruitmentListUpdatedAt = trim((string) ($recruitmentListUpdatedAt ?? ''));
 $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
 $isLocked = !empty($cp['isLocked']);
 $publicAudience = ($cp['publicAudience'] ?? 'unit') === 'platform' ? 'platform' : 'unit';
@@ -115,6 +118,9 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
           <a href="#roster" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10">Roster</a>
           <?php endif; ?>
           <a href="#units" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10">Unités</a>
+          <?php if ($recruitmentPublishedOpenings !== []): ?>
+          <a href="#carrieres" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10">Offres</a>
+          <?php endif; ?>
         </nav>
       </div>
     </header>
@@ -151,9 +157,9 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
 
           <div class="mt-8 flex flex-wrap gap-3">
             <?php if (!$isLocked && $publicAudience !== 'platform'): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-slate-950 transition hover:bg-emerald-400">Rejoindre (candidature)</a>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-slate-950 transition hover:bg-emerald-400" data-comspec-zone="vitrine_hero">Rejoindre (candidature)</a>
             <?php elseif (!$isLocked && $publicAudience === 'platform'): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Candidater</a>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15" data-comspec-zone="vitrine_hero">Candidater</a>
             <?php endif; ?>
             <?php if (!empty($sv['publicRosterEnabled'])): ?>
             <a href="#roster" class="inline-flex items-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Consulter le roster</a>
@@ -324,7 +330,7 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
           </div>
           <div class="mt-4 flex flex-wrap gap-3">
             <?php if (!$isLocked): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center rounded-2xl <?= $publicAudience === 'platform' ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50' : 'bg-slate-950 text-white hover:bg-slate-800' ?> px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition"><?= $publicAudience === 'platform' ? 'Candidature' : 'Postuler' ?></a>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center rounded-2xl <?= $publicAudience === 'platform' ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50' : 'bg-slate-950 text-white hover:bg-slate-800' ?> px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition" data-comspec-zone="bloc_acces"><?= $publicAudience === 'platform' ? 'Candidature' : 'Postuler' ?></a>
             <?php endif; ?>
             <button type="button" class="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition hover:bg-slate-50" data-copy-code="<?= htmlspecialchars($communityCode, ENT_QUOTES, 'UTF-8') ?>">Copier le code</button>
           </div>
@@ -334,6 +340,90 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
         </div>
       </aside>
     </section>
+
+    <?php if ($recruitmentPublishedOpenings !== []): ?>
+    <section id="carrieres" class="py-24 bg-slate-50 relative">
+      <div class="community-showcase-grain pointer-events-none absolute inset-0" aria-hidden="true"></div>
+      <div class="relative max-w-7xl mx-auto px-6">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-16 pb-8 border-b-2 border-slate-200">
+          <div>
+            <h4 class="text-blue-600 text-xs font-black uppercase tracking-[0.3em] mb-2">Direction des ressources humaines</h4>
+            <h2 class="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter text-slate-900">Prospection <span class="text-blue-600">opérationnelle</span></h2>
+          </div>
+          <div class="text-right font-mono text-[10px] text-slate-400 uppercase hidden md:block mt-4 md:mt-0">
+            <?php
+            $docLine = $recruitmentProspectionRef !== '' ? htmlspecialchars($recruitmentProspectionRef, ENT_QUOTES, 'UTF-8') : 'Tableau des offres';
+            $ts = $recruitmentListUpdatedAt !== '' ? strtotime($recruitmentListUpdatedAt) : false;
+            $when = $ts ? date('d/m/Y H:i', $ts) : date('d/m/Y H:i');
+            ?>
+            Document mis à jour le : <?= htmlspecialchars($when, ENT_QUOTES, 'UTF-8') ?><br>
+            Réf. affichée : <?= $docLine ?>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-6">
+          <?php foreach ($recruitmentPublishedOpenings as $ro): ?>
+            <?php
+              $pc = \App\Services\Recruitment\RecruitmentOpeningPresentation::personnelCategoryLabel((string) ($ro['personnel_category'] ?? 'other'));
+              $arm = \App\Services\Recruitment\RecruitmentOpeningPresentation::armDomainLabel(isset($ro['arm_domain']) ? (string) $ro['arm_domain'] : null);
+              $ref = (string) ($ro['reference_public'] ?? '');
+              $sum = trim((string) ($ro['summary'] ?? ''));
+              if ($sum === '') {
+                  $sum = trim(strip_tags((string) ($ro['description'] ?? '')));
+                  if (mb_strlen($sum) > 220) {
+                      $sum = mb_substr($sum, 0, 217) . '…';
+                  }
+              }
+              $avisSlug = (string) ($ro['public_page_slug'] ?? '');
+              $detailUrl = $avisSlug !== '' ? url('c/' . rawurlencode($slug) . '/avis/' . rawurlencode($avisSlug)) : url('c/' . rawurlencode($slug) . '/enlistment');
+            ?>
+          <div class="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col md:flex-row">
+            <div class="bg-slate-900 text-white p-6 flex flex-col justify-center items-center md:w-48 text-center border-r border-slate-200">
+              <span class="text-[10px] font-black uppercase tracking-widest opacity-60 mb-2">Catégorie</span>
+              <span class="text-lg font-black italic uppercase leading-tight"><?= htmlspecialchars($pc, ENT_QUOTES, 'UTF-8') ?></span>
+              <div class="mt-4 px-3 py-1 bg-blue-600 text-[9px] font-bold uppercase tracking-wide"><?= htmlspecialchars($arm, ENT_QUOTES, 'UTF-8') ?></div>
+            </div>
+            <div class="p-8 flex-grow">
+              <div class="flex justify-between items-start mb-4 gap-4 flex-wrap">
+                <div>
+                  <h3 class="text-2xl font-black uppercase italic text-slate-900"><?= htmlspecialchars((string) ($ro['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
+                  <p class="text-sm font-bold text-blue-600 uppercase tracking-tight mt-1"><?= htmlspecialchars((string) ($ro['unit_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                </div>
+                <div class="text-right shrink-0">
+                  <span class="text-[10px] font-mono bg-slate-100 px-2 py-1 rounded">Réf. <?= htmlspecialchars($ref !== '' ? $ref : '—', ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
+              </div>
+              <?php if ($sum !== ''): ?>
+              <p class="text-sm text-slate-600 leading-relaxed mb-6"><?= nl2br(htmlspecialchars($sum, ENT_QUOTES, 'UTF-8')) ?></p>
+              <?php endif; ?>
+              <div class="flex flex-wrap gap-6 border-t border-slate-100 pt-6">
+                <?php if (trim((string) ($ro['employment_contract_label'] ?? '')) !== ''): ?>
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span class="text-[10px] font-bold uppercase text-slate-500"><?= htmlspecialchars((string) $ro['employment_contract_label'], ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if (trim((string) ($ro['employment_context_label'] ?? '')) !== ''): ?>
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                  <span class="text-[10px] font-bold uppercase text-slate-500"><?= htmlspecialchars((string) $ro['employment_context_label'], ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
+                <?php endif; ?>
+              </div>
+            </div>
+            <div class="p-8 bg-slate-50 border-t md:border-t-0 md:border-l border-slate-100 flex flex-col items-stretch justify-center gap-3 min-w-[200px]">
+              <a href="<?= htmlspecialchars($detailUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-center bg-white border-2 border-slate-200 text-slate-900 px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">Voir la fiche</a>
+              <?php if (!$isLocked && $publicAudience !== 'platform'): ?>
+              <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) ($ro['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="comspec-analytics-cta text-center bg-slate-900 text-white px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all" data-comspec-zone="liste_postes" data-comspec-opening="<?= (int) ($ro['id'] ?? 0) ?>">Candidater</a>
+              <?php elseif (!$isLocked): ?>
+              <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) ($ro['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="comspec-analytics-cta text-center bg-blue-600 text-white px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all" data-comspec-zone="liste_postes" data-comspec-opening="<?= (int) ($ro['id'] ?? 0) ?>">Candidater</a>
+              <?php endif; ?>
+            </div>
+          </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    </section>
+    <?php endif; ?>
 
     <section id="structure" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -505,7 +595,7 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
         <a href="<?= htmlspecialchars(url('c/' . $slug . '/forum')) ?>" class="inline-flex items-center px-4 py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-emerald-700">Forum</a>
         <?php endif; ?>
         <?php if (!$isLocked): ?>
-        <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50"><?= $publicAudience === 'platform' ? 'Candidater' : 'Rejoindre (candidature)' ?></a>
+        <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50" data-comspec-zone="pied_page"><?= $publicAudience === 'platform' ? 'Candidater' : 'Rejoindre (candidature)' ?></a>
         <?php endif; ?>
         <a href="<?= url('communities') ?>" class="inline-flex items-center px-4 py-2.5 text-xs font-bold uppercase text-slate-500">Registre</a>
       </div>

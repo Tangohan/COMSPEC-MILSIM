@@ -18,6 +18,7 @@ final class ContainerIntegrations
             \App\Controllers\Web\ActivityHubController::class => new \App\Controllers\Web\ActivityHubController(
                 Container::get(\App\Repositories\ForumNotificationRepository::class),
                 Container::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class),
+                Container::get(\App\Repositories\TenantMessageRepository::class),
                 Container::get(\App\Services\Notifications\ActivityHubPresentationService::class),
             ),
             \App\Controllers\Web\CommunityCalendarFeedController::class => new \App\Controllers\Web\CommunityCalendarFeedController(

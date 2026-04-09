@@ -115,7 +115,7 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
         <?php endif; ?>
 
         <?php if (!$isLocked): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="inline-flex items-center px-4 py-2.5 <?= $publicAudience === 'platform' ? 'border border-dashed border-slate-300 text-slate-600' : 'border border-slate-300' ?> text-xs font-bold uppercase rounded-xl hover:bg-slate-50"><?= $publicAudience === 'platform' ? 'Candidater' : 'Rejoindre (candidature)' ?></a>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center px-4 py-2.5 <?= $publicAudience === 'platform' ? 'border border-dashed border-slate-300 text-slate-600' : 'border border-slate-300' ?> text-xs font-bold uppercase rounded-xl hover:bg-slate-50" data-comspec-zone="fiche_classique"><?= $publicAudience === 'platform' ? 'Candidater' : 'Rejoindre (candidature)' ?></a>
         <?php else: ?>
             <span class="inline-flex items-center px-4 py-2.5 border border-slate-200 text-slate-400 text-xs font-bold uppercase rounded-xl"><?= $publicAudience === 'platform' ? 'Candidatures fermées' : 'Inscription fermée' ?></span>
         <?php endif; ?>

@@ -24,6 +24,14 @@ function run_moderation_granular_sanctions_migration(PDO $pdo): void
         }
     }
 
+    if (!$hasColumn($pdo, 'moderation_actions', 'sanction_scope')) {
+        try {
+            $pdo->exec("ALTER TABLE moderation_actions ADD COLUMN sanction_scope VARCHAR(16) NOT NULL DEFAULT 'tenant' COMMENT 'tenant=org level 0, platform=site levels 1-3' AFTER restrictions_json");
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] moderation_actions.sanction_scope : ' . $e->getMessage() . "\n";
+        }
+    }
+
     if ($hasColumn($pdo, 'blocked_indicators', 'revoked_at')) {
         // already migrated
     } else {
@@ -63,8 +71,9 @@ function ensure_moderation_granular_sanctions_schema(PDO $pdo): void
     if ($done) {
         return;
     }
-    $st = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_actions' AND COLUMN_NAME = 'restrictions_json' LIMIT 1");
-    if ($st && $st->fetchColumn()) {
+    $stJson = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_actions' AND COLUMN_NAME = 'restrictions_json' LIMIT 1");
+    $stScope = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_actions' AND COLUMN_NAME = 'sanction_scope' LIMIT 1");
+    if ($stJson && $stJson->fetchColumn() && $stScope && $stScope->fetchColumn()) {
         $done = true;
 
         return;

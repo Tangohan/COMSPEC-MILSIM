@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Core\Response;
+use App\Core\Session;
 
 /**
  * Clé partagée pour les intégrations ATAK / C2 (en-têtes X_COMSPEC_KEY, X_ATAK_TOKEN, Bearer).
@@ -86,14 +87,52 @@ final class ComspecApiKeyAuth
                 ], 503);
             }
 
-            return self::requestPresentsValidKey() ? null : self::json401();
+            if (self::requestPresentsValidKey()) {
+                return null;
+            }
+
+            return self::authenticatedBrowserSessionMayAccessTactical() ? null : self::json401();
         }
 
         if ($secret === '') {
             return null;
         }
 
-        return self::requestPresentsValidKey() ? null : self::json401();
+        if (self::requestPresentsValidKey()) {
+            return null;
+        }
+
+        return self::authenticatedBrowserSessionMayAccessTactical() ? null : self::json401();
+    }
+
+    /**
+     * Navigateur connecté au portail (session membre + communauté) : accès aux API tactiques sans clé ATAK.
+     * Désactivable avec TACTICAL_API_ALLOW_SESSION=false.
+     */
+    private static function authenticatedBrowserSessionMayAccessTactical(): bool
+    {
+        if (!self::tacticalSessionBypassEnabled()) {
+            return false;
+        }
+        Session::start();
+        $uid = Session::get('user_id');
+        $tid = Session::get('tenant_id');
+        if ($uid === null || $uid === '' || $tid === null || $tid === '') {
+            return false;
+        }
+
+        return (int) $uid > 0 && (int) $tid > 0;
+    }
+
+    private static function tacticalSessionBypassEnabled(): bool
+    {
+        $raw = (string) (($_ENV['TACTICAL_API_ALLOW_SESSION'] ?? null) ?: (getenv('TACTICAL_API_ALLOW_SESSION') ?: '1'));
+
+        if ($raw === '0' || strcasecmp($raw, 'false') === 0 || strcasecmp($raw, 'off') === 0) {
+            return false;
+        }
+
+        return true;
     }
 
     private static function tacticalStrictFromEnv(): bool

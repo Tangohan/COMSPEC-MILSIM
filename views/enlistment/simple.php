@@ -17,6 +17,7 @@ $hasMembershipOnTarget = !empty($ctx['hasMembershipOnTarget']);
 $switchToTargetUrl = $ctx['switchToTargetUrl'] ?? null;
 $showMilsimUnavailableNotice = $showMilsimUnavailableNotice ?? false;
 $simpleEnlistmentUrl = $simpleEnlistmentUrl ?? $formAction;
+$selectedRecruitmentOpening = is_array($selectedRecruitmentOpening ?? null) ? $selectedRecruitmentOpening : null;
 ?>
 <script>
 document.addEventListener('alpine:init', function () {
@@ -73,6 +74,14 @@ document.addEventListener('alpine:init', function () {
 
     <form id="formulaire-inscription-simple" method="post" action="<?= htmlspecialchars($simpleEnlistmentUrl) ?>" class="space-y-5 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         <?= \App\Core\Csrf::field() ?>
+        <?php if ($selectedRecruitmentOpening !== null && !empty($selectedRecruitmentOpening['id'])): ?>
+            <input type="hidden" name="enlistment_opening_id" value="<?= (int) $selectedRecruitmentOpening['id'] ?>">
+            <div class="rounded-xl border border-sky-200 bg-sky-50 p-5">
+                <p class="text-[10px] font-black uppercase tracking-widest text-sky-800">Candidature ciblée</p>
+                <p class="mt-2 text-sm font-bold text-slate-900">Vous postulez pour : <?= htmlspecialchars((string) ($selectedRecruitmentOpening['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                <p class="mt-1 text-xs text-sky-900/80 leading-relaxed">Votre dossier sera rattaché à cet avis pour le suivi côté équipe RH.</p>
+            </div>
+        <?php endif; ?>
         <input type="hidden" name="enlistment_flow" :value="flow">
 
         <?php if ($canUseAccount): ?>

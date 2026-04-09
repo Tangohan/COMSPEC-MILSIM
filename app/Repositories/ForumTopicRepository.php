@@ -314,4 +314,20 @@ class ForumTopicRepository
 
         return $stmt->execute([$postId, $postId ? 1 : 0, $topicId, $tenantId]);
     }
+
+    /**
+     * Liste de sujets récents pour sélection (back-office coopération).
+     *
+     * @return list<array{id: int, title: string}>
+     */
+    public function listRecentTitlesForTenant(int $tenantId, int $limit = 80): array
+    {
+        $limit = max(1, min(200, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT id, title FROM forum_topics WHERE tenant_id = ? AND is_hidden = 0 ORDER BY updated_at DESC LIMIT {$limit}"
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }

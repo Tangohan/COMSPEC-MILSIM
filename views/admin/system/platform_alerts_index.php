@@ -1,12 +1,15 @@
 <?php
 /** @var list<array<string, mixed>> $platformAlerts */
 $rows = $platformAlerts ?? [];
+$canManagePlatform = \App\Core\Gate::getInstance()->allows('admin.system');
 ?>
 <div class="max-w-5xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Alertes plateforme</h1>
         <div class="flex gap-3">
+            <?php if ($canManagePlatform): ?>
             <a href="<?= url('admin/system/alerts/create') ?>" class="inline-flex items-center px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-bold hover:bg-emerald-600 transition-colors">Nouvelle alerte</a>
+            <?php endif; ?>
             <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Retour</a>
         </div>
     </div>
@@ -15,7 +18,9 @@ $rows = $platformAlerts ?? [];
     <?php if ($e): ?><p class="text-red-600 text-sm mb-4"><?= htmlspecialchars($e) ?></p><?php endif; ?>
 
     <?php if ($rows === []): ?>
-        <p class="text-slate-600 text-sm">Aucune alerte. Créez-en une pour afficher bandeaux promo, nouveautés ou messages urgents sur l’interface.</p>
+        <p class="text-slate-600 text-sm"><?= $canManagePlatform
+            ? 'Aucune alerte. Créez-en une pour afficher bandeaux promo, nouveautés ou messages urgents sur l’interface.'
+            : 'Aucune alerte configurée pour le moment.' ?></p>
     <?php else: ?>
         <ul class="space-y-3">
             <?php foreach ($rows as $r): ?>
@@ -29,6 +34,7 @@ $rows = $platformAlerts ?? [];
                         <p class="font-black text-slate-900"><?= htmlspecialchars((string) ($r['title'] ?? '')) ?></p>
                         <p class="text-xs text-slate-500 mt-1"><?= $active ? 'Active' : 'Inactive' ?> · ordre <?= (int) ($r['sort_order'] ?? 0) ?></p>
                     </div>
+                    <?php if ($canManagePlatform): ?>
                     <div class="flex gap-2">
                         <a href="<?= url('admin/system/alerts/' . $id . '/edit') ?>" class="text-sm font-semibold text-blue-700 hover:underline">Modifier</a>
                         <form method="post" action="<?= url('admin/system/alerts/' . $id . '/delete') ?>" class="inline" onsubmit="return confirm('Supprimer cette alerte ?');">
@@ -36,6 +42,7 @@ $rows = $platformAlerts ?? [];
                             <button type="submit" class="text-sm font-semibold text-rose-600 hover:underline">Supprimer</button>
                         </form>
                     </div>
+                    <?php endif; ?>
                 </li>
             <?php endforeach; ?>
         </ul>

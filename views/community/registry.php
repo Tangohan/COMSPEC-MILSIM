@@ -141,7 +141,7 @@ if ($registryCount === 0) {
                 $gameLabel = trim((string) ($t['game_label'] ?? ''));
                 $coverUrl = $registryCoverUrl($slug);
                 $gradientStyle = $registryCoverGradient($slug);
-                $publicUrl = url('c/' . rawurlencode($slug));
+                $publicUrl = url('c/' . rawurlencode($slug) . '?ref=registry');
                 $joinDirect = $code !== '' ? url('join') . '?code=' . rawurlencode($code) : null;
                 ?>
             <li class="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_70px_-30px_rgba(15,23,42,0.22)] transition-all hover:-translate-y-1 hover:border-emerald-300 hover:shadow-[0_30px_90px_-28px_rgba(16,185,129,0.18)]">

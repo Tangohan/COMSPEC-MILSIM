@@ -48,6 +48,8 @@ class MePreferencesApiController
                 'meta' => [
                     'callsign_source' => 'users.callsign',
                     'deprecated' => ['user_profiles.arma_callsign' => 'Utiliser users.callsign (indicatif plateforme unique).'],
+                    'cooperation_notification_event_prefix' => 'cooperation.signal.',
+                    'cooperation_notification_aggregation_hint' => 'Les événements journal coopération sont regroupés par mission et type (clé d’agrégation côté serveur).',
                 ],
             ]);
         }

@@ -245,7 +245,9 @@ $card = static function (string $href, string $title, string $desc, string $acce
         <section>
             <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Modération &amp; conformité</h2>
             <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                <?php $card(url('back-office/moderation'), 'Modération', 'Sanctions et suivi des membres.'); ?>
+                <?php if ($gate->allows('admin.members.moderate')): ?>
+                <?php $card(url('back-office/moderation'), 'Restrictions membres', 'Limitations d’activité dans la communauté (formations, documents, etc.).'); ?>
+                <?php endif; ?>
                 <?php $card(url('back-office/audit'), 'Journal d’activité', 'Traçabilité des actions administratives.'); ?>
                 <?php if ($gate->allows('forum.moderate') || $gate->allows('forum.moderate_organization') || $gate->allows('admin.organization') || $gate->allows('admin.access')): ?>
                 <?php $card(url('back-office/forum-moderation'), 'Modération forum', 'Files et outils modérateur forum.'); ?>

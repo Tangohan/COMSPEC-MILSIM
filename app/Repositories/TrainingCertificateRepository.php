@@ -158,6 +158,49 @@ class TrainingCertificateRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Dernière formation certifiante attestée (titre court) pour affichage forum.
+     *
+     * @param list<int> $userIds
+     * @return array<int, string> user_id => course title
+     */
+    public function latestValidCertifiedCourseTitlesForUsers(int $tenantId, array $userIds): array
+    {
+        $userIds = array_values(array_filter(array_map('intval', $userIds), fn ($id) => $id > 0));
+        if ($userIds === []) {
+            return [];
+        }
+        try {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'training_certificates' LIMIT 1");
+            if (!$stmt || !$stmt->fetchColumn()) {
+                return [];
+            }
+        } catch (\Throwable) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        $sql = "SELECT e.user_id, cr.title AS course_title, tc.issued_at
+                FROM training_certificates tc
+                INNER JOIN training_enrollments e ON e.id = tc.enrollment_id
+                INNER JOIN training_courses cr ON cr.id = e.course_id
+                WHERE tc.tenant_id = ? AND tc.status = 'valid' AND cr.is_certifying = 1 AND e.user_id IN ($placeholders)
+                ORDER BY e.user_id ASC, tc.issued_at DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId], $userIds));
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            if ($uid > 0 && !isset($out[$uid])) {
+                $t = trim((string) ($row['course_title'] ?? ''));
+                if ($t !== '') {
+                    $out[$uid] = $t;
+                }
+            }
+        }
+
+        return $out;
+    }
+
     /** @return list<array<string, mixed>> */
     public function listByUserId(int $userId, ?int $tenantId = null): array
     {

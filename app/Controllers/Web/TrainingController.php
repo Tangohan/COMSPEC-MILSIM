@@ -30,6 +30,10 @@ use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\UserRepository;
 use App\Core\Csrf;
+use App\Services\Analytics\AnalyticsEventCategory;
+use App\Services\Analytics\AnalyticsEventName;
+use App\Services\Analytics\AnalyticsEventService;
+use App\Services\Analytics\AnalyticsSubjectType;
 
 class TrainingController
 {
@@ -56,6 +60,7 @@ class TrainingController
         private PersonnelProfileRepository $personnelProfileRepository,
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private UserRepository $userRepository,
+        private AnalyticsEventService $analyticsEventService,
     ) {}
 
     /**
@@ -186,6 +191,17 @@ class TrainingController
             });
             $catalogueSidebarEnrollments = array_slice($catalogueSidebarEnrollments, 0, 8);
         }
+
+        $this->analyticsEventService->record(
+            $tenantId,
+            $userId ? (int) $userId : null,
+            AnalyticsEventCategory::TRAINING,
+            AnalyticsEventName::TRAINING_CATALOG_VIEW,
+            null,
+            null,
+            null,
+            null
+        );
 
         return Response::view('training.catalogue', [
             'title' => 'Formations',
@@ -329,6 +345,19 @@ class TrainingController
             return Response::redirect(url('formations/code-acces'));
         }
         if ((int) ($row['tenant_id'] ?? 0) === $tenantId) {
+            $cid = (int) ($row['id'] ?? 0);
+            if ($cid > 0) {
+                $this->analyticsEventService->record(
+                    $tenantId,
+                    (int) $userId,
+                    AnalyticsEventCategory::TRAINING,
+                    AnalyticsEventName::COURSE_SHARE_CODE_USED,
+                    AnalyticsSubjectType::TRAINING_COURSE,
+                    $cid,
+                    null,
+                    null
+                );
+            }
             $slug = trim((string) ($row['slug'] ?? ''));
 
             return Response::redirect($slug !== '' ? url('formations/' . rawurlencode($slug)) : url('formations'));
@@ -397,7 +426,19 @@ class TrainingController
             ? \training_lms_policy_comments_enabled($policyDecoded)
             : true;
         $isFavorite = $userId ? $this->lmsSocialRepository->isFavorite((int) $userId, $courseId) : false;
+        $isLiked = $userId ? $this->lmsSocialRepository->isLiked((int) $userId, $courseId) : false;
         $sessions = $this->lmsSocialRepository->listSessionsForCourse($courseId);
+
+        $this->analyticsEventService->record(
+            $tenantId,
+            $userId ? (int) $userId : null,
+            AnalyticsEventCategory::TRAINING,
+            AnalyticsEventName::COURSE_VIEW,
+            AnalyticsSubjectType::TRAINING_COURSE,
+            $courseId,
+            null,
+            null
+        );
 
         $orderedLessons = function_exists('training_lms_ordered_lessons') ? training_lms_ordered_lessons($course) : [];
         $continueLesson = null;
@@ -423,6 +464,7 @@ class TrainingController
             'policyEval' => $policyEval,
             'policyDisplay' => $policyDisplay,
             'isFavorite' => $isFavorite,
+            'isLiked' => $isLiked,
             'courseSessions' => $sessions,
             'viewerLoggedIn' => (bool) $userId,
             'continueLesson' => $continueLesson,
@@ -431,6 +473,13 @@ class TrainingController
             'canAccessLearning' => $canAccessLearning,
             'lmsCommentsEnabled' => $lmsCommentsEnabled,
             'canWithdrawEnrollment' => $canWithdrawEnrollment,
+            'analyticsBeacon' => [
+                'tenantId' => $tenantId,
+                'category' => AnalyticsEventCategory::TRAINING,
+                'durationEvent' => AnalyticsEventName::COURSE_PAGE_DURATION,
+                'subjectType' => AnalyticsSubjectType::TRAINING_COURSE,
+                'subjectId' => $courseId,
+            ],
         ]);
     }
 
@@ -555,6 +604,28 @@ class TrainingController
             }
             $this->lmsSocialRepository->setFavorite($tenantId, $userId, $courseId, $on);
             Session::flash('success', $on ? 'Ajouté aux favoris.' : 'Retiré des favoris.');
+        });
+    }
+
+    public function postLike(Request $request, array $params = []): Response
+    {
+        return $this->redirectCourseAfter($request, function () use ($request): void {
+            $tenantId = (int) Session::get('tenant_id');
+            $userId = (int) Session::get('user_id');
+            $courseId = (int) $request->input('course_id', 0);
+            $on = (int) $request->input('like', 1) === 1;
+            if ($courseId < 1 || !$tenantId || !$userId) {
+                Session::flash('error', 'Données invalides.');
+
+                return;
+            }
+            if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+
+                return;
+            }
+            $this->lmsSocialRepository->setLike($tenantId, $userId, $courseId, $on);
+            Session::flash('success', $on ? 'Merci pour votre soutien.' : '« J’aime » retiré.');
         });
     }
 

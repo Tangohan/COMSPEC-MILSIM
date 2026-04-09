@@ -214,6 +214,191 @@ declare(strict_types=1);
     </p>
 </section>
 
+<section id="cooperations-inter-unites" class="site-docs__section">
+    <h2>Coopérations inter-unités</h2>
+    <p>
+        Ce module sert à <strong>organiser une collaboration officielle entre deux communautés ou plus</strong> sur la même plateforme Athena,
+        lorsqu’elles doivent se coordonner sur un même sujet opérationnel (brief commun, partage d’informations encadré, réunions, suivi d’engagement).
+        Il ne remplace ni le forum général de votre unité ni les canaux externes : il fournit un <strong>dossier dédié</strong>, une <strong>chronologie</strong> et un
+        <strong>espace de discussion lié au brief partagé</strong>, avec des règles d’accès explicites pour limiter les malentendus et tracer les décisions importantes.
+    </p>
+    <div class="site-docs__callout site-docs__callout--tip">
+        <strong>Important.</strong> Si vous ne voyez aucun menu « Coopérations inter-unités », votre compte n’a tout simplement pas l’habilitation correspondante dans la communauté active.
+        Demandez à un responsable de l’unité de vous attribuer le rôle ou la permission adaptée, ou de confirmer que la fonction est ouverte aux membres comme vous.
+    </div>
+
+    <h3>Où ouvrir le module dans le portail</h3>
+    <p>
+        L’accès principal se fait depuis le <strong>back-office de votre communauté</strong>, dans la zone regroupant les outils métier (souvent intitulée « Ressources » ou « Ressources &amp; outils » selon l’écran).
+        Repérez l’entrée <strong>Coopérations inter-unités</strong> : elle mène à la <strong>liste des dossiers</strong> auxquels vous participez ou que vous pilotez.
+    </p>
+    <p>
+        Selon votre profil, un <strong>raccourci</strong> peut aussi apparaître depuis le <strong>tableau de bord</strong> du portail, dans le menu latéral des ressources rapides, ou depuis les raccourcis d’administration de la communauté lorsque vous gérez plusieurs modules.
+        Si vous aviez conservé d’anciens favoris pointant vers une ancienne adresse du module, le site peut vous <strong>rediriger automatiquement</strong> vers la zone actuelle : le contenu reste le même, seul le chemin affiché dans la barre d’adresse peut différer.
+    </p>
+
+    <h3>Idées clés à comprendre avant de commencer</h3>
+    <ul>
+        <li><strong>Communauté à l’initiative (souvent dite « unité support »)</strong> — C’est la communauté qui propose la coopération, en rédige la proposition initiale et, en général, héberge l’espace commun (fil de discussion partagé) une fois la coopération ouverte.</li>
+        <li><strong>Communautés partenaires</strong> — Ce sont les autres unités invitées à rejoindre le dossier. Elles peuvent accepter, refuser, négocier, puis participer aux échanges une fois les conditions réunies.</li>
+        <li><strong>Dossier de coopération</strong> — L’ensemble structuré : proposition, invitations, journal, onglets (réunion, structures, clôture…). Pensez-y comme à un <em>dossier vivant</em> qui avance par étapes.</li>
+        <li><strong>Phase ou état du dossier</strong> — Indique où vous en êtes (proposition en discussion, coopération en cours, clôturée, etc.). Les intitulés à l’écran sont volontairement métier ; l’interface grise ou masque les actions impossibles à l’étape courante.</li>
+        <li><strong>Espace commun (fil lié au brief)</strong> — Une discussion dédiée au dossier, distincte des fils généraux du forum. Elle sert aux échanges opérationnels autorisés dans le cadre fixé par les unités.</li>
+        <li><strong>Journal (chronologie)</strong> — Liste horodatée des événements marquants : invitations, validations, ouvertures, messages notables liés au processus, etc. Elle aide tout le monde à se synchroniser sans relire tout l’historique du fil.</li>
+        <li><strong>Autorisation de partage</strong> — Étape où chaque participant <strong>confirme explicitement</strong>, pour son compte, ce qu’il accepte de partager dans ce cadre. Un <strong>code de confirmation</strong> est en général envoyé sur l’adresse courriel du compte pour renforcer la sécurité.</li>
+    </ul>
+
+    <h3>Parcours complet, de la proposition à l’après-clôture</h3>
+    <p>
+        Le détail des boutons peut varier légèrement selon votre rôle, mais la <strong>logique générale</strong> reste la suivante.
+    </p>
+
+    <h4>1. Lancer une nouvelle coopération</h4>
+    <p>
+        Depuis la liste, utilisez l’action de <strong>création</strong>. Vous saisissez un <strong>titre</strong> clair (visible par les partenaires), choisissez une <strong>typologie</strong> (entraînement conjoint, appui, échange d’information, etc.) et un <strong>niveau de priorité</strong> lorsque ces champs sont proposés.
+        La <strong>date limite pour répondre à la proposition</strong>, si vous la renseignez, sert de repère pour tout le monde : au-delà, l’état-major sait qu’une relance ou une décision s’impose.
+    </p>
+    <p>
+        Certaines organisations utilisent aussi des <strong>conditions suspensives</strong> : il s’agit de points qui doivent être levés (validation interne, disponibilité d’un moyen, accord d’un tiers) avant de considérer que la coopération peut passer à l’étape suivante.
+        Rédigez-les comme des phrases compréhensibles par un lecteur extérieur à votre unité ; évitez le jargon interne non expliqué.
+    </p>
+
+    <h4>2. Inviter d’autres communautés</h4>
+    <p>
+        Le pilote du dossier désigne les <strong>communautés partenaires</strong> à associer. Chaque invitation est notée dans le <strong>journal</strong>.
+        Les partenaires voient alors la demande dans leur propre liste de coopérations et reçoivent les indications nécessaires pour comprendre l’objet et l’échéance.
+    </p>
+
+    <h4>3. Accepter ou refuser</h4>
+    <p>
+        Côté partenaire, l’acceptation signifie « nous entrons dans le cadre de discussion prévu ». Le refus clôt la participation de cette communauté à ce dossier précis, sans préjuger d’autres collaborations futures.
+        Tant que toutes les parties requises n’ont pas accepté, la coopération ne peut pas avancer vers l’ouverture de l’espace commun.
+    </p>
+
+    <h4>4. Négociation et contre-propositions</h4>
+    <p>
+        Si le cadre initial ne convient pas entièrement, une communauté partenaire peut formuler une <strong>contre-proposition</strong> structurée (calendrier, périmètre, modalités de coordination, etc.).
+        L’unité à l’initiative peut <strong>accepter</strong>, <strong>refuser</strong> ou ajuster la proposition principale. Chaque va-et-vient est consigné pour que personne ne doute de la version « officielle » en vigueur à un instant donné.
+    </p>
+
+    <h4>5. Autorisation de partage (consentement personnel)</h4>
+    <p>
+        Avant ou pendant l’activation selon le workflow de votre plateforme, chaque participant concerné doit passer par l’écran d’<strong>autorisation de partage</strong>.
+        Vous cochez des <strong>familles d’informations</strong> (brief, organigramme, qualifications, documents de séance, etc. — les libellés exacts dépendent de la configuration).
+        Pour les partages jugés sensibles, l’interface peut demander une <strong>courte justification</strong> : elle aide les référents à comprendre le contexte sans remplacer une instruction officielle sur le secret opérationnel.
+    </p>
+    <p>
+        Un <strong>code à usage limité dans le temps</strong> est envoyé sur votre courriel : saisissez-le sur la page indiquée. En cas d’échec répété, attendez le délai affiché avant de redemander un code, pour éviter le blocage automatique du compte sur cette étape.
+        Si vous ne recevez rien, vérifiez les courriers indésirables et la bonne adresse associée à votre compte.
+    </p>
+
+    <h4>6. Activation et « instantané » de contexte</h4>
+    <p>
+        L’activation marque le passage à la <strong>coopération en cours</strong>. À ce moment, le système peut enregistrer un <strong>instantané de contexte</strong> : qui participait, quelles grandes lignes de la proposition étaient actives, éléments de structure ou de coordination déjà saisis.
+        Cet instantané sert de <strong>référence</strong> si, plus tard, un différend apparaît sur « ce qui avait été acté au départ ». Ce n’est pas une garantie juridique externe au site, mais un outil de clarté interne entre unités.
+    </p>
+    <p>
+        Le <strong>fil commun</strong> est alors disponible (sous réserve des droits individuels). Un <strong>message d’accueil</strong> peut être généré automatiquement pour rappeler l’objet, les unités engagées, les liens utiles vers la réunion ou les structures, et les règles de bon usage.
+    </p>
+
+    <h4>7. Pendant la coopération en cours</h4>
+    <p>
+        Les onglets du dossier couvrent les besoins courants :
+    </p>
+    <ul>
+        <li><strong>Synthèse</strong> — Vue d’ensemble : état, partenaires, raccourcis vers les autres onglets, actions possibles pour votre rôle (inviter, promouvoir un co-pilote, assigner des rôles de dossier à des membres de votre communauté, etc.).</li>
+        <li><strong>Proposition</strong> — Ajustement des paramètres initiaux tant que le cadre le permet (typologie, priorité, délais, conditions suspensives).</li>
+        <li><strong>Négociation</strong> — Suivi des contre-propositions en cours ou passées.</li>
+        <li><strong>Espace commun</strong> — Accès au fil de discussion partagé et, le cas échéant, à la visioconférence temporaire proposée par la plateforme.</li>
+        <li><strong>Autorisation de partage</strong> — Retour sur l’écran de consentement si vous devez mettre à jour ou renouveler votre accord (selon politique de votre organisation).</li>
+        <li><strong>Chronologie</strong> — Journal détaillé avec filtrage par type d’événement ; les pilotes peuvent parfois exporter une copie pour archivage interne hors site.</li>
+        <li><strong>Réunion</strong> — Planification d’une réunion (titre, ordre du jour, date prévue, participants attendus), enregistrement d’une réunion « notée dans le journal », lien vers un compte rendu ou une rediffusion si votre unité en fournit une.</li>
+        <li><strong>Structures &amp; liaisons</strong> — Points de contact, fréquences, textes libres pour la coordination cartographique présentés sous forme de libellés opérationnels (sans exposer de détails techniques de réseau), procédure de bascule si un canal principal devient indisponible, état de synchronisation décrit en langage courant, et éventuellement besoins de compétences déclarés pour la mission (chef de mission, liaison radio, soutien santé, etc.) à titre indicatif.</li>
+        <li><strong>Clôture</strong> — Lorsque la coopération doit s’arrêter : motif, bilan synthétique, niveau de conservation des éléments selon les choix proposés.</li>
+        <li><strong>Retour d’expérience (REX)</strong> — Après clôture, chaque communauté peut remplir un formulaire structuré (réussites, difficultés, recommandations, notation de plusieurs critères). Certaines personnes habilitées peuvent consulter une <strong>vue consolidée</strong> regroupant les contributions de toutes les unités.</li>
+    </ul>
+    <p>
+        Un <strong>verrouillage de l’échange</strong> peut être appliqué par les pilotes : par exemple lecture seule du fil commun, ou blocage des nouvelles réponses, selon la politique interne ou la phase du dossier (y compris après clôture).
+        Si vous voyez la mention de <strong>consultation seule</strong> sur le fil partagé, respectez-la : les échanges informels doivent alors passer par les canaux que votre état-major a prévus.
+    </p>
+
+    <h4>8. Messages dans l’espace commun : nature et bon usage</h4>
+    <p>
+        Lorsque l’interface le permet, vous choisissez une <strong>nature de message</strong> : message standard, information officielle, décision validée, etc.
+        Les décisions marquées comme telles peuvent être mises en avant dans le <strong>journal</strong> pour retrouver rapidement les engagements publics pris dans le cadre du dossier.
+        Les <strong>brouillons</strong> permettent de préparer un texte avant publication lorsque cette option existe.
+    </p>
+    <p>
+        Même lorsque le message est publié depuis <strong>votre compte personnel</strong>, le contexte « coopération inter-unités » peut indiquer clairement <strong>quelle communauté vous représentez</strong> dans cet échange.
+        Restez aligné sur les instructions de votre chaîne de commandement : le fil partagé n’est pas un espace anonyme.
+    </p>
+
+    <h4>9. Rôles au sein du dossier (personnes, pas seulement unités)</h4>
+    <p>
+        Outre le fait d’appartenir à une communauté <strong>support</strong> ou <strong>partenaire</strong>, des rôles <strong>au sein du dossier</strong> peuvent être attribués à des membres nommément (référent, lecture seule, rédacteur, observateur, officier de liaison, etc. — les intitulés exacts dépendent du référentiel de votre plateforme).
+        Ces rôles <strong>ne remplacent pas</strong> votre rôle général dans la communauté : ils précisent ce que vous êtes autorisé à faire <em>dans ce dossier précis</em> (par exemple préparer les messages officiels ou seulement consulter).
+    </p>
+
+    <h3>Liste des coopérations : indicateurs et « actions attendues »</h3>
+    <p>
+        La page liste peut afficher des <strong>indicateurs de pilotage</strong> (nombre de dossiers actifs, invitations en attente, délais proches, etc.) et une zone <strong>actions attendues</strong> : il s’agit de rappels explicites du type « une réponse est attendue de votre unité sur tel dossier » ou « une autorisation de partage n’est pas complète ».
+        Utilisez cette zone comme une <strong>file de priorités</strong> avant d’ouvrir chaque dossier en détail.
+    </p>
+
+    <h3>Cohérence avec le forum général et la modération</h3>
+    <p>
+        Le fil d’une coopération inter-unités suit les <strong>mêmes principes de civilité</strong> que le reste du forum. Les signalements et interventions des modérateurs restent possibles selon les règles de votre communauté.
+        Pour le détail des outils de modération, voir la section <a href="#moderation-forum">Modération &amp; signalements</a>.
+    </p>
+
+    <h3>Référence des types et messages automatiques</h3>
+    <p>
+        Le portail propose une <strong>liste de types de coopération</strong> (libellés et textes d’aide) que votre communauté peut compléter si les personnes habilitées l’ont prévu.
+        Des <strong>messages types</strong> peuvent aussi accompagner les grandes étapes d’un dossier (invitation, mise à jour, clôture, etc.) via le courriel, les notifications du portail ou des publications forum, selon la configuration retenue et vos préférences personnelles.
+        En cas de doute sur ce qui est modifiable chez vous, interrogez l’encadrement ou l’administration de la communauté.
+    </p>
+
+    <h3>Modèles, duplication et capitalisation</h3>
+    <p>
+        Selon l’évolution du portail, votre organisation peut proposer de <strong>dupliquer</strong> un dossier passé pour démarrer une nouvelle coopération sur un schéma proche, ou d’utiliser des <strong>modèles</strong> internes.
+        La duplication évite de recopier à la main les grandes rubriques tout en exigeant une relecture : les partenaires, dates et engagements précédents ne sont jamais repris tels quels sans validation humaine.
+    </p>
+
+    <h3>Notifications et suivi dans le temps</h3>
+    <p>
+        Le portail peut consigner des <strong>événements destinés à des notifications</strong> (courriel, messages dans l’interface, récapitulatifs) selon les préférences de votre compte et les réglages de la plateforme.
+        L’objectif est d’éviter le spam : les rappels sont souvent <strong>regroupés par dossier</strong> lorsque plusieurs actions se produisent en peu de temps.
+        Pensez à garder vos <strong>préférences de notification</strong> à jour dans votre espace personnel si vous trouvez les rappels trop rares ou trop fréquents.
+    </p>
+
+    <h3>Bonnes pratiques opérationnelles et de sécurité</h3>
+    <ul>
+        <li><strong>Centralisez les décisions importantes</strong> dans le dossier (proposition validée, messages marqués comme décisions, journal) plutôt que sur des canaux parallèles non tracés.</li>
+        <li><strong>Ne reproduisez pas</strong> dans le fil partagé des informations dont la classification dépasse ce que votre autorisation de partage couvre.</li>
+        <li><strong>Vérifiez la communauté active</strong> en haut de l’écran avant d’inviter ou d’accepter : une erreur de contexte peut envoyer une invitation depuis la mauvaise unité.</li>
+        <li><strong>Préparez les réunions</strong> avec un ordre du jour dans l’outil : les autres unités savent à quoi s’attendre et le journal garde une trace.</li>
+        <li><strong>Clôturez proprement</strong> : un dossier resté « en cours » alors que l’activité est finie crée de la confusion pour les tableaux de bord et les statistiques internes.</li>
+        <li><strong>Remplissez le REX</strong> après clôture : c’est le moment où la mémoire institutionnelle s’améliore pour la prochaine coopération.</li>
+    </ul>
+
+    <h3>Dépannage : situations fréquentes</h3>
+    <dl class="site-docs__dl">
+        <dt>Message « accès refusé » en ouvrant un dossier</dt>
+        <dd>Vous n’êtes pas listé comme participant actif, ou votre rôle ne couvre pas cette action à cette étape. Vérifiez aussi que la bonne communauté est sélectionnée.</dd>
+        <dt>Je ne peux pas répondre sur le fil commun</dt>
+        <dd>La coopération n’est peut-être pas encore activée, un verrouillage est en place, ou votre permission d’écriture dans l’espace commun n’a pas été accordée. Demandez au pilote du dossier.</dd>
+        <dt>Code de confirmation jamais reçu</dt>
+        <dd>Contrôlez le courrier indésirable, l’adresse du compte, et attendez quelques minutes. Évitez de demander trop de codes d’affilée.</dd>
+        <dt>Partenaire qui « ne voit rien »</dt>
+        <dd>Souvent : mauvaise communauté active de son côté, invitation encore en attente, ou habilitation manquante dans son unité.</dd>
+    </dl>
+
+    <div class="site-docs__callout">
+        <strong>Rappel.</strong> Athena est un outil au service de votre organisation : les règles de classification de l’information, les ordres internes et le jugement du commandement restent prioritaires sur tout affichage du portail.
+        En cas de doute sur ce qui peut être partagé avec une autre unité, <strong>ne publiez pas</strong> et sollicitez votre référent avant d’utiliser l’espace commun.
+    </div>
+</section>
+
 <section id="moderation-forum" class="site-docs__section">
     <h2>Modération &amp; signalements</h2>
     <h3>Qui modère ?</h3>
@@ -427,6 +612,7 @@ declare(strict_types=1);
         <li><strong>Protégez les données</strong> : ne copiez pas d’informations nominatives hors des espaces autorisés.</li>
         <li><strong>Signalez les anomalies</strong> à un référent plutôt que de contourner les règles.</li>
         <li><strong>Formations</strong> : testez en brouillon ou en privé avant de publier ; vérifiez les assignations après mise en ligne.</li>
+        <li><strong>Coopérations inter-unités</strong> : tenez le journal à jour, clôturez les dossiers terminés, remplissez le retour d’expérience ; ne dépassez jamais le périmètre de votre autorisation de partage.</li>
     </ul>
     <div class="site-docs__callout site-docs__callout--tip">
         <strong>Évolutions.</strong> Les libellés à l’écran et les workflows peuvent être ajustés par votre organisation : en cas d’écart avec ce guide,

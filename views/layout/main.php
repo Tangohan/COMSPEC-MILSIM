@@ -3,7 +3,13 @@ $title = $title ?? 'Athena';
 $content = $content ?? 'home';
 $baseUrl = url('');
 $communityShowcasePage = !empty($communityShowcasePage);
+$communityRecruitmentOpeningPage = !empty($communityRecruitmentOpeningPage);
 $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office_request();
+$isPlatformAdminShell = function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request();
+$usesAdminSidebarShell = !empty($isBackOfficeShell) || !empty($isPlatformAdminShell);
+$adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
+    ? 'Administration communauté'
+    : (!empty($isPlatformAdminShell) ? 'Administration plateforme' : '');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -18,7 +24,7 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
-    <?php if ($communityShowcasePage): ?>
+    <?php if ($communityShowcasePage || $communityRecruitmentOpeningPage): ?>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
       .community-showcase-grain::before {
@@ -51,7 +57,7 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
     $alpineSrc = is_file($alpineLocal) ? $baseUrl . '/assets/js/alpine.min.js' : 'https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js';
 ?>
     <script defer src="<?= htmlspecialchars($alpineSrc) ?>"></script>
-    <?php if (!empty($isBackOfficeShell)): ?>
+    <?php if (!empty($usesAdminSidebarShell)): ?>
     <style>[x-cloak]{display:none!important}</style>
     <?php endif; ?>
 </head>
@@ -61,8 +67,8 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
-    <main class="<?= !empty($isBackOfficeShell) ? 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]' : 'min-h-[80vh]' ?>">
-        <?php if (!empty($isBackOfficeShell)): ?>
+    <main class="<?= !empty($usesAdminSidebarShell) ? 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]' : 'min-h-[80vh]' ?>">
+        <?php if (!empty($usesAdminSidebarShell)): ?>
         <div
             x-data="{ navOpen: false }"
             @keydown.escape.window="navOpen = false"
@@ -79,7 +85,7 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
                     <svg class="h-5 w-5 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
                     Menu
                 </button>
-                <span class="truncate text-sm font-bold text-slate-900">Administration communauté</span>
+                <span class="truncate text-sm font-bold text-slate-900"><?= htmlspecialchars($adminSidebarShellMobileTitle, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
 
             <div
@@ -99,7 +105,7 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
             <aside
                 class="fixed inset-y-0 left-0 z-[210] w-[min(100%,288px)] max-w-full border-r border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-64 lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:border-r lg:shadow-none xl:w-72"
                 :class="navOpen ? 'translate-x-0' : '-translate-x-full'"
-                id="back-office-sidebar"
+                id="<?= !empty($isBackOfficeShell) ? 'back-office-sidebar' : 'platform-admin-sidebar' ?>"
                 aria-label="Menu latéral"
                 @click.capture="if ($event.target.closest('a')) navOpen = false"
             >
@@ -113,7 +119,11 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
                             Fermer
                         </button>
                     </div>
-                    <?php require base_path('views/partials/back_office_sidebar.php'); ?>
+                    <?php if (!empty($isBackOfficeShell)): ?>
+                        <?php require base_path('views/partials/back_office_sidebar.php'); ?>
+                    <?php else: ?>
+                        <?php require base_path('views/partials/platform_admin_sidebar.php'); ?>
+                    <?php endif; ?>
                 </div>
             </aside>
 
@@ -141,7 +151,7 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
         ?>
         <?php endif; ?>
     </main>
-    <?php if (empty($trainingAdminNav) && ($showPortalFooter ?? true)): ?>
+    <?php if (empty($trainingAdminNav) && ($showPortalFooter ?? true) && empty($usesAdminSidebarShell)): ?>
     <footer class="border-t border-slate-200 py-6 mt-12">
         <div class="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-center text-xs text-slate-500">
             <span>Athena — SaaS RH tactique MILSIM Arma 3</span>
@@ -157,6 +167,7 @@ $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office
     <?php endif; ?>
     <?php require base_path('views/partials/community_report_modal.php'); ?>
     <?php require base_path('views/partials/portal_help_modal.php'); ?>
+    <?php require base_path('views/partials/analytics_beacon.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

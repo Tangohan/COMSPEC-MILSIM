@@ -39,6 +39,17 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
 </head>
 <body class="dashboard-shell bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
     <?php $__dashGate = \App\Core\Gate::getInstance(); ?>
+    <?php
+    /** Aligné sur {@see \App\Middleware\InterteamMissionsAccessMiddleware} pour afficher le raccourci uniquement aux profils habilités. */
+    $__dashCoopRes = $__dashGate->allows('admin.system')
+        || $__dashGate->allows('admin.organization')
+        || $__dashGate->allows('admin.access')
+        || (function_exists('can') && (
+            can('interteam.missions.manage') || can('interteam.missions.respond')
+            || can('cooperation.missions.view') || can('cooperation.missions.manage')
+            || can('cooperation.missions.create') || can('cooperation.missions.respond')
+        ));
+    ?>
     <style>
         /* Secours si le build Tailwind omet les utilitaires arbitraires (w-[200%], etc.) */
         #dashDrawerTrack {
@@ -209,6 +220,9 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         <a href="<?= htmlspecialchars(url('documents')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Documents</a>
         <a href="<?= htmlspecialchars(url('modpacks')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Modpacks</a>
         <a href="<?= htmlspecialchars(url('formations')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Formations</a>
+        <?php if (!empty($__dashCoopRes)): ?>
+        <a href="<?= htmlspecialchars(cooperation_mission_index_url(), ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Coopérations inter-unités</a>
+        <?php endif; ?>
         <a href="<?= htmlspecialchars(url('equipement')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Équipement</a>
     </template>
     <template id="dashTplAccount">
@@ -842,7 +856,7 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                 <div class="flex flex-wrap gap-3">
                     <a href="<?= url('formations') ?>" class="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-blue-700 transition-colors">Ouvrir le catalogue</a>
                     <?php if (function_exists('can') && (can('training.update') || can('training.publish') || can('admin.access') || can('training.manage'))): ?>
-                    <a href="<?= url('back-office/ressources/training/courses') ?>" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-800 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white">Admin formations</a>
+                    <a href="<?= url('back-office/ressources/training/courses') ?>" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-800 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white">Gérer les parcours</a>
                     <?php endif; ?>
                 </div>
             </div>

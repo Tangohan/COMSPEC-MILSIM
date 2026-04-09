@@ -3,29 +3,30 @@ declare(strict_types=1);
 
 /**
  * Raccourcis vers les modules métier du tenant de session.
- * Les URLs canoniques côté navigation sont préfixées /back-office/ressources/ ; les cibles techniques restent sous /admin/… ou /documents/…
  */
 $gate = \App\Core\Gate::getInstance();
 $sys = $gate->allows('admin.system');
 $org = $gate->allows('admin.organization') || $gate->allows('admin.access');
-$training = $gate->allows('training.manage') || $gate->allows('training.assign') || $gate->allows('admin.access');
+$support = $gate->allows('site.support');
+$training = \App\Support\TrainingLmsStaffAccess::allows($gate);
 $docs = $gate->allows('documents.upload') || $gate->allows('admin.access');
+$docsView = $gate->allows('documents.view');
 
 $links = [];
-if ($sys || $org) {
+if ($sys || $org || $support) {
     $links[] = ['href' => url('back-office'), 'label' => 'Tableau de bord communauté', 'desc' => 'Membres, unités, recrutement, configuration — périmètre organisationnel'];
 }
-if ($sys || $org) {
+if ($sys || $org || $support) {
     $links[] = ['href' => url('back-office/ressources/modpacks'), 'label' => 'Modpacks', 'desc' => 'Packs mods de la communauté sélectionnée'];
     $links[] = ['href' => url('back-office/ressources/atak-config'), 'label' => 'Configuration ATAK / Tacmap', 'desc' => 'Carte et paramètres tactiques pour ce tenant'];
     $links[] = ['href' => url('back-office/ressources/atak-mod'), 'label' => 'Mod ATAK (Overwatch)', 'desc' => 'Fichiers mod côté communauté'];
     $links[] = ['href' => url('back-office/ressources/forum-config'), 'label' => 'Configuration forum', 'desc' => 'Canaux, modération technique, filtres'];
-    $links[] = ['href' => url('back-office/ressources/interteam-missions'), 'label' => 'Missions inter-unités', 'desc' => 'Coopération entre communautés et partage ciblé du brief'];
+    $links[] = ['href' => cooperation_mission_index_url(), 'label' => 'Coopérations inter-unités', 'desc' => 'Propositions, validation mutuelle, espace commun sur le brief et coordination opérationnelle'];
 }
-if ($sys || $training) {
+if ($training) {
     $links[] = ['href' => url('back-office/ressources/training'), 'label' => 'Formations (LMS)', 'desc' => 'Catalogue, inscriptions et suivi pour ce tenant'];
 }
-if ($sys || $docs) {
+if ($sys || $docs || ($support && $docsView)) {
     $links[] = ['href' => url('documents/gestion'), 'label' => 'Gestion documentaire', 'desc' => 'Bibliothèque documentaire de la communauté courante'];
 }
 
@@ -37,8 +38,8 @@ if ($links === []) {
     <h2 id="tenant-mod-heading" class="text-lg font-bold text-slate-900 mb-1">Raccourcis · modules de la communauté active</h2>
     <p class="text-sm text-slate-600 mb-4 max-w-3xl">
         Ces outils s’appliquent à la <strong class="font-semibold text-slate-800">communauté de votre session</strong>, pas à la plateforme entière.
-        Ce n’est <strong class="font-semibold text-slate-800">pas</strong> l’administration globale du site (rôles système, tenants, audit global → section « Modules plateforme » ci-dessus).
-        Préfixe d’URL recommandé : <code class="text-xs bg-white/80 px-1.5 py-0.5 rounded border border-emerald-200/80">/back-office/ressources/…</code>
+        Ce n’est <strong class="font-semibold text-slate-800">pas</strong> l’administration globale du site (rôles système, tenants, audit global — voir la section « Modules plateforme » ci-dessus lorsque vous avez ces droits).
+        Ouvrez plutôt le <strong class="font-semibold text-slate-800">back-office</strong>, rubrique <strong class="font-semibold text-slate-800">Ressources</strong>, pour retrouver ces modules avec le même périmètre.
     </p>
     <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <?php foreach ($links as $row): ?>

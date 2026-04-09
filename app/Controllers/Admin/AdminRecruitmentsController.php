@@ -10,6 +10,8 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\EnlistmentCannedMessageRepository;
 use App\Repositories\EnlistmentRepository;
+use App\Repositories\RecruitmentOpeningRepository;
+use App\Repositories\TenantRepository;
 use App\Services\Recruitment\EnlistmentAcceptanceProvisioningService;
 
 class AdminRecruitmentsController
@@ -17,7 +19,9 @@ class AdminRecruitmentsController
     public function __construct(
         private EnlistmentRepository $enlistmentRepository,
         private EnlistmentCannedMessageRepository $cannedMessageRepository,
-        private EnlistmentAcceptanceProvisioningService $enlistmentAcceptanceProvisioningService
+        private EnlistmentAcceptanceProvisioningService $enlistmentAcceptanceProvisioningService,
+        private TenantRepository $tenantRepository,
+        private RecruitmentOpeningRepository $recruitmentOpeningRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -57,12 +61,28 @@ class AdminRecruitmentsController
 
         $canned = $this->cannedMessageRepository->listForTenant((int) $tenantId);
 
+        $linkedOpening = null;
+        $communitySlug = '';
+        $trow = $this->tenantRepository->findById((int) $tenantId);
+        if ($trow) {
+            $communitySlug = trim((string) ($trow['slug'] ?? ''));
+        }
+        $roid = (int) ($row['recruitment_opening_id'] ?? 0);
+        if ($roid > 0 && $this->recruitmentOpeningRepository->tablesExist()) {
+            $orow = $this->recruitmentOpeningRepository->findByIdForTenant($roid, (int) $tenantId);
+            if ($orow) {
+                $linkedOpening = $orow;
+            }
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.recruitments.show',
             'title' => 'Candidature #' . $id,
             'enlistment' => $row,
             'enlistmentCannedMessages' => $canned,
             'membershipRepairHint' => $this->enlistmentAcceptanceProvisioningService->membershipRepairHint((int) $tenantId, $row),
+            'linkedRecruitmentOpening' => $linkedOpening,
+            'communitySlug' => $communitySlug,
             'showPortalFooter' => false,
         ]);
     }

@@ -35,11 +35,7 @@ $botActionMeta = static function (string $action): array {
 $canForumContentMod = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
 $canDeleteForumPost = function_exists('can') && can('forum.post.delete_any');
 $gateMod = \App\Core\Gate::getInstance();
-$canFormalMemberWarn = function_exists('can') && (
-    can('admin.members.moderate')
-    || $gateMod->allows('admin.organization')
-    || $gateMod->allows('admin.access')
-);
+$canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
 ?>
 <div class="forum-mod-console w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pb-16">
   <nav class="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500 mb-8" aria-label="Fil d’Ariane">

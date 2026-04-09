@@ -249,12 +249,14 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | GET | `/admin/atak-mod` | AdminAtakModController::index | ✅ | |
 | POST | `/admin/atak-mod/upload` | AdminAtakModController::upload | ✅ | |
 | POST | `/admin/atak-mod/delete` | AdminAtakModController::delete | ✅ | |
-| GET | `/admin/training` | AdminTrainingController::dashboard | ✅ | |
-| GET | `/admin/training/courses` | AdminTrainingController::courses | ✅ | |
-| GET | `/admin/training/enrollments` | AdminTrainingController::enrollments | ✅ | |
-| GET | `/admin/training/reports` | AdminTrainingController::reports | ✅ | |
-| GET | `/admin/training/certificates` | AdminTrainingController::certificates | ✅ | |
-| GET | `/admin/training/audit` | AdminTrainingController::audit | ✅ | |
+| GET | `/admin/training` et sous-chemins | Redirection vers `back-office/ressources/training/…` | ✅ | Compatibilité URL ; pas de POST |
+| GET | `/back-office/ressources/training` | AdminTrainingController::dashboard | ✅ | Pilotage LMS (middleware staff formation) |
+| GET | `/back-office/ressources/training/courses` | AdminTrainingController::courses | ✅ | |
+| GET | `/back-office/ressources/training/enrollments` | AdminTrainingController::enrollments | ✅ | |
+| GET | `/back-office/ressources/training/reports` | AdminTrainingController::reports | ✅ | |
+| GET | `/back-office/ressources/training/certificates` | AdminTrainingController::certificates | ✅ | |
+| GET | `/back-office/ressources/training/audit` | AdminTrainingController::audit | ✅ | |
+| GET | `/back-office/ressources/training/studio` | AdminTrainingStudioController::index | ✅ | |
 | GET | `/admin/forum-config` | AdminForumConfigController::index | ✅ | |
 
 ---

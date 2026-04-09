@@ -66,12 +66,77 @@ final class PermissionImplication
             return true;
         }
 
+        if (self::impliedByInterteamLegacy($granted, $permission)) {
+            return true;
+        }
+
         return false;
+    }
+
+    /**
+     * Anciennes permissions interteam.* → équivalents cooperation.* (sans casser les rôles existants).
+     *
+     * @param list<string> $granted
+     */
+    private static function impliedByInterteamLegacy(array $granted, string $permission): bool
+    {
+        $manageExtras = [
+            'cooperation.missions.view',
+            'cooperation.exchange.read',
+            'cooperation.exchange.write',
+            'cooperation.orbat.view',
+            'cooperation.readiness.view',
+            'cooperation.meeting.launch',
+            'cooperation.missions.activate',
+            'cooperation.missions.close',
+            'cooperation.missions.archive',
+            'cooperation.data.request',
+            'cooperation.data.approve',
+            'cooperation.data.revoke',
+            'cooperation.audit.view',
+            'cooperation.rex.submit',
+            'cooperation.rex.read',
+            'cooperation.catalog.manage',
+            'cooperation.announcements.manage',
+        ];
+        if (in_array('cooperation.missions.manage', $granted, true)
+            && in_array($permission, ['cooperation.catalog.manage', 'cooperation.announcements.manage'], true)) {
+            return true;
+        }
+
+        if (in_array('interteam.missions.manage', $granted, true)) {
+            if ($permission === 'cooperation.missions.manage' || in_array($permission, $manageExtras, true)) {
+                return true;
+            }
+        }
+        if (in_array('interteam.missions.respond', $granted, true)) {
+            if (in_array($permission, ['cooperation.missions.respond', 'cooperation.missions.view', 'cooperation.exchange.read'], true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Habilitations dérivées de « administration organisationnelle ».
+     * Exclusions : droits sensibles à attribuer explicitement sur les rôles (ex. restrictions membres niveau org).
+     *
+     * @var list<string>
+     */
+    private static function adminOrganizationExcludedSlugs(): array
+    {
+        return [
+            'admin.members.moderate',
+        ];
     }
 
     private static function impliedByAdminOrganization(string $permission): bool
     {
-        if (str_starts_with($permission, 'admin.') || str_starts_with($permission, 'personnel.')) {
+        if (str_starts_with($permission, 'admin.')) {
+            return !in_array($permission, self::adminOrganizationExcludedSlugs(), true);
+        }
+        if (str_starts_with($permission, 'personnel.')) {
             return true;
         }
 

@@ -42,20 +42,28 @@ class ModerationRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function listRecentActions(int $tenantId, int $limit = 100): array
+    public function listRecentActions(int $tenantId, int $limit = 100, ?string $sanctionScope = null): array
     {
+        $lim = max(1, min(500, $limit));
+        $scopeSql = '';
+        $params = [$tenantId];
+        if ($sanctionScope === 'tenant' && $this->hasSanctionScopeColumn()) {
+            $scopeSql = " AND (ma.sanction_scope = 'tenant' OR ma.sanction_scope IS NULL OR ma.sanction_scope = '')";
+        } elseif ($sanctionScope === 'platform' && $this->hasSanctionScopeColumn()) {
+            $scopeSql = " AND ma.sanction_scope = 'platform'";
+        }
         $stmt = $this->pdo->prepare(
             'SELECT ma.*, u.email AS target_email, a.email AS actor_email
              FROM moderation_actions ma
              INNER JOIN users u ON u.id = ma.target_user_id AND u.tenant_id = ma.tenant_id
              INNER JOIN users a ON a.id = ma.actor_user_id AND a.tenant_id = ma.tenant_id
-             WHERE ma.tenant_id = ?
+             WHERE ma.tenant_id = ?' . $scopeSql . '
              ORDER BY ma.created_at DESC
-             LIMIT ' . max(1, min(500, $limit))
+             LIMIT ' . $lim
         );
-        $stmt->execute([$tenantId]);
+        $stmt->execute($params);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function createCase(int $tenantId, int $subjectUserId, int $openedByUserId, string $priority = 'normal'): int
@@ -76,10 +84,30 @@ class ModerationRepository
         string $actionType,
         ?string $reason,
         ?\DateTimeInterface $expiresAt,
-        ?string $restrictionsJson = null
+        ?string $restrictionsJson = null,
+        string $sanctionScope = 'tenant'
     ): int {
         $hasJson = $this->hasRestrictionsJsonColumn();
-        if ($hasJson) {
+        $hasScope = $this->hasSanctionScopeColumn();
+        $exp = $expiresAt ? $expiresAt->format('Y-m-d H:i:s') : null;
+        if ($hasJson && $hasScope) {
+            $scope = $sanctionScope === 'platform' ? 'platform' : 'tenant';
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO moderation_actions (case_id, tenant_id, target_user_id, actor_user_id, action_type, reason, restrictions_json, sanction_scope, expires_at, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+            );
+            $stmt->execute([
+                $caseId,
+                $tenantId,
+                $targetUserId,
+                $actorUserId,
+                $actionType,
+                $reason,
+                $restrictionsJson,
+                $scope,
+                $exp,
+            ]);
+        } elseif ($hasJson) {
             $stmt = $this->pdo->prepare(
                 'INSERT INTO moderation_actions (case_id, tenant_id, target_user_id, actor_user_id, action_type, reason, restrictions_json, expires_at, created_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())'
@@ -92,7 +120,7 @@ class ModerationRepository
                 $actionType,
                 $reason,
                 $restrictionsJson,
-                $expiresAt ? $expiresAt->format('Y-m-d H:i:s') : null,
+                $exp,
             ]);
         } else {
             $stmt = $this->pdo->prepare(
@@ -106,7 +134,7 @@ class ModerationRepository
                 $actorUserId,
                 $actionType,
                 $reason,
-                $expiresAt ? $expiresAt->format('Y-m-d H:i:s') : null,
+                $exp,
             ]);
         }
 
@@ -137,5 +165,47 @@ class ModerationRepository
         $stmt->execute([$revokedByUserId, $actionId, $tenantId]);
 
         return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Révoque une action uniquement si son périmètre correspond (évite que l’org lève une sanction « site »).
+     */
+    public function revokeActionForScope(int $tenantId, int $actionId, int $revokedByUserId, string $expectedScope): bool
+    {
+        if (!$this->hasSanctionScopeColumn()) {
+            return $expectedScope === 'tenant' && $this->revokeAction($tenantId, $actionId, $revokedByUserId);
+        }
+        $scope = $expectedScope === 'platform' ? 'platform' : 'tenant';
+        if ($scope === 'tenant') {
+            $stmt = $this->pdo->prepare(
+                "UPDATE moderation_actions SET revoked_at = NOW(), revoked_by_user_id = ?
+                 WHERE id = ? AND tenant_id = ? AND revoked_at IS NULL
+                 AND (sanction_scope = 'tenant' OR sanction_scope IS NULL OR sanction_scope = '')"
+            );
+        } else {
+            $stmt = $this->pdo->prepare(
+                "UPDATE moderation_actions SET revoked_at = NOW(), revoked_by_user_id = ?
+                 WHERE id = ? AND tenant_id = ? AND revoked_at IS NULL AND sanction_scope = 'platform'"
+            );
+        }
+        $stmt->execute([$revokedByUserId, $actionId, $tenantId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    private function hasSanctionScopeColumn(): bool
+    {
+        static $v;
+        if ($v !== null) {
+            return $v;
+        }
+        try {
+            $st = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_actions' AND COLUMN_NAME = 'sanction_scope' LIMIT 1");
+            $v = (bool) ($st && $st->fetchColumn());
+        } catch (\Throwable) {
+            $v = false;
+        }
+
+        return $v;
     }
 }

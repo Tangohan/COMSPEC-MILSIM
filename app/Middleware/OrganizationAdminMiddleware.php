@@ -24,6 +24,10 @@ class OrganizationAdminMiddleware
         if (!$scopedOrgAccess) {
             if (str_starts_with($path, '/back-office/recruitments') && $gate->allows('organization.recruitment.manage')) {
                 $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/recruitment/offers') && ($gate->allows('organization.recruitment.openings.manage') || $gate->allows('organization.recruitment.manage'))) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/recruitment/reference-format') && ($gate->allows('organization.recruitment.openings.manage') || $gate->allows('organization.recruitment.manage'))) {
+                $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/organisation-effectifs') && $gate->allows('organization.effectifs.hub.view')) {
                 $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/positions') && $gate->allows('organization.job_roles.referential.manage')) {

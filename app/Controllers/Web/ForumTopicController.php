@@ -12,6 +12,8 @@ use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumPostRepository;
 use App\Repositories\ForumCategoryRepository;
 use App\Repositories\ForumVoteRepository;
+use App\Repositories\ForumPostReactionRepository;
+use App\Repositories\TrainingCertificateRepository;
 use App\Repositories\ForumAttachmentRepository;
 use App\Repositories\ForumNotificationRepository;
 use App\Repositories\UserForumStatsRepository;
@@ -33,6 +35,8 @@ class ForumTopicController
         private ProfilePublicIdentityService $profilePublicIdentityService,
         private ForumAuthorIdentityRepository $forumAuthorIdentityRepository,
         private ForumVoteRepository $voteRepository,
+        private ForumPostReactionRepository $forumPostReactionRepository,
+        private TrainingCertificateRepository $trainingCertificateRepository,
         private ForumAttachmentRepository $forumAttachmentRepository,
         private ForumNotificationRepository $forumNotificationRepository,
         private UserForumStatsRepository $userForumStatsRepository,
@@ -112,6 +116,11 @@ class ForumTopicController
         $postCount = $this->postRepository->countByTopic($id, $isModo);
         $totalPages = max(1, (int) ceil($postCount / $perPage));
         $posts = $this->postRepository->listByTopicPaginated($id, $page, $perPage, $isModo);
+        $postIds = array_values(array_filter(array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $posts), static fn (int $pid): bool => $pid > 0));
+        $reactionCountMap = $this->forumPostReactionRepository->countByKeysForPosts($postIds);
+        $userReactionMap = $this->forumPostReactionRepository->getUserReactionsForPosts((int) $userId, $postIds);
+        $authorIds = array_values(array_unique(array_filter(array_map(static fn (array $row): int => (int) ($row['user_id'] ?? 0), $posts), static fn (int $uid): bool => $uid > 0)));
+        $certTitleMap = $this->trainingCertificateRepository->latestValidCertifiedCourseTitlesForUsers((int) $tenantId, $authorIds);
         foreach ($posts as $i => $p) {
             // Forum global (scope=platform) : carte auteur allégée pour tout le monde, y compris modérateurs.
             // L’identité sensible reste visible dans le panneau « Modération — identité réelle ».
@@ -129,7 +138,22 @@ class ForumTopicController
             $p['vote_score'] = $this->voteRepository->sumForPost((int) $p['id']);
             $p['vote_user_value'] = $this->voteRepository->getUserVote((int) $p['id'], (int) $userId);
             $p['attachments'] = $this->forumAttachmentRepository->listForPost((int) $p['id'], (int) $tenantId);
+            $pid = (int) $p['id'];
+            $p['reaction_counts'] = $reactionCountMap[$pid] ?? [];
+            $p['user_reaction_key'] = $userReactionMap[$pid] ?? null;
+            $au = (int) ($p['user_id'] ?? 0);
+            $p['author_cert_course_title'] = $certTitleMap[$au] ?? null;
             $posts[$i] = $p;
+        }
+        $byAuthorDisplay = [];
+        foreach ($posts as $p) {
+            $byAuthorDisplay[(int) $p['id']] = (string) ($p['author_display_resolved'] ?? '');
+        }
+        foreach ($posts as $i => $p) {
+            $ppid = isset($p['parent_post_id']) ? (int) $p['parent_post_id'] : 0;
+            $posts[$i]['parent_author_display'] = ($ppid > 0 && isset($byAuthorDisplay[$ppid]))
+                ? $byAuthorDisplay[$ppid]
+                : null;
         }
         $isSubscribed = $this->topicRepository->isSubscribed($userId, $id);
 

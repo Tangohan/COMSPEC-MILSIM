@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>CERBERE | Configuration Déployable</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #000a12; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .config-card { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(51, 65, 85, 0.3); }
+        .inherited { border-left: 4px solid #334155; } /* Gris : Hérité */
+        .custom { border-left: 4px solid #3b82f6; }    /* Bleu : Spécifique à l'unité */
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-10">
+            <h1 class="text-2xl font-black italic uppercase italic">Configuration de l'échelon : <span class="text-blue-500">DIVISION INFRA</span></h1>
+            <p class="text-[10px] font-mono text-slate-500">HIERARCHIE: SYS / EM / DIV_INFRA</p>
+        </header>
+
+        <div class="space-y-6">
+            <div class="config-card inherited rounded-xl p-6 opacity-60">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Flux : SGT ➜ SCH</span>
+                        <h3 class="text-lg font-bold">Règle Héritée de : <span class="italic">ETAT-MAJOR SYSTÈME</span></h3>
+                    </div>
+                    <button class="bg-blue-600/10 text-blue-400 border border-blue-600/20 px-4 py-2 text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all">
+                        Détacher et Personnaliser
+                    </button>
+                </div>
+                <div class="mt-4 grid grid-cols-3 gap-4 text-[10px] font-mono">
+                    <div class="bg-black/20 p-2">ANCIENNETE: 3 ANS</div>
+                    <div class="bg-black/20 p-2">PUNITIONS MAX: 10J</div>
+                    <div class="bg-black/20 p-2">NOTE MIN: 14/20</div>
+                </div>
+            </div>
+
+            <div class="config-card custom rounded-xl p-6 bg-blue-600/5">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-[9px] font-bold text-blue-400 uppercase tracking-widest">Flux : LTN ➜ CNE</span>
+                        <h3 class="text-lg font-bold text-white">Configuration Locale (Spécifique à l'Unité)</h3>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="text-slate-500 text-[10px] font-bold uppercase">Réinitialiser (Hériter)</button>
+                        <button class="bg-blue-600 text-white px-4 py-2 text-[10px] font-black uppercase italic">Modifier</button>
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-3 gap-4 text-[10px] font-mono">
+                    <div class="bg-blue-900/20 p-2 border border-blue-500/20">ANCIENNETE: 2 ANS <span class="text-blue-500">(Custom)</span></div>
+                    <div class="bg-blue-900/20 p-2 border border-blue-500/20">PUNITIONS MAX: 05J <span class="text-blue-500">(Custom)</span></div>
+                    <div class="bg-blue-900/20 p-2 border border-blue-500/20">NOTE MIN: 16/20 <span class="text-blue-500">(Custom)</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="glass-panel p-6 border-l-4 border-red-500 bg-red-500/5">
+            <div class="flex justify-between items-start">
+                <h3 class="text-white font-black italic">SCH VERDIER Marc</h3>
+                <span class="text-[10px] font-mono text-red-500 blink">NON_PROMOVABLE</span>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                <div class="p-2 border border-slate-800 rounded">
+                    <p class="text-[8px] text-slate-500 uppercase">Temps Grade</p>
+                    <p class="text-xs text-emerald-500 font-bold">VALIDE (3.5y/3y)</p>
+                </div>
+                <div class="p-2 border border-red-900/50 rounded bg-red-950/20">
+                    <p class="text-[8px] text-slate-500 uppercase">Diplôme Requis</p>
+                    <p class="text-xs text-red-500 font-bold italic">BSTAT MANQUANT</p>
+                </div>
+                <div class="p-2 border border-slate-800 rounded text-slate-600">
+                    <p class="text-[8px] text-slate-500 uppercase">Punitions</p>
+                    <p class="text-xs font-bold">AUCUNE</p>
+                </div>
+                <div class="p-2 border border-slate-800 rounded">
+                    <p class="text-[8px] text-slate-500 uppercase">Médical</p>
+                    <p class="text-xs text-emerald-500 font-bold">À JOUR</p>
+                </div>
+            </div>
+        </div>
+    <div class="rule-card custom rounded-2xl p-6 bg-blue-600/5 mt-4">
+        <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-4">Critère de Responsabilité</h4>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+                <label class="text-[9px] text-slate-500 font-bold uppercase">Type de temps requis</label>
+                <select class="w-full bg-black border border-slate-800 p-2 text-xs font-mono text-white">
+                    <option value="CHEF_DE_GROUPE">Temps de Chef de Groupe</option>
+                    <option value="CHEF_DE_SECTION">Temps de Chef de Section</option>
+                    <option value="COMMANDANT_UNITE">Temps de Commandant d'Unité</option>
+                </select>
+            </div>
+            
+            <div class="space-y-2">
+                <label class="text-[9px] text-slate-500 font-bold uppercase">Durée cumulée (Mois)</label>
+                <div class="flex items-center gap-3">
+                    <input type="number" value="24" class="w-20 bg-black border border-slate-800 p-2 text-xs font-mono text-blue-400">
+                    <span class="text-[9px] text-slate-500 font-bold uppercase italic">Mois min.</span>
+                </div>
+            </div>
+        </div>
+        
+        <p class="mt-4 text-[8px] text-slate-600 font-mono">
+            LOG_INFO: Le calcul inclut toutes les affectations passées dont la fonction est indexée dans "config_fonctions_commandement".
+        </p>
+    </div>
+</body>
+</html>

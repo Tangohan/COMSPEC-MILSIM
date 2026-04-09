@@ -762,6 +762,29 @@ class UserRepository
     }
 
     /**
+     * Résout un @identifiant unique (nom affiché ou indicatif exact, insensible à la casse).
+     *
+     * @return array{id: int, display_name: string, callsign: ?string}|null
+     */
+    public function findForForumMention(int $tenantId, string $token): ?array
+    {
+        $token = trim($token);
+        if ($token === '') {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT id, display_name, callsign FROM users WHERE tenant_id = ? AND (
+                LOWER(display_name) = LOWER(?)
+                OR (callsign IS NOT NULL AND TRIM(callsign) <> \'\' AND LOWER(TRIM(callsign)) = LOWER(?))
+            ) LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $token, $token]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
      * Recherche annuaire portail (nom d’affichage, indicatif, slug de profil public).
      *
      * @return list<array<string, mixed>>
@@ -1233,6 +1256,55 @@ class UserRepository
     }
 
     /**
+     * Destinataires pour une demande d’accès (gouvernance + profils pouvant gérer les rôles sur la communauté).
+     *
+     * @return list<string>
+     */
+    public function listEmailsForTenantAccessDelegation(int $tenantId): array
+    {
+        $emails = $this->listGovernanceEmailsForTenant($tenantId);
+        $sql = "SELECT DISTINCT u.email FROM users u
+            INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
+            INNER JOIN role_permissions rp ON rp.role_id = r.id
+            INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
+            WHERE u.tenant_id = ? AND u.status = 'active'
+            AND p.slug IN ('admin.organization', 'admin.access')";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$tenantId]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $e = strtolower(trim((string) ($row['email'] ?? '')));
+                if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                    $emails[] = $e;
+                }
+            }
+        } catch (\Throwable) {
+        }
+        if ($this->hasTenantUserRolesTable()) {
+            $sql2 = "SELECT DISTINCT u.email FROM users u
+                INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
+                INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
+                INNER JOIN role_permissions rp ON rp.role_id = r.id
+                INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
+                WHERE u.tenant_id = ? AND u.status = 'active'
+                AND p.slug IN ('admin.organization', 'admin.access')";
+            try {
+                $st = $this->pdo->prepare($sql2);
+                $st->execute([$tenantId]);
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $e = strtolower(trim((string) ($row['email'] ?? '')));
+                    if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                        $emails[] = $e;
+                    }
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return array_values(array_unique($emails));
+    }
+
+    /**
      * Emails des rôles recrutement : recruteur, fondateur (propriétaire communauté), RH.
      *
      * @return list<string>
@@ -1288,6 +1360,58 @@ class UserRepository
             try {
                 $st = $this->pdo->prepare($sql2);
                 $st->execute([$tenantId]);
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $ids[] = (int) ($row['id'] ?? 0);
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+    }
+
+    /**
+     * Membres actifs ayant au moins une des permissions listées (rôle principal et rôles additionnels).
+     *
+     * @param list<string> $permissionSlugs
+     * @return list<int>
+     */
+    public function listActiveUserIdsWithAnyPermissionSlug(int $tenantId, array $permissionSlugs): array
+    {
+        if ($tenantId < 1 || $permissionSlugs === []) {
+            return [];
+        }
+        $permissionSlugs = array_values(array_unique(array_filter(array_map('trim', $permissionSlugs))));
+        if ($permissionSlugs === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($permissionSlugs), '?'));
+        $params = array_merge([$tenantId], $permissionSlugs);
+        $ids = [];
+        $sql = "SELECT DISTINCT u.id FROM users u
+            INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
+            INNER JOIN role_permissions rp ON rp.role_id = r.id
+            INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
+            WHERE u.tenant_id = ? AND u.status = 'active' AND p.slug IN ({$placeholders})";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $ids[] = (int) ($row['id'] ?? 0);
+            }
+        } catch (\Throwable) {
+            return [];
+        }
+        if ($this->hasTenantUserRolesTable()) {
+            $sql2 = "SELECT DISTINCT u.id FROM users u
+                INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
+                INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
+                INNER JOIN role_permissions rp ON rp.role_id = r.id
+                INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
+                WHERE u.tenant_id = ? AND u.status = 'active' AND p.slug IN ({$placeholders})";
+            try {
+                $st = $this->pdo->prepare($sql2);
+                $st->execute($params);
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $ids[] = (int) ($row['id'] ?? 0);
                 }

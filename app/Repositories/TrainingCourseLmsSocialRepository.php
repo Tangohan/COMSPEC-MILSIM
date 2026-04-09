@@ -51,6 +51,33 @@ class TrainingCourseLmsSocialRepository
         }
     }
 
+    public function isLiked(int $userId, int $courseId): bool
+    {
+        if (!$this->hasTable('training_course_likes')) {
+            return false;
+        }
+        $st = $this->pdo->prepare('SELECT 1 FROM training_course_likes WHERE user_id = ? AND course_id = ? LIMIT 1');
+        $st->execute([$userId, $courseId]);
+
+        return (bool) $st->fetchColumn();
+    }
+
+    public function setLike(int $tenantId, int $userId, int $courseId, bool $on): void
+    {
+        if (!$this->hasTable('training_course_likes')) {
+            return;
+        }
+        if ($on) {
+            $st = $this->pdo->prepare(
+                'INSERT IGNORE INTO training_course_likes (tenant_id, user_id, course_id) VALUES (?, ?, ?)'
+            );
+            $st->execute([$tenantId, $userId, $courseId]);
+        } else {
+            $st = $this->pdo->prepare('DELETE FROM training_course_likes WHERE user_id = ? AND course_id = ?');
+            $st->execute([$userId, $courseId]);
+        }
+    }
+
     /** @return list<array<string, mixed>> */
     public function listPublishedReviews(int $courseId, int $limit = 50): array
     {

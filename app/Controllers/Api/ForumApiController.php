@@ -16,6 +16,7 @@ use App\Repositories\ForumPostRepository;
 use App\Repositories\ForumReportRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\ForumVoteRepository;
+use App\Repositories\ForumPostReactionRepository;
 use App\Repositories\ForumNotificationRepository;
 use App\Repositories\UserForumStatsRepository;
 use App\Repositories\UserProfileDisplaySettingsRepository;
@@ -33,6 +34,7 @@ class ForumApiController
         private ForumReportRepository $reportRepository,
         private UserRepository $userRepository,
         private ForumVoteRepository $voteRepository,
+        private ForumPostReactionRepository $postReactionRepository,
         private ForumNotificationRepository $notificationRepository,
         private ForumPostAttachmentService $postAttachmentService,
         private UserForumStatsRepository $userForumStatsRepository,
@@ -83,6 +85,9 @@ class ForumApiController
             'save_profile_settings' => $this->saveProfileSettings($input, $userId),
             'mark_best_answer' => $this->markBestAnswer($input, $userId, $tenantId),
             'save_draft' => $this->saveDraft($input, $userId, $tenantId),
+            'set_post_reaction' => $this->setPostReaction($input, $userId, $tenantId),
+            'clear_post_reaction' => $this->clearPostReaction($input, $userId, $tenantId),
+            'set_post_publication_badge' => $this->setPostPublicationBadge($input, $userId, $tenantId),
             default => Response::json(['success' => false, 'error' => 'Action inconnue'], 400),
         };
     }
@@ -100,11 +105,18 @@ class ForumApiController
     private function mentionSearch(Request $request, int $tenantId): Response
     {
         $q = trim((string) $request->query('q', ''));
-        if (strlen($q) < 2) {
-            return Response::json(['success' => true, 'users' => []]);
+        $groups = [];
+        if (function_exists('forum_mention_virtual_labels')) {
+            foreach (forum_mention_virtual_labels() as $lab) {
+                $lab = (string) $lab;
+                if ($q === '' || mb_stripos($lab, $q) !== false) {
+                    $groups[] = ['label' => '@' . $lab, 'insert' => $lab];
+                }
+            }
         }
-        $users = $this->userRepository->searchForMention($tenantId, $q, 10);
-        return Response::json(['success' => true, 'users' => $users]);
+        $users = strlen($q) < 2 ? [] : $this->userRepository->searchForMention($tenantId, $q, 12);
+
+        return Response::json(['success' => true, 'users' => $users, 'groups' => $groups]);
     }
 
     private function subscribe(array $input, int $userId, int $tenantId): Response
@@ -263,8 +275,93 @@ class ForumApiController
             forum_after_post_moderation((int) $tenantId, (int) $userId, $postId, $content);
         }
         $this->notifyTopicParticipantsApi($tenantId, $topicId, $userId, (string) ($topic['title'] ?? 'Sujet'));
+        if (function_exists('forum_notify_mentioned_users_in_new_post')) {
+            forum_notify_mentioned_users_in_new_post(
+                $tenantId,
+                $userId,
+                $topicId,
+                $postId,
+                (string) ($topic['title'] ?? 'Sujet'),
+                (string) ($input['content'] ?? '')
+            );
+        }
 
         return Response::json(['success' => true, 'post_id' => $postId]);
+    }
+
+    /** @var list<string> */
+    private const REACTION_KEYS = ['received', 'validated', 'priority', 'action', 'bravo', 'review'];
+
+    /** @var list<string> */
+    private const PUBLICATION_BADGES = ['official', 'report', 'info', 'question', 'urgent', 'resolved'];
+
+    private function setPostReaction(array $input, int $userId, int $tenantId): Response
+    {
+        $postId = (int) ($input['post_id'] ?? 0);
+        $key = strtolower(preg_replace('/[^a-z0-9_]/', '', (string) ($input['reaction_key'] ?? '')));
+        if ($postId <= 0 || !in_array($key, self::REACTION_KEYS, true)) {
+            return Response::json(['success' => false, 'error' => 'Réaction invalide'], 400);
+        }
+        $post = $this->postRepository->findById($postId, $tenantId);
+        if (!$post) {
+            return Response::json(['success' => false, 'error' => 'Message introuvable'], 404);
+        }
+        $this->postReactionRepository->setReaction($tenantId, $postId, $userId, $key);
+
+        return Response::json([
+            'success' => true,
+            'reaction_counts' => $this->postReactionRepository->countByKeysForPost($postId),
+            'user_reaction_key' => $this->postReactionRepository->getUserReactionKey($postId, $userId),
+        ]);
+    }
+
+    private function clearPostReaction(array $input, int $userId, int $tenantId): Response
+    {
+        $postId = (int) ($input['post_id'] ?? 0);
+        if ($postId <= 0) {
+            return Response::json(['success' => false, 'error' => 'Message invalide'], 400);
+        }
+        $post = $this->postRepository->findById($postId, $tenantId);
+        if (!$post) {
+            return Response::json(['success' => false, 'error' => 'Message introuvable'], 404);
+        }
+        $this->postReactionRepository->removeReaction($postId, $userId);
+
+        return Response::json([
+            'success' => true,
+            'reaction_counts' => $this->postReactionRepository->countByKeysForPost($postId),
+            'user_reaction_key' => null,
+        ]);
+    }
+
+    private function setPostPublicationBadge(array $input, int $userId, int $tenantId): Response
+    {
+        $postId = (int) ($input['post_id'] ?? 0);
+        $raw = $input['badge'] ?? null;
+        $badge = is_string($raw) ? trim($raw) : null;
+        if ($badge === '' || $badge === 'none') {
+            $badge = null;
+        }
+        if ($postId <= 0) {
+            return Response::json(['success' => false, 'error' => 'Message invalide'], 400);
+        }
+        $post = $this->postRepository->findById($postId, $tenantId);
+        if (!$post) {
+            return Response::json(['success' => false, 'error' => 'Message introuvable'], 404);
+        }
+        $isAuthor = (int) $post['user_id'] === $userId;
+        $isMod = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
+        if (!$isAuthor && !$isMod) {
+            return Response::json(['success' => false, 'error' => 'Non autorisé'], 403);
+        }
+        if ($badge !== null && !in_array($badge, self::PUBLICATION_BADGES, true)) {
+            return Response::json(['success' => false, 'error' => 'Type de badge invalide'], 400);
+        }
+        if (!$this->postRepository->updatePublicationBadge($postId, $tenantId, $badge)) {
+            return Response::json(['success' => false, 'error' => 'Mise à jour impossible'], 400);
+        }
+
+        return Response::json(['success' => true, 'badge' => $badge]);
     }
 
     private function markBestAnswer(array $input, int $userId, int $tenantId): Response

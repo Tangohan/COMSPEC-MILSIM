@@ -264,6 +264,12 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_certificate_templates : ' . $e->getMessage() . "\n";
 }
+$usageAnalyticsMigrate = require $root . '/bootstrap/usage_analytics_migration.php';
+try {
+    $usageAnalyticsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] usage_analytics : ' . $e->getMessage() . "\n";
+}
 echo "Migrations LMS formation (première passe) OK.\n";
 $migrationFlush();
 
@@ -1571,6 +1577,9 @@ if ($stmt && !$stmt->fetch()) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 }
 
+$forumPremiumMigrate = require $root . '/bootstrap/forum_premium_migration.php';
+$forumPremiumMigrate($pdo);
+
 $forumV2Migrate = require $root . '/bootstrap/forum_v2_migration.php';
 $forumV2Migrate($pdo);
 
@@ -1618,6 +1627,13 @@ $personnelJobRolesMigrate($pdo);
 $enlistmentCannedMessagesMigrate = require $root . '/bootstrap/enlistment_canned_messages_migration.php';
 $enlistmentCannedMessagesMigrate($pdo);
 
+$recruitmentOpeningsMigrate = require $root . '/bootstrap/recruitment_openings_migration.php';
+try {
+    $recruitmentOpeningsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] recruitment_openings : ' . $e->getMessage() . "\n";
+}
+
 $tenantDashboardPinsMigrate = require $root . '/bootstrap/tenant_dashboard_pins_migration.php';
 try {
     $tenantDashboardPinsMigrate($pdo);
@@ -1637,6 +1653,27 @@ try {
     $briefPlatformInterteamMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] brief_platform_interteam : ' . $e->getMessage() . "\n";
+}
+
+$interteamCoopHubMigrate = require $root . '/bootstrap/interteam_cooperation_hub_migration.php';
+try {
+    $interteamCoopHubMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] interteam_cooperation_hub : ' . $e->getMessage() . "\n";
+}
+
+$cooperationEnhanceMigrate = require $root . '/bootstrap/cooperation_module_enhancements_migration.php';
+try {
+    $cooperationEnhanceMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] cooperation_module_enhancements : ' . $e->getMessage() . "\n";
+}
+
+$cooperationCatalogMigrate = require $root . '/bootstrap/cooperation_catalog_and_announcements_migration.php';
+try {
+    $cooperationCatalogMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] cooperation_catalog_and_announcements : ' . $e->getMessage() . "\n";
 }
 
 require_once $root . '/bootstrap/autoload.php';
@@ -1678,6 +1715,46 @@ if (is_file($msgSql)) {
         echo "Migration community_messaging.sql...\n";
         $pdo->exec(file_get_contents($msgSql));
     }
+}
+
+// Permission messagerie interne : comms.tenant_messages.receive (+ liaison rôles gouvernance)
+try {
+    $permSlug = 'comms.tenant_messages.receive';
+    $permName = 'Recevoir les messages internes adressés à l’encadrement';
+    $tStmt = $pdo->query('SELECT id FROM tenants');
+    if ($tStmt) {
+        $insPerm = $pdo->prepare('INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, ?, ?, ?, NOW())');
+        $chkPerm = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $insRp = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+        $roleIds = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug IN (\'tenant_admin\',\'community_owner\')');
+        while ($tRow = $tStmt->fetch(PDO::FETCH_ASSOC)) {
+            $tid = (int) ($tRow['id'] ?? 0);
+            if ($tid < 1) {
+                continue;
+            }
+            $chkPerm->execute([$tid, $permSlug]);
+            $permRow = $chkPerm->fetch(PDO::FETCH_ASSOC);
+            if ($permRow) {
+                $permId = (int) ($permRow['id'] ?? 0);
+            } else {
+                $insPerm->execute([$tid, $permName, $permSlug, 'comms']);
+                $permId = (int) $pdo->lastInsertId();
+            }
+            if ($permId < 1) {
+                continue;
+            }
+            $roleIds->execute([$tid]);
+            while ($r = $roleIds->fetch(PDO::FETCH_ASSOC)) {
+                $rid = (int) ($r['id'] ?? 0);
+                if ($rid > 0) {
+                    $insRp->execute([$rid, $permId]);
+                }
+            }
+        }
+    }
+    echo "Permission messagerie interne (comms.tenant_messages.receive) — synchronisation par tenant OK.\n";
+} catch (Throwable $e) {
+    echo '  [ATTENTION] Permission messagerie interne : ' . $e->getMessage() . "\n";
 }
 
 $platformIntPath = $root . '/migrations/platform_integrations.sql';

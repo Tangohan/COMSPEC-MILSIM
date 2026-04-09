@@ -84,7 +84,9 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                 </section>
                 <?php endif; ?>
 
+                <?php if (\App\Core\Gate::getInstance()->allows('admin.system')): ?>
                 <p class="text-sm text-slate-500 pt-2">
-                    <a href="<?= url('admin') ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Retour administration</a>
+                    <a href="<?= url('admin') ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Tableau de bord plateforme</a>
                 </p>
+                <?php endif; ?>
 <?php require base_path('views/admin/training/partials/command_shell_close.php'); ?>

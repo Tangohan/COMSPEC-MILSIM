@@ -92,6 +92,15 @@ final class SystemOpsCenterController
                 'link_label' => 'Ouvrir la quarantaine',
             ],
             [
+                'role' => 'moderator',
+                'status' => 'monitor',
+                'priority' => 'medium',
+                'title' => 'Sanctions membres au niveau site',
+                'description' => 'Mesures sur le compte, le forum, la messagerie ou plusieurs domaines du portail — après choix de la communauté et du membre.',
+                'link' => url('admin/system/member-sanctions'),
+                'link_label' => 'Ouvrir l’écran sanctions site',
+            ],
+            [
                 'role' => 'support',
                 'status' => count($activeAlerts) > 0 ? 'open' : 'monitor',
                 'priority' => count($activeAlerts) > 0 ? 'medium' : 'low',

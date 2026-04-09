@@ -12,6 +12,12 @@ $tenantRows = $adminAuditRecentTenant ?? [];
 $auditMore = url('admin/audit');
 $boForumMod = url('back-office/forum-moderation');
 $contentMod = url('admin/content-moderation');
+$memberSanctionsSite = url('admin/system/member-sanctions');
+$blocklistSite = url('admin/system/blocklist');
+$gateMod = \App\Core\Gate::getInstance();
+$canSystemModerationTools = $gateMod->allows('admin.system');
+$canOpenForumModConsole = $canSystemModerationTools
+    || (function_exists('forum_user_can_moderate') && forum_user_can_moderate());
 
 /**
  * @param array{tenant_id: int, tenant_name: string|null} $row
@@ -32,6 +38,12 @@ $tenantLabel = static function (array $row): string {
             Vue agrégée sur toutes les communautés. Le traitement des signalements et de la quarantaine fichiers se fait
             <strong class="font-semibold text-slate-800">dans le contexte d’une communauté</strong> (sélectionnez-la dans le portail, puis ouvrez les écrans indiqués).
         </p>
+        <?php if ($canSystemModerationTools): ?>
+        <p class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
+            <a href="<?= htmlspecialchars($memberSanctionsSite, ENT_QUOTES, 'UTF-8') ?>" class="text-rose-800 hover:underline">Sanctions membres (site) →</a>
+            <a href="<?= htmlspecialchars($blocklistSite, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-700 hover:underline">Liste e-mail et réseau (site) →</a>
+        </p>
+        <?php endif; ?>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -42,7 +54,11 @@ $tenantLabel = static function (array $row): string {
             <?php else: ?>
                 <p class="text-3xl font-black tabular-nums text-rose-900"><?= $forumTotal ?></p>
                 <p class="mt-1 text-xs text-slate-500">Ouverts à traiter (toutes communautés)</p>
+                <?php if ($canOpenForumModConsole): ?>
                 <a href="<?= htmlspecialchars($boForumMod, ENT_QUOTES, 'UTF-8') ?>" class="mt-4 inline-flex text-sm font-bold text-emerald-800 hover:text-emerald-700 underline decoration-emerald-300">Console modération forum →</a>
+                <?php else: ?>
+                <p class="mt-4 text-xs text-slate-500">Console modération : sélectionnez une communauté et vérifiez vos habilitations de modérateur.</p>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
         <div class="rounded-2xl border border-amber-200/90 bg-white p-5 shadow-sm">
@@ -52,7 +68,11 @@ $tenantLabel = static function (array $row): string {
             <?php else: ?>
                 <p class="text-3xl font-black tabular-nums text-amber-950"><?= $queueTotal ?></p>
                 <p class="mt-1 text-xs text-slate-500">Quarantaine ou analyse en cours (toutes communautés)</p>
+                <?php if ($canOpenForumModConsole): ?>
                 <a href="<?= htmlspecialchars($contentMod, ENT_QUOTES, 'UTF-8') ?>" class="mt-4 inline-flex text-sm font-bold text-emerald-800 hover:text-emerald-700 underline decoration-emerald-300">File de validation →</a>
+                <?php else: ?>
+                <p class="mt-4 text-xs text-slate-500">Validation des pièces jointes : accès réservé aux modérateurs habilités.</p>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>

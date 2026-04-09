@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CERBERE | Gestion des Engagements</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #001529; color: #cbd5e1; font-family: 'Inter', sans-serif; }
+        .cerbere-grainy { position: relative; }
+        .cerbere-grainy::before {
+            content: ""; position: fixed; inset: 0; opacity: 0.03; pointer-events: none; z-index: 50;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+        .input-tech { @apply bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 font-mono text-xs focus:border-blue-600 outline-none transition-all w-full; }
+        .glass-panel { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(51, 65, 85, 0.3); }
+    </style>
+</head>
+<body class="cerbere-grainy">
+
+<div class="min-h-screen p-8 relative z-10">
+    <header class="max-w-6xl mx-auto mb-10 flex justify-between items-end border-b border-slate-800 pb-10">
+        <div>
+            <h2 class="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em] mb-2">// CONTRACT_MANAGEMENT_SYSTEM</h2>
+            <h1 class="text-4xl font-black text-white italic uppercase tracking-tighter">Attribution d' <span class="text-blue-600">Engagement</span></h1>
+        </div>
+        <div class="text-right">
+            <p class="text-[9px] text-slate-500 font-bold uppercase">Référence Générée</p>
+            <p class="font-mono text-[10px] text-blue-400">SYS/DRHAT/BSO/<?= date('Y') ?>-NEW</p>
+        </div>
+    </header>
+
+    <form action="/api/contrats/assign" method="POST" class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="space-y-6">
+            <div class="glass-panel p-6 rounded-2xl text-center">
+                <div class="w-32 h-32 bg-slate-800 border-2 border-slate-700 mx-auto mb-6 flex items-center justify-center relative overflow-hidden">
+                    <span class="text-4xl font-black text-slate-600 italic">IMG</span>
+                    <div class="absolute bottom-0 inset-x-0 bg-blue-600/20 py-1 text-[8px] font-black uppercase">Dossier Matricule</div>
+                </div>
+                <h3 class="text-lg font-black text-white uppercase italic">DUPONT Alexandre</h3>
+                <p class="text-blue-500 text-[10px] font-mono font-bold tracking-widest mt-1">MATRICULE: 12345678</p>
+                
+                <div class="mt-8 pt-6 border-t border-slate-800 text-left space-y-4">
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Unité Affectée</label>
+                        <p class="text-xs font-bold text-slate-300">1er REGIMENT DE CHASSEURS</p>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Spécialité (CODE)</label>
+                        <p class="text-xs font-mono text-slate-300">INFO/SYST-42</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-6">
+            <div class="glass-panel p-8 rounded-2xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Type d'engagement</label>
+                        <select name="type_contrat" class="input-tech">
+                            <option value="ENGAGE">Engagé Volontaire (EVAT)</option>
+                            <option value="OSC">Officier Sous Contrat (OSC)</option>
+                            <option value="RESERVE">Réserve Opérationnelle</option>
+                            <option value="CIVIL_CONTRACTUEL">Civil Contractuel</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Durée de l'engagement</label>
+                        <select name="duree" class="input-tech">
+                            <option value="1">1 an (Renouvelable)</option>
+                            <option value="3">3 ans</option>
+                            <option value="5">5 ans (Standard)</option>
+                            <option value="10">10 ans</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date de Signature</label>
+                        <input type="date" name="date_debut" class="input-tech" value="<?= date('Y-m-d') ?>">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Échéance Théorique</label>
+                        <input type="date" name="date_fin" class="input-tech bg-slate-900" readonly>
+                        <p class="text-[9px] text-slate-500 italic">Calculée automatiquement selon la durée.</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Clauses & Homologations de Sécurité</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                        <label class="flex items-center gap-3 p-3 bg-slate-950/50 border border-slate-800 rounded-lg cursor-pointer hover:border-blue-600/50 transition-all">
+                            <input type="checkbox" name="homologation" class="w-4 h-4 accent-blue-600">
+                            <span class="text-[10px] font-bold uppercase tracking-tight">Accréditation Confidentiel Défense</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 bg-slate-950/50 border border-slate-800 rounded-lg cursor-pointer hover:border-blue-600/50 transition-all">
+                            <input type="checkbox" name="prime" class="w-4 h-4 accent-blue-600">
+                            <span class="text-[10px] font-bold uppercase tracking-tight">Indemnité de Mobilité Géo.</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-8 space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Observations Administratives</label>
+                    <textarea name="commentaire" rows="4" class="input-tech resize-none" placeholder="Notes sur le recrutement ou dérogations éventuelles..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-4">
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-5 uppercase tracking-widest italic text-sm transition-all shadow-[0_10px_30px_rgba(37,99,235,0.2)]">
+                    Générer et Enregistrer le Contrat
+                </button>
+                <button type="button" class="px-10 border border-slate-700 hover:bg-slate-800 text-slate-400 font-bold uppercase text-[10px] transition-all">
+                    Aperçu PDF
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

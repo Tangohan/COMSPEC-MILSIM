@@ -17,6 +17,8 @@ $certCourses = $policyDisplay['certificate_courses'] ?? [];
 $policyFlags = $policyDisplay['policy_flags'] ?? [];
 $hasPolicyInfo = $preCourses !== [] || $certCourses !== [] || $policyFlags !== [];
 $isFavorite = $isFavorite ?? false;
+$isLiked = $isLiked ?? false;
+$analyticsBeacon = $analyticsBeacon ?? null;
 $courseSessions = $courseSessions ?? [];
 $viewerLoggedIn = $viewerLoggedIn ?? false;
 $continueLesson = $continueLesson ?? null;
@@ -138,6 +140,7 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
                         </div>
                         <div class="flex flex-col items-stretch sm:items-end gap-3 shrink-0">
                             <?php if ($viewerLoggedIn): ?>
+                            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                             <form method="post" action="<?= url('formations/favorite') ?>" class="inline">
                                 <?= \App\Core\Csrf::field() ?>
                                 <input type="hidden" name="course_id" value="<?= $courseId ?>">
@@ -145,6 +148,14 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
                                 <input type="hidden" name="favorite" value="<?= $isFavorite ? '0' : '1' ?>">
                                 <button type="submit" class="w-full sm:w-auto px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-wider <?= $isFavorite ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-slate-200 bg-white text-slate-600' ?>"><?= $isFavorite ? '★ Favori' : '☆ Favori' ?></button>
                             </form>
+                            <form method="post" action="<?= url('formations/like') ?>" class="inline">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="course_id" value="<?= $courseId ?>">
+                                <input type="hidden" name="course_slug" value="<?= htmlspecialchars($slugForForms) ?>">
+                                <input type="hidden" name="like" value="<?= $isLiked ? '0' : '1' ?>">
+                                <button type="submit" class="w-full sm:w-auto px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-wider <?= $isLiked ? 'border-rose-400 bg-rose-50 text-rose-800' : 'border-slate-200 bg-white text-slate-600' ?>"><?= $isLiked ? '♥ J’aime' : '♡ J’aime' ?></button>
+                            </form>
+                            </div>
                             <?php endif; ?>
                             <?php if ($enrollment && $canAccessLearning): ?>
                             <div class="text-left sm:text-right rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
@@ -452,6 +463,7 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
         </div>
     </div>
     <?php if (!empty($viewerLoggedIn)) { require base_path('views/partials/community_report_modal.php'); } ?>
+    <?php require base_path('views/partials/analytics_beacon.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

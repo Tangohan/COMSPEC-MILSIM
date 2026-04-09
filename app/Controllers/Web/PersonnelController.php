@@ -6,6 +6,8 @@ namespace App\Controllers\Web;
 
 use App\Core\Container;
 use App\Core\Request;
+use App\Services\Moderation\ModerationRestrictionResolver;
+use App\Services\Moderation\ModerationStatusPresenter;
 use App\Core\Response;
 use App\Core\Session;
 use App\Services\Auth\AuthService;
@@ -284,6 +286,12 @@ class PersonnelController
         $showEmailInContact = !$redactPersonalPresentation && ($isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_email_to_others'] ?? 0) === 1);
         $showMatriculePublic = $isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_matricule_to_others'] ?? 1) === 1;
 
+        /** @var ModerationRestrictionResolver $modResolver */
+        $modResolver = Container::get(ModerationRestrictionResolver::class);
+        $modSet = $modResolver->getActiveSet((int) $tenantId, $uid);
+        $personnelModerationStaffLines = $canStaffView ? ModerationStatusPresenter::linesForStaff($modSet) : [];
+        $personnelModerationMemberBrief = ($isSelf && !$redactPersonalPresentation) ? ModerationStatusPresenter::briefForMember($modSet) : null;
+
         return Response::view('layout.main', [
             'content' => 'personnel.file',
             'title' => 'Fiche personnel',
@@ -317,6 +325,8 @@ class PersonnelController
             'displaySettings' => $displaySettings,
             'showEmailInContact' => $showEmailInContact,
             'showMatriculePublic' => $showMatriculePublic,
+            'personnelModerationStaffLines' => $personnelModerationStaffLines,
+            'personnelModerationMemberBrief' => $personnelModerationMemberBrief,
         ]);
     }
 

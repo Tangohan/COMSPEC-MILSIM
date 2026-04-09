@@ -77,7 +77,7 @@ class OrganizationDashboardController
         $moderationRecent = [];
         $moderationError = null;
         try {
-            $moderationRecent = $this->moderationRepository->listRecentActions($tenantId, 5);
+            $moderationRecent = $this->moderationRepository->listRecentActions($tenantId, 5, 'tenant');
         } catch (\Throwable) {
             $moderationError = 'Modération indisponible.';
         }

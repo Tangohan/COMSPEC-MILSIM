@@ -110,8 +110,30 @@ if (is_array($grade)) {
         $gradeLabel = trim((string) ($grade['label_short'] ?? ''));
     }
 }
+$personnelModerationStaffLines = is_array($personnelModerationStaffLines ?? null) ? $personnelModerationStaffLines : [];
+$personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_string($personnelModerationMemberBrief) && trim($personnelModerationMemberBrief) !== ''
+    ? trim($personnelModerationMemberBrief)
+    : null;
 ?>
 <main class="min-h-screen pt-20 pb-24">
+    <?php if ($personnelModerationStaffLines !== []): ?>
+    <div class="max-w-7xl mx-auto px-6 md:px-8 pt-6">
+        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" role="region" aria-label="Restrictions d’accès">
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-600">Restrictions actuelles (vue encadrement)</p>
+            <ul class="mt-2 list-disc pl-5 text-sm text-slate-800 space-y-1">
+                <?php foreach ($personnelModerationStaffLines as $line): ?>
+                    <li><?= htmlspecialchars($line, ENT_QUOTES, 'UTF-8') ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    </div>
+    <?php elseif ($personnelModerationMemberBrief !== null): ?>
+    <div class="max-w-7xl mx-auto px-6 md:px-8 pt-6">
+        <div class="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm" role="status">
+            <?= htmlspecialchars($personnelModerationMemberBrief, ENT_QUOTES, 'UTF-8') ?>
+        </div>
+    </div>
+    <?php endif; ?>
     <!-- Hero -->
     <section class="w-full bg-slate-900 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950/30 border-b border-slate-700/50">
         <div class="max-w-7xl mx-auto px-6 md:px-8 py-12 md:py-16">

@@ -24,6 +24,7 @@ use App\Services\Training\TrainingAuditService;
 use App\Services\Training\TrainingCourseSessionNotificationService;
 use App\Services\Training\TrainingLessonResourceStorageService;
 use App\Services\Training\TrainingService;
+use App\Support\TrainingLmsStaffAccess;
 
 class AdminTrainingStudioController
 {
@@ -1418,17 +1419,10 @@ class AdminTrainingStudioController
         return null;
     }
 
-    /**
-     * Aligné sur config/navigation.php (lien « Studio LMS ») : inclut training.assign.
-     */
+    /** Aligné sur {@see TrainingLmsStaffAccess} (middleware + AdminTrainingController). */
     private function hasTrainingAccess(): bool
     {
-        $gate = Gate::getInstance();
-
-        return $gate->allows('admin.access') || $gate->allows('training.manage')
-            || $gate->allows('training.assign')
-            || $gate->allows('training.create') || $gate->allows('training.update')
-            || $gate->allows('training.delete') || $gate->allows('training.publish');
+        return TrainingLmsStaffAccess::allows(Gate::getInstance());
     }
 
     private function canPublish(): bool

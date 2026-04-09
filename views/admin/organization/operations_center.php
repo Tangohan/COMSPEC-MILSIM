@@ -56,9 +56,13 @@ $formatDate = static function (?string $raw): string {
 
     <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <article class="rounded-xl border border-rose-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-rose-700">Incidents modération</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-rose-700">Signalements forum</p>
             <p class="mt-2 text-3xl font-black text-slate-900"><?= $moderationOpen ?></p>
-            <a class="mt-3 inline-flex text-sm font-semibold text-rose-700 hover:underline" href="<?= url('back-office/moderation') ?>">Traiter →</a>
+            <p class="mt-1 text-[11px] text-slate-500">Dossiers signalés en attente dans cette communauté.</p>
+            <a class="mt-3 inline-flex text-sm font-semibold text-rose-700 hover:underline" href="<?= url('back-office/forum-moderation') ?>">Ouvrir la console forum →</a>
+            <?php if (\App\Core\Gate::getInstance()->allows('admin.members.moderate')): ?>
+                <a class="mt-2 block text-xs font-semibold text-slate-600 hover:underline" href="<?= url('back-office/moderation') ?>">Restrictions membres (organisation)</a>
+            <?php endif; ?>
         </article>
 
         <article class="rounded-xl border border-blue-200 bg-white p-4 shadow-sm">

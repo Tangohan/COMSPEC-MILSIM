@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CERBERE | Chronologie des Engagements</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #001529; color: #cbd5e1; font-family: 'Inter', sans-serif; }
+        .grain { position: fixed; inset: 0; opacity: 0.04; pointer-events: none; z-index: 50; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+        
+        /* Ligne verticale de la timeline */
+        .timeline-line {
+            position: absolute; left: 2.25rem; top: 0; bottom: 0;
+            width: 2px; background: linear-gradient(to bottom, #2563eb, #1e293b);
+        }
+
+        .contract-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.3);
+            transition: all 0.3s ease;
+        }
+        .contract-card:hover { border-color: rgba(37, 99, 235, 0.5); transform: translateX(8px); }
+        
+        .status-pill { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800; padding: 4px 12px; border: 1px solid currentColor; text-transform: uppercase; }
+    </style>
+</head>
+<body class="p-8">
+    <div class="grain"></div>
+
+    <div class="max-w-5xl mx-auto relative z-10">
+        <header class="mb-12 flex justify-between items-center border-b border-slate-800 pb-8">
+            <div>
+                <h2 class="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em] mb-2">// SERVICE_RECORD_CHRONOLOGY</h2>
+                <h1 class="text-4xl font-black text-white italic uppercase tracking-tighter">Historique des <span class="text-blue-600">Contrats</span></h1>
+            </div>
+            <a href="/contrats/nouveau-anterieur" class="bg-blue-600 hover:bg-blue-500 text-white font-black px-6 py-3 uppercase italic text-xs tracking-widest transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)]">
+                + Créer un Contrat Antérieur
+            </a>
+        </header>
+
+        <div class="relative space-y-8 pb-12">
+            <div class="timeline-line"></div>
+
+            <div class="relative pl-20 group">
+                <div class="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 bg-blue-600 rounded-full border-4 border-slate-900 z-10 shadow-[0_0_15px_#2563eb]"></div>
+                
+                <div class="contract-card p-6 rounded-2xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4">
+                        <span class="status-pill text-emerald-500 bg-emerald-500/10 border-emerald-500/30">Actif</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <h3 class="text-xl font-black text-white uppercase italic">Officier de carrière <span class="text-slate-500 font-normal text-sm">(Saint-Cyr, EMIA, Rang)</span></h3>
+                        <p class="text-blue-400 font-mono text-xs font-bold">ÉTAT-MAJOR SYSTÈME — Général d'Armée</p>
+                    </div>
+                    
+                    <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 border-t border-slate-800/50">
+                        <div>
+                            <p class="text-[9px] text-slate-500 uppercase font-black">Début</p>
+                            <p class="text-sm font-mono text-slate-200">08/01/2026</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] text-slate-500 uppercase font-black">Fin</p>
+                            <p class="text-sm font-mono text-slate-500 italic">Non définie</p>
+                        </div>
+                        <div class="md:col-span-2 text-right self-end">
+                            <span class="text-[9px] font-mono text-slate-600">REF: SYS/EM/DRHAT/BO/0001-2026</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative pl-20 group opacity-70 hover:opacity-100 transition-opacity">
+                <div class="absolute left-8 top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-700 rounded-full border-2 border-slate-900 z-10"></div>
+                
+                <div class="contract-card p-6 rounded-2xl">
+                    <div class="absolute top-0 right-0 p-4">
+                        <span class="status-pill text-slate-500 border-slate-700">Terminé</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <h3 class="text-lg font-black text-slate-300 uppercase italic">Officier sous contrat – filière encadrement</h3>
+                        <p class="text-slate-500 font-mono text-xs uppercase">SIRUS — Élève-Officier (2ème année)</p>
+                    </div>
+                    
+                    <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-slate-800/30">
+                        <div>
+                            <p class="text-[9px] text-slate-500 uppercase font-black">Début</p>
+                            <p class="text-sm font-mono text-slate-400">10/01/2025</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] text-slate-500 uppercase font-black">Fin</p>
+                            <p class="text-sm font-mono text-slate-400">07/01/2026</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative pl-20 group opacity-70 hover:opacity-100 transition-opacity">
+                <div class="absolute left-8 top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-700 rounded-full border-2 border-slate-900 z-10"></div>
+                
+                <div class="contract-card p-6 rounded-2xl">
+                    <div class="absolute top-0 right-0 p-4">
+                        <span class="status-pill text-slate-500 border-slate-700">Terminé</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <h3 class="text-lg font-black text-slate-300 uppercase italic">Officier sous contrat – filière encadrement</h3>
+                        <p class="text-slate-500 font-mono text-xs uppercase">DIRECTION DE L'INFRASTRUCTURE — Élève-Officier (1ère année)</p>
+                    </div>
+                    
+                    <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-slate-800/30">
+                        <div>
+                            <p class="text-[9px] text-slate-500 uppercase font-black">Début</p>
+                            <p class="text-sm font-mono text-slate-400">10/01/2024</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] text-slate-500 uppercase font-black">Fin</p>
+                            <p class="text-sm font-mono text-slate-400">09/01/2025</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="mt-12 p-6 bg-blue-600/5 border border-blue-600/10 rounded-xl flex items-center gap-6">
+            <div class="w-12 h-12 flex items-center justify-center bg-blue-600/20 text-blue-500 rounded-lg">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <p class="text-xs text-slate-400 italic">
+                L'historique des contrats retrace l'intégralité de la carrière administrative du personnel. Les contrats antérieurs sont importés depuis le SIRH ou créés manuellement par l'officier de gestion.
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

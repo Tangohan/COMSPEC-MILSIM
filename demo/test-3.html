@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb; /* Bleu électrique */
+            --text-main: #1e3a8a; /* Bleu marine profond */
+            --bg-light: #ffffff;
+            --card-bg: rgba(248, 250, 252, 0.8);
+            --border: rgba(30, 58, 138, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Effet de grain subtil */
+        .grain {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Halo de souris - Version Light (plus doux) */
+        .mouse-halo {
+            position: fixed;
+            width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+        }
+
+        /* Cards style épuré */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .choice-card:hover {
+            border-color: var(--primary);
+            background: white;
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(37, 99, 235, 0.08);
+        }
+
+        .step-indicator { position: relative; }
+        .step-indicator::after {
+            content: '';
+            position: absolute;
+            left: 1.25rem; top: 2.5rem; bottom: -1rem;
+            width: 2px; background: var(--border);
+        }
+        .step-indicator:last-child::after { display: none; }
+
+        .btn-action {
+            background: var(--primary);
+            transition: all 0.3s;
+            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.3);
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            filter: brightness(1.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in { animation: fadeIn 0.6s ease-out forwards; }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+    <div id="halo" class="mouse-halo"></div>
+
+    <div class="relative z-10 min-h-screen">
+        <nav class="border-b border-blue-100 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-black text-white shadow-lg shadow-blue-200">C</div>
+                    <span class="font-black tracking-tighter uppercase italic text-blue-900">Cerbere <span class="text-blue-600 text-xs">v2.0</span></span>
+                </div>
+                <div class="text-[10px] font-mono text-blue-400 uppercase tracking-widest bg-blue-50 px-3 py-1 rounded border border-blue-100">
+                    System Status: <span class="text-blue-600 font-bold">Online</span>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto px-6 pt-16 pb-24">
+            <div id="view-choix" class="animate-in">
+                <div class="mb-16">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 mb-6">
+                        <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                        <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Enregistrement Requis</span>
+                    </div>
+                    <h1 class="text-5xl md:text-6xl font-black mb-6 uppercase tracking-tighter italic leading-none text-blue-950">
+                        Demande <br><span class="text-blue-600">d'accréditation</span>
+                    </h1>
+                    <p class="text-blue-800/60 max-w-2xl text-lg leading-relaxed">
+                        Initialisez votre accès au système de gestion de votre structure de commandement. Sélectionnez votre module d'inscription.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="glass-card choice-card p-10 rounded-3xl cursor-pointer group" onclick="showTutorial('compte')">
+                        <div class="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center mb-8 transition-transform group-hover:scale-110">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        </div>
+                        <h3 class="text-xl font-black mb-3 italic uppercase tracking-tight text-blue-900">Compte Personnel</h3>
+                        <p class="text-blue-800/50 text-sm mb-6 leading-relaxed">Création de profil individuel pour les opérateurs et cadres.</p>
+                        <span class="text-[10px] font-bold text-blue-600 tracking-widest uppercase">Standard Access</span>
+                    </div>
+
+                    <div class="glass-card choice-card p-10 rounded-3xl cursor-pointer group" onclick="showTutorial('organisation')">
+                        <div class="w-14 h-14 bg-slate-100 text-blue-600 rounded-2xl flex items-center justify-center mb-8 border border-blue-100">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                        </div>
+                        <h3 class="text-xl font-black mb-3 italic uppercase tracking-tight text-blue-900">Entité Parente</h3>
+                        <p class="text-blue-800/50 text-sm mb-6 leading-relaxed">Enregistrement des hautes structures (État-Major, Directions).</p>
+                        <span class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Admin Module</span>
+                    </div>
+
+                    <div class="glass-card choice-card p-10 rounded-3xl cursor-pointer group" onclick="showTutorial('unite')">
+                        <div class="w-14 h-14 bg-slate-100 text-blue-600 rounded-2xl flex items-center justify-center mb-8 border border-blue-100">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </div>
+                        <h3 class="text-xl font-black mb-3 italic uppercase tracking-tight text-blue-900">Unité Tactique</h3>
+                        <p class="text-blue-800/50 text-sm mb-6 leading-relaxed">Déploiement numérique pour les régiments et unités de terrain.</p>
+                        <span class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Ops Force</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-tutoriel-compte" class="hidden animate-in max-w-3xl mx-auto">
+                <button onclick="hideTutorial()" class="mb-8 flex items-center gap-2 text-blue-400 hover:text-blue-600 transition-colors text-xs font-black uppercase tracking-widest">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3"/></svg>
+                    Retour
+                </button>
+
+                <div class="glass-card rounded-3xl overflow-hidden shadow-xl shadow-blue-900/5 border-blue-100">
+                    <div class="bg-blue-600 p-10 text-white">
+                        <h2 class="text-3xl font-black italic uppercase tracking-tighter">Configuration</h2>
+                        <p class="opacity-80 text-sm font-medium">Briefing des prérequis d'inscription</p>
+                    </div>
+
+                    <div class="p-10 space-y-12 bg-white">
+                        <div class="space-y-10">
+                            <div class="step-indicator flex gap-6">
+                                <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black flex-shrink-0 border border-blue-100">1</div>
+                                <div>
+                                    <h4 class="font-black uppercase tracking-tight italic mb-1 text-blue-900">Identité Digitale</h4>
+                                    <p class="text-blue-800/60 text-sm leading-relaxed">Saisie du matricule et de l'adresse mail institutionnelle pour vérification.</p>
+                                </div>
+                            </div>
+                            <div class="step-indicator flex gap-6">
+                                <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black flex-shrink-0 border border-blue-100">2</div>
+                                <div>
+                                    <h4 class="font-black uppercase tracking-tight italic mb-1 text-blue-900">Validation</h4>
+                                    <p class="text-blue-800/60 text-sm leading-relaxed">Validation par l'officier de sécurité de votre structure de rattachement.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-8 border-t border-blue-50">
+                            <button onclick="hideTutorial()" class="text-blue-300 font-bold uppercase text-xs tracking-widest hover:text-blue-600 transition-colors">Annuler</button>
+                            <a href="#" class="btn-action text-white px-10 py-4 rounded-xl font-black uppercase tracking-tighter italic text-sm">
+                                Continuer
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const halo = document.getElementById('halo');
+        document.addEventListener('mousemove', (e) => {
+            halo.style.left = e.clientX + 'px';
+            halo.style.top = e.clientY + 'px';
+        });
+
+        function showTutorial(type) {
+            document.getElementById('view-choix').classList.add('hidden');
+            document.getElementById('view-tutoriel-compte').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function hideTutorial() {
+            document.getElementById('view-tutoriel-compte').classList.add('hidden');
+            document.getElementById('view-choix').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Notifications;
 
 /**
- * Libellés et liens pour le centre d’activité (agrégation forum + courrier).
+ * Libellés et liens pour le centre d’activité (forum, courrier, messagerie interne).
  */
 final class ActivityHubPresentationService
 {
@@ -29,6 +29,24 @@ final class ActivityHubPresentationService
                 'title' => 'Réponse sur un sujet suivi',
                 'detail' => trim((string) ($payload['title'] ?? 'Sujet du forum')),
                 'href' => isset($payload['topic_id']) ? url('forum/topic/' . (int) $payload['topic_id']) : url('forum'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
+            'forum_mention' => [
+                'title' => 'Vous avez été cité sur le forum',
+                'detail' => trim((string) ($payload['title'] ?? 'Sujet du forum')),
+                'href' => (isset($payload['topic_id'], $payload['post_id']))
+                    ? url('forum/topic/' . (int) $payload['topic_id'] . '?newpost=' . (int) $payload['post_id'] . '#post-' . (int) $payload['post_id'])
+                    : (isset($payload['topic_id']) ? url('forum/topic/' . (int) $payload['topic_id']) : url('forum')),
+                'unread' => $unread,
+                'at' => $at,
+            ],
+            'interteam_coop_reply' => [
+                'title' => 'Message sur un fil partagé (coopération)',
+                'detail' => trim((string) ($payload['title'] ?? 'Sujet partagé')),
+                'href' => (isset($payload['mission_slug'], $payload['topic_id']) && trim((string) $payload['mission_slug']) !== '')
+                    ? url('forum/coop/' . rawurlencode(trim((string) $payload['mission_slug'])) . '/sujet/' . (int) $payload['topic_id'])
+                    : url('forum'),
                 'unread' => $unread,
                 'at' => $at,
             ],
@@ -64,6 +82,17 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'cooperation_announcement' => [
+                'title' => trim((string) ($payload['title'] ?? 'Coopération inter-unités')) !== ''
+                    ? trim((string) $payload['title'])
+                    : 'Coopération inter-unités',
+                'detail' => trim((string) ($payload['detail'] ?? 'Nouvelle information sur un dossier de coopération.')),
+                'href' => (isset($payload['href']) && trim((string) $payload['href']) !== '')
+                    ? trim((string) $payload['href'])
+                    : url('back-office/cooperation/missions'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             default => [
                 'title' => 'Forum',
                 'detail' => 'Notification',
@@ -95,6 +124,42 @@ final class ActivityHubPresentationService
             'title' => 'Courrier interne',
             'detail' => $detail,
             'href' => $docId > 0 ? url('courrier/read/' . $docId) : url('courrier'),
+            'unread' => $unread,
+            'at' => $at,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array{title: string, detail: string, href: string, unread: bool, at: string}
+     */
+    public function formatTenantMessageThreadRow(array $row, int $currentUserId): array
+    {
+        $threadId = (int) ($row['id'] ?? 0);
+        $subject = trim((string) ($row['subject'] ?? ''));
+        $preview = trim((string) ($row['last_preview'] ?? ''));
+        $lastSenderId = (int) ($row['last_sender_id'] ?? 0);
+        $unread = !empty($row['thread_unread']);
+        $at = (string) ($row['updated_at'] ?? '');
+
+        $head = $subject !== '' ? $subject : 'Échange avec l’encadrement';
+        if ($preview !== '') {
+            if (function_exists('mb_strlen') && mb_strlen($preview) > 120) {
+                $preview = mb_substr($preview, 0, 117) . '…';
+            } elseif (strlen($preview) > 120) {
+                $preview = substr($preview, 0, 117) . '…';
+            }
+        }
+        $who = 'Quelqu’un';
+        if ($lastSenderId > 0 && $lastSenderId === $currentUserId) {
+            $who = 'Vous';
+        }
+        $detail = $preview !== '' ? ($who . ' : ' . $preview) : ($who . ' a mis à jour la conversation.');
+
+        return [
+            'title' => 'Messagerie interne',
+            'detail' => $head . ' — ' . $detail,
+            'href' => $threadId > 0 ? url('messages/' . $threadId) : url('messages'),
             'unread' => $unread,
             'at' => $at,
         ];

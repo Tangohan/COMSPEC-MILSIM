@@ -276,6 +276,167 @@ if (!function_exists('is_back_office_request')) {
     }
 }
 
+if (!function_exists('is_platform_site_admin_shell_request')) {
+    /**
+     * Pages d’administration « site entier » (pilotage / infra) avec barre latérale dédiée.
+     * Exclut les écrans rattachés à la communauté active (/admin/modpacks, /admin/atak-config, etc.).
+     */
+    function is_platform_site_admin_shell_request(): bool
+    {
+        $p = back_office_path_suffix();
+        if ($p === 'admin') {
+            return true;
+        }
+        if (!str_starts_with($p, 'admin/')) {
+            return false;
+        }
+        $rest = substr($p, strlen('admin/'));
+        $prefixes = ['ops-center', 'audit', 'maintenance', 'roles', 'settings', 'site-roles'];
+        foreach ($prefixes as $prefix) {
+            if ($rest === $prefix || str_starts_with($rest, $prefix . '/')) {
+                return true;
+            }
+        }
+        if ($rest === 'system' || str_starts_with($rest, 'system/')) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('interteam_mission_status_label')) {
+    /**
+     * Libellé métier à partir du seul champ status (sans ligne mission complète).
+     *
+     * @deprecated Préférer {@see cooperation_mission_display_label()} lorsque la ligne mission est disponible.
+     */
+    function interteam_mission_status_label(string $status): string
+    {
+        return \App\Support\CooperationDictionary::labelFromLegacyStatus($status);
+    }
+}
+
+if (!function_exists('cooperation_mission_display_label')) {
+    /**
+     * Libellé d’état à afficher (phase métier ou repli sur status).
+     *
+     * @param array<string, mixed> $mission
+     */
+    function cooperation_mission_display_label(array $mission): string
+    {
+        return \App\Support\CooperationDictionary::phaseLabel(
+            \App\Support\CooperationDictionary::effectivePhase($mission)
+        );
+    }
+}
+
+if (!function_exists('cooperation_mission_index_url')) {
+    function cooperation_mission_index_url(): string
+    {
+        return url('back-office/cooperation/missions');
+    }
+}
+
+if (!function_exists('cooperation_mission_create_url')) {
+    function cooperation_mission_create_url(): string
+    {
+        return url('back-office/cooperation/missions/create');
+    }
+}
+
+if (!function_exists('cooperation_mission_show_url')) {
+    function cooperation_mission_show_url(string|int $id): string
+    {
+        return url('back-office/cooperation/missions/' . (int) $id);
+    }
+}
+
+if (!function_exists('cooperation_mission_edit_url')) {
+    function cooperation_mission_edit_url(string|int $id): string
+    {
+        return url('back-office/cooperation/missions/' . (int) $id . '/edit');
+    }
+}
+
+if (!function_exists('cooperation_mission_exchange_url')) {
+    function cooperation_mission_exchange_url(string|int $id): string
+    {
+        return url('back-office/cooperation/missions/' . (int) $id . '/exchange');
+    }
+}
+
+if (!function_exists('cooperation_mission_consent_url')) {
+    function cooperation_mission_consent_url(string|int $id): string
+    {
+        return url('back-office/cooperation/missions/' . (int) $id . '/consent');
+    }
+}
+
+if (!function_exists('cooperation_mission_timeline_url')) {
+    function cooperation_mission_timeline_url(string|int $id): string
+    {
+        return url('back-office/cooperation/missions/' . (int) $id . '/timeline');
+    }
+}
+
+if (!function_exists('cooperation_mission_timeline_export_url')) {
+    function cooperation_mission_timeline_export_url(string|int $id): string
+    {
+        return url('back-office/cooperation/missions/' . (int) $id . '/timeline-export');
+    }
+}
+
+if (!function_exists('cooperation_mission_meeting_url')) {
+    function cooperation_mission_meeting_url(string|int $id): string
+    {
+        return url('back-office/cooperation/missions/' . (int) $id . '/meeting');
+    }
+}
+
+if (!function_exists('cooperation_mission_orbat_url')) {
+    function cooperation_mission_orbat_url(string|int $id): string
+    {
+        return url('back-office/cooperation/missions/' . (int) $id . '/orbat');
+    }
+}
+
+if (!function_exists('cooperation_mission_archive_url')) {
+    function cooperation_mission_archive_url(string|int $id): string
+    {
+        return url('back-office/cooperation/missions/' . (int) $id . '/archive');
+    }
+}
+
+if (!function_exists('cooperation_mission_negotiate_url')) {
+    function cooperation_mission_negotiate_url(string|int $id): string
+    {
+        return url('back-office/cooperation/missions/' . (int) $id . '/negotiate');
+    }
+}
+
+if (!function_exists('cooperation_mission_rex_url')) {
+    function cooperation_mission_rex_url(string|int $id): string
+    {
+        return url('back-office/cooperation/missions/' . (int) $id . '/rex');
+    }
+}
+
+if (!function_exists('cooperation_missions_url')) {
+    /**
+     * URL du module (suffixe optionnel : « create », « 12/consent », etc.).
+     * Préférer les helpers {@see cooperation_mission_show_url()} etc. pour éviter les chemins en dur.
+     */
+    function cooperation_missions_url(string $suffix = ''): string
+    {
+        if ($suffix === '') {
+            return cooperation_mission_index_url();
+        }
+
+        return url('back-office/cooperation/missions/' . ltrim($suffix, '/'));
+    }
+}
+
 if (!function_exists('training_studio_path')) {
     /**
      * Chemin URL du Studio LMS (back-office ressources), sans slash initial.
