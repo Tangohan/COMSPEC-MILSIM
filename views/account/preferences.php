@@ -199,18 +199,42 @@ foreach ($notifEmailCatalog as $item) {
                 Décochez les types de messages que vous ne souhaitez plus recevoir. Les e-mails indispensables (réinitialisation de mot de passe, vérification d’adresse, liens à usage unique) peuvent toujours être envoyés.
                 Les thèmes ci-dessous couvrent la sécurité du compte, les événements, les formations, le recrutement et les alertes utiles à l’équipe (modération, nouveaux membres).
             </p>
+            <div class="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                <label class="block">
+                    <span class="sr-only">Filtrer les notifications</span>
+                    <input type="search" id="notif-search" placeholder="Filtrer (ex. sécurité, formation, recrutement…)" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900">
+                </label>
+                <div class="flex flex-wrap gap-2 sm:justify-end">
+                    <button type="button" id="notif-enable-all" class="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-emerald-900 hover:bg-emerald-100">Tout activer</button>
+                    <button type="button" id="notif-disable-all" class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-amber-900 hover:bg-amber-100">Tout désactiver</button>
+                    <button type="button" id="notif-reset-filter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Réinitialiser filtre</button>
+                </div>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                <span id="notif-stats" class="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white">0 / 0 actives</span>
+                <button type="button" data-notif-preset="minimum" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Preset minimum</button>
+                <button type="button" data-notif-preset="standard" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Preset standard</button>
+                <button type="button" data-notif-preset="ops" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Preset ops</button>
+            </div>
             <div class="mt-6 space-y-8">
                 <?php foreach ($notifByGroup as $groupName => $items): ?>
-                <div>
-                    <h3 class="border-b border-slate-100 pb-2 text-xs font-black uppercase tracking-wider text-slate-500"><?= htmlspecialchars($groupName) ?></h3>
+                <div data-notif-group="<?= htmlspecialchars(strtolower($groupName), ENT_QUOTES, 'UTF-8') ?>">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                        <h3 class="text-xs font-black uppercase tracking-wider text-slate-500"><?= htmlspecialchars($groupName) ?></h3>
+                        <div class="flex gap-2">
+                            <button type="button" data-group-toggle="1" class="rounded-md border border-slate-300 bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Activer groupe</button>
+                            <button type="button" data-group-toggle="0" class="rounded-md border border-slate-300 bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Désactiver groupe</button>
+                        </div>
+                    </div>
                     <ul class="mt-4 space-y-3">
                         <?php foreach ($items as $item): ?>
                         <?php
                             $key = $item['key'];
                             $checked = !empty($notifEmailState[$key]);
+                            $searchBlob = strtolower(($item['label'] ?? '') . ' ' . ($item['hint'] ?? '') . ' ' . $groupName);
                         ?>
-                        <li class="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3">
-                            <input type="checkbox" name="notif_email[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>]" id="notif_<?= htmlspecialchars(preg_replace('/[^a-zA-Z0-9_]/', '_', $key)) ?>" value="1" class="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900" <?= $checked ? 'checked' : '' ?>>
+                        <li class="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3" data-notif-item="<?= htmlspecialchars($searchBlob, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="checkbox" name="notif_email[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>]" id="notif_<?= htmlspecialchars(preg_replace('/[^a-zA-Z0-9_]/', '_', $key)) ?>" value="1" class="notif-email-toggle mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900" <?= $checked ? 'checked' : '' ?>>
                             <div class="min-w-0 flex-1">
                                 <label for="notif_<?= htmlspecialchars(preg_replace('/[^a-zA-Z0-9_]/', '_', $key)) ?>" class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($item['label']) ?></label>
                                 <p class="mt-0.5 text-xs text-slate-600"><?= htmlspecialchars($item['hint']) ?></p>
@@ -229,3 +253,114 @@ foreach ($notifEmailCatalog as $item) {
         </div>
     </form>
 </div>
+<script>
+(function () {
+    var search = document.getElementById('notif-search');
+    var enableAll = document.getElementById('notif-enable-all');
+    var disableAll = document.getElementById('notif-disable-all');
+    var resetFilter = document.getElementById('notif-reset-filter');
+    var stats = document.getElementById('notif-stats');
+    var visibleItems = function () {
+        return Array.prototype.slice.call(document.querySelectorAll('[data-notif-item]')).filter(function (row) {
+            return !row.classList.contains('hidden');
+        });
+    };
+    var updateStats = function () {
+        if (!stats) {
+            return;
+        }
+        var boxes = Array.prototype.slice.call(document.querySelectorAll('.notif-email-toggle'));
+        var enabled = boxes.filter(function (b) { return !!b.checked; }).length;
+        stats.textContent = enabled + ' / ' + boxes.length + ' actives';
+    };
+    var applyFilter = function () {
+        if (!search) {
+            return;
+        }
+        var q = (search.value || '').toLowerCase().trim();
+        var groups = Array.prototype.slice.call(document.querySelectorAll('[data-notif-group]'));
+        groups.forEach(function (group) {
+            var rows = Array.prototype.slice.call(group.querySelectorAll('[data-notif-item]'));
+            var shown = 0;
+            rows.forEach(function (row) {
+                var blob = row.getAttribute('data-notif-item') || '';
+                var ok = q === '' || blob.indexOf(q) !== -1;
+                row.classList.toggle('hidden', !ok);
+                if (ok) {
+                    shown++;
+                }
+            });
+            group.classList.toggle('hidden', shown === 0);
+        });
+        updateStats();
+    };
+    if (search) {
+        search.addEventListener('input', applyFilter);
+    }
+    if (enableAll) {
+        enableAll.addEventListener('click', function () {
+            visibleItems().forEach(function (row) {
+                var box = row.querySelector('.notif-email-toggle');
+                if (box) {
+                    box.checked = true;
+                }
+            });
+            updateStats();
+        });
+    }
+    if (disableAll) {
+        disableAll.addEventListener('click', function () {
+            visibleItems().forEach(function (row) {
+                var box = row.querySelector('.notif-email-toggle');
+                if (box) {
+                    box.checked = false;
+                }
+            });
+            updateStats();
+        });
+    }
+    if (resetFilter) {
+        resetFilter.addEventListener('click', function () {
+            if (search) {
+                search.value = '';
+            }
+            applyFilter();
+        });
+    }
+    Array.prototype.slice.call(document.querySelectorAll('[data-notif-group]')).forEach(function (group) {
+        Array.prototype.slice.call(group.querySelectorAll('[data-group-toggle]')).forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var on = btn.getAttribute('data-group-toggle') === '1';
+                Array.prototype.slice.call(group.querySelectorAll('.notif-email-toggle')).forEach(function (box) {
+                    box.checked = on;
+                });
+                updateStats();
+            });
+        });
+    });
+    Array.prototype.slice.call(document.querySelectorAll('.notif-email-toggle')).forEach(function (box) {
+        box.addEventListener('change', updateStats);
+    });
+    Array.prototype.slice.call(document.querySelectorAll('[data-notif-preset]')).forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var mode = btn.getAttribute('data-notif-preset');
+            Array.prototype.slice.call(document.querySelectorAll('.notif-email-toggle')).forEach(function (box) {
+                var id = box.id || '';
+                if (mode === 'minimum') {
+                    box.checked = id.indexOf('new_device_login') !== -1 || id.indexOf('multiple_login_attempts') !== -1;
+                    return;
+                }
+                if (mode === 'standard') {
+                    box.checked = id.indexOf('community_report_new_staff') === -1 && id.indexOf('new_community_member') === -1;
+                    return;
+                }
+                if (mode === 'ops') {
+                    box.checked = true;
+                }
+            });
+            updateStats();
+        });
+    });
+    updateStats();
+})();
+</script>
