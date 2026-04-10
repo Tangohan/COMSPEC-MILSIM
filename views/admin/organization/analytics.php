@@ -7,8 +7,12 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $trainingCourseStats */
 /** @var list<array<string, mixed>> $recruitmentOpeningStats */
 /** @var array{public_views: int, public_duration_avg: ?float, enlistment_opens: int, enlistment_submits: int, cta_clicks: int} $publicEngagement */
+/** @var list<array{label: string, events: int}> $tenantCategoryBreakdown */
+/** @var list<array{actor_label: string, events: int}> $tenantTopActors */
 $trainingCourseStats = $trainingCourseStats ?? [];
 $recruitmentOpeningStats = $recruitmentOpeningStats ?? [];
+$tenantCategoryBreakdown = $tenantCategoryBreakdown ?? [];
+$tenantTopActors = $tenantTopActors ?? [];
 $publicEngagement = $publicEngagement ?? [
     'public_views' => 0,
     'public_duration_avg' => null,
@@ -93,6 +97,57 @@ $ratioPct = static function (int $num, int $den): string {
             </div>
         </dl>
         <p class="text-xs text-slate-500 leading-relaxed max-w-3xl">Les durées et certains clics ne sont comptés que si le visiteur a accepté les cookies « mesure d’audience » sur le portail.</p>
+    </section>
+
+    <section class="mb-10">
+        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Détails back-office (usage interne)</h2>
+        <div class="grid lg:grid-cols-2 gap-4 mb-4">
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-200 bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500">
+                            <th class="px-4 py-3 font-bold">Membre</th>
+                            <th class="px-4 py-3 font-bold text-right">Événements</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($tenantTopActors === []): ?>
+                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucun acteur interne identifiable pour cette période.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($tenantTopActors as $row): ?>
+                        <tr class="border-b border-slate-100">
+                            <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars((string) ($row['actor_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['events'] ?? 0) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-200 bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500">
+                            <th class="px-4 py-3 font-bold">Module</th>
+                            <th class="px-4 py-3 font-bold text-right">Événements</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($tenantCategoryBreakdown === []): ?>
+                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucune catégorie interne collectée.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($tenantCategoryBreakdown as $row): ?>
+                        <tr class="border-b border-slate-100">
+                            <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars((string) ($row['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['events'] ?? 0) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p class="text-xs text-slate-500 max-w-3xl">Ces détails représentent l’activité interne du back-office (actions membres authentifiés), à distinguer des visites publiques ci-dessous.</p>
     </section>
 
     <section class="mb-10">

@@ -45,6 +45,8 @@ final class OrganizationAnalyticsController
         $trainingRows = $this->tenantAnalyticsRepository->listTrainingCourseStats($tenantId, $since);
         $openingRows = $this->tenantAnalyticsRepository->listRecruitmentOpeningStats($tenantId, $since);
         $publicEngagement = $this->tenantAnalyticsRepository->getTenantPublicEngagement($tenantId, $since);
+        $categoryBreakdown = $this->tenantAnalyticsRepository->getTenantCategoryBreakdown($tenantId, $since);
+        $topActors = $this->tenantAnalyticsRepository->listTenantTopActors($tenantId, $since, 8);
 
         return Response::view('layout.main', [
             'title' => 'Indicateurs d’usage',
@@ -57,6 +59,8 @@ final class OrganizationAnalyticsController
             'trainingCourseStats' => $trainingRows,
             'recruitmentOpeningStats' => $openingRows,
             'publicEngagement' => $publicEngagement,
+            'tenantCategoryBreakdown' => $categoryBreakdown,
+            'tenantTopActors' => $topActors,
         ]);
     }
 }
