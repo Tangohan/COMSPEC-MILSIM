@@ -59,11 +59,43 @@ final class TenantApiKeyRepository
             return [];
         }
         $stmt = $this->pdo->prepare(
-            'SELECT id, name, key_prefix, quota_per_day, created_at, revoked_at, last_used_at FROM tenant_api_keys WHERE tenant_id = ? ORDER BY id DESC'
+            'SELECT
+                k.id,
+                k.name,
+                k.key_prefix,
+                k.scopes_json,
+                k.quota_per_day,
+                k.created_at,
+                k.revoked_at,
+                k.last_used_at,
+                COALESCE(u.request_count, 0) AS today_request_count
+            FROM tenant_api_keys k
+            LEFT JOIN tenant_api_key_daily_usage u
+                ON u.api_key_id = k.id
+                AND u.usage_day = CURDATE()
+            WHERE k.tenant_id = ?
+            ORDER BY k.id DESC'
         );
         $stmt->execute([$tenantId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findForTenant(int $id, int $tenantId): ?array
+    {
+        if (!$this->tableExists()) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM tenant_api_keys WHERE id = ? AND tenant_id = ? LIMIT 1'
+        );
+        $stmt->execute([$id, $tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
     }
 
     public function revoke(int $id, int $tenantId): void
@@ -75,6 +107,23 @@ final class TenantApiKeyRepository
             'UPDATE tenant_api_keys SET revoked_at = NOW() WHERE id = ? AND tenant_id = ? AND revoked_at IS NULL'
         );
         $stmt->execute([$id, $tenantId]);
+    }
+
+    /**
+     * @param list<string> $scopes
+     */
+    public function updateKeySettings(int $id, int $tenantId, string $name, int $quotaPerDay, array $scopes): void
+    {
+        if (!$this->tableExists()) {
+            return;
+        }
+        $scopesJson = json_encode(array_values($scopes), JSON_UNESCAPED_UNICODE);
+        $stmt = $this->pdo->prepare(
+            'UPDATE tenant_api_keys
+             SET name = ?, quota_per_day = ?, scopes_json = ?
+             WHERE id = ? AND tenant_id = ? AND revoked_at IS NULL'
+        );
+        $stmt->execute([$name, $quotaPerDay, $scopesJson, $id, $tenantId]);
     }
 
     /**

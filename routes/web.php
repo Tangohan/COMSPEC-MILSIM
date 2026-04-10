@@ -391,6 +391,8 @@ return function (Router $router) {
     $router->get('/back-office/analytics', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/integrations', [OrganizationIntegrationsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys', [OrganizationIntegrationsController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/api-keys/{id}/update', [OrganizationIntegrationsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/api-keys/{id}/rotate', [OrganizationIntegrationsController::class, 'rotate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys/{id}/revoke', [OrganizationIntegrationsController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/conformite/export-dossier', [ComplianceBundleExportController::class, 'form'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/conformite/export-dossier/telecharger', [ComplianceBundleExportController::class, 'download'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
