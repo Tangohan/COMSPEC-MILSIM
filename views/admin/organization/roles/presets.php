@@ -8,7 +8,7 @@ $presetsPreviewUrl = isset($presetsPreviewUrl) ? (string) $presetsPreviewUrl : u
 $err = \App\Core\Session::getFlash('error');
 $ok = \App\Core\Session::getFlash('success');
 ?>
-<div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 lg:py-12">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
         <div>
             <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-2">Rôles communauté</p>
@@ -39,13 +39,13 @@ $ok = \App\Core\Session::getFlash('success');
         <form method="post" action="<?= url('back-office/roles/presets/apply') ?>" id="preset-apply-form" class="space-y-8">
             <?= \App\Core\Csrf::field() ?>
 
-            <ol class="grid gap-6 lg:grid-cols-3 mb-2">
+            <ol class="grid gap-4 lg:gap-6 lg:grid-cols-3 mb-2">
                 <li class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white mb-3">1</span>
                     <h2 class="text-sm font-bold text-slate-900">Rôle à configurer</h2>
                     <p class="text-xs text-slate-500 mt-1 mb-3">Rôles de votre communauté ou opérationnels (hors plateforme).</p>
                     <label for="role_id" class="sr-only">Rôle</label>
-                    <select name="role_id" id="role_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    <select name="role_id" id="role_id" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
                         <option value="">— Choisir un rôle —</option>
                         <?php foreach ($roles as $r):
                             $rid = (int) $r['id'];
@@ -73,7 +73,7 @@ $ok = \App\Core\Session::getFlash('success');
                             ?>
                             <label class="flex cursor-pointer gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition hover:border-blue-400 hover:bg-blue-50/30 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/50 has-[:checked]:ring-2 has-[:checked]:ring-blue-200">
                                 <input type="radio" name="preset_id" value="<?= htmlspecialchars($pid, ENT_QUOTES, 'UTF-8') ?>" required class="mt-1 h-4 w-4 shrink-0 text-blue-600 border-slate-300 focus:ring-blue-500">
-                                <span class="min-w-0">
+                                <span class="min-w-0 flex-1">
                                     <span class="block font-bold text-slate-900 text-sm"><?= htmlspecialchars($plab, ENT_QUOTES, 'UTF-8') ?></span>
                                     <span class="mt-1 block text-xs text-slate-600 leading-snug"><?= htmlspecialchars($pdesc, ENT_QUOTES, 'UTF-8') ?></span>
                                 </span>
@@ -104,14 +104,16 @@ $ok = \App\Core\Session::getFlash('success');
                 <p class="mt-1 text-sm text-rose-900/90">Après confirmation, les membres qui ont ce rôle disposent immédiatement du nouveau jeu de droits. Vérifiez la fiche du rôle après application.</p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
-                <button type="button" id="btn-open-confirm" disabled class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none">
+            <div class="sticky bottom-3 z-10 rounded-2xl border border-slate-200/80 bg-white/95 p-3 shadow-lg backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+                <div class="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                <button type="button" id="btn-open-confirm" disabled class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none">
                     Continuer vers la confirmation…
                 </button>
-                <a href="<?= url('back-office/roles') ?>" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Annuler</a>
+                <a href="<?= url('back-office/roles') ?>" class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Annuler</a>
+                </div>
             </div>
 
-            <dialog id="preset-confirm-dialog" class="max-w-lg w-[calc(100%-2rem)] rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl backdrop:bg-slate-900/40">
+            <dialog id="preset-confirm-dialog" class="max-w-lg w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl backdrop:bg-slate-900/40">
                 <div class="border-b border-slate-100 px-6 py-4">
                     <h2 class="text-lg font-black text-slate-900">Confirmer l’application du profil</h2>
                     <p class="text-xs text-slate-500 mt-1">Cette action remplace toutes les habilitations du rôle sélectionné.</p>
