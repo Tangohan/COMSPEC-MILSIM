@@ -648,7 +648,10 @@ return function (Router $router) {
     $router->get('/back-office/ressources/training', [AdminTrainingController::class, 'dashboard'], $trainingResMw);
 
     $router->get('/back-office/ressources/training/competences/commandement', [TrainingCompetencyController::class, 'commandCenter'], $trainingResMw);
+    $router->post('/back-office/ressources/training/competences/commandement', [TrainingCompetencyController::class, 'commandCenter'], $trainingResMw);
     $router->get('/back-office/ressources/training/competences/instructeur', [TrainingCompetencyController::class, 'instructorCenter'], $trainingResMw);
+    $router->get('/back-office/ressources/training/competences/formateur', [TrainingCompetencyController::class, 'trainerCenter'], $trainingResMw);
+    $router->post('/back-office/ressources/training/competences/formateur', [TrainingCompetencyController::class, 'trainerCenter'], $trainingResMw);
 
     // Bureau Courrier / Correspondance Officielle
     $router->get('/courrier', [CourrierDashboardController::class, 'index'], $mwCourrier);
