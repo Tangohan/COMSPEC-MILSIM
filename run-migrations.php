@@ -264,6 +264,12 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_certificate_templates : ' . $e->getMessage() . "\n";
 }
+$trainingCompetencyFrameworkMigrate = require $root . '/bootstrap/training_competency_framework_migration.php';
+try {
+    $trainingCompetencyFrameworkMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_competency_framework : ' . $e->getMessage() . "\n";
+}
 $usageAnalyticsMigrate = require $root . '/bootstrap/usage_analytics_migration.php';
 try {
     $usageAnalyticsMigrate($pdo);
