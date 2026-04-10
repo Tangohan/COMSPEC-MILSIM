@@ -19,7 +19,8 @@ declare(strict_types=1);
 
         <section class="space-y-3">
             <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-900">Gérer vos choix</h2>
-            <p>Vous pouvez à tout moment rouvrir le bandeau et cocher ou décocher les catégories proposées (mesure d’audience, publicité et personnalisation) grâce au lien <strong>Préférences cookies</strong> en pied de page ou au bouton ci-dessous.</p>
+            <p>Vous pouvez à tout moment rouvrir le bandeau et cocher ou décocher les catégories proposées (mesure d’audience, personnalisation du portail, publicité tierce) grâce au lien <strong>Préférences cookies</strong> en pied de page ou au bouton ci-dessous.</p>
+            <p>Par défaut, un nouveau consentement peut être demandé au bout de 180 jours pour confirmer vos choix.</p>
             <p>
                 <button type="button" data-cookie-preferences="" class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-colors">
                     Modifier mes préférences
@@ -33,7 +34,12 @@ declare(strict_types=1);
         </section>
 
         <section class="space-y-3">
-            <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-900">Publicité et contenus personnalisés</h2>
+            <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-900">Personnalisation du portail</h2>
+            <p>Cette catégorie permet d’adapter certains éléments de l’expérience (ordre ou mise en avant de contenus, assistance contextuelle) sans activer la publicité tierce.</p>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-900">Publicité tierce</h2>
             <p>Cette catégorie est prévue pour de futurs partenariats ou campagnes (affichage d’annonces, recommandations liées à des tiers). Elle reste désactivée tant que vous ne l’activez pas et tant que l’équipe n’a pas branché d’outil correspondant. Refuser cette option n’affecte pas le fonctionnement du portail.</p>
         </section>
 

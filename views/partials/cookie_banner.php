@@ -27,6 +27,9 @@ $b = url('');
                 <button type="button" id="portal-cookie-customize" class="px-4 py-2.5 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-colors" aria-expanded="false" aria-controls="portal-cookie-panel">
                     Personnaliser
                 </button>
+                <button type="button" id="portal-cookie-reject-all" class="px-4 py-2.5 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-colors">
+                    Tout refuser
+                </button>
                 <button type="button" id="portal-cookie-accept-all" class="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-colors">
                     Tout accepter
                 </button>
@@ -36,6 +39,7 @@ $b = url('');
         <div id="portal-cookie-panel" class="hidden border-t border-slate-100 pt-4 space-y-4" hidden aria-hidden="true">
             <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Affinez vos choix</p>
             <p class="text-xs text-slate-500">Les catégories ci-dessous sont désactivées tant que vous ne les activez pas. Vous pourrez modifier ce réglage à tout moment via « Préférences cookies » en pied de page ou sur la page dédiée.</p>
+            <p id="portal-cookie-last-choice" class="text-[11px] text-slate-500">Aucun choix enregistré</p>
             <ul class="space-y-3">
                 <li class="flex gap-3 items-start rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
                     <span class="mt-0.5 text-emerald-600" aria-hidden="true">
@@ -54,14 +58,25 @@ $b = url('');
                     </label>
                 </li>
                 <li class="flex gap-3 items-start rounded-xl border border-slate-200 bg-white px-4 py-3">
+                    <input type="checkbox" id="portal-cookie-personalization" class="mt-1 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                    <label for="portal-cookie-personalization" class="cursor-pointer">
+                        <span class="text-xs font-bold text-slate-900">Personnalisation du portail</span>
+                        <span class="block text-[11px] text-slate-500 mt-0.5">Adapter l’expérience (ordre de widgets publics, contenus proposés, aide contextuelle) sans activer la publicité tierce.</span>
+                    </label>
+                </li>
+                <li class="flex gap-3 items-start rounded-xl border border-slate-200 bg-white px-4 py-3">
                     <input type="checkbox" id="portal-cookie-ads" class="mt-1 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
                     <label for="portal-cookie-ads" class="cursor-pointer">
-                        <span class="text-xs font-bold text-slate-900">Publicité et personnalisation</span>
-                        <span class="block text-[11px] text-slate-500 mt-0.5">Réservé aux futurs contenus promotionnels ou messages tiers ; aucun bandeau publicitaire n’est affiché sur le portail tant que cette option n’est pas activée par l’équipe et acceptée ici.</span>
+                        <span class="text-xs font-bold text-slate-900">Publicité tierce</span>
+                        <span class="block text-[11px] text-slate-500 mt-0.5">Réservé aux futurs contenus promotionnels ou messages partenaires. Cette option reste indépendante des préférences de personnalisation du portail.</span>
                     </label>
                 </li>
             </ul>
+            <p class="text-[11px] text-slate-500">Pour renforcer la confidentialité, un nouveau consentement pourra vous être demandé après 180 jours ou après un changement majeur de politique.</p>
             <div class="flex flex-wrap gap-2 justify-end">
+                <button type="button" id="portal-cookie-reset" class="px-4 py-2.5 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-colors">
+                    Réinitialiser
+                </button>
                 <button type="button" id="portal-cookie-save-custom" class="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-colors">
                     Enregistrer mes choix
                 </button>
