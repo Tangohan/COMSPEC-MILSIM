@@ -1,7 +1,24 @@
 <?php
 declare(strict_types=1);
 /** @var array{tenants_with_events: int, events_24h: int, top_tenants: list<array{tenant_id: int, name: string, events: int}>} $platformAnalyticsSnapshot */
+/** @var list<array{day: string, events: int}> $platformDailyEvents */
+/** @var list<array{category: string, events: int}> $platformCategoryBreakdown */
+/** @var int $platformAnalyticsDays */
 $snap = $platformAnalyticsSnapshot ?? ['tenants_with_events' => 0, 'events_24h' => 0, 'top_tenants' => []];
+$platformDailyEvents = $platformDailyEvents ?? [];
+$platformCategoryBreakdown = $platformCategoryBreakdown ?? [];
+$platformAnalyticsDays = (int) ($platformAnalyticsDays ?? 7);
+$periodLinks = static function (int $current): string {
+    $opts = [1 => '24 h', 7 => '7 jours', 30 => '30 jours'];
+    $base = url('admin/analytics');
+    $parts = [];
+    foreach ($opts as $days => $label) {
+        $active = $days === $current ? ' font-black text-emerald-700' : ' text-slate-600 hover:text-slate-900';
+        $parts[] = '<a class="text-sm' . $active . '" href="' . htmlspecialchars($base . '?days=' . $days, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+    }
+
+    return implode('<span class="text-slate-300 mx-2">|</span>', $parts);
+};
 ?>
 <div class="max-w-5xl mx-auto px-6 py-10">
     <div class="flex items-center justify-between gap-4 mb-8">
@@ -9,7 +26,10 @@ $snap = $platformAnalyticsSnapshot ?? ['tenants_with_events' => 0, 'events_24h' 
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Indicateurs transverses</h1>
             <p class="text-sm text-slate-600 mt-1">Agrégats anonymisés (comptages uniquement, 7 derniers jours pour le classement).</p>
         </div>
-        <a href="<?= htmlspecialchars(url('admin'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm text-slate-500 hover:text-slate-800">Tableau de bord</a>
+        <div class="flex items-center gap-3">
+            <?= $periodLinks($platformAnalyticsDays) ?>
+            <a href="<?= htmlspecialchars(url('admin'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm text-slate-500 hover:text-slate-800">Tableau de bord</a>
+        </div>
     </div>
 
     <dl class="grid sm:grid-cols-2 gap-4 mb-10">
@@ -46,6 +66,56 @@ $snap = $platformAnalyticsSnapshot ?? ['tenants_with_events' => 0, 'events_24h' 
                 <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+    </section>
+
+    <section class="mt-10">
+        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Détails plateforme (<?= (int) $platformAnalyticsDays ?> j.)</h2>
+        <div class="grid lg:grid-cols-2 gap-4">
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                            <th class="px-4 py-3 font-bold">Date</th>
+                            <th class="px-4 py-3 font-bold text-right">Événements</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($platformDailyEvents === []): ?>
+                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucune activité sur la période sélectionnée.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($platformDailyEvents as $row): ?>
+                        <tr class="border-b border-slate-100">
+                            <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string) ($row['day'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="px-4 py-3 text-right tabular-nums font-medium text-slate-900"><?= (int) ($row['events'] ?? 0) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                            <th class="px-4 py-3 font-bold">Catégorie</th>
+                            <th class="px-4 py-3 font-bold text-right">Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($platformCategoryBreakdown === []): ?>
+                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucune catégorie détectée.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($platformCategoryBreakdown as $row): ?>
+                        <tr class="border-b border-slate-100">
+                            <td class="px-4 py-3 text-slate-700 font-medium"><?= htmlspecialchars((string) ($row['category'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['events'] ?? 0) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </section>
 </div>

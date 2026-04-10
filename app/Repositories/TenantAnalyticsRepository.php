@@ -220,4 +220,144 @@ class TenantAnalyticsRepository
 
         return $out;
     }
+
+    /**
+     * @return list<array{day: string, events: int}>
+     */
+    public function getPlatformDailyEvents(int $days): array
+    {
+        $days = max(1, min(90, $days));
+        if (!$this->hasUsageEvents()) {
+            return [];
+        }
+
+        $stmt = $this->pdo->prepare(
+            'SELECT DATE(created_at) AS d, COUNT(*) AS cnt
+             FROM usage_analytics_events
+             WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+             GROUP BY DATE(created_at)
+             ORDER BY d DESC'
+        );
+        $stmt->execute([$days]);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'day' => (string) ($row['d'] ?? ''),
+                'events' => (int) ($row['cnt'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{category: string, events: int}>
+     */
+    public function getPlatformCategoryBreakdown(int $days): array
+    {
+        $days = max(1, min(90, $days));
+        if (!$this->hasUsageEvents()) {
+            return [];
+        }
+
+        $stmt = $this->pdo->prepare(
+            'SELECT category, COUNT(*) AS cnt
+             FROM usage_analytics_events
+             WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+             GROUP BY category
+             ORDER BY cnt DESC, category ASC
+             LIMIT 12'
+        );
+        $stmt->execute([$days]);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'category' => (string) ($row['category'] ?? ''),
+                'events' => (int) ($row['cnt'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{label: string, events: int}>
+     */
+    public function getTenantCategoryBreakdown(int $tenantId, string $sinceIso): array
+    {
+        if ($tenantId < 1 || !$this->hasUsageEvents()) {
+            return [];
+        }
+
+        $stmt = $this->pdo->prepare(
+            'SELECT category, COUNT(*) AS cnt
+             FROM usage_analytics_events
+             WHERE tenant_id = ? AND created_at >= ?
+             GROUP BY category
+             ORDER BY cnt DESC, category ASC'
+        );
+        $stmt->execute([$tenantId, $sinceIso]);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'label' => (string) ($row['category'] ?? ''),
+                'events' => (int) ($row['cnt'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{actor_label: string, events: int}>
+     */
+    public function listTenantTopActors(int $tenantId, string $sinceIso, int $limit = 10): array
+    {
+        if ($tenantId < 1 || !$this->hasUsageEvents() || !$this->hasTable('users')) {
+            return [];
+        }
+        $limit = max(1, min(50, $limit));
+        $sql = 'SELECT COALESCE(u.username, u.email, CONCAT(\'#\', e.actor_user_id)) AS actor_label, COUNT(*) AS cnt
+                FROM usage_analytics_events e
+                LEFT JOIN users u ON u.id = e.actor_user_id
+                WHERE e.tenant_id = ? AND e.created_at >= ? AND e.actor_user_id IS NOT NULL
+                GROUP BY e.actor_user_id, actor_label
+                ORDER BY cnt DESC, actor_label ASC
+                LIMIT ' . $limit;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$tenantId, $sinceIso]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'actor_label' => (string) ($row['actor_label'] ?? 'Inconnu'),
+                'events' => (int) ($row['cnt'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
 }
