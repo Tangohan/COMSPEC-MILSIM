@@ -274,7 +274,8 @@ $card = static function (string $href, string $title, string $desc, string $acce
                 <?php if (empty($units)): ?>
                 <p class="p-6 text-slate-500">Aucune unité. <a href="<?= url('back-office/groups/create') ?>" class="underline font-medium">Créer une unité</a>.</p>
                 <?php else: ?>
-                <table class="w-full">
+                <div class="overflow-x-auto">
+                <table class="w-full min-w-[640px]">
                     <thead class="bg-slate-50 border-b border-slate-200">
                         <tr>
                             <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Nom</th>
@@ -296,6 +297,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
                 <?php endif; ?>
             </div>
 
@@ -311,9 +313,13 @@ $card = static function (string $href, string $title, string $desc, string $acce
                         <?php else: ?>
                         <ul class="space-y-2">
                             <?php foreach ($grades as $g): ?>
+                            <?php
+                            $gradeShortLabel = (string) ($g['label_short'] ?? $g['short_name'] ?? '');
+                            $gradeNatoCode = (string) ($g['label_otan'] ?? ($g['nato_code'] ?? ''));
+                            ?>
                             <li class="flex justify-between items-center text-sm">
                                 <span class="font-medium"><?= htmlspecialchars($g['label_long'] ?? $g['name'] ?? '') ?></span>
-                                <span class="text-slate-500"><?= htmlspecialchars($g['label_short'] ?? $g['short_name'] ?? '') ?><?= !empty($g['label_otan'] ?? $g['nato_code']) ? ' · ' . htmlspecialchars($g['label_otan'] ?? $g['nato_code']) : '' ?></span>
+                                <span class="text-slate-500 text-right"><?= htmlspecialchars($gradeShortLabel, ENT_QUOTES, 'UTF-8') ?><?= $gradeNatoCode !== '' ? ' · ' . htmlspecialchars($gradeNatoCode, ENT_QUOTES, 'UTF-8') : '' ?></span>
                             </li>
                             <?php endforeach; ?>
                         </ul>
@@ -347,7 +353,8 @@ $card = static function (string $href, string $title, string $desc, string $acce
                     <?php if (empty($adminPanels)): ?>
                     <p class="p-6 text-slate-500 text-sm">Aucun panneau configuré.</p>
                     <?php else: ?>
-                    <table class="w-full">
+                    <div class="overflow-x-auto">
+                    <table class="w-full min-w-[560px]">
                         <thead class="bg-slate-50 border-b border-slate-200">
                             <tr>
                                 <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Nom</th>
@@ -365,6 +372,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                     <?php endif; ?>
                 </div>
             </div>
