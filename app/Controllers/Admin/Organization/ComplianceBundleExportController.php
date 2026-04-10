@@ -88,7 +88,10 @@ final class ComplianceBundleExportController
 
             return Response::redirect(url('back-office/conformite/export-dossier'));
         }
-        fputcsv($fh, ['Identifiant', 'Parcours', 'Date de fin', 'N° attestation', 'Fichier PDF'], ';');
+        $csvSep = ';';
+        $csvEnc = '"';
+        $csvEsc = '\\';
+        fputcsv($fh, ['Identifiant', 'Parcours', 'Date de fin', 'N° attestation', 'Fichier PDF'], $csvSep, $csvEnc, $csvEsc);
         foreach ($rows as $r) {
             $uid = (int) ($r['user_id'] ?? 0);
             $label = $anonymize
@@ -100,7 +103,7 @@ final class ComplianceBundleExportController
                 (string) ($r['completed_at'] ?? ''),
                 (string) ($r['certificate_number'] ?? ''),
                 !empty($r['pdf_path']) ? 'certificats/attestation_' . (int) ($r['certificate_id'] ?? 0) . '.pdf' : '',
-            ], ';');
+            ], $csvSep, $csvEnc, $csvEsc);
         }
         rewind($fh);
         $csv = stream_get_contents($fh) ?: '';

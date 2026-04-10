@@ -1,5 +1,8 @@
 <?php
 declare(strict_types=1);
+
+use App\Services\Analytics\TenantAnalyticsLabels;
+
 /** @var int $activeApprox */
 /** @var int $dashboardEvents */
 /** @var string $since */
@@ -7,12 +10,25 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $trainingCourseStats */
 /** @var list<array<string, mixed>> $recruitmentOpeningStats */
 /** @var array{public_views: int, public_duration_avg: ?float, enlistment_opens: int, enlistment_submits: int, cta_clicks: int} $publicEngagement */
-/** @var list<array{label: string, events: int}> $tenantCategoryBreakdown */
+/** @var list<array{category: string, events: int}> $tenantCategoryBreakdown */
 /** @var list<array{actor_label: string, events: int}> $tenantTopActors */
+/** @var array{total_events: int, distinct_actors: int, events_with_duration: int, avg_duration_seconds: ?float} $tenantUsageSummary */
+/** @var list<array{day: string, events: int}> $tenantDailyEvents */
+/** @var list<array{name: string, events: int}> $tenantTopEventNames */
+/** @var int $trainingCatalogViews */
 $trainingCourseStats = $trainingCourseStats ?? [];
 $recruitmentOpeningStats = $recruitmentOpeningStats ?? [];
 $tenantCategoryBreakdown = $tenantCategoryBreakdown ?? [];
 $tenantTopActors = $tenantTopActors ?? [];
+$tenantDailyEvents = $tenantDailyEvents ?? [];
+$tenantTopEventNames = $tenantTopEventNames ?? [];
+$trainingCatalogViews = (int) ($trainingCatalogViews ?? 0);
+$tenantUsageSummary = $tenantUsageSummary ?? [
+    'total_events' => 0,
+    'distinct_actors' => 0,
+    'events_with_duration' => 0,
+    'avg_duration_seconds' => null,
+];
 $publicEngagement = $publicEngagement ?? [
     'public_views' => 0,
     'public_duration_avg' => null,
@@ -21,6 +37,11 @@ $publicEngagement = $publicEngagement ?? [
     'cta_clicks' => 0,
 ];
 $analyticsDays = (int) ($analyticsDays ?? 30);
+
+$dailyMax = 0;
+foreach ($tenantDailyEvents as $de) {
+    $dailyMax = max($dailyMax, (int) ($de['events'] ?? 0));
+}
 
 $periodLinks = static function (int $current): string {
     $base = url('back-office/analytics');
@@ -53,6 +74,78 @@ $ratioPct = static function (int $num, int $den): string {
             <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm text-slate-500 hover:text-slate-800 ml-2">Retour</a>
         </div>
     </div>
+
+    <section class="mb-10">
+        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Volume d’activité (suivi d’usage)</h2>
+        <p class="text-sm text-slate-600 mb-4 max-w-3xl">Indicateurs agrégés à partir du journal d’usage du portail (y compris actions anonymes ou sans membre identifié). Les durées moyennes ne portent que sur les visites où une mesure a été acceptée.</p>
+        <dl class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Événements enregistrés (période)</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($tenantUsageSummary['total_events'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Membres distincts (connectés)</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($tenantUsageSummary['distinct_actors'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Mesures de durée reçues</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($tenantUsageSummary['events_with_duration'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Durée moyenne (ces mesures)</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1"><?= isset($tenantUsageSummary['avg_duration_seconds']) && $tenantUsageSummary['avg_duration_seconds'] !== null ? (int) round((float) $tenantUsageSummary['avg_duration_seconds']) . ' s' : '—' ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-emerald-50/80 shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-emerald-900">Ouvertures du catalogue formations</dt>
+                <dd class="text-3xl font-black text-emerald-950 mt-1"><?= $trainingCatalogViews ?></dd>
+            </div>
+        </dl>
+
+        <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm mb-6">
+            <h3 class="text-sm font-bold text-slate-800 mb-4">Répartition par jour</h3>
+            <?php if ($tenantDailyEvents === []): ?>
+                <p class="text-sm text-slate-500 py-6 text-center">Pas encore de données journalières sur cette période.</p>
+            <?php else: ?>
+                <div class="flex items-end gap-1 h-36 px-1" role="img" aria-label="Histogramme du nombre d’événements par jour">
+                    <?php foreach ($tenantDailyEvents as $de):
+                        $cnt = (int) ($de['events'] ?? 0);
+                        $barPx = $dailyMax > 0 ? max($cnt > 0 ? 3 : 0, (int) round(132 * $cnt / $dailyMax)) : 0;
+                        $dayRaw = (string) ($de['day'] ?? '');
+                        $dayLabel = $dayRaw !== '' ? date('d/m', strtotime($dayRaw)) : '—';
+                        ?>
+                    <div class="flex-1 min-w-[18px] flex flex-col items-center justify-end h-full">
+                        <span class="text-[10px] font-semibold text-slate-600 mb-0.5 tabular-nums"><?= $cnt > 0 ? (string) $cnt : '' ?></span>
+                        <div class="w-full max-w-[22px] mx-auto rounded-t bg-emerald-500/90 shrink-0" style="height: <?= $barPx ?>px" title="<?= (int) $cnt ?> événement(s) le <?= htmlspecialchars($dayLabel, ENT_QUOTES, 'UTF-8') ?>"></div>
+                        <span class="text-[9px] text-slate-500 mt-1.5 leading-none text-center w-full truncate"><?= htmlspecialchars($dayLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="border-b border-slate-200 bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500">
+                        <th class="px-4 py-3 font-bold">Type d’action</th>
+                        <th class="px-4 py-3 font-bold text-right">Occurrences</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if ($tenantTopEventNames === []): ?>
+                    <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucune action recensée sur la période.</td></tr>
+                <?php else: ?>
+                    <?php foreach ($tenantTopEventNames as $row): ?>
+                    <tr class="border-b border-slate-100">
+                        <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars(TenantAnalyticsLabels::eventNameLabel((string) ($row['name'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['events'] ?? 0) ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
 
     <section class="mb-10">
         <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Espace membre</h2>
@@ -101,6 +194,7 @@ $ratioPct = static function (int $num, int $den): string {
 
     <section class="mb-10">
         <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Détails back-office (usage interne)</h2>
+        <p class="text-sm text-slate-600 mb-4 max-w-3xl">Membres les plus actifs sur le suivi d’usage, et volume par grande rubrique (formations, fiche publique, recrutement, portail).</p>
         <div class="grid lg:grid-cols-2 gap-4 mb-4">
             <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
                 <table class="min-w-full text-sm">
@@ -128,17 +222,20 @@ $ratioPct = static function (int $num, int $den): string {
                 <table class="min-w-full text-sm">
                     <thead>
                         <tr class="border-b border-slate-200 bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500">
-                            <th class="px-4 py-3 font-bold">Module</th>
+                            <th class="px-4 py-3 font-bold">Rubrique</th>
                             <th class="px-4 py-3 font-bold text-right">Événements</th>
                         </tr>
                     </thead>
                     <tbody>
                     <?php if ($tenantCategoryBreakdown === []): ?>
-                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucune catégorie interne collectée.</td></tr>
+                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucune rubrique recensée sur la période.</td></tr>
                     <?php else: ?>
                         <?php foreach ($tenantCategoryBreakdown as $row): ?>
+                        <?php
+                        $catKey = (string) ($row['category'] ?? $row['label'] ?? '');
+                        ?>
                         <tr class="border-b border-slate-100">
-                            <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars((string) ($row['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars(TenantAnalyticsLabels::categoryLabel($catKey), ENT_QUOTES, 'UTF-8') ?></td>
                             <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['events'] ?? 0) ?></td>
                         </tr>
                         <?php endforeach; ?>
@@ -147,7 +244,7 @@ $ratioPct = static function (int $num, int $den): string {
                 </table>
             </div>
         </div>
-        <p class="text-xs text-slate-500 max-w-3xl">Ces détails représentent l’activité interne du back-office (actions membres authentifiés), à distinguer des visites publiques ci-dessous.</p>
+        <p class="text-xs text-slate-500 max-w-3xl">La colonne « Membres » ne compte que les événements liés à un compte connecté. Les visites publiques sans compte apparaissent surtout dans les rubriques « Fiche publique » et « Recrutement » ci-dessus.</p>
     </section>
 
     <section class="mb-10">

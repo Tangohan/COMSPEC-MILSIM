@@ -47,6 +47,10 @@ final class OrganizationAnalyticsController
         $publicEngagement = $this->tenantAnalyticsRepository->getTenantPublicEngagement($tenantId, $since);
         $categoryBreakdown = $this->tenantAnalyticsRepository->getTenantCategoryBreakdown($tenantId, $since);
         $topActors = $this->tenantAnalyticsRepository->listTenantTopActors($tenantId, $since, 8);
+        $tenantUsageSummary = $this->tenantAnalyticsRepository->getTenantUsageSummary($tenantId, $since);
+        $tenantDailyEvents = $this->tenantAnalyticsRepository->getTenantDailyEventCounts($tenantId, $since);
+        $tenantTopEventNames = $this->tenantAnalyticsRepository->getTenantTopEventNames($tenantId, $since, 12);
+        $trainingCatalogViews = $this->tenantAnalyticsRepository->getTenantTrainingCatalogViews($tenantId, $since);
 
         return Response::view('layout.main', [
             'title' => 'Indicateurs d’usage',
@@ -61,6 +65,10 @@ final class OrganizationAnalyticsController
             'publicEngagement' => $publicEngagement,
             'tenantCategoryBreakdown' => $categoryBreakdown,
             'tenantTopActors' => $topActors,
+            'tenantUsageSummary' => $tenantUsageSummary,
+            'tenantDailyEvents' => $tenantDailyEvents,
+            'tenantTopEventNames' => $tenantTopEventNames,
+            'trainingCatalogViews' => $trainingCatalogViews,
         ]);
     }
 }

@@ -236,6 +236,12 @@ class GradeRepository
         $r['sort_order'] = (int) ($r['sort_order'] ?? 0);
         $r['is_commissioned'] = (int) ($r['is_commissioned'] ?? 0);
         $r['is_active'] = (int) ($r['is_active'] ?? 1);
+        if (!\array_key_exists('nato_code', $r) && \array_key_exists('label_otan', $r)) {
+            $r['nato_code'] = $r['label_otan'];
+        }
+        if (!\array_key_exists('label_otan', $r) && \array_key_exists('nato_code', $r)) {
+            $r['label_otan'] = $r['nato_code'];
+        }
         return $r;
     }
 

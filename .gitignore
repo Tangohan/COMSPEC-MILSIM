@@ -22,3 +22,6 @@ composer.lock
 config/phinx.php
 node_modules/
 ressources/
+
+# Copie locale TCPDF : ne pas versionner un dépôt Git imbriqué
+tcpdf/.git/

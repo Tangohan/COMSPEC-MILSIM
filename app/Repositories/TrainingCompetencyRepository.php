@@ -17,10 +17,32 @@ final class TrainingCompetencyRepository
         $this->pdo = Database::getPdo();
     }
 
+    /**
+     * Schéma complet module compétences : matrices (bootstrap PHP) + progression (modules / user_progress, SQL).
+     */
     public function competencySchemaAvailable(): bool
     {
+        return $this->hasTable('training_competency_matrices') && $this->hasTable('user_progress');
+    }
+
+    public function competencyMatricesSchemaAvailable(): bool
+    {
+        return $this->hasTable('training_competency_matrices');
+    }
+
+    public function competencyTrainerRolesSchemaAvailable(): bool
+    {
+        return $this->hasTable('training_trainer_roles');
+    }
+
+    private function hasTable(string $table): bool
+    {
+        $t = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+        if ($t === '') {
+            return false;
+        }
         try {
-            $st = $this->pdo->query("SHOW TABLES LIKE 'training_competency_matrices'");
+            $st = $this->pdo->query('SHOW TABLES LIKE ' . $this->pdo->quote($t));
 
             return (bool) $st->fetchColumn();
         } catch (PDOException) {
@@ -31,6 +53,9 @@ final class TrainingCompetencyRepository
     /** @return list<array<string,mixed>> */
     public function listTrainerRoles(int $tenantId): array
     {
+        if (!$this->hasTable('training_trainer_roles')) {
+            return [];
+        }
         $sql = "SELECT r.id, r.name, r.slug,
                        CASE WHEN ttr.role_id IS NULL THEN 0 ELSE 1 END AS is_trainer_role
                 FROM roles r
@@ -46,6 +71,9 @@ final class TrainingCompetencyRepository
     /** @param list<int> $roleIds */
     public function saveTrainerRolePicking(int $tenantId, array $roleIds, int $actorUserId): void
     {
+        if (!$this->hasTable('training_trainer_roles')) {
+            return;
+        }
         $roleIds = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $v): bool => $v > 0)));
         $this->pdo->beginTransaction();
         try {
@@ -66,6 +94,9 @@ final class TrainingCompetencyRepository
     /** @return list<int> */
     public function trainerRoleIds(int $tenantId): array
     {
+        if (!$this->hasTable('training_trainer_roles')) {
+            return [];
+        }
         $st = $this->pdo->prepare('SELECT role_id FROM training_trainer_roles WHERE tenant_id = ? ORDER BY role_id ASC');
         $st->execute([$tenantId]);
 
@@ -75,6 +106,9 @@ final class TrainingCompetencyRepository
     /** @return list<array<string,mixed>> */
     public function listMatrices(int $tenantId): array
     {
+        if (!$this->hasTable('training_competency_matrices')) {
+            return [];
+        }
         $sql = "SELECT m.*, COUNT(a.user_id) AS assignment_count
                 FROM training_competency_matrices m
                 LEFT JOIN training_competency_matrix_assignments a ON a.matrix_id = m.id
@@ -89,6 +123,9 @@ final class TrainingCompetencyRepository
 
     public function findMatrix(int $tenantId, int $matrixId): ?array
     {
+        if (!$this->hasTable('training_competency_matrices')) {
+            return null;
+        }
         $st = $this->pdo->prepare('SELECT * FROM training_competency_matrices WHERE tenant_id = ? AND id = ? LIMIT 1');
         $st->execute([$tenantId, $matrixId]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
@@ -98,6 +135,9 @@ final class TrainingCompetencyRepository
 
     public function saveMatrix(int $tenantId, int $actorUserId, string $name, string $description, array $autoRules): int
     {
+        if (!$this->hasTable('training_competency_matrices')) {
+            return 0;
+        }
         $json = json_encode($autoRules, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $st = $this->pdo->prepare('INSERT INTO training_competency_matrices (tenant_id, name, description, auto_detect_rules_json, is_active, created_by_user_id, updated_by_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?, NOW(), NOW())');
         $st->execute([
@@ -115,6 +155,9 @@ final class TrainingCompetencyRepository
     /** @param list<int> $userIds */
     public function assignMatrixToUsers(int $tenantId, int $matrixId, int $actorUserId, array $userIds, string $source = 'manual'): int
     {
+        if (!$this->hasTable('training_competency_matrix_assignments')) {
+            return 0;
+        }
         $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $v): bool => $v > 0)));
         if ($userIds === []) {
             return 0;

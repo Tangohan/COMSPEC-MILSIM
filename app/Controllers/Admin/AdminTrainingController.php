@@ -25,7 +25,9 @@ use App\Services\Training\TrainingCourseExchangeService;
 use App\Services\Training\TrainingEnrollmentPolicyService;
 use App\Services\Training\TrainingProgressService;
 use App\Services\Training\TrainingCertificateService;
+use App\Services\Training\TrainingCertificatePdfService;
 use App\Services\Training\TrainingCertificateAssetStorageService;
+use App\Support\TrainingCertificatePdfEngine;
 use App\Support\TrainingLmsStaffAccess;
 
 class AdminTrainingController
@@ -47,6 +49,7 @@ class AdminTrainingController
         private FeatureGateService $featureGate,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
         private TrainingCertificateService $certificateService,
+        private TrainingCertificatePdfService $certificatePdfService,
     ) {}
 
     public function dashboard(Request $request, array $params = []): Response
@@ -364,7 +367,7 @@ class AdminTrainingController
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
         $certificates = $this->certificateRepository->listForTenantAdmin($tenantId, 200);
-        $pdfReady = class_exists(\Dompdf\Dompdf::class);
+        $pdfReady = TrainingCertificatePdfEngine::isAvailable();
         $pendingPdf = 0;
         foreach ($certificates as $c) {
             if (($c['status'] ?? '') !== 'valid') {
@@ -399,8 +402,8 @@ class AdminTrainingController
             return $redirect;
         }
         $tenantId = (int) Session::get('tenant_id');
-        if (!class_exists(\Dompdf\Dompdf::class)) {
-            Session::flash('error', 'La génération des fichiers PDF n’est pas disponible sur ce serveur. Vérifiez l’installation du projet (dépendances Composer) ou contactez l’équipe technique.');
+        if (!TrainingCertificatePdfEngine::isAvailable()) {
+            Session::flash('error', 'La génération des documents PDF n’est pas disponible sur ce serveur. Contactez l’équipe technique.');
 
             return $redirect;
         }
@@ -424,12 +427,16 @@ class AdminTrainingController
         }
         $tenantId = (int) Session::get('tenant_id');
         $tpl = $this->certificateTemplateRepository->findByTenantId($tenantId) ?? [];
+        $layoutFlags = $this->certificateTemplateLayoutFlags($tpl);
 
         return Response::view('layout.main', [
             'content' => 'admin.training.certificates_gabarit',
             'title' => 'Gabarit des attestations',
             'trainingAdminNav' => 'certificates_gabarit',
             'tpl' => $tpl,
+            'trainingCertificatePdfAvailable' => TrainingCertificatePdfEngine::isAvailable(),
+            'certLayoutShowFinalScore' => $layoutFlags['show_final_score'],
+            'certLayoutShowValidUntil' => $layoutFlags['show_valid_until'],
         ]);
     }
 
@@ -480,6 +487,10 @@ class AdminTrainingController
                 $bgRel = null;
             }
 
+            $layoutJson = json_encode([
+                'show_final_score' => (string) $request->input('layout_show_final_score', '0') === '1',
+                'show_valid_until' => (string) $request->input('layout_show_valid_until', '0') === '1',
+            ], JSON_UNESCAPED_UNICODE);
             $this->certificateTemplateRepository->upsertForTenant($tenantId, [
                 'name' => (string) $request->input('name', 'Modèle par défaut'),
                 'headline' => (string) $request->input('headline', 'Attestation de formation'),
@@ -489,6 +500,7 @@ class AdminTrainingController
                 'accent_hex' => (string) $request->input('accent_hex', '#059669'),
                 'logo_relative_path' => is_string($logoRel) ? $logoRel : null,
                 'background_relative_path' => is_string($bgRel) ? $bgRel : null,
+                'layout_json' => $layoutJson,
             ]);
             Session::flash('success', 'Le gabarit a été enregistré. Les prochaines attestations générées utiliseront ces réglages.');
         } catch (\InvalidArgumentException $e) {
@@ -498,6 +510,74 @@ class AdminTrainingController
         }
 
         return $redirect;
+    }
+
+    public function certificateGabaritExamplePdf(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        if (!$this->userCanManageTrainingCourseEditorially()) {
+            throw new \RuntimeException('Accès refusé.', 403);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $binary = $this->certificatePdfService->generatePreviewBinary($tenantId);
+        if ($binary === null || $binary === '') {
+            Session::flash('error', 'La génération d’un document d’exemple n’est pas disponible sur ce serveur.');
+            return Response::redirect(training_lms_admin_url('certificates/gabarit'));
+        }
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="attestation-exemple.pdf"')
+            ->setBody($binary);
+    }
+
+    public function certificateGabaritFile(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        if (!$this->userCanManageTrainingCourseEditorially()) {
+            throw new \RuntimeException('Accès refusé.', 403);
+        }
+        $type = (string) $request->query('type', '');
+        if ($type !== 'logo' && $type !== 'fond') {
+            return (new Response())->setStatusCode(404)->setBody('Fichier introuvable.');
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $tpl = $this->certificateTemplateRepository->findByTenantId($tenantId);
+        if (!$tpl) {
+            return (new Response())->setStatusCode(404)->setBody('Fichier introuvable.');
+        }
+        $rel = $type === 'logo'
+            ? ($tpl['logo_relative_path'] ?? null)
+            : ($tpl['background_relative_path'] ?? null);
+        if (!is_string($rel) || $rel === '') {
+            return (new Response())->setStatusCode(404)->setBody('Fichier introuvable.');
+        }
+        $abs = $this->certificateAssetStorage->absolutePath($rel);
+        if ($abs === null || !is_file($abs)) {
+            return (new Response())->setStatusCode(404)->setBody('Fichier introuvable.');
+        }
+        $data = @file_get_contents($abs);
+        if ($data === false) {
+            return (new Response())->setStatusCode(404)->setBody('Fichier introuvable.');
+        }
+        $mime = 'application/octet-stream';
+        if (function_exists('finfo_open')) {
+            $fi = finfo_open(FILEINFO_MIME_TYPE);
+            if ($fi !== false) {
+                $m = finfo_file($fi, $abs);
+                finfo_close($fi);
+                if (is_string($m) && $m !== '') {
+                    $mime = $m;
+                }
+            }
+        }
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', $mime)
+            ->header('Cache-Control', 'private, max-age=120')
+            ->setBody($data);
     }
 
     public function audit(Request $request, array $params = []): Response
@@ -702,6 +782,28 @@ class AdminTrainingController
             }
         } catch (\Throwable) {
         }
+    }
+
+    /**
+     * @param array<string, mixed> $tplRow
+     * @return array{show_final_score: bool, show_valid_until: bool}
+     */
+    private function certificateTemplateLayoutFlags(array $tplRow): array
+    {
+        $defaults = ['show_final_score' => true, 'show_valid_until' => true];
+        $raw = $tplRow['layout_json'] ?? null;
+        if ($raw === null || $raw === '') {
+            return $defaults;
+        }
+        $j = is_string($raw) ? json_decode($raw, true) : null;
+        if (!is_array($j)) {
+            return $defaults;
+        }
+
+        return [
+            'show_final_score' => array_key_exists('show_final_score', $j) ? (bool) $j['show_final_score'] : $defaults['show_final_score'],
+            'show_valid_until' => array_key_exists('show_valid_until', $j) ? (bool) $j['show_valid_until'] : $defaults['show_valid_until'],
+        ];
     }
 
     /** @param array<string, mixed> $course */

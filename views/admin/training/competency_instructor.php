@@ -3,8 +3,8 @@
     <p class="tc-kicker">Vue instructeur</p>
     <h1 class="tc-hero-title mb-4">Validation terrain &amp; observations</h1>
     <p class="text-slate-600 text-sm max-w-3xl leading-relaxed">
-        Console d’encadrement pour les validations humaines, les overrides de score et les observations terrain
-        adossées aux tables `trainer_validation_logs` et `user_progress_event_logs`.
+        Console d’encadrement pour les validations humaines, les ajustements de score et les observations terrain,
+        avec historique des décisions et du suivi des renouvellements.
     </p>
 </header>
 
@@ -12,9 +12,9 @@
     <article class="tc-panel p-5">
         <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">File d’attente validation</h2>
         <ul class="mt-4 space-y-2 text-sm text-slate-600">
-            <li>• Modules CHARLIE terminés en attente de DELTA.</li>
-            <li>• Évaluations FIELD avec `requires_validator = 1`.</li>
-            <li>• Recyclages critiques à arbitrer.</li>
+            <li>• Blocs CHARLIE terminés en attente de validation DELTA.</li>
+            <li>• Mises en situation terrain nécessitant une validation par un instructeur.</li>
+            <li>• Recyclages sensibles à arbitrer.</li>
         </ul>
     </article>
     <article class="tc-panel p-5">

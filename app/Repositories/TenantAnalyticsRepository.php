@@ -293,7 +293,7 @@ class TenantAnalyticsRepository
     }
 
     /**
-     * @return list<array{label: string, events: int}>
+     * @return list<array{category: string, events: int}>
      */
     public function getTenantCategoryBreakdown(int $tenantId, string $sinceIso): array
     {
@@ -318,12 +318,156 @@ class TenantAnalyticsRepository
         $out = [];
         foreach ($rows as $row) {
             $out[] = [
-                'label' => (string) ($row['category'] ?? ''),
+                'category' => (string) ($row['category'] ?? ''),
                 'events' => (int) ($row['cnt'] ?? 0),
             ];
         }
 
         return $out;
+    }
+
+    /**
+     * @return array{
+     *   total_events: int,
+     *   distinct_actors: int,
+     *   events_with_duration: int,
+     *   avg_duration_seconds: ?float
+     * }
+     */
+    public function getTenantUsageSummary(int $tenantId, string $sinceIso): array
+    {
+        $empty = [
+            'total_events' => 0,
+            'distinct_actors' => 0,
+            'events_with_duration' => 0,
+            'avg_duration_seconds' => null,
+        ];
+        if ($tenantId < 1 || !$this->hasUsageEvents()) {
+            return $empty;
+        }
+
+        $st = $this->pdo->prepare(
+            'SELECT COUNT(*) AS total_events
+             FROM usage_analytics_events
+             WHERE tenant_id = ? AND created_at >= ?'
+        );
+        $st->execute([$tenantId, $sinceIso]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (is_array($row)) {
+            $empty['total_events'] = (int) ($row['total_events'] ?? 0);
+        }
+
+        $st = $this->pdo->prepare(
+            'SELECT COUNT(DISTINCT actor_user_id) AS distinct_actors
+             FROM usage_analytics_events
+             WHERE tenant_id = ? AND created_at >= ? AND actor_user_id IS NOT NULL'
+        );
+        $st->execute([$tenantId, $sinceIso]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (is_array($row)) {
+            $empty['distinct_actors'] = (int) ($row['distinct_actors'] ?? 0);
+        }
+
+        $st = $this->pdo->prepare(
+            'SELECT COUNT(*) AS cnt, ROUND(AVG(NULLIF(duration_seconds, 0))) AS avg_d
+             FROM usage_analytics_events
+             WHERE tenant_id = ? AND created_at >= ?
+               AND duration_seconds IS NOT NULL AND duration_seconds > 0'
+        );
+        $st->execute([$tenantId, $sinceIso]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (is_array($row)) {
+            $empty['events_with_duration'] = (int) ($row['cnt'] ?? 0);
+            $avg = $row['avg_d'] ?? null;
+            $empty['avg_duration_seconds'] = $avg !== null && $avg !== false && $avg !== ''
+                ? (float) $avg
+                : null;
+        }
+
+        return $empty;
+    }
+
+    /**
+     * @return list<array{day: string, events: int}>
+     */
+    public function getTenantDailyEventCounts(int $tenantId, string $sinceIso): array
+    {
+        if ($tenantId < 1 || !$this->hasUsageEvents()) {
+            return [];
+        }
+
+        $stmt = $this->pdo->prepare(
+            'SELECT DATE(created_at) AS d, COUNT(*) AS cnt
+             FROM usage_analytics_events
+             WHERE tenant_id = ? AND created_at >= ?
+             GROUP BY DATE(created_at)
+             ORDER BY d ASC'
+        );
+        $stmt->execute([$tenantId, $sinceIso]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'day' => (string) ($row['d'] ?? ''),
+                'events' => (int) ($row['cnt'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{name: string, events: int}>
+     */
+    public function getTenantTopEventNames(int $tenantId, string $sinceIso, int $limit = 12): array
+    {
+        if ($tenantId < 1 || !$this->hasUsageEvents()) {
+            return [];
+        }
+        $limit = max(1, min(30, $limit));
+
+        $stmt = $this->pdo->prepare(
+            'SELECT name, COUNT(*) AS cnt
+             FROM usage_analytics_events
+             WHERE tenant_id = ? AND created_at >= ?
+             GROUP BY name
+             ORDER BY cnt DESC, name ASC
+             LIMIT ' . $limit
+        );
+        $stmt->execute([$tenantId, $sinceIso]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'name' => (string) ($row['name'] ?? ''),
+                'events' => (int) ($row['cnt'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    public function getTenantTrainingCatalogViews(int $tenantId, string $sinceIso): int
+    {
+        if ($tenantId < 1 || !$this->hasUsageEvents()) {
+            return 0;
+        }
+
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM usage_analytics_events
+             WHERE tenant_id = ? AND created_at >= ? AND name = ?'
+        );
+        $stmt->execute([$tenantId, $sinceIso, AnalyticsEventName::TRAINING_CATALOG_VIEW]);
+
+        return (int) $stmt->fetchColumn();
     }
 
     /**
@@ -335,11 +479,12 @@ class TenantAnalyticsRepository
             return [];
         }
         $limit = max(1, min(50, $limit));
-        $sql = 'SELECT COALESCE(u.username, u.email, CONCAT(\'#\', e.actor_user_id)) AS actor_label, COUNT(*) AS cnt
+        $actorExpr = 'COALESCE(NULLIF(TRIM(u.display_name), \'\'), NULLIF(TRIM(u.callsign), \'\'), u.email, CONCAT(\'#\', e.actor_user_id))';
+        $sql = 'SELECT ' . $actorExpr . ' AS actor_label, COUNT(*) AS cnt
                 FROM usage_analytics_events e
                 LEFT JOIN users u ON u.id = e.actor_user_id
                 WHERE e.tenant_id = ? AND e.created_at >= ? AND e.actor_user_id IS NOT NULL
-                GROUP BY e.actor_user_id, actor_label
+                GROUP BY e.actor_user_id, ' . $actorExpr . '
                 ORDER BY cnt DESC, actor_label ASC
                 LIMIT ' . $limit;
 

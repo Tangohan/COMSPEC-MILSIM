@@ -660,8 +660,12 @@ class Container
             \App\Services\Training\CompetencyUserJourneyService::class => new \App\Services\Training\CompetencyUserJourneyService(
                 self::get(\App\Repositories\CompetencyUserProgressRepository::class),
             ),
+            \App\Repositories\TrainingCompetencyRepository::class => new \App\Repositories\TrainingCompetencyRepository(),
             \App\Controllers\Web\TrainingCompetencyController::class => new \App\Controllers\Web\TrainingCompetencyController(
                 self::get(\App\Services\Training\CompetencyUserJourneyService::class),
+                self::get(\App\Repositories\TrainingCompetencyRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
             ),
             \App\Controllers\Web\TrainingController::class => new \App\Controllers\Web\TrainingController(
                 self::get(\App\Repositories\TrainingRepository::class),
@@ -780,7 +784,8 @@ class Container
                 self::get(\App\Services\Training\TrainingCourseExchangeService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
-                self::get(\App\Services\Training\TrainingCertificateService::class)
+                self::get(\App\Services\Training\TrainingCertificateService::class),
+                self::get(\App\Services\Training\TrainingCertificatePdfService::class)
             ),
             \App\Controllers\Admin\AdminTrainingStudioController::class => new \App\Controllers\Admin\AdminTrainingStudioController(
                 self::get(\App\Repositories\TrainingCourseRepository::class),

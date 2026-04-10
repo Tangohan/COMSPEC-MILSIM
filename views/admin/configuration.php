@@ -315,7 +315,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
                             <?php foreach ($grades as $g): ?>
                             <?php
                             $gradeShortLabel = (string) ($g['label_short'] ?? $g['short_name'] ?? '');
-                            $gradeNatoCode = (string) ($g['label_otan'] ?? ($g['nato_code'] ?? ''));
+                            $gradeNatoCode = trim((string) ($g['label_otan'] ?? $g['nato_code'] ?? ''));
                             ?>
                             <li class="flex justify-between items-center text-sm">
                                 <span class="font-medium"><?= htmlspecialchars($g['label_long'] ?? $g['name'] ?? '') ?></span>

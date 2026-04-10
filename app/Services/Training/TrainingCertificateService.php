@@ -8,6 +8,7 @@ use App\Repositories\TrainingCertificateRepository;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Services\Training\TrainingProgressService;
+use App\Support\TrainingCertificatePdfEngine;
 
 class TrainingCertificateService
 {
@@ -143,7 +144,7 @@ class TrainingCertificateService
      */
     public function backfillPendingPdfDocuments(int $tenantId, int $max = 50): int
     {
-        if (!class_exists(\Dompdf\Dompdf::class)) {
+        if (!TrainingCertificatePdfEngine::isAvailable()) {
             return 0;
         }
         $max = max(1, min(100, $max));
@@ -170,8 +171,8 @@ class TrainingCertificateService
 
     private function generatePdfOrLogFailure(int $certificateId, int $tenantId): void
     {
-        if (!class_exists(\Dompdf\Dompdf::class)) {
-            error_log('[training_certificate] Dompdf absent : impossible de générer le PDF (certificat id=' . $certificateId . ', tenant=' . $tenantId . ').');
+        if (!TrainingCertificatePdfEngine::isAvailable()) {
+            error_log('[training_certificate] Moteur PDF indisponible : impossible de générer le PDF (certificat id=' . $certificateId . ', tenant=' . $tenantId . ').');
 
             return;
         }

@@ -1,6 +1,6 @@
 <?php
 $certificates = $certificates ?? [];
-$trainingCertificatesPdfReady = $trainingCertificatesPdfReady ?? class_exists(\Dompdf\Dompdf::class);
+$trainingCertificatesPdfReady = $trainingCertificatesPdfReady ?? \App\Support\TrainingCertificatePdfEngine::isAvailable();
 $trainingCertificatesPendingPdf = (int) ($trainingCertificatesPendingPdf ?? 0);
 require base_path('views/admin/training/partials/command_shell_open.php');
 
@@ -20,7 +20,7 @@ $statusFr = static function (string $s): string {
                         <p>Les attestations des parcours <strong class="font-semibold text-slate-800">certifiants</strong> sont <strong class="font-semibold text-slate-800">créées automatiquement</strong> dès que l’apprenant termine le parcours (leçons et validations requises). La colonne « Délivré par » affiche <strong class="font-semibold text-slate-800">Complétion automatique</strong> lorsque personne du staff n’a déclenché l’émission à la main.</p>
                         <p>Le <strong class="font-semibold text-slate-800">fichier PDF</strong> est généré sur le serveur à partir du <a href="<?= htmlspecialchars(training_lms_admin_url('certificates/gabarit')) ?>" class="font-semibold text-emerald-700 hover:underline">gabarit de la communauté</a>. Tant que le PDF n’est pas prêt, la colonne « Document » indique « En attente ».</p>
                         <?php if (!$trainingCertificatesPdfReady): ?>
-                        <p class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 text-sm">La génération PDF n’est pas disponible sur cette installation (composant serveur manquant). Les attestations restent enregistrées, mais les fichiers ne pourront pas être produits tant que l’environnement n’est pas complété.</p>
+                        <p class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 text-sm">La génération des documents PDF n’est pas disponible sur ce serveur. Les attestations restent enregistrées, mais les fichiers ne pourront pas être produits tant que l’environnement n’est pas corrigé.</p>
                         <?php elseif ($trainingCertificatesPendingPdf > 0): ?>
                         <form method="post" action="<?= htmlspecialchars(url('back-office/ressources/training/certificates/generer-documents')) ?>" class="flex flex-wrap items-center gap-3">
                             <?= \App\Core\Csrf::field() ?>

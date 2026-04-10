@@ -270,6 +270,12 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_competency_framework : ' . $e->getMessage() . "\n";
 }
+$competencyProgressionFrameworkMigrate = require $root . '/bootstrap/competency_progression_framework_migration.php';
+try {
+    $competencyProgressionFrameworkMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] competency_progression_framework : ' . $e->getMessage() . "\n";
+}
 $usageAnalyticsMigrate = require $root . '/bootstrap/usage_analytics_migration.php';
 try {
     $usageAnalyticsMigrate($pdo);

@@ -642,6 +642,8 @@ return function (Router $router) {
     $router->get('/back-office/ressources/training/reports', [AdminTrainingController::class, 'reports'], $trainingResMw);
     $router->get('/back-office/ressources/training/certificates', [AdminTrainingController::class, 'certificates'], $trainingResMw);
     $router->post('/back-office/ressources/training/certificates/generer-documents', [AdminTrainingController::class, 'certificatesGeneratePendingPdfs'], $trainingResMw);
+    $router->get('/back-office/ressources/training/certificates/gabarit/exemple-pdf', [AdminTrainingController::class, 'certificateGabaritExamplePdf'], $trainingResMw);
+    $router->get('/back-office/ressources/training/certificates/gabarit/fichier', [AdminTrainingController::class, 'certificateGabaritFile'], $trainingResMw);
     $router->get('/back-office/ressources/training/certificates/gabarit', [AdminTrainingController::class, 'certificateGabarit'], $trainingResMw);
     $router->post('/back-office/ressources/training/certificates/gabarit', [AdminTrainingController::class, 'certificateGabaritSave'], $trainingResMw);
     $router->get('/back-office/ressources/training/audit', [AdminTrainingController::class, 'audit'], $trainingResMw);
