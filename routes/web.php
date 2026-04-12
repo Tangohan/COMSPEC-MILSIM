@@ -142,6 +142,7 @@ use App\Controllers\Admin\Organization\OrganizationIntegrationsController;
 use App\Controllers\Admin\Organization\ComplianceBundleExportController;
 use App\Controllers\Web\VerifyEmailController;
 use App\Controllers\Web\SecurityDeviceController;
+use App\Controllers\Web\OperationalBoardController;
 
 return function (Router $router) {
     $mwForum = [AuthMiddleware::class, ForumSanctionMiddleware::class];
@@ -208,6 +209,15 @@ return function (Router $router) {
     $router->post('/activite/messages/lu', [ActivityHubController::class, 'markTenantMessagesRead'], [AuthMiddleware::class]);
     $router->get('/calendrier/abonnement/{token}', [CommunityCalendarFeedController::class, 'ics']);
     $router->get('/operateur/terrain', [OperateurTerrainController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/back-office/tableau-operationnel', [OperationalBoardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableau-operationnel', [OperationalBoardController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableau-operationnel/posture', [OperationalBoardController::class, 'setPosture'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableau-operationnel/template', [OperationalBoardController::class, 'createFromTemplate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableau-operationnel/{id}/validation', [OperationalBoardController::class, 'transitionValidation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableau-operationnel/{id}/status', [OperationalBoardController::class, 'transitionOperationalStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableau-operationnel/{id}/frago', [OperationalBoardController::class, 'createFrago'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableau-operationnel/{id}/checklist/{itemId}', [OperationalBoardController::class, 'toggleChecklist'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/tableau-operationnel/stream', [OperationalBoardController::class, 'stream'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/integrations/v1/evenements', [IntegrationsPublicEventsController::class, 'upcoming'], [IntegrationsApiAuthMiddleware::class]);
     $router->get('/messages', [TenantMessagesController::class, 'index'], $mwMessages);
     $router->post('/messages', [TenantMessagesController::class, 'create'], $mwMessages);
