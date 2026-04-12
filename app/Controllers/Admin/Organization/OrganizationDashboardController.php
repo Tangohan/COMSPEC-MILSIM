@@ -12,6 +12,7 @@ use App\Repositories\AuditLogRepository;
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\ModerationRepository;
+use App\Repositories\OpsBoardRepository;
 use App\Repositories\TenantAlertRepository;
 use App\Repositories\TenantCommunityFeedRepository;
 use App\Repositories\TenantRepository;
@@ -26,7 +27,8 @@ class OrganizationDashboardController
         private ?EnlistmentRepository $enlistmentRepository = null,
         private ?TenantCommunityFeedRepository $communityFeed = null,
         private ?CommunityEventRepository $eventRepository = null,
-        private ?TenantAlertRepository $tenantAlertRepository = null
+        private ?TenantAlertRepository $tenantAlertRepository = null,
+        private ?OpsBoardRepository $opsBoardRepository = null
     ) {
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
@@ -35,6 +37,7 @@ class OrganizationDashboardController
         $this->communityFeed ??= new TenantCommunityFeedRepository();
         $this->eventRepository ??= new CommunityEventRepository();
         $this->tenantAlertRepository ??= new TenantAlertRepository();
+        $this->opsBoardRepository ??= new OpsBoardRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -177,6 +180,38 @@ class OrganizationDashboardController
             $alertsError = 'Alertes locales indisponibles.';
         }
 
+        $opsBoardFilters = [
+            'unit_id' => trim((string) $request->query('unit', '')),
+            'period_start' => trim((string) $request->query('from', '')),
+            'period_end' => trim((string) $request->query('to', '')),
+            'block_type' => trim((string) $request->query('type', '')),
+            'visibility_level' => trim((string) $request->query('visibility', '')),
+            'priority' => trim((string) $request->query('priority', '')),
+        ];
+
+        $opsBoardItems = [];
+        $opsBoardError = null;
+        try {
+            $this->opsBoardRepository->expirePastItems($tenantId);
+            $opsBoardItems = $this->opsBoardRepository->listBoardItemsForTenant($tenantId, $opsBoardFilters);
+        } catch (\Throwable) {
+            $opsBoardError = 'Mur opérationnel indisponible (tables absentes ou erreur SQL).';
+        }
+
+        $opsByType = [
+            'permanence_speciale' => [],
+            'info_pratique' => [],
+            'manifestation' => [],
+            'flash_info' => [],
+        ];
+        foreach ($opsBoardItems as $item) {
+            $type = (string) ($item['block_type'] ?? '');
+            if (!array_key_exists($type, $opsByType)) {
+                continue;
+            }
+            $opsByType[$type][] = $item;
+        }
+
         $onboardingAnomalies = [
             'profils_incomplets' => count($workQueue['incomplete_profiles'] ?? []),
             'membres_sans_unite' => count($workQueue['users_without_unit'] ?? []),
@@ -199,6 +234,9 @@ class OrganizationDashboardController
             'operationsAlertsError' => $alertsError,
             'operationsOnboardingAnomalies' => $onboardingAnomalies,
             'operationsWorkQueue' => $workQueue,
+            'operationsOpsBoardItemsByType' => $opsByType,
+            'operationsOpsBoardFilters' => $opsBoardFilters,
+            'operationsOpsBoardError' => $opsBoardError,
         ]);
     }
 

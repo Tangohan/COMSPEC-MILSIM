@@ -13,7 +13,9 @@ $eventsError = $operationsEventsError ?? null;
 $activeAlerts = $operationsActiveAlerts ?? [];
 $alertsError = $operationsAlertsError ?? null;
 $anomalies = $operationsOnboardingAnomalies ?? [];
-$workQueue = $operationsWorkQueue ?? [];
+$opsByType = is_array($operationsOpsBoardItemsByType ?? null) ? $operationsOpsBoardItemsByType : [];
+$opsFilters = is_array($operationsOpsBoardFilters ?? null) ? $operationsOpsBoardFilters : [];
+$opsError = $operationsOpsBoardError ?? null;
 
 $profileLabels = [
     'commandement' => 'Commandement',
@@ -22,13 +24,45 @@ $profileLabels = [
     'formation' => 'Formation',
 ];
 
-$formatDate = static function (?string $raw): string {
+$priorityClasses = [
+    'critical' => 'border-rose-300 bg-rose-50 text-rose-900',
+    'high' => 'border-amber-300 bg-amber-50 text-amber-900',
+    'normal' => 'border-slate-200 bg-white text-slate-900',
+    'low' => 'border-blue-200 bg-blue-50 text-blue-900',
+];
+
+$priorityLabels = [
+    'critical' => 'Critique',
+    'high' => 'Élevée',
+    'normal' => 'Normale',
+    'low' => 'Informationnelle',
+];
+
+$formatDate = static function (?string $raw, string $format = 'd/m/Y H:i'): string {
     if ($raw === null || trim($raw) === '') {
         return '—';
     }
     $ts = strtotime($raw);
 
-    return $ts ? date('d/m/Y H:i', $ts) : (string) $raw;
+    return $ts ? date($format, $ts) : (string) $raw;
+};
+
+$formatRange = static function (?string $from, ?string $to) use ($formatDate): string {
+    if (($from === null || trim($from) === '') && ($to === null || trim($to) === '')) {
+        return '—';
+    }
+
+    return $formatDate($from, 'd/m/Y') . ' → ' . $formatDate($to, 'd/m/Y');
+};
+
+$escape = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+
+$renderPriorityBadge = static function (array $item) use ($priorityClasses, $priorityLabels, $escape): string {
+    $prio = (string) ($item['priority'] ?? 'normal');
+    $cls = $priorityClasses[$prio] ?? $priorityClasses['normal'];
+    $lbl = $priorityLabels[$prio] ?? ucfirst($prio);
+
+    return '<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ' . $cls . '">' . $escape($lbl) . '</span>';
 };
 ?>
 
@@ -38,7 +72,7 @@ $formatDate = static function (?string $raw): string {
             <div>
                 <p class="text-[11px] uppercase tracking-[0.2em] font-bold text-emerald-700">Control Tower</p>
                 <h1 class="text-2xl font-black text-slate-900 mt-1">Centre des opérations</h1>
-                <p class="text-sm text-slate-600 mt-2">Vue unifiée des incidents, recrutements, événements, alertes et anomalies d’onboarding.</p>
+                <p class="text-sm text-slate-600 mt-2">Socle unique fusionnant tableau de pilotage (missions, activités, affectations) et mur d’information opérationnelle.</p>
             </div>
             <a href="<?= url('back-office') ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Retour tableau de bord</a>
         </div>
@@ -88,6 +122,128 @@ $formatDate = static function (?string $raw): string {
             <p class="mt-2 text-3xl font-black text-slate-900"><?= count($activeAlerts) ?></p>
             <a class="mt-3 inline-flex text-sm font-semibold text-emerald-700 hover:underline" href="<?= url('back-office/alerts') ?>">Escalader →</a>
         </article>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <h2 class="text-sm font-black uppercase tracking-[0.16em] text-slate-900">Mur opérationnel (diffusion structurée)</h2>
+                <p class="mt-1 text-xs text-slate-500">Filtres globaux multi-tenant : unité, période, type, visibilité, priorité.</p>
+            </div>
+            <a href="<?= url('back-office/events') ?>" class="text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline">Lier un item à un event →</a>
+        </div>
+
+        <form method="get" action="<?= htmlspecialchars(url('back-office/centre-operations'), ENT_QUOTES, 'UTF-8') ?>" class="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+            <input type="hidden" name="profile" value="<?= $escape($profile) ?>">
+            <input type="text" name="unit" value="<?= $escape((string) ($opsFilters['unit_id'] ?? '')) ?>" placeholder="Unité (id)" class="rounded-lg border border-slate-300 px-3 py-2 text-xs">
+            <input type="date" name="from" value="<?= $escape((string) ($opsFilters['period_start'] ?? '')) ?>" class="rounded-lg border border-slate-300 px-3 py-2 text-xs">
+            <input type="date" name="to" value="<?= $escape((string) ($opsFilters['period_end'] ?? '')) ?>" class="rounded-lg border border-slate-300 px-3 py-2 text-xs">
+            <select name="type" class="rounded-lg border border-slate-300 px-3 py-2 text-xs">
+                <option value="">Type (tous)</option>
+                <?php foreach (['permanence_speciale' => 'Permanence', 'info_pratique' => 'Info pratique', 'manifestation' => 'Manifestation', 'flash_info' => 'Flash info'] as $value => $label): ?>
+                    <option value="<?= $value ?>" <?= (($opsFilters['block_type'] ?? '') === $value) ? 'selected' : '' ?>><?= $label ?></option>
+                <?php endforeach; ?>
+            </select>
+            <input type="text" name="visibility" value="<?= $escape((string) ($opsFilters['visibility_level'] ?? '')) ?>" placeholder="Visibilité (tenant/unit/role...)" class="rounded-lg border border-slate-300 px-3 py-2 text-xs">
+            <select name="priority" class="rounded-lg border border-slate-300 px-3 py-2 text-xs">
+                <option value="">Priorité (toutes)</option>
+                <?php foreach ($priorityLabels as $value => $label): ?>
+                    <option value="<?= $value ?>" <?= (($opsFilters['priority'] ?? '') === $value) ? 'selected' : '' ?>><?= $escape($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <div class="md:col-span-3 xl:col-span-6 flex gap-2">
+                <button type="submit" class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white">Filtrer</button>
+                <a href="<?= htmlspecialchars(url('back-office/centre-operations') . '?profile=' . urlencode($profile), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">Réinitialiser</a>
+            </div>
+        </form>
+
+        <?php if ($opsError): ?>
+            <p class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"><?= $escape((string) $opsError) ?></p>
+        <?php endif; ?>
+
+        <details open class="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
+            <summary class="cursor-pointer text-sm font-bold text-slate-900">A. Permanences particulières (<?= count($opsByType['permanence_speciale'] ?? []) ?>)</summary>
+            <div class="mt-3 overflow-x-auto">
+                <table class="min-w-full text-xs">
+                    <thead class="text-left text-slate-500 uppercase tracking-wide"><tr><th class="p-2">Type</th><th class="p-2">Personnels</th><th class="p-2">Validité</th><th class="p-2">Visibilité</th></tr></thead>
+                    <tbody>
+                        <?php foreach (($opsByType['permanence_speciale'] ?? []) as $item): ?>
+                            <tr class="border-t border-slate-100">
+                                <td class="p-2 font-semibold text-slate-800"><?= $escape((string) ($item['title'] ?? 'Permanence')) ?> <?= !empty($item['is_pinned']) ? '📌' : '' ?> <?= $renderPriorityBadge($item) ?></td>
+                                <td class="p-2 text-slate-600"><?= $escape((string) ($item['assignment_summary'] ?? '—')) ?></td>
+                                <td class="p-2 text-slate-600"><?= $escape($formatRange((string) ($item['start_date'] ?? ''), (string) ($item['end_date'] ?? ''))) ?></td>
+                                <td class="p-2 text-slate-600"><?= $escape((string) ($item['visibility_level'] ?? 'tenant')) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (($opsByType['permanence_speciale'] ?? []) === []): ?><tr><td colspan="4" class="p-2 text-slate-500">Aucune permanence spéciale publiée.</td></tr><?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <details open class="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
+            <summary class="cursor-pointer text-sm font-bold text-slate-900">B. Infos pratiques (<?= count($opsByType['info_pratique'] ?? []) ?>)</summary>
+            <div class="mt-3 overflow-x-auto">
+                <table class="min-w-full text-xs">
+                    <thead class="text-left text-slate-500 uppercase tracking-wide"><tr><th class="p-2">Visibilité</th><th class="p-2">Début</th><th class="p-2">Fin</th><th class="p-2">Libellé</th></tr></thead>
+                    <tbody>
+                        <?php foreach (($opsByType['info_pratique'] ?? []) as $item): ?>
+                            <tr class="border-t border-slate-100">
+                                <td class="p-2 text-slate-700"><?= $escape((string) ($item['visibility_level'] ?? 'tenant')) ?></td>
+                                <td class="p-2 text-slate-600"><?= $escape($formatDate((string) ($item['start_date'] ?? ''), 'd/m/Y')) ?></td>
+                                <td class="p-2 text-slate-600"><?= $escape($formatDate((string) ($item['end_date'] ?? ''), 'd/m/Y')) ?></td>
+                                <td class="p-2 font-semibold text-slate-800"><?= !empty($item['is_pinned']) ? '📌 ' : '' ?><?= $escape((string) ($item['title'] ?? 'Info')) ?> <?= $renderPriorityBadge($item) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (($opsByType['info_pratique'] ?? []) === []): ?><tr><td colspan="4" class="p-2 text-slate-500">Aucune info pratique publiée.</td></tr><?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <details open class="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
+            <summary class="cursor-pointer text-sm font-bold text-slate-900">C. Manifestations particulières (<?= count($opsByType['manifestation'] ?? []) ?>)</summary>
+            <div class="mt-3 overflow-x-auto">
+                <table class="min-w-full text-xs">
+                    <thead class="text-left text-slate-500 uppercase tracking-wide"><tr><th class="p-2">Titre</th><th class="p-2">Début</th><th class="p-2">Fin</th><th class="p-2">Visibilité</th></tr></thead>
+                    <tbody>
+                        <?php foreach (($opsByType['manifestation'] ?? []) as $item): ?>
+                            <tr class="border-t border-slate-100">
+                                <td class="p-2 font-semibold text-slate-800"><?= $escape((string) ($item['title'] ?? 'Manifestation')) ?> <?= $renderPriorityBadge($item) ?></td>
+                                <td class="p-2 text-slate-600"><?= $escape($formatDate((string) ($item['start_date'] ?? ''), 'd/m/Y')) ?></td>
+                                <td class="p-2 text-slate-600"><?= $escape($formatDate((string) ($item['end_date'] ?? ''), 'd/m/Y')) ?></td>
+                                <td class="p-2 text-slate-700"><?= $escape((string) ($item['visibility_level'] ?? 'tenant')) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (($opsByType['manifestation'] ?? []) === []): ?><tr><td colspan="4" class="p-2 text-slate-500">Aucune manifestation particulière publiée.</td></tr><?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <details open class="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
+            <summary class="cursor-pointer text-sm font-bold text-slate-900">D. Flash infos (<?= count($opsByType['flash_info'] ?? []) ?>)</summary>
+            <div class="mt-3 grid gap-3 md:grid-cols-2">
+                <?php foreach (($opsByType['flash_info'] ?? []) as $item): ?>
+                    <?php
+                    $prio = (string) ($item['priority'] ?? 'normal');
+                    $cardClass = $priorityClasses[$prio] ?? $priorityClasses['normal'];
+                    ?>
+                    <article class="rounded-xl border p-4 shadow-sm <?= $cardClass ?>">
+                        <p class="text-[10px] uppercase tracking-[0.18em] font-bold">Flash info <?= !empty($item['is_pinned']) ? '• Épinglé' : '' ?></p>
+                        <h3 class="mt-1 text-base font-black"><?= $escape((string) ($item['title'] ?? 'Annonce')) ?></h3>
+                        <?php if (!empty($item['summary'])): ?>
+                            <p class="mt-2 text-sm leading-relaxed"><?= nl2br($escape((string) $item['summary'])) ?></p>
+                        <?php endif; ?>
+                        <?php if (!empty($item['content'])): ?>
+                            <div class="mt-2 rounded-lg bg-white/70 p-3 text-xs leading-relaxed prose prose-sm max-w-none"><?= nl2br($escape((string) $item['content'])) ?></div>
+                        <?php endif; ?>
+                        <p class="mt-2 text-[11px] opacity-80">Affichage : <?= $escape($formatRange((string) ($item['start_date'] ?? ''), (string) ($item['end_date'] ?? ''))) ?> • Cible <?= $escape((string) ($item['visibility_level'] ?? 'tenant')) ?></p>
+                    </article>
+                <?php endforeach; ?>
+                <?php if (($opsByType['flash_info'] ?? []) === []): ?><p class="text-sm text-slate-500">Aucun flash info actif.</p><?php endif; ?>
+            </div>
+        </details>
     </section>
 
     <section class="grid gap-6 xl:grid-cols-3">
