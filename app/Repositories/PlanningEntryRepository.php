@@ -229,7 +229,7 @@ final class PlanningEntryRepository
         if (!in_array($validationStatus, $allowed, true)) {
             return false;
         }
-        $status = $validationStatus === 'active' ? 'active' : 'draft';
+        $status = in_array($validationStatus, ['active', 'validated'], true) ? 'active' : 'draft';
         if ($validationStatus === 'rejected') {
             $status = 'cancelled';
         }
@@ -503,6 +503,341 @@ final class PlanningEntryRepository
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (\PDOException) {
             return [];
+        }
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findByIdForTenant(int $tenantId, int $entryId): ?array
+    {
+        if (!$this->hasTable('planning_entries') || $tenantId < 1 || $entryId < 1) {
+            return null;
+        }
+        try {
+            $stmt = $this->pdo->prepare('SELECT * FROM planning_entries WHERE id = ? AND tenant_id = ? LIMIT 1');
+            $stmt->execute([$entryId, $tenantId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $row ?: null;
+        } catch (\PDOException) {
+            return null;
+        }
+    }
+
+    /**
+     * Liste portail : entrées actives / validées, filtrées par niveau de sensibilité.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listForPortal(int $tenantId, array $filters, int $viewerUserId, bool $viewerCanSeeRestricted): array
+    {
+        if (!$this->hasTable('planning_entries')) {
+            return [];
+        }
+        $where = [
+            'e.tenant_id = :tenant_id',
+            'e.status = \'active\'',
+            'e.validation_status NOT IN (\'draft\',\'rejected\')',
+        ];
+        $params = ['tenant_id' => $tenantId];
+        if (!$viewerCanSeeRestricted) {
+            $where[] = 'e.security_level = \'unit_public\'';
+            $where[] = '(e.visibility_scope != \'private\' OR e.created_by = :viewer_uid)';
+            $params['viewer_uid'] = $viewerUserId;
+        }
+
+        foreach (['entry_type', 'operational_status'] as $filterKey) {
+            $value = trim((string) ($filters[$filterKey] ?? ''));
+            if ($value !== '') {
+                $where[] = 'e.' . $filterKey . ' = :' . $filterKey;
+                $params[$filterKey] = $value;
+            }
+        }
+
+        $periodStart = trim((string) ($filters['period_start'] ?? ''));
+        $periodEnd = trim((string) ($filters['period_end'] ?? ''));
+        if ($periodStart !== '' && $periodEnd !== '') {
+            $where[] = '((e.start_date IS NULL OR e.start_date <= :period_end) AND (e.end_date IS NULL OR e.end_date >= :period_start))';
+            $params['period_start'] = $periodStart;
+            $params['period_end'] = $periodEnd;
+        }
+
+        $query = 'SELECT e.*, c.name AS category_name, c.color AS category_color,
+                chief.name AS chief_name, deputy.name AS deputy_name, repl.name AS replacement_name,
+                (SELECT GROUP_CONCAT(DISTINCT t.tag ORDER BY t.tag SEPARATOR ", ") FROM planning_entry_tags t WHERE t.planning_entry_id = e.id) AS tags_list,
+                (SELECT COUNT(*) FROM planning_entry_checklists cl WHERE cl.planning_entry_id = e.id AND cl.is_required = 1) AS checklist_required,
+                (SELECT COUNT(*) FROM planning_entry_checklists cl WHERE cl.planning_entry_id = e.id AND cl.is_required = 1 AND cl.is_done = 1) AS checklist_done
+            FROM planning_entries e
+            LEFT JOIN planning_categories c ON c.id = e.category_id
+            LEFT JOIN users chief ON chief.id = e.chief_user_id
+            LEFT JOIN users deputy ON deputy.id = e.deputy_user_id
+            LEFT JOIN users repl ON repl.id = e.replacement_user_id
+            WHERE ' . implode(' AND ', $where) . '
+            ORDER BY FIELD(e.priority, "critical", "high", "normal", "low"), e.display_order ASC, COALESCE(e.start_date, e.created_at) ASC, e.id DESC';
+
+        try {
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute($params);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\PDOException) {
+            return [];
+        }
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listPersonnelRowsForEntry(int $entryId): array
+    {
+        if (!$this->hasTable('planning_entry_personnel')) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT p.*, COALESCE(NULLIF(TRIM(u.display_name), \'\'), NULLIF(TRIM(u.callsign), \'\'), u.email) AS user_label
+             FROM planning_entry_personnel p
+             INNER JOIN users u ON u.id = p.user_id
+             WHERE p.planning_entry_id = ?
+             ORDER BY p.is_lead DESC, p.id ASC'
+        );
+        $stmt->execute([$entryId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listAssetRowsForEntry(int $entryId): array
+    {
+        if (!$this->hasTable('planning_entry_assets')) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM planning_entry_assets WHERE planning_entry_id = ? ORDER BY id ASC');
+        $stmt->execute([$entryId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listNoteRowsForEntry(int $entryId): array
+    {
+        if (!$this->hasTable('planning_entry_notes')) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM planning_entry_notes WHERE planning_entry_id = ? ORDER BY is_pinned DESC, id ASC');
+        $stmt->execute([$entryId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listChecklistRowsForEntry(int $entryId): array
+    {
+        if (!$this->hasTable('planning_entry_checklists')) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM planning_entry_checklists WHERE planning_entry_id = ? ORDER BY id ASC');
+        $stmt->execute([$entryId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * @param list<array{user_id: int, role_label: string, is_lead: bool}> $rows
+     */
+    public function replacePersonnelForEntry(int $tenantId, int $entryId, array $rows, int $actorUserId): void
+    {
+        if (!$this->hasTable('planning_entry_personnel') || !$this->findByIdForTenant($tenantId, $entryId)) {
+            return;
+        }
+        $this->pdo->prepare('DELETE FROM planning_entry_personnel WHERE planning_entry_id = ?')->execute([$entryId]);
+        $ins = $this->pdo->prepare('INSERT INTO planning_entry_personnel (planning_entry_id, user_id, role_label, is_lead) VALUES (?, ?, ?, ?)');
+        foreach ($rows as $r) {
+            $uid = (int) ($r['user_id'] ?? 0);
+            if ($uid < 1) {
+                continue;
+            }
+            $rl = isset($r['role_label']) ? trim((string) $r['role_label']) : '';
+            $ins->execute([
+                $entryId,
+                $uid,
+                $rl !== '' ? $rl : null,
+                !empty($r['is_lead']) ? 1 : 0,
+            ]);
+        }
+        $this->logAction($entryId, $actorUserId, 'assignment', 'Affectations personnel mises à jour');
+    }
+
+    /**
+     * @param list<array{type: string, label: string, reference: string, state: string}> $rows
+     */
+    public function replaceAssetsForEntry(int $tenantId, int $entryId, array $rows, int $actorUserId): void
+    {
+        if (!$this->hasTable('planning_entry_assets') || !$this->findByIdForTenant($tenantId, $entryId)) {
+            return;
+        }
+        $this->pdo->prepare('DELETE FROM planning_entry_assets WHERE planning_entry_id = ?')->execute([$entryId]);
+        $hasState = $this->columnExists('planning_entry_assets', 'asset_state');
+        if ($hasState) {
+            $ins = $this->pdo->prepare('INSERT INTO planning_entry_assets (planning_entry_id, asset_type, asset_label, asset_reference, asset_state) VALUES (?, ?, ?, ?, ?)');
+        } else {
+            $ins = $this->pdo->prepare('INSERT INTO planning_entry_assets (planning_entry_id, asset_type, asset_label, asset_reference) VALUES (?, ?, ?, ?)');
+        }
+        foreach ($rows as $r) {
+            $label = trim((string) ($r['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+            $type = trim((string) ($r['type'] ?? 'moyen')) ?: 'moyen';
+            $ref = trim((string) ($r['reference'] ?? ''));
+            $state = trim((string) ($r['state'] ?? 'available'));
+            if ($hasState) {
+                $ins->execute([$entryId, $type, $label, $ref !== '' ? $ref : null, $state !== '' ? $state : 'available']);
+            } else {
+                $ins->execute([$entryId, $type, $label, $ref !== '' ? $ref : null]);
+            }
+        }
+        $this->logAction($entryId, $actorUserId, 'update', 'Moyens mis à jour');
+    }
+
+    /**
+     * @param list<array{type: string, content: string, pinned: bool}> $rows
+     */
+    public function replaceNotesForEntry(int $tenantId, int $entryId, array $rows, int $actorUserId): void
+    {
+        if (!$this->hasTable('planning_entry_notes') || !$this->findByIdForTenant($tenantId, $entryId)) {
+            return;
+        }
+        $this->pdo->prepare('DELETE FROM planning_entry_notes WHERE planning_entry_id = ?')->execute([$entryId]);
+        $ins = $this->pdo->prepare('INSERT INTO planning_entry_notes (planning_entry_id, note_type, content, is_pinned) VALUES (?, ?, ?, ?)');
+        foreach ($rows as $r) {
+            $content = trim((string) ($r['content'] ?? ''));
+            if ($content === '') {
+                continue;
+            }
+            $nt = trim((string) ($r['type'] ?? 'consigne'));
+            $allowed = ['consigne', 'info', 'restriction', 'brief'];
+            if (!in_array($nt, $allowed, true)) {
+                $nt = 'consigne';
+            }
+            $ins->execute([$entryId, $nt, $content, !empty($r['pinned']) ? 1 : 0]);
+        }
+        $this->logAction($entryId, $actorUserId, 'update', 'Consignes / notes mises à jour');
+    }
+
+    /** @param list<string> $tags */
+    public function replaceTagsForEntry(int $tenantId, int $entryId, array $tags, int $actorUserId): void
+    {
+        if (!$this->hasTable('planning_entry_tags') || !$this->findByIdForTenant($tenantId, $entryId)) {
+            return;
+        }
+        $this->pdo->prepare('DELETE FROM planning_entry_tags WHERE planning_entry_id = ?')->execute([$entryId]);
+        $ins = $this->pdo->prepare('INSERT INTO planning_entry_tags (planning_entry_id, tag) VALUES (?, ?)');
+        foreach ($tags as $raw) {
+            $t = strtolower(trim((string) $raw));
+            if ($t === '' || strlen($t) > 80) {
+                continue;
+            }
+            try {
+                $ins->execute([$entryId, $t]);
+            } catch (\PDOException) {
+            }
+        }
+        $this->logAction($entryId, $actorUserId, 'update', 'Étiquettes mises à jour');
+    }
+
+    /** @param array<string, mixed> $payload same shape as create() */
+    public function updateEntry(int $tenantId, int $entryId, array $payload, int $actorUserId): bool
+    {
+        if (!$this->hasTable('planning_entries') || !$this->findByIdForTenant($tenantId, $entryId)) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare('UPDATE planning_entries SET
+            title = :title, description = :description, entry_type = :entry_type, category_id = :category_id,
+            linked_type = :linked_type, linked_id = :linked_id,
+            start_date = :start_date, end_date = :end_date, all_day = :all_day,
+            priority = :priority, display_order = :display_order,
+            visibility_scope = :visibility_scope, security_level = :security_level,
+            operational_status = :operational_status, phase_current = :phase_current,
+            chief_user_id = :chief_user_id, deputy_user_id = :deputy_user_id,
+            replacement_user_id = :replacement_user_id, replacement_auto_activate = :replacement_auto_activate,
+            command_chain = :command_chain, accountability_note = :accountability_note,
+            location_lat = :location_lat, location_lng = :location_lng, operation_zone = :operation_zone, map_link = :map_link,
+            dossier_ref = :dossier_ref, legal_constraints = :legal_constraints,
+            fire_window_start = :fire_window_start, fire_window_end = :fire_window_end,
+            updated_at = CURRENT_TIMESTAMP
+            WHERE id = :id AND tenant_id = :tenant_id');
+        $ok = $stmt->execute([
+            'title' => (string) $payload['title'],
+            'description' => $payload['description'] ?: null,
+            'entry_type' => (string) $payload['entry_type'],
+            'category_id' => $payload['category_id'] ?: null,
+            'linked_type' => $payload['linked_type'] ?: null,
+            'linked_id' => $payload['linked_id'] ?: null,
+            'start_date' => $payload['start_date'] ?: null,
+            'end_date' => $payload['end_date'] ?: null,
+            'all_day' => !empty($payload['all_day']) ? 1 : 0,
+            'priority' => (string) ($payload['priority'] ?? 'normal'),
+            'display_order' => (int) ($payload['display_order'] ?? 100),
+            'visibility_scope' => (string) ($payload['visibility_scope'] ?? 'tenant'),
+            'security_level' => (string) ($payload['security_level'] ?? 'unit_public'),
+            'operational_status' => (string) ($payload['operational_status'] ?? 'planned'),
+            'phase_current' => (string) ($payload['phase_current'] ?? 'phase_1'),
+            'chief_user_id' => $payload['chief_user_id'] ?: null,
+            'deputy_user_id' => $payload['deputy_user_id'] ?: null,
+            'replacement_user_id' => $payload['replacement_user_id'] ?: null,
+            'replacement_auto_activate' => !empty($payload['replacement_auto_activate']) ? 1 : 0,
+            'command_chain' => $payload['command_chain'] ?: null,
+            'accountability_note' => $payload['accountability_note'] ?: null,
+            'location_lat' => $payload['location_lat'] ?: null,
+            'location_lng' => $payload['location_lng'] ?: null,
+            'operation_zone' => $payload['operation_zone'] ?: null,
+            'map_link' => $payload['map_link'] ?: null,
+            'dossier_ref' => $payload['dossier_ref'] ?: null,
+            'legal_constraints' => $payload['legal_constraints'] ?: null,
+            'fire_window_start' => $payload['fire_window_start'] ?: null,
+            'fire_window_end' => $payload['fire_window_end'] ?: null,
+            'id' => $entryId,
+            'tenant_id' => $tenantId,
+        ]);
+        if ($ok) {
+            $this->logAction($entryId, $actorUserId, 'update', 'Fiche entrée mise à jour');
+            $this->registerRealtimeEvent($tenantId, $entryId, 'entry_updated', ['title' => (string) $payload['title']]);
+        }
+
+        return (bool) $ok;
+    }
+
+    public function duplicateEntry(int $tenantId, int $entryId, int $actorUserId): ?int
+    {
+        $src = $this->findByIdForTenant($tenantId, $entryId);
+        if ($src === null) {
+            return null;
+        }
+        unset($src['id']);
+        $src['title'] = '[Copie] ' . (string) ($src['title'] ?? 'Entrée');
+        $src['tenant_id'] = $tenantId;
+        $src['created_by'] = $actorUserId;
+        $src['status'] = 'draft';
+        $src['validation_status'] = 'draft';
+        $src['operational_status'] = 'planned';
+        $newId = $this->create($src);
+        if ($newId < 1) {
+            return null;
+        }
+        $this->copyEntryChildren($entryId, $newId);
+        $this->logAction($newId, $actorUserId, 'create', 'Duplication depuis #' . $entryId);
+
+        return $newId;
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $stmt->execute([$table, $column]);
+
+            return (bool) $stmt->fetchColumn();
+        } catch (\Throwable) {
+            return false;
         }
     }
 

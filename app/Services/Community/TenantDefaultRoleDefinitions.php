@@ -142,6 +142,9 @@ final class TenantDefaultRoleDefinitions
     public static function defaultPermissionSlugsForOperationalRoles(): array
     {
         return [
+            'member' => [
+                'operational.board.view',
+            ],
             'hr' => [
                 'documents.view', 'forum.view', 'forum.create_topic', 'forum.reply', 'training.view',
                 'invitations.send', 'admin.members.view', 'personnel.profile.view', 'personnel.profile.update',
@@ -150,6 +153,7 @@ final class TenantDefaultRoleDefinitions
             'recruiter' => [
                 'forum.view', 'forum.create_topic', 'forum.reply',
                 'invitations.send', 'admin.members.view', 'personnel.profile.view',
+                'operational.board.view',
             ],
             'instructor' => [
                 'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
@@ -157,6 +161,7 @@ final class TenantDefaultRoleDefinitions
                 'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
                 'personnel.profile.view',
                 'dashboard.pins.manage',
+                'operational.board.view',
             ],
             'medic' => [
                 'forum.view', 'forum.reply',
@@ -181,6 +186,7 @@ final class TenantDefaultRoleDefinitions
                 'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                 'documents.view', 'documents.download.standard', 'training.view',
                 'personnel.profile.view',
+                'operational.board.view',
                 'dashboard.pins.manage',
                 'interteam.missions.respond',
                 'cooperation.missions.respond',

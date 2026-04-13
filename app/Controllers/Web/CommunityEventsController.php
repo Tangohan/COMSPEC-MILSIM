@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Web;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -64,6 +65,12 @@ final class CommunityEventsController
             }
         }
 
+        $gate = Gate::getInstance();
+        $canPublishOperationalBoard = $gate->allows('operational.board.edit')
+            || $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('admin.system');
+
         return Response::view('layout.main', [
             'title' => 'Événements & opérations',
             'content' => 'community.events',
@@ -72,6 +79,7 @@ final class CommunityEventsController
             'eventsQuota' => $this->featureGate->quotaStatusForFeature($tenantId, 'events'),
             'eventsCheckInFlags' => $checkInFlags,
             'calendar_subscription_url' => $calendarSubscriptionUrl,
+            'canPublishOperationalBoard' => $canPublishOperationalBoard,
         ]);
     }
 

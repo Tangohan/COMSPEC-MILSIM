@@ -166,6 +166,9 @@ final class PermissionImplication
         if (str_starts_with($permission, 'personnel.')) {
             return true;
         }
+        if (str_starts_with($permission, 'operational.board.')) {
+            return true;
+        }
 
         return $permission === 'invitations.send';
     }

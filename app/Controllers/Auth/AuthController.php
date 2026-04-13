@@ -19,6 +19,7 @@ use App\Services\Audit\AuditService;
 use App\Services\Auth\LoginSecurityNotificationService;
 use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
+use App\Support\LoginIntendedDestination;
 
 class AuthController
 {
@@ -83,6 +84,11 @@ class AuthController
             (int) $user['id']
         );
         $this->loginSecurityNotifications->onSuccessfulLogin($request, $user);
+
+        $after = LoginIntendedDestination::consumeRedirectUrl();
+        if ($after !== null) {
+            return Response::redirect($after);
+        }
 
         return Response::redirect(url('dashboard'));
     }

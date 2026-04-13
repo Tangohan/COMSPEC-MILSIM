@@ -45,6 +45,10 @@ final class ContainerIntegrations
             ),
             \App\Controllers\Web\OperationalBoardController::class => new \App\Controllers\Web\OperationalBoardController(
                 new \App\Repositories\PlanningEntryRepository(),
+                Container::get(\App\Repositories\UserRepository::class),
+                new \App\Repositories\CommunityEventRepository(),
+                new \App\Repositories\InterteamMissionRepository(),
+                Container::get(\App\Repositories\TrainingCourseRepository::class),
             ),
             \App\Services\Communications\TenantEmailDispatchService::class => new \App\Services\Communications\TenantEmailDispatchService(
                 new \App\Services\Communications\TenantEmailRecipientResolver(

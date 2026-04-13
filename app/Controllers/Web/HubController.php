@@ -38,6 +38,27 @@ class HubController
                 ],
             ],
         ];
+        $canOpsBoardEdit = $gate->allows('operational.board.edit')
+            || $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('admin.system');
+        if ($canOpsBoardEdit) {
+            $sections[0]['entries'][] = [
+                'label' => 'Pilotage du mur opérationnel',
+                'url' => url('back-office/tableau-operationnel'),
+                'description' => 'Publication, validation et mise à jour des entrées affichées au mur.',
+                'icon' => 'dashboard',
+                'accent' => 'amber',
+            ];
+        } elseif ($gate->allows('operational.board.view')) {
+            $sections[0]['entries'][] = [
+                'label' => 'Mur opérationnel',
+                'url' => url('tableau-operationnel'),
+                'description' => 'Permanences, consignes et informations publiées pour l’unité.',
+                'icon' => 'dashboard',
+                'accent' => 'amber',
+            ];
+        }
 
         $comm = [
             [

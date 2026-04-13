@@ -1,128 +1,15 @@
 <?php
 $base = url('');
-$title = $title ?? 'Dashboard — Athena';
+$title = $title ?? 'Tableau de bord — Athena';
 $showcase_training_feature = $showcase_training_feature ?? false;
 $showcase_items = $showcase_items ?? [];
 $dashboard_tenant_label = $dashboard_tenant_label ?? null;
 $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
-$dash_header_ctx = function_exists('portal_header_context') ? portal_header_context() : [
-    'alerts' => [],
-    'alerts_count' => 0,
-    'alerts_severity' => 'info',
-    'display_name' => '',
-];
-$dash_grade_short = null;
-$dash_gr = $grade ?? null;
-if (is_array($dash_gr)) {
-    $dash_gt = trim((string) ($dash_gr['label_short'] ?? $dash_gr['short_name'] ?? $dash_gr['label_long'] ?? $dash_gr['name'] ?? ''));
-    $dash_grade_short = $dash_gt !== '' ? $dash_gt : null;
-}
 
-$dashBuiltNav = function_exists('build_navigation_menu') ? build_navigation_menu() : ['search' => ['enabled' => false]];
-$dashSearchEnabled = !empty($dashBuiltNav['search']['enabled']);
-$dashSearchUrl = (string) ($dashBuiltNav['search']['action'] ?? url('search'));
-$dashNavFullGroups = [];
-if (function_exists('navigation_scope_group_entries') && function_exists('navigation_scope_drawer_entries')) {
-    $dashNavFullGroups = navigation_scope_group_entries(navigation_scope_drawer_entries());
-}
 $dashRibbonEntries = [];
 if (function_exists('navigation_scope_drawer_entries')) {
     $dashRibbonEntries = array_slice(navigation_scope_drawer_entries(), 0, 16);
 }
-
-$dashCoopInterUnits = false;
-if (class_exists(\App\Core\Gate::class)) {
-    $dg = \App\Core\Gate::getInstance();
-    $dashCoopInterUnits = $dg->allows('admin.system')
-        || $dg->allows('admin.organization')
-        || $dg->allows('admin.access')
-        || (function_exists('can') && (
-            can('interteam.missions.manage') || can('interteam.missions.respond')
-            || can('cooperation.missions.view') || can('cooperation.missions.manage')
-            || can('cooperation.missions.create') || can('cooperation.missions.respond')
-        ));
-}
-
-/**
- * @param list<array<string, mixed>> $defs
- * @return list<array{label: string, href: string, path: string, active_match: string}>
- */
-$dashResolveNavLinks = static function (array $defs): array {
-    $out = [];
-    foreach ($defs as $def) {
-        if (!is_array($def) || !function_exists('navigation_resolve_link')) {
-            continue;
-        }
-        $r = navigation_resolve_link($def);
-        if ($r !== null) {
-            $out[] = $r;
-        }
-    }
-
-    return $out;
-};
-
-$dashQuickLinks = $dashResolveNavLinks([
-    ['label' => 'Tableau de bord', 'path' => 'dashboard'],
-    ['label' => 'Mon activité', 'path' => 'activite'],
-    ['label' => 'Ma fiche personnelle', 'path' => 'personnel/me'],
-    ['label' => 'Guides dossier et préréglages', 'path' => 'personnel/tutorials'],
-    ['label' => 'Annuaire des profils', 'path' => 'personnel'],
-]);
-
-$dashOpsLinks = $dashResolveNavLinks([
-    ['label' => 'Hub mission', 'path' => 'hub'],
-    ['label' => 'Pointage', 'path' => 'pointage'],
-    ['label' => 'Communautés', 'path' => 'communities'],
-    ['label' => 'Événements', 'path' => 'evenements'],
-    ['label' => 'Messagerie interne', 'path' => 'messages'],
-    ['label' => 'Accueil du forum', 'path' => 'forum', 'permission' => 'forum.view'],
-    ['label' => 'Publier un sujet', 'path' => 'forum/new-topic', 'permission' => 'forum.create_topic'],
-    ['label' => 'ORBAT', 'path' => 'orbat'],
-    ['label' => 'Situation tactique (ATAK)', 'path' => 'atak'],
-    ['label' => 'TACMAP', 'path' => 'tacmap'],
-    ['label' => 'Overwatch', 'path' => 'overwatch'],
-    ['label' => 'Aide terrain', 'path' => 'operateur/terrain'],
-    ['label' => 'Installation et réglages ATAK', 'path' => 'atak/setup'],
-    ['label' => 'Tutoriel ATAK', 'path' => 'atak/tuto'],
-    ['label' => 'Télécharger le module ATAK', 'path' => 'atak/mod/download'],
-    ['label' => 'Dossier opérateur', 'path' => 'dossier-operateur/accreditation'],
-    ['label' => 'Équipement', 'path' => 'equipment'],
-    ['label' => 'Modpacks', 'path' => 'modpacks'],
-]);
-
-$dashResLinks = $dashResolveNavLinks([
-    ['label' => 'Accueil public', 'path' => ''],
-    ['label' => 'Bibliothèque documentaire', 'path' => 'documents', 'permission' => 'documents.view'],
-    ['label' => 'Gestion documentaire', 'path' => 'documents/gestion', 'permission' => 'documents.upload'],
-    ['label' => 'Tableau du courrier', 'path' => 'courrier', 'permission' => 'courrier.view'],
-    ['label' => 'Rédiger un courrier', 'path' => 'courrier/editor', 'permission' => 'courrier.create'],
-    ['label' => 'Modèles de courrier', 'path' => 'courrier/templates', 'any_permissions' => ['courrier.create', 'courrier.validate']],
-    ['label' => 'Historique du courrier', 'path' => 'courrier/history', 'permission' => 'courrier.view'],
-    ['label' => 'Archives du courrier', 'path' => 'courrier/archives', 'any_permissions' => ['courrier.view', 'courrier.archive']],
-    ['label' => 'Guide du portail', 'path' => 'documentation'],
-    ['label' => 'Références équipe', 'path' => 'documentation/references'],
-    ['label' => 'Recherche portail', 'path' => 'search'],
-    ['label' => 'Formations', 'path' => 'formations'],
-    ['label' => 'Mes parcours', 'path' => 'formations/mes-formations'],
-    ['label' => 'Compétences', 'path' => 'formations/competences', 'permission' => 'training.view'],
-    ['label' => 'Code d’accès formation', 'path' => 'formations/code-acces', 'permission' => 'training.view'],
-    ['label' => 'Modpacks', 'path' => 'modpacks'],
-    ['label' => 'Équipement (fiches)', 'path' => 'equipement'],
-]);
-if ($dashCoopInterUnits && function_exists('cooperation_mission_index_url')) {
-    $dashResLinks[] = [
-        'label' => 'Coopérations inter-unités',
-        'href' => cooperation_mission_index_url(),
-        'path' => '/cooperations',
-        'active_match' => 'prefix',
-    ];
-}
-
-$dashAccountLinks = $dashResolveNavLinks([
-    ['label' => 'Paramètres du compte', 'path' => 'account'],
-    ['label' => 'Préférences', 'path' => 'account/preferences'],
-]);
 ?>
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
@@ -163,35 +50,17 @@ $dashAccountLinks = $dashResolveNavLinks([
     <script defer src="https://unpkg.com/alpinejs@3/dist/cdn.min.js"></script>
     <?php endif; ?>
 </head>
-<body class="dashboard-shell bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
-    <?php $__dashGate = \App\Core\Gate::getInstance(); ?>
+<body class="dashboard-shell layout-light bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden antialiased">
+<?php
+$baseUrl = $base;
+require base_path('views/partials/header_portal.php');
+?>
+<script defer src="<?= htmlspecialchars($base) ?>/assets/js/portal-alerts.js"></script>
+<script defer src="<?= htmlspecialchars($base) ?>/assets/js/navigation.js"></script>
+<?php require base_path('views/partials/alert_banners.php'); ?>
+<?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
+
     <style>
-        /* Secours si le build Tailwind omet les utilitaires arbitraires (w-[200%], etc.) */
-        #dashDrawerTrack {
-            width: 200%;
-            will-change: transform;
-        }
-        @media (max-width: 1023px) {
-            .dashboard-shell #navDrawer {
-                width: min(100%, 340px);
-                max-width: min(100%, 340px);
-            }
-        }
-        /* Fenêtre de défilement : sans ceci, le track 200 % peut laisser voir les deux colonnes */
-        /* min-width:0 évite que le track 200 % impose une largeur min et affiche les deux colonnes */
-        #dashDrawerViewport {
-            width: 100%;
-            max-width: 100%;
-            min-width: 0;
-            overflow: hidden;
-        }
-        /* Grand écran : même logique tiroir (fermé par défaut, ouvert via le bouton menu) */
-        @media (min-width: 1024px) {
-            .dashboard-shell #navDrawer {
-                width: 18rem;
-                max-width: none;
-            }
-        }
         .dash-vers-details > summary {
             list-style: none;
         }
@@ -199,175 +68,10 @@ $dashAccountLinks = $dashResolveNavLinks([
             display: none;
         }
     </style>
-    <script>
-        function dashDrawerGoRoot() {
-            var tr = document.getElementById('dashDrawerTrack');
-            if (tr) tr.style.transform = 'translate3d(0,0,0)';
-        }
-        function dashDrawerIsWideLayout() {
-            return window.matchMedia('(min-width: 1024px)').matches;
-        }
-        function toggleMenu() {
-            document.body.classList.toggle('drawer-open');
-            if (document.body.classList.contains('drawer-open')) {
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.style.overflow = '';
-                dashDrawerGoRoot();
-            }
-        }
-        function dashOpenSubmenu(title, templateId) {
-            var tpl = document.getElementById(templateId);
-            var host = document.getElementById('dashDrawerSubLinks');
-            var subTitle = document.getElementById('dashDrawerSubTitle');
-            var tr = document.getElementById('dashDrawerTrack');
-            var vp = document.getElementById('dashDrawerViewport');
-            if (!tpl || !host || !subTitle || !tr) return;
-            subTitle.textContent = title;
-            host.replaceChildren();
-            if (tpl.tagName === 'TEMPLATE' && tpl.content) {
-                host.append(...tpl.content.cloneNode(true).children);
-            } else {
-                host.innerHTML = tpl.innerHTML;
-            }
-            /* Décalage d’exactement une « page » de tiroir (largeur du viewport), pas -50 % du track (plus fiable) */
-            var w = vp ? vp.offsetWidth : tr.parentElement ? tr.parentElement.offsetWidth : 0;
-            tr.style.transform = w ? ('translate3d(-' + w + 'px,0,0)') : 'translate3d(-50%,0,0)';
-        }
-        document.addEventListener('DOMContentLoaded', function () {
-            var back = document.getElementById('dashDrawerBack');
-            if (back) back.addEventListener('click', dashDrawerGoRoot);
-            if (dashDrawerIsWideLayout()) {
-                dashDrawerGoRoot();
-            }
-            var mq = window.matchMedia('(min-width: 1024px)');
-            var lastWide = mq.matches;
-            window.addEventListener('resize', function () {
-                var wide = window.matchMedia('(min-width: 1024px)').matches;
-                if (wide !== lastWide) {
-                    lastWide = wide;
-                    dashDrawerGoRoot();
-                }
-            });
-        });
-    </script>
-    <div id="bodyOverlay" class="overlay fixed inset-0 z-[110] bg-slate-900/40 backdrop-blur-sm" onclick="toggleMenu()"></div>
-
-    <aside id="navDrawer"
-           class="drawer-translate fixed top-0 left-0 z-[120] flex h-full w-[min(100%,340px)] flex-col overflow-x-hidden border-r border-slate-200/80 bg-gradient-to-b from-slate-50 to-slate-100/90 shadow-[8px_0_40px_-12px_rgba(15,23,42,0.35)] lg:w-72 lg:max-w-none lg:shadow-md"
-           aria-label="Menu latéral">
-        <div class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            <div id="dashDrawerViewport" class="min-h-0 min-w-0 flex-1 w-full max-w-full overflow-x-hidden overflow-y-hidden">
-            <div id="dashDrawerTrack" class="flex h-full w-[200%] shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]" style="transform:translate3d(0,0,0)">
-                <div class="flex h-full w-1/2 min-w-0 shrink-0 grow-0 basis-1/2 flex-col overflow-hidden">
-                    <div class="flex shrink-0 items-center justify-between border-b border-slate-200/60 px-5 pb-4 pt-5">
-                        <span class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Menu</span>
-                        <button type="button" onclick="toggleMenu()" class="rounded-xl p-2 text-slate-500 transition hover:bg-slate-200/80 hover:text-slate-900" aria-label="Fermer le menu">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
-                    </div>
-                    <nav class="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 py-4" aria-label="Navigation du tableau de bord">
-                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-emerald-950 transition hover:border-emerald-300 hover:bg-white hover:shadow-sm"
-                                onclick="dashOpenSubmenu('Plan du portail', 'dashTplFullNav')">
-                            <span>Plan du portail</span>
-                            <svg class="h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
-                        </button>
-                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-800 transition hover:border-slate-200/80 hover:bg-white/90 hover:shadow-sm"
-                                onclick="dashOpenSubmenu('Personnel', 'dashTplQuick')">
-                            <span>Personnel</span>
-                            <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
-                        </button>
-                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-800 transition hover:border-slate-200/80 hover:bg-white/90 hover:shadow-sm"
-                                onclick="dashOpenSubmenu('Mission et unité', 'dashTplOps')">
-                            <span>Mission et unité</span>
-                            <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
-                        </button>
-                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-800 transition hover:border-slate-200/80 hover:bg-white/90 hover:shadow-sm"
-                                onclick="dashOpenSubmenu('Ressources', 'dashTplRes')">
-                            <span>Ressources</span>
-                            <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
-                        </button>
-                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-800 transition hover:border-slate-200/80 hover:bg-white/90 hover:shadow-sm"
-                                onclick="dashOpenSubmenu('Compte', 'dashTplAccount')">
-                            <span>Compte</span>
-                            <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
-                        </button>
-                        <?php if ($__dashGate->allows('admin.system') || $__dashGate->allows('admin.organization') || $__dashGate->allows('admin.access')): ?>
-                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 transition hover:border-slate-200/80 hover:bg-white/90 hover:text-slate-800 hover:shadow-sm"
-                                onclick="dashOpenSubmenu('Administration', 'dashTplAdmin')">
-                            <span>Administration</span>
-                            <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
-                        </button>
-                        <?php endif; ?>
-                    </nav>
-                    <div class="shrink-0 space-y-4 border-t border-slate-200/60 bg-slate-50/80 px-5 py-5">
-                        <form method="post" action="<?= url('logout') ?>">
-                            <?= \App\Core\Csrf::field() ?>
-                            <button type="submit" class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 transition hover:text-slate-900">Déconnexion</button>
-                        </form>
-                        <div class="flex gap-3">
-                            <button type="button" class="flex h-9 w-9 cursor-default items-center justify-center rounded-full border border-dashed border-slate-200 bg-white text-[10px] font-black text-slate-400" disabled title="Bientôt disponible">IG</button>
-                            <button type="button" class="flex h-9 w-9 cursor-default items-center justify-center rounded-full border border-dashed border-slate-200 bg-white text-[10px] font-black text-slate-400" disabled title="Bientôt disponible">YT</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex h-full w-1/2 min-w-0 shrink-0 grow-0 basis-1/2 flex-col overflow-hidden bg-white">
-                    <div class="flex shrink-0 items-center gap-2 border-b border-slate-100 px-3 py-4">
-                        <button type="button" id="dashDrawerBack" class="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900" aria-label="Retour au menu principal">
-                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/></svg>
-                            Retour
-                        </button>
-                    </div>
-                    <p id="dashDrawerSubTitle" class="shrink-0 px-5 pb-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400"></p>
-                    <div id="dashDrawerSubLinks" class="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 pb-6"></div>
-                </div>
-            </div>
-            </div>
-        </div>
-    </aside>
-
-    <template id="dashTplQuick">
-        <?php foreach ($dashQuickLinks as $r): ?>
-        <a href="<?= htmlspecialchars((string) $r['href']) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()"><?= htmlspecialchars((string) $r['label']) ?></a>
-        <?php endforeach; ?>
-    </template>
-    <template id="dashTplOps">
-        <?php foreach ($dashOpsLinks as $r): ?>
-        <a href="<?= htmlspecialchars((string) $r['href']) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()"><?= htmlspecialchars((string) $r['label']) ?></a>
-        <?php endforeach; ?>
-    </template>
-    <template id="dashTplRes">
-        <?php foreach ($dashResLinks as $r): ?>
-        <a href="<?= htmlspecialchars((string) $r['href']) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()"><?= htmlspecialchars((string) $r['label']) ?></a>
-        <?php endforeach; ?>
-    </template>
-    <template id="dashTplAccount">
-        <?php foreach ($dashAccountLinks as $r): ?>
-        <a href="<?= htmlspecialchars((string) $r['href']) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()"><?= htmlspecialchars((string) $r['label']) ?></a>
-        <?php endforeach; ?>
-    </template>
-    <?php
-    $__dashTplAdminSystem = $__dashGate->allows('admin.system');
-    $__dashTplAdminOffice = $__dashGate->allows('admin.organization') || $__dashGate->allows('admin.access');
-    ?>
-    <template id="dashTplAdmin">
-        <?php if ($__dashTplAdminSystem): ?>
-        <a href="<?= htmlspecialchars(url('admin')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50" onclick="toggleMenu()">Administration système</a>
-        <?php endif; ?>
-        <?php if ($__dashTplAdminOffice): ?>
-        <a href="<?= htmlspecialchars(url('back-office')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50" onclick="toggleMenu()">Back-office</a>
-        <a href="<?= htmlspecialchars(url('back-office/tableau-operationnel')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50" onclick="toggleMenu()">Tableau opérationnel</a>
-        <?php endif; ?>
-        <?php if (!$__dashTplAdminSystem && !$__dashTplAdminOffice): ?>
-        <p class="rounded-xl px-4 py-3.5 text-sm leading-relaxed text-slate-500">Aucun raccourci n’est disponible pour le moment. Si vous pensez qu’il s’agit d’une erreur, contactez un responsable de l’unité.</p>
-        <?php endif; ?>
-    </template>
-
-    <?php require base_path('views/partials/dashboard_full_nav_template.php'); ?>
 
     <div class="min-h-screen">
     <div class="w-full border-b border-white/5 bg-slate-900 text-white/30 select-none">
-        <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 sm:px-8">
+        <div class="mx-auto flex max-w-[1800px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 sm:px-6 lg:px-8">
             <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[8px] uppercase tracking-[0.15em]">
                 <div class="flex items-center gap-2">
                     <span class="font-black tracking-[0.28em] text-emerald-500">ZULU</span>
@@ -411,17 +115,15 @@ $dashAccountLinks = $dashResolveNavLinks([
 
     <script>
         function formatClock(date, timeZone = 'UTC') {
-            return new Intl.DateTimeFormat('en-GB', { // en-GB pour le format 24h naturel
+            return new Intl.DateTimeFormat('en-GB', {
                 hour: '2-digit', minute: '2-digit', second: '2-digit',
                 hour12: false,
                 timeZone: timeZone
             }).format(date);
         }
-    
+
         function updateOperationalClocks() {
             const now = new Date();
-            
-            // Mapping des IDs et fuseaux
             const zones = {
                 't-zulu': 'UTC',
                 't-pst': 'America/Los_Angeles',
@@ -429,102 +131,47 @@ $dashAccountLinks = $dashResolveNavLinks([
                 't-est': 'America/New_York',
                 'clock-local': Intl.DateTimeFormat().resolvedOptions().timeZone
             };
-    
             for (const [id, tz] of Object.entries(zones)) {
                 const el = document.getElementById(id);
                 if (el) el.textContent = formatClock(now, tz);
             }
         }
-    
+
         setInterval(updateOperationalClocks, 1000);
         updateOperationalClocks();
     </script>
-    
-    <header class="sticky top-0 z-[100] w-full border-b border-slate-200/80 bg-slate-50/95 backdrop-blur-md">
-        <div class="relative mx-auto flex min-h-[3.5rem] max-w-5xl items-center justify-between gap-2 px-4 py-1.5 text-slate-900 sm:min-h-[3.75rem] sm:gap-3 sm:px-8 sm:py-0">
-            <div class="flex min-w-0 flex-1 items-center">
-                <button type="button" onclick="toggleMenu()" class="group flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-xl outline-none transition hover:bg-slate-200/60" aria-label="Ouvrir le menu">
-                    <span class="h-0.5 w-5 rounded-full bg-slate-900 transition group-hover:translate-x-0.5"></span>
-                    <span class="h-0.5 w-3 self-end rounded-full bg-slate-900 transition group-hover:w-5"></span>
-                </button>
-            </div>
-            <div class="absolute left-1/2 top-1/2 flex max-w-[42%] -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center sm:max-w-none">
-                <a href="<?= htmlspecialchars($base) ?>/" class="truncate text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 transition hover:text-emerald-700 sm:text-[11px] sm:tracking-[0.26em]">
-                    Athena Compsec
-                </a>
-                <span class="mt-0.5 text-[6px] font-semibold uppercase tracking-[0.35em] text-slate-400">Portail opérationnel</span>
-            </div>
-            <div class="flex min-w-0 flex-1 items-center justify-end gap-1 sm:justify-end sm:gap-2">
-                <div class="hidden min-w-0 max-w-[11rem] flex-col items-end text-right leading-tight sm:flex md:max-w-[14rem] lg:max-w-[18rem]">
-                    <?php if ($dashboard_tenant_label !== null && trim((string) $dashboard_tenant_label) !== ''): ?>
-                        <p class="w-full truncate text-[9px] font-black uppercase tracking-[0.12em] text-slate-500"><?= htmlspecialchars((string) $dashboard_tenant_label) ?></p>
-                    <?php endif; ?>
-                    <?php
-                    $dashName = trim((string) ($dash_header_ctx['display_name'] ?? ''));
-                    ?>
-                    <p class="w-full truncate text-xs font-semibold text-slate-900" title="<?= htmlspecialchars($dashName !== '' ? $dashName : 'Compte') ?>"><?= htmlspecialchars($dashName !== '' ? $dashName : 'Compte') ?></p>
-                    <?php if ($dash_grade_short !== null): ?>
-                        <p class="w-full truncate text-[10px] font-medium text-slate-500"><?= htmlspecialchars($dash_grade_short) ?></p>
-                    <?php endif; ?>
-                </div>
-                <?php
-                $ctx = $dash_header_ctx;
-                $portal_alerts_dropdown_id = 'dash-portal-alerts-dropdown';
-                require base_path('views/partials/portal_alerts_bell.php');
-                unset($ctx, $portal_alerts_dropdown_id);
-                ?>
-                <?php if ($dashSearchEnabled): ?>
-                <a href="<?= htmlspecialchars($dashSearchUrl) ?>"
-                   class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 sm:h-10 sm:w-10"
-                   title="Rechercher sur le portail"
-                   aria-label="Rechercher sur le portail">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                </a>
-                <?php endif; ?>
-                <a href="<?= htmlspecialchars(url('account')) ?>"
-                   class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 sm:h-10 sm:w-10"
-                   title="Paramètres du compte"
-                   aria-label="Paramètres du compte">
-                    <svg class="h-4 w-4 sm:h-[18px] sm:w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                </a>
-                <a href="<?= htmlspecialchars($base) ?>/"
-                   class="hidden shrink-0 rounded-lg px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 transition hover:bg-slate-200/60 hover:text-slate-900 md:inline-flex">
-                    Accueil
-                </a>
-                <form method="post" action="<?= htmlspecialchars(url('logout')) ?>" class="flex shrink-0 items-center">
-                    <?= \App\Core\Csrf::field() ?>
-                    <button type="submit"
-                            class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400 sm:h-10 sm:w-10"
-                            title="Se déconnecter"
-                            aria-label="Se déconnecter">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                        </svg>
-                    </button>
-                </form>
-            </div>
-        </div>
-    </header>
     <?php if ($dashRibbonEntries !== []): ?>
-    <nav class="z-[95] border-b border-slate-200/90 bg-white/90 backdrop-blur-sm" aria-label="Raccourcis du portail">
-        <div class="mx-auto max-w-5xl overflow-x-auto px-4 py-2 sm:px-8">
-            <ul class="flex w-max min-w-0 max-w-full flex-nowrap gap-2">
+    <nav class="border-b border-slate-200/90 bg-gradient-to-b from-white to-slate-50/95 shadow-[0_1px_0_rgba(15,23,42,0.04)]" aria-label="Accès rapides du tableau de bord">
+        <div class="mx-auto max-w-[1800px] px-4 py-3 sm:px-6 lg:px-8">
+            <div class="mb-2 flex flex-wrap items-end justify-between gap-2">
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Sur cette page</p>
+                    <p class="text-sm font-semibold text-slate-900">Raccourcis vers vos modules</p>
+                </div>
+                <p class="max-w-md text-xs text-slate-500">Faites défiler horizontalement sur mobile pour voir toutes les entrées.</p>
+            </div>
+            <div class="relative -mx-1">
+                <div class="scrollbar-thin overflow-x-auto overscroll-x-contain px-1 pb-1">
+                    <ul class="flex w-max min-w-0 max-w-none flex-nowrap gap-2 md:flex-wrap md:gap-2.5">
                 <?php foreach ($dashRibbonEntries as $re): ?>
                     <?php if (!is_array($re)) {
                         continue;
                     } ?>
                     <li class="shrink-0">
                         <a href="<?= htmlspecialchars((string) ($re['href'] ?? '#')) ?>"
-                           class="inline-flex max-w-[11rem] items-center truncate rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-800 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/80 hover:text-emerald-950"><?= htmlspecialchars((string) ($re['label'] ?? '')) ?></a>
+                           class="inline-flex max-w-[14rem] items-center truncate rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-sm ring-slate-900/5 transition hover:border-sky-300/80 hover:bg-sky-50/90 hover:text-sky-950 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"><?= htmlspecialchars((string) ($re['label'] ?? '')) ?></a>
                     </li>
                 <?php endforeach; ?>
-            </ul>
+                    </ul>
+                </div>
+            </div>
         </div>
     </nav>
+    <style>
+        .scrollbar-thin { scrollbar-width: thin; scrollbar-color: rgb(203 213 225) transparent; }
+        .scrollbar-thin::-webkit-scrollbar { height: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgb(203 213 225); border-radius: 999px; }
+    </style>
     <?php endif; ?>
 
     <main class="min-h-screen bg-[#f8fafc] text-slate-900">
@@ -1383,6 +1030,5 @@ $dashAccountLinks = $dashResolveNavLinks([
         </section>
     </main>
     </div>
-    <script defer src="<?= htmlspecialchars($base) ?>/assets/js/portal-alerts.js"></script>
 </body>
 </html>

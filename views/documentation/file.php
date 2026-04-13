@@ -15,7 +15,7 @@ $docKey = $docKey ?? '';
             <header>
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div>
-                        <h1><?= htmlspecialchars($docTitle, ENT_QUOTES, 'UTF-8') ?></h1>
+                        <h1><?= htmlspecialchars($docTitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></h1>
                         <p class="site-docs__file-meta">Fiche source pour l’équipe (texte brut).</p>
                     </div>
                     <?php if (\App\Core\Session::get('user_id') && $docKey !== ''): ?>
@@ -24,7 +24,7 @@ $docKey = $docKey ?? '';
                 </div>
             </header>
             <div class="site-docs__file-body">
-                <pre><?= htmlspecialchars($docBody, ENT_QUOTES, 'UTF-8') ?></pre>
+                <pre><?= htmlspecialchars($docBody, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></pre>
             </div>
         </article>
     </div>

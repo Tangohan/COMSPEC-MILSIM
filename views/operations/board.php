@@ -2,7 +2,14 @@
 declare(strict_types=1);
 
 $boardFilters = $boardFilters ?? [];
-$boardPanels = $boardPanels ?? ['permanences' => [], 'infos' => [], 'activites' => []];
+$boardPanels = array_merge([
+    'permanences' => [],
+    'infos' => [],
+    'manifestations' => [],
+    'flash' => [],
+    'activites' => [],
+], $boardPanels ?? []);
+$boardToday = $boardToday ?? date('Y-m-d');
 $boardCategories = $boardCategories ?? [];
 $boardTemplates = $boardTemplates ?? [];
 $boardPosture = $boardPosture ?? ['posture_level' => 'NORMAL'];
@@ -24,11 +31,33 @@ $postureUi = $posturePresentation[$posture] ?? $posturePresentation['NORMAL'];
 
 $entryTypeLabels = [
     'permanence' => 'Permanence',
-    'info' => 'Information',
+    'info' => 'Information pratique',
+    'manifestation' => 'Manifestation',
     'mission' => 'Mission',
     'task' => 'Tâche',
     'formation' => 'Formation',
+    'flash_info' => 'Flash information',
 ];
+
+$temporalBucket = static function (array $e, string $today): string {
+    $op = (string) ($e['operational_status'] ?? 'planned');
+    if ($op === 'in_progress') {
+        return 'en_cours';
+    }
+    $start = isset($e['start_date']) && $e['start_date'] !== null && $e['start_date'] !== '' ? (string) $e['start_date'] : '';
+    $end = isset($e['end_date']) && $e['end_date'] !== null && $e['end_date'] !== '' ? (string) $e['end_date'] : '';
+    if ($start !== '' && $start > $today) {
+        return 'a_venir';
+    }
+    if ($end !== '' && $end < $today) {
+        return 'passe';
+    }
+    if ($start !== '' && $start <= $today && ($end === '' || $end >= $today)) {
+        return 'aujourdhui';
+    }
+
+    return 'sans_date';
+};
 
 $operationalLabels = [
     'planned' => 'Planifié',
@@ -78,6 +107,7 @@ if ($tenantName === '') {
                 <p class="mt-1 text-sm text-slate-600">Vue consolidée des permanences, informations et missions pour la période sélectionnée.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
+                <a href="<?= url('tableau-operationnel') ?>" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-100">Vue portail (lecture)</a>
                 <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide ring-1 <?= htmlspecialchars($postureUi['badge'], ENT_QUOTES, 'UTF-8') ?>">
                     Posture <?= htmlspecialchars($postureUi['label'], ENT_QUOTES, 'UTF-8') ?>
                 </span>
@@ -160,70 +190,90 @@ if ($tenantName === '') {
         <?php endif; ?>
     </section>
 
-    <section class="grid grid-cols-1 gap-3 lg:grid-cols-3" id="board-columns">
-        <?php foreach (['permanences' => 'Permanences', 'infos' => 'Informations', 'activites' => 'Missions et activités'] as $key => $title): ?>
-            <div class="flex min-h-[420px] flex-col rounded-2xl border border-slate-200 bg-slate-50/80 shadow-inner">
-                <div class="rounded-t-2xl border-b border-slate-200 bg-white px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></div>
-                <div class="space-y-2 p-2" data-column="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>">
-                    <?php foreach ($boardPanels[$key] as $entry):
-                        $priority = (string) ($entry['priority'] ?? 'normal');
-                        $tags = array_filter(array_map('trim', explode(',', (string) ($entry['tags_list'] ?? ''))));
-                        $opKey = (string) ($entry['operational_status'] ?? 'planned');
-                        $phaseKey = (string) ($entry['phase_current'] ?? 'phase_1');
-                        $etype = (string) ($entry['entry_type'] ?? 'task');
-                        $tagBlob = strtolower(implode(' ', $tags));
-                        ?>
-                        <article class="entry-card rounded-xl border border-l-4 bg-white p-3 text-xs shadow-sm <?= htmlspecialchars($priorityClass[$priority] ?? $priorityClass['normal'], ENT_QUOTES, 'UTF-8') ?>"
-                                 data-entry_type="<?= htmlspecialchars($etype, ENT_QUOTES, 'UTF-8') ?>"
-                                 data-operational_status="<?= htmlspecialchars($opKey, ENT_QUOTES, 'UTF-8') ?>"
-                                 data-priority="<?= htmlspecialchars($priority, ENT_QUOTES, 'UTF-8') ?>"
-                                 data-tag="<?= htmlspecialchars($tagBlob, ENT_QUOTES, 'UTF-8') ?>">
-                            <div class="flex items-start justify-between gap-2">
-                                <h3 class="font-bold text-slate-900"><?= htmlspecialchars((string) ($entry['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
-                                <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700"><?= htmlspecialchars($priorityShort[$priority] ?? $priority, ENT_QUOTES, 'UTF-8') ?></span>
+    <div id="board-columns" class="space-y-3">
+        <?php
+        $renderBoardCard = static function (array $entry) use ($priorityClass, $priorityShort, $operationalLabels, $phaseLabels, $entryTypeLabels): void {
+            $showAdminActions = true;
+            require __DIR__ . '/board_card.php';
+        };
+        ?>
+        <details class="group rounded-2xl border border-slate-200 bg-white shadow-sm" open>
+            <summary class="cursor-pointer list-none rounded-t-2xl border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-800">
+                <span class="inline-flex items-center gap-2">A. Permanences particulières <span class="rounded-full bg-white px-2 py-0.5 text-[10px] text-slate-600"><?= count($boardPanels['permanences']) ?></span></span>
+            </summary>
+            <div class="p-3" data-column="permanences">
+                <div class="mb-3 grid gap-2 md:grid-cols-3">
+                    <?php
+                    $buckets = ['aujourdhui' => 'Aujourd’hui', 'en_cours' => 'En cours', 'a_venir' => 'À venir'];
+                    foreach ($buckets as $bk => $bl): ?>
+                        <div class="rounded-xl border border-slate-100 bg-slate-50/80 p-2">
+                            <p class="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500"><?= htmlspecialchars($bl, ENT_QUOTES, 'UTF-8') ?></p>
+                            <div class="space-y-2 subcolumn" data-bucket="<?= htmlspecialchars($bk, ENT_QUOTES, 'UTF-8') ?>">
+                                <?php foreach ($boardPanels['permanences'] as $entry):
+                                    if ($temporalBucket($entry, $boardToday) !== $bk) {
+                                        continue;
+                                    }
+                                    $renderBoardCard($entry);
+                                    endforeach; ?>
                             </div>
-                            <p class="mt-2 text-slate-700">
-                                Commandement : <?= htmlspecialchars((string) ($entry['chief_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?> ·
-                                Adjoint : <?= htmlspecialchars((string) ($entry['deputy_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?> ·
-                                Remplaçant : <?= htmlspecialchars((string) ($entry['replacement_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
-                            </p>
-                            <p class="mt-1 text-slate-600">
-                                <?= htmlspecialchars($operationalLabels[$opKey] ?? $opKey, ENT_QUOTES, 'UTF-8') ?>
-                                · <?= htmlspecialchars($phaseLabels[$phaseKey] ?? $phaseKey, ENT_QUOTES, 'UTF-8') ?>
-                                · <?= htmlspecialchars($entryTypeLabels[$etype] ?? $etype, ENT_QUOTES, 'UTF-8') ?>
-                            </p>
-                            <p class="mt-1 text-slate-600">
-                                Points de contrôle : <?= (int) ($entry['checklist_done'] ?? 0) ?> / <?= (int) ($entry['checklist_required'] ?? 0) ?>
-                                <?php if (!empty($entry['dossier_ref'])): ?>
-                                    · Dossier : <?= htmlspecialchars((string) $entry['dossier_ref'], ENT_QUOTES, 'UTF-8') ?>
-                                <?php endif; ?>
-                            </p>
-                            <p class="mt-1 text-slate-600">
-                                Zone : <?= htmlspecialchars((string) ($entry['operation_zone'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
-                                <?php if (!empty($entry['map_link'])): ?>
-                                    · <a class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-900" href="<?= htmlspecialchars((string) $entry['map_link'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">Carte</a>
-                                <?php endif; ?>
-                            </p>
-                            <?php if ($tags): ?>
-                                <p class="mt-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Étiquettes : <?= htmlspecialchars(implode(' · ', $tags), ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php endif; ?>
-                            <div class="entry-card-actions mt-3 flex flex-wrap gap-2">
-                                <form method="post" action="<?= url('back-office/tableau-operationnel/' . (int) ($entry['id'] ?? 0) . '/frago') ?>">
-                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                                    <button type="submit" class="rounded-lg bg-slate-800 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-900" title="Générer une mise à jour opérationnelle à partir de cette ligne">Mise à jour opérationnelle</button>
-                                </form>
-                                <form method="post" action="<?= url('back-office/tableau-operationnel/' . (int) ($entry['id'] ?? 0) . '/status') ?>" class="flex">
-                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                                    <input type="hidden" name="operational_status" value="completed">
-                                    <button type="submit" class="rounded-lg bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-800">Clôturer</button>
-                                </form>
-                            </div>
-                        </article>
+                        </div>
                     <?php endforeach; ?>
                 </div>
+                <div class="space-y-2" data-bucket-rest="permanences">
+                    <?php foreach ($boardPanels['permanences'] as $entry):
+                        if (in_array($temporalBucket($entry, $boardToday), ['aujourdhui', 'en_cours', 'a_venir'], true)) {
+                            continue;
+                        }
+                        $renderBoardCard($entry);
+                        endforeach; ?>
+                </div>
             </div>
-        <?php endforeach; ?>
-    </section>
+        </details>
+
+        <details class="group rounded-2xl border border-slate-200 bg-white shadow-sm" open>
+            <summary class="cursor-pointer list-none rounded-t-2xl border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-800">
+                B. Infos pratiques <span class="rounded-full bg-white px-2 py-0.5 text-[10px] text-slate-600"><?= count($boardPanels['infos']) ?></span>
+            </summary>
+            <div class="space-y-2 p-3" data-column="infos">
+                <?php foreach ($boardPanels['infos'] as $entry) {
+                    $renderBoardCard($entry);
+                } ?>
+            </div>
+        </details>
+
+        <details class="group rounded-2xl border border-slate-200 bg-white shadow-sm" open>
+            <summary class="cursor-pointer list-none rounded-t-2xl border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-800">
+                C. Manifestations <span class="rounded-full bg-white px-2 py-0.5 text-[10px] text-slate-600"><?= count($boardPanels['manifestations']) ?></span>
+            </summary>
+            <div class="space-y-2 p-3" data-column="manifestations">
+                <?php foreach ($boardPanels['manifestations'] as $entry) {
+                    $renderBoardCard($entry);
+                } ?>
+            </div>
+        </details>
+
+        <details class="group rounded-2xl border border-slate-200 bg-white shadow-sm" open>
+            <summary class="cursor-pointer list-none rounded-t-2xl border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-800">
+                D. Missions et activités <span class="rounded-full bg-white px-2 py-0.5 text-[10px] text-slate-600"><?= count($boardPanels['activites']) ?></span>
+            </summary>
+            <div class="space-y-2 p-3" data-column="activites">
+                <?php foreach ($boardPanels['activites'] as $entry) {
+                    $renderBoardCard($entry);
+                } ?>
+            </div>
+        </details>
+
+        <details class="group rounded-2xl border border-amber-100 bg-amber-50/40 shadow-sm" open>
+            <summary class="cursor-pointer list-none rounded-t-2xl border-b border-amber-200 bg-amber-100/60 px-4 py-3 text-xs font-bold uppercase tracking-wider text-amber-950">
+                Flash infos <span class="rounded-full bg-white px-2 py-0.5 text-[10px] text-amber-900"><?= count($boardPanels['flash']) ?></span>
+            </summary>
+            <div class="space-y-3 p-4" data-column="flash">
+                <?php foreach ($boardPanels['flash'] as $entry) {
+                    $renderBoardCard($entry);
+                } ?>
+            </div>
+        </details>
+    </div>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800">Journal récent</h2>
@@ -256,37 +306,11 @@ if ($tenantName === '') {
                 <button type="submit" class="w-full rounded-lg bg-slate-900 py-2.5 text-sm font-bold text-white hover:bg-slate-800" <?= count($boardTemplates) === 0 ? 'disabled' : '' ?>>Créer depuis le modèle</button>
             </form>
 
-            <form method="post" action="<?= url('back-office/tableau-operationnel') ?>" class="xl:col-span-2 grid grid-cols-2 gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs md:grid-cols-4">
-                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                <div class="col-span-2 md:col-span-4">
-                    <p class="font-semibold text-slate-800">Nouvelle entrée (brouillon)</p>
-                    <p class="mt-1 text-slate-600">Les références membres correspondent aux fiches gérées dans le back-office (utilisateurs).</p>
-                </div>
-                <input name="title" required placeholder="Intitulé" class="rounded-lg border border-slate-300 bg-white p-2 md:col-span-2" autocomplete="off">
-                <select name="entry_type" class="rounded-lg border border-slate-300 bg-white p-2" aria-label="Type d’entrée">
-                    <?php foreach ($entryTypeLabels as $k => $lbl): ?>
-                        <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($lbl, ENT_QUOTES, 'UTF-8') ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <input name="dossier_ref" placeholder="Référence dossier" class="rounded-lg border border-slate-300 bg-white p-2" autocomplete="off">
-                <input name="operation_zone" placeholder="Zone d’intervention" class="rounded-lg border border-slate-300 bg-white p-2" autocomplete="off">
-                <input name="description" placeholder="Consigne ou description" class="rounded-lg border border-slate-300 bg-white p-2 md:col-span-2" autocomplete="off">
-                <input name="legal_constraints" placeholder="Contraintes (cadre, sécurité, etc.)" class="rounded-lg border border-slate-300 bg-white p-2 md:col-span-2" autocomplete="off">
-                <input type="datetime-local" name="fire_window_start" class="rounded-lg border border-slate-300 bg-white p-2" aria-label="Début de fenêtre d’action">
-                <input type="datetime-local" name="fire_window_end" class="rounded-lg border border-slate-300 bg-white p-2" aria-label="Fin de fenêtre d’action">
-                <input type="number" name="chief_user_id" min="1" class="rounded-lg border border-slate-300 bg-white p-2" placeholder="Réf. fiche chef" title="Numéro de la fiche utilisateur désigné comme chef" aria-label="Référence fiche chef">
-                <input type="number" name="replacement_user_id" min="1" class="rounded-lg border border-slate-300 bg-white p-2" placeholder="Réf. fiche remplaçant" title="Numéro de la fiche utilisateur remplaçant" aria-label="Référence fiche remplaçant">
-                <label class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 md:col-span-2">
-                    <input type="checkbox" name="replacement_auto_activate" value="1" class="rounded border-slate-400">
-                    <span>Activer le remplacement automatiquement lorsque les conditions sont réunies</span>
-                </label>
-                <select name="phase_current" class="rounded-lg border border-slate-300 bg-white p-2 md:col-span-2" aria-label="Phase courante">
-                    <?php foreach ($phaseLabels as $k => $lbl): ?>
-                        <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($lbl, ENT_QUOTES, 'UTF-8') ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <button type="submit" class="rounded-lg bg-emerald-700 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 md:col-span-2">Enregistrer le brouillon</button>
-            </form>
+            <div class="xl:col-span-2 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
+                <p class="font-semibold text-slate-900">Nouvelle entrée</p>
+                <p class="mt-2">Ouvrez l’éditeur complet pour saisir les affectations, moyens, consignes et rattachements.</p>
+                <a href="<?= url('back-office/tableau-operationnel/fiche/nouvelle') ?>" class="mt-4 inline-flex rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800">Créer une entrée libre</a>
+            </div>
         </div>
     </section>
 </div>

@@ -43,7 +43,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 |---------|--------|------------|--------|-------|
 | GET | `/dashboard` | HomeController::dashboard | ✅ | |
 | GET | `/hub` | HubController::index | ✅ | Menu modules |
-| GET | `/account` | AccountController::index | ✅ | |
+| GET | `/account` | AccountController::index | ✅ | Sans session : redirection vers `/login` avec message explicite ; après connexion, retour automatique vers la page demandée (GET) si encore valide (voir `App\Support\LoginIntendedDestination`). |
 | GET/POST | `/account/preferences` | AccountController::preferences | ✅ | |
 | GET/POST | `/account/mail` | AccountController::mail | ✅ | |
 | GET/POST | `/account/image` | AccountController::image | ✅ | Avatar |

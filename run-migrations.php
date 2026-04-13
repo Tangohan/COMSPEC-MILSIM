@@ -7,7 +7,8 @@ declare(strict_types=1);
  * Point d’entrée utilisateur recommandé : **php setup-database.php** (un seul script documenté).
  * Ce fichier reste le moteur procédural ; ne pas le confondre avec les seuls bootstrap PHP isolés.
  *
- * Web : public/setup-database.php ou public/run-migrations.php (alias).
+ * Web : public/setup-database.php, public/run-migrations.php ou public/appliquer-ce-qui-manque-en-base.php
+ * (préambule commun : bootstrap/migrations_web_stream.php — texte brut, flux immédiat).
  */
 
 $root = dirname(__FILE__);
@@ -44,7 +45,10 @@ if ($checks['.env']) {
     echo "[ATTENTION] Pas de fichier .env — utilisation des variables d'environnement ou valeurs par défaut.\n";
 }
 
-/** Affiche tout de suite en mode web (évite l’impression que « rien ne s’exécute » tant que le tampon n’est pas plein). */
+/**
+ * Affiche tout de suite en mode web (tampons / compression).
+ * Le préambule global (en-têtes, padding proxy, erreur fatale navigateur) est dans migrations_web_begin_plain_response().
+ */
 $migrationFlush = static function (): void {
     if (PHP_SAPI !== 'cli') {
         @ini_set('zlib.output_compression', '0');
@@ -55,35 +59,6 @@ $migrationFlush = static function (): void {
     }
     @flush();
 };
-
-if (PHP_SAPI !== 'cli') {
-    $migrationFlush();
-    @set_time_limit(0);
-    @ini_set('max_execution_time', '0');
-    @ini_set('output_buffering', '0');
-    @ini_set('zlib.output_compression', '0');
-    if (!headers_sent()) {
-        header('X-Accel-Buffering: no');
-    }
-    echo "[INFO] Mode navigateur : la sortie défile au fil de l’eau ; le script peut prendre plusieurs minutes.\n";
-    // Remplissage : certains reverse-proxy / hébergeurs n’envoient la réponse au navigateur qu’après ~2–4 Ko.
-    echo str_repeat(' ', 2048) . "\n";
-    $migrationFlush();
-
-    register_shutdown_function(static function (): void {
-        $err = error_get_last();
-        if ($err === null) {
-            return;
-        }
-        $t = (int) ($err['type'] ?? 0);
-        if (!in_array($t, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
-            return;
-        }
-        $msg = ($err['message'] ?? '') . ' — ' . ($err['file'] ?? '') . ':' . (string) ($err['line'] ?? '');
-        echo "\n[ERREUR FATALE] " . $msg . "\n";
-        @flush();
-    });
-}
 
 // Connexion DB
 $host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: '127.0.0.1';

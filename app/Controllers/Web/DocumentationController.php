@@ -32,6 +32,7 @@ final class DocumentationController
         'recherche' => ['rel' => 'utilisateur/recherche-et-raccourcis.md', 'title' => 'Recherche & raccourcis', 'section' => 'Utilisateur'],
         'technique-readme' => ['rel' => 'technique/README.md', 'title' => 'Documentation technique (index)', 'section' => 'Technique'],
         'modules' => ['rel' => 'technique/modules-fonctionnels.md', 'title' => 'Modules fonctionnels', 'section' => 'Technique'],
+        'migrations-dump-audit' => ['rel' => 'MIGRATIONS-DUMP-AUDIT.md', 'title' => 'Audit export base de données / migrations', 'section' => 'Technique'],
     ];
 
     public function index(Request $request, array $params = []): Response
@@ -92,6 +93,11 @@ final class DocumentationController
             ]);
         }
         $body = (string) file_get_contents($full);
+        // PHP 8.2+ : htmlspecialchars() lève ValueError sur UTF-8 invalide → 500 avec error_handler strict.
+        if (!mb_check_encoding($body, 'UTF-8')) {
+            $clean = @iconv('UTF-8', 'UTF-8//IGNORE', $body);
+            $body = $clean !== false ? $clean : mb_convert_encoding($body, 'UTF-8', 'UTF-8');
+        }
 
         return Response::view('layout.main', [
             'content' => 'documentation.file',

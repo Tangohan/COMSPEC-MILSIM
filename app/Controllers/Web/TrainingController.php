@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -454,6 +455,12 @@ class TrainingController
             $continueLesson = training_lms_next_incomplete_lesson($orderedLessons, $enrollmentProgressDetail['progress'] ?? []);
         }
 
+        $gate = Gate::getInstance();
+        $canPublishOperationalBoard = $gate->allows('operational.board.edit')
+            || $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('admin.system');
+
         return Response::view('training.course', [
             'title' => $course['title'],
             'course' => $course,
@@ -473,6 +480,7 @@ class TrainingController
             'canAccessLearning' => $canAccessLearning,
             'lmsCommentsEnabled' => $lmsCommentsEnabled,
             'canWithdrawEnrollment' => $canWithdrawEnrollment,
+            'canPublishOperationalBoard' => $canPublishOperationalBoard,
             'analyticsBeacon' => [
                 'tenantId' => $tenantId,
                 'category' => AnalyticsEventCategory::TRAINING,

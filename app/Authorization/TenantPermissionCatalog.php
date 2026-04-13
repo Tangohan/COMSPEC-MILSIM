@@ -31,6 +31,7 @@ final class TenantPermissionCatalog
     {
         return array_merge(
             self::adminDefinitions(),
+            self::operationalBoardDefinitions(),
             self::dashboardDefinitions(),
             self::forumDefinitions(),
             self::interteamDefinitions(),
@@ -92,6 +93,17 @@ final class TenantPermissionCatalog
     /**
      * @return list<array{slug: string, module: string, action: string|null, name: string}>
      */
+    /**
+     * @return list<array{slug: string, module: string, action: string|null, name: string}>
+     */
+    private static function operationalBoardDefinitions(): array
+    {
+        return [
+            ['slug' => 'operational.board.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter le tableau opérationnel (portail)'],
+            ['slug' => 'operational.board.edit', 'module' => 'operations', 'action' => 'manage', 'name' => 'Créer et modifier les entrées du tableau opérationnel'],
+        ];
+    }
+
     private static function adminDefinitions(): array
     {
         return [

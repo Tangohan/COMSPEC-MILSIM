@@ -3,6 +3,7 @@ $base = url('');
 $error = \App\Core\Session::getFlash('error');
 $success = \App\Core\Session::getFlash('success');
 $warning = \App\Core\Session::getFlash('warning');
+$info = \App\Core\Session::getFlash('info');
 $pendingVerificationEmail = \App\Core\Session::get('pending_verification_email');
 $title = $title ?? 'Connexion';
 ?>
@@ -49,6 +50,9 @@ $title = $title ?? 'Connexion';
         <?php endif; ?>
         <?php if ($warning): ?>
         <?php $flash_variant = 'warning'; $flash_message = $warning; require base_path('views/partials/flash_message.php'); ?>
+        <?php endif; ?>
+        <?php if ($info): ?>
+        <?php $flash_variant = 'info'; $flash_message = $info; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
 
         <?php if ($pendingVerificationEmail !== null && $pendingVerificationEmail !== ''): ?>

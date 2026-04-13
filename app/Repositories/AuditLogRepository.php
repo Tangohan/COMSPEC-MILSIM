@@ -67,13 +67,6 @@ final class AuditLogRepository
             foreach ($excludedActions as $ea) {
                 $params[] = $ea;
             }
-            $where[] = '(a.user_id IS NULL OR NOT EXISTS (
-                SELECT 1 FROM users u_pf
-                INNER JOIN site_role_assignments sra
-                    ON sra.email_normalized = LOWER(TRIM(u_pf.email))
-                    AND sra.revoked_at IS NULL
-                WHERE u_pf.id = a.user_id
-            ))';
         }
 
         $whereSql = implode(' AND ', $where);
@@ -159,7 +152,7 @@ final class AuditLogRepository
 
     /**
      * Dernières entrées pour un tenant. Pour le back-office organisation : exclure les actions
-     * réservées à la plateforme et les acteurs ayant un rôle site (staff).
+     * réservées à la plateforme (rôles site globaux, migrations de périmètre).
      *
      * @return list<array<string, mixed>>
      */
@@ -187,13 +180,6 @@ final class AuditLogRepository
              LEFT JOIN users u ON u.id = a.user_id
              WHERE a.tenant_id = ?
              AND a.action NOT IN ({$placeholders})
-             AND (a.user_id IS NULL OR NOT EXISTS (
-                SELECT 1 FROM users u_pf
-                INNER JOIN site_role_assignments sra
-                    ON sra.email_normalized = LOWER(TRIM(u_pf.email))
-                    AND sra.revoked_at IS NULL
-                WHERE u_pf.id = a.user_id
-             ))
              ORDER BY a.id DESC
              LIMIT " . (int) $limit;
         $stmt = $this->pdo->prepare($sql);
@@ -204,7 +190,7 @@ final class AuditLogRepository
 
     /**
      * Dernières actions « RH / effectifs » : comptes, rôles, groupes, invitations, inscriptions.
-     * Mêmes exclusions que le journal organisation (acteurs rôle site).
+     * Mêmes exclusions d’actions plateforme que le journal organisation.
      *
      * @return list<array<string, mixed>>
      */
@@ -235,13 +221,6 @@ final class AuditLogRepository
              WHERE a.tenant_id = ?
              AND a.action IN ({$placeholders})
              AND a.action NOT IN ({$exPh})
-             AND (a.user_id IS NULL OR NOT EXISTS (
-                SELECT 1 FROM users u_pf
-                INNER JOIN site_role_assignments sra
-                    ON sra.email_normalized = LOWER(TRIM(u_pf.email))
-                    AND sra.revoked_at IS NULL
-                WHERE u_pf.id = a.user_id
-             ))
              ORDER BY a.id DESC
              LIMIT " . (int) $limit;
         $stmt = $this->pdo->prepare($sql);

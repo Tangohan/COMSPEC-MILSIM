@@ -10,13 +10,17 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\UserRepository;
 use App\Services\Rbac\RbacService;
+use App\Support\LoginIntendedDestination;
 
 class AuthMiddleware
 {
     public function __invoke(Request $request, callable $next): Response
     {
         if (!Session::get('user_id')) {
-            Session::flash('error', 'Authentification requise.');
+            if (!LoginIntendedDestination::rememberFromRequest($request)) {
+                Session::flash('error', 'Authentification requise.');
+            }
+
             return Response::redirect(url('login'));
         }
 

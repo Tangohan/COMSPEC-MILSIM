@@ -28,6 +28,7 @@ $hasCompletedAnyLesson = $lessonDone !== [];
 $canAccessLearning = $canAccessLearning ?? false;
 $canWithdrawEnrollment = $canWithdrawEnrollment ?? false;
 $lmsCommentsEnabled = $lmsCommentsEnabled ?? true;
+$canPublishOperationalBoard = !empty($canPublishOperationalBoard);
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
 $lmsShowCompletionBanner = !empty($lmsShowCompletionBanner);
@@ -156,6 +157,14 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
                                 <button type="submit" class="w-full sm:w-auto px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-wider <?= $isLiked ? 'border-rose-400 bg-rose-50 text-rose-800' : 'border-slate-200 bg-white text-slate-600' ?>"><?= $isLiked ? '♥ J’aime' : '♡ J’aime' ?></button>
                             </form>
                             </div>
+                            <?php endif; ?>
+                            <?php if ($canPublishOperationalBoard): ?>
+                            <form method="post" action="<?= url('back-office/tableau-operationnel/publier-lie') ?>" class="inline w-full sm:w-auto">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="source_type" value="formation">
+                                <input type="hidden" name="source_id" value="<?= $courseId ?>">
+                                <button type="submit" class="w-full sm:w-auto px-4 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-xs font-black uppercase tracking-wider text-emerald-900 hover:bg-emerald-100">Publier au mur opérationnel</button>
+                            </form>
                             <?php endif; ?>
                             <?php if ($enrollment && $canAccessLearning): ?>
                             <div class="text-left sm:text-right rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
