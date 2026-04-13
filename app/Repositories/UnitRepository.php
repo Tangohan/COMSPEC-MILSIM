@@ -177,6 +177,68 @@ class UnitRepository
     }
 
     /**
+     * Racines ORBAT + toutes les sous-unités (descendants).
+     *
+     * @param list<int> $rootIds
+     * @return list<int>
+     */
+    public function expandUnitIdsWithDescendants(int $tenantId, array $rootIds): array
+    {
+        $rootIds = array_values(array_unique(array_filter(array_map('intval', $rootIds), static fn (int $x): bool => $x > 0)));
+        if ($rootIds === []) {
+            return [];
+        }
+        $all = $this->allForTenant($tenantId);
+        $byParent = [];
+        foreach ($all as $u) {
+            $pid = (int) ($u['parent_id'] ?? 0);
+            $byParent[$pid][] = (int) ($u['id'] ?? 0);
+        }
+        $seen = [];
+        $stack = $rootIds;
+        while ($stack !== []) {
+            $id = (int) array_pop($stack);
+            if ($id < 1 || isset($seen[$id])) {
+                continue;
+            }
+            $seen[$id] = true;
+            foreach ($byParent[$id] ?? [] as $child) {
+                $stack[] = (int) $child;
+            }
+        }
+
+        return array_map('intval', array_keys($seen));
+    }
+
+    /**
+     * Membres actifs rattachés à au moins une des unités (ORBAT / personnel).
+     *
+     * @param list<int> $unitIds
+     * @return list<int>
+     */
+    public function listActiveUserIdsForUnits(int $tenantId, array $unitIds): array
+    {
+        $unitIds = array_values(array_unique(array_filter(array_map('intval', $unitIds), static fn (int $x): bool => $x > 0)));
+        if ($unitIds === []) {
+            return [];
+        }
+        [$unionSql, $params] = $this->memberUnionSql($tenantId);
+        $ph = implode(',', array_fill(0, count($unitIds), '?'));
+        $sql = 'SELECT DISTINCT t.user_id FROM (' . $unionSql . ') t WHERE t.unit_id IN (' . $ph . ')';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge($params, $unitIds));
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            if ($uid > 0) {
+                $out[$uid] = true;
+            }
+        }
+
+        return array_map('intval', array_keys($out));
+    }
+
+    /**
      * @return array{0: string, 1: array<int, mixed>}
      */
     private function memberUnionSql(int $tenantId): array
@@ -239,6 +301,11 @@ class UnitRepository
         return $cache[$table];
     }
 
+    public function hasTableColumn(string $table, string $column): bool
+    {
+        return $this->columnExists($table, $column);
+    }
+
     private function columnExists(string $table, string $column): bool
     {
         $stmt = $this->pdo->prepare(
@@ -247,6 +314,25 @@ class UnitRepository
         $stmt->execute([$table, $column]);
 
         return (bool) $stmt->fetchColumn();
+    }
+
+    /**
+     * Slug unique pour une nouvelle unité (évite collision sur (tenant_id, slug)).
+     */
+    public function uniqueSlugForTenant(int $tenantId, string $name): string
+    {
+        $base = $this->slugify($name);
+        $slug = $base;
+        $n = 2;
+        while ($this->slugExists($tenantId, $slug)) {
+            $slug = $base . '-' . $n;
+            ++$n;
+            if ($n > 200) {
+                return $base . '-' . bin2hex(random_bytes(3));
+            }
+        }
+
+        return $slug;
     }
 
     public function getByType(int $tenantId, string $type): array
@@ -291,6 +377,108 @@ class UnitRepository
         return $this->buildTree($byParent, 0);
     }
 
+    /**
+     * Liste plate id, name, parent_id pour sélecteurs ORBAT (même tenant).
+     *
+     * @return list<array{id: int, name: string, parent_id: int|null}>
+     */
+    public function listFlatForStructure(int $tenantId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, name, parent_id FROM units WHERE tenant_id = ? ORDER BY display_order ASC, name ASC'
+        );
+        $stmt->execute([$tenantId]);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $pid = $row['parent_id'];
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'name' => (string) ($row['name'] ?? ''),
+                'parent_id' => $pid !== null && $pid !== '' ? (int) $pid : null,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Nombre d’unités ayant cette unité comme parent direct.
+     */
+    public function countUnitsWithOrbatDisplayType(int $tenantId, string $displaySlug): int
+    {
+        if (!$this->hasTableColumn('units', 'orbat_display_type')) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM units WHERE tenant_id = ? AND orbat_display_type = ?'
+        );
+        $stmt->execute([$tenantId, $displaySlug]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countChildren(int $unitId, int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM units WHERE tenant_id = ? AND parent_id = ?'
+        );
+        $stmt->execute([$tenantId, $unitId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Unités auxquelles l’utilisateur est rattaché (sources ORBAT / personnel).
+     *
+     * @return list<int>
+     */
+    public function unitIdsForUser(int $tenantId, int $userId): array
+    {
+        if ($userId < 1) {
+            return [];
+        }
+        $ids = [];
+        $sql = 'SELECT DISTINCT uu.unit_id FROM user_units uu
+            INNER JOIN users u ON u.id = uu.user_id AND u.tenant_id = ?
+            WHERE uu.user_id = ? AND u.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$tenantId, $userId]);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $uid = (int) ($row['unit_id'] ?? 0);
+            if ($uid > 0) {
+                $ids[$uid] = true;
+            }
+        }
+        if ($this->tableExists('personnel_assignments')) {
+            $sql = 'SELECT DISTINCT pa.unit_id FROM personnel_assignments pa
+                INNER JOIN users u ON u.id = pa.user_id AND u.tenant_id = ?
+                WHERE pa.user_id = ? AND pa.status = \'active\' AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())';
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$tenantId, $userId]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $uid = (int) ($row['unit_id'] ?? 0);
+                if ($uid > 0) {
+                    $ids[$uid] = true;
+                }
+            }
+        }
+        if ($this->columnExists('personnel_profiles', 'primary_unit_id')) {
+            $sql = 'SELECT pp.primary_unit_id AS unit_id FROM personnel_profiles pp
+                INNER JOIN users u ON u.id = pp.user_id AND u.tenant_id = ?
+                WHERE pp.user_id = ? AND pp.primary_unit_id IS NOT NULL AND u.status = \'active\'';
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$tenantId, $userId]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $uid = (int) ($row['unit_id'] ?? 0);
+                if ($uid > 0) {
+                    $ids[$uid] = true;
+                }
+            }
+        }
+
+        return array_map('intval', array_keys($ids));
+    }
+
     private function buildTree(array $byParent, int $parentId): array
     {
         $out = [];
@@ -311,22 +499,45 @@ class UnitRepository
             : 1;
 
         if ($this->columnExists('units', 'public_blurb')) {
-            $stmt = $this->pdo->prepare(
-                'INSERT INTO units (tenant_id, parent_id, name, slug, type, code, commander_user_id, display_order, public_blurb, public_tags, show_on_public_page, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
-            );
-            $stmt->execute([
-                $tenantId,
-                isset($data['parent_id']) ? (int) $data['parent_id'] : null,
-                $data['name'] ?? '',
-                $slug,
-                $data['type'] ?? null,
-                $data['code'] ?? null,
-                isset($data['commander_user_id']) ? (int) $data['commander_user_id'] : null,
-                (int) ($data['display_order'] ?? 0),
-                $publicBlurb !== '' ? $publicBlurb : null,
-                $publicTagsJson,
-                $showPublic,
-            ]);
+            $mask = $this->columnExists('units', 'orbat_mask_mode')
+                ? \App\Support\OrbatMaskMode::normalize($data['orbat_mask_mode'] ?? null)
+                : 'none';
+            if ($this->columnExists('units', 'orbat_mask_mode')) {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO units (tenant_id, parent_id, name, slug, type, code, commander_user_id, display_order, public_blurb, public_tags, show_on_public_page, orbat_mask_mode, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+                );
+                $stmt->execute([
+                    $tenantId,
+                    isset($data['parent_id']) ? (int) $data['parent_id'] : null,
+                    $data['name'] ?? '',
+                    $slug,
+                    $data['type'] ?? null,
+                    $data['code'] ?? null,
+                    isset($data['commander_user_id']) ? (int) $data['commander_user_id'] : null,
+                    (int) ($data['display_order'] ?? 0),
+                    $publicBlurb !== '' ? $publicBlurb : null,
+                    $publicTagsJson,
+                    $showPublic,
+                    $mask,
+                ]);
+            } else {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO units (tenant_id, parent_id, name, slug, type, code, commander_user_id, display_order, public_blurb, public_tags, show_on_public_page, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+                );
+                $stmt->execute([
+                    $tenantId,
+                    isset($data['parent_id']) ? (int) $data['parent_id'] : null,
+                    $data['name'] ?? '',
+                    $slug,
+                    $data['type'] ?? null,
+                    $data['code'] ?? null,
+                    isset($data['commander_user_id']) ? (int) $data['commander_user_id'] : null,
+                    (int) ($data['display_order'] ?? 0),
+                    $publicBlurb !== '' ? $publicBlurb : null,
+                    $publicTagsJson,
+                    $showPublic,
+                ]);
+            }
         } else {
             $stmt = $this->pdo->prepare(
                 'INSERT INTO units (tenant_id, parent_id, name, slug, type, code, commander_user_id, display_order, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())'
@@ -357,6 +568,21 @@ class UnitRepository
             $allowed[] = 'public_tags';
             $allowed[] = 'show_on_public_page';
         }
+        if ($this->columnExists('units', 'orbat_mask_mode')) {
+            $allowed[] = 'orbat_mask_mode';
+        }
+        if ($this->columnExists('units', 'orbat_display_type')) {
+            $allowed[] = 'orbat_display_type';
+        }
+        if ($this->columnExists('units', 'orbat_icon_path')) {
+            $allowed[] = 'orbat_icon_path';
+        }
+        if ($this->columnExists('units', 'orbat_image_path')) {
+            $allowed[] = 'orbat_image_path';
+        }
+        if ($this->columnExists('units', 'orbat_details')) {
+            $allowed[] = 'orbat_details';
+        }
         foreach ($allowed as $key) {
             if (!array_key_exists($key, $data)) {
                 continue;
@@ -375,6 +601,16 @@ class UnitRepository
             } elseif ($key === 'public_blurb') {
                 $v = trim((string) $data[$key]);
                 $params[] = $v === '' ? null : $v;
+            } elseif ($key === 'orbat_mask_mode') {
+                $params[] = \App\Support\OrbatMaskMode::normalize((string) $data[$key]);
+            } elseif ($key === 'orbat_display_type') {
+                $params[] = mb_substr(trim((string) $data[$key]), 0, 64);
+            } elseif ($key === 'orbat_icon_path' || $key === 'orbat_image_path') {
+                $v = trim((string) $data[$key]);
+                $params[] = $v === '' ? null : mb_substr($v, 0, 512);
+            } elseif ($key === 'orbat_details') {
+                $v = trim((string) $data[$key]);
+                $params[] = $v === '' ? null : mb_substr($v, 0, 16000);
             } else {
                 $params[] = $data[$key];
             }

@@ -34,7 +34,8 @@ final class EmailService
         string $textBody,
         ?int $tenantId = null,
         ?string $replyTo = null,
-        ?array $payloadSummary = null
+        ?array $payloadSummary = null,
+        ?int $campaignId = null
     ): bool {
         $this->lastSendError = null;
         if (filter_var((string) env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN)) {
@@ -50,6 +51,7 @@ final class EmailService
                         'tenantId' => $tenantId,
                         'replyTo' => $replyTo,
                         'payloadSummary' => $payloadSummary,
+                        'campaignId' => $campaignId,
                     ], JSON_UNESCAPED_UNICODE));
 
                     return true;
@@ -85,7 +87,8 @@ final class EmailService
             $status,
             $result['provider_id'] ?? null,
             $result['error'] ?? null,
-            $payloadSummary
+            $payloadSummary,
+            $campaignId
         );
 
         if (!$result['ok']) {

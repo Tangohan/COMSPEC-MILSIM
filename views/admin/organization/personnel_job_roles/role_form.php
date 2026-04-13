@@ -42,7 +42,7 @@ $selectedSet = array_fill_keys($selectedPerm, true);
                     <input type="text" name="name" required value="<?= htmlspecialchars((string) ($role['name'] ?? '')) ?>" class="w-full rounded border border-slate-200 px-3 py-2 text-sm" maxlength="120">
                 </div>
                 <div>
-                    <label class="mb-1 block text-xs font-semibold text-slate-600">Slug (unique)</label>
+                    <label class="mb-1 block text-xs font-semibold text-slate-600">Référence courte du poste (unique)</label>
                     <input type="text" name="slug" required value="<?= htmlspecialchars((string) ($role['slug'] ?? '')) ?>" class="w-full rounded border border-slate-200 px-3 py-2 font-mono text-sm text-slate-900" maxlength="80">
                 </div>
                 <div>

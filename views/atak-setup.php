@@ -66,7 +66,7 @@ $atakModDownloadUrl = $atakModDownloadUrl ?? null;
             <?php if ($nodeAtakUrl !== ''): ?>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">URL du nœud ATAK</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Adresse du serveur de liaison ATAK</label>
                     <div class="flex gap-2 items-center">
                         <pre class="flex-1 bg-slate-100 border border-slate-200 rounded px-3 py-2 text-sm overflow-x-auto" id="setup-node-url"><?= htmlspecialchars($nodeAtakUrl) ?></pre>
                         <button type="button" class="px-3 py-2 bg-slate-900 text-white text-sm font-medium rounded hover:bg-slate-800 whitespace-nowrap" data-copy-target="setup-node-url">Copier</button>
@@ -83,7 +83,7 @@ $atakModDownloadUrl = $atakModDownloadUrl ?? null;
                 <?php endif; ?>
             </div>
             <?php else: ?>
-            <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">L’URL du nœud n’est pas configurée. Un administrateur doit renseigner la <a href="<?= $baseUrl ?>/admin/atak-config" class="underline">Configuration ATAK</a>.</p>
+            <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">L’adresse du serveur de liaison n’est pas renseignée. Un administrateur doit compléter la <a href="<?= $baseUrl ?>/admin/atak-config" class="underline">configuration ATAK</a>.</p>
             <?php endif; ?>
         </section>
 
@@ -148,7 +148,7 @@ $atakModDownloadUrl = $atakModDownloadUrl ?? null;
   if (testBtn && testResult) {
     testBtn.addEventListener('click', function () {
       if (!nodeUrl) {
-        testResult.textContent = 'Aucune URL de nœud configurée.';
+        testResult.textContent = 'Aucune adresse de serveur de liaison configurée.';
         testResult.className = 'mt-2 text-sm text-amber-700';
         testResult.classList.remove('hidden');
         return;

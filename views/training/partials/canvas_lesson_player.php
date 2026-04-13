@@ -71,7 +71,7 @@ $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
             <h2 class="text-xl font-semibold text-slate-900 mb-6"><?= htmlspecialchars((string) $sl['title']) ?></h2>
             <?php endif; ?>
             <?php if ($events === []): ?>
-            <p class="text-sm text-slate-500">Ajoutez des étapes dans l’éditeur (JSON ou lignes <span class="font-mono text-xs">date | titre | texte</span>).</p>
+            <p class="text-sm text-slate-500">Ajoutez des étapes dans l’éditeur (import structuré ou lignes <span class="font-mono text-xs">date | titre | texte</span>).</p>
             <?php else: ?>
             <ol class="space-y-8">
                 <?php foreach ($events as $idx => $ev): ?>

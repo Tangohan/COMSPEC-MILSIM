@@ -11,7 +11,7 @@
         <thead class="bg-slate-50 border-b border-slate-200">
             <tr>
                 <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Nom</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Slug</th>
+                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Référence</th>
                 <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Type</th>
                 <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Permissions</th>
                 <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>

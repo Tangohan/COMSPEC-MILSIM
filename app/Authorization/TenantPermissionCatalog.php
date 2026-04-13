@@ -276,7 +276,11 @@ final class TenantPermissionCatalog
         return [
             ['slug' => 'comms.tenant_messages.receive', 'module' => 'comms', 'action' => 'view', 'name' => 'Recevoir les messages internes adressés à l’encadrement'],
             ['slug' => 'comms.announcement.send', 'module' => 'comms', 'action' => 'create', 'name' => 'Envoyer une annonce'],
-            ['slug' => 'comms.email.broadcast', 'module' => 'comms', 'action' => 'manage', 'name' => 'Envoyer un email aux membres'],
+            ['slug' => 'comms.email.broadcast', 'module' => 'comms', 'action' => 'manage', 'name' => 'Diffusion e-mail large (tous types de messages aux membres)'],
+            ['slug' => 'comms.email.send.orbat', 'module' => 'comms', 'action' => 'create', 'name' => 'Envoyer un e-mail lié à la structure (ORBAT)'],
+            ['slug' => 'comms.email.send.mission', 'module' => 'comms', 'action' => 'create', 'name' => 'Envoyer un e-mail lié au pilotage opérationnel'],
+            ['slug' => 'comms.email.send.activity', 'module' => 'comms', 'action' => 'create', 'name' => 'Envoyer un e-mail lié aux activités'],
+            ['slug' => 'comms.email.send.custom', 'module' => 'comms', 'action' => 'create', 'name' => 'Envoyer un e-mail libre aux membres'],
             ['slug' => 'comms.email_templates.manage', 'module' => 'comms', 'action' => 'manage', 'name' => 'Gérer les modèles d’email'],
             ['slug' => 'comms.notifications.history.view', 'module' => 'comms', 'action' => 'view', 'name' => 'Voir l’historique des notifications'],
             ['slug' => 'comms.alerts.manage', 'module' => 'comms', 'action' => 'manage', 'name' => 'Gérer les alertes automatiques'],

@@ -11,7 +11,7 @@
         </div>
     </div>
     <dl class="grid gap-4 md:grid-cols-2 mb-6">
-        <div><dt class="text-slate-500 text-sm">Slug</dt><dd><?= htmlspecialchars($group['slug'] ?? '—') ?></dd></div>
+        <div><dt class="text-slate-500 text-sm">Adresse courte</dt><dd><?= htmlspecialchars($group['slug'] ?? '—') ?></dd></div>
         <div><dt class="text-slate-500 text-sm">Code</dt><dd><?= htmlspecialchars($group['code'] ?? '—') ?></dd></div>
         <div><dt class="text-slate-500 text-sm">Responsable</dt><dd><?= $commander ? htmlspecialchars($commander['display_name'] ?? $commander['email']) : '—' ?></dd></div>
     </dl>

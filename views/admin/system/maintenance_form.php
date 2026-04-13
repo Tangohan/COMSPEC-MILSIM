@@ -188,11 +188,11 @@ if ($scopeRaw === '' || $scopeRaw === 'global') {
                     <p class="mt-1 text-xs text-slate-500">Séparées par des virgules. Utile pour un poste fixe ou un bastion.</p>
                 </div>
                 <div>
-                    <label for="allowed_roles" class="block text-xs font-bold uppercase tracking-wider text-slate-500">Slugs de rôles tenant (optionnel)</label>
+                    <label for="allowed_roles" class="block text-xs font-bold uppercase tracking-wider text-slate-500">Rôles de la communauté autorisés (optionnel)</label>
                     <input type="text" name="allowed_roles" id="allowed_roles" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm"
                            value="<?= htmlspecialchars((string) ($row['allowed_roles'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                           placeholder="instructor, moderator">
-                    <p class="mt-1 text-xs text-slate-500">Liste CSV — correspond au slug du rôle dans la communauté de l’utilisateur.</p>
+                           placeholder="formateur, moderateur">
+                    <p class="mt-1 text-xs text-slate-500">Noms courts des rôles tels qu’ils figurent dans l’administration de la communauté, séparés par des virgules. Laissez vide pour ne pas filtrer par rôle.</p>
                 </div>
             </div>
         </section>

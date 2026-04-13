@@ -51,6 +51,14 @@ $boNavRolesFx = $p === 'back-office/roles-functions' || str_starts_with($p, 'bac
 $boNavPjr = str_starts_with($p, 'back-office/personnel-job-roles');
 $boNavEff = str_starts_with($p, 'back-office/organisation-effectifs');
 $boNavGroups = str_starts_with($p, 'back-office/groups');
+$boNavCommunications = str_starts_with($p, 'back-office/communications');
+$canCommsSection = $gate->allows('comms.email.send.orbat')
+    || $gate->allows('comms.email.send.mission')
+    || $gate->allows('comms.email.send.activity')
+    || $gate->allows('comms.email.send.custom')
+    || $gate->allows('comms.email.broadcast')
+    || $gate->allows('comms.email_templates.manage')
+    || $gate->allows('comms.notifications.history.view');
 $boNavTeams = str_starts_with($p, 'back-office/teams');
 $boNavCats = str_starts_with($p, 'back-office/categories');
 $boNavGrades = str_starts_with($p, 'back-office/referentiels/grades');
@@ -66,6 +74,7 @@ $boNavAudit = str_starts_with($p, 'back-office/audit');
 $boNavMod = str_starts_with($p, 'back-office/moderation');
 $canMemberModeration = $gate->allows('admin.members.moderate');
 $boNavEvents = str_starts_with($p, 'back-office/events');
+$boNavOpsBoard = str_starts_with($p, 'back-office/tableau-operationnel');
 $studioPath = function_exists('training_studio_path') ? training_studio_path() : 'back-office/ressources/training/studio';
 $boNavStudioActive = str_starts_with($p, $studioPath . '/') || $p === $studioPath;
 $lmsResPath = function_exists('training_lms_admin_path') ? training_lms_admin_path() : 'back-office/ressources/training';
@@ -107,6 +116,9 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
         <?php $boLink('back-office/teams', 'Équipes', $boNavTeams); ?>
         <?php $boLink('back-office/categories', 'Catégories', $boNavCats); ?>
         <?php $boLink('back-office/referentiels/grades', 'Référentiel des grades', $boNavGrades); ?>
+        <?php if ($canCommsSection): ?>
+            <?php $boLink('back-office/communications', 'E-mails aux membres', $boNavCommunications); ?>
+        <?php endif; ?>
 
         <?php $boSection('Communauté'); ?>
         <?php $boLink('back-office/community', 'Identité & code d’accès', $boNavCommCode); ?>
@@ -118,6 +130,7 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
         <?php $boLink('back-office/onboarding-recovery', 'Aide après inscription', $boNavOnb); ?>
 
         <?php $boSection('Pilotage'); ?>
+        <?php $boLink('back-office/tableau-operationnel', 'Tableau opérationnel', $boNavOpsBoard); ?>
         <?php $boLink('back-office/audit', 'Journal d’activité', $boNavAudit); ?>
         <?php if ($canMemberModeration): ?>
             <?php $boLink('back-office/moderation', 'Restrictions membres', $boNavMod); ?>

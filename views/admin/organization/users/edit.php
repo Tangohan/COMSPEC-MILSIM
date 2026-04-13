@@ -1,4 +1,8 @@
 <?php
+declare(strict_types=1);
+
+use App\Support\OrganizationRoleLabels;
+
 $user = $user ?? null;
 $userProfile = $userProfile ?? null;
 $roles = $roles ?? [];
@@ -9,6 +13,7 @@ $gradeCategories = $gradeCategories ?? [];
 $positionsList = is_array($positionsList ?? null) ? $positionsList : [];
 $userActivePositions = is_array($userActivePositions ?? null) ? $userActivePositions : [];
 $roleSetsList = is_array($roleSetsList ?? null) ? $roleSetsList : [];
+$organizationRoleLabelMode = $organizationRoleLabelMode ?? OrganizationRoleLabels::MODE_FR;
 if (!$user) {
     echo '<p>Utilisateur introuvable.</p>';
     return;
@@ -16,7 +21,7 @@ if (!$user) {
 $uid = (int) $user['id'];
 $isServiceAccount = !empty($isServiceAccount);
 ?>
-<div class="max-w-5xl mx-auto px-6 py-12">
+<div class="max-w-7xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 mb-6">Modifier le compte administratif</h1>
     <p class="text-sm text-slate-600 mb-4">Connexion, rôle, identité civile liée au compte. L’identité opérationnelle (personnage, affectation, clearance) se gère dans la <a href="<?= url('personnel/' . $uid . '/edit') ?>" class="text-blue-700 font-medium underline">fiche personnelle</a>.</p>
     <?php if (\App\Core\Session::get('success')): ?>
@@ -54,7 +59,7 @@ $isServiceAccount = !empty($isServiceAccount);
         <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
             <label class="block text-sm font-medium text-slate-700">Rôles (communauté et/ou opérationnel)</label>
             <p class="text-xs text-slate-500 mt-0.5 mb-3">Cochez un ou plusieurs rôles. Les droits effectifs sont l’<strong>union</strong> des permissions. Les rôles site/plateforme ne sont pas listés ici.</p>
-            <div class="grid sm:grid-cols-2 gap-3">
+            <div class="grid lg:grid-cols-2 gap-6">
                 <?php
                 $byLayer = ['community' => [], 'intra' => []];
                 foreach ($roles as $r) {
@@ -67,13 +72,17 @@ $isServiceAccount = !empty($isServiceAccount);
                 ?>
                 <?php if (!empty($byLayer['community'])): ?>
                 <div>
-                    <p class="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">Gouvernance communauté</p>
+                    <p class="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2"><?= htmlspecialchars(OrganizationRoleLabels::layerGroupLabel('community', $organizationRoleLabelMode)) ?></p>
                     <div class="space-y-2">
                         <?php foreach ($byLayer['community'] as $r): ?>
-                        <?php $rid = (int) $r['id']; $chk = in_array($rid, $selectedRoleIds, true); ?>
+                        <?php
+                        $rid = (int) $r['id'];
+                        $chk = in_array($rid, $selectedRoleIds, true);
+                        $rDisp = OrganizationRoleLabels::displayName($r, $organizationRoleLabelMode);
+                        ?>
                         <label class="flex items-start gap-2 cursor-pointer text-sm">
-                            <input type="checkbox" name="role_ids[]" value="<?= $rid ?>" class="role-pick mt-0.5 rounded border-slate-300 text-slate-900" <?= $chk ? 'checked' : '' ?> data-role-name="<?= htmlspecialchars($r['name'], ENT_QUOTES, 'UTF-8') ?>">
-                            <span><span class="font-medium text-slate-900"><?= htmlspecialchars($r['name']) ?></span><?php if (!empty($r['description'])): ?><span class="block text-xs text-slate-500"><?= htmlspecialchars((string) $r['description']) ?></span><?php endif; ?></span>
+                            <input type="checkbox" name="role_ids[]" value="<?= $rid ?>" class="role-pick mt-0.5 rounded border-slate-300 text-slate-900" <?= $chk ? 'checked' : '' ?> data-role-name="<?= htmlspecialchars($rDisp, ENT_QUOTES, 'UTF-8') ?>">
+                            <span><span class="font-medium text-slate-900"><?= htmlspecialchars($rDisp) ?></span><?php if (!empty($r['description'])): ?><span class="block text-xs text-slate-500"><?= htmlspecialchars((string) $r['description']) ?></span><?php endif; ?></span>
                         </label>
                         <?php endforeach; ?>
                     </div>
@@ -81,13 +90,17 @@ $isServiceAccount = !empty($isServiceAccount);
                 <?php endif; ?>
                 <?php if (!empty($byLayer['intra'])): ?>
                 <div>
-                    <p class="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">Rôles opérationnels</p>
+                    <p class="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2"><?= htmlspecialchars(OrganizationRoleLabels::layerGroupLabel('intra', $organizationRoleLabelMode)) ?></p>
                     <div class="space-y-2">
                         <?php foreach ($byLayer['intra'] as $r): ?>
-                        <?php $rid = (int) $r['id']; $chk = in_array($rid, $selectedRoleIds, true); ?>
+                        <?php
+                        $rid = (int) $r['id'];
+                        $chk = in_array($rid, $selectedRoleIds, true);
+                        $rDisp = OrganizationRoleLabels::displayName($r, $organizationRoleLabelMode);
+                        ?>
                         <label class="flex items-start gap-2 cursor-pointer text-sm">
-                            <input type="checkbox" name="role_ids[]" value="<?= $rid ?>" class="role-pick mt-0.5 rounded border-slate-300 text-slate-900" <?= $chk ? 'checked' : '' ?> data-role-name="<?= htmlspecialchars($r['name'], ENT_QUOTES, 'UTF-8') ?>">
-                            <span><span class="font-medium text-slate-900"><?= htmlspecialchars($r['name']) ?></span><?php if (!empty($r['description'])): ?><span class="block text-xs text-slate-500"><?= htmlspecialchars((string) $r['description']) ?></span><?php endif; ?></span>
+                            <input type="checkbox" name="role_ids[]" value="<?= $rid ?>" class="role-pick mt-0.5 rounded border-slate-300 text-slate-900" <?= $chk ? 'checked' : '' ?> data-role-name="<?= htmlspecialchars($rDisp, ENT_QUOTES, 'UTF-8') ?>">
+                            <span><span class="font-medium text-slate-900"><?= htmlspecialchars($rDisp) ?></span><?php if (!empty($r['description'])): ?><span class="block text-xs text-slate-500"><?= htmlspecialchars((string) $r['description']) ?></span><?php endif; ?></span>
                         </label>
                         <?php endforeach; ?>
                     </div>
@@ -101,7 +114,7 @@ $isServiceAccount = !empty($isServiceAccount);
                         <tr>
                             <th class="text-left p-2 font-semibold sticky left-0 bg-slate-50 z-10 border-r border-slate-100">Permission</th>
                             <?php foreach ($roleMatrix['roles'] as $rr): ?>
-                            <th class="p-2 text-center font-medium whitespace-nowrap role-col" data-role-id="<?= (int) $rr['id'] ?>"><?= htmlspecialchars($rr['name']) ?></th>
+                            <th class="p-2 text-center font-medium whitespace-nowrap role-col" data-role-id="<?= (int) $rr['id'] ?>"><?= htmlspecialchars(OrganizationRoleLabels::displayName($rr, $organizationRoleLabelMode)) ?></th>
                             <?php endforeach; ?>
                             <th class="p-2 text-center font-bold text-emerald-800 bg-emerald-50/80">Union</th>
                         </tr>

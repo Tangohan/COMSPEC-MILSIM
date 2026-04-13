@@ -5,6 +5,124 @@ $showcase_training_feature = $showcase_training_feature ?? false;
 $showcase_items = $showcase_items ?? [];
 $dashboard_tenant_label = $dashboard_tenant_label ?? null;
 $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
+$dash_header_ctx = function_exists('portal_header_context') ? portal_header_context() : [
+    'alerts' => [],
+    'alerts_count' => 0,
+    'alerts_severity' => 'info',
+    'display_name' => '',
+];
+$dash_grade_short = null;
+$dash_gr = $grade ?? null;
+if (is_array($dash_gr)) {
+    $dash_gt = trim((string) ($dash_gr['label_short'] ?? $dash_gr['short_name'] ?? $dash_gr['label_long'] ?? $dash_gr['name'] ?? ''));
+    $dash_grade_short = $dash_gt !== '' ? $dash_gt : null;
+}
+
+$dashBuiltNav = function_exists('build_navigation_menu') ? build_navigation_menu() : ['search' => ['enabled' => false]];
+$dashSearchEnabled = !empty($dashBuiltNav['search']['enabled']);
+$dashSearchUrl = (string) ($dashBuiltNav['search']['action'] ?? url('search'));
+$dashNavFullGroups = [];
+if (function_exists('navigation_scope_group_entries') && function_exists('navigation_scope_drawer_entries')) {
+    $dashNavFullGroups = navigation_scope_group_entries(navigation_scope_drawer_entries());
+}
+$dashRibbonEntries = [];
+if (function_exists('navigation_scope_drawer_entries')) {
+    $dashRibbonEntries = array_slice(navigation_scope_drawer_entries(), 0, 16);
+}
+
+$dashCoopInterUnits = false;
+if (class_exists(\App\Core\Gate::class)) {
+    $dg = \App\Core\Gate::getInstance();
+    $dashCoopInterUnits = $dg->allows('admin.system')
+        || $dg->allows('admin.organization')
+        || $dg->allows('admin.access')
+        || (function_exists('can') && (
+            can('interteam.missions.manage') || can('interteam.missions.respond')
+            || can('cooperation.missions.view') || can('cooperation.missions.manage')
+            || can('cooperation.missions.create') || can('cooperation.missions.respond')
+        ));
+}
+
+/**
+ * @param list<array<string, mixed>> $defs
+ * @return list<array{label: string, href: string, path: string, active_match: string}>
+ */
+$dashResolveNavLinks = static function (array $defs): array {
+    $out = [];
+    foreach ($defs as $def) {
+        if (!is_array($def) || !function_exists('navigation_resolve_link')) {
+            continue;
+        }
+        $r = navigation_resolve_link($def);
+        if ($r !== null) {
+            $out[] = $r;
+        }
+    }
+
+    return $out;
+};
+
+$dashQuickLinks = $dashResolveNavLinks([
+    ['label' => 'Tableau de bord', 'path' => 'dashboard'],
+    ['label' => 'Mon activité', 'path' => 'activite'],
+    ['label' => 'Ma fiche personnelle', 'path' => 'personnel/me'],
+    ['label' => 'Guides dossier et préréglages', 'path' => 'personnel/tutorials'],
+    ['label' => 'Annuaire des profils', 'path' => 'personnel'],
+]);
+
+$dashOpsLinks = $dashResolveNavLinks([
+    ['label' => 'Hub mission', 'path' => 'hub'],
+    ['label' => 'Pointage', 'path' => 'pointage'],
+    ['label' => 'Communautés', 'path' => 'communities'],
+    ['label' => 'Événements', 'path' => 'evenements'],
+    ['label' => 'Messagerie interne', 'path' => 'messages'],
+    ['label' => 'Accueil du forum', 'path' => 'forum', 'permission' => 'forum.view'],
+    ['label' => 'Publier un sujet', 'path' => 'forum/new-topic', 'permission' => 'forum.create_topic'],
+    ['label' => 'ORBAT', 'path' => 'orbat'],
+    ['label' => 'Situation tactique (ATAK)', 'path' => 'atak'],
+    ['label' => 'TACMAP', 'path' => 'tacmap'],
+    ['label' => 'Overwatch', 'path' => 'overwatch'],
+    ['label' => 'Aide terrain', 'path' => 'operateur/terrain'],
+    ['label' => 'Installation et réglages ATAK', 'path' => 'atak/setup'],
+    ['label' => 'Tutoriel ATAK', 'path' => 'atak/tuto'],
+    ['label' => 'Télécharger le module ATAK', 'path' => 'atak/mod/download'],
+    ['label' => 'Dossier opérateur', 'path' => 'dossier-operateur/accreditation'],
+    ['label' => 'Équipement', 'path' => 'equipment'],
+    ['label' => 'Modpacks', 'path' => 'modpacks'],
+]);
+
+$dashResLinks = $dashResolveNavLinks([
+    ['label' => 'Accueil public', 'path' => ''],
+    ['label' => 'Bibliothèque documentaire', 'path' => 'documents', 'permission' => 'documents.view'],
+    ['label' => 'Gestion documentaire', 'path' => 'documents/gestion', 'permission' => 'documents.upload'],
+    ['label' => 'Tableau du courrier', 'path' => 'courrier', 'permission' => 'courrier.view'],
+    ['label' => 'Rédiger un courrier', 'path' => 'courrier/editor', 'permission' => 'courrier.create'],
+    ['label' => 'Modèles de courrier', 'path' => 'courrier/templates', 'any_permissions' => ['courrier.create', 'courrier.validate']],
+    ['label' => 'Historique du courrier', 'path' => 'courrier/history', 'permission' => 'courrier.view'],
+    ['label' => 'Archives du courrier', 'path' => 'courrier/archives', 'any_permissions' => ['courrier.view', 'courrier.archive']],
+    ['label' => 'Guide du portail', 'path' => 'documentation'],
+    ['label' => 'Références équipe', 'path' => 'documentation/references'],
+    ['label' => 'Recherche portail', 'path' => 'search'],
+    ['label' => 'Formations', 'path' => 'formations'],
+    ['label' => 'Mes parcours', 'path' => 'formations/mes-formations'],
+    ['label' => 'Compétences', 'path' => 'formations/competences', 'permission' => 'training.view'],
+    ['label' => 'Code d’accès formation', 'path' => 'formations/code-acces', 'permission' => 'training.view'],
+    ['label' => 'Modpacks', 'path' => 'modpacks'],
+    ['label' => 'Équipement (fiches)', 'path' => 'equipement'],
+]);
+if ($dashCoopInterUnits && function_exists('cooperation_mission_index_url')) {
+    $dashResLinks[] = [
+        'label' => 'Coopérations inter-unités',
+        'href' => cooperation_mission_index_url(),
+        'path' => '/cooperations',
+        'active_match' => 'prefix',
+    ];
+}
+
+$dashAccountLinks = $dashResolveNavLinks([
+    ['label' => 'Paramètres du compte', 'path' => 'account'],
+    ['label' => 'Préférences', 'path' => 'account/preferences'],
+]);
 ?>
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
@@ -12,9 +130,17 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?></title>
+<?php
+    $seo_og_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+    $meta_description = $meta_description ?? 'Tableau de bord Athena : accès rapide aux formations, messages et activités de votre communauté.';
+    require base_path('views/partials/seo_meta.php');
+?>
     <?php $tailwindBaseUrl = $base; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
+    <?php if (is_file(base_path('public/assets/css/portal-nav.css'))): ?>
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/portal-nav.css" rel="stylesheet">
+    <?php endif; ?>
     <?php if ($showcase_training_feature && !empty($showcase_items)): ?>
     <script>
         window.__dashboardShowcaseCourses = <?= $showcase_json ?>;
@@ -39,17 +165,6 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
 </head>
 <body class="dashboard-shell bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
     <?php $__dashGate = \App\Core\Gate::getInstance(); ?>
-    <?php
-    /** Aligné sur {@see \App\Middleware\InterteamMissionsAccessMiddleware} pour afficher le raccourci uniquement aux profils habilités. */
-    $__dashCoopRes = $__dashGate->allows('admin.system')
-        || $__dashGate->allows('admin.organization')
-        || $__dashGate->allows('admin.access')
-        || (function_exists('can') && (
-            can('interteam.missions.manage') || can('interteam.missions.respond')
-            || can('cooperation.missions.view') || can('cooperation.missions.manage')
-            || can('cooperation.missions.create') || can('cooperation.missions.respond')
-        ));
-    ?>
     <style>
         /* Secours si le build Tailwind omet les utilitaires arbitraires (w-[200%], etc.) */
         #dashDrawerTrack {
@@ -152,6 +267,11 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
                         </button>
                     </div>
                     <nav class="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 py-4" aria-label="Navigation du tableau de bord">
+                        <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-emerald-950 transition hover:border-emerald-300 hover:bg-white hover:shadow-sm"
+                                onclick="dashOpenSubmenu('Plan du portail', 'dashTplFullNav')">
+                            <span>Plan du portail</span>
+                            <svg class="h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                        </button>
                         <button type="button" class="flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3.5 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-800 transition hover:border-slate-200/80 hover:bg-white/90 hover:shadow-sm"
                                 onclick="dashOpenSubmenu('Personnel', 'dashTplQuick')">
                             <span>Personnel</span>
@@ -207,26 +327,24 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
     </aside>
 
     <template id="dashTplQuick">
-        <a href="<?= htmlspecialchars(url('dashboard')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Tableau de bord</a>
-        <a href="<?= htmlspecialchars(url('activite')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Mon activité</a>
-        <a href="<?= htmlspecialchars(url('personnel/me')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Ma fiche</a>
+        <?php foreach ($dashQuickLinks as $r): ?>
+        <a href="<?= htmlspecialchars((string) $r['href']) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()"><?= htmlspecialchars((string) $r['label']) ?></a>
+        <?php endforeach; ?>
     </template>
     <template id="dashTplOps">
-        <a href="<?= htmlspecialchars(url('atak')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">ATAK / Tacmap</a>
-        <a href="<?= htmlspecialchars(url('orbat')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">ORBAT / Unité</a>
+        <?php foreach ($dashOpsLinks as $r): ?>
+        <a href="<?= htmlspecialchars((string) $r['href']) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()"><?= htmlspecialchars((string) $r['label']) ?></a>
+        <?php endforeach; ?>
     </template>
     <template id="dashTplRes">
-        <a href="<?= htmlspecialchars($base) ?>/" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Accueil</a>
-        <a href="<?= htmlspecialchars(url('documents')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Documents</a>
-        <a href="<?= htmlspecialchars(url('modpacks')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Modpacks</a>
-        <a href="<?= htmlspecialchars(url('formations')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Formations</a>
-        <?php if (!empty($__dashCoopRes)): ?>
-        <a href="<?= htmlspecialchars(cooperation_mission_index_url(), ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Coopérations inter-unités</a>
-        <?php endif; ?>
-        <a href="<?= htmlspecialchars(url('equipement')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Équipement</a>
+        <?php foreach ($dashResLinks as $r): ?>
+        <a href="<?= htmlspecialchars((string) $r['href']) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()"><?= htmlspecialchars((string) $r['label']) ?></a>
+        <?php endforeach; ?>
     </template>
     <template id="dashTplAccount">
-        <a href="<?= htmlspecialchars(url('account')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()">Paramètres</a>
+        <?php foreach ($dashAccountLinks as $r): ?>
+        <a href="<?= htmlspecialchars((string) $r['href']) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-800 transition hover:bg-slate-50" onclick="toggleMenu()"><?= htmlspecialchars((string) $r['label']) ?></a>
+        <?php endforeach; ?>
     </template>
     <?php
     $__dashTplAdminSystem = $__dashGate->allows('admin.system');
@@ -238,11 +356,14 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         <?php endif; ?>
         <?php if ($__dashTplAdminOffice): ?>
         <a href="<?= htmlspecialchars(url('back-office')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50" onclick="toggleMenu()">Back-office</a>
+        <a href="<?= htmlspecialchars(url('back-office/tableau-operationnel')) ?>" class="block rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50" onclick="toggleMenu()">Tableau opérationnel</a>
         <?php endif; ?>
         <?php if (!$__dashTplAdminSystem && !$__dashTplAdminOffice): ?>
         <p class="rounded-xl px-4 py-3.5 text-sm leading-relaxed text-slate-500">Aucun raccourci n’est disponible pour le moment. Si vous pensez qu’il s’agit d’une erreur, contactez un responsable de l’unité.</p>
         <?php endif; ?>
     </template>
+
+    <?php require base_path('views/partials/dashboard_full_nav_template.php'); ?>
 
     <div class="min-h-screen">
     <div class="w-full border-b border-white/5 bg-slate-900 text-white/30 select-none">
@@ -320,24 +441,92 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
     </script>
     
     <header class="sticky top-0 z-[100] w-full border-b border-slate-200/80 bg-slate-50/95 backdrop-blur-md">
-        <div class="relative mx-auto flex h-[3.75rem] max-w-5xl items-center justify-between px-4 text-slate-900 sm:px-8">
-            <div class="flex flex-1 items-center">
+        <div class="relative mx-auto flex min-h-[3.5rem] max-w-5xl items-center justify-between gap-2 px-4 py-1.5 text-slate-900 sm:min-h-[3.75rem] sm:gap-3 sm:px-8 sm:py-0">
+            <div class="flex min-w-0 flex-1 items-center">
                 <button type="button" onclick="toggleMenu()" class="group flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-xl outline-none transition hover:bg-slate-200/60" aria-label="Ouvrir le menu">
                     <span class="h-0.5 w-5 rounded-full bg-slate-900 transition group-hover:translate-x-0.5"></span>
                     <span class="h-0.5 w-3 self-end rounded-full bg-slate-900 transition group-hover:w-5"></span>
                 </button>
             </div>
-            <div class="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center">
-                <a href="<?= htmlspecialchars($base) ?>/" class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 transition hover:text-emerald-700 sm:text-[11px] sm:tracking-[0.26em]">
+            <div class="absolute left-1/2 top-1/2 flex max-w-[42%] -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center sm:max-w-none">
+                <a href="<?= htmlspecialchars($base) ?>/" class="truncate text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 transition hover:text-emerald-700 sm:text-[11px] sm:tracking-[0.26em]">
                     Athena Compsec
                 </a>
                 <span class="mt-0.5 text-[6px] font-semibold uppercase tracking-[0.35em] text-slate-400">Portail opérationnel</span>
             </div>
-            <div class="flex-1" aria-hidden="true"></div>
+            <div class="flex min-w-0 flex-1 items-center justify-end gap-1 sm:justify-end sm:gap-2">
+                <div class="hidden min-w-0 max-w-[11rem] flex-col items-end text-right leading-tight sm:flex md:max-w-[14rem] lg:max-w-[18rem]">
+                    <?php if ($dashboard_tenant_label !== null && trim((string) $dashboard_tenant_label) !== ''): ?>
+                        <p class="w-full truncate text-[9px] font-black uppercase tracking-[0.12em] text-slate-500"><?= htmlspecialchars((string) $dashboard_tenant_label) ?></p>
+                    <?php endif; ?>
+                    <?php
+                    $dashName = trim((string) ($dash_header_ctx['display_name'] ?? ''));
+                    ?>
+                    <p class="w-full truncate text-xs font-semibold text-slate-900" title="<?= htmlspecialchars($dashName !== '' ? $dashName : 'Compte') ?>"><?= htmlspecialchars($dashName !== '' ? $dashName : 'Compte') ?></p>
+                    <?php if ($dash_grade_short !== null): ?>
+                        <p class="w-full truncate text-[10px] font-medium text-slate-500"><?= htmlspecialchars($dash_grade_short) ?></p>
+                    <?php endif; ?>
+                </div>
+                <?php
+                $ctx = $dash_header_ctx;
+                $portal_alerts_dropdown_id = 'dash-portal-alerts-dropdown';
+                require base_path('views/partials/portal_alerts_bell.php');
+                unset($ctx, $portal_alerts_dropdown_id);
+                ?>
+                <?php if ($dashSearchEnabled): ?>
+                <a href="<?= htmlspecialchars($dashSearchUrl) ?>"
+                   class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 sm:h-10 sm:w-10"
+                   title="Rechercher sur le portail"
+                   aria-label="Rechercher sur le portail">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </a>
+                <?php endif; ?>
+                <a href="<?= htmlspecialchars(url('account')) ?>"
+                   class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 sm:h-10 sm:w-10"
+                   title="Paramètres du compte"
+                   aria-label="Paramètres du compte">
+                    <svg class="h-4 w-4 sm:h-[18px] sm:w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                </a>
+                <a href="<?= htmlspecialchars($base) ?>/"
+                   class="hidden shrink-0 rounded-lg px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 transition hover:bg-slate-200/60 hover:text-slate-900 md:inline-flex">
+                    Accueil
+                </a>
+                <form method="post" action="<?= htmlspecialchars(url('logout')) ?>" class="flex shrink-0 items-center">
+                    <?= \App\Core\Csrf::field() ?>
+                    <button type="submit"
+                            class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400 sm:h-10 sm:w-10"
+                            title="Se déconnecter"
+                            aria-label="Se déconnecter">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
         </div>
     </header>
-    
-    
+    <?php if ($dashRibbonEntries !== []): ?>
+    <nav class="z-[95] border-b border-slate-200/90 bg-white/90 backdrop-blur-sm" aria-label="Raccourcis du portail">
+        <div class="mx-auto max-w-5xl overflow-x-auto px-4 py-2 sm:px-8">
+            <ul class="flex w-max min-w-0 max-w-full flex-nowrap gap-2">
+                <?php foreach ($dashRibbonEntries as $re): ?>
+                    <?php if (!is_array($re)) {
+                        continue;
+                    } ?>
+                    <li class="shrink-0">
+                        <a href="<?= htmlspecialchars((string) ($re['href'] ?? '#')) ?>"
+                           class="inline-flex max-w-[11rem] items-center truncate rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-800 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/80 hover:text-emerald-950"><?= htmlspecialchars((string) ($re['label'] ?? '')) ?></a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    </nav>
+    <?php endif; ?>
+
     <main class="min-h-screen bg-[#f8fafc] text-slate-900">
         <?php
         $communityMemberships = $communityMemberships ?? [];
@@ -1194,5 +1383,6 @@ $showcase_json = json_encode($showcase_items, JSON_HEX_TAG | JSON_HEX_APOS | JSO
         </section>
     </main>
     </div>
+    <script defer src="<?= htmlspecialchars($base) ?>/assets/js/portal-alerts.js"></script>
 </body>
 </html>

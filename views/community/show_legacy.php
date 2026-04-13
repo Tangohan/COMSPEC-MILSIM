@@ -53,7 +53,7 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
     </div>
 
     <h1 class="text-3xl font-black uppercase tracking-tight text-slate-900 mb-2"><?= htmlspecialchars($name) ?></h1>
-    <p class="text-sm text-slate-500 mb-6"><?= $publicAudience === 'platform' ? 'Portail public' : 'Page publique' ?> · <code class="bg-slate-100 px-2 py-0.5 rounded text-xs"><?= htmlspecialchars($slug) ?></code></p>
+    <p class="text-sm text-slate-500 mb-6"><?= $publicAudience === 'platform' ? 'Portail public — fiche de présentation' : 'Page publique — fiche de présentation de la communauté' ?></p>
 
     <?php if ($gameLabel !== '' || $mainMods !== '' || $modpackSize !== null): ?>
         <div class="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-sm p-5 mb-8 space-y-2 text-sm shadow-sm">

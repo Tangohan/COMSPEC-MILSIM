@@ -40,7 +40,8 @@ for ($i = 0; $i < $max; $i++) {
             (string) ($data['textBody'] ?? ''),
             isset($data['tenantId']) ? (int) $data['tenantId'] : null,
             isset($data['replyTo']) ? (string) $data['replyTo'] : null,
-            isset($data['payloadSummary']) && is_array($data['payloadSummary']) ? $data['payloadSummary'] : null
+            isset($data['payloadSummary']) && is_array($data['payloadSummary']) ? $data['payloadSummary'] : null,
+            isset($data['campaignId']) ? (int) $data['campaignId'] : null
         );
         $jobs->delete($id);
     } else {

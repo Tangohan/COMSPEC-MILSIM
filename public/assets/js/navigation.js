@@ -251,60 +251,10 @@
         closeAllMegas();
     });
 
-    function closeAlertsPanel() {
-        var wrap = document.querySelector('[data-portal-alerts-wrap]');
-        if (!wrap) return;
-        var trig = wrap.querySelector('[data-portal-alerts-trigger]');
-        var panel = wrap.querySelector('[data-portal-alerts-panel]');
-        if (!panel) return;
-        panel.hidden = true;
-        if (trig) {
-            trig.setAttribute('aria-expanded', 'false');
-        }
-    }
-
-    function toggleAlertsPanel() {
-        var wrap = document.querySelector('[data-portal-alerts-wrap]');
-        if (!wrap) return;
-        var trig = wrap.querySelector('[data-portal-alerts-trigger]');
-        var panel = wrap.querySelector('[data-portal-alerts-panel]');
-        if (!trig || !panel) return;
-        var open = trig.getAttribute('aria-expanded') === 'true';
-        if (open) {
-            panel.hidden = true;
-            trig.setAttribute('aria-expanded', 'false');
-        } else {
-            panel.hidden = false;
-            trig.setAttribute('aria-expanded', 'true');
-            window.setTimeout(function () {
-                var first = panel.querySelector('a, button');
-                if (first && first.focus) first.focus();
-            }, 0);
-        }
-    }
-
-    var alertsWrap = document.querySelector('[data-portal-alerts-wrap]');
-    if (alertsWrap) {
-        var alertsTrig = alertsWrap.querySelector('[data-portal-alerts-trigger]');
-        var alertsPanel = alertsWrap.querySelector('[data-portal-alerts-panel]');
-        if (alertsTrig && alertsPanel) {
-            alertsTrig.addEventListener('click', function (e) {
-                e.stopPropagation();
-                toggleAlertsPanel();
-            });
-            document.addEventListener('click', function (e) {
-                if (!e.target) return;
-                if (alertsWrap.contains(e.target)) return;
-                closeAlertsPanel();
-            });
-        }
-    }
-
     document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') return;
         setDrawerOpen(false);
         closeAllMegas();
-        closeAlertsPanel();
     });
 
     window.addEventListener('resize', function () {

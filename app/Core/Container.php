@@ -316,6 +316,7 @@ class Container
                 self::get(\App\Services\Profile\UserUiPreferencesValidationService::class)
             ),
             \App\Repositories\PersonnelJobRoleRepository::class => new \App\Repositories\PersonnelJobRoleRepository(),
+            \App\Repositories\PlanningEntryRepository::class => new \App\Repositories\PlanningEntryRepository(),
             \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController::class => new \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController(
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Repositories\PermissionRepository::class),
@@ -345,6 +346,7 @@ class Container
                 self::get(\App\Repositories\UserProfileRepository::class),
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Repositories\PlanningEntryRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
                 self::get(TenantRepository::class)
             ),
@@ -369,6 +371,7 @@ class Container
             \App\Repositories\PersonnelAdminPanelRepository::class => new \App\Repositories\PersonnelAdminPanelRepository(),
             \App\Repositories\PersonnelAdminDataRepository::class => new \App\Repositories\PersonnelAdminDataRepository(),
             \App\Repositories\UnitRepository::class => new \App\Repositories\UnitRepository(),
+            \App\Repositories\OrbatChartTypeRepository::class => new \App\Repositories\OrbatChartTypeRepository(),
             \App\Repositories\EnlistmentRepository::class => new \App\Repositories\EnlistmentRepository(),
             \App\Repositories\EnlistmentCannedMessageRepository::class => new \App\Repositories\EnlistmentCannedMessageRepository(),
             \App\Repositories\RecruitmentPresetRepository::class => new \App\Repositories\RecruitmentPresetRepository(),
@@ -1096,7 +1099,8 @@ class Container
             ),
             \App\Controllers\Api\OrbatApiController::class => new \App\Controllers\Api\OrbatApiController(
                 self::get(\App\Repositories\UnitRepository::class),
-                self::get(UserRepository::class)
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\OrbatChartTypeRepository::class)
             ),
             \App\Controllers\Api\ForumModerationApiController::class => new \App\Controllers\Api\ForumModerationApiController(
                 self::get(\App\Repositories\ForumTopicRepository::class),

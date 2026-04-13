@@ -74,7 +74,10 @@ $renderPriorityBadge = static function (array $item) use ($priorityClasses, $pri
                 <h1 class="text-2xl font-black text-slate-900 mt-1">Centre des opérations</h1>
                 <p class="text-sm text-slate-600 mt-2">Socle unique fusionnant tableau de pilotage (missions, activités, affectations) et mur d’information opérationnelle.</p>
             </div>
-            <a href="<?= url('back-office') ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Retour tableau de bord</a>
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="<?= url('back-office/tableau-operationnel') ?>" class="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-100">Tableau opérationnel</a>
+                <a href="<?= url('back-office') ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Retour tableau de bord</a>
+            </div>
         </div>
 
         <div class="mt-4 flex flex-wrap gap-2">

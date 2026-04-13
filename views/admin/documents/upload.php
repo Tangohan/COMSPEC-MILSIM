@@ -47,9 +47,9 @@ $visibilityHelpLong = [
     'private' => '<p><strong>Privé</strong> limite la diffusion aux personnes qui travaillent sur le document : le <em>propriétaire</em>, l’<em>auteur</em> et les <em>collaborateurs</em> que vous ajouterez ensuite (éditeur, lecteur, etc.). Tant que le statut reste « Brouillon » ou « En relecture », les autres utilisateurs ne voient pas le fichier même s’ils ont d’autres droits.</p>',
     'collaborators' => '<p>Identique au mode privé sur le principe, mais l’accent est mis sur la <strong>liste de collaborateurs</strong> : seuls ces comptes auront accès une fois le document <em>publié</em>. Pensez à compléter les collaborateurs après création si besoin.</p>',
     'unit' => '<p>Le document est rattaché à <strong>une unité</strong> (liste « Unité » dans la section Liaisons métier). Les utilisateurs qui appartiennent à cette unité dans l’ORBAT / annuaire pourront le consulter lorsqu’il est publié. <strong>Obligatoire :</strong> choisir une unité, sinon la création est refusée.</p>',
-    'role' => '<p>Vous cochez un ou plusieurs <strong>rôles communauté</strong> du <em>tenant courant</em> (ex. cadre, opérateur). Seuls ces profils pourront lire une fois publié, si leur <strong>niveau de classification</strong> le permet. <strong>État-major</strong> (<code>tenant_admin</code>) et <strong>fondateur</strong> (<code>community_owner</code>) ne sont pas limités par cette liste (accès complet). Les <strong>modérateurs forum</strong> (<code>forum_moderator</code>) voient tout en lecture et commentaires. Le menu « Niveau d’accès » s’applique aux rôles cochés.</p>',
+    'role' => '<p>Vous cochez un ou plusieurs <strong>rôles communauté</strong> (ex. cadre, opérateur). Seuls ces profils pourront lire une fois publié, si leur <strong>niveau de classification</strong> le permet. <strong>État-major</strong>, <strong>fondateur</strong> et profils d’administration équivalents ne sont pas limités par cette liste. Les <strong>modérateurs du forum</strong> voient tout en lecture et commentaires. Le menu « Niveau d’accès » s’applique aux rôles cochés.</p>',
     'organization' => '<p>Diffusion large au sein de la <strong>communauté courante</strong> : tout compte actif peut lire le document publié, sauf s’il est bloqué par le <strong>niveau de classification</strong> (un utilisateur ne voit pas un document classé au-dessus de son plafond). À utiliser pour les notices générales non sensibles.</p>',
-    'controlled' => '<p>Mode le plus fin : chaque ligne du tableau est une <strong>règle d’accès</strong>. Colonne « Type » : rôle (slug exact), unité (identifiant numérique), utilisateur (ID), ou groupe. Colonne « Valeur » : l’identifiant correspondant. Colonne « Accès » : jusqu’où va le droit (lecture, modification…). Les lignes vides sont ignorées. Combinez plusieurs règles si des profils différents doivent coexister.</p>',
+    'controlled' => '<p>Mode le plus fin : chaque ligne du tableau est une <strong>règle d’accès</strong>. Colonne « Type » : rôle (référence telle qu’en administration), unité, utilisateur ou groupe. Colonne « Valeur » : l’identifiant attendu pour ce type (souvent un numéro interne pour unité ou personne). Colonne « Accès » : jusqu’où va le droit (lecture, modification…). Les lignes vides sont ignorées. Combinez plusieurs règles si des profils différents doivent coexister.</p>',
 ];
 $classificationHelpLong = '<p>Le <strong>niveau de classification</strong> protège le contenu : plus il est élevé, moins de profils peuvent le consulter. <strong>Public</strong> : peu restrictif. <strong>Interne service</strong> : usage courant au sein de l’organisation. <strong>Restreint / Sensible / Confidentiel / Opérationnel</strong> : réservé aux profils autorisés (souvent commandement ou rôles dédiés). Ce niveau est combiné à la <em>visibilité</em> : les deux conditions doivent être remplies pour qu’un utilisateur lise le document.</p>';
 $statuses = ['draft' => 'Brouillon', 'review' => 'En relecture', 'approval' => 'À valider', 'published' => 'Publié', 'suspended' => 'Suspendu', 'archived' => 'Archivé', 'obsolete' => 'Obsolète'];
@@ -64,9 +64,9 @@ $accessLevelLabels = [
     'manage' => 'Gérer',
 ];
 $permTypeLabels = [
-    'role' => 'Rôle (slug)',
-    'unit' => 'Unité (ID)',
-    'user' => 'Utilisateur (ID)',
+    'role' => 'Rôle',
+    'unit' => 'Unité',
+    'user' => 'Utilisateur',
     'group' => 'Groupe',
 ];
 ?>
@@ -137,7 +137,7 @@ $permTypeLabels = [
                             <input type="text" name="title" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-inner shadow-slate-100/50 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" id="doc-title" placeholder="Intitulé officiel" />
                         </div>
                         <div>
-                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-600">Slug</label>
+                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-600">Adresse courte du document</label>
                             <input type="text" name="slug" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="Généré depuis le titre si vide" />
                         </div>
                         <div>
@@ -272,7 +272,7 @@ $permTypeLabels = [
                               <details class="doc-help-details text-right">
                                 <summary class="inline-flex cursor-pointer list-none items-center gap-1 rounded-full border border-violet-300 bg-white px-2 py-0.5 text-[10px] font-black uppercase text-violet-900"><span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-violet-700 text-[10px] text-white">?</span> Aide</summary>
                                 <div class="mt-2 rounded-lg border border-violet-100 bg-white p-3 text-left text-[11px] leading-relaxed text-violet-950/90">
-                                  Cochez les <strong>slugs de rôles</strong> tels qu’ils existent dans votre communauté (officier, membre…). Le <strong>niveau d’accès</strong> s’applique à toutes les cases cochées : en général « Lecture » suffit pour une diffusion lecture seule ; montez seulement si ces rôles doivent aussi commenter ou modifier via les permissions documentaires.
+                                  Cochez les <strong>rôles</strong> proposés pour votre communauté (officier, membre…). Le <strong>niveau d’accès</strong> s’applique à toutes les cases cochées : en général « Lecture » suffit pour une diffusion lecture seule ; montez seulement si ces rôles doivent aussi commenter ou modifier via les permissions documentaires.
                                 </div>
                               </details>
                             </div>
@@ -326,7 +326,7 @@ $permTypeLabels = [
                             <details class="doc-help-details mt-2 rounded-lg border border-amber-200 bg-white">
                               <summary class="cursor-pointer px-3 py-2 text-[11px] font-semibold text-amber-900">Comment remplir le tableau ?</summary>
                               <div class="border-t border-amber-100 px-3 py-2 text-[11px] leading-relaxed text-amber-950/95">
-                                <strong>Rôle</strong> : slug exact (comme dans l’admin). <strong>Unité / Utilisateur</strong> : numéro interne (ID). <strong>Groupe</strong> : identifiant métier si utilisé. Colonne <em>Accès</em> : droit max pour la ligne. Les lignes vides sont ignorées.
+                                <strong>Rôle</strong> : référence telle qu’affichée dans l’administration des rôles. <strong>Unité / Utilisateur</strong> : numéro interne attribué par le système. <strong>Groupe</strong> : identifiant métier si utilisé. Colonne <em>Accès</em> : droit maximal pour la ligne. Les lignes vides sont ignorées.
                               </div>
                             </details>
                             <details id="controlled-fine-rules-details" class="mt-3 overflow-x-auto rounded-lg border border-amber-100 bg-white shadow-sm">
@@ -352,7 +352,7 @@ $permTypeLabels = [
                                                 </select>
                                             </td>
                                             <td class="px-2 py-2 align-top">
-                                                <input type="text" name="permissions[<?= $pi ?>][permission_value]" class="w-full min-w-[8rem] rounded border border-slate-200 px-2 py-1.5 font-mono text-[12px]" placeholder="ex. slug rôle ou ID" title="Slug du rôle, ou identifiant numérique unité/utilisateur" />
+                                                <input type="text" name="permissions[<?= $pi ?>][permission_value]" class="w-full min-w-[8rem] rounded border border-slate-200 px-2 py-1.5 font-mono text-[12px]" placeholder="Référence rôle ou n° interne" title="Référence du rôle ou numéro interne unité ou personne" />
                                             </td>
                                             <td class="px-2 py-2 align-top">
                                                 <select name="permissions[<?= $pi ?>][access_level]" class="w-full rounded border border-slate-200 px-2 py-1.5 text-[12px]">

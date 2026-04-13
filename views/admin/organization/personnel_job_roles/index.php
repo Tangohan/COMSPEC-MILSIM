@@ -69,7 +69,7 @@ $personnelProfilesJobRoleReady = $personnelProfilesJobRoleReady ?? true;
                 <tr>
                     <th class="p-3 text-xs font-semibold uppercase text-slate-600">Catégorie</th>
                     <th class="p-3 text-xs font-semibold uppercase text-slate-600">Rôle</th>
-                    <th class="p-3 text-xs font-semibold uppercase text-slate-600">Slug</th>
+                    <th class="p-3 text-xs font-semibold uppercase text-slate-600">Référence</th>
                     <th class="p-3 text-xs font-semibold uppercase text-slate-600">Perms</th>
                     <th class="p-3 text-xs font-semibold uppercase text-slate-600">Actions</th>
                 </tr>

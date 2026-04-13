@@ -121,11 +121,11 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                             <div class="md:col-span-2">
                                 <label class="mb-3 flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                                     <input type="checkbox" name="wizard_custom_community_slug" value="1" id="wizard-custom-community-slug" class="h-4 w-4 rounded border-slate-300 text-emerald-600">
-                                    <span class="text-sm font-semibold text-slate-800">Définir un <strong>slug URL</strong> personnalisé</span>
+                                    <span class="text-sm font-semibold text-slate-800">Définir une <strong>adresse web personnalisée</strong> pour la communauté</span>
                                 </label>
                                 <p class="mb-2 text-xs text-slate-500">Sans cette option, l’adresse web de la communauté est <strong>dérivée automatiquement</strong> du nom affiché (lettres minuscules et tirets).</p>
                                 <div id="wizard-community-slug-wrap" class="hidden">
-                                    <label class="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Segment d’URL (slug)</label>
+                                    <label class="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Adresse courte (lien public)</label>
                                     <input type="text" name="slug" id="wizard-community-slug-input" pattern="[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?" class="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 font-mono text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="ex. mon-unite">
                                 </div>
                             </div>
@@ -341,17 +341,17 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                         </label>
                         <label class="mt-3 flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                             <input type="checkbox" name="wizard_orbat_custom_slug" value="1" id="wizard-orbat-custom-slug" class="h-4 w-4 rounded border-slate-300 text-emerald-600">
-                            <span class="text-sm text-slate-800"><strong>Slugs d’unités personnalisés</strong> — affiche le segment d’URL par unité ; sinon il est calculé à partir du nom.</span>
+                            <span class="text-sm text-slate-800"><strong>Adresses courtes par unité</strong> — permet de choisir un segment d’adresse pour chaque unité ; sinon il est dérivé du nom.</span>
                         </label>
                         <div class="mt-4 flex flex-wrap gap-2">
                             <button type="button" id="orbat-add-root" class="rounded-2xl bg-slate-900 px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white hover:bg-emerald-600">+ Unité racine</button>
                         </div>
                         <div id="orbat-builder-root" class="mt-4 min-h-[120px]"></div>
                         <details class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
-                            <summary class="cursor-pointer text-sm font-bold text-slate-700">Avancé : édition JSON</summary>
-                            <label class="mt-3 mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">JSON des unités</label>
+                            <summary class="cursor-pointer text-sm font-bold text-slate-700">Mode expert : arborescence des unités</summary>
+                            <label class="mt-3 mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Données structurées des unités</label>
                             <textarea id="wizard-units-editor" rows="8" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"><?= htmlspecialchars($defaultWizardUnitsJson, ENT_QUOTES, 'UTF-8') ?></textarea>
-                            <p class="mt-2 text-xs text-slate-500">Synchronisé avec le constructeur et le champ <code>wizard_units_json</code>.</p>
+                            <p class="mt-2 text-xs text-slate-500">Synchronisé avec le constructeur ci-dessus ; réservé aux parcours avancés.</p>
                         </details>
                     </div>
 
@@ -570,13 +570,13 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                                         <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-slate-700">
                                             <li><strong class="text-slate-900">Dossier étendu</strong> (type « Olympus ») : identité administratif/RP, matériel, expérience, motivation, engagement, barre de progression et case de confirmation anti-IA.</li>
                                             <li><strong class="text-slate-900">Adapté</strong> aux unités qui veulent filtrer fortement et documenter chaque candidature.</li>
-                                            <li><strong class="text-slate-900">Personnalisation</strong> : libellés, préambule, ROE, filigrane — soit via JSON dans cet assistant, soit via l’éditeur visuel après création.</li>
+                                            <li><strong class="text-slate-900">Personnalisation</strong> : libellés, préambule, ROE, filigrane — depuis cet assistant ou l’éditeur visuel après création.</li>
                                         </ul>
                                         <div class="mt-4 flex flex-wrap gap-2">
                                             <button type="button" class="btn-open-milsim-form-editor inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
                                                 Ouvrir l’édition du formulaire
                                             </button>
-                                            <span class="self-center text-[10px] text-slate-500">JSON optionnel · pack MilSim</span>
+                                            <span class="self-center text-[10px] text-slate-500">Import avancé optionnel · pack MilSim</span>
                                         </div>
                                     </div>
 
@@ -610,7 +610,7 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                                 <div class="md:col-span-2">
                                     <label for="wizard-welcome-text" class="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Message d’accueil</label>
                                     <textarea id="wizard-welcome-text" name="welcome_text" rows="3" maxlength="500" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Texte visible sur la page de communauté publique."></textarea>
-                                    <p class="mt-1 text-xs text-slate-500">Surtout utile en mode simple ; complète la vitrine <code class="text-[11px]">/c/&lt;slug&gt;</code>.</p>
+                                    <p class="mt-1 text-xs text-slate-500">Surtout utile en mode simple ; complète la vitrine publique de la communauté.</p>
                                 </div>
                             </div>
                             <div class="grid gap-4 md:grid-cols-2">
@@ -629,16 +629,16 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                                     <div>
                                         <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-900">Édition du formulaire MilSim</p>
                                         <p class="mt-1 text-sm font-semibold text-slate-900">Atelier visuel + aperçu en direct</p>
-                                        <p class="mt-2 max-w-xl text-xs leading-relaxed text-slate-600">Ouvrez une fenêtre pleine page : préambule, ROE, champs (texte, liste, oui/non) et rendu dans un cadre à droite. Plus besoin de JSON pour l’essentiel.</p>
+                                        <p class="mt-2 max-w-xl text-xs leading-relaxed text-slate-600">Ouvrez une fenêtre pleine page : préambule, ROE, champs (texte, liste, oui/non) et rendu dans un cadre à droite. L’essentiel se fait à la souris, sans fichier technique.</p>
                                     </div>
                                     <button type="button" class="btn-open-milsim-form-editor inline-flex shrink-0 items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
                                         Ouvrir l’atelier
                                     </button>
                                 </div>
                                 <details class="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/80 p-3">
-                                    <summary class="cursor-pointer text-xs font-bold text-slate-600">JSON expert (optionnel)</summary>
-                                    <p class="mt-2 text-xs text-slate-500">Surcharge de <code class="rounded bg-white px-1 text-[11px]">enlistment_milsim</code> si vous importez une config complète.</p>
-                                    <textarea name="wizard_enlistment_milsim_json" id="wizard_enlistment_milsim_json" rows="5" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-900" placeholder='{"portal_title": "…"}'></textarea>
+                                    <summary class="cursor-pointer text-xs font-bold text-slate-600">Mode expert : import structuré (optionnel)</summary>
+                                    <p class="mt-2 text-xs text-slate-500">Collez ici une configuration complète fournie par votre équipe technique si vous en disposez.</p>
+                                    <textarea name="wizard_enlistment_milsim_json" id="wizard_enlistment_milsim_json" rows="5" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-900" placeholder="Configuration complète du formulaire"></textarea>
                                     <p class="mt-2 text-xs text-slate-500">
                                         <a href="<?= htmlspecialchars($presentationPackUrl, ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 underline">Fiche registre (après création)</a>
                                     </p>
@@ -816,7 +816,7 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
         });
         var lines = [];
         lines.push('Nom : ' + (name || '—'));
-        if (slug) lines.push('Slug : ' + slug);
+        if (slug) lines.push('Adresse courte : ' + slug);
         if (tz) lines.push('Fuseau : ' + tz);
         lines.push('Modèle rôles : ' + (roles === 'standard' ? 'Standard (modération org.)' : 'Rapide'));
         var extraRoles = document.querySelectorAll('#wizard-custom-roles-container .wizard-custom-role-row').length;

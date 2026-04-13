@@ -9,6 +9,10 @@ $grades = $grades ?? [];
 $assignments = $assignments ?? [];
 $primaryAssignment = $primaryAssignment ?? null;
 $commander = $commander ?? null;
+$commanderLabelsById = is_array($commanderLabelsById ?? null) ? $commanderLabelsById : [];
+$personnelJobRoleAssignments = is_array($personnelJobRoleAssignments ?? null) ? $personnelJobRoleAssignments : [];
+$personnelPlanningEntries = is_array($personnelPlanningEntries ?? null) ? $personnelPlanningEntries : [];
+$canViewOperationalBoardLink = !empty($canViewOperationalBoardLink);
 $qualifications = $qualifications ?? [];
 $serviceHistory = $serviceHistory ?? [];
 $trainingCertificates = $trainingCertificates ?? [];
@@ -52,6 +56,48 @@ $lmsCertificateStatusFr = static function (string $s): string {
         default => '—',
     };
 };
+$accountStatusFr = static function (?string $s): string {
+    return match (trim((string) $s)) {
+        'active' => 'Compte actif',
+        'inactive' => 'Compte inactif',
+        'pending_verification' => 'En attente de validation de l’e-mail',
+        'suspended' => 'Compte suspendu',
+        'banned' => 'Compte exclu',
+        '' => '—',
+        default => 'Compte : statut à confirmer auprès d’un administrateur',
+    };
+};
+$qualificationStatusFr = static function (?string $s): string {
+    return match (trim((string) $s)) {
+        'valid' => 'À jour',
+        'expired' => 'Expirée',
+        'revoked' => 'Retirée',
+        'pending' => 'En attente de validation',
+        'suspended' => 'Suspendue',
+        '' => '—',
+        default => 'État à confirmer',
+    };
+};
+$planningEntryTypeFr = static function (?string $t): string {
+    return match (trim((string) $t)) {
+        'permanence' => 'Permanence',
+        'info' => 'Point d’information',
+        'mission' => 'Mission',
+        'task' => 'Tâche',
+        'formation' => 'Formation',
+        default => 'Activité',
+    };
+};
+$planningOperationalStatusFr = static function (?string $t): string {
+    return match (trim((string) $t)) {
+        'planned' => 'Prévu',
+        'in_progress' => 'En cours',
+        'suspended' => 'Suspendu',
+        'completed' => 'Terminé',
+        'cancelled' => 'Annulé',
+        default => '',
+    };
+};
 
 if (!$targetUser) {
     echo '<p>Utilisateur non trouvé.</p>';
@@ -90,7 +136,6 @@ if (!empty($personnelProfile['character_portrait_path'])) {
 }
 
 $unitName = $primaryAssignment['unit_name'] ?? $primaryUnitFallbackName ?? ($personnelExtras['squadron'] ?? null);
-$roleName = $primaryAssignment['role_name'] ?? null;
 $enlistmentDate = $personnelProfile['enlistment_date'] ?? $personnelExtras['date_of_enlistment'] ?? null;
 $enlistmentFormatted = null;
 if ($enlistmentDate) {
@@ -110,6 +155,9 @@ if (is_array($grade)) {
         $gradeLabel = trim((string) ($grade['label_short'] ?? ''));
     }
 }
+$rankOverride = trim((string) ($personnelProfile['rank_display_override'] ?? ''));
+$rankDisplayRp = trim((string) ($personnelProfile['rank_display'] ?? ''));
+$effectiveRankDisplay = $rankOverride !== '' ? $rankOverride : ($rankDisplayRp !== '' ? $rankDisplayRp : $gradeLabel);
 $personnelModerationStaffLines = is_array($personnelModerationStaffLines ?? null) ? $personnelModerationStaffLines : [];
 $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_string($personnelModerationMemberBrief) && trim($personnelModerationMemberBrief) !== ''
     ? trim($personnelModerationMemberBrief)
@@ -155,9 +203,10 @@ $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_s
                     <p class="text-sm text-slate-400"><?= htmlspecialchars($unitName) ?></p>
                     <?php endif; ?>
                     <div class="flex flex-wrap gap-2 mt-2">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-black uppercase <?= ($targetUser['status'] ?? '') === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600/30 text-slate-400' ?>">
-                            <span class="w-1.5 h-1.5 rounded-full <?= ($targetUser['status'] ?? '') === 'active' ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500' ?>"></span>
-                            <?= ($targetUser['status'] ?? '') === 'active' ? 'Actif' : htmlspecialchars($targetUser['status'] ?? '—') ?>
+                        <?php $rawAccountStatus = (string) ($targetUser['status'] ?? ''); ?>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-black uppercase <?= $rawAccountStatus === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600/30 text-slate-400' ?>">
+                            <span class="w-1.5 h-1.5 rounded-full <?= $rawAccountStatus === 'active' ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500' ?>"></span>
+                            <?= htmlspecialchars($accountStatusFr($rawAccountStatus)) ?>
                         </span>
                         <?php if ($clearanceLevel): ?>
                         <span class="inline-flex px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-slate-600/30 text-slate-300">Clearance <?= htmlspecialchars($clearanceLevel) ?></span>
@@ -242,7 +291,7 @@ $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_s
             <div class="flex flex-wrap gap-6 md:gap-10">
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Rang</p>
-                    <p class="text-sm font-black text-slate-900 italic"><?= $gradeLabel !== '' ? htmlspecialchars($gradeLabel) : '—' ?></p>
+                    <p class="text-sm font-black text-slate-900 italic"><?= $effectiveRankDisplay !== '' ? htmlspecialchars($effectiveRankDisplay) : '—' ?></p>
                 </div>
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Unité</p>
@@ -258,7 +307,7 @@ $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_s
                 </div>
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Statut réseau</p>
-                    <p class="text-sm font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?> italic"><?= ($targetUser['status'] ?? '') === 'active' ? 'Actif' : htmlspecialchars($targetUser['status'] ?? '—') ?></p>
+                    <p class="text-sm font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?> italic"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p>
                 </div>
                 <?php if ($enlistmentFormatted): ?>
                 <div>
@@ -342,6 +391,9 @@ $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_s
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom opérateur</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($displayName) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatif radio</p><p class="text-sm font-black text-slate-900"><?= $callsign ? htmlspecialchars($callsign) : '—' ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Matricule</p><p class="text-sm font-black text-slate-900"><?= !empty($showMatriculePublic) ? ($matricule ? htmlspecialchars($matricule) : '—') : '—' ?></p></div>
+                        <?php if ($gradeLabel !== '' && $gradeLabel !== $effectiveRankDisplay): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Grade de référence</p><p class="text-sm text-slate-700"><?= htmlspecialchars($gradeLabel) ?></p></div>
+                        <?php endif; ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Rôle principal</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($personnelProfile['primary_role'] ?? '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Rôle secondaire</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($personnelProfile['secondary_role'] ?? '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : '—' ?></p></div>
@@ -376,17 +428,100 @@ $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_s
                     <?php endif; ?>
                 </section>
 
-                <!-- Affectation -->
+                <?php if ($personnelJobRoleAssignments !== []): ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Affectation</h2>
-                    <div class="space-y-4">
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : 'Non assignée' ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Rôle dans l'équipe</p><p class="text-sm font-black text-slate-900"><?= $roleName ? htmlspecialchars($roleName) : '—' ?></p></div>
-                        <?php if ($enlistmentFormatted): ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date d'enrôlement</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($enlistmentFormatted) ?></p></div>
-                        <?php endif; ?>
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Rôles métier (référentiel)</h2>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <?php foreach ($personnelJobRoleAssignments as $jr):
+                            $jrName = trim((string) ($jr['role_name'] ?? ''));
+                            $jrDetail = trim((string) ($jr['role_detail'] ?? ''));
+                            $jrLabel = $jrDetail !== '' && $jrName !== '' ? $jrName . ' — ' . $jrDetail : ($jrName !== '' ? $jrName : $jrDetail);
+                            $jrPrimary = !empty($jr['is_primary']);
+                            ?>
+                        <div class="rounded-2xl border border-slate-200 p-5 bg-slate-50/50">
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <span class="text-[9px] font-black uppercase tracking-wider <?= $jrPrimary ? 'text-emerald-700' : 'text-slate-500' ?>"><?= $jrPrimary ? 'Rôle principal' : 'Rôle complémentaire' ?></span>
+                            </div>
+                            <p class="text-sm font-black text-slate-900"><?= $jrLabel !== '' ? htmlspecialchars($jrLabel) : '—' ?></p>
+                        </div>
+                        <?php endforeach; ?>
                     </div>
                 </section>
+                <?php endif; ?>
+
+                <section class="bg-white border border-slate-200 rounded-3xl p-8">
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Affectations actives</h2>
+                    <?php if ($assignments === []): ?>
+                    <p class="text-sm text-slate-600">Aucune affectation d’unité enregistrée pour l’instant<?= $unitName || $primaryUnitFallbackName ? ' — l’unité indiquée dans le dossier peut provenir d’une saisie manuelle.' : '.' ?></p>
+                    <?php if ($enlistmentFormatted): ?>
+                    <p class="text-xs text-slate-500 mt-3">Date d’enrôlement : <span class="font-semibold text-slate-700"><?= htmlspecialchars($enlistmentFormatted) ?></span></p>
+                    <?php endif; ?>
+                    <?php else: ?>
+                    <div class="space-y-6">
+                        <?php foreach ($assignments as $asg):
+                            $asgUnit = trim((string) ($asg['unit_name'] ?? ''));
+                            $asgRole = trim((string) ($asg['role_name'] ?? ''));
+                            $asgPrimary = !empty($asg['is_primary']);
+                            $cmdId = (int) ($asg['commander_user_id'] ?? 0);
+                            $cmdLabel = $cmdId > 0 ? ($commanderLabelsById[$cmdId] ?? '—') : '—';
+                            ?>
+                        <div class="rounded-2xl border border-slate-200 p-5 flex flex-col gap-3">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <?php if ($asgPrimary): ?>
+                                <span class="inline-flex rounded-md bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-900">Affectation principale</span>
+                                <?php else: ?>
+                                <span class="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase text-slate-600">Affectation complémentaire</span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $asgUnit !== '' ? htmlspecialchars($asgUnit) : '—' ?></p></div>
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Fonction dans l’équipe</p><p class="text-sm font-black text-slate-900"><?= $asgRole !== '' ? htmlspecialchars($asgRole) : '—' ?></p></div>
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef d’unité</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($cmdLabel) ?></p></div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php if ($enlistmentFormatted): ?>
+                    <p class="text-xs text-slate-500 mt-6 pt-6 border-t border-slate-100">Date d’enrôlement : <span class="font-semibold text-slate-700"><?= htmlspecialchars($enlistmentFormatted) ?></span></p>
+                    <?php endif; ?>
+                    <?php endif; ?>
+                </section>
+
+                <?php if ($personnelPlanningEntries !== []): ?>
+                <section class="bg-white border border-slate-200 rounded-3xl p-8">
+                    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Engagements (tableau opérationnel)</h2>
+                            <p class="text-sm text-slate-600 mt-2 max-w-2xl">Créneaux et activités auxquels cette personne est affectée dans la période en cours.</p>
+                        </div>
+                        <?php if ($canViewOperationalBoardLink): ?>
+                        <a href="<?= htmlspecialchars(url('back-office/tableau-operationnel')) ?>" class="inline-flex shrink-0 items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-50 transition">Ouvrir le tableau</a>
+                        <?php endif; ?>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <?php foreach ($personnelPlanningEntries as $pe):
+                            $peTitle = trim((string) ($pe['title'] ?? 'Activité'));
+                            $peType = $planningEntryTypeFr((string) ($pe['entry_type'] ?? ''));
+                            $peOp = isset($pe['operational_status']) ? $planningOperationalStatusFr((string) $pe['operational_status']) : '';
+                            $peStart = !empty($pe['start_date']) ? date('d/m/Y', strtotime((string) $pe['start_date'])) : null;
+                            $peEnd = !empty($pe['end_date']) ? date('d/m/Y', strtotime((string) $pe['end_date'])) : null;
+                            $peRole = trim((string) ($pe['personnel_role_label'] ?? ''));
+                            $peLead = !empty($pe['personnel_is_lead']);
+                            ?>
+                        <div class="rounded-2xl border border-slate-200 p-5 flex flex-col gap-2 bg-slate-50/40">
+                            <p class="text-sm font-black text-slate-900 leading-snug"><?= htmlspecialchars($peTitle) ?></p>
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-slate-500"><?= htmlspecialchars($peType) ?><?php if ($peOp !== ''): ?> · <?= htmlspecialchars($peOp) ?><?php endif; ?></p>
+                            <?php if ($peStart || $peEnd): ?>
+                            <p class="text-xs text-slate-700"><?php if ($peStart && $peEnd): ?>Du <?= htmlspecialchars($peStart) ?> au <?= htmlspecialchars($peEnd) ?><?php elseif ($peStart): ?>À partir du <?= htmlspecialchars($peStart) ?><?php else: ?>Jusqu’au <?= htmlspecialchars($peEnd) ?><?php endif; ?></p>
+                            <?php endif; ?>
+                            <?php if ($peRole !== '' || $peLead): ?>
+                            <p class="text-xs text-slate-600"><?php if ($peLead): ?><span class="font-semibold text-slate-800">Responsable désigné</span><?php if ($peRole !== ''): ?> — <?php endif; ?><?php endif; ?><?php if ($peRole !== ''): ?><?= htmlspecialchars($peRole) ?><?php endif; ?></p>
+                            <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+                <?php endif; ?>
 
                 <!-- Sécurité / habilitation -->
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
@@ -516,7 +651,7 @@ $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_s
                             <?php foreach ($qualifications as $q): ?>
                             <div class="px-6 py-4 border border-slate-200 rounded-2xl flex flex-col gap-2">
                                 <span class="text-[7px] font-black tracking-widest text-slate-400 uppercase"><?= htmlspecialchars($q['qualification_name']) ?></span>
-                                <p class="text-xs font-bold text-slate-900"><?= htmlspecialchars($q['level'] ?? '') ?> — <?= htmlspecialchars($q['status']) ?></p>
+                                <p class="text-xs font-bold text-slate-900"><?= htmlspecialchars((string) ($q['level'] ?? '')) ?> — <?= htmlspecialchars($qualificationStatusFr((string) ($q['status'] ?? ''))) ?></p>
                                 <?php if (!empty($q['expires_at'])): ?><p class="text-[10px] text-slate-500">Expire <?= date('d/m/Y', strtotime($q['expires_at'])) ?></p><?php endif; ?>
                             </div>
                             <?php endforeach; ?>
@@ -615,7 +750,7 @@ $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_s
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($civilIdentity['first_name'] !== '' ? $civilIdentity['first_name'] : '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($civilIdentity['last_name'] !== '' ? $civilIdentity['last_name'] : '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-bold text-slate-900"><?= htmlspecialchars($targetUser['email']) ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut compte</p><p class="text-sm font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?>"><?= htmlspecialchars($targetUser['status'] ?? '—') ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut compte</p><p class="text-sm font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?>"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
                         <?php if (!empty($userProfile['birth_date'])): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date de naissance</p><p class="text-sm text-slate-800"><?= htmlspecialchars((string) $userProfile['birth_date']) ?></p></div>
                         <?php endif; ?>
@@ -650,7 +785,7 @@ $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_s
                         <?php else: ?>
                         <p class="text-[11px] text-slate-500 italic">E-mail masqué par les préférences de visibilité du titulaire.</p>
                         <?php endif; ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut Réseau</p><p class="text-[11px] font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?> italic"><?= ($targetUser['status'] ?? '') === 'active' ? 'Actif' : htmlspecialchars($targetUser['status'] ?? '—') ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut Réseau</p><p class="text-[11px] font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?> italic"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
                     </div>
                 </section>
 

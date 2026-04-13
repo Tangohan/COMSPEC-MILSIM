@@ -11,9 +11,25 @@ class EmailDeliveryRepository
 {
     private PDO $pdo;
 
+    private static ?bool $hasCampaignIdColumn = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    private function hasCampaignIdColumn(): bool
+    {
+        if (self::$hasCampaignIdColumn === null) {
+            try {
+                $st = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'email_deliveries' AND COLUMN_NAME = 'campaign_id' LIMIT 1");
+                self::$hasCampaignIdColumn = $st && (bool) $st->fetchColumn();
+            } catch (\Throwable) {
+                self::$hasCampaignIdColumn = false;
+            }
+        }
+
+        return self::$hasCampaignIdColumn;
     }
 
     public function insert(
@@ -25,23 +41,44 @@ class EmailDeliveryRepository
         string $status,
         ?string $providerMessageId,
         ?string $errorMessage,
-        ?array $payloadSummary
+        ?array $payloadSummary,
+        ?int $campaignId = null
     ): int {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO email_deliveries (tenant_id, event_code, recipient, subject, transport, status, provider_message_id, error_message, payload_summary, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
-        );
-        $stmt->execute([
-            $tenantId,
-            $eventCode,
-            $recipient,
-            $subject,
-            $transport,
-            $status,
-            $providerMessageId,
-            $errorMessage,
-            $payloadSummary !== null ? json_encode($payloadSummary, JSON_THROW_ON_ERROR) : null,
-        ]);
+        $jsonPayload = $payloadSummary !== null ? json_encode($payloadSummary, JSON_THROW_ON_ERROR) : null;
+        if ($this->hasCampaignIdColumn() && $campaignId !== null && $campaignId > 0) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO email_deliveries (tenant_id, campaign_id, event_code, recipient, subject, transport, status, provider_message_id, error_message, payload_summary, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+            );
+            $stmt->execute([
+                $tenantId,
+                $campaignId,
+                $eventCode,
+                $recipient,
+                $subject,
+                $transport,
+                $status,
+                $providerMessageId,
+                $errorMessage,
+                $jsonPayload,
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO email_deliveries (tenant_id, event_code, recipient, subject, transport, status, provider_message_id, error_message, payload_summary, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+            );
+            $stmt->execute([
+                $tenantId,
+                $eventCode,
+                $recipient,
+                $subject,
+                $transport,
+                $status,
+                $providerMessageId,
+                $errorMessage,
+                $jsonPayload,
+            ]);
+        }
 
         return (int) $this->pdo->lastInsertId();
     }

@@ -46,6 +46,7 @@ final class OperationalBoardController
         return Response::view('layout.main', [
             'title' => 'Tableau opérationnel',
             'content' => 'operations/board',
+            'boardSchemaReady' => $this->planningEntries->isOperationalBoardSchemaReady(),
             'boardFilters' => $filters,
             'boardPanels' => $panels,
             'boardCategories' => $this->planningEntries->listCategories($tenantId),
@@ -71,7 +72,7 @@ final class OperationalBoardController
             return Response::redirect(url('back-office/tableau-operationnel'));
         }
 
-        $this->planningEntries->create([
+        $newId = $this->planningEntries->create([
             'tenant_id' => $tenantId,
             'title' => $title,
             'description' => trim((string) $request->input('description', '')),
@@ -105,6 +106,10 @@ final class OperationalBoardController
             'fire_window_end' => trim((string) $request->input('fire_window_end', '')),
             'created_by' => $userId,
         ]);
+        if ($newId < 1) {
+            Session::flash('error', 'Le tableau opérationnel n’est pas encore activé sur ce serveur. Un administrateur doit exécuter les mises à jour de base de données (script d’initialisation ou migrations Phinx).');
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
 
         Session::flash('success', 'Entrée créée en brouillon.');
         return Response::redirect(url('back-office/tableau-operationnel'));
@@ -118,7 +123,13 @@ final class OperationalBoardController
         [$tenantId, $userId] = $this->tenantAndUser();
         $level = $this->enum($request->input('posture_level', 'NORMAL'), ['NORMAL', 'VIGILANCE', 'ALERTE', 'CRISE'], 'NORMAL');
         $this->planningEntries->setPosture($tenantId, $level, $userId);
-        Session::flash('success', 'Posture: ' . $level);
+        $labels = [
+            'NORMAL' => 'niveau normal',
+            'VIGILANCE' => 'vigilance renforcée',
+            'ALERTE' => 'alerte',
+            'CRISE' => 'crise',
+        ];
+        Session::flash('success', 'Niveau de posture appliqué : ' . ($labels[$level] ?? 'mis à jour') . '.');
         return Response::redirect(url('back-office/tableau-operationnel'));
     }
 

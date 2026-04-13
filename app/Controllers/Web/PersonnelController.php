@@ -31,6 +31,7 @@ use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
+use App\Repositories\PlanningEntryRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
 use App\Core\Gate;
@@ -116,6 +117,7 @@ class PersonnelController
         private UserProfileRepository $userProfileRepository,
         private EnlistmentRepository $enlistmentRepository,
         private PersonnelJobRoleRepository $personnelJobRoleRepository,
+        private PlanningEntryRepository $planningEntryRepository,
         private RoleRepository $roleRepository,
         private TenantRepository $tenantRepository
     ) {}
@@ -221,6 +223,32 @@ class PersonnelController
         if (!empty($primaryAssignment['commander_user_id'])) {
             $commander = $this->userRepository->findById((int) $primaryAssignment['commander_user_id'], (int) $tenantId);
         }
+
+        $commanderLabelsById = [];
+        $seenCommanderIds = [];
+        foreach ($assignments as $a) {
+            $cid = (int) ($a['commander_user_id'] ?? 0);
+            if ($cid < 1 || isset($seenCommanderIds[$cid])) {
+                continue;
+            }
+            $seenCommanderIds[$cid] = true;
+            $cu = $this->userRepository->findById($cid, (int) $tenantId);
+            if ($cu) {
+                $dn = trim((string) ($cu['display_name'] ?? ''));
+                $cs = trim((string) ($cu['callsign'] ?? ''));
+                $em = trim((string) ($cu['email'] ?? ''));
+                $commanderLabelsById[$cid] = $dn !== '' ? $dn : ($cs !== '' ? $cs : $em);
+            } else {
+                $commanderLabelsById[$cid] = '—';
+            }
+        }
+
+        $personnelJobRoleAssignments = [];
+        if ($this->personnelJobRoleRepository->tablesExist() && $this->personnelJobRoleRepository->pivotTableExists()) {
+            $pivotMap = $this->personnelJobRoleRepository->listPivotAssignmentsForUsers((int) $tenantId, [$uid]);
+            $personnelJobRoleAssignments = $pivotMap[$uid] ?? [];
+        }
+
         $qualifications = $this->personnelQualificationRepository->listForUser($uid);
         $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($uid);
         $trainingCertificates = $this->trainingCertificateRepository->listByUserId($uid, (int) $tenantId);
@@ -292,6 +320,15 @@ class PersonnelController
         $personnelModerationStaffLines = $canStaffView ? ModerationStatusPresenter::linesForStaff($modSet) : [];
         $personnelModerationMemberBrief = ($isSelf && !$redactPersonalPresentation) ? ModerationStatusPresenter::briefForMember($modSet) : null;
 
+        $personnelPlanningEntries = [];
+        if (($isSelf || $canStaffView) && $this->planningEntryRepository->isOperationalBoardSchemaReady()) {
+            $personnelPlanningEntries = $this->planningEntryRepository->listActiveEntriesForAssignedUser((int) $tenantId, $uid, 15);
+        }
+        $gateInst = Gate::getInstance();
+        $canViewOperationalBoardLink = $gateInst->allows('admin.organization')
+            || $gateInst->allows('admin.access')
+            || $gateInst->allows('site.support');
+
         return Response::view('layout.main', [
             'content' => 'personnel.file',
             'title' => 'Fiche personnel',
@@ -309,6 +346,10 @@ class PersonnelController
             'assignments' => $assignments,
             'primaryAssignment' => $primaryAssignment,
             'commander' => $commander,
+            'commanderLabelsById' => $commanderLabelsById,
+            'personnelJobRoleAssignments' => $personnelJobRoleAssignments,
+            'personnelPlanningEntries' => $personnelPlanningEntries,
+            'canViewOperationalBoardLink' => $canViewOperationalBoardLink,
             'qualifications' => $qualifications,
             'serviceHistory' => $serviceHistory,
             'trainingCertificates' => $trainingCertificates,
@@ -388,10 +429,16 @@ class PersonnelController
             return Response::redirect(url('login'));
         }
         $tid = (int) $tenantId;
-        $rosterData = OrbatRosterPayload::buildForTenant($this->unitRepository, $tid);
         $gate = Gate::getInstance();
         $orbatCanManage = $gate->allows('admin.organization') || $gate->allows('admin.access')
             || $gate->allows('organization.orbat.manage');
+        $viewerId = (int) Session::get('user_id');
+        $rosterData = OrbatRosterPayload::buildForTenant(
+            $this->unitRepository,
+            $tid,
+            $viewerId,
+            $orbatCanManage
+        );
         $orbatCommanderOptions = [];
         if ($orbatCanManage) {
             foreach ($this->userRepository->allForTenant($tid) as $u) {

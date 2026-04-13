@@ -19,6 +19,7 @@ use App\Services\Audit\AuditService;
 use App\Services\Auth\AuthService;
 use App\Services\EmailService;
 use App\Services\Platform\FeatureGateService;
+use App\Support\OrganizationRoleLabels;
 
 final class InvitationAdminController
 {
@@ -42,8 +43,12 @@ final class InvitationAdminController
         $rows = $this->invitations->listForTenant($tenantId, $statusFilter !== '' ? $statusFilter : null);
         $rolesOrganization = $this->roleRepository->forTenantOrganization($tenantId);
         $units = $this->unitRepository->allForTenant($tenantId);
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $tenantRow = $this->tenantRepository->findById($tenantId) ?: [];
+        $organizationRoleLabelMode = OrganizationRoleLabels::mode($community, $tenantRow);
         $jobRoleOptions = $this->personnelJobRoleRepository->tablesExist()
-            ? $this->personnelJobRoleRepository->listRoleOptionsForSelect($tenantId)
+            ? $this->personnelJobRoleRepository->listRoleOptionsForSelect($tenantId, false, true, $organizationRoleLabelMode)
             : [];
 
         return Response::view('layout.main', [
@@ -53,6 +58,7 @@ final class InvitationAdminController
             'rolesOrganization' => $rolesOrganization,
             'inviteUnits' => $units,
             'inviteJobRoleOptions' => $jobRoleOptions,
+            'organizationRoleLabelMode' => $organizationRoleLabelMode,
             'canAdd' => $this->featureGate->canAddMember($tenantId),
             'inviteFilterStatus' => $statusFilter,
         ]);

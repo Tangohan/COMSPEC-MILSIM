@@ -18,6 +18,7 @@ use App\Repositories\RecruitmentPresetRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserUiPreferencesRepository;
 use App\Services\Email\EmailEvents;
+use App\Support\TenantEmailKind;
 use App\Services\Profile\RecruitmentPresetPayloadService;
 use App\Services\Profile\UserUiPreferencesValidationService;
 use App\Services\User\UserProfileSlugService;
@@ -408,6 +409,32 @@ class AccountController
                 'group' => 'Recrutement',
             ];
         }
+
+        $encadrement = 'Messages de l’encadrement';
+        $items[] = [
+            'key' => TenantEmailKind::notificationPreferenceKey(TenantEmailKind::ORBAT),
+            'label' => 'Informations sur la structure et les affectations',
+            'hint' => 'Messages envoyés par les personnes habilitées concernant l’organisation des effectifs.',
+            'group' => $encadrement,
+        ];
+        $items[] = [
+            'key' => TenantEmailKind::notificationPreferenceKey(TenantEmailKind::MISSION),
+            'label' => 'Pilotage opérationnel',
+            'hint' => 'Messages liés au suivi des opérations et du planning interne.',
+            'group' => $encadrement,
+        ];
+        $items[] = [
+            'key' => TenantEmailKind::notificationPreferenceKey(TenantEmailKind::ACTIVITY),
+            'label' => 'Activités et présence',
+            'hint' => 'Messages concernant les activités collectives et la coordination.',
+            'group' => $encadrement,
+        ];
+        $items[] = [
+            'key' => TenantEmailKind::notificationPreferenceKey(TenantEmailKind::CUSTOM),
+            'label' => 'Messages généraux à l’équipe',
+            'hint' => 'Annonces libres adressées aux membres par l’encadrement.',
+            'group' => $encadrement,
+        ];
 
         return $items;
     }

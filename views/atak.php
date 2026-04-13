@@ -236,14 +236,14 @@ if ($atakMapConfig) {
       <div class="atak-game-config-inner">
         <?php if (!empty($nodeAtakUrl)): ?>
         <div class="atak-game-config-block">
-          <p class="atak-game-config-label">URL du nœud utilisée <span class="atak-game-config-hint">(à saisir dans le mod : Paramètres → Addons → COMSPEC Overwatch)</span></p>
+          <p class="atak-game-config-label">Adresse du serveur de liaison <span class="atak-game-config-hint">(à saisir dans le mod : Paramètres → Addons → COMSPEC Overwatch)</span></p>
           <div class="atak-game-config-url-wrap">
             <pre class="atak-game-config-url" id="atak-node-url-copy"><?= htmlspecialchars($nodeAtakUrl) ?></pre>
-            <button type="button" class="atak-game-config-copy" id="atak-copy-node-url" title="Copier l'URL">Copier</button>
+            <button type="button" class="atak-game-config-copy" id="atak-copy-node-url" title="Copier l’adresse">Copier</button>
           </div>
         </div>
         <?php else: ?>
-          <p class="atak-game-config-warn" id="atak-no-node-url">Aucune URL nœud configurée. Configurez l'URL du nœud ATAK dans <a href="<?= url('admin/atak-config') ?>">Admin → Configuration ATAK</a> pour activer la liaison.</p>
+          <p class="atak-game-config-warn" id="atak-no-node-url">Aucune adresse de serveur de liaison configurée. Complétez la <a href="<?= url('admin/atak-config') ?>">configuration ATAK</a> dans l’administration pour activer la liaison.</p>
         <?php endif; ?>
         <div class="atak-game-config-block">
           <p class="atak-game-config-label">Votre IP (visiteur)</p>
@@ -290,7 +290,7 @@ if ($atakMapConfig) {
       <div class="atak-game-config-inner">
         <div class="atak-health-grid">
           <div class="atak-health-row">
-            <span class="atak-health-label">Noeuds API</span>
+            <span class="atak-health-label">Serveurs de liaison</span>
             <span class="atak-health-cell" id="health-node-url">—</span>
             <span class="atak-health-status" id="health-node-status">—</span>
           </div>
@@ -513,7 +513,7 @@ if ($atakMapConfig) {
         var armaEl = document.getElementById('health-arma');
         var unitsCountEl = document.getElementById('health-units-count');
         var activeCallsignsEl = document.getElementById('health-active-callsigns');
-        var nodeUrl = (typeof window.ATAK_NODE_URL === 'string' && window.ATAK_NODE_URL) ? window.ATAK_NODE_URL : 'Même origine (API PHP)';
+        var nodeUrl = (typeof window.ATAK_NODE_URL === 'string' && window.ATAK_NODE_URL) ? window.ATAK_NODE_URL : 'Même site (hébergement principal)';
         if (nodeUrlEl) nodeUrlEl.textContent = nodeUrl;
         if (nodeStatusEl) nodeStatusEl.textContent = 'Vérification…';
         var pingController = new AbortController();
@@ -526,7 +526,7 @@ if ($atakMapConfig) {
           if (nodeStatusEl) { nodeStatusEl.textContent = (e.name === 'AbortError' ? 'Timeout' : 'Erreur'); nodeStatusEl.className = 'atak-health-status err'; }
         });
         if (socketStateEl) { socketStateEl.textContent = 'Connecté'; socketStateEl.className = 'atak-health-cell atak-health-status ok'; }
-        if (socketUrlEl) socketUrlEl.textContent = 'API PHP (polling)';
+        if (socketUrlEl) socketUrlEl.textContent = 'Mise à jour automatique';
         var mapId = (window.ATAKSocket && window.ATAKSocket.getMapId) ? window.ATAKSocket.getMapId() : 1;
         fetch('<?= url("api/atak/stats") ?>?mapId=' + mapId, { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (d) {
           if (armaEl) armaEl.textContent = d.lastArmaActivityAgo != null ? 'Dernière activité Arma il y a ' + d.lastArmaActivityAgo + ' s' : 'Jamais';

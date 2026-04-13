@@ -571,10 +571,16 @@ class PersonnelJobRoleRepository
      * Libellés pour listes d’emplois : « Racine › Sous-cat › Nom du rôle »,
      * plus segments pour affichage hiérarchique et chaîne de recherche normalisée.
      *
+     * @param 'fr'|'en' $organizationRoleLabelMode Intitulé principal : français ou anglais (si label_en renseigné).
+     *
      * @return list<array{id: int, label: string, name: string, segments: list<string>, search: string, label_en?: string}>
      */
-    public function listRoleOptionsForSelect(int $tenantId, bool $appendEnglishLabel = false, bool $useCategoryPath = true): array
-    {
+    public function listRoleOptionsForSelect(
+        int $tenantId,
+        bool $appendEnglishLabel = false,
+        bool $useCategoryPath = true,
+        string $organizationRoleLabelMode = 'fr'
+    ): array {
         $roles = $this->listRolesWithCategory($tenantId);
         $cats = $this->listCategories($tenantId);
         $catById = [];
@@ -594,23 +600,30 @@ class PersonnelJobRoleRepository
             return implode(' › ', $parts);
         };
 
+        $preferEn = $organizationRoleLabelMode === 'en';
         $out = [];
         foreach ($roles as $r) {
             $cid = (int) ($r['category_id'] ?? 0);
             $c = $catById[$cid] ?? null;
             $prefix = $c ? $path($c) : '';
             $name = (string) $r['name'];
-            $label = $useCategoryPath && $prefix !== '' ? $prefix . ' › ' . $name : $name;
             $en = trim((string) ($r['label_en'] ?? ''));
-            if ($appendEnglishLabel && $en !== '') {
+            $displayLeaf = ($preferEn && $en !== '') ? $en : $name;
+            $label = $useCategoryPath && $prefix !== '' ? $prefix . ' › ' . $displayLeaf : $displayLeaf;
+            if ($preferEn && $appendEnglishLabel && $en !== '' && $name !== '' && $name !== $displayLeaf) {
+                $label .= ' — ' . $name;
+            } elseif (!$preferEn && $appendEnglishLabel && $en !== '') {
                 $label .= ' — ' . $en;
             }
             if ($useCategoryPath && $prefix !== '') {
-                $segments = array_merge(explode(' › ', $prefix), [$name]);
+                $segments = array_merge(explode(' › ', $prefix), [$displayLeaf]);
             } else {
-                $segments = [$name];
+                $segments = [$displayLeaf];
             }
             $searchBits = $segments;
+            if ($name !== '') {
+                $searchBits[] = $name;
+            }
             if ($en !== '') {
                 $searchBits[] = $en;
             }

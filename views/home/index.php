@@ -9,6 +9,11 @@ $loggedIn = (bool) \App\Core\Session::get('user_id');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?></title>
+<?php
+    $seo_og_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+    $meta_description = $meta_description ?? 'Athena Compsec : portail MILSIM pour communautés Arma — formations, unités, forum et outils opérationnels.';
+    require base_path('views/partials/seo_meta.php');
+?>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">

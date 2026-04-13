@@ -15,6 +15,7 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
+use App\Support\OrganizationRoleLabels;
 
 class PersonnelJobRoleAdminController
 {
@@ -261,10 +262,14 @@ class PersonnelJobRoleAdminController
         $assignmentPivot = $this->jobRoleRepository->pivotTableExists()
             ? $this->jobRoleRepository->listPivotAssignmentsForUsers($tenantId, $userIds)
             : [];
+        $community = is_array($tenantSettings['community'] ?? null) ? $tenantSettings['community'] : [];
+        $tenantRow = $this->tenantRepository->findById($tenantId) ?: [];
+        $orgRoleLabelMode = OrganizationRoleLabels::mode($community, $tenantRow);
         $jobRoleOptions = $this->jobRoleRepository->listRoleOptionsForSelect(
             $tenantId,
             $pjrAssignSettings['show_english_labels'],
-            $pjrAssignSettings['show_category_in_role_picklist']
+            $pjrAssignSettings['show_category_in_role_picklist'],
+            $orgRoleLabelMode
         );
         $jobRolePermissionCounts = $this->jobRoleRepository->permissionCountsForTenant($tenantId);
         $totalPages = max(1, (int) ceil($total / $perPage));

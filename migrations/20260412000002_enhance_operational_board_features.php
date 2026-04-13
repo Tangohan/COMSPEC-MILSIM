@@ -6,31 +6,108 @@ use Phinx\Migration\AbstractMigration;
 
 final class EnhanceOperationalBoardFeatures extends AbstractMigration
 {
-    public function change(): void
+    public function up(): void
     {
-        $this->execute(<<<'SQL'
-ALTER TABLE planning_entries
-    ADD COLUMN IF NOT EXISTS validation_status ENUM('draft','validated','active','rejected') NOT NULL DEFAULT 'draft' AFTER status,
-    ADD COLUMN IF NOT EXISTS validation_comment TEXT NULL AFTER validation_status,
-    ADD COLUMN IF NOT EXISTS validated_by BIGINT UNSIGNED NULL AFTER validation_comment,
-    ADD COLUMN IF NOT EXISTS validated_at DATETIME NULL AFTER validated_by,
-    ADD COLUMN IF NOT EXISTS operational_status ENUM('planned','in_progress','suspended','completed','cancelled') NOT NULL DEFAULT 'planned' AFTER visibility_scope,
-    ADD COLUMN IF NOT EXISTS security_level ENUM('unit_public','command_restricted','confidential','secret_ops') NOT NULL DEFAULT 'unit_public' AFTER operational_status,
-    ADD COLUMN IF NOT EXISTS chief_user_id BIGINT UNSIGNED NULL AFTER created_by,
-    ADD COLUMN IF NOT EXISTS deputy_user_id BIGINT UNSIGNED NULL AFTER chief_user_id,
-    ADD COLUMN IF NOT EXISTS command_chain VARCHAR(255) NULL AFTER deputy_user_id,
-    ADD COLUMN IF NOT EXISTS accountability_note VARCHAR(255) NULL AFTER command_chain,
-    ADD COLUMN IF NOT EXISTS location_lat DECIMAL(10,7) NULL AFTER accountability_note,
-    ADD COLUMN IF NOT EXISTS location_lng DECIMAL(10,7) NULL AFTER location_lat,
-    ADD COLUMN IF NOT EXISTS operation_zone VARCHAR(255) NULL AFTER location_lng,
-    ADD COLUMN IF NOT EXISTS map_link VARCHAR(255) NULL AFTER operation_zone;
-SQL);
+        $planningEntries = $this->table('planning_entries');
+        $planningAssets = $this->table('planning_entry_assets');
 
-        $this->execute(<<<'SQL'
-ALTER TABLE planning_entry_assets
-    ADD COLUMN IF NOT EXISTS asset_state ENUM('available','engaged','unavailable') NOT NULL DEFAULT 'available' AFTER asset_reference,
-    ADD COLUMN IF NOT EXISTS asset_metadata JSON NULL AFTER asset_state;
+        if (!$planningEntries->hasColumn('validation_status')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN validation_status ENUM('draft','validated','active','rejected') NOT NULL DEFAULT 'draft' AFTER status
 SQL);
+        }
+        if (!$planningEntries->hasColumn('validation_comment')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN validation_comment TEXT NULL AFTER validation_status
+SQL);
+        }
+        if (!$planningEntries->hasColumn('validated_by')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN validated_by BIGINT UNSIGNED NULL AFTER validation_comment
+SQL);
+        }
+        if (!$planningEntries->hasColumn('validated_at')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN validated_at DATETIME NULL AFTER validated_by
+SQL);
+        }
+        if (!$planningEntries->hasColumn('operational_status')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN operational_status ENUM('planned','in_progress','suspended','completed','cancelled') NOT NULL DEFAULT 'planned' AFTER visibility_scope
+SQL);
+        }
+        if (!$planningEntries->hasColumn('security_level')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN security_level ENUM('unit_public','command_restricted','confidential','secret_ops') NOT NULL DEFAULT 'unit_public' AFTER operational_status
+SQL);
+        }
+        if (!$planningEntries->hasColumn('chief_user_id')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN chief_user_id BIGINT UNSIGNED NULL AFTER created_by
+SQL);
+        }
+        if (!$planningEntries->hasColumn('deputy_user_id')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN deputy_user_id BIGINT UNSIGNED NULL AFTER chief_user_id
+SQL);
+        }
+        if (!$planningEntries->hasColumn('command_chain')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN command_chain VARCHAR(255) NULL AFTER deputy_user_id
+SQL);
+        }
+        if (!$planningEntries->hasColumn('accountability_note')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN accountability_note VARCHAR(255) NULL AFTER command_chain
+SQL);
+        }
+        if (!$planningEntries->hasColumn('location_lat')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN location_lat DECIMAL(10,7) NULL AFTER accountability_note
+SQL);
+        }
+        if (!$planningEntries->hasColumn('location_lng')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN location_lng DECIMAL(10,7) NULL AFTER location_lat
+SQL);
+        }
+        if (!$planningEntries->hasColumn('operation_zone')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN operation_zone VARCHAR(255) NULL AFTER location_lng
+SQL);
+        }
+        if (!$planningEntries->hasColumn('map_link')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN map_link VARCHAR(255) NULL AFTER operation_zone
+SQL);
+        }
+
+        if (!$planningAssets->hasColumn('asset_state')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entry_assets
+    ADD COLUMN asset_state ENUM('available','engaged','unavailable') NOT NULL DEFAULT 'available' AFTER asset_reference
+SQL);
+        }
+        if (!$planningAssets->hasColumn('asset_metadata')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entry_assets
+    ADD COLUMN asset_metadata JSON NULL AFTER asset_state
+SQL);
+        }
 
         $this->execute(<<<'SQL'
 CREATE TABLE IF NOT EXISTS `operational_postures` (
@@ -168,5 +245,10 @@ CREATE TABLE IF NOT EXISTS `planning_entry_integrations` (
     UNIQUE KEY `uniq_entry_integration` (`source_system`, `external_ref`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL);
+    }
+
+    public function down(): void
+    {
+        throw new \RuntimeException('Migration EnhanceOperationalBoardFeatures: retour arrière non pris en charge (données métier).');
     }
 }

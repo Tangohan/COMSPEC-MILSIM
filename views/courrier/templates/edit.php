@@ -22,7 +22,7 @@ $isNew = $template === null;
         </div>
         <?php if (!$isNew): ?>
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Slug</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Adresse courte du modèle</label>
             <input type="text" name="slug" value="<?= htmlspecialchars($template['slug'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2">
         </div>
         <?php endif; ?>

@@ -7,10 +7,10 @@
     <details class="text-xs text-slate-600 border border-slate-200 rounded-lg p-2 bg-slate-50">
       <summary class="cursor-pointer font-bold text-slate-700">Qui génère ? Comment ?</summary>
       <ul class="mt-2 space-y-1 list-disc list-inside">
-        <li><strong>Génération :</strong> les rapports sont créés ou fusionnés quand un client envoie <code class="bg-slate-200 px-1 rounded">POST /api/intel/report</code> avec <code>missionId</code>, <code>target_type</code>, <code>pos_x</code>, <code>pos_y</code>, <code>source_callsign</code> (optionnel).</li>
-        <li><strong>Depuis Arma :</strong> le mod COMSPEC peut appeler l’extension avec <code>Intel.Report</code> et un JSON (à brancher dans vos scripts SQF / JTAC / contact). Aucun script du mod n’appelle encore cette fonction par défaut.</li>
-        <li><strong>Fusion :</strong> si un rapport existant a le même <code>target_type</code> et une position à moins de 100 m dans les 5 dernières minutes, le nouveau rapport est fusionné (incrément <code>merged_count</code>).</li>
-        <li><strong>Statuts :</strong> 1 source = <strong>TEMPORARY</strong>, 2 = <strong>CORROBORATED</strong>, 3+ = <strong>CONFIRMED</strong>.</li>
+        <li><strong>Génération :</strong> les rapports sont créés ou fusionnés lorsqu’un client de jeu ou un outil connecté envoie une situation (mission, type de cible, position, indicatif source éventuel).</li>
+        <li><strong>Depuis Arma :</strong> le mod COMSPEC peut transmettre ces éléments via l’extension prévue (à brancher dans vos scripts d’équipe). Rien n’est envoyé par défaut tant que cette liaison n’est pas configurée.</li>
+        <li><strong>Fusion :</strong> si un rapport du même type de cible existe déjà à proximité (moins de 100 m dans les dernières minutes), le nouveau message est fusionné avec la situation en cours.</li>
+        <li><strong>Niveau de confiance :</strong> une seule source donne un avis provisoire ; plusieurs sources rapprochées le renforcent jusqu’à un niveau confirmé.</li>
       </ul>
     </details>
     <div class="border-t border-slate-200 pt-2">

@@ -170,6 +170,9 @@ final class TenantDefaultRoleDefinitions
             'rto' => [
                 'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own',
                 'comms.announcement.send',
+                'comms.email.send.orbat',
+                'comms.email.send.activity',
+                'comms.email.send.custom',
             ],
             'probation' => [
                 'forum.view', 'forum.reply',
@@ -189,6 +192,103 @@ final class TenantDefaultRoleDefinitions
     }
 
     /**
+     * Libellés anglais (doctrine US / usage international) pour les slugs système connus.
+     * Complète les entrées hors catalogue militaire (`MilitaryOperationalRoleCatalog`).
+     *
+     * @return array<string, string> slug => label_en
+     */
+    public static function canonicalEnglishLabelsBySlug(): array
+    {
+        $fromDefs = [
+            'community_owner' => 'Organization manager',
+            'tenant_admin' => 'Organization administrator',
+            'member' => 'Operator',
+            'officer' => 'Supervisory member',
+            'forum_moderator' => 'Communications officer',
+            'hr' => 'Human resources manager',
+            'recruiter' => 'Recruiter',
+            'invite' => 'Visitor',
+            'instructor' => 'Instructor',
+            'medic' => 'Medic',
+            'logistics' => 'Logistics',
+            'rto' => 'RTO (communications)',
+            'probation' => 'Probation',
+        ];
+
+        $organic = [
+            'deputy_commander' => 'Deputy organization lead',
+            'operations_officer' => 'Operations officer (S3)',
+            'training_officer' => 'Training officer',
+            'intelligence_officer' => 'Intelligence officer (S2)',
+            'logistics_officer' => 'Logistics officer (S4)',
+            'discipline_officer' => 'Discipline officer',
+            'recruitment_officer' => 'Recruiting officer',
+            'security_officer' => 'Security officer',
+            'technical_admin' => 'Local technical administrator',
+            'auditor_internal' => 'Internal auditor',
+            'founder' => 'Founder',
+            'veteran' => 'Veteran member',
+            'certified_instructor' => 'Certified instructor',
+            'elite_member' => 'Elite member',
+            'disciplinary_watch' => 'Disciplinary watch',
+            'probation_member' => 'Probationary member',
+            'suspended_status' => 'Suspended',
+            'honorary_member' => 'Honorary member',
+            'guest' => 'Guest',
+        ];
+
+        return array_merge($fromDefs, $organic);
+    }
+
+    public static function rolesTableHasLabelEnColumn(\PDO $pdo): bool
+    {
+        try {
+            $st = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'roles' AND COLUMN_NAME = 'label_en' LIMIT 1");
+
+            return (bool) $st?->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Met à jour label_en pour les rôles système dont le slug est dans le référentiel anglais.
+     *
+     * @param ?int $tenantId null = tous les tenants (backfill / migration)
+     */
+    public static function applyCanonicalEnglishLabels(\PDO $pdo, ?int $tenantId = null): void
+    {
+        if (!self::rolesTableHasLabelEnColumn($pdo)) {
+            return;
+        }
+        $map = self::canonicalEnglishLabelsBySlug();
+        if ($map === []) {
+            return;
+        }
+        $upd = $pdo->prepare('UPDATE roles SET label_en = ? WHERE tenant_id = ? AND slug = ? AND is_system = 1');
+        $run = static function (int $tid) use ($map, $upd): void {
+            if ($tid <= 0) {
+                return;
+            }
+            foreach ($map as $slug => $en) {
+                $upd->execute([$en, $tid, $slug]);
+            }
+        };
+        if ($tenantId !== null && $tenantId > 0) {
+            $run($tenantId);
+
+            return;
+        }
+        $st = $pdo->query('SELECT id FROM tenants');
+        if (!$st) {
+            return;
+        }
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $run((int) ($row['id'] ?? 0));
+        }
+    }
+
+    /**
      * Met à jour nom + description pour les slugs connus (idempotent, sans toucher aux rôles personnalisés).
      */
     public static function applyCanonicalLabels(\PDO $pdo, int $tenantId): void
@@ -205,6 +305,7 @@ final class TenantDefaultRoleDefinitions
                 $row['slug'],
             ]);
         }
+        self::applyCanonicalEnglishLabels($pdo, $tenantId);
     }
 
     /**

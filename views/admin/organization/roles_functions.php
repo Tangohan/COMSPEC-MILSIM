@@ -76,7 +76,7 @@ $graphJsonUrl = url('back-office/roles-functions/graph.json');
             <table class="min-w-full text-sm">
                 <thead>
                     <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-200">
-                        <th class="py-2 pr-4">Slug</th>
+                        <th class="py-2 pr-4">Référence courte</th>
                         <th class="py-2 pr-4">FR</th>
                         <th class="py-2 pr-4">US</th>
                         <th class="py-2">Famille</th>

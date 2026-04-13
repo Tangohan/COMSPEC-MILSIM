@@ -558,9 +558,9 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
                 </div>
             </div>
             <details class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80">
-                <summary class="cursor-pointer px-4 py-3 text-xs font-bold text-slate-600 [&::-webkit-details-marker]:hidden">Import JSON (expert) — surcharge des champs</summary>
+                <summary class="cursor-pointer px-4 py-3 text-xs font-bold text-slate-600 [&::-webkit-details-marker]:hidden">Import structuré (expert) — surcharge des champs</summary>
                 <div class="border-t border-slate-200 p-4">
-                    <p class="text-[11px] text-slate-500 mb-2">Optionnel. Même clés que l’éditeur visuel ; utile pour copier-coller une config. Peut compléter <code class="text-xs">widget</code> et <code class="text-xs">options</code>.</p>
+                    <p class="text-[11px] text-slate-500 mb-2">Optionnel. Reprend les mêmes réglages que l’éditeur visuel ; pratique pour coller une configuration fournie par l’équipe technique (widgets et options avancées).</p>
                     <textarea name="em_fields_json" rows="10" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono"><?= htmlspecialchars($emFieldsJson) ?></textarea>
                 </div>
             </details>

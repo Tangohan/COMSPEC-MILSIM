@@ -30,12 +30,22 @@ use App\Services\EmailService;
 use App\Services\GradeValidationService;
 use App\Services\Personnel\PersonnelCompletenessService;
 use App\Services\Moderation\IndicatorBlocklistService;
+use App\Support\OrganizationRoleLabels;
 
 class UserAdminController
 {
     private const SETUP_TOKEN_HOURS = 72;
 
     private const RESEND_VERIFICATION_COOLDOWN_SEC = 90;
+
+    private function organizationRoleLabelModeForTenant(int $tenantId): string
+    {
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $tenant = $this->tenantRepository->findById($tenantId) ?: [];
+
+        return OrganizationRoleLabels::mode($community, $tenant);
+    }
 
     public function __construct(
         private UserRepository $userRepository,
@@ -329,6 +339,7 @@ class UserAdminController
             'roleMatrix' => $roleMatrix,
             'grades' => $grades,
             'gradeCategories' => $gradeCategories,
+            'organizationRoleLabelMode' => $this->organizationRoleLabelModeForTenant($tenantId),
         ]);
     }
 
@@ -474,6 +485,7 @@ class UserAdminController
             'positionsList' => $positions,
             'userActivePositions' => $userActivePositions,
             'roleSetsList' => $roleSets,
+            'organizationRoleLabelMode' => $this->organizationRoleLabelModeForTenant($tenantId),
         ]);
     }
 

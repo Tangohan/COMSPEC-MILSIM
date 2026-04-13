@@ -14,7 +14,7 @@ $images = $modpack['images'] ?? [];
             <input type="text" name="name" required class="w-full border border-slate-200 rounded px-3 py-2" value="<?= htmlspecialchars($modpack['name'] ?? '') ?>" />
         </div>
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Slug</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Adresse courte dans l’URL</label>
             <input type="text" name="slug" class="w-full border border-slate-200 rounded px-3 py-2" value="<?= htmlspecialchars($modpack['slug'] ?? '') ?>" />
         </div>
         <div>

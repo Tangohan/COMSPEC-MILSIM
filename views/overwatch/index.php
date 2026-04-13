@@ -156,7 +156,7 @@ $overwatchPageCsrf = \App\Core\Csrf::token();
       <div id="overwatch-health-body" class="border-t border-slate-100 overflow-hidden" hidden>
         <div class="px-4 py-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 text-xs">
           <div class="flex justify-between items-center gap-2 p-2 rounded bg-slate-50">
-            <span class="text-slate-600">API / DB</span>
+            <span class="text-slate-600">Données serveur</span>
             <span id="health-db" class="font-mono font-bold text-slate-700">—</span>
           </div>
           <div class="flex justify-between items-center gap-2 p-2 rounded bg-slate-50">
@@ -199,7 +199,7 @@ $overwatchPageCsrf = \App\Core\Csrf::token();
     </section>
   </div>
 
-  <div id="overwatch-access-modal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="overwatch-access-modal-title">
+  <div id="overwatch-access-modal" class="hidden fixed inset-0 z-[10050] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="overwatch-access-modal-title">
     <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-4 border border-slate-200">
       <h2 id="overwatch-access-modal-title" class="text-lg font-black uppercase tracking-tight text-slate-800 mb-1">Demande d’accès</h2>
       <p class="text-xs text-slate-600 mb-3">Un message est envoyé par e-mail aux gestionnaires de <strong>votre communauté</strong> pour qu’ils puissent vous attribuer les habilitations adaptées.</p>

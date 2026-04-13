@@ -271,8 +271,8 @@ $forumContextTenantId = (int) ($forumContextTenantId ?? \App\Core\Session::get('
         <input type="text" id="forum-subcat-name" name="name" required maxlength="120" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30" placeholder="Ex. Briefings équipe Alpha">
       </div>
       <div>
-        <label for="forum-subcat-slug" class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Slug URL <span class="text-slate-400 font-normal normal-case">(optionnel)</span></label>
-        <input type="text" id="forum-subcat-slug" name="slug" maxlength="80" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30" placeholder="auto depuis le nom si vide">
+        <label for="forum-subcat-slug" class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Adresse courte du canal <span class="text-slate-400 font-normal normal-case">(optionnel)</span></label>
+        <input type="text" id="forum-subcat-slug" name="slug" maxlength="80" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30" placeholder="Laissez vide pour la dériver du nom">
       </div>
       <div>
         <label for="forum-subcat-desc" class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Description <span class="text-slate-400 font-normal normal-case">(optionnel)</span></label>

@@ -82,6 +82,44 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
     }
     .orbat-legend-dot { width: 11px; height: 11px; border-radius: 999px; display: inline-block; }
     @media (max-width: 900px) { .orbat-node-card { min-width: 124px; } }
+    .orbat-mask-badge {
+        position: absolute; top: 6px; right: 6px; font-size: 8px; font-weight: 900; text-transform: uppercase;
+        letter-spacing: 0.06em; color: #7c2d12; background: #ffedd5; border: 1px solid #fdba74; border-radius: 6px; padding: 2px 5px;
+        pointer-events: none;
+    }
+    #orbat-ctx-menu {
+        position: fixed; z-index: 80; min-width: 220px; display: none;
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 20px 50px rgba(15,23,42,0.15);
+        padding: 6px 0; font-size: 13px; font-weight: 600; color: #0f172a;
+    }
+    #orbat-ctx-menu button {
+        display: block; width: 100%; text-align: left; padding: 10px 16px; background: transparent; border: 0; cursor: pointer;
+        font: inherit; color: inherit;
+    }
+    #orbat-ctx-menu button:hover:not(:disabled) { background: #f1f5f9; }
+    #orbat-ctx-menu button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .orbat-modal-overlay {
+        position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center;
+        background: rgba(15,23,42,0.45); padding: 16px;
+    }
+    .orbat-modal-overlay[aria-hidden="false"] { display: flex; }
+    .orbat-modal {
+        width: 100%; max-width: 420px; background: #fff; border-radius: 1.25rem; padding: 1.25rem 1.35rem;
+        box-shadow: 0 24px 60px rgba(15,23,42,0.2); border: 1px solid #e2e8f0;
+    }
+    .orbat-modal h3 { font-size: 1rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; color: #0f172a; margin-bottom: 0.5rem; }
+    .orbat-modal p.hint { font-size: 0.8rem; color: #64748b; margin-bottom: 1rem; line-height: 1.45; }
+    .orbat-modal label { display: block; font-size: 0.65rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 0.35rem; }
+    .orbat-modal input[type="text"], .orbat-modal select {
+        width: 100%; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.5rem 0.65rem; font-size: 0.9rem; margin-bottom: 0.75rem;
+    }
+    .orbat-modal-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; margin-top: 0.75rem; }
+    .orbat-modal-actions button {
+        border-radius: 0.75rem; padding: 0.45rem 1rem; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer;
+    }
+    .orbat-btn-secondary { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+    .orbat-btn-primary { background: #0f172a; border: 1px solid #0f172a; color: #fff; }
+    .orbat-btn-danger { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
 </style>
 
 <div class="orbat-page relative min-h-screen overflow-hidden">
@@ -94,7 +132,7 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
                 <h1 class="text-3xl font-black tracking-tight uppercase leading-none">ORBAT</h1>
                 <p class="text-sm text-slate-500 mt-3 font-medium">Structure organique, disponibilité des unités, consultation dynamique.</p>
                 <?php if ($showOrbatEditTools): ?>
-                <p class="mt-2 max-w-2xl text-xs font-semibold leading-relaxed text-emerald-900">Vous gérez cette communauté : les champs à droite permettent de modifier une unité sélectionnée ; l’enregistrement est automatique après une courte pause dans la saisie, et l’organigramme se met à jour sans recharger la page.</p>
+                <p class="mt-2 max-w-2xl text-xs font-semibold leading-relaxed text-emerald-900">Vous gérez cette communauté : clic droit ou bouton « ⋯ » sur une carte pour créer, rattacher, régler la confidentialité ou supprimer une unité. Les champs à droite servent à la fiche détaillée ; l’enregistrement est automatique après une courte pause, et l’organigramme se met à jour sans recharger la page.</p>
                 <?php endif; ?>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 min-w-[320px]">
@@ -179,6 +217,11 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
                         <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Mission</p>
                         <p id="detail-mission" class="text-sm text-slate-700 font-medium mt-2 leading-relaxed">—</p>
                     </div>
+                    <div id="detail-orbat-extras-wrap" class="hidden rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                        <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Détails complémentaires</p>
+                        <p id="detail-orbat-details" class="text-sm text-slate-700 font-medium mt-2 leading-relaxed whitespace-pre-wrap">—</p>
+                        <div id="detail-chart-visuals" class="mt-3 flex flex-wrap gap-3 items-center"></div>
+                    </div>
                     <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                         <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Composition</p>
                         <div id="detail-children" class="mt-3 space-y-2 text-sm font-medium text-slate-700"></div>
@@ -202,17 +245,33 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
                         </div>
                         <div>
                             <label for="orbat-ed-type" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Type sur l’organigramme</label>
-                            <select id="orbat-ed-type" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
-                                <option value="command">Commandement</option>
-                                <option value="alpha">Alpha</option>
-                                <option value="bravo">Bravo</option>
-                                <option value="support">Soutien</option>
-                                <option value="special">Spécial</option>
-                            </select>
+                            <select id="orbat-ed-type" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></select>
+                            <button type="button" id="orbat-btn-new-chart-type" class="mt-2 w-full rounded-xl border border-emerald-300 bg-white py-2 text-[10px] font-black uppercase tracking-wider text-emerald-900 hover:bg-emerald-50">Nouveau type sur l’organigramme…</button>
                         </div>
                         <div>
                             <label for="orbat-ed-mission" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Mission ou description courte</label>
                             <textarea id="orbat-ed-mission" rows="3" maxlength="8000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></textarea>
+                        </div>
+                        <div>
+                            <label for="orbat-ed-details" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Détails complémentaires</label>
+                            <p class="mb-2 text-[10px] text-slate-500 leading-snug">Informations de contexte affichées sur la fiche (repères, organisation interne, notes de pilotage).</p>
+                            <textarea id="orbat-ed-details" rows="4" maxlength="16000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></textarea>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 bg-white p-3 space-y-3">
+                            <p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Visuels sur la carte</p>
+                            <p class="text-[10px] text-slate-500 leading-snug">Icône (PNG, ICO, JPG) et image d’illustration (PNG, JPG), jusqu’à 2,5&nbsp;Mo.</p>
+                            <div class="flex flex-wrap gap-3 items-end">
+                                <div class="flex-1 min-w-[140px]">
+                                    <label class="mb-1 block text-[9px] font-black uppercase text-slate-400">Icône</label>
+                                    <input type="file" id="orbat-upload-icon" accept=".png,.ico,.jpg,.jpeg,image/png,image/x-icon,image/vnd.microsoft.icon,image/jpeg" class="block w-full text-xs text-slate-600">
+                                    <button type="button" id="orbat-clear-icon" class="mt-1 text-[10px] font-bold text-rose-700 hover:underline">Retirer l’icône</button>
+                                </div>
+                                <div class="flex-1 min-w-[140px]">
+                                    <label class="mb-1 block text-[9px] font-black uppercase text-slate-400">Image</label>
+                                    <input type="file" id="orbat-upload-image" accept=".png,.jpg,.jpeg,image/png,image/jpeg" class="block w-full text-xs text-slate-600">
+                                    <button type="button" id="orbat-clear-image" class="mt-1 text-[10px] font-bold text-rose-700 hover:underline">Retirer l’image</button>
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <label for="orbat-ed-commander" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Chef d’unité référent</label>
@@ -232,6 +291,77 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
     </main>
 </div>
 
+<?php if ($showOrbatEditTools && $rosterData !== null): ?>
+<div id="orbat-ctx-menu" role="menu" aria-hidden="true">
+    <button type="button" role="menuitem" data-ctx="edit">Modifier la fiche</button>
+    <button type="button" role="menuitem" data-ctx="create">Créer une sous-unité…</button>
+    <button type="button" role="menuitem" data-ctx="move">Rattacher à une autre unité…</button>
+    <button type="button" role="menuitem" data-ctx="detach">Détacher (niveau racine)</button>
+    <button type="button" role="menuitem" data-ctx="mask">Confidentialité sur l’organigramme…</button>
+    <button type="button" role="menuitem" data-ctx="delete">Supprimer cette unité…</button>
+</div>
+<div id="orbat-modal-create" class="orbat-modal-overlay" aria-hidden="true">
+    <div class="orbat-modal" role="dialog" aria-modal="true" aria-labelledby="orbat-m-create-title">
+        <h3 id="orbat-m-create-title">Nouvelle sous-unité</h3>
+        <p class="hint">L’unité sera créée sous l’élément sélectionné dans l’organigramme.</p>
+        <label for="orbat-create-name">Nom affiché</label>
+        <input id="orbat-create-name" type="text" maxlength="255" autocomplete="off">
+        <label for="orbat-create-type">Type d’unité</label>
+        <select id="orbat-create-type"></select>
+        <div class="orbat-modal-actions">
+            <button type="button" class="orbat-btn-secondary" data-close-modal="create">Annuler</button>
+            <button type="button" class="orbat-btn-primary" id="orbat-create-submit">Créer</button>
+        </div>
+    </div>
+</div>
+<div id="orbat-modal-move" class="orbat-modal-overlay" aria-hidden="true">
+    <div class="orbat-modal" role="dialog" aria-modal="true" aria-labelledby="orbat-m-move-title">
+        <h3 id="orbat-m-move-title">Rattacher l’unité</h3>
+        <p class="hint">Choisissez l’unité parente. Les boucles dans la hiérarchie sont refusées automatiquement.</p>
+        <label for="orbat-move-parent">Rattacher sous</label>
+        <select id="orbat-move-parent"></select>
+        <div class="orbat-modal-actions">
+            <button type="button" class="orbat-btn-secondary" data-close-modal="move">Annuler</button>
+            <button type="button" class="orbat-btn-primary" id="orbat-move-submit">Enregistrer</button>
+        </div>
+    </div>
+</div>
+<div id="orbat-modal-mask" class="orbat-modal-overlay" aria-hidden="true">
+    <div class="orbat-modal" role="dialog" aria-modal="true" aria-labelledby="orbat-m-mask-title">
+        <h3 id="orbat-m-mask-title">Confidentialité sur l’organigramme</h3>
+        <p class="hint">Ces réglages s’appliquent aux personnes qui consultent l’ORBAT selon leurs affectations. Les gestionnaires voient toujours la structure complète pour le pilotage.</p>
+        <label for="orbat-mask-select">Mode</label>
+        <select id="orbat-mask-select"></select>
+        <div class="orbat-modal-actions">
+            <button type="button" class="orbat-btn-secondary" data-close-modal="mask">Annuler</button>
+            <button type="button" class="orbat-btn-primary" id="orbat-mask-submit">Enregistrer</button>
+        </div>
+    </div>
+</div>
+<div id="orbat-modal-delete" class="orbat-modal-overlay" aria-hidden="true">
+    <div class="orbat-modal" role="dialog" aria-modal="true" aria-labelledby="orbat-m-del-title">
+        <h3 id="orbat-m-del-title">Supprimer l’unité</h3>
+        <p class="hint" id="orbat-delete-hint">Cette action est définitive. Les sous-unités doivent être déplacées ou supprimées avant.</p>
+        <div class="orbat-modal-actions">
+            <button type="button" class="orbat-btn-secondary" data-close-modal="delete">Annuler</button>
+            <button type="button" class="orbat-btn-danger" id="orbat-delete-submit">Supprimer</button>
+        </div>
+    </div>
+</div>
+<div id="orbat-modal-chart-type" class="orbat-modal-overlay" aria-hidden="true">
+    <div class="orbat-modal" role="dialog" aria-modal="true" aria-labelledby="orbat-m-ct-title">
+        <h3 id="orbat-m-ct-title">Nouveau type sur l’organigramme</h3>
+        <p class="hint">Donnez un nom lisible (ex. « Cellule renseignement »). Une référence courte sera créée automatiquement pour le style des cartes.</p>
+        <label for="orbat-chart-type-label">Nom du type</label>
+        <input id="orbat-chart-type-label" type="text" maxlength="120" autocomplete="off">
+        <div class="orbat-modal-actions">
+            <button type="button" class="orbat-btn-secondary" data-close-modal="chart-type">Annuler</button>
+            <button type="button" class="orbat-btn-primary" id="orbat-chart-type-submit">Créer</button>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php if ($rosterData !== null): ?>
 <script>
 (function() {
@@ -241,6 +371,10 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
     const orbatCsrf = <?= json_encode($orbatCsrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE) ?>;
     const apiUnitUrl = appBaseUrl + "/api/orbat/unit";
     const apiRosterUrl = appBaseUrl + "/api/orbat/roster";
+    const apiStructureUrl = appBaseUrl + "/api/orbat/structure";
+    const apiStructureOptionsUrl = appBaseUrl + "/api/orbat/structure-options";
+    const apiChartTypeUrl = appBaseUrl + "/api/orbat/chart-type";
+    const apiUnitUploadUrl = appBaseUrl + "/api/orbat/unit-upload";
 
     const collapsedState = new Map();
     let lastRosterSnapshot = JSON.stringify(rosterData);
@@ -249,6 +383,9 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
     let editorsBound = false;
     let saveInFlight = false;
     let isHydratingForm = false;
+
+    var structureOptionsCache = null;
+    var ctxTargetNode = null;
 
     function getStatusLabel(status) {
         if (status === "active") return "Active";
@@ -259,6 +396,53 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
     function getTypeLabel(type) {
         const labels = { command: "Commandement", alpha: "Alpha", bravo: "Bravo", support: "Soutien", special: "Spécial" };
         return labels[type] || (type || "—");
+    }
+
+    function getChartDisplayLabel(slug) {
+        if (!slug) return "—";
+        if (structureOptionsCache && structureOptionsCache.chartDisplayTypes) {
+            var list = structureOptionsCache.chartDisplayTypes;
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].id === slug) return list[i].label;
+            }
+        }
+        return getTypeLabel(slug);
+    }
+
+    function mediaSrc(path) {
+        if (!path) return "";
+        if (path.indexOf("/") === 0) return appBaseUrl + path;
+        return path;
+    }
+
+    function refreshOrbatTypeSelect() {
+        var sel = document.getElementById("orbat-ed-type");
+        if (!sel) return;
+        var prev = sel.value;
+        sel.innerHTML = "";
+        var list = (structureOptionsCache && structureOptionsCache.chartDisplayTypes) ? structureOptionsCache.chartDisplayTypes : [];
+        if (!list.length) {
+            ["command", "alpha", "bravo", "support", "special"].forEach(function(id) {
+                var o = document.createElement("option");
+                o.value = id;
+                o.textContent = getTypeLabel(id);
+                sel.appendChild(o);
+            });
+        } else {
+            list.forEach(function(t) {
+                var o = document.createElement("option");
+                o.value = t.id;
+                var lab = t.label || t.id;
+                if (t.builtin === false) lab = lab + " (personnalisé)";
+                o.textContent = lab;
+                sel.appendChild(o);
+            });
+        }
+        if (prev) {
+            for (var j = 0; j < sel.options.length; j++) {
+                if (sel.options[j].value === prev) { sel.selectedIndex = j; break; }
+            }
+        }
     }
 
     function findNodeByUnitId(node, unitId) {
@@ -283,7 +467,7 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
     function bindEditors() {
         if (!showOrbatEditTools || editorsBound) return;
         editorsBound = true;
-        ["orbat-ed-name", "orbat-ed-code", "orbat-ed-type", "orbat-ed-mission", "orbat-ed-commander"].forEach(function(id) {
+        ["orbat-ed-name", "orbat-ed-code", "orbat-ed-type", "orbat-ed-mission", "orbat-ed-details", "orbat-ed-commander"].forEach(function(id) {
             const el = document.getElementById(id);
             if (!el) return;
             el.addEventListener("input", scheduleSave);
@@ -306,6 +490,7 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         const codeEl = document.getElementById("orbat-ed-code");
         const typeEl = document.getElementById("orbat-ed-type");
         const missionEl = document.getElementById("orbat-ed-mission");
+        const detailsEl = document.getElementById("orbat-ed-details");
         const cmdEl = document.getElementById("orbat-ed-commander");
         const name = nameEl ? nameEl.value.trim() : "";
         if (!name) {
@@ -321,6 +506,7 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         body.append("code", codeEl ? codeEl.value.trim() : "");
         body.append("public_blurb", missionEl ? missionEl.value.trim() : "");
         body.append("orbat_type", typeEl ? typeEl.value : "command");
+        body.append("orbat_details", detailsEl ? detailsEl.value.trim() : "");
         body.append("commander_user_id", cmdEl && cmdEl.value ? cmdEl.value : "");
         try {
             const res = await fetch(apiUnitUrl, { method: "POST", body: body, credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } });
@@ -351,11 +537,18 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         const code = document.getElementById("orbat-ed-code");
         const typ = document.getElementById("orbat-ed-type");
         const mission = document.getElementById("orbat-ed-mission");
+        const details = document.getElementById("orbat-ed-details");
         const cmd = document.getElementById("orbat-ed-commander");
+        refreshOrbatTypeSelect();
         if (name) name.value = node.label || "";
         if (code) code.value = (node.role && node.role !== "Unité") ? node.role : "";
-        if (typ) typ.value = node.type || "command";
+        if (typ && node.type) {
+            for (var ti = 0; ti < typ.options.length; ti++) {
+                if (typ.options[ti].value === node.type) { typ.selectedIndex = ti; break; }
+            }
+        }
         if (mission) mission.value = (node.mission && node.mission !== "—") ? node.mission : "";
+        if (details) details.value = node.orbatDetails || "";
         if (cmd) cmd.value = (node.commanderUserId && node.commanderUserId > 0) ? String(node.commanderUserId) : "";
         isHydratingForm = false;
         bindEditors();
@@ -377,12 +570,97 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         return arr;
     }
 
+    async function ensureStructureOptions() {
+        if (structureOptionsCache || !showOrbatEditTools) return structureOptionsCache;
+        try {
+            var res = await fetch(apiStructureOptionsUrl, { credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } });
+            var j = await res.json().catch(function() { return null; });
+            if (res.ok && j && j.success) {
+                structureOptionsCache = j;
+            }
+        } catch (e) {}
+        return structureOptionsCache;
+    }
+
+    async function postStructure(action, fields) {
+        var body = new FormData();
+        body.append("_csrf_token", orbatCsrf);
+        body.append("action", action);
+        Object.keys(fields || {}).forEach(function(k) {
+            var v = fields[k];
+            if (v === undefined || v === null) return;
+            body.append(k, String(v));
+        });
+        var res = await fetch(apiStructureUrl, { method: "POST", body: body, credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } });
+        var j = await res.json().catch(function() { return {}; });
+        if (!res.ok || !j.success) {
+            throw new Error(j.message || "Action impossible pour le moment.");
+        }
+        if (j.roster) applyRosterFromServer(j.roster);
+    }
+
+    function collectDescendantIds(flatUnits, rootId) {
+        var childrenOf = {};
+        flatUnits.forEach(function(u) {
+            var p = u.parent_id === null || u.parent_id === undefined || u.parent_id === "" ? 0 : u.parent_id;
+            if (!childrenOf[p]) childrenOf[p] = [];
+            childrenOf[p].push(u.id);
+        });
+        var out = [];
+        var stack = (childrenOf[rootId] || []).slice();
+        while (stack.length) {
+            var id = stack.pop();
+            out.push(id);
+            (childrenOf[id] || []).forEach(function(c) { stack.push(c); });
+        }
+        return out;
+    }
+
+    function openModal(id) {
+        var el = document.getElementById("orbat-modal-" + id);
+        if (!el) return;
+        el.setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal(id) {
+        var el = document.getElementById("orbat-modal-" + id);
+        if (!el) return;
+        el.setAttribute("aria-hidden", "true");
+    }
+
+    function closeCtxMenu() {
+        var m = document.getElementById("orbat-ctx-menu");
+        if (m) { m.style.display = "none"; m.setAttribute("aria-hidden", "true"); }
+        ctxTargetNode = null;
+    }
+
+    function openOrbatContextMenu(px, py, node) {
+        ctxTargetNode = node;
+        var m = document.getElementById("orbat-ctx-menu");
+        if (!m) return;
+        var uid = node.unitId || 0;
+        m.querySelectorAll("button[data-ctx]").forEach(function(btn) {
+            var k = btn.getAttribute("data-ctx");
+            var dis = uid < 1 && k !== "edit";
+            btn.disabled = !!dis;
+        });
+        m.style.display = "block";
+        m.setAttribute("aria-hidden", "false");
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var mw = m.offsetWidth, mh = m.offsetHeight;
+        var x = Math.max(8, Math.min(px, vw - mw - 8));
+        var y = Math.max(8, Math.min(py, vh - mh - 8));
+        m.style.left = x + "px";
+        m.style.top = y + "px";
+    }
+
     function createNodeCard(node) {
         const wrapper = document.createElement("div");
         wrapper.className = "orbat-node-wrapper";
         const card = document.createElement("div");
         card.className = "orbat-node-card";
         card.dataset.nodeId = node.id;
+        card.style.position = "relative";
         const top = document.createElement("div");
         top.className = "orbat-node-top";
         const insignia = document.createElement("div");
@@ -400,12 +678,56 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         sub.textContent = node.role || "—";
         const meta = document.createElement("div");
         meta.className = "orbat-node-meta";
-        meta.innerHTML = "<span>" + getTypeLabel(node.type) + "</span><span>" + (node.strength || 0) + " pax</span>";
+        meta.innerHTML = "<span>" + getChartDisplayLabel(node.type) + "</span><span>" + (node.strength || 0) + " pax</span>";
         card.appendChild(top);
         card.appendChild(label);
         card.appendChild(sub);
         card.appendChild(meta);
+        if (node.chartImageUrl || node.chartIconUrl) {
+            var vis = document.createElement("div");
+            vis.className = "mt-2 flex items-center justify-center gap-2";
+            if (node.chartImageUrl) {
+                var im = document.createElement("img");
+                im.src = mediaSrc(node.chartImageUrl);
+                im.alt = "";
+                im.className = "max-h-12 w-auto rounded-lg border border-slate-200 object-cover";
+                vis.appendChild(im);
+            } else if (node.chartIconUrl) {
+                var ic = document.createElement("img");
+                ic.src = mediaSrc(node.chartIconUrl);
+                ic.alt = "";
+                ic.className = "h-8 w-8 object-contain";
+                vis.appendChild(ic);
+            }
+            card.appendChild(vis);
+        }
+        if (node.staffMaskActive) {
+            var badge = document.createElement("span");
+            badge.className = "orbat-mask-badge";
+            badge.textContent = "Masque";
+            card.appendChild(badge);
+        }
         card.addEventListener("click", function(e) { e.stopPropagation(); selectNode(node); });
+        if (showOrbatEditTools) {
+            card.setAttribute("title", "Clic droit ou bouton ⋯ pour les actions de structure");
+            var actBtn = document.createElement("button");
+            actBtn.type = "button";
+            actBtn.className = "absolute left-1 top-1 z-[3] h-6 w-6 rounded-lg border border-slate-200 bg-white/90 text-slate-600 text-sm font-black leading-none hover:bg-slate-50";
+            actBtn.setAttribute("aria-label", "Actions sur cette unité");
+            actBtn.textContent = "⋯";
+            actBtn.addEventListener("click", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var r = card.getBoundingClientRect();
+                openOrbatContextMenu(r.left + 4, r.bottom + 6, node);
+            });
+            card.appendChild(actBtn);
+            card.addEventListener("contextmenu", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openOrbatContextMenu(e.clientX, e.clientY, node);
+            });
+        }
         wrapper.appendChild(card);
 
         if ((node.children || []).length > 0) {
@@ -463,11 +785,40 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         var el;
         if (el = document.getElementById("detail-name")) el.textContent = node.label || "—";
         if (el = document.getElementById("detail-role")) el.textContent = node.role || "—";
-        if (el = document.getElementById("detail-type")) el.textContent = getTypeLabel(node.type);
+        if (el = document.getElementById("detail-type")) el.textContent = getChartDisplayLabel(node.type);
         if (el = document.getElementById("detail-status")) el.textContent = getStatusLabel(node.status || "active");
         if (el = document.getElementById("detail-strength")) el.textContent = (node.strength || 0) + " personnels";
         if (el = document.getElementById("detail-lead")) el.textContent = node.leader || "—";
         if (el = document.getElementById("detail-mission")) el.textContent = node.mission || "—";
+        var exWrap = document.getElementById("detail-orbat-extras-wrap");
+        var exDet = document.getElementById("detail-orbat-details");
+        var exVis = document.getElementById("detail-chart-visuals");
+        var dtxt = (node.orbatDetails || "").trim();
+        var hasVis = !!(node.chartIconUrl || node.chartImageUrl);
+        if (exWrap) {
+            if ((dtxt !== "" || hasVis) && (node.unitId || 0) > 0) {
+                exWrap.classList.remove("hidden");
+                if (exDet) exDet.textContent = dtxt !== "" ? dtxt : "—";
+                if (exVis) {
+                    exVis.innerHTML = "";
+                    if (node.chartImageUrl) {
+                        var im = document.createElement("img");
+                        im.src = mediaSrc(node.chartImageUrl);
+                        im.alt = "";
+                        im.className = "max-h-24 rounded-xl border border-slate-200 object-cover";
+                        exVis.appendChild(im);
+                    } else if (node.chartIconUrl) {
+                        var ic = document.createElement("img");
+                        ic.src = mediaSrc(node.chartIconUrl);
+                        ic.alt = "";
+                        ic.className = "h-14 w-14 object-contain";
+                        exVis.appendChild(ic);
+                    }
+                }
+            } else {
+                exWrap.classList.add("hidden");
+            }
+        }
         var membersBox = document.getElementById("detail-members");
         if (membersBox) {
             membersBox.innerHTML = "";
@@ -479,17 +830,26 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
                 membersBox.innerHTML = "<p class=\"text-xs text-slate-500\">Aucun membre actif rattaché à cette unité.</p>";
             } else {
                 mems.forEach(function(mem) {
-                    var row = document.createElement("a");
-                    row.href = appBaseUrl + "/personnel/" + encodeURIComponent(String(mem.user_id));
-                    row.className = "flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:border-emerald-300 hover:bg-emerald-50/50";
+                    var uidMem = parseInt(String(mem.user_id || 0), 10);
+                    var row;
+                    if (uidMem > 0) {
+                        row = document.createElement("a");
+                        row.href = appBaseUrl + "/personnel/" + encodeURIComponent(String(uidMem));
+                        row.className = "flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:border-emerald-300 hover:bg-emerald-50/50";
+                    } else {
+                        row = document.createElement("div");
+                        row.className = "flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600";
+                    }
                     var sp = document.createElement("span");
                     sp.className = "truncate";
                     sp.textContent = mem.label || "";
-                    var ar = document.createElement("span");
-                    ar.className = "text-[10px] text-slate-400 shrink-0";
-                    ar.textContent = "→";
                     row.appendChild(sp);
-                    row.appendChild(ar);
+                    if (uidMem > 0) {
+                        var ar = document.createElement("span");
+                        ar.className = "text-[10px] text-slate-400 shrink-0";
+                        ar.textContent = "→";
+                        row.appendChild(ar);
+                    }
                     membersBox.appendChild(row);
                 });
             }
@@ -523,6 +883,8 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
             return {
                 id: node.id, unitId: node.unitId, label: node.label, role: node.role, type: node.type, status: node.status,
                 strength: node.strength, leader: node.leader, mission: node.mission, commanderUserId: node.commanderUserId || 0,
+                structType: node.structType, maskMode: node.maskMode, staffMaskActive: node.staffMaskActive,
+                orbatDetails: node.orbatDetails, chartIconUrl: node.chartIconUrl, chartImageUrl: node.chartImageUrl,
                 members: node.members || [], children: children
             };
         }
@@ -551,9 +913,278 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         renderTree(filteredTree(currentSearch));
     });
 
-    flattenNodes(rosterData).forEach(function(n) { collapsedState.set(n.id, false); });
-    renderTree(JSON.parse(JSON.stringify(rosterData)));
-    selectNode(rosterData);
+    var pendingMoveUnitId = 0;
+    var pendingMaskUnitId = 0;
+    var pendingDeleteUnitId = 0;
+    var pendingCreateParentId = 0;
+
+    function bootOrbatTree() {
+        flattenNodes(rosterData).forEach(function(n) { collapsedState.set(n.id, false); });
+        renderTree(JSON.parse(JSON.stringify(rosterData)));
+        selectNode(rosterData);
+    }
+
+    if (showOrbatEditTools) {
+        ensureStructureOptions().then(function() {
+            refreshOrbatTypeSelect();
+            bootOrbatTree();
+        }).catch(function() { bootOrbatTree(); });
+    } else {
+        bootOrbatTree();
+    }
+
+    if (showOrbatEditTools) {
+        var cm = document.getElementById("orbat-ctx-menu");
+        if (cm) {
+            cm.addEventListener("click", function(e) {
+                var btn = e.target && e.target.closest ? e.target.closest("button[data-ctx]") : null;
+                if (!btn || !ctxTargetNode) return;
+                e.preventDefault();
+                var act = btn.getAttribute("data-ctx");
+                var node = ctxTargetNode;
+                var uid = node.unitId || 0;
+                if (act === "edit") {
+                    selectNode(node);
+                    closeCtxMenu();
+                    return;
+                }
+                if (uid < 1) { closeCtxMenu(); return; }
+                if (act === "create") {
+                    pendingCreateParentId = uid;
+                    closeCtxMenu();
+                    ensureStructureOptions().then(function() {
+                        var sel = document.getElementById("orbat-create-type");
+                        var nameIn = document.getElementById("orbat-create-name");
+                        if (nameIn) nameIn.value = "";
+                        if (sel && structureOptionsCache && structureOptionsCache.structTypes) {
+                            sel.innerHTML = "";
+                            structureOptionsCache.structTypes.forEach(function(t) {
+                                var o = document.createElement("option");
+                                o.value = t.id;
+                                o.textContent = t.label;
+                                sel.appendChild(o);
+                            });
+                            if (sel.options.length === 0) {
+                                var o = document.createElement("option");
+                                o.value = "unit";
+                                o.textContent = "Unité";
+                                sel.appendChild(o);
+                            }
+                        }
+                        openModal("create");
+                    });
+                    return;
+                }
+                if (act === "move") {
+                    pendingMoveUnitId = uid;
+                    closeCtxMenu();
+                    ensureStructureOptions().then(function() {
+                        var sel = document.getElementById("orbat-move-parent");
+                        if (!sel || !structureOptionsCache) return;
+                        sel.innerHTML = "";
+                        var o0 = document.createElement("option");
+                        o0.value = "";
+                        o0.textContent = "Racine (sans parent)";
+                        sel.appendChild(o0);
+                        var all = structureOptionsCache.units || [];
+                        var forbid = new Set([pendingMoveUnitId].concat(collectDescendantIds(all, pendingMoveUnitId)));
+                        all.forEach(function(u) {
+                            if (forbid.has(u.id)) return;
+                            var o = document.createElement("option");
+                            o.value = String(u.id);
+                            o.textContent = u.name;
+                            sel.appendChild(o);
+                        });
+                        openModal("move");
+                    });
+                    return;
+                }
+                if (act === "detach") {
+                    closeCtxMenu();
+                    if (!confirm("Détacher cette unité au niveau racine ?")) return;
+                    postStructure("move", { unit_id: String(uid), parent_id: "" }).catch(function(err) { alert(err.message || err); });
+                    return;
+                }
+                if (act === "mask") {
+                    pendingMaskUnitId = uid;
+                    closeCtxMenu();
+                    ensureStructureOptions().then(function() {
+                        var sel = document.getElementById("orbat-mask-select");
+                        if (!sel || !structureOptionsCache) return;
+                        sel.innerHTML = "";
+                        (structureOptionsCache.maskModes || []).forEach(function(m) {
+                            var o = document.createElement("option");
+                            o.value = m.id;
+                            o.textContent = m.label;
+                            sel.appendChild(o);
+                        });
+                        var cur = (node.maskMode || "none");
+                        if (sel.querySelector('option[value="' + cur + '"]')) sel.value = cur;
+                        openModal("mask");
+                    });
+                    return;
+                }
+                if (act === "delete") {
+                    pendingDeleteUnitId = uid;
+                    closeCtxMenu();
+                    openModal("delete");
+                }
+            });
+        }
+        document.addEventListener("click", function(e) {
+            if (cm && cm.style.display === "block" && !cm.contains(e.target)) closeCtxMenu();
+        });
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "Escape") closeCtxMenu();
+        });
+
+        document.querySelectorAll("[data-close-modal]").forEach(function(b) {
+            b.addEventListener("click", function() {
+                closeModal(b.getAttribute("data-close-modal") || "");
+            });
+        });
+        ["create", "move", "mask", "delete", "chart-type"].forEach(function(mid) {
+            var ov = document.getElementById("orbat-modal-" + mid);
+            if (ov) {
+                ov.addEventListener("click", function(e) {
+                    if (e.target === ov) closeModal(mid);
+                });
+            }
+        });
+
+        var createSub = document.getElementById("orbat-create-submit");
+        if (createSub) {
+            createSub.addEventListener("click", function() {
+                var nameIn = document.getElementById("orbat-create-name");
+                var typ = document.getElementById("orbat-create-type");
+                var nm = nameIn ? nameIn.value.trim() : "";
+                if (!nm) { alert("Indiquez un nom pour la nouvelle unité."); return; }
+                var parentId = pendingCreateParentId > 0 ? String(pendingCreateParentId) : "";
+                postStructure("create", { name: nm, struct_type: typ ? typ.value : "unit", parent_id: parentId })
+                    .then(function() { closeModal("create"); })
+                    .catch(function(err) { alert(err.message || err); });
+            });
+        }
+        var moveSub = document.getElementById("orbat-move-submit");
+        if (moveSub) {
+            moveSub.addEventListener("click", function() {
+                var sel = document.getElementById("orbat-move-parent");
+                var pid = sel && sel.value !== undefined ? sel.value : "";
+                postStructure("move", { unit_id: String(pendingMoveUnitId), parent_id: pid === "" ? "" : String(pid) })
+                    .then(function() { closeModal("move"); })
+                    .catch(function(err) { alert(err.message || err); });
+            });
+        }
+        var maskSub = document.getElementById("orbat-mask-submit");
+        if (maskSub) {
+            maskSub.addEventListener("click", function() {
+                var sel = document.getElementById("orbat-mask-select");
+                var v = sel ? sel.value : "none";
+                postStructure("set_mask", { unit_id: String(pendingMaskUnitId), orbat_mask_mode: v })
+                    .then(function() { closeModal("mask"); })
+                    .catch(function(err) { alert(err.message || err); });
+            });
+        }
+        var delSub = document.getElementById("orbat-delete-submit");
+        if (delSub) {
+            delSub.addEventListener("click", function() {
+                postStructure("delete", { unit_id: String(pendingDeleteUnitId) })
+                    .then(function() { closeModal("delete"); })
+                    .catch(function(err) { alert(err.message || err); });
+            });
+        }
+
+        var btnNewCt = document.getElementById("orbat-btn-new-chart-type");
+        if (btnNewCt) {
+            btnNewCt.addEventListener("click", function() {
+                var inp = document.getElementById("orbat-chart-type-label");
+                if (inp) inp.value = "";
+                openModal("chart-type");
+            });
+        }
+        var ctSub = document.getElementById("orbat-chart-type-submit");
+        if (ctSub) {
+            ctSub.addEventListener("click", function() {
+                var inp = document.getElementById("orbat-chart-type-label");
+                var lab = inp ? inp.value.trim() : "";
+                if (!lab) { alert("Indiquez un nom pour ce type."); return; }
+                var fd = new FormData();
+                fd.append("_csrf_token", orbatCsrf);
+                fd.append("action", "create");
+                fd.append("label", lab);
+                fetch(apiChartTypeUrl, { method: "POST", body: fd, credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } })
+                    .then(function(r) { return r.json(); })
+                    .then(function(j) {
+                        if (!j || !j.success) throw new Error(j && j.message ? j.message : "Erreur");
+                        if (j.chartDisplayTypes) {
+                            structureOptionsCache = structureOptionsCache || {};
+                            structureOptionsCache.chartDisplayTypes = j.chartDisplayTypes;
+                        }
+                        refreshOrbatTypeSelect();
+                        closeModal("chart-type");
+                    })
+                    .catch(function(err) { alert(err.message || err); });
+            });
+        }
+
+        async function postUnitMediaClear(icon, image) {
+            var fd = new FormData();
+            fd.append("_csrf_token", orbatCsrf);
+            fd.append("unit_id", String(currentSelectedUnitId));
+            if (icon) fd.append("clear_chart_icon", "1");
+            if (image) fd.append("clear_chart_image", "1");
+            var res = await fetch(apiUnitUrl, { method: "POST", body: fd, credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } });
+            var j = await res.json().catch(function() { return {}; });
+            if (!res.ok || !j.success) throw new Error(j.message || "Impossible de mettre à jour.");
+            if (j.roster) applyRosterFromServer(j.roster);
+        }
+        var clrIcBtn = document.getElementById("orbat-clear-icon");
+        if (clrIcBtn) clrIcBtn.addEventListener("click", function() {
+            if (currentSelectedUnitId < 1) return;
+            if (!confirm("Retirer l’icône de cette unité ?")) return;
+            postUnitMediaClear(true, false).catch(function(e) { alert(e.message || e); });
+        });
+        var clrImgBtn = document.getElementById("orbat-clear-image");
+        if (clrImgBtn) clrImgBtn.addEventListener("click", function() {
+            if (currentSelectedUnitId < 1) return;
+            if (!confirm("Retirer l’image de cette unité ?")) return;
+            postUnitMediaClear(false, true).catch(function(e) { alert(e.message || e); });
+        });
+        var upIcIn = document.getElementById("orbat-upload-icon");
+        if (upIcIn) upIcIn.addEventListener("change", function() {
+            if (!upIcIn.files || !upIcIn.files[0] || currentSelectedUnitId < 1) return;
+            var fd = new FormData();
+            fd.append("_csrf_token", orbatCsrf);
+            fd.append("unit_id", String(currentSelectedUnitId));
+            fd.append("slot", "icon");
+            fd.append("file", upIcIn.files[0]);
+            fetch(apiUnitUploadUrl, { method: "POST", body: fd, credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function(r) { return r.json(); })
+                .then(function(j) {
+                    if (!j || !j.success) throw new Error(j && j.message ? j.message : "Envoi impossible");
+                    upIcIn.value = "";
+                    if (j.roster) applyRosterFromServer(j.roster);
+                })
+                .catch(function(e) { alert(e.message || e); });
+        });
+        var upImgIn = document.getElementById("orbat-upload-image");
+        if (upImgIn) upImgIn.addEventListener("change", function() {
+            if (!upImgIn.files || !upImgIn.files[0] || currentSelectedUnitId < 1) return;
+            var fd = new FormData();
+            fd.append("_csrf_token", orbatCsrf);
+            fd.append("unit_id", String(currentSelectedUnitId));
+            fd.append("slot", "image");
+            fd.append("file", upImgIn.files[0]);
+            fetch(apiUnitUploadUrl, { method: "POST", body: fd, credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function(r) { return r.json(); })
+                .then(function(j) {
+                    if (!j || !j.success) throw new Error(j && j.message ? j.message : "Envoi impossible");
+                    upImgIn.value = "";
+                    if (j.roster) applyRosterFromServer(j.roster);
+                })
+                .catch(function(e) { alert(e.message || e); });
+        });
+    }
 
     if (showOrbatEditTools) {
         setInterval(function() {

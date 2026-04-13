@@ -37,7 +37,7 @@ $id = (int) ($rule['id'] ?? 0);
                         <tr class="bg-slate-50/50">
                             <td colspan="4" class="px-4 py-3 text-xs text-slate-600">
                                 <details>
-                                    <summary class="cursor-pointer font-medium text-slate-800">JSON</summary>
+                                    <summary class="cursor-pointer font-medium text-slate-800">Détail structuré</summary>
                                     <pre class="mt-2 whitespace-pre-wrap break-all"><?= htmlspecialchars((string) ($a['old_values'] ?? ''), ENT_QUOTES, 'UTF-8') ?></pre>
                                     <pre class="mt-2 whitespace-pre-wrap break-all"><?= htmlspecialchars((string) ($a['new_values'] ?? ''), ENT_QUOTES, 'UTF-8') ?></pre>
                                 </details>

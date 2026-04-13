@@ -1,22 +1,20 @@
 <?php
+declare(strict_types=1);
+
+use App\Support\OrganizationRoleLabels;
+
 /** @var list<array<string, mixed>> $invitations */
 /** @var list<array<string, mixed>> $rolesOrganization */
 /** @var list<array<string, mixed>> $inviteUnits */
 /** @var list<array{id: int, label: string, name: string}> $inviteJobRoleOptions */
 /** @var bool $canAdd */
 /** @var string $inviteFilterStatus */
+/** @var string $organizationRoleLabelMode */
 $inviteFilterStatus = $inviteFilterStatus ?? '';
 $rolesOrganization = $rolesOrganization ?? [];
 $inviteUnits = $inviteUnits ?? [];
 $inviteJobRoleOptions = $inviteJobRoleOptions ?? [];
-
-$layerLabel = static function (string $layer): string {
-    return match ($layer) {
-        'community' => 'Gouvernance et habilitations',
-        'intra' => 'Rôles opérationnels et métier',
-        default => 'Autres rôles',
-    };
-};
+$organizationRoleLabelMode = $organizationRoleLabelMode ?? OrganizationRoleLabels::MODE_FR;
 
 $statusPresentation = static function (string $raw): array {
     return match ($raw) {
@@ -94,7 +92,7 @@ foreach ($rolesOrganization as $r) {
 }
 ?>
 <div class="bg-slate-50 min-h-[calc(100vh-3.5rem)]">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8">
         <header class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Back-office communauté</p>
             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -151,31 +149,42 @@ foreach ($rolesOrganization as $r) {
                             placeholder="prenom.nom@exemple.fr">
                     </div>
                     <div class="sm:col-span-2">
-                        <label for="invite-role" class="block text-sm font-semibold text-slate-800 mb-1.5">Rôle dans l’unité</label>
-                        <p class="text-xs text-slate-500 mb-2 max-w-3xl leading-relaxed">
+                        <span class="block text-sm font-semibold text-slate-800 mb-1.5">Rôle dans l’unité</span>
+                        <p class="text-xs text-slate-500 mb-4 max-w-3xl leading-relaxed">
                             Choisissez un rôle de gouvernance ou opérationnel défini pour votre communauté. Les habilitations réservées à l’équipe qui gère toute la plateforme ne sont pas proposées ici.
                         </p>
-                        <select id="invite-role" name="role_id" required
-                            class="w-full max-w-2xl rounded-lg border border-slate-300 px-3 py-2.5 text-sm bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none">
-                            <?php foreach (['community', 'intra'] as $ly): ?>
+                        <div class="space-y-6" role="radiogroup" aria-label="Rôle dans l’unité">
+                            <?php $firstRoleRadio = true; ?>
+                            <?php foreach (['community', 'intra', 'other'] as $ly): ?>
                                 <?php if (empty($rolesByLayer[$ly])) {
                                     continue;
                                 } ?>
-                                <optgroup label="<?= htmlspecialchars($layerLabel($ly)) ?>">
-                                    <?php foreach ($rolesByLayer[$ly] as $r): ?>
-                                        <?php $optLabel = trim((string) ($r['name'] ?? '')); ?>
-                                        <option value="<?= (int) ($r['id'] ?? 0) ?>"><?= htmlspecialchars($optLabel !== '' ? $optLabel : 'Rôle sans intitulé') ?></option>
-                                    <?php endforeach; ?>
-                                </optgroup>
+                                <div>
+                                    <p class="text-xs font-bold text-slate-600 uppercase tracking-wide mb-3"><?= htmlspecialchars(OrganizationRoleLabels::layerGroupLabel($ly, $organizationRoleLabelMode)) ?></p>
+                                    <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                                        <?php foreach ($rolesByLayer[$ly] as $r): ?>
+                                            <?php
+                                            $rid = (int) ($r['id'] ?? 0);
+                                            $disp = OrganizationRoleLabels::displayName($r, $organizationRoleLabelMode);
+                                            $rdesc = trim((string) ($r['description'] ?? ''));
+                                            ?>
+                                            <label class="flex items-start gap-3 cursor-pointer rounded-xl border border-slate-200 bg-white p-3.5 text-sm shadow-sm transition-colors hover:border-blue-300 hover:bg-slate-50/80">
+                                                <input type="radio" name="role_id" value="<?= $rid ?>" class="invite-role-pick mt-0.5 shrink-0 border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                    <?= $firstRoleRadio ? 'required' : '' ?>
+                                                    data-role-name="<?= htmlspecialchars($disp, ENT_QUOTES, 'UTF-8') ?>">
+                                                <?php $firstRoleRadio = false; ?>
+                                                <span class="min-w-0">
+                                                    <span class="font-semibold text-slate-900 leading-snug"><?= htmlspecialchars($disp !== '' ? $disp : 'Rôle sans intitulé') ?></span>
+                                                    <?php if ($rdesc !== ''): ?>
+                                                        <span class="block text-xs text-slate-500 mt-1 leading-relaxed"><?= htmlspecialchars($rdesc) ?></span>
+                                                    <?php endif; ?>
+                                                </span>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
                             <?php endforeach; ?>
-                            <?php if (!empty($rolesByLayer['other'])): ?>
-                                <optgroup label="Autres rôles organisationnels">
-                                    <?php foreach ($rolesByLayer['other'] as $r): ?>
-                                        <option value="<?= (int) ($r['id'] ?? 0) ?>"><?= htmlspecialchars(trim((string) ($r['name'] ?? '')) !== '' ? (string) ($r['name'] ?? '') : 'Rôle sans intitulé') ?></option>
-                                    <?php endforeach; ?>
-                                </optgroup>
-                            <?php endif; ?>
-                        </select>
+                        </div>
                     </div>
                 </div>
 

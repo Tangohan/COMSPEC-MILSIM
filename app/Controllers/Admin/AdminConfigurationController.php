@@ -20,6 +20,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Services\Community\TenantOnboardingHealthService;
+use App\Support\OrganizationRoleLabels;
 use Throwable;
 
 class AdminConfigurationController
@@ -200,10 +201,15 @@ class AdminConfigurationController
         if (!in_array($mode, ['primary_only', 'multi'], true)) {
             $mode = 'primary_only';
         }
+        $orgRoleLabels = trim((string) $request->input('organization_role_labels', OrganizationRoleLabels::MODE_FR));
+        if (!in_array($orgRoleLabels, [OrganizationRoleLabels::MODE_FR, OrganizationRoleLabels::MODE_EN], true)) {
+            $orgRoleLabels = OrganizationRoleLabels::MODE_FR;
+        }
         $this->tenantRepository->updateSettings($tenantId, [
             'community' => [
                 'member_can_choose_display_role' => $memberChoose ? 1 : 0,
                 'display_badges_mode' => $mode,
+                'organization_role_labels' => $orgRoleLabels,
             ],
         ]);
         Session::flash('success', 'Préférences d’affichage des rôles enregistrées.');

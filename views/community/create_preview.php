@@ -17,7 +17,7 @@ foreach (is_array($c['style_badges'] ?? null) ? $c['style_badges'] : [] as $slug
 <div class="max-w-3xl mx-auto px-6 py-10">
     <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Aperçu (brouillon)</p>
     <h1 class="text-2xl font-black text-slate-900 mb-2"><?= htmlspecialchars($previewName ?? '') ?></h1>
-    <p class="text-sm text-slate-600 mb-6">Segment d’URL proposé : <code class="bg-slate-100 px-2 py-0.5 rounded text-xs"><?= htmlspecialchars($previewSlug ?? '') ?></code></p>
+    <p class="text-sm text-slate-600 mb-6">Adresse courte proposée pour le lien public : <span class="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs"><?= htmlspecialchars($previewSlug ?? '') ?></span></p>
     <p class="mb-6">
         <a href="<?= htmlspecialchars(url('communities/create'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-bold text-emerald-700 hover:underline">← Retour à l’assistant</a>
     </p>

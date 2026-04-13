@@ -21,21 +21,28 @@ $decodeScopes = static function ($raw): array {
 
     return array_values(array_filter(array_map(static fn ($scope): string => trim((string) $scope), $decoded), static fn (string $scope): bool => $scope !== ''));
 };
+
+$scopeLabelFr = static function (string $scope): string {
+    return match ($scope) {
+        'events:read' => 'Lecture des événements',
+        default => $scope,
+    };
+};
 ?>
 <div class="mx-auto max-w-6xl space-y-8 px-4 py-8">
     <header class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h1 class="text-2xl font-black text-slate-900">Centre d’intégrations</h1>
-        <p class="mt-2 text-sm text-slate-600">Gérez les clés API, quotas journaliers, rotation de secrets et suivi de consommation pour vos outils externes.</p>
+        <p class="mt-2 text-sm text-slate-600">Gérez les jetons d’accès pour vos outils externes : quotas journaliers, renouvellement des secrets et suivi de consommation.</p>
         <div class="mt-4 grid gap-3 text-xs text-slate-500 md:grid-cols-3">
-            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Auth: <strong class="text-slate-800">Bearer token</strong></div>
-            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Endpoint: <code class="text-slate-800">/integrations/v1/evenements</code></div>
-            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Doc: <code class="text-slate-800">docs/openapi-integrations.yaml</code></div>
+            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Chaque outil présente un <strong class="text-slate-800">jeton confidentiel</strong> à chaque requête.</div>
+            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Le flux d’événements est décrit dans la <strong class="text-slate-800">notice d’intégration</strong> fournie avec la plateforme.</div>
+            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">La référence détaillée des échanges accompagne le <strong class="text-slate-800">dossier de déploiement</strong>.</div>
         </div>
     </header>
 
     <?php if ($new_integration_key_plain): ?>
     <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <p class="text-sm font-bold text-amber-900">Copiez cette clé maintenant : elle ne sera plus affichée en clair.</p>
+        <p class="text-sm font-bold text-amber-900">Copiez ce jeton maintenant : il ne sera plus affiché en clair.</p>
         <code class="mt-2 block break-all rounded bg-white p-3 text-xs text-slate-800"><?= htmlspecialchars($new_integration_key_plain, ENT_QUOTES, 'UTF-8') ?></code>
         <p class="mt-2 text-xs text-amber-900">Conseil sécurité: stockez-la dans un gestionnaire de secrets et jamais en clair dans le code source.</p>
     </div>
@@ -54,23 +61,23 @@ $decodeScopes = static function ($raw): array {
             </div>
         </div>
         <fieldset>
-            <legend class="block text-xs font-bold uppercase tracking-wider text-slate-500">Scopes autorisés</legend>
+            <legend class="block text-xs font-bold uppercase tracking-wider text-slate-500">Types de données autorisés pour ce jeton</legend>
             <div class="mt-2 grid gap-2 md:grid-cols-2">
                 <?php foreach ($available_scopes as $scope): ?>
                     <label class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">
                         <input type="checkbox" name="scopes[]" value="<?= htmlspecialchars($scope, ENT_QUOTES, 'UTF-8') ?>" checked class="rounded border-slate-300 text-slate-900 focus:ring-slate-700">
-                        <span><?= htmlspecialchars($scope, ENT_QUOTES, 'UTF-8') ?></span>
+                        <span><?= htmlspecialchars($scopeLabelFr($scope), ENT_QUOTES, 'UTF-8') ?></span>
                     </label>
                 <?php endforeach; ?>
             </div>
         </fieldset>
-        <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-slate-800">Créer une clé API</button>
+        <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-slate-800">Créer un jeton d’accès</button>
     </form>
 
     <section>
-        <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Clés existantes</h2>
+        <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Jetons existants</h2>
         <?php if ($integration_keys === []): ?>
-            <p class="mt-3 text-sm text-slate-500">Aucune clé pour l’instant.</p>
+            <p class="mt-3 text-sm text-slate-500">Aucun jeton pour l’instant.</p>
         <?php else: ?>
             <ul class="mt-4 space-y-4">
                 <?php foreach ($integration_keys as $k): ?>
@@ -107,7 +114,7 @@ $decodeScopes = static function ($raw): array {
 
                     <div class="mt-3 flex flex-wrap gap-2">
                         <?php foreach ($scopes as $scope): ?>
-                            <span class="rounded-full border border-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-700"><?= htmlspecialchars($scope, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="rounded-full border border-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-700"><?= htmlspecialchars($scopeLabelFr($scope), ENT_QUOTES, 'UTF-8') ?></span>
                         <?php endforeach; ?>
                     </div>
 
@@ -121,18 +128,18 @@ $decodeScopes = static function ($raw): array {
                             <?php foreach ($available_scopes as $scope): ?>
                                 <label class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">
                                     <input type="checkbox" name="scopes[]" value="<?= htmlspecialchars($scope, ENT_QUOTES, 'UTF-8') ?>" <?= in_array($scope, $scopes, true) ? 'checked' : '' ?> class="rounded border-slate-300 text-slate-900 focus:ring-slate-700">
-                                    <span><?= htmlspecialchars($scope, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span><?= htmlspecialchars($scopeLabelFr($scope), ENT_QUOTES, 'UTF-8') ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
                     </form>
 
                     <div class="mt-4 flex flex-wrap gap-3">
-                        <form method="post" action="<?= htmlspecialchars(url('back-office/integrations/api-keys/' . (int) ($k['id'] ?? 0) . '/rotate'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Tourner cette clé ? Une nouvelle clé sera générée et l’ancienne sera désactivée immédiatement.');">
+                        <form method="post" action="<?= htmlspecialchars(url('back-office/integrations/api-keys/' . (int) ($k['id'] ?? 0) . '/rotate'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Renouveler ce jeton ? Un nouveau secret sera généré et l’ancien cessera de fonctionner immédiatement.');">
                             <?= \App\Core\Csrf::field() ?>
                             <button type="submit" class="rounded-lg border border-amber-300 px-3 py-2 text-xs font-bold uppercase tracking-wider text-amber-700 hover:bg-amber-50">Rotation</button>
                         </form>
-                        <form method="post" action="<?= htmlspecialchars(url('back-office/integrations/api-keys/' . (int) ($k['id'] ?? 0) . '/revoke'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Révoquer cette clé ? Les outils qui l’utilisent cesseront de fonctionner.');">
+                        <form method="post" action="<?= htmlspecialchars(url('back-office/integrations/api-keys/' . (int) ($k['id'] ?? 0) . '/revoke'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Révoquer ce jeton ? Les outils qui l’utilisent cesseront de fonctionner.');">
                             <?= \App\Core\Csrf::field() ?>
                             <button type="submit" class="rounded-lg border border-rose-300 px-3 py-2 text-xs font-bold uppercase tracking-wider text-rose-700 hover:bg-rose-50">Révoquer</button>
                         </form>

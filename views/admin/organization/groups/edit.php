@@ -24,7 +24,7 @@ $sop = array_key_exists('show_on_public_page', $group) ? (int) $group['show_on_p
             <input type="text" id="name" name="name" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" value="<?= htmlspecialchars($group['name'] ?? '') ?>">
         </div>
         <div>
-            <label for="slug" class="block text-sm font-medium text-slate-700">Slug</label>
+            <label for="slug" class="block text-sm font-medium text-slate-700">Adresse courte dans l’URL</label>
             <input type="text" id="slug" name="slug" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" value="<?= htmlspecialchars($group['slug'] ?? '') ?>">
         </div>
         <div>

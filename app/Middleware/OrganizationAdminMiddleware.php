@@ -32,6 +32,16 @@ class OrganizationAdminMiddleware
                 $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/positions') && $gate->allows('organization.job_roles.referential.manage')) {
                 $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/communications') && (
+                $gate->allows('comms.email.send.orbat')
+                || $gate->allows('comms.email.send.mission')
+                || $gate->allows('comms.email.send.activity')
+                || $gate->allows('comms.email.send.custom')
+                || $gate->allows('comms.email.broadcast')
+                || $gate->allows('comms.email_templates.manage')
+                || $gate->allows('comms.notifications.history.view')
+            )) {
+                $scopedOrgAccess = true;
             }
         }
         if (!$scopedOrgAccess) {

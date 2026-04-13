@@ -18,6 +18,10 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?> — Athena</title>
 <?php
+    $seo_og_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . ' — Athena';
+    require base_path('views/partials/seo_meta.php');
+?>
+<?php
     $tailwindBaseUrl = $baseUrl;
     require base_path('views/partials/tailwind_cdn_or_build.php');
 ?>
@@ -64,6 +68,7 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
 <body class="layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen">
     <div class="grain" aria-hidden="true"></div>
     <?php require base_path('views/partials/header_portal.php'); ?>
+    <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/portal-alerts.js"></script>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>

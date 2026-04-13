@@ -6,22 +6,76 @@ use Phinx\Migration\AbstractMigration;
 
 final class OperationalBoardAdvancedWorkflows extends AbstractMigration
 {
-    public function change(): void
+    public function up(): void
     {
-        $this->execute(<<<'SQL'
+        $planningEntries = $this->table('planning_entries');
+
+        if (!$planningEntries->hasColumn('frago_parent_entry_id')) {
+            $this->execute(<<<'SQL'
 ALTER TABLE planning_entries
-    ADD COLUMN IF NOT EXISTS frago_parent_entry_id BIGINT UNSIGNED NULL AFTER linked_id,
-    ADD COLUMN IF NOT EXISTS frago_version INT NOT NULL DEFAULT 1 AFTER frago_parent_entry_id,
-    ADD COLUMN IF NOT EXISTS replacement_user_id BIGINT UNSIGNED NULL AFTER deputy_user_id,
-    ADD COLUMN IF NOT EXISTS replacement_auto_activate TINYINT(1) NOT NULL DEFAULT 0 AFTER replacement_user_id,
-    ADD COLUMN IF NOT EXISTS phase_current ENUM('phase_1','phase_2','phase_3') NOT NULL DEFAULT 'phase_1' AFTER operational_status,
-    ADD COLUMN IF NOT EXISTS phase_rules_json JSON NULL AFTER phase_current,
-    ADD COLUMN IF NOT EXISTS dossier_ref VARCHAR(120) NULL AFTER map_link,
-    ADD COLUMN IF NOT EXISTS legal_constraints TEXT NULL AFTER dossier_ref,
-    ADD COLUMN IF NOT EXISTS fire_window_start DATETIME NULL AFTER legal_constraints,
-    ADD COLUMN IF NOT EXISTS fire_window_end DATETIME NULL AFTER fire_window_start,
-    ADD COLUMN IF NOT EXISTS realtime_external_ref VARCHAR(190) NULL AFTER fire_window_end;
+    ADD COLUMN frago_parent_entry_id BIGINT UNSIGNED NULL AFTER linked_id
 SQL);
+        }
+        if (!$planningEntries->hasColumn('frago_version')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN frago_version INT NOT NULL DEFAULT 1 AFTER frago_parent_entry_id
+SQL);
+        }
+        if (!$planningEntries->hasColumn('replacement_user_id')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN replacement_user_id BIGINT UNSIGNED NULL AFTER deputy_user_id
+SQL);
+        }
+        if (!$planningEntries->hasColumn('replacement_auto_activate')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN replacement_auto_activate TINYINT(1) NOT NULL DEFAULT 0 AFTER replacement_user_id
+SQL);
+        }
+        if (!$planningEntries->hasColumn('phase_current')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN phase_current ENUM('phase_1','phase_2','phase_3') NOT NULL DEFAULT 'phase_1' AFTER operational_status
+SQL);
+        }
+        if (!$planningEntries->hasColumn('phase_rules_json')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN phase_rules_json JSON NULL AFTER phase_current
+SQL);
+        }
+        if (!$planningEntries->hasColumn('dossier_ref')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN dossier_ref VARCHAR(120) NULL AFTER map_link
+SQL);
+        }
+        if (!$planningEntries->hasColumn('legal_constraints')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN legal_constraints TEXT NULL AFTER dossier_ref
+SQL);
+        }
+        if (!$planningEntries->hasColumn('fire_window_start')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN fire_window_start DATETIME NULL AFTER legal_constraints
+SQL);
+        }
+        if (!$planningEntries->hasColumn('fire_window_end')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN fire_window_end DATETIME NULL AFTER fire_window_start
+SQL);
+        }
+        if (!$planningEntries->hasColumn('realtime_external_ref')) {
+            $this->execute(<<<'SQL'
+ALTER TABLE planning_entries
+    ADD COLUMN realtime_external_ref VARCHAR(190) NULL AFTER fire_window_end
+SQL);
+        }
 
         $this->execute(<<<'SQL'
 CREATE TABLE IF NOT EXISTS `planning_entry_versions` (
@@ -111,5 +165,10 @@ CREATE TABLE IF NOT EXISTS `planning_realtime_stream` (
     KEY `idx_realtime_stream_tenant` (`tenant_id`, `id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL);
+    }
+
+    public function down(): void
+    {
+        throw new \RuntimeException('Migration OperationalBoardAdvancedWorkflows: retour arrière non pris en charge (données métier).');
     }
 }

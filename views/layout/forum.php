@@ -11,6 +11,12 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?> — <?= htmlspecialchars($forumConfig['subtitle'] ?? 'Athena') ?></title>
+<?php
+    $forumBrand = htmlspecialchars($forumConfig['subtitle'] ?? 'Athena', ENT_QUOTES, 'UTF-8');
+    $seo_og_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . ' — ' . $forumBrand;
+    $meta_description = $meta_description ?? 'Forum de la communauté : annonces, canaux de discussion et sujets récents sur Athena.';
+    require base_path('views/partials/seo_meta.php');
+?>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -26,6 +32,7 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
 </head>
 <body class="forum-mode-day bg-slate-50 text-slate-900 min-h-screen overflow-x-hidden font-sans antialiased" style="font-family: 'Inter', sans-serif;">
     <?php require base_path('views/partials/header_portal.php'); ?>
+    <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/portal-alerts.js"></script>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>

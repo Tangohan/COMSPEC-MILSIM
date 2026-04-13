@@ -15,6 +15,11 @@ $trainingStudioShowIntro = $trainingStudioShowIntro ?? true;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?> — Studio LMS</title>
 <?php
+    $seo_og_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . ' — Studio LMS';
+    $meta_description = $meta_description ?? 'Studio de formations Athena : création de parcours, contenus pédagogiques et suivi des apprenants.';
+    require base_path('views/partials/seo_meta.php');
+?>
+<?php
     $tailwindBaseUrl = $baseUrl;
     require base_path('views/partials/tailwind_cdn_or_build.php');
 ?>

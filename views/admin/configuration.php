@@ -132,7 +132,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
                     <dd class="font-semibold text-slate-900 text-right truncate max-w-[55%]" title="<?= htmlspecialchars((string) ($tenant['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($tenant['name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></dd>
                 </div>
                 <div class="flex justify-between gap-3 text-sm">
-                    <dt class="text-slate-500">Slug URL</dt>
+                    <dt class="text-slate-500">Adresse courte du lien</dt>
                     <dd class="font-mono text-xs text-slate-800 text-right"><?= htmlspecialchars((string) ($tenant['slug'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></dd>
                 </div>
                 <div class="flex justify-between gap-3 text-sm">
@@ -204,11 +204,15 @@ $card = static function (string $href, string $title, string $desc, string $acce
         if ($badgesMode !== 'multi') {
             $badgesMode = 'primary_only';
         }
+        $orgRoleLabels = (string) ($community['organization_role_labels'] ?? 'fr');
+        if ($orgRoleLabels !== 'en') {
+            $orgRoleLabels = 'fr';
+        }
         ?>
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-sm font-bold text-slate-900">Affichage des rôles (membres)</h2>
             <p class="mt-1 text-xs text-slate-600 max-w-2xl">Autorisez les titulaires à choisir quel rôle organisation apparaît en priorité sur le forum et dans le portail, et définissez si plusieurs badges peuvent être affichés à terme.</p>
-            <form method="post" action="<?= htmlspecialchars(url('back-office/configuration/member-role-display'), ENT_QUOTES, 'UTF-8') ?>" class="mt-5 space-y-4 max-w-xl">
+            <form method="post" action="<?= htmlspecialchars(url('back-office/configuration/member-role-display'), ENT_QUOTES, 'UTF-8') ?>" class="mt-5 space-y-4 max-w-2xl">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="member_can_choose_display_role" value="0">
                 <label class="flex items-start gap-3 text-sm text-slate-800 cursor-pointer">
@@ -220,6 +224,14 @@ $card = static function (string $href, string $title, string $desc, string $acce
                     <select id="display_badges_mode" name="display_badges_mode" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
                         <option value="primary_only" <?= $badgesMode === 'primary_only' ? 'selected' : '' ?>>Un seul badge principal</option>
                         <option value="multi" <?= $badgesMode === 'multi' ? 'selected' : '' ?>>Plusieurs badges (quand l’interface le proposera)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="organization_role_labels" class="block text-xs font-semibold text-slate-700 mb-1">Langue des intitulés de rôles (administration)</label>
+                    <p class="text-xs text-slate-500 mb-2">Invitations, attribution des comptes et listes déroulantes du back-office : libellés en français ou en anglais (doctrine américaine), sans modifier les droits attachés aux rôles.</p>
+                    <select id="organization_role_labels" name="organization_role_labels" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                        <option value="fr" <?= $orgRoleLabels === 'fr' ? 'selected' : '' ?>>Français</option>
+                        <option value="en" <?= $orgRoleLabels === 'en' ? 'selected' : '' ?>>Anglais (doctrine américaine)</option>
                     </select>
                 </div>
                 <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800">Enregistrer</button>
@@ -358,7 +370,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
                         <thead class="bg-slate-50 border-b border-slate-200">
                             <tr>
                                 <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Nom</th>
-                                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Slug</th>
+                                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Référence</th>
                                 <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Ordre</th>
                             </tr>
                         </thead>

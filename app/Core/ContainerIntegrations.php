@@ -43,6 +43,36 @@ final class ContainerIntegrations
                 Container::get(\App\Repositories\TrainingEnrollmentRepository::class),
                 Container::get(\App\Services\Audit\AuditService::class),
             ),
+            \App\Controllers\Web\OperationalBoardController::class => new \App\Controllers\Web\OperationalBoardController(
+                new \App\Repositories\PlanningEntryRepository(),
+            ),
+            \App\Services\Communications\TenantEmailDispatchService::class => new \App\Services\Communications\TenantEmailDispatchService(
+                new \App\Services\Communications\TenantEmailRecipientResolver(
+                    Container::get(\App\Repositories\UnitRepository::class),
+                    Container::get(\App\Repositories\UserRepository::class),
+                ),
+                new \App\Services\Communications\TenantEmailRenderService(
+                    Container::get(\App\Services\Courrier\TemplateVariableService::class),
+                    Container::get(\App\Repositories\UnitRepository::class),
+                ),
+                new \App\Repositories\TenantEmailCampaignRepository(),
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                Container::get(\App\Services\EmailService::class),
+            ),
+            \App\Controllers\Admin\Organization\TenantCommunicationsController::class => new \App\Controllers\Admin\Organization\TenantCommunicationsController(
+                new \App\Repositories\TenantEmailTemplateRepository(),
+                new \App\Repositories\TenantEmailRecipientGroupRepository(),
+                new \App\Repositories\TenantEmailCampaignRepository(),
+                Container::get(\App\Services\Communications\TenantEmailDispatchService::class),
+                new \App\Services\Communications\TenantEmailRenderService(
+                    Container::get(\App\Services\Courrier\TemplateVariableService::class),
+                    Container::get(\App\Repositories\UnitRepository::class),
+                ),
+                Container::get(\App\Repositories\UnitRepository::class),
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Repositories\RoleRepository::class),
+            ),
             default => null,
         };
     }

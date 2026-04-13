@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Controllers\Admin\System;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\PlatformAlertRepository;
+use App\Support\PlatformAlertPresentation;
 
 final class SystemPlatformAlertsController
 {
@@ -20,10 +22,33 @@ final class SystemPlatformAlertsController
 
     public function index(Request $request, array $params = []): Response
     {
+        $gate = Gate::getInstance();
+        $canManagePlatformAlerts = $gate->allows('admin.system');
+        $isPlatformSupportReadOnly = $gate->allows('site.support') && ! $canManagePlatformAlerts;
+
+        $rows = $this->alerts->allOrdered();
+        $now = date('Y-m-d H:i:s');
+        $platformAlertRows = [];
+        $stats = ['published' => 0, 'disabled' => 0, 'visible_now' => 0];
+        foreach ($rows as $r) {
+            if (! empty($r['is_active'])) {
+                $stats['published']++;
+            } else {
+                $stats['disabled']++;
+            }
+            if (PlatformAlertPresentation::isPublishedVisibleNow($r, $now)) {
+                $stats['visible_now']++;
+            }
+            $platformAlertRows[] = PlatformAlertPresentation::enrichRowForAdmin($r, $now);
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.system.platform_alerts_index',
             'title' => 'Alertes plateforme',
-            'platformAlerts' => $this->alerts->allOrdered(),
+            'platformAlertRows' => $platformAlertRows,
+            'platformAlertStats' => $stats,
+            'canManagePlatformAlerts' => $canManagePlatformAlerts,
+            'isPlatformSupportReadOnly' => $isPlatformSupportReadOnly,
         ]);
     }
 
@@ -138,7 +163,7 @@ final class SystemPlatformAlertsController
         $ctaUrlRaw = trim((string) $request->input('cta_url', ''));
         $ctaUrl = $ctaUrlRaw === '' ? null : $this->sanitizeUrl($ctaUrlRaw);
         if ($ctaUrl === false) {
-            return ['_error' => 'URL du lien invalide (utilisez une adresse https:// ou un chemin commençant par /).'];
+            return ['_error' => 'Lien cible invalide : utilisez une adresse en https ou un chemin interne commençant par /.'];
         }
         $coupon = trim((string) $request->input('coupon_code', ''));
         $starts = $this->parseDt($request->input('starts_at'));

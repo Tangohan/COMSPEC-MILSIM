@@ -14,7 +14,7 @@ $unitTypes = $unitTypes ?? [];
             <input type="text" name="name" required class="w-full border border-slate-200 rounded px-3 py-2" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" />
         </div>
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Slug (optionnel)</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Adresse courte (optionnel)</label>
             <input type="text" name="slug" class="w-full border border-slate-200 rounded px-3 py-2" placeholder="auto si vide" value="<?= htmlspecialchars($_POST['slug'] ?? '') ?>" />
         </div>
         <div>

@@ -19,7 +19,7 @@ $rid = (int) $role['id'];
         </div>
     </div>
     <dl class="grid gap-4 md:grid-cols-2 mb-6">
-        <div><dt class="text-slate-500 text-sm">Slug</dt><dd class="font-mono"><?= htmlspecialchars($role['slug']) ?></dd></div>
+        <div><dt class="text-slate-500 text-sm">Référence interne du rôle</dt><dd class="font-mono"><?= htmlspecialchars($role['slug']) ?></dd></div>
         <div><dt class="text-slate-500 text-sm">Description</dt><dd><?= htmlspecialchars($role['description'] ?? '—') ?></dd></div>
         <div><dt class="text-slate-500 text-sm">Système</dt><dd><?= !empty($role['is_system']) ? 'Oui' : 'Non' ?></dd></div>
         <div><dt class="text-slate-500 text-sm">Verrouillé</dt><dd><?= $isLocked ? 'Oui' : 'Non' ?></dd></div>

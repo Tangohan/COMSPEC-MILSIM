@@ -382,6 +382,8 @@ return [
                     'links' => [
                         ['label' => 'Back-office communauté', 'path' => 'back-office', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Centre opérationnel', 'path' => 'back-office/centre-operations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Synthèse des leviers d’administration'],
+                        ['label' => 'Tableau opérationnel', 'path' => 'back-office/tableau-operationnel', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Pilotage des permanences, missions et consignes'],
+                        ['label' => 'E-mails aux membres', 'path' => 'back-office/communications', 'any_permissions' => ['comms.email.send.orbat', 'comms.email.send.mission', 'comms.email.send.activity', 'comms.email.send.custom', 'comms.email.broadcast', 'comms.email_templates.manage', 'comms.notifications.history.view'], 'description' => 'Diffusions, modèles et groupes de destinataires'],
                         ['label' => 'Paramètres de la communauté', 'path' => 'back-office/community', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Identité, modules et options'],
                         ['label' => 'Vitrine publique', 'path' => 'back-office/community/presentation', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Page publique de présentation'],
                         ['label' => 'Événements (gestion)', 'path' => 'back-office/events', 'any_permissions' => ['admin.organization', 'admin.access']],

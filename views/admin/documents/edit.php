@@ -55,7 +55,7 @@ foreach ($permissions as $p) {
 }
 $roleSlugsGranted = array_values(array_unique($roleSlugsGranted));
 $accessLevelLabels = ['read' => 'Lecture', 'comment' => 'Commenter', 'edit' => 'Modifier', 'approve' => 'Valider', 'manage' => 'Gérer'];
-$permTypeLabels = ['role' => 'Rôle (slug)', 'unit' => 'Unité (ID)', 'user' => 'Utilisateur (ID)', 'group' => 'Groupe'];
+$permTypeLabels = ['role' => 'Rôle', 'unit' => 'Unité', 'user' => 'Utilisateur', 'group' => 'Groupe'];
 $visibilityHelp = [
     'private' => 'Réservé au propriétaire et aux collaborateurs du document une fois publié.',
     'collaborators' => 'Seuls les collaborateurs listés sur la fiche pourront lire.',
@@ -99,7 +99,7 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                             <input type="text" name="title" required class="w-full border border-slate-200 rounded px-3 py-2" value="<?= htmlspecialchars($document['title']) ?>" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Slug</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Adresse courte du document</label>
                             <input type="text" name="slug" class="w-full border border-slate-200 rounded px-3 py-2" value="<?= htmlspecialchars($document['slug'] ?? '') ?>" />
                         </div>
                         <div>
@@ -197,7 +197,7 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                             <details class="doc-help-details mt-2 rounded-lg border border-amber-200 bg-white">
                               <summary class="cursor-pointer px-2 py-2 text-[11px] font-semibold text-amber-900">Comment remplir le tableau ?</summary>
                               <div class="border-t border-amber-100 px-2 py-2 text-[11px] leading-relaxed text-amber-950/95">
-                                <strong>Rôle</strong> : slug exact. <strong>Unité / Utilisateur</strong> : ID numérique. Les lignes vides sont ignorées.
+                                <strong>Rôle</strong> : référence telle qu’en administration. <strong>Unité / Utilisateur</strong> : numéro interne. Les lignes vides sont ignorées.
                               </div>
                             </details>
                             <details id="edit-controlled-fine-rules-details" class="mt-2 overflow-x-auto rounded-lg border border-amber-100 bg-white shadow-sm"<?= $openControlledFineTable ? ' open' : '' ?>>
@@ -217,7 +217,7 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                                             <?php endforeach; ?>
                                         </select>
                                     </td>
-                                    <td class="p-1"><input type="text" name="permissions[<?= $pi ?>][permission_value]" value="<?= $row ? htmlspecialchars((string) ($row['permission_value'] ?? '')) : '' ?>" class="w-full rounded border border-slate-200 px-1 py-1 font-mono" placeholder="slug ou ID" title="Slug du rôle ou ID unité/utilisateur" /></td>
+                                    <td class="p-1"><input type="text" name="permissions[<?= $pi ?>][permission_value]" value="<?= $row ? htmlspecialchars((string) ($row['permission_value'] ?? '')) : '' ?>" class="w-full rounded border border-slate-200 px-1 py-1 font-mono" placeholder="Référence ou n° interne" title="Référence du rôle ou numéro interne unité ou personne" /></td>
                                     <td class="p-1">
                                         <select name="permissions[<?= $pi ?>][access_level]" class="w-full rounded border border-slate-200 px-1 py-1">
                                             <?php foreach ($permissionAccessLevels as $lvl): ?>

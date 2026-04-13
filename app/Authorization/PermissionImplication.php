@@ -66,7 +66,34 @@ final class PermissionImplication
             return true;
         }
 
+        if (self::impliedByCommsEmail($granted, $permission)) {
+            return true;
+        }
+
         if (self::impliedByInterteamLegacy($granted, $permission)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Ancien droit large « broadcast » et annonces → envois par famille.
+     *
+     * @param list<string> $granted
+     */
+    private static function impliedByCommsEmail(array $granted, string $permission): bool
+    {
+        $sendSlugs = [
+            'comms.email.send.orbat',
+            'comms.email.send.mission',
+            'comms.email.send.activity',
+            'comms.email.send.custom',
+        ];
+        if (in_array('comms.email.broadcast', $granted, true) && in_array($permission, $sendSlugs, true)) {
+            return true;
+        }
+        if (in_array('comms.announcement.send', $granted, true) && $permission === 'comms.email.send.custom') {
             return true;
         }
 

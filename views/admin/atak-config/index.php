@@ -33,16 +33,16 @@ $error = \App\Core\Session::getFlash('error');
         </div>
 
         <div class="border border-slate-200 rounded-lg p-4 bg-slate-50/50">
-            <h2 class="text-sm font-bold text-slate-800 mb-3">API ATAK (site → overlay)</h2>
+            <h2 class="text-sm font-bold text-slate-800 mb-3">Liaison site ↔ carte ATAK</h2>
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">URL de base API ATAK (optionnel)</label>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Adresse de base du service (optionnel)</label>
                 <input type="url" name="node_url" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="" value="<?= htmlspecialchars($config['node_url'] ?? '') ?>" />
-                <p class="text-xs text-slate-500 mt-1">L’API C2 est fournie par le site PHP (même origine). Laisser vide pour utiliser l’origine courante. Renseigner une URL uniquement pour un domaine dédié (ex. pour la DLL Arma).</p>
+                <p class="text-xs text-slate-500 mt-1">Par défaut, la carte utilise le même site que celui que vous consultez. Ne renseignez une adresse dédiée que si votre installation impose un domaine séparé (par ex. pour le mod Arma).</p>
                 <div class="mt-3 p-3 bg-white border border-slate-200 rounded text-xs text-slate-700">
-                    <p class="font-semibold text-slate-800 mb-1">Configuration</p>
+                    <p class="font-semibold text-slate-800 mb-1">À retenir</p>
                     <ul class="list-disc list-inside space-y-0.5">
-                        <li>Le C2 ATAK est géré par l’<strong>API PHP</strong> du site (<code class="bg-slate-100 px-0.5">/api/atak/*</code>, polling).</li>
-                        <li>Pour le mod Arma (DLL), configurez l’URL du site (ex. <code class="bg-slate-100 px-0.5">https://<?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'votre-domaine.fr') ?></code>) dans le paramètre « URL Athena » du mod.</li>
+                        <li>Le centre de commande de la carte est fourni par ce portail ; les mises à jour se font en continu depuis le site.</li>
+                        <li>Pour le mod Arma, indiquez l’adresse du site Athena (par ex. <strong>https://<?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'votre-domaine.fr') ?></strong>) dans le réglage prévu par le mod.</li>
                     </ul>
                 </div>
             </div>

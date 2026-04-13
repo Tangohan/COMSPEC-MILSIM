@@ -1371,6 +1371,80 @@ class UserRepository
     }
 
     /**
+     * Membres actifs avec une adresse e-mail utilisable (diffusions internes).
+     *
+     * @return list<int>
+     */
+    public function listActiveUserIdsEligibleForEmailBroadcast(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $svcExcl = $this->hasServiceAccountColumn() ? '(u.is_service_account IS NULL OR u.is_service_account = 0)' : '1';
+        $sql = "SELECT u.id FROM users u
+            WHERE u.tenant_id = ? AND u.status = 'active' AND {$svcExcl}
+            AND u.email IS NOT NULL AND TRIM(u.email) <> ''
+            AND u.email LIKE '%@%'";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$tenantId]);
+            $ids = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $ids[] = (int) ($row['id'] ?? 0);
+            }
+
+            return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Membres actifs dont le rôle communauté (principal ou additionnel) est parmi les slugs donnés.
+     *
+     * @param list<string> $roleSlugs
+     * @return list<int>
+     */
+    public function listActiveUserIdsWithOrganizationRoleSlugs(int $tenantId, array $roleSlugs): array
+    {
+        $roleSlugs = array_values(array_unique(array_filter(array_map('trim', $roleSlugs))));
+        if ($tenantId < 1 || $roleSlugs === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($roleSlugs), '?'));
+        $params = array_merge([$tenantId], $roleSlugs);
+        $ids = [];
+        $sql = "SELECT DISTINCT u.id FROM users u
+            INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
+            WHERE u.tenant_id = ? AND u.status = 'active' AND r.slug IN ({$placeholders})";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $ids[] = (int) ($row['id'] ?? 0);
+            }
+        } catch (\Throwable) {
+            return [];
+        }
+        if ($this->hasTenantUserRolesTable()) {
+            $sql2 = "SELECT DISTINCT u.id FROM users u
+                INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id AND tur.org_unit_id IS NULL
+                INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
+                WHERE u.tenant_id = ? AND u.status = 'active' AND r.slug IN ({$placeholders})";
+            try {
+                $st = $this->pdo->prepare($sql2);
+                $st->execute($params);
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $ids[] = (int) ($row['id'] ?? 0);
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+    }
+
+    /**
      * Membres actifs ayant au moins une des permissions listées (rôle principal et rôles additionnels).
      *
      * @param list<string> $permissionSlugs

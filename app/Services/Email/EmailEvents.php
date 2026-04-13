@@ -65,6 +65,15 @@ final class EmailEvents
     /** Annonce liée à une coopération inter-unités (texte issu d’un gabarit configurable). */
     public const COOPERATION_ANNOUNCEMENT = 'COOPERATION_ANNOUNCEMENT';
 
+    /** Diffusion membre — famille structure / ORBAT. */
+    public const TENANT_EMAIL_ORBAT = 'TENANT_EMAIL_ORBAT';
+    /** Diffusion membre — pilotage opérationnel. */
+    public const TENANT_EMAIL_MISSION = 'TENANT_EMAIL_MISSION';
+    /** Diffusion membre — activités. */
+    public const TENANT_EMAIL_ACTIVITY = 'TENANT_EMAIL_ACTIVITY';
+    /** Diffusion membre — message libre. */
+    public const TENANT_EMAIL_CUSTOM = 'TENANT_EMAIL_CUSTOM';
+
     /** @var list<string> */
     public const EMAIL_EVENTS = [
         self::USER_REGISTER_CONFIRMATION,
@@ -100,5 +109,9 @@ final class EmailEvents
         self::TENANT_ACCESS_REQUEST,
         self::TENANT_INTERNAL_MESSAGE_THREAD,
         self::COOPERATION_ANNOUNCEMENT,
+        self::TENANT_EMAIL_ORBAT,
+        self::TENANT_EMAIL_MISSION,
+        self::TENANT_EMAIL_ACTIVITY,
+        self::TENANT_EMAIL_CUSTOM,
     ];
 }

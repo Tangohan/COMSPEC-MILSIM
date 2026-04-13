@@ -146,7 +146,7 @@ $priorityBadge = [
                 <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
                     <p class="font-semibold text-slate-800 mb-1">Liens transverses</p>
                     <ul class="space-y-1 text-slate-600">
-                        <li><a class="underline" href="<?= htmlspecialchars((string) ($crossLinks['user_lookup'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>">Lookup utilisateur (API)</a></li>
+                        <li><a class="underline" href="<?= htmlspecialchars((string) ($crossLinks['user_lookup'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>">Recherche de compte (outil système)</a></li>
                         <li><a class="underline" href="<?= htmlspecialchars((string) ($crossLinks['audit'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>">Journal d’audit</a></li>
                         <li><a class="underline" href="<?= htmlspecialchars((string) ($crossLinks['moderation'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>">Console modération</a></li>
                     </ul>

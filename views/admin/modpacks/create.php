@@ -16,7 +16,7 @@ $description = $_POST['description'] ?? '';
             <input type="text" name="name" required class="w-full border border-slate-200 rounded px-3 py-2" value="<?= htmlspecialchars($name) ?>" />
         </div>
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Slug (optionnel, auto si vide)</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Adresse courte (optionnel, générée si vide)</label>
             <input type="text" name="slug" class="w-full border border-slate-200 rounded px-3 py-2" placeholder="ex: modpack-principal" value="<?= htmlspecialchars($slug) ?>" />
         </div>
         <div>
