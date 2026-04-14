@@ -8,7 +8,7 @@ declare(strict_types=1);
  *   php scripts/compare-sql-dump-schemas.php [--verbose] <dump_reference.sql> <dump_a_comparer.sql>
  *   php scripts/compare-sql-dump-schemas.php --list-tables <dump.sql>
  *
- * La référence est typiquement un mysqldump --no-data obtenu après run-migrations.php + phinx migrate sur une base vierge.
+ * La référence est typiquement un mysqldump --no-data obtenu après run-migrations.php (ou setup-database.php) sur une base vierge.
  */
 
 if (PHP_SAPI !== 'cli') {

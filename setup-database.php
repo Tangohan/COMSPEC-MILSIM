@@ -14,7 +14,7 @@ declare(strict_types=1);
  *
  *  1. Chargement `.env` et connexion MySQL
  *  2. Import `migrations/schema.sql` (schéma métier)
- *  3. `run_phinx_migrate()` — migrations robmorgan/phinx (`migrations/*.php`, table `phinxlog`, ex. tableau opérationnel)
+ *  3. `run_core_schema_extensions_migration()` — DDL étendue (`bootstrap/core_schema_extensions_migration.php`, ex. tableau opérationnel, ORBAT)
  *  4. `run_community_platform_migration()` — plans d’abonnement, colonnes `tenants` (facturation / owner)
  *  5. `run_platform_unit_commander_migration()` — invitations, modération, événements, usage,
  *     codes communauté, parrainage (`referral_*`), sécurité, etc.

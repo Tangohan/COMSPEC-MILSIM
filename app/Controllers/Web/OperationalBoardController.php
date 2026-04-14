@@ -11,8 +11,10 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\InterteamMissionRepository;
+use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PlanningEntryRepository;
 use App\Repositories\TrainingCourseRepository;
+use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 
 final class OperationalBoardController
@@ -23,6 +25,8 @@ final class OperationalBoardController
         private CommunityEventRepository $communityEvents,
         private InterteamMissionRepository $interteamMissions,
         private TrainingCourseRepository $trainingCourses,
+        private UnitRepository $units,
+        private PersonnelJobRoleRepository $jobRoles,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -47,6 +51,9 @@ final class OperationalBoardController
             $filters['critical_only'] = 1;
         }
 
+        $userId = (int) (Session::get('user_id') ?? 0);
+        $this->planningEntries->ensureDefaultPlanningTemplatesIfEmpty($tenantId, $userId);
+
         $entries = $this->planningEntries->listForBoard($tenantId, $filters);
         $panels = $this->partitionBoardPanels($entries);
         $memberOptions = $this->memberSelectOptions($tenantId);
@@ -59,6 +66,7 @@ final class OperationalBoardController
             'boardPanels' => $panels,
             'boardCategories' => $this->planningEntries->listCategories($tenantId),
             'boardTemplates' => $this->planningEntries->listTemplates($tenantId),
+            'boardDraftCount' => $this->planningEntries->countPlanningEntriesByStatus($tenantId, 'draft'),
             'boardPosture' => $posture,
             'boardLogs' => $this->planningEntries->listRecentLogs($tenantId, 40),
             'boardTags' => $this->planningEntries->listTags($tenantId),
@@ -89,7 +97,9 @@ final class OperationalBoardController
             'period_start' => (string) ($request->query('period_start') ?? date('Y-m-d')),
             'period_end' => (string) ($request->query('period_end') ?? date('Y-m-d', strtotime('+14 days'))),
         ];
-        $entries = $this->planningEntries->listForPortal($tenantId, $filters, $userId, $canRestricted);
+        $viewerUnitIds = $this->units->unitIdsForUser($tenantId, $userId);
+        $viewerJobRoleIds = $this->jobRoles->assignedJobRoleIdsForUser($tenantId, $userId);
+        $entries = $this->planningEntries->listForPortal($tenantId, $filters, $userId, $canRestricted, $viewerUnitIds, $viewerJobRoleIds);
         $panels = $this->partitionBoardPanels($entries);
 
         return Response::view('layout.main', [
@@ -104,16 +114,39 @@ final class OperationalBoardController
         ]);
     }
 
-    public function formNew(Request $request, array $params = []): Response
+       /** Écran d’accueil : un parcours par type de fiche (URL dédiée par type). */
+    public function formNewHub(Request $request, array $params = []): Response
     {
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
         }
-        $prefill = $this->prefillFromQuery($request, $tenantId);
 
         return Response::view('layout.main', [
-            'title' => 'Nouvelle entrée — tableau opérationnel',
+            'title' => 'Nouvelle entrée — choisir le type',
+            'content' => 'operations/board_entry_new_hub',
+            'boardSchemaReady' => $this->planningEntries->isOperationalBoardSchemaReady(),
+        ]);
+    }
+
+    /** Formulaire de création pour un type précis (slug dans l’URL). */
+    public function formNewTyped(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        if ($tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        $slug = strtolower(trim((string) ($params['entryType'] ?? '')));
+        if (!in_array($slug, $this->boardEntryTypeSlugs(), true)) {
+            Session::flash('error', 'Ce type de fiche n’existe pas. Choisissez-en un dans la liste.');
+
+            return Response::redirect(url('back-office/tableau-operationnel/fiche/nouvelle'));
+        }
+        $prefill = $this->prefillFromQuery($request, $tenantId);
+        $prefill['entry_type'] = $slug;
+
+        return Response::view('layout.main', [
+            'title' => 'Nouvelle fiche — ' . $this->boardEntryTypeTitle($slug),
             'content' => 'operations/board_entry_form',
             'boardEntry' => null,
             'boardEntryPersonnel' => [],
@@ -123,7 +156,12 @@ final class OperationalBoardController
             'boardCategories' => $this->planningEntries->listCategories($tenantId),
             'boardMemberOptions' => $this->memberSelectOptions($tenantId),
             'boardPrefill' => $prefill,
+            'boardLinkedSource' => $this->resolveBoardLinkedSource($tenantId, $prefill),
             'boardSchemaReady' => $this->planningEntries->isOperationalBoardSchemaReady(),
+            'boardVisibilityUnits' => $this->boardUnitOptionsForForm($tenantId),
+            'boardVisibilityJobRoles' => $this->boardJobRoleOptionsForVisibility($tenantId),
+            'boardFormVariant' => $slug,
+            'boardFormReturnUrl' => url('back-office/tableau-operationnel/fiche/nouvelle/' . rawurlencode($slug)),
         ]);
     }
 
@@ -141,8 +179,10 @@ final class OperationalBoardController
             return Response::redirect(url('back-office/tableau-operationnel'));
         }
 
+        $variant = $this->enum((string) ($entry['entry_type'] ?? ''), $this->boardEntryTypeSlugs(), 'task');
+
         return Response::view('layout.main', [
-            'title' => 'Modifier une entrée — tableau opérationnel',
+            'title' => 'Modifier — ' . $this->boardEntryTypeTitle($variant),
             'content' => 'operations/board_entry_form',
             'boardEntry' => $entry,
             'boardEntryPersonnel' => $this->planningEntries->listPersonnelRowsForEntry($id),
@@ -152,8 +192,41 @@ final class OperationalBoardController
             'boardCategories' => $this->planningEntries->listCategories($tenantId),
             'boardMemberOptions' => $this->memberSelectOptions($tenantId),
             'boardPrefill' => [],
+            'boardLinkedSource' => $this->resolveBoardLinkedSource($tenantId, $entry),
             'boardSchemaReady' => $this->planningEntries->isOperationalBoardSchemaReady(),
+            'boardVisibilityUnits' => $this->boardUnitOptionsForForm($tenantId),
+            'boardVisibilityJobRoles' => $this->boardJobRoleOptionsForVisibility($tenantId),
+            'boardFormVariant' => $variant,
+            'boardFormReturnUrl' => url('back-office/tableau-operationnel/fiche/' . $id),
         ]);
+    }
+
+    public function storePlanningCategory(Request $request, array $params = []): Response
+    {
+        if (!$this->validateCsrf()) {
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        [$tenantId, $userId] = $this->tenantAndUser();
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        $name = trim((string) $request->input('category_name', ''));
+        $color = trim((string) $request->input('category_color', '#334155'));
+        $redirect = trim((string) $request->input('redirect_after', ''));
+        if ($name === '') {
+            Session::flash('error', 'Indiquez un nom pour la rubrique.');
+
+            return Response::redirect($this->safeBoardFormRedirect($redirect));
+        }
+        $newCatId = $this->planningEntries->createPlanningCategory($tenantId, $name, $color);
+        if ($newCatId === null) {
+            Session::flash('error', 'Impossible d’ajouter cette rubrique. Le nom est peut-être déjà utilisé.');
+
+            return Response::redirect($this->safeBoardFormRedirect($redirect));
+        }
+        Session::flash('success', 'Rubrique ajoutée : vous pouvez la sélectionner dans la liste.');
+
+        return Response::redirect($this->safeBoardFormRedirect($redirect, $newCatId));
     }
 
     public function update(Request $request, array $params = []): Response
@@ -183,6 +256,16 @@ final class OperationalBoardController
 
         $payload = $this->payloadFromRequest($request);
         $payload['title'] = $title;
+        $visErr = $this->validateVisibilityTargets(
+            (string) $payload['visibility_scope'],
+            $payload['visibility_unit_id'] ?? null,
+            $payload['visibility_job_role_ids'] ?? null
+        );
+        if ($visErr !== null) {
+            Session::flash('error', $visErr);
+
+            return Response::redirect(url('back-office/tableau-operationnel/fiche/' . $entryId));
+        }
         $this->planningEntries->updateEntry($tenantId, $entryId, $payload, $userId);
         $this->syncChildrenFromRequest($request, $tenantId, $entryId, $userId);
         $tags = $this->parseTags((string) $request->input('tags_csv', ''));
@@ -203,7 +286,7 @@ final class OperationalBoardController
         $newId = $this->planningEntries->duplicateEntry($tenantId, $entryId, $userId);
         Session::flash($newId === null ? 'error' : 'success', $newId === null ? 'Duplication impossible.' : 'Copie créée en brouillon.');
 
-        return Response::redirect($newId ? url('back-office/tableau-operationnel/fiche/' . $newId) : url('back-office/tableau-operationnel'));
+        return Response::redirect($newId ? $this->boardPilotageDraftsUrl() : url('back-office/tableau-operationnel'));
     }
 
     /** Création rapide depuis un événement, une mission coopération ou une formation. */
@@ -275,6 +358,26 @@ final class OperationalBoardController
             $entryType = 'formation';
         }
 
+        $existingId = $this->planningEntries->findOpenEntryIdForLink($tenantId, $linkedType, $linkedId);
+        if ($existingId !== null) {
+            $msg = match ($kind) {
+                'event' => 'Une fiche du tableau opérationnel est déjà rattachée à cet événement.',
+                'formation' => 'Une fiche du tableau opérationnel est déjà rattachée à cette formation.',
+                default => 'Une fiche du tableau opérationnel est déjà rattachée à cette mission.',
+            };
+            if ($this->requestPrefersJson()) {
+                return Response::json([
+                    'success' => false,
+                    'code' => 'duplicate_linked_entry',
+                    'existing_entry_id' => $existingId,
+                    'message' => $msg,
+                ], 409);
+            }
+            Session::flash('error', $msg);
+
+            return Response::redirect(url('back-office/tableau-operationnel/fiche/' . $existingId));
+        }
+
         $newId = $this->planningEntries->create([
             'tenant_id' => $tenantId,
             'title' => $title,
@@ -316,7 +419,7 @@ final class OperationalBoardController
         }
         Session::flash('success', 'Brouillon créé et lié à la source. Complétez la fiche puis validez la publication.');
 
-        return Response::redirect(url('back-office/tableau-operationnel/fiche/' . $newId));
+        return Response::redirect($this->boardPilotageDraftsUrl());
     }
 
     public function store(Request $request, array $params = []): Response
@@ -332,6 +435,15 @@ final class OperationalBoardController
             return Response::redirect(url('back-office/tableau-operationnel'));
         }
 
+        $scope = $this->enum($request->input('visibility_scope', 'tenant'), ['tenant', 'unit', 'role', 'private'], 'tenant');
+        $vis = $this->visibilityTargetsFromRequest($request, $scope);
+        $visErr = $this->validateVisibilityTargets($scope, $vis['visibility_unit_id'], $vis['visibility_job_role_ids']);
+        if ($visErr !== null) {
+            Session::flash('error', $visErr);
+
+            return Response::redirect(url('back-office/tableau-operationnel/fiche/nouvelle'));
+        }
+
         $newId = $this->planningEntries->create([
             'tenant_id' => $tenantId,
             'title' => $title,
@@ -342,11 +454,14 @@ final class OperationalBoardController
             'linked_id' => $this->nullableInt($request->input('linked_id', '')),
             'start_date' => trim((string) $request->input('start_date', '')),
             'end_date' => trim((string) $request->input('end_date', '')),
+            'all_day' => (int) $request->input('all_day', 1) === 1 ? 1 : 0,
             'status' => 'draft',
             'validation_status' => 'draft',
             'priority' => $this->enum($request->input('priority', 'normal'), ['low', 'normal', 'high', 'critical'], 'normal'),
             'display_order' => (int) $request->input('display_order', 100),
-            'visibility_scope' => $this->enum($request->input('visibility_scope', 'tenant'), ['tenant', 'unit', 'role', 'private'], 'tenant'),
+            'visibility_scope' => $scope,
+            'visibility_unit_id' => $vis['visibility_unit_id'],
+            'visibility_job_role_ids' => $vis['visibility_job_role_ids'],
             'security_level' => $this->enum($request->input('security_level', 'unit_public'), ['unit_public', 'command_restricted', 'confidential', 'secret_ops'], 'unit_public'),
             'operational_status' => $this->enum($request->input('operational_status', 'planned'), ['planned', 'in_progress', 'suspended', 'completed', 'cancelled'], 'planned'),
             'phase_current' => $this->enum($request->input('phase_current', 'phase_1'), ['phase_1', 'phase_2', 'phase_3'], 'phase_1'),
@@ -367,12 +482,16 @@ final class OperationalBoardController
             'created_by' => $userId,
         ]);
         if ($newId < 1) {
-            Session::flash('error', 'Le tableau opérationnel n’est pas encore activé sur ce serveur. Un administrateur doit exécuter les mises à jour de base de données (script d’initialisation ou migrations Phinx).');
+            Session::flash('error', 'Le tableau opérationnel n’est pas encore activé sur ce serveur. Un administrateur doit exécuter les mises à jour de base de données (script d’initialisation du site).');
             return Response::redirect(url('back-office/tableau-operationnel'));
         }
 
+        $this->syncChildrenFromRequest($request, $tenantId, $newId, $userId);
+        $tags = $this->parseTags((string) $request->input('tags_csv', ''));
+        $this->planningEntries->replaceTagsForEntry($tenantId, $newId, $tags, $userId);
+
         Session::flash('success', 'Entrée créée en brouillon.');
-        return Response::redirect(url('back-office/tableau-operationnel/fiche/' . $newId));
+        return Response::redirect($this->boardPilotageDraftsUrl());
     }
 
     public function setPosture(Request $request, array $params = []): Response
@@ -433,9 +552,122 @@ final class OperationalBoardController
         }
         [$tenantId, $userId] = $this->tenantAndUser();
         $entryId = $this->planningEntries->createFromTemplate($tenantId, (int) $request->input('template_id', 0), $userId);
-        Session::flash($entryId === null ? 'error' : 'success', $entryId === null ? 'Template introuvable.' : 'Entrée créée depuis modèle.');
+        Session::flash($entryId === null ? 'error' : 'success', $entryId === null ? 'Modèle introuvable ou inactif.' : 'Une nouvelle fiche brouillon a été créée à partir du modèle.');
 
-        return Response::redirect($entryId ? url('back-office/tableau-operationnel/fiche/' . $entryId) : url('back-office/tableau-operationnel'));
+        return Response::redirect($entryId ? $this->boardPilotageDraftsUrl() : url('back-office/tableau-operationnel'));
+    }
+
+    /** Création d’un modèle vide (squelette) depuis le tableau opérationnel. */
+    public function storePlanningTemplate(Request $request, array $params = []): Response
+    {
+        if (!$this->validateCsrf()) {
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        [$tenantId, $userId] = $this->tenantAndUser();
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        $name = trim((string) $request->input('template_name', ''));
+        if ($name === '') {
+            Session::flash('error', 'Indiquez un nom pour le modèle.');
+
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        $family = $this->enum(
+            (string) $request->input('mission_family', 'custom'),
+            ['permanence_opj', 'mission_judiciaire', 'instruction', 'dispositif_securite', 'exercice', 'custom'],
+            'custom'
+        );
+        $entryType = $this->enum(
+            (string) $request->input('entry_type', 'task'),
+            ['permanence', 'info', 'mission', 'task', 'formation', 'manifestation', 'flash_info'],
+            'task'
+        );
+        $title = trim((string) $request->input('default_title', ''));
+        if ($title === '') {
+            $title = $name;
+        }
+        $description = trim((string) $request->input('default_description', ''));
+        $payload = [
+            'title' => $title,
+            'description' => $description !== '' ? $description : null,
+            'entry_type' => $entryType,
+            'category_id' => 0,
+            'linked_type' => null,
+            'linked_id' => null,
+            'all_day' => 1,
+            'priority' => $this->enum($request->input('priority', 'normal'), ['low', 'normal', 'high', 'critical'], 'normal'),
+            'display_order' => (int) $request->input('display_order', 100),
+            'visibility_scope' => $this->enum($request->input('visibility_scope', 'tenant'), ['tenant', 'unit', 'role', 'private'], 'tenant'),
+            'security_level' => $this->enum($request->input('security_level', 'unit_public'), ['unit_public', 'command_restricted', 'confidential', 'secret_ops'], 'unit_public'),
+            'operational_status' => 'planned',
+            'phase_current' => 'phase_1',
+            'chief_user_id' => null,
+            'deputy_user_id' => null,
+            'replacement_user_id' => null,
+            'replacement_auto_activate' => 0,
+            'command_chain' => null,
+            'accountability_note' => null,
+            'location_lat' => null,
+            'location_lng' => null,
+            'operation_zone' => null,
+            'map_link' => null,
+            'dossier_ref' => null,
+            'legal_constraints' => null,
+            'fire_window_start' => null,
+            'fire_window_end' => null,
+        ];
+        $newTplId = $this->planningEntries->createPlanningTemplate($tenantId, $name, $family, $payload, $userId);
+        if ($newTplId === null) {
+            Session::flash('error', 'Impossible d’enregistrer ce modèle pour le moment.');
+
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        Session::flash('success', 'Modèle enregistré. Vous pouvez l’utiliser ci-dessous pour générer une nouvelle fiche brouillon.');
+
+        return Response::redirect(url('back-office/tableau-operationnel'));
+    }
+
+    /** Enregistre la fiche courante comme modèle réutilisable (sans dates ni liaison métier). */
+    public function storePlanningTemplateFromEntry(Request $request, array $params = []): Response
+    {
+        if (!$this->validateCsrf()) {
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        [$tenantId, $userId] = $this->tenantAndUser();
+        $entryId = (int) ($params['id'] ?? 0);
+        if ($tenantId < 1 || $userId < 1 || $entryId < 1) {
+            Session::flash('error', 'Données invalides.');
+
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        $entry = $this->planningEntries->findByIdForTenant($tenantId, $entryId);
+        if ($entry === null) {
+            Session::flash('error', 'Entrée introuvable.');
+
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        $name = trim((string) $request->input('template_name', ''));
+        if ($name === '') {
+            Session::flash('error', 'Indiquez un nom pour le modèle.');
+
+            return Response::redirect(url('back-office/tableau-operationnel/fiche/' . $entryId));
+        }
+        $family = $this->enum(
+            (string) $request->input('mission_family', 'custom'),
+            ['permanence_opj', 'mission_judiciaire', 'instruction', 'dispositif_securite', 'exercice', 'custom'],
+            'custom'
+        );
+        $payload = $this->planningEntries->planningEntryRowToTemplatePayload($entry);
+        $newTplId = $this->planningEntries->createPlanningTemplate($tenantId, $name, $family, $payload, $userId);
+        if ($newTplId === null) {
+            Session::flash('error', 'Impossible d’enregistrer ce modèle.');
+
+            return Response::redirect(url('back-office/tableau-operationnel/fiche/' . $entryId));
+        }
+        Session::flash('success', 'Modèle créé à partir de cette fiche (dates et rattachement métier exclus — à compléter sur chaque nouvelle fiche).');
+
+        return Response::redirect(url('back-office/tableau-operationnel/fiche/' . $entryId));
     }
 
     public function createFrago(Request $request, array $params = []): Response
@@ -536,6 +768,152 @@ final class OperationalBoardController
         return $normalized === 'none' ? null : $normalized;
     }
 
+    /** @return list<string> */
+    private function boardEntryTypeSlugs(): array
+    {
+        return ['permanence', 'info', 'manifestation', 'mission', 'task', 'formation', 'flash_info'];
+    }
+
+    private function boardEntryTypeTitle(string $slug): string
+    {
+        return match ($slug) {
+            'permanence' => 'Permanence',
+            'info' => 'Information pratique',
+            'manifestation' => 'Manifestation / dispositif',
+            'mission' => 'Mission',
+            'task' => 'Tâche interne',
+            'formation' => 'Activité de formation',
+            'flash_info' => 'Flash information',
+            default => 'Fiche tableau opérationnel',
+        };
+    }
+
+    private function safeBoardFormRedirect(string $redirect, ?int $selectCategoryId = null): string
+    {
+        $base = rtrim(url(''), '/');
+        $redirect = trim($redirect);
+        if ($redirect === '' || !str_starts_with($redirect, $base)) {
+            $redirect = url('back-office/tableau-operationnel/fiche/nouvelle');
+        }
+        if ($selectCategoryId !== null && $selectCategoryId > 0) {
+            $redirect .= (str_contains($redirect, '?') ? '&' : '?') . 'category_id=' . $selectCategoryId;
+        }
+
+        return $redirect;
+    }
+
+    /** Pilotage du mur : vue filtrée sur les fiches encore en brouillon (non publiées). */
+    private function boardPilotageDraftsUrl(): string
+    {
+        return url('back-office/tableau-operationnel') . '?' . http_build_query(['status' => 'draft'], '', '&', PHP_QUERY_RFC3986);
+    }
+
+    /** @return list<array{id:int,label:string}> */
+    private function boardUnitOptionsForForm(int $tenantId): array
+    {
+        $flat = $this->units->listFlatForStructure($tenantId);
+        $byId = [];
+        foreach ($flat as $row) {
+            $byId[(int) $row['id']] = $row;
+        }
+        $depth = null;
+        $depth = function (int $id) use (&$byId, &$depth): int {
+            if (!isset($byId[$id])) {
+                return 0;
+            }
+            $p = $byId[$id]['parent_id'];
+            $pid = $p !== null && $p !== '' ? (int) $p : 0;
+            if ($pid < 1) {
+                return 0;
+            }
+
+            return 1 + $depth($pid);
+        };
+        $out = [];
+        foreach ($flat as $row) {
+            $id = (int) $row['id'];
+            $d = $depth($id);
+            $pad = $d > 0 ? str_repeat('· ', $d) : '';
+            $out[] = ['id' => $id, 'label' => $pad . (string) $row['name']];
+        }
+
+        return $out;
+    }
+
+    /** @return list<array{id:int,label:string}> */
+    private function boardJobRoleOptionsForVisibility(int $tenantId): array
+    {
+        if (!$this->jobRoles->tablesExist() || !$this->jobRoles->personnelProfilesHaveJobRoleColumns()) {
+            return [];
+        }
+        $opts = $this->jobRoles->listRoleOptionsForSelect($tenantId, false, true, 'fr');
+        $out = [];
+        foreach ($opts as $o) {
+            $out[] = ['id' => (int) ($o['id'] ?? 0), 'label' => (string) ($o['label'] ?? '')];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array{visibility_unit_id: ?int, visibility_job_role_ids: ?string}
+     */
+    private function visibilityTargetsFromRequest(Request $request, string $scope): array
+    {
+        if ($scope === 'unit') {
+            return [
+                'visibility_unit_id' => $this->nullableInt($request->input('visibility_unit_id', '')),
+                'visibility_job_role_ids' => null,
+            ];
+        }
+        if ($scope === 'role') {
+            return [
+                'visibility_unit_id' => null,
+                'visibility_job_role_ids' => $this->normalizeVisibilityJobRoleJson($request->input('visibility_job_role_id', [])),
+            ];
+        }
+
+        return ['visibility_unit_id' => null, 'visibility_job_role_ids' => null];
+    }
+
+    private function normalizeVisibilityJobRoleJson(mixed $raw): ?string
+    {
+        if (!is_array($raw)) {
+            return null;
+        }
+        $ids = [];
+        foreach ($raw as $x) {
+            $i = (int) $x;
+            if ($i > 0) {
+                $ids[$i] = true;
+            }
+        }
+        if ($ids === []) {
+            return null;
+        }
+        $list = array_keys($ids);
+        sort($list);
+
+        return json_encode($list);
+    }
+
+    private function validateVisibilityTargets(string $scope, ?int $unitId, ?string $roleJson): ?string
+    {
+        if ($scope === 'unit') {
+            if ($unitId === null || $unitId < 1) {
+                return 'Pour une diffusion limitée à une unité, sélectionnez l’unité dans la liste.';
+            }
+        }
+        if ($scope === 'role') {
+            $rj = $roleJson !== null ? trim($roleJson) : '';
+            if ($rj === '' || $rj === '[]') {
+                return 'Pour une diffusion limitée à certains emplois métier, cochez au moins un emploi dans la liste.';
+            }
+        }
+
+        return null;
+    }
+
     /** @return list<array<string, list<array<string, mixed>>>> */
     private function partitionBoardPanels(array $entries): array
     {
@@ -598,6 +976,29 @@ final class OperationalBoardController
             $out['linked_id'] = $ref;
         }
 
+        $typeHint = trim((string) $request->query('type', ''));
+        if ($typeHint !== '') {
+            $typeHint = $this->enum($typeHint, ['permanence', 'info', 'mission', 'task', 'formation', 'manifestation', 'flash_info'], '');
+            if ($typeHint !== '') {
+                $out['entry_type'] = $typeHint;
+            }
+        }
+
+        $titleHint = trim((string) $request->query('titre', ''));
+        if ($titleHint !== '') {
+            $out['title'] = mb_substr($titleHint, 0, 500);
+        }
+
+        $debut = trim((string) $request->query('debut', ''));
+        if ($debut !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $debut) === 1) {
+            $out['start_date'] = $debut;
+        }
+
+        $catPre = $this->nullableInt($request->query('category_id', ''));
+        if ($catPre !== null) {
+            $out['category_id'] = $catPre;
+        }
+
         return $out;
     }
 
@@ -612,9 +1013,72 @@ final class OperationalBoardController
         return false;
     }
 
+    /**
+     * Libellé + lien vers la source métier pour l’UI (événement, coopération, formation).
+     *
+     * @param array<string, mixed> $row Ligne fiche ou préremplissage avec linked_type / linked_id
+     *
+     * @return array{label: string, url: ?string}|null
+     */
+    private function resolveBoardLinkedSource(int $tenantId, array $row): ?array
+    {
+        $lt = trim((string) ($row['linked_type'] ?? ''));
+        $lid = (int) ($row['linked_id'] ?? 0);
+        if ($lid < 1 || !in_array($lt, ['event', 'mission', 'formation'], true)) {
+            return null;
+        }
+        if ($lt === 'event') {
+            $ev = $this->communityEvents->findByIdForTenant($lid, $tenantId);
+            $title = $ev ? trim((string) ($ev['title'] ?? '')) : '';
+            if ($title === '') {
+                $title = 'Événement de l’agenda';
+            }
+
+            return [
+                'label' => 'Événement : ' . $title,
+                'url' => url('evenements'),
+            ];
+        }
+        if ($lt === 'mission') {
+            if (!$this->interteamMissionVisibleToTenant($lid, $tenantId)) {
+                return [
+                    'label' => 'Coopération inter-unités (accès restreint ou source indisponible)',
+                    'url' => null,
+                ];
+            }
+            $m = $this->interteamMissions->findById($lid);
+            $title = $m ? trim((string) ($m['title'] ?? '')) : '';
+            if ($title === '') {
+                $title = 'Coopération inter-unités';
+            }
+
+            return [
+                'label' => 'Coopération : ' . $title,
+                'url' => cooperation_mission_show_url($lid),
+            ];
+        }
+        $course = $this->trainingCourses->findByIdForViewer($lid, $tenantId);
+        if ($course === null) {
+            return [
+                'label' => 'Formation (parcours indisponible ou non accessible)',
+                'url' => url('formations'),
+            ];
+        }
+        $slug = trim((string) ($course['slug'] ?? ''));
+        $title = trim((string) ($course['title'] ?? '')) ?: 'Formation';
+
+        return [
+            'label' => 'Formation : ' . $title,
+            'url' => $slug !== '' ? url('formations/' . $slug) : url('formations'),
+        ];
+    }
+
     /** @return array<string, mixed> */
     private function payloadFromRequest(Request $request): array
     {
+        $scope = $this->enum($request->input('visibility_scope', 'tenant'), ['tenant', 'unit', 'role', 'private'], 'tenant');
+        $vis = $this->visibilityTargetsFromRequest($request, $scope);
+
         return [
             'title' => '',
             'description' => trim((string) $request->input('description', '')),
@@ -627,7 +1091,9 @@ final class OperationalBoardController
             'all_day' => (int) $request->input('all_day', 1) === 1,
             'priority' => $this->enum($request->input('priority', 'normal'), ['low', 'normal', 'high', 'critical'], 'normal'),
             'display_order' => (int) $request->input('display_order', 100),
-            'visibility_scope' => $this->enum($request->input('visibility_scope', 'tenant'), ['tenant', 'unit', 'role', 'private'], 'tenant'),
+            'visibility_scope' => $scope,
+            'visibility_unit_id' => $vis['visibility_unit_id'],
+            'visibility_job_role_ids' => $vis['visibility_job_role_ids'],
             'security_level' => $this->enum($request->input('security_level', 'unit_public'), ['unit_public', 'command_restricted', 'confidential', 'secret_ops'], 'unit_public'),
             'operational_status' => $this->enum($request->input('operational_status', 'planned'), ['planned', 'in_progress', 'suspended', 'completed', 'cancelled'], 'planned'),
             'phase_current' => $this->enum($request->input('phase_current', 'phase_1'), ['phase_1', 'phase_2', 'phase_3'], 'phase_1'),
@@ -721,5 +1187,16 @@ final class OperationalBoardController
         $raw = str_replace('T', ' ', $raw);
 
         return strlen($raw) === 16 ? $raw . ':00' : $raw;
+    }
+
+    private function requestPrefersJson(): bool
+    {
+        $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+        if (str_contains($accept, 'application/json')) {
+            return true;
+        }
+        $xhr = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+
+        return $xhr === 'xmlhttprequest';
     }
 }

@@ -49,6 +49,8 @@ final class ContainerIntegrations
                 new \App\Repositories\CommunityEventRepository(),
                 new \App\Repositories\InterteamMissionRepository(),
                 Container::get(\App\Repositories\TrainingCourseRepository::class),
+                Container::get(\App\Repositories\UnitRepository::class),
+                new \App\Repositories\PersonnelJobRoleRepository(),
             ),
             \App\Services\Communications\TenantEmailDispatchService::class => new \App\Services\Communications\TenantEmailDispatchService(
                 new \App\Services\Communications\TenantEmailRecipientResolver(

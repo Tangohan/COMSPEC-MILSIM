@@ -18,6 +18,7 @@ $boardTags = $boardTags ?? [];
 $boardQualificationAlerts = $boardQualificationAlerts ?? [];
 $boardFireConflicts = $boardFireConflicts ?? [];
 $boardSchemaReady = $boardSchemaReady ?? true;
+$boardDraftCount = (int) ($boardDraftCount ?? 0);
 
 $posture = (string) ($boardPosture['posture_level'] ?? 'NORMAL');
 
@@ -120,6 +121,25 @@ if ($tenantName === '') {
                 <p class="mt-1 text-sm text-slate-600">Vue consolidée des permanences, informations et missions pour la période sélectionnée.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
+                <a href="<?= url('back-office/tableau-operationnel/fiche/nouvelle') ?>" class="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-800">Nouvelle entrée</a>
+                <?php
+                $draftListUrl = url('back-office/tableau-operationnel') . '?' . http_build_query([
+                    'status' => 'draft',
+                    'period_start' => (string) ($boardFilters['period_start'] ?? ''),
+                    'period_end' => (string) ($boardFilters['period_end'] ?? ''),
+                    'entry_type' => (string) ($boardFilters['entry_type'] ?? ''),
+                    'operational_status' => (string) ($boardFilters['operational_status'] ?? ''),
+                    'tag' => (string) ($boardFilters['tag'] ?? ''),
+                    'mode' => (string) ($boardFilters['mode'] ?? 'standard'),
+                    'critical_only' => (int) ($boardFilters['critical_only'] ?? 0),
+                ], '', '&', PHP_QUERY_RFC3986);
+                ?>
+                <a href="<?= htmlspecialchars($draftListUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-950 shadow-sm hover:bg-amber-100" title="Afficher uniquement les fiches non publiées sur le tableau">
+                    Brouillons
+                    <?php if ($boardDraftCount > 0): ?>
+                        <span class="rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] font-black text-amber-950"><?= $boardDraftCount ?></span>
+                    <?php endif; ?>
+                </a>
                 <a href="<?= url('tableau-operationnel') ?>" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-100">Vue portail (lecture)</a>
                 <form method="get" action="<?= url('back-office/tableau-operationnel') ?>" class="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="period_start" value="<?= htmlspecialchars((string) ($boardFilters['period_start'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
@@ -226,6 +246,29 @@ if ($tenantName === '') {
         <?php endif; ?>
     </section>
 
+    <?php
+    $nouvelleFiche = url('back-office/tableau-operationnel/fiche/nouvelle');
+    $debutJour = rawurlencode((string) $boardToday);
+    $lienNouvelle = static function (string $type) use ($nouvelleFiche, $debutJour): string {
+        return $nouvelleFiche . '/' . rawurlencode($type) . '?debut=' . $debutJour;
+    };
+    $pillClass = 'inline-flex items-center rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-900 shadow-sm hover:bg-emerald-50';
+    ?>
+    <section class="rounded-2xl border border-emerald-100 bg-gradient-to-b from-emerald-50/50 to-white p-4 shadow-sm" aria-labelledby="board-quick-create-heading">
+        <h2 id="board-quick-create-heading" class="text-sm font-bold uppercase tracking-wider text-emerald-950">Création rapide</h2>
+        <p class="mt-1 max-w-3xl text-xs leading-relaxed text-slate-600">Ouvre l’éditeur avec le type choisi et la date de début du jour. La fiche est créée en brouillon : complétez le texte, validez puis mettez en ligne quand c’est prêt.</p>
+        <div class="mt-3 flex flex-wrap gap-2">
+            <a href="<?= htmlspecialchars($lienNouvelle('flash_info'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $pillClass ?>">Flash information</a>
+            <a href="<?= htmlspecialchars($lienNouvelle('permanence'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $pillClass ?>">Permanence</a>
+            <a href="<?= htmlspecialchars($lienNouvelle('info'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $pillClass ?>">Info pratique</a>
+            <a href="<?= htmlspecialchars($lienNouvelle('manifestation'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $pillClass ?>">Manifestation</a>
+            <a href="<?= htmlspecialchars($lienNouvelle('mission'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $pillClass ?>">Mission</a>
+            <a href="<?= htmlspecialchars($lienNouvelle('task'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $pillClass ?>">Tâche interne</a>
+            <a href="<?= htmlspecialchars($lienNouvelle('formation'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $pillClass ?>">Formation</a>
+        </div>
+        <p class="mt-3 text-[11px] text-slate-500">Pour repartir d’une entrée déjà rédigée, utilisez <span class="font-semibold text-slate-700">Copier en brouillon</span> sur la carte concernée. Les modèles enregistrés en bas de page génèrent aussi une fiche prête à compléter.</p>
+    </section>
+
     <div id="board-columns" class="space-y-3">
         <?php
         $renderBoardCard = static function (array $entry) use ($priorityClass, $priorityShort, $operationalLabels, $phaseLabels, $entryTypeLabels): void {
@@ -326,25 +369,66 @@ if ($tenantName === '') {
     </section>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800">Création et modèles</h2>
+        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800">Modèles et création guidée</h2>
+        <p class="mt-2 max-w-3xl text-xs text-slate-600">Un <strong class="font-semibold text-slate-800">modèle</strong> enregistre un squelette (type d’activité, intitulé, consignes, visibilité de base) pour générer une <strong class="font-semibold text-slate-800">nouvelle fiche brouillon</strong> à chaque usage. La <strong class="font-semibold text-slate-800">famille</strong> sert à classer les missions types dans la liste (libellé interne à l’équipe pilotage).</p>
+        <?php
+        $familleModeleLabels = [
+            'permanence_opj' => 'Permanence judiciaire',
+            'mission_judiciaire' => 'Mission judiciaire',
+            'instruction' => 'Instruction ou formation',
+            'dispositif_securite' => 'Dispositif sécurité',
+            'exercice' => 'Exercice',
+            'custom' => 'Sur mesure',
+        ];
+        ?>
         <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
             <form method="post" action="<?= url('back-office/tableau-operationnel/template') ?>" class="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                <label class="block font-semibold text-slate-800" for="template_id">Partir d’un modèle enregistré</label>
+                <p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">À partir d’un modèle</p>
+                <label class="block font-semibold text-slate-800" for="template_id">Choisir un modèle</label>
                 <select id="template_id" name="template_id" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm">
                     <?php foreach ($boardTemplates as $tpl): ?>
-                        <option value="<?= (int) ($tpl['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($tpl['name'] ?? 'Modèle'), ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php
+                        $tt = (string) ($tpl['template_type'] ?? 'custom');
+                        $fam = $familleModeleLabels[$tt] ?? 'Sur mesure';
+                        ?>
+                        <option value="<?= (int) ($tpl['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($tpl['name'] ?? 'Modèle'), ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars($fam, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                 </select>
                 <?php if (count($boardTemplates) === 0): ?>
-                    <p class="text-slate-500">Aucun modèle disponible pour l’instant.</p>
+                    <p class="text-slate-500">Aucun modèle pour l’instant : créez-en un au centre ou ouvrez une fiche existante pour l’enregistrer comme modèle.</p>
                 <?php endif; ?>
-                <button type="submit" class="w-full rounded-lg bg-slate-900 py-2.5 text-sm font-bold text-white hover:bg-slate-800" <?= count($boardTemplates) === 0 ? 'disabled' : '' ?>>Créer depuis le modèle</button>
+                <button type="submit" class="w-full rounded-lg bg-slate-900 py-2.5 text-sm font-bold text-white hover:bg-slate-800" <?= count($boardTemplates) === 0 ? 'disabled' : '' ?>>Générer une fiche brouillon</button>
             </form>
 
-            <div class="xl:col-span-2 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
-                <p class="font-semibold text-slate-900">Nouvelle entrée</p>
-                <p class="mt-2">Ouvrez l’éditeur complet pour saisir les affectations, moyens, consignes et rattachements.</p>
+            <form method="post" action="<?= url('back-office/tableau-operationnel/modele') ?>" class="space-y-2 rounded-xl border border-emerald-100 bg-emerald-50/40 p-3 text-xs">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                <p class="text-[11px] font-bold uppercase tracking-wide text-emerald-800">Nouveau modèle (squelette vide)</p>
+                <label class="block font-semibold text-slate-800" for="template_name">Nom du modèle (dans la liste)</label>
+                <input id="template_name" name="template_name" required maxlength="160" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" autocomplete="off" placeholder="Ex. Permanence cellule recrutement">
+                <label class="block font-semibold text-slate-800" for="mission_family">Famille / type métier</label>
+                <select id="mission_family" name="mission_family" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm">
+                    <?php foreach ($familleModeleLabels as $val => $lib): ?>
+                        <option value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($lib, ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <label class="block font-semibold text-slate-800" for="tpl_entry_type">Type d’entrée sur le tableau</label>
+                <select id="tpl_entry_type" name="entry_type" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm">
+                    <?php foreach ($entryTypeLabels as $k => $lbl): ?>
+                        <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($lbl, ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <label class="block font-semibold text-slate-800" for="default_title">Intitulé proposé sur la fiche</label>
+                <input id="default_title" name="default_title" maxlength="180" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" autocomplete="off" placeholder="Laisser vide pour reprendre le nom du modèle">
+                <label class="block font-semibold text-slate-800" for="default_description">Consigne ou description type</label>
+                <textarea id="default_description" name="default_description" rows="3" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" placeholder="Texte réutilisable ; vous l’affinerez sur chaque fiche générée."></textarea>
+                <button type="submit" class="w-full rounded-lg bg-emerald-700 py-2.5 text-sm font-bold text-white hover:bg-emerald-800">Enregistrer le modèle</button>
+            </form>
+
+            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
+                <p class="font-semibold text-slate-900">Sans modèle</p>
+                <p class="mt-2">Ouvrez l’éditeur complet pour tout saisir à la main (affectations, moyens, consignes, rattachements).</p>
+                <p class="mt-3 text-xs text-slate-600">Astuce : depuis une fiche déjà rédigée, utilisez <span class="font-semibold text-slate-800">Enregistrer comme modèle</span> pour conserver type, visibilité et textes types sans les dates.</p>
                 <a href="<?= url('back-office/tableau-operationnel/fiche/nouvelle') ?>" class="mt-4 inline-flex rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800">Créer une entrée libre</a>
             </div>
         </div>

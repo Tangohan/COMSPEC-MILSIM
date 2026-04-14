@@ -643,4 +643,46 @@ class PersonnelJobRoleRepository
 
         return $out;
     }
+
+    /**
+     * Emplois métier (fiche) attribués au membre : fiche principale + affectations multiples.
+     *
+     * @return list<int>
+     */
+    public function assignedJobRoleIdsForUser(int $tenantId, int $userId): array
+    {
+        if (!$this->tablesExist() || $userId < 1) {
+            return [];
+        }
+        $ids = [];
+        if ($this->personnelProfilesHaveJobRoleColumns()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT pp.personnel_job_role_id FROM personnel_profiles pp
+                 INNER JOIN users u ON u.id = pp.user_id
+                 WHERE u.tenant_id = ? AND pp.user_id = ? AND u.status = \'active\'
+                 LIMIT 1'
+            );
+            $stmt->execute([$tenantId, $userId]);
+            $rid = (int) $stmt->fetchColumn();
+            if ($rid > 0) {
+                $ids[$rid] = true;
+            }
+        }
+        if ($this->pivotTableExists()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT DISTINCT pj.personnel_job_role_id FROM personnel_profile_job_roles pj
+                 INNER JOIN users u ON u.id = pj.user_id AND u.tenant_id = pj.tenant_id
+                 WHERE pj.tenant_id = ? AND pj.user_id = ? AND u.status = \'active\''
+            );
+            $stmt->execute([$tenantId, $userId]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $rid = (int) ($row['personnel_job_role_id'] ?? 0);
+                if ($rid > 0) {
+                    $ids[$rid] = true;
+                }
+            }
+        }
+
+        return array_map('intval', array_keys($ids));
+    }
 }

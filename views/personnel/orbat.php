@@ -76,6 +76,48 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         width: 1px; height: 20px; background: rgba(15,23,42,0.18);
     }
     .orbat-hidden-children { display: none; }
+    .orbat-placeholder-card {
+        cursor: default;
+        border-style: dashed;
+        border-color: rgba(100, 116, 139, 0.45);
+        background: rgba(248, 250, 252, 0.95);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+    .orbat-placeholder-card:hover {
+        transform: none;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        border-color: rgba(100, 116, 139, 0.55);
+    }
+    .orbat-placeholder-card .orbat-insignia {
+        background: linear-gradient(180deg, #e2e8f0, #cbd5e1);
+        font-size: 14px;
+        line-height: 1;
+    }
+    .orbat-placeholder-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 8px;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #475569;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        padding: 4px 8px;
+    }
+    .orbat-collapsed-hint {
+        margin-top: 6px;
+        font-size: 9px;
+        font-weight: 700;
+        color: #64748b;
+        text-align: center;
+        max-width: 200px;
+        line-height: 1.35;
+        letter-spacing: 0.02em;
+    }
     .orbat-panel {
         background: rgba(255,255,255,0.88); border: 1px solid rgba(15,23,42,0.08);
         box-shadow: 0 16px 36px rgba(15,23,42,0.06); backdrop-filter: blur(10px);
@@ -165,6 +207,7 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
                 <span class="flex items-center gap-2"><span class="orbat-legend-dot bg-red-500"></span> Inactive</span>
                 <span class="flex items-center gap-2"><span class="orbat-legend-dot bg-blue-400"></span> Command / Alpha</span>
                 <span class="flex items-center gap-2"><span class="orbat-legend-dot bg-green-300"></span> Bravo</span>
+                <span class="flex items-center gap-2"><span class="orbat-legend-dot border-2 border-dashed border-slate-400 bg-slate-100"></span> Non affichée (périmètre)</span>
             </div>
             <div class="flex flex-col sm:flex-row gap-3">
                 <input id="searchInput" type="text" placeholder="Recherche unité, rôle, officier..." class="w-full sm:w-80 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium outline-none focus:border-slate-400">
@@ -191,6 +234,12 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
             <aside class="orbat-panel rounded-[2rem] p-6">
                 <p class="text-[10px] font-black tracking-[0.28em] uppercase text-slate-400 mb-3">Fiche Unité</p>
                 <div id="detailsPanel" class="space-y-5">
+                    <div id="detail-redacted-banner" class="hidden rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold leading-snug text-amber-950">
+                        Les noms affichés sur cette unité sont abrégés : votre périmètre ne permet pas d’afficher l’identité complète des personnes listées.
+                    </div>
+                    <div id="detail-placeholder-banner" class="hidden rounded-2xl border border-slate-300 border-dashed bg-slate-50 px-4 py-3 text-xs font-semibold leading-snug text-slate-800">
+                        Emplacement masqué dans l’organigramme : la structure existe côté organisation, mais n’est pas visible avec votre profil actuel.
+                    </div>
                     <div>
                         <h2 id="detail-name" class="text-2xl font-black tracking-tight uppercase">Aucune sélection</h2>
                         <p id="detail-role" class="text-sm text-slate-500 font-semibold mt-1">Sélectionnez un élément du roster.</p>
@@ -555,6 +604,9 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
     }
 
     function countStats(node) {
+        if (node.isOrbatPlaceholder) {
+            return { units: 0, personnel: 0, active: 0, other: 0 };
+        }
         let units = 1, personnel = node.strength || 0, active = node.status === "active" ? 1 : 0, other = node.status !== "active" ? 1 : 0;
         for (const child of (node.children || [])) {
             const c = countStats(child);
@@ -669,17 +721,18 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
     }
 
     function createNodeCard(node) {
+        const isPh = !!node.isOrbatPlaceholder;
         const wrapper = document.createElement("div");
         wrapper.className = "orbat-node-wrapper";
         const card = document.createElement("div");
-        card.className = "orbat-node-card";
+        card.className = "orbat-node-card" + (isPh ? " orbat-placeholder-card" : "");
         card.dataset.nodeId = node.id;
         card.style.position = "relative";
         const top = document.createElement("div");
         top.className = "orbat-node-top";
         const insignia = document.createElement("div");
-        insignia.className = "orbat-insignia orbat-type-" + (node.type || "command");
-        insignia.textContent = (node.label || "").split(" ")[0].substring(0, 2).toUpperCase() || "—";
+        insignia.className = "orbat-insignia orbat-type-" + (isPh ? "command" : (node.type || "command"));
+        insignia.textContent = isPh ? "\u25C6" : ((node.label || "").split(" ")[0].substring(0, 2).toUpperCase() || "\u2014");
         const status = document.createElement("div");
         status.className = "orbat-status-dot orbat-status-" + (node.status || "active");
         top.appendChild(insignia);
@@ -697,7 +750,7 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         card.appendChild(label);
         card.appendChild(sub);
         card.appendChild(meta);
-        if (node.chartImageUrl || node.chartIconUrl) {
+        if (!isPh && (node.chartImageUrl || node.chartIconUrl)) {
             var vis = document.createElement("div");
             vis.className = "mt-2 flex items-center justify-center gap-2";
             if (node.chartImageUrl) {
@@ -715,14 +768,21 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
             }
             card.appendChild(vis);
         }
+        if (isPh) {
+            var phLab = document.createElement("div");
+            phLab.className = "orbat-placeholder-badge";
+            phLab.textContent = "Hors périmètre";
+            card.appendChild(phLab);
+        }
         if (node.staffMaskActive) {
             var badge = document.createElement("span");
             badge.className = "orbat-mask-badge";
-            badge.textContent = "Masque";
+            badge.textContent = (node.maskHintLabel && String(node.maskHintLabel).trim()) ? String(node.maskHintLabel).trim() : "Confidentialité";
+            badge.title = "Réglage de confidentialité sur l’organigramme pour les personnes qui consultent sans habilitation complète.";
             card.appendChild(badge);
         }
         card.addEventListener("click", function(e) { e.stopPropagation(); selectNode(node); });
-        if (showOrbatEditTools) {
+        if (showOrbatEditTools && !isPh) {
             card.setAttribute("title", "Clic droit ou bouton ⋯ pour les actions de structure");
             var actBtn = document.createElement("button");
             actBtn.type = "button";
@@ -748,13 +808,21 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
             const btn = document.createElement("button");
             btn.type = "button";
             btn.className = "orbat-collapse-btn";
-            btn.textContent = collapsedState.get(node.id) ? "Déployer" : "Réduire";
+            var nKids = (node.children || []).length;
+            btn.textContent = collapsedState.get(node.id) ? ("Déployer (" + nKids + ")") : "Réduire";
+            btn.title = collapsedState.get(node.id) ? ("Afficher les " + nKids + " sous-unité(s)") : "Masquer les sous-unités";
             btn.addEventListener("click", function(e) {
                 e.stopPropagation();
                 collapsedState.set(node.id, !collapsedState.get(node.id));
                 renderTree(filteredTree(currentSearch));
             });
             wrapper.appendChild(btn);
+            if (collapsedState.get(node.id) && nKids > 0) {
+                var cHint = document.createElement("div");
+                cHint.className = "orbat-collapsed-hint";
+                cHint.textContent = nKids + " sous-unité" + (nKids > 1 ? "s" : "") + " repliée" + (nKids > 1 ? "s" : "") + " — utiliser « Déployer »";
+                wrapper.appendChild(cHint);
+            }
             const childrenContainer = document.createElement("div");
             childrenContainer.className = "orbat-children-container has-children" + (collapsedState.get(node.id) ? " orbat-hidden-children" : "");
             const row = document.createElement("div");
@@ -797,6 +865,16 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
     function selectNode(node) {
         currentSelectedUnitId = node.unitId || 0;
         var el;
+        var banRed = document.getElementById("detail-redacted-banner");
+        if (banRed) {
+            if (node.viewerNamesRedacted) banRed.classList.remove("hidden");
+            else banRed.classList.add("hidden");
+        }
+        var banPh = document.getElementById("detail-placeholder-banner");
+        if (banPh) {
+            if (node.isOrbatPlaceholder) banPh.classList.remove("hidden");
+            else banPh.classList.add("hidden");
+        }
         if (el = document.getElementById("detail-name")) el.textContent = node.label || "—";
         if (el = document.getElementById("detail-role")) el.textContent = node.role || "—";
         if (el = document.getElementById("detail-type")) el.textContent = getChartDisplayLabel(node.type);
@@ -810,18 +888,21 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         var dtxt = (node.orbatDetails || "").trim();
         var hasVis = !!(node.chartIconUrl || node.chartImageUrl);
         if (exWrap) {
-            if ((dtxt !== "" || hasVis) && (node.unitId || 0) > 0) {
+            var showExtras = node.isOrbatPlaceholder
+                ? (dtxt !== "")
+                : ((dtxt !== "" || hasVis) && (node.unitId || 0) > 0);
+            if (showExtras) {
                 exWrap.classList.remove("hidden");
                 if (exDet) exDet.textContent = dtxt !== "" ? dtxt : "—";
                 if (exVis) {
                     exVis.innerHTML = "";
-                    if (node.chartImageUrl) {
+                    if (!node.isOrbatPlaceholder && node.chartImageUrl) {
                         var im = document.createElement("img");
                         im.src = mediaSrc(node.chartImageUrl);
                         im.alt = "";
                         im.className = "max-h-24 rounded-xl border border-slate-200 object-cover";
                         exVis.appendChild(im);
-                    } else if (node.chartIconUrl) {
+                    } else if (!node.isOrbatPlaceholder && node.chartIconUrl) {
                         var ic = document.createElement("img");
                         ic.src = mediaSrc(node.chartIconUrl);
                         ic.alt = "";
@@ -840,6 +921,8 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
             var uu = node.unitId || 0;
             if (uu === 0) {
                 membersBox.innerHTML = "<p class=\"text-xs text-slate-500\">Vue racine — sélectionnez une unité dans l’arbre.</p>";
+            } else if (node.isOrbatPlaceholder) {
+                membersBox.innerHTML = "<p class=\"text-xs text-slate-500\">Aucune liste de membres n’est affichée pour cet emplacement.</p>";
             } else if (mems.length === 0) {
                 membersBox.innerHTML = "<p class=\"text-xs text-slate-500\">Aucun membre actif rattaché à cette unité.</p>";
             } else {
@@ -872,7 +955,9 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         if (childrenBox) {
             childrenBox.innerHTML = "";
             if (!node.children || node.children.length === 0) {
-                childrenBox.innerHTML = "<p class=\"text-slate-500\">Aucune sous-unité.</p>";
+                childrenBox.innerHTML = node.isOrbatPlaceholder
+                    ? "<p class=\"text-slate-500\">Les sous-unités ne sont pas visibles pour cet emplacement.</p>"
+                    : "<p class=\"text-slate-500\">Aucune sous-unité.</p>";
             } else {
                 node.children.forEach(function(child) {
                     const row = document.createElement("div");
@@ -898,8 +983,11 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
                 id: node.id, unitId: node.unitId, label: node.label, role: node.role, type: node.type, status: node.status,
                 strength: node.strength, leader: node.leader, mission: node.mission, commanderUserId: node.commanderUserId || 0,
                 structType: node.structType, maskMode: node.maskMode, staffMaskActive: node.staffMaskActive,
+                maskHintLabel: node.maskHintLabel,
                 orbatDetails: node.orbatDetails, chartIconUrl: node.chartIconUrl, chartImageUrl: node.chartImageUrl,
-                members: node.members || [], children: children
+                members: node.members || [], children: children,
+                isOrbatPlaceholder: node.isOrbatPlaceholder, placeholderReason: node.placeholderReason,
+                viewerNamesRedacted: node.viewerNamesRedacted
             };
         }
         return null;

@@ -34,16 +34,6 @@ $suspText = implode("\n", $suspLines);
         <?php require base_path('views/back_office/cooperation/missions/_nav.php'); ?>
         <h1 class="mt-4 text-2xl font-black text-slate-900">Proposition</h1>
         <p class="mt-2 text-sm text-slate-600">Définissez l’objet et le cadrage de la coopération. Les unités partenaires voient ces éléments sur la synthèse.</p>
-        <?php
-        $g = \App\Core\Gate::getInstance();
-        if ($g->allows('operational.board.edit') || $g->allows('admin.organization') || $g->allows('admin.access') || $g->allows('admin.system')): ?>
-        <form method="post" action="<?= htmlspecialchars(url('back-office/tableau-operationnel/publier-lie'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 inline-block">
-            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
-            <input type="hidden" name="source_type" value="mission">
-            <input type="hidden" name="source_id" value="<?= $sid ?>">
-            <button type="submit" class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-100">Publier au mur opérationnel</button>
-        </form>
-        <?php endif; ?>
     </div>
 
     <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/proposal'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">

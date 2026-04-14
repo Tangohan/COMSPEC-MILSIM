@@ -19,7 +19,6 @@ composer.lock
 .idea/
 .vscode/
 *.log
-config/phinx.php
 node_modules/
 ressources/
 

@@ -19,7 +19,7 @@ final class PlanningEntryRepository
         $this->pdo = Database::getPdo();
     }
 
-    /** Indique si les tables du tableau opérationnel (migrations Phinx) sont présentes. */
+    /** Indique si les tables du tableau opérationnel (extensions DDL pipeline) sont présentes. */
     public function isOperationalBoardSchemaReady(): bool
     {
         return $this->hasTable('planning_entries');
@@ -122,6 +122,29 @@ final class PlanningEntryRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    public function createPlanningCategory(int $tenantId, string $name, string $color = '#334155'): ?int
+    {
+        if (!$this->hasTable('planning_categories') || $tenantId < 1) {
+            return null;
+        }
+        $name = trim($name);
+        if ($name === '') {
+            return null;
+        }
+        $color = trim($color);
+        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
+            $color = '#334155';
+        }
+        try {
+            $stmt = $this->pdo->prepare('INSERT INTO planning_categories (tenant_id, name, color) VALUES (?, ?, ?)');
+            $stmt->execute([$tenantId, $name, $color]);
+
+            return (int) $this->pdo->lastInsertId();
+        } catch (\PDOException) {
+            return null;
+        }
+    }
+
     /** @return list<array<string,mixed>> */
     public function listTemplates(int $tenantId): array
     {
@@ -131,6 +154,237 @@ final class PlanningEntryRepository
         $stmt = $this->pdo->prepare('SELECT id, name, template_type, payload_json FROM planning_templates WHERE tenant_id = ? AND is_active = 1 ORDER BY name ASC');
         $stmt->execute([$tenantId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function countPlanningEntriesByStatus(int $tenantId, string $status): int
+    {
+        if (!$this->hasTable('planning_entries') || $tenantId < 1) {
+            return 0;
+        }
+        if (!in_array($status, ['draft', 'active', 'archived', 'cancelled'], true)) {
+            return 0;
+        }
+        try {
+            $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM planning_entries WHERE tenant_id = ? AND status = ?');
+            $stmt->execute([$tenantId, $status]);
+
+            return (int) $stmt->fetchColumn();
+        } catch (\PDOException) {
+            return 0;
+        }
+    }
+
+    /**
+     * Insère des modèles d’exemple lorsque le tenant n’en a aucun (idempotent par comptage).
+     */
+    public function ensureDefaultPlanningTemplatesIfEmpty(int $tenantId, int $actorUserId): void
+    {
+        if (!$this->hasTable('planning_templates') || $tenantId < 1) {
+            return;
+        }
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM planning_templates WHERE tenant_id = ?');
+        $stmt->execute([$tenantId]);
+        if ((int) $stmt->fetchColumn() > 0) {
+            return;
+        }
+        $blank = static function (): array {
+            return [
+                'category_id' => 0,
+                'linked_type' => null,
+                'linked_id' => null,
+                'all_day' => 1,
+                'priority' => 'normal',
+                'display_order' => 100,
+                'visibility_scope' => 'tenant',
+                'security_level' => 'unit_public',
+                'operational_status' => 'planned',
+                'phase_current' => 'phase_1',
+                'chief_user_id' => null,
+                'deputy_user_id' => null,
+                'replacement_user_id' => null,
+                'replacement_auto_activate' => 0,
+                'command_chain' => null,
+                'accountability_note' => null,
+                'location_lat' => null,
+                'location_lng' => null,
+                'operation_zone' => null,
+                'map_link' => null,
+                'dossier_ref' => null,
+                'legal_constraints' => null,
+                'fire_window_start' => null,
+                'fire_window_end' => null,
+            ];
+        };
+        $defs = [
+            [
+                'name' => 'Permanence de formation',
+                'type' => 'instruction',
+                'payload' => array_merge($blank(), [
+                    'title' => 'Permanence de formation — intitulé à préciser',
+                    'description' => "Dispositif d’accueil et de veille pédagogique pendant une période de formation : point d’information, liaison avec l’encadrement, consignes de sécurité et d’organisation. Indiquez les dates et le public concernés avant mise en ligne.",
+                    'entry_type' => 'permanence',
+                ]),
+            ],
+            [
+                'name' => 'Mission type — ordre général',
+                'type' => 'mission_judiciaire',
+                'payload' => array_merge($blank(), [
+                    'title' => 'Mission — objet à préciser',
+                    'description' => "Squelette de mission : contexte, objectifs, effectifs prévus, moyens, fenêtre d’action. Complétez chaque bloc puis validez avant publication sur le mur.",
+                    'entry_type' => 'mission',
+                ]),
+            ],
+            [
+                'name' => 'Flash information (court)',
+                'type' => 'custom',
+                'payload' => array_merge($blank(), [
+                    'title' => 'Information courte',
+                    'description' => "Texte du flash lisible en quelques secondes. Précisez la période de validité dans les dates du tableau.",
+                    'entry_type' => 'flash_info',
+                ]),
+            ],
+        ];
+        foreach ($defs as $def) {
+            $this->createPlanningTemplate($tenantId, (string) $def['name'], (string) $def['type'], $def['payload'], $actorUserId);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $payload Champs acceptés par {@see create()} (sans tenant_id / created_by obligatoires).
+     */
+    public function createPlanningTemplate(int $tenantId, string $name, string $templateType, array $payload, int $createdBy): ?int
+    {
+        if (!$this->hasTable('planning_templates') || $tenantId < 1) {
+            return null;
+        }
+        $name = trim($name);
+        if ($name === '') {
+            return null;
+        }
+        $allowed = ['permanence_opj', 'mission_judiciaire', 'instruction', 'dispositif_securite', 'exercice', 'custom'];
+        if (!in_array($templateType, $allowed, true)) {
+            $templateType = 'custom';
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO planning_templates (tenant_id, name, template_type, payload_json, is_active, created_by) VALUES (?, ?, ?, ?, 1, ?)'
+            );
+            $stmt->execute([
+                $tenantId,
+                $name,
+                $templateType,
+                json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                $createdBy > 0 ? $createdBy : null,
+            ]);
+
+            return (int) $this->pdo->lastInsertId();
+        } catch (\PDOException) {
+            return null;
+        }
+    }
+
+    /**
+     * Extrait de la ligne SQL d’une fiche les champs réutilisables comme modèle (sans dates ni liaison métier).
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, mixed>
+     */
+    public function planningEntryRowToTemplatePayload(array $row): array
+    {
+        $keys = [
+            'title', 'description', 'entry_type', 'category_id', 'all_day', 'priority', 'display_order',
+            'visibility_scope', 'security_level', 'operational_status', 'phase_current',
+            'chief_user_id', 'deputy_user_id', 'replacement_user_id', 'replacement_auto_activate',
+            'command_chain', 'accountability_note', 'location_lat', 'location_lng',
+            'operation_zone', 'map_link', 'dossier_ref', 'legal_constraints',
+            'fire_window_start', 'fire_window_end',
+        ];
+        $out = [];
+        foreach ($keys as $k) {
+            if (!array_key_exists($k, $row)) {
+                continue;
+            }
+            $v = $row[$k];
+            if ($v === null || $v === '') {
+                $out[$k] = null;
+
+                continue;
+            }
+            if (is_string($v)) {
+                $trim = trim($v);
+                $out[$k] = $trim === '' ? null : $trim;
+            } elseif (is_int($v) || is_float($v)) {
+                $out[$k] = $v;
+            } else {
+                $out[$k] = $v;
+            }
+        }
+        if ($this->columnExists('planning_entries', 'visibility_unit_id')) {
+            $uid = isset($row['visibility_unit_id']) ? (int) $row['visibility_unit_id'] : 0;
+            $out['visibility_unit_id'] = $uid > 0 ? $uid : null;
+            $jr = $row['visibility_job_role_ids'] ?? null;
+            $out['visibility_job_role_ids'] = is_string($jr) && trim($jr) !== '' ? trim($jr) : null;
+        }
+        $out['start_date'] = null;
+        $out['end_date'] = null;
+        $out['linked_type'] = null;
+        $out['linked_id'] = null;
+        $cat = isset($row['category_id']) ? (int) $row['category_id'] : 0;
+        $out['category_id'] = $cat > 0 ? $cat : 0;
+        if (!isset($out['all_day'])) {
+            $out['all_day'] = 1;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @return array<string, mixed>
+     */
+    private function normalizePayloadForNewEntryFromTemplate(array $payload, int $tenantId, int $actorUserId, string $fallbackTitle): array
+    {
+        unset($payload['id'], $payload['created_at'], $payload['updated_at'], $payload['frago_parent_entry_id'], $payload['frago_version']);
+        $payload['tenant_id'] = $tenantId;
+        $payload['created_by'] = $actorUserId;
+        $payload['status'] = 'draft';
+        $payload['validation_status'] = 'draft';
+        $payload['operational_status'] = 'planned';
+        $payload['start_date'] = null;
+        $payload['end_date'] = null;
+        $payload['linked_type'] = null;
+        $payload['linked_id'] = null;
+        $t = trim((string) ($payload['title'] ?? ''));
+        $payload['title'] = $t !== '' ? $t : $fallbackTitle;
+        if (!isset($payload['all_day'])) {
+            $payload['all_day'] = 1;
+        }
+        if (!isset($payload['entry_type']) || (string) $payload['entry_type'] === '') {
+            $payload['entry_type'] = 'task';
+        }
+        if (!isset($payload['visibility_scope']) || (string) $payload['visibility_scope'] === '') {
+            $payload['visibility_scope'] = 'tenant';
+        }
+        if (!isset($payload['security_level']) || (string) $payload['security_level'] === '') {
+            $payload['security_level'] = 'unit_public';
+        }
+        if (!isset($payload['priority']) || (string) $payload['priority'] === '') {
+            $payload['priority'] = 'normal';
+        }
+        if (!isset($payload['display_order'])) {
+            $payload['display_order'] = 100;
+        }
+        if (!isset($payload['phase_current']) || (string) $payload['phase_current'] === '') {
+            $payload['phase_current'] = 'phase_1';
+        }
+        if (isset($payload['visibility_job_role_ids']) && is_array($payload['visibility_job_role_ids'])) {
+            $ids = array_values(array_filter(array_map('intval', $payload['visibility_job_role_ids']), static fn (int $i): bool => $i > 0));
+            $payload['visibility_job_role_ids'] = $ids === [] ? null : json_encode($ids, JSON_UNESCAPED_UNICODE);
+        }
+
+        return $payload;
     }
 
     /** @return list<array<string,mixed>> */
@@ -177,23 +431,25 @@ final class PlanningEntryRepository
         if (!$this->hasTable('planning_entries')) {
             return 0;
         }
+        $hasVisUnit = $this->columnExists('planning_entries', 'visibility_unit_id');
+        $visUnitSql = $hasVisUnit ? ', visibility_unit_id, visibility_job_role_ids' : '';
         $stmt = $this->pdo->prepare('INSERT INTO planning_entries (
                 tenant_id, title, description, entry_type, category_id, linked_type, linked_id,
                 start_date, end_date, all_day, status, validation_status, priority, display_order,
-                visibility_scope, security_level, operational_status, phase_current, created_by,
+                visibility_scope' . $visUnitSql . ', security_level, operational_status, phase_current, created_by,
                 chief_user_id, deputy_user_id, replacement_user_id, replacement_auto_activate,
                 command_chain, accountability_note, location_lat, location_lng, operation_zone, map_link,
                 dossier_ref, legal_constraints, fire_window_start, fire_window_end
             ) VALUES (
                 :tenant_id, :title, :description, :entry_type, :category_id, :linked_type, :linked_id,
                 :start_date, :end_date, :all_day, :status, :validation_status, :priority, :display_order,
-                :visibility_scope, :security_level, :operational_status, :phase_current, :created_by,
+                :visibility_scope' . ($hasVisUnit ? ', :visibility_unit_id, :visibility_job_role_ids' : '') . ', :security_level, :operational_status, :phase_current, :created_by,
                 :chief_user_id, :deputy_user_id, :replacement_user_id, :replacement_auto_activate,
                 :command_chain, :accountability_note, :location_lat, :location_lng, :operation_zone, :map_link,
                 :dossier_ref, :legal_constraints, :fire_window_start, :fire_window_end
             )');
 
-        $stmt->execute([
+        $execParams = [
             'tenant_id' => (int) $payload['tenant_id'], 'title' => (string) $payload['title'],
             'description' => $payload['description'] ?: null, 'entry_type' => (string) $payload['entry_type'],
             'category_id' => $payload['category_id'] ?: null, 'linked_type' => $payload['linked_type'] ?: null,
@@ -211,7 +467,13 @@ final class PlanningEntryRepository
             'operation_zone' => $payload['operation_zone'] ?: null, 'map_link' => $payload['map_link'] ?: null,
             'dossier_ref' => $payload['dossier_ref'] ?: null, 'legal_constraints' => $payload['legal_constraints'] ?: null,
             'fire_window_start' => $payload['fire_window_start'] ?: null, 'fire_window_end' => $payload['fire_window_end'] ?: null,
-        ]);
+        ];
+        if ($hasVisUnit) {
+            $execParams['visibility_unit_id'] = !empty($payload['visibility_unit_id']) ? (int) $payload['visibility_unit_id'] : null;
+            $jr = $payload['visibility_job_role_ids'] ?? null;
+            $execParams['visibility_job_role_ids'] = is_string($jr) && $jr !== '' ? $jr : null;
+        }
+        $stmt->execute($execParams);
 
         $entryId = (int) $this->pdo->lastInsertId();
         $this->logAction($entryId, (int) ($payload['created_by'] ?? 0), 'create', 'Entrée créée');
@@ -310,6 +572,32 @@ final class PlanningEntryRepository
         return $ok;
     }
 
+    /**
+     * Fiche encore ouverte (publication non annulée) pour la même source métier liée.
+     * Les fiches retirées du mur (`status = cancelled`) ne comptent pas : on peut en recréer une.
+     */
+    public function findOpenEntryIdForLink(int $tenantId, string $linkedType, int $linkedId): ?int
+    {
+        if (!$this->hasTable('planning_entries') || $tenantId < 1 || $linkedId < 1 || $linkedType === '') {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT id FROM planning_entries
+             WHERE tenant_id = :tenant_id AND linked_type = :linked_type AND linked_id = :linked_id
+             AND status <> :cancelled
+             ORDER BY id DESC LIMIT 1'
+        );
+        $stmt->execute([
+            'tenant_id' => $tenantId,
+            'linked_type' => $linkedType,
+            'linked_id' => $linkedId,
+            'cancelled' => 'cancelled',
+        ]);
+        $id = $stmt->fetchColumn();
+
+        return $id !== false ? (int) $id : null;
+    }
+
     /** @return list<array<string,mixed>> */
     public function listRecentLogs(int $tenantId, int $limit = 40): array
     {
@@ -361,9 +649,10 @@ final class PlanningEntryRepository
         if (!is_array($payload)) {
             $payload = [];
         }
-        $payload['tenant_id'] = $tenantId;
-        $payload['created_by'] = $actorUserId;
-        $payload['title'] = $payload['title'] ?? (string) ($template['name'] ?? 'Template');
+        $fallbackTitle = trim((string) ($template['name'] ?? '')) !== ''
+            ? trim((string) $template['name'])
+            : 'Nouvelle fiche';
+        $payload = $this->normalizePayloadForNewEntryFromTemplate($payload, $tenantId, $actorUserId, $fallbackTitle);
 
         $entryId = $this->create($payload);
         if ($entryId < 1) {
@@ -561,12 +850,21 @@ final class PlanningEntryRepository
     }
 
     /**
-     * Liste portail : entrées actives / validées, filtrées par niveau de sensibilité.
+     * Liste portail : entrées actives / validées, filtrées par niveau de sensibilité et périmètre (unité / emplois).
+     *
+     * @param list<int> $viewerUnitIds
+     * @param list<int> $viewerJobRoleIds
      *
      * @return list<array<string, mixed>>
      */
-    public function listForPortal(int $tenantId, array $filters, int $viewerUserId, bool $viewerCanSeeRestricted): array
-    {
+    public function listForPortal(
+        int $tenantId,
+        array $filters,
+        int $viewerUserId,
+        bool $viewerCanSeeRestricted,
+        array $viewerUnitIds = [],
+        array $viewerJobRoleIds = []
+    ): array {
         if (!$this->hasTable('planning_entries')) {
             return [];
         }
@@ -614,11 +912,66 @@ final class PlanningEntryRepository
         try {
             $stmt = $this->pdo->prepare($query);
             $stmt->execute($params);
-
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (\PDOException) {
             return [];
         }
+
+        if ($viewerCanSeeRestricted || !$this->columnExists('planning_entries', 'visibility_unit_id')) {
+            return $rows;
+        }
+
+        return array_values(array_filter(
+            $rows,
+            static fn (array $e): bool => self::entryVisibleForPortalAudience($e, $viewerUserId, $viewerUnitIds, $viewerJobRoleIds)
+        ));
+    }
+
+    /**
+     * @param array<string, mixed> $e
+     * @param list<int> $viewerUnitIds
+     * @param list<int> $viewerJobRoleIds
+     */
+    private static function entryVisibleForPortalAudience(
+        array $e,
+        int $viewerUserId,
+        array $viewerUnitIds,
+        array $viewerJobRoleIds
+    ): bool {
+        $scope = (string) ($e['visibility_scope'] ?? 'tenant');
+        if ($scope === 'tenant') {
+            return true;
+        }
+        if ($scope === 'private') {
+            return (int) ($e['created_by'] ?? 0) === $viewerUserId;
+        }
+        if ($scope === 'unit') {
+            $uid = (int) ($e['visibility_unit_id'] ?? 0);
+            if ($uid < 1) {
+                return false;
+            }
+
+            return in_array($uid, $viewerUnitIds, true);
+        }
+        if ($scope === 'role') {
+            $raw = trim((string) ($e['visibility_job_role_ids'] ?? ''));
+            if ($raw === '') {
+                return true;
+            }
+            $needed = json_decode($raw, true);
+            if (!is_array($needed) || $needed === []) {
+                return true;
+            }
+            foreach ($needed as $rid) {
+                if (in_array((int) $rid, $viewerJobRoleIds, true)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     /** @return list<array<string, mixed>> */
@@ -785,12 +1138,14 @@ final class PlanningEntryRepository
         if (!$this->hasTable('planning_entries') || !$this->findByIdForTenant($tenantId, $entryId)) {
             return false;
         }
+        $hasVis = $this->columnExists('planning_entries', 'visibility_unit_id');
+        $visSql = $hasVis ? ', visibility_unit_id = :visibility_unit_id, visibility_job_role_ids = :visibility_job_role_ids' : '';
         $stmt = $this->pdo->prepare('UPDATE planning_entries SET
             title = :title, description = :description, entry_type = :entry_type, category_id = :category_id,
             linked_type = :linked_type, linked_id = :linked_id,
             start_date = :start_date, end_date = :end_date, all_day = :all_day,
             priority = :priority, display_order = :display_order,
-            visibility_scope = :visibility_scope, security_level = :security_level,
+            visibility_scope = :visibility_scope' . $visSql . ', security_level = :security_level,
             operational_status = :operational_status, phase_current = :phase_current,
             chief_user_id = :chief_user_id, deputy_user_id = :deputy_user_id,
             replacement_user_id = :replacement_user_id, replacement_auto_activate = :replacement_auto_activate,
@@ -800,7 +1155,7 @@ final class PlanningEntryRepository
             fire_window_start = :fire_window_start, fire_window_end = :fire_window_end,
             updated_at = CURRENT_TIMESTAMP
             WHERE id = :id AND tenant_id = :tenant_id');
-        $ok = $stmt->execute([
+        $exec = [
             'title' => (string) $payload['title'],
             'description' => $payload['description'] ?: null,
             'entry_type' => (string) $payload['entry_type'],
@@ -832,7 +1187,13 @@ final class PlanningEntryRepository
             'fire_window_end' => $payload['fire_window_end'] ?: null,
             'id' => $entryId,
             'tenant_id' => $tenantId,
-        ]);
+        ];
+        if ($hasVis) {
+            $exec['visibility_unit_id'] = !empty($payload['visibility_unit_id']) ? (int) $payload['visibility_unit_id'] : null;
+            $jr = $payload['visibility_job_role_ids'] ?? null;
+            $exec['visibility_job_role_ids'] = is_string($jr) && $jr !== '' ? $jr : null;
+        }
+        $ok = $stmt->execute($exec);
         if ($ok) {
             $this->logAction($entryId, $actorUserId, 'update', 'Fiche entrée mise à jour');
             $this->registerRealtimeEvent($tenantId, $entryId, 'entry_updated', ['title' => (string) $payload['title']]);

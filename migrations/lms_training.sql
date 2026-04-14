@@ -1,7 +1,7 @@
 -- LMS Training — Migration
 -- 1) Renommage des tables existantes (legacy)
 -- 2) Création des nouvelles tables (training_courses, modules, lessons, etc.)
--- Exécuter après schema.sql (ou après les migrations Phinx de base).
+-- Exécuter après schema.sql (parcours legacy ; l’installation moderne repose sur le schéma principal + pipeline PHP).
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;

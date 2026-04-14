@@ -54,12 +54,13 @@ $typeLabel = static function (string $t): string {
                     <p class="text-sm text-neutral-300 mt-2"><?= nl2br(htmlspecialchars((string) $ev['description'])) ?></p>
                 <?php endif; ?>
                     <?php if ($canPublishOperationalBoard): ?>
-                    <form method="post" action="<?= url('back-office/tableau-operationnel/publier-lie') ?>" class="mt-3">
-                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                        <input type="hidden" name="source_type" value="event">
-                        <input type="hidden" name="source_id" value="<?= $eid ?>">
-                        <button type="submit" class="text-xs font-bold text-sky-300 hover:text-sky-200 underline decoration-sky-500/50">Publier au mur opérationnel</button>
-                    </form>
+                    <?php
+                    $opBoardPublishSourceType = 'event';
+                    $opBoardPublishSourceId = $eid;
+                    $opBoardPublishCsrf = \App\Core\Csrf::token();
+                    $opBoardPublishVariant = 'events_dark';
+                    require base_path('views/partials/operational_board_publish_linked_form.php');
+                    ?>
                     <?php endif; ?>
                     <?php if ($currentUserId): ?>
                 <div class="mt-3 flex flex-wrap items-center gap-3">

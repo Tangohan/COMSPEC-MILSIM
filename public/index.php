@@ -59,6 +59,12 @@ register_shutdown_function(function () use ($showErrors, $root) {
     header('Content-Type: text/html; charset=utf-8');
     if (!$showErrors) {
         http_response_code(500);
+        $view500 = $root . '/views/errors/500.php';
+        if (is_file($view500)) {
+            require $view500;
+
+            return;
+        }
         echo '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Erreur</title></head><body><p>Une erreur est survenue. Réessayez plus tard.</p></body></html>';
 
         return;

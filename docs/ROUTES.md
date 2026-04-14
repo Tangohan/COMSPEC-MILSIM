@@ -81,7 +81,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | POST | `/back-office/tableau-operationnel` | OperationalBoardController::store | ✅ | |
 | POST | `/back-office/tableau-operationnel/fiche/{id}` | OperationalBoardController::update | ✅ | |
 | POST | `/back-office/tableau-operationnel/fiche/{id}/dupliquer` | OperationalBoardController::duplicate | ✅ | |
-| POST | `/back-office/tableau-operationnel/publier-lie` | OperationalBoardController::storeLinked | ✅ | |
+| POST | `/back-office/tableau-operationnel/publier-lie` | OperationalBoardController::storeLinked | ✅ | Même source déjà liée (fiche non annulée) : redirection vers la fiche existante ; réponse JSON 409 si `Accept: application/json` ou requête `X-Requested-With: XMLHttpRequest` |
 | POST | `/back-office/tableau-operationnel/posture` | OperationalBoardController::setPosture | ✅ | |
 | POST | `/back-office/tableau-operationnel/template` | OperationalBoardController::createFromTemplate | ✅ | |
 | POST | `/back-office/tableau-operationnel/{id}/validation` | OperationalBoardController::transitionValidation | ✅ | |
@@ -140,7 +140,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | GET | `/atak/setup` | AtakController::setup | ✅ | |
 | GET | `/atak/mod/download` | AtakController::downloadMod | ✅ | |
 | GET | `/atak/tuto` | AtakController::tuto | ✅ | |
-| GET | `/tacmap` | HomeController::tacmap | 🔶 | Vue simple |
+| GET | `/tacmap` | HomeController::tacmap | ✅ | Carte tactique (Leaflet + données communauté) ; enrichissements carto = évolution produit |
 | GET | `/overwatch` | HomeController::overwatch | ✅ | Poste de commandement |
 
 ### 2.8 Forum
@@ -307,8 +307,8 @@ Les préfixes `/api/training/*`, `/api/atak/*`, `/api/orbat/*`, `/api/cas`, `/ap
 | Élément | État | Suggestion |
 |---------|------|------------|
 | **Admin candidatures** | ✅ | Parcours principal : `/back-office/recruitments` (offres : `/back-office/recruitment/offers`) |
-| **Tacmap** | 🔶 | Vue simple ; enrichissement cartographique optionnel |
-| **Erreurs 404/500** | 🔶 | Vérifier renvoi Router → vues d’erreur |
+| **TACMAP (roadmap)** | 🔶 | Pistes d’enrichissement cartographique optionnelles |
+| **Erreurs 404/500** | ✅ | 404 : [`Router`](../app/Core/Router.php) → `views/errors/404.php` ; 500 : [`ExceptionHandler`](../app/Core/ExceptionHandler.php) et shutdown dans [`public/index.php`](../public/index.php) → `views/errors/500.php` hors mode debug |
 
 ### Redirections `.htaccess`
 

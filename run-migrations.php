@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Pipeline complet schéma + migrations Phinx (robmorgan/phinx) + migrations bootstrap + seed (appelé par setup-database.php).
+ * Pipeline complet schéma + extensions DDL + migrations bootstrap + seed (appelé par setup-database.php).
  *
  * Point d’entrée utilisateur recommandé : **php setup-database.php** (un seul script documenté).
  * Ce fichier reste le moteur procédural ; ne pas le confondre avec les seuls bootstrap PHP isolés.
@@ -98,7 +98,7 @@ $bootstrapFiles = [
     'roles_organic_architecture_migration.php',
     'military_role_catalog_schema_migration.php',
     'moderation_granular_sanctions_migration.php',
-    'phinx_runner.php',
+    'core_schema_extensions_migration.php',
 ];
 foreach ($bootstrapFiles as $bf) {
     $path = $root . '/bootstrap/' . $bf;
@@ -156,8 +156,8 @@ if (!empty($errors)) {
 echo "Schéma OK. ({$done} instructions exécutées)\n";
 $migrationFlush();
 
-// Migrations Phinx : fichiers PHP versionnés dans /migrations (ex. tableau opérationnel, planning_*), journal phinxlog.
-run_phinx_migrate($root, $migrationFlush);
+// Extensions DDL (tableau opérationnel planning_*, ORBAT, tenant_email_*, app_maintenance, label_en rôles…).
+run_core_schema_extensions_migration($pdo, $root, $migrationFlush);
 
 // Plans Stripe, colonnes tenants, invitations, modération, événements, usage, codes communauté, parrainage — idempotent.
 echo "Migrations bootstrap plateforme (community_platform + unit_commander + rbac_three_layer)...\n";
@@ -2260,6 +2260,11 @@ if ($stmt && $stmt->fetch()) {
     echo "\n--- Pipeline exécuté (résumé) ---\n";
     echo "Schéma SQL (migrations/schema.sql) ; bootstrap plateforme et RBAC ; migrations LMS et annexes ; compléments seed (tenant default déjà présent).\n";
     echo "Si vous ne voyez que les premières lignes dans le navigateur, le script a tout de même pu aller au bout côté serveur — préférez : php setup-database.php en SSH pour une sortie complète.\n";
+    if (defined('COMSPEC_MIGRATIONS_WEB_FULL') && COMSPEC_MIGRATIONS_WEB_FULL) {
+        require_once $root . '/bootstrap/migrations_full_post.php';
+        comspec_run_all_supplementary_sql_files($pdo, $root, $migrationFlush);
+        comspec_print_post_migration_report($pdo, $root, $migrationFlush);
+    }
     exit(0);
 }
 
@@ -2329,3 +2334,8 @@ echo "Schéma SQL (migrations/schema.sql) ; bootstrap : community_platform, unit
 echo "LMS (thème, vitrine, engagement, parcours portail) ; migrations forum/alerts/modération/e-mail/modo système ; training enrichments ; personnel job roles ; messages enrôlement ; dashboard pins ;\n";
 echo "autoload (modération système) ; option TRAINING_ONBOARDING_ASSIGN_ALL ; seeds tenant default (forum, documents, permissions) si applicable.\n";
 echo "Migrations terminées.\n";
+if (defined('COMSPEC_MIGRATIONS_WEB_FULL') && COMSPEC_MIGRATIONS_WEB_FULL) {
+    require_once $root . '/bootstrap/migrations_full_post.php';
+    comspec_run_all_supplementary_sql_files($pdo, $root, $migrationFlush);
+    comspec_print_post_migration_report($pdo, $root, $migrationFlush);
+}

@@ -30,3 +30,13 @@ $tabs = [
         </a>
     <?php endforeach; ?>
 </nav>
+<?php
+$gObCoopNav = \App\Core\Gate::getInstance();
+if ($mid > 0 && ($gObCoopNav->allows('operational.board.edit') || $gObCoopNav->allows('admin.organization') || $gObCoopNav->allows('admin.access') || $gObCoopNav->allows('admin.system'))) {
+    $opBoardPublishSourceType = 'mission';
+    $opBoardPublishSourceId = $mid;
+    $opBoardPublishCsrf = \App\Core\Csrf::token();
+    $opBoardPublishVariant = 'mission_compact';
+    require base_path('views/partials/operational_board_publish_linked_form.php');
+}
+?>

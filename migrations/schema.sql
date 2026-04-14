@@ -1,4 +1,4 @@
--- Athena : schéma complet (sans Phinx)
+-- Athena : schéma de référence principal (complété par run-migrations.php / extensions DDL)
 -- Exécution : run-migrations.php ou import manuel
 
 SET NAMES utf8mb4;

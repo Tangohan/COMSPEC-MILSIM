@@ -110,7 +110,10 @@ class Router
             }
         }
 
-        return (new Response())->setStatusCode(404)->setBody($this->render404());
+        return (new Response())
+            ->setStatusCode(404)
+            ->header('Content-Type', 'text/html; charset=utf-8')
+            ->setBody($this->render404());
     }
 
     private function render404(): string

@@ -159,12 +159,12 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
                             </div>
                             <?php endif; ?>
                             <?php if ($canPublishOperationalBoard): ?>
-                            <form method="post" action="<?= url('back-office/tableau-operationnel/publier-lie') ?>" class="inline w-full sm:w-auto">
-                                <?= \App\Core\Csrf::field() ?>
-                                <input type="hidden" name="source_type" value="formation">
-                                <input type="hidden" name="source_id" value="<?= $courseId ?>">
-                                <button type="submit" class="w-full sm:w-auto px-4 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-xs font-black uppercase tracking-wider text-emerald-900 hover:bg-emerald-100">Publier au mur opérationnel</button>
-                            </form>
+                            <?php
+                            $opBoardPublishSourceType = 'formation';
+                            $opBoardPublishSourceId = $courseId;
+                            $opBoardPublishVariant = 'course';
+                            require base_path('views/partials/operational_board_publish_linked_form.php');
+                            ?>
                             <?php endif; ?>
                             <?php if ($enrollment && $canAccessLearning): ?>
                             <div class="text-left sm:text-right rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">

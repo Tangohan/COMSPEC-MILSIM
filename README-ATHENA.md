@@ -11,7 +11,7 @@ Plateforme PHP 8.4 multi-tenant (Athena) pour la gestion RH, formations, documen
 
 ## Installation
 
-**Installation rapide (script)** : à la racine du projet, exécuter `php install.php`. Le script vérifie PHP 8.4, crée les dossiers `storage/`, copie `.env.example` → `.env` et `config/phinx.php.dist` → `config/phinx.php`, lance `composer install`, puis les migrations et le seed si les binaires sont disponibles. Options : `--no-composer`, `--no-migrate`, `--no-seed`. Penser à éditer `.env` avant ou après (DB_*, APP_URL, JWT_SECRET).
+**Installation rapide (script)** : à la racine du projet, exécuter `php install.php`. Le script vérifie PHP 8.4, crée les dossiers `storage/`, copie `.env.example` → `.env`, lance `composer install` si demandé, puis `setup-database.php` (schéma, extensions DDL, seed) si les options le permettent. Options : `--no-composer`, `--no-migrate`, `--no-seed`. Penser à éditer `.env` avant ou après (DB_*, APP_URL, JWT_SECRET).
 
 **Installation manuelle :**
 
@@ -28,28 +28,18 @@ Plateforme PHP 8.4 multi-tenant (Athena) pour la gestion RH, formations, documen
    ```
    Renseigner dans `.env` : `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `APP_URL`, `JWT_SECRET`, `NODE_ATAK_URL` (si utilisé).
 
-4. Configurer Phinx (migrations) :
+4. Initialiser la base de données (schéma SQL, extensions métier, seed) :
    ```bash
-   cp config/phinx.php.dist config/phinx.php
+   php setup-database.php
    ```
-   Ajuster si besoin les paramètres dans `config/phinx.php`.
+   Compte par défaut après seed : `admin@athena.local` / `admin`.  
+   Variante web : ouvrir `public/setup-database.php` dans le navigateur (sortie texte).
 
-5. Exécuter les migrations :
-   ```bash
-   vendor/bin/phinx migrate
-   ```
-
-6. (Recommandé) Exécuter le seed pour créer le tenant et l’utilisateur admin par défaut :
-   ```bash
-   vendor/bin/phinx seed:run -s DefaultTenantSeeder
-   ```
-   Compte par défaut : `admin@athena.local` / `admin`.
-
-7. **Document root** : pointer le serveur web (Apache/Nginx) vers le dossier `public/`.  
+5. **Document root** : pointer le serveur web (Apache/Nginx) vers le dossier `public/`.  
    - Exemple Apache : `DocumentRoot /chemin/vers/COMSPEC-MILSIM/public`  
    - Le fichier `public/.htaccess` gère les redirections legacy (`.html` → URLs propres) et le front controller.
 
-8. Droits et répertoires : s’assurer que `storage/logs`, `storage/cache`, `storage/sessions`, `storage/uploads` sont writables par le serveur web.
+6. Droits et répertoires : s’assurer que `storage/logs`, `storage/cache`, `storage/sessions`, `storage/uploads` sont writables par le serveur web.
 
 ## Générer vendor pour upload (sans Composer sur le serveur)
 
@@ -73,7 +63,7 @@ Si le serveur n’exécute pas Composer (proc_open désactivé, etc.), génère 
 - `bootstrap/` — chargement env, config, erreurs
 - `views/` — vues PHP (layout, auth, personnel, admin, etc.)
 - `routes/web.php` — définition des routes
-- `migrations/` — migrations Phinx
+- `migrations/` — `schema.sql`, scripts `.sql` et pipeline PHP (`run-migrations.php`, `bootstrap/core_schema_extensions_migration.php`, etc.)
 - `storage/` — logs, cache, sessions, uploads
 - `server/` — service Node ATAK (carte temps réel), inchangé
 

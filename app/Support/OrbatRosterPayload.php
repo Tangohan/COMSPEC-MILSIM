@@ -189,6 +189,8 @@ final class OrbatRosterPayload
             $applied = self::applyViewerPolicies($ch, $viewerUnitIds, false);
             if ($applied !== null) {
                 $childrenOut[] = $applied;
+            } elseif ((int) ($ch['unitId'] ?? 0) > 0) {
+                $childrenOut[] = self::hiddenBranchPlaceholder($ch);
             }
         }
         $node['children'] = $childrenOut;
@@ -202,6 +204,7 @@ final class OrbatRosterPayload
         if ($needAnon) {
             $node['members'] = self::anonymizeMemberRows($node['members'] ?? []);
             $node['leader'] = self::anonymizeLeaderLabel((string) ($node['leader'] ?? '—'));
+            $node['viewerNamesRedacted'] = true;
         }
 
         return $node;
@@ -211,10 +214,62 @@ final class OrbatRosterPayload
      * @param array<string, mixed> $node
      * @return array<string, mixed>
      */
+    /**
+     * Carte synthétique lorsqu’une branche est entièrement masquée pour le lecteur (sans révéler le nom de l’unité).
+     *
+     * @param array<string, mixed> $removedSubtree
+     *
+     * @return array<string, mixed>
+     */
+    private static function hiddenBranchPlaceholder(array $removedSubtree): array
+    {
+        $subCount = count(self::collectSubtreeUnitIds($removedSubtree));
+        $scopeNote = $subCount > 1
+            ? sprintf('Cette branche regroupe %d unités qui ne sont pas affichées avec votre profil actuel.', $subCount)
+            : 'Le détail de cette partie de l’organigramme n’est pas affiché.';
+
+        $stableKey = (string) ($removedSubtree['id'] ?? '') . '|' . (string) (int) ($removedSubtree['unitId'] ?? 0);
+
+        return [
+            'id' => 'masked-' . substr(hash('sha256', 'orbat-masked|' . $stableKey), 0, 14),
+            'unitId' => 0,
+            'label' => 'Structure non affichée',
+            'role' => 'Selon votre périmètre',
+            'type' => 'command',
+            'structType' => 'placeholder',
+            'maskMode' => OrbatMaskMode::NONE,
+            'status' => 'inactive',
+            'strength' => 0,
+            'leader' => '—',
+            'mission' => 'Cette portion de l’organigramme est réservée aux personnes concernées par l’affectation ou le niveau d’habilitation. Si vous devez la consulter, rapprochez votre encadrement ou le référent organisation.',
+            'orbatDetails' => $scopeNote,
+            'chartIconUrl' => null,
+            'chartImageUrl' => null,
+            'commanderUserId' => 0,
+            'members' => [],
+            'children' => [],
+            'isOrbatPlaceholder' => true,
+            'placeholderReason' => 'branch_hidden',
+        ];
+    }
+
+    private static function staffMaskBadgeCaption(string $mask): string
+    {
+        return match ($mask) {
+            OrbatMaskMode::HIDDEN_ALL => 'Masqué',
+            OrbatMaskMode::SCOPE_SECTION => 'Section',
+            OrbatMaskMode::SCOPE_TEAM => 'Équipe',
+            OrbatMaskMode::SCOPE_ROLE => 'Rôles',
+            OrbatMaskMode::ANONYMIZE => 'Noms abrégés',
+            default => 'Confidentiel',
+        };
+    }
+
     private static function annotateStaffMaskHints(array $node): array
     {
         $mask = OrbatMaskMode::normalize((string) ($node['maskMode'] ?? OrbatMaskMode::NONE));
         $node['staffMaskActive'] = $mask !== OrbatMaskMode::NONE;
+        $node['maskHintLabel'] = $mask !== OrbatMaskMode::NONE ? self::staffMaskBadgeCaption($mask) : '';
 
         $children = [];
         foreach ($node['children'] ?? [] as $ch) {

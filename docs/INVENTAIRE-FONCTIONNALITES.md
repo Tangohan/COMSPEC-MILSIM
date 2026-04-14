@@ -16,6 +16,7 @@ Document de synthèse de l’état **actuel** du dépôt (code et routes). Pour 
 | **Front**           | Vues PHP dans `views/`, assets dans `public/assets/`.                                 |
 | **Temps réel ATAK** | Service Node optionnel dans `server/` (carte / WebSocket selon déploiement).          |
 | **Auth**            | Session ; utilisateur lié à un **tenant** (`tenant_id`).                              |
+| **CI / Linux**      | PSR-4 `App\\` → répertoire `app/` ; conserver la casse des dossiers (`Controllers`, `Core`, …). Éviter deux chemins identiques à la casse près (autoload Composer sous Linux). |
 
 
 ---
@@ -65,7 +66,8 @@ Données étendues (migrations `personnel_dossier.sql` et associées) : `personn
 
 - **Consultation** : `GET /tableau-operationnel` — portail « Mur opérationnel » ; accès via `[OperationalBoardViewMiddleware](../app/Middleware/OperationalBoardViewMiddleware.php)` (permission « Consulter le tableau opérationnel » `operational.board.view`, ou pilotage / rôles d’administration listés dans le middleware).
 - **Pilotage** : routes `GET` / `POST` sous `/back-office/tableau-operationnel` (liste, création, fiches, validation, statuts opérationnels, FRAGO, checklist, **retrait de publication**, duplication, modèle, posture, publication liée, flux temps réel). Accès via `[OperationalBoardEditMiddleware](../app/Middleware/OperationalBoardEditMiddleware.php)` (`operational.board.edit` ou administrateurs).
-- **Catalogue des permissions** : entrées `operational.board.`* dans `[TenantPermissionCatalog](../app/Authorization/TenantPermissionCatalog.php)`.
+- **Publication liée** (`POST /back-office/tableau-operationnel/publier-lie`) : une seule fiche non annulée par combinaison source (événement, mission inter-unités, formation) ; sinon message clair et ouverture de la fiche existante (réponse JSON 409 si le client indique une attente JSON ou une requête XHR).
+- **Catalogue des permissions** : entrées `operational.board.*` dans `[TenantPermissionCatalog](../app/Authorization/TenantPermissionCatalog.php)`.
 - **Interface** : vues `[views/operations/board_portal.php](../views/operations/board_portal.php)`, `[board.php](../views/operations/board.php)`, `[board_entry_form.php](../views/operations/board_entry_form.php)`.
 
 ---
@@ -172,10 +174,12 @@ Schéma : `migrations/lms_training.sql` et tables associées.
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Pages web**    | `/atak`, `/atak/setup`, `/atak/tuto`, téléchargement mod ATAK ; `/tacmap` ; `/overwatch` (vue commandement / santé / couches).                                                                                                                                      |
 | **Config admin** | `/admin/atak-config`, `/admin/atak-mod`.                                                                                                                                                                                                                            |
-| **API REST**     | Nombreux endpoints sous `/api/`* : marqueurs, unités temps réel, chat, pings, nine-line, CAS, reconnaissance, formes carte, codes laser, manifeste vol, designator, SIGINT, intel photos, fire-support, danger zones, logistics, intel fusion, replay, IFF, health. |
+| **API REST**     | Nombreux endpoints sous `/api/*` : marqueurs, unités temps réel, chat, pings, nine-line, CAS, reconnaissance, formes carte, codes laser, manifeste vol, designator, SIGINT, intel photos, fire-support, danger zones, logistics, intel fusion, replay, IFF, health. |
 
 
 Certaines routes sont utilisées par le client carte (JavaScript embarqué dans les pages) et/ou par le mod Arma ; le tenant peut être forcé via session ou variables d’environnement pour l’ATAK.
+
+**Pages d’erreur HTTP** : route inconnue → corps généré par [`Router`](../app/Core/Router.php) à partir de `views/errors/404.php` ; exception non interceptée → [`ExceptionHandler`](../app/Core/ExceptionHandler.php) et `views/errors/500.php` ; erreur fatale PHP (shutdown) → même vue500 hors affichage debug ([`public/index.php`](../public/index.php)).
 
 **Couverture côté navigateur (extrait)** — repères dans `public/assets/js/` (et miroirs éventuels sous `app/assets/js/`) :
 
@@ -191,10 +195,10 @@ Certaines routes sont utilisées par le client carte (JavaScript embarqué dans 
 | `atak-cams.js`                                     | `/api/recon/images`, `/api/intel/photos`      |
 | `atak-laser-codes.js`                              | `/api/atak/laser-codes`                       |
 | `atak-map-shapes.js`, `comspec-operational-map.js` | `/api/map-shapes`                             |
-| `training_quiz_player.js`                          | `/api/training/quiz/`*                        |
+| `training_quiz_player.js`                          | `/api/training/quiz/*`                        |
 
 
-Les vues **forum** et **configuration forum** appellent aussi `/api/forum`, `/api/forum-upload`, `/api/forum-moderation`, `/api/admin/`*, etc. La page **ORBAT** consomme `/api/orbat/`* (voir section Personnel / ORBAT). Tout endpoint listé dans `routes/web.php` sans occurrence dans ces inventaires peut encore être utilisé par un autre client (module jeu, outil externe, script) : traiter comme « non couvert par le JS livré dans le dépôt » plutôt que comme mort.
+Les vues **forum** et **configuration forum** appellent aussi `/api/forum`, `/api/forum-upload`, `/api/forum-moderation`, `/api/admin/*`, etc. La page **ORBAT** consomme `/api/orbat/*` (voir section Personnel / ORBAT). Tout endpoint listé dans `routes/web.php` sans occurrence dans ces inventaires peut encore être utilisé par un autre client (module jeu, outil externe, script) : traiter comme « non couvert par le JS livré dans le dépôt » plutôt que comme mort.
 
 ---
 
@@ -213,7 +217,7 @@ Vue condensée **parcours × droits × API × navigation** (les détails restent
 | Domaine                | Parcours principal                                           | R                   | W              | API / temps réel                  | Menu / hub (repères)          | Permissions (slugs)                                    |
 | ---------------------- | ------------------------------------------------------------ | ------------------- | -------------- | --------------------------------- | ----------------------------- | ------------------------------------------------------ |
 | Mur opérationnel       | `/tableau-operationnel`, `/back-office/tableau-operationnel` | ✅ portail           | ✅ back-office  | SSE `…/stream`                    | Mur opérationnel, Pilotage    | `operational.board.view`, `operational.board.edit`     |
-| ORBAT                  | `/orbat`                                                     | ✅                   | ✅ (structure)  | `/api/orbat/`*                    | ORBAT, Organisation (ORBAT)   | `organization.orbat.view`, `organization.orbat.manage` |
+| ORBAT                  | `/orbat`                                                     | ✅                   | ✅ (structure)  | `/api/orbat/*`                    | ORBAT, Organisation (ORBAT)   | `organization.orbat.view`, `organization.orbat.manage` |
 | Personnel (hors ORBAT) | `/personnel/*`                                               | ✅                   | ✅ fiche        | —                                 | Dossier personnel, fiches     | Selon routes (ex. édition fiche)                       |
 | Documents              | `/documents`, `/documents/gestion`                           | ✅ lecture           | ✅ gestion      | —                                 | Module documents              | `documents.*`                                          |
 | Formations             | `/formations`, `/back-office/ressources/training`            | ✅                   | ✅ pilotage     | `/api/training/*`                 | Formations, Studio / pilotage | Rôles formation + catalogue LMS                        |

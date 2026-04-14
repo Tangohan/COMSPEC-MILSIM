@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Met à jour la base : schéma, Phinx, bootstraps, compléments (même enchaînement que setup-database).
+ * Met à jour la base : schéma, extensions DDL, bootstraps, compléments (même enchaînement que setup-database).
  * Idempotent — ne fait qu’ajouter ce qui manque.
  *
  * URL (exemple avec préfixe /public) :
