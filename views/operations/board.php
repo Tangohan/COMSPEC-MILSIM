@@ -121,6 +121,29 @@ if ($tenantName === '') {
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <a href="<?= url('tableau-operationnel') ?>" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-100">Vue portail (lecture)</a>
+                <form method="get" action="<?= url('back-office/tableau-operationnel') ?>" class="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="period_start" value="<?= htmlspecialchars((string) ($boardFilters['period_start'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="period_end" value="<?= htmlspecialchars((string) ($boardFilters['period_end'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="entry_type" value="<?= htmlspecialchars((string) ($boardFilters['entry_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="operational_status" value="<?= htmlspecialchars((string) ($boardFilters['operational_status'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="tag" value="<?= htmlspecialchars((string) ($boardFilters['tag'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="mode" value="<?= htmlspecialchars((string) ($boardFilters['mode'] ?? 'standard'), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="critical_only" value="<?= (int) ($boardFilters['critical_only'] ?? 0) ?>">
+                    <label class="text-xs font-semibold text-slate-600" for="board_pub_status">Publication</label>
+                    <select id="board_pub_status" name="status" class="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-900" onchange="this.form.submit()">
+                        <?php
+                        $pub = (string) ($boardFilters['status'] ?? 'active');
+                        $pubOpts = [
+                            'active' => 'Publiées (actives)',
+                            'draft' => 'Brouillons',
+                            'cancelled' => 'Retirées du mur',
+                            'all' => 'Toutes',
+                        ];
+                        foreach ($pubOpts as $val => $lbl): ?>
+                            <option value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>" <?= $pub === $val ? 'selected' : '' ?>><?= htmlspecialchars($lbl, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
                 <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide ring-1 <?= htmlspecialchars($postureUi['badge'], ENT_QUOTES, 'UTF-8') ?>">
                     Posture <?= htmlspecialchars($postureUi['label'], ENT_QUOTES, 'UTF-8') ?>
                 </span>

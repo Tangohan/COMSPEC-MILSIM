@@ -107,8 +107,8 @@ $entryTypes = [
                         <option value="formation" <?= $val('linked_type') === 'formation' ? 'selected' : '' ?>>Formation</option>
                     </select>
                 </label>
-                <label class="block text-xs font-semibold text-slate-600">Référence interne (n° de l’objet lié)
-                    <input type="number" name="linked_id" min="1" value="<?= htmlspecialchars($val('linked_id'), ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm" placeholder="Si applicable" title="Identifiant interne de l’objet lié dans la base">
+                <label class="block text-xs font-semibold text-slate-600">Référence de l’élément lié
+                    <input type="number" name="linked_id" min="1" value="<?= htmlspecialchars($val('linked_id'), ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm" placeholder="Si vous la connaissez (sinon laisser vide)">
                 </label>
                 <label class="block text-xs font-semibold text-slate-600">Date de début (validité)
                     <input type="date" name="start_date" value="<?= htmlspecialchars($val('start_date'), ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm">
@@ -352,6 +352,20 @@ $entryTypes = [
             <?php endif; ?>
         </div>
     </form>
+
+    <?php if ($isEdit && $eid > 0): ?>
+    <section class="mx-auto max-w-5xl rounded-2xl border border-rose-200 bg-rose-50/50 px-4 py-5 shadow-sm space-y-3" aria-labelledby="board-retire-heading">
+        <h2 id="board-retire-heading" class="text-sm font-bold uppercase tracking-wider text-rose-900">Retirer du mur opérationnel</h2>
+        <p class="text-sm text-slate-700">L’entrée ne sera plus affichée sur le portail lecture seule. Vous pourrez encore la retrouver ici en filtrant les fiches « retirées du mur ».</p>
+        <form method="post" action="<?= url('back-office/tableau-operationnel/' . $eid . '/retirer-du-mur') ?>" class="space-y-3" onsubmit="return confirm('Retirer cette entrée du mur opérationnel ? Elle disparaîtra du portail public.');">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+            <label class="block text-xs font-semibold text-slate-600">Motif (optionnel, pour le journal)
+                <input type="text" name="retire_reason" maxlength="500" class="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" autocomplete="off" placeholder="Ex. information devenue sans objet">
+            </label>
+            <button type="submit" class="rounded-xl border border-rose-300 bg-white px-5 py-2.5 text-sm font-bold text-rose-900 shadow-sm hover:bg-rose-100">Retirer du mur</button>
+        </form>
+    </section>
+    <?php endif; ?>
     <?php endif; ?>
 </div>
 

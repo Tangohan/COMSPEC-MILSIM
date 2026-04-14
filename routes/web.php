@@ -228,6 +228,7 @@ return function (Router $router) {
     $router->post('/back-office/tableau-operationnel/{id}/status', [OperationalBoardController::class, 'transitionOperationalStatus'], $mwOperationalBoardEdit);
     $router->post('/back-office/tableau-operationnel/{id}/frago', [OperationalBoardController::class, 'createFrago'], $mwOperationalBoardEdit);
     $router->post('/back-office/tableau-operationnel/{id}/checklist/{itemId}', [OperationalBoardController::class, 'toggleChecklist'], $mwOperationalBoardEdit);
+    $router->post('/back-office/tableau-operationnel/{id}/retirer-du-mur', [OperationalBoardController::class, 'retireFromBoard'], $mwOperationalBoardEdit);
     $router->get('/integrations/v1/evenements', [IntegrationsPublicEventsController::class, 'upcoming'], [IntegrationsApiAuthMiddleware::class]);
     $router->get('/messages', [TenantMessagesController::class, 'index'], $mwMessages);
     $router->post('/messages', [TenantMessagesController::class, 'create'], $mwMessages);

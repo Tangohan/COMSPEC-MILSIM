@@ -61,9 +61,36 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | POST | `/personnel/{id}/update` | PersonnelController::update | ✅ | |
 | POST | `/personnel/{id}/generate-matricule` | PersonnelController::generateMatricule | ✅ | |
 | POST | `/personnel/{id}/notes` | PersonnelController::updateNotes | ✅ | |
-| GET | `/orbat` | PersonnelController::orbat | ✅ | |
+| GET | `/orbat` | PersonnelController::orbat | ✅ | Permission `organization.orbat.view` (ou dérivée : gestion ORBAT, administration organisation) |
+| GET | `/api/orbat/roster` | OrbatApiController::roster | ✅ | Session ; même périmètre que la page ORBAT |
+| GET | `/api/orbat/structure-options` | OrbatApiController::structureOptions | ✅ | Réservé aux gestionnaires de structure |
+| POST | `/api/orbat/chart-type` | OrbatApiController::chartType | ✅ | Idem + jeton de formulaire |
+| POST | `/api/orbat/unit-upload` | OrbatApiController::uploadUnitMedia | ✅ | Idem |
+| POST | `/api/orbat/structure` | OrbatApiController::structure | ✅ | Idem |
+| POST | `/api/orbat/unit` | OrbatApiController::updateUnit | ✅ | Idem |
 
-### 2.3 Documents (lecture + fichiers)
+### 2.3 Mur opérationnel (planning)
+
+| Méthode | Chemin | Contrôleur | Statut | Notes |
+|---------|--------|------------|--------|-------|
+| GET | `/tableau-operationnel` | OperationalBoardController::portalIndex | ✅ | Lecture portail (`operational.board.view` ou équivalent) |
+| GET | `/back-office/tableau-operationnel` | OperationalBoardController::index | ✅ | Pilotage (`operational.board.edit` ou admin) |
+| GET | `/back-office/tableau-operationnel/stream` | OperationalBoardController::stream | ✅ | Flux JSON (pilotage) |
+| GET | `/back-office/tableau-operationnel/fiche/nouvelle` | OperationalBoardController::formNew | ✅ | |
+| GET | `/back-office/tableau-operationnel/fiche/{id}` | OperationalBoardController::formEdit | ✅ | |
+| POST | `/back-office/tableau-operationnel` | OperationalBoardController::store | ✅ | |
+| POST | `/back-office/tableau-operationnel/fiche/{id}` | OperationalBoardController::update | ✅ | |
+| POST | `/back-office/tableau-operationnel/fiche/{id}/dupliquer` | OperationalBoardController::duplicate | ✅ | |
+| POST | `/back-office/tableau-operationnel/publier-lie` | OperationalBoardController::storeLinked | ✅ | |
+| POST | `/back-office/tableau-operationnel/posture` | OperationalBoardController::setPosture | ✅ | |
+| POST | `/back-office/tableau-operationnel/template` | OperationalBoardController::createFromTemplate | ✅ | |
+| POST | `/back-office/tableau-operationnel/{id}/validation` | OperationalBoardController::transitionValidation | ✅ | |
+| POST | `/back-office/tableau-operationnel/{id}/status` | OperationalBoardController::transitionOperationalStatus | ✅ | |
+| POST | `/back-office/tableau-operationnel/{id}/frago` | OperationalBoardController::createFrago | ✅ | |
+| POST | `/back-office/tableau-operationnel/{id}/checklist/{itemId}` | OperationalBoardController::toggleChecklist | ✅ | |
+| POST | `/back-office/tableau-operationnel/{id}/retirer-du-mur` | OperationalBoardController::retireFromBoard | ✅ | Retrait du portail (confirmation obligatoire côté interface) |
+
+### 2.4 Documents (lecture + fichiers)
 
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
@@ -72,7 +99,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | GET | `/documents/{id}/file` | DocumentsController::file | ✅ | |
 | GET | `/documents/{id}/download` | DocumentsController::download | ✅ | |
 
-### 2.4 Documents (gestion — permissions `documents.*`)
+### 2.5 Documents (gestion — permissions `documents.*`)
 
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
@@ -88,7 +115,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | GET | `/documents/gestion/{id}/historique` | AdminDocumentsController::history | ✅ | |
 | GET | `/documents/gestion/{id}/acces` | AdminDocumentsController::access | ✅ | |
 
-### 2.5 Équipement, modpacks, formations
+### 2.6 Équipement, modpacks, formations
 
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
@@ -105,7 +132,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | GET | `/formations/certificate/{id}` | TrainingController::certificate | ✅ | |
 | GET | `/formations/{slug}` | TrainingController::showBySlug | ✅ | |
 
-### 2.6 ATAK et vues tactiques
+### 2.7 ATAK et vues tactiques
 
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
@@ -116,7 +143,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | GET | `/tacmap` | HomeController::tacmap | 🔶 | Vue simple |
 | GET | `/overwatch` | HomeController::overwatch | ✅ | Poste de commandement |
 
-### 2.7 Forum
+### 2.8 Forum
 
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
@@ -135,7 +162,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | POST | `/forum/topic/{id}/pin` | ForumModerationController::pinTopic | ✅ | |
 | POST | `/forum/topic/{id}/unpin` | ForumModerationController::unpinTopic | ✅ | |
 
-### 2.8 Courrier
+### 2.9 Courrier
 
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
@@ -237,7 +264,15 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
 | GET | `/admin/configuration` | AdminConfigurationController::index | ✅ | |
-| GET | `/admin/recruitments` | AdminRecruitmentsController::index | 🔶 | Liste ; détail / workflow à renforcer |
+| GET | `/admin/recruitments` | *redirect* | ✅ | Vers `back-office/recruitments` (`AuthMiddleware`) |
+| GET | `/back-office/recruitments` | AdminRecruitmentsController::index | ✅ | `OrganizationAdminMiddleware` |
+| GET | `/back-office/recruitments/{id}` | AdminRecruitmentsController::show | ✅ | Fiche, décision, finalisation adhésion |
+| POST | `/back-office/recruitments/{id}/decision` | AdminRecruitmentsController::decision | ✅ | |
+| POST | `/back-office/recruitments/{id}/finalize-membership` | AdminRecruitmentsController::finalizeMembership | ✅ | |
+| GET | `/back-office/recruitments/messages-prefaits` | AdminRecruitmentsController::cannedMessagesIndex | ✅ | |
+| POST | `/back-office/recruitments/messages-prefaits` | AdminRecruitmentsController::cannedMessageStore | ✅ | |
+| POST | `/back-office/recruitments/messages-prefaits/{id}/update` | AdminRecruitmentsController::cannedMessageUpdate | ✅ | |
+| POST | `/back-office/recruitments/messages-prefaits/{id}/delete` | AdminRecruitmentsController::cannedMessageDelete | ✅ |
 | GET | `/admin/modpacks` | AdminModpackController::index | ✅ | |
 | GET | `/admin/modpacks/create` | AdminModpackController::create | ✅ | |
 | POST | `/admin/modpacks/store` | AdminModpackController::store | ✅ | |
@@ -263,7 +298,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 
 ## 4. API (JSON / usage client)
 
-Les préfixes `/api/training/*`, `/api/atak/*`, `/api/cas`, `/api/recon/*`, `/api/map-shapes`, `/api/fire-support/*`, `/api/danger-zones`, `/api/logistics/*`, `/api/intel/*`, `/api/replay/*`, `/api/iff/*`, `/api/forum*`, `/api/admin/*`, `/api/health` sont définis dans [`routes/web.php`](../routes/web.php). Détail : voir inventaire [INVENTAIRE-FONCTIONNALITES.md](INVENTAIRE-FONCTIONNALITES.md) section ATAK / API.
+Les préfixes `/api/training/*`, `/api/atak/*`, `/api/orbat/*`, `/api/cas`, `/api/recon/*`, `/api/map-shapes`, `/api/fire-support/*`, `/api/danger-zones`, `/api/logistics/*`, `/api/intel/*`, `/api/replay/*`, `/api/iff/*`, `/api/forum*`, `/api/admin/*`, `/api/health` sont définis dans [`routes/web.php`](../routes/web.php). Détail : voir inventaire [INVENTAIRE-FONCTIONNALITES.md](INVENTAIRE-FONCTIONNALITES.md) (ATAK / API, couverture JavaScript).
 
 ---
 
@@ -271,7 +306,7 @@ Les préfixes `/api/training/*`, `/api/atak/*`, `/api/cas`, `/api/recon/*`, `/ap
 
 | Élément | État | Suggestion |
 |---------|------|------------|
-| **Admin candidatures** | 🔶 | Détail par ID, changement de statut, commentaires |
+| **Admin candidatures** | ✅ | Parcours principal : `/back-office/recruitments` (offres : `/back-office/recruitment/offers`) |
 | **Tacmap** | 🔶 | Vue simple ; enrichissement cartographique optionnel |
 | **Erreurs 404/500** | 🔶 | Vérifier renvoi Router → vues d’erreur |
 
@@ -281,4 +316,4 @@ Les anciennes URLs `.html` sont redirigées vers les URLs propres (`public/.htac
 
 ---
 
-*Dernière mise à jour : alignement sur `routes/web.php` (hub, organisation, système, courrier, documents gestion, équipement, overwatch, APIs).*
+*Dernière mise à jour : alignement sur `routes/web.php` (mur opérationnel, ORBAT, recrutements back-office, APIs).*

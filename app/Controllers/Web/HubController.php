@@ -99,33 +99,36 @@ class HubController
             'entries' => $comm,
         ];
 
+        $personnelEntries = [
+            [
+                'label' => 'Ma fiche personnelle',
+                'url' => url('personnel/me'),
+                'description' => 'Identité opérationnelle, qualifications et formations.',
+                'icon' => 'personnel',
+                'accent' => 'emerald',
+            ],
+            [
+                'label' => 'Pointage & présence',
+                'url' => url('pointage'),
+                'description' => 'Sessions, présence et activité du jour.',
+                'icon' => 'pointage',
+                'accent' => 'teal',
+            ],
+        ];
+        if ($gate->allows('organization.orbat.view')) {
+            $personnelEntries[] = [
+                'label' => 'ORBAT',
+                'url' => url('orbat'),
+                'description' => 'Organigramme et rattachement aux unités.',
+                'icon' => 'orbat',
+                'accent' => 'slate',
+            ];
+        }
         $sections[] = [
             'id' => 'personnel',
             'title' => 'Personnel & organisation',
             'subtitle' => 'Votre dossier, la présence et la structure des unités.',
-            'entries' => [
-                [
-                    'label' => 'Ma fiche personnelle',
-                    'url' => url('personnel/me'),
-                    'description' => 'Identité opérationnelle, qualifications et formations.',
-                    'icon' => 'personnel',
-                    'accent' => 'emerald',
-                ],
-                [
-                    'label' => 'Pointage & présence',
-                    'url' => url('pointage'),
-                    'description' => 'Sessions, présence et activité du jour.',
-                    'icon' => 'pointage',
-                    'accent' => 'teal',
-                ],
-                [
-                    'label' => 'ORBAT',
-                    'url' => url('orbat'),
-                    'description' => 'Organigramme et rattachement aux unités.',
-                    'icon' => 'orbat',
-                    'accent' => 'slate',
-                ],
-            ],
+            'entries' => $personnelEntries,
         ];
 
         $terrain = [

@@ -464,6 +464,28 @@ final class OperationalBoardController
         return Response::redirect(url('back-office/tableau-operationnel/fiche/' . $entryId));
     }
 
+    public function retireFromBoard(Request $request, array $params = []): Response
+    {
+        if (!$this->validateCsrf()) {
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        [$tenantId, $userId] = $this->tenantAndUser();
+        $entryId = (int) ($params['id'] ?? 0);
+        if ($tenantId < 1 || $userId < 1 || $entryId < 1) {
+            Session::flash('error', 'Données invalides.');
+
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        $reason = trim((string) $request->input('retire_reason', ''));
+        if ($this->planningEntries->retireFromBoard($tenantId, $entryId, $userId, $reason !== '' ? $reason : null)) {
+            Session::flash('success', 'L’entrée a été retirée du mur opérationnel. Elle n’est plus visible sur le portail.');
+        } else {
+            Session::flash('error', 'Impossible de retirer cette entrée. Vérifiez qu’elle existe encore.');
+        }
+
+        return Response::redirect(url('back-office/tableau-operationnel'));
+    }
+
     public function stream(Request $request, array $params = []): Response
     {
         $tenantId = (int) (Session::get('tenant_id') ?? 0);

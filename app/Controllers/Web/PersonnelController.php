@@ -430,6 +430,11 @@ class PersonnelController
         }
         $tid = (int) $tenantId;
         $gate = Gate::getInstance();
+        if (!$gate->allows('organization.orbat.view')) {
+            Session::flash('error', 'Vous n’avez pas accès à l’organigramme des unités.');
+
+            return Response::redirect(url('dashboard'));
+        }
         $orbatCanManage = $gate->allows('admin.organization') || $gate->allows('admin.access')
             || $gate->allows('organization.orbat.manage');
         $viewerId = (int) Session::get('user_id');

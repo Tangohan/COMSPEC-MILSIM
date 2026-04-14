@@ -53,7 +53,7 @@ final class PlanningEntryRepository
         $params = ['tenant_id' => $tenantId];
 
         $status = trim((string) ($filters['status'] ?? 'active'));
-        if ($status !== '') {
+        if ($status !== '' && $status !== 'all') {
             $where[] = 'e.status = :status';
             $params['status'] = $status;
         }
@@ -270,6 +270,43 @@ final class PlanningEntryRepository
             $this->logAction($entryId, $actorUserId, 'status_change', 'Statut opérationnel: ' . $operationalStatus);
             $this->registerRealtimeEvent($tenantId, $entryId, 'status_change', ['status' => $operationalStatus]);
         }
+        return $ok;
+    }
+
+    /**
+     * Retire l’entrée du mur opérationnel : elle n’apparaît plus sur le portail (statut publication annulé).
+     */
+    public function retireFromBoard(int $tenantId, int $entryId, int $actorUserId, ?string $reason = null): bool
+    {
+        if (!$this->hasTable('planning_entries')) {
+            return false;
+        }
+        $entry = $this->findByIdForTenant($tenantId, $entryId);
+        if ($entry === null) {
+            return false;
+        }
+        $comment = $reason !== null && trim($reason) !== '' ? trim($reason) : 'Retirée du mur opérationnel.';
+
+        $stmt = $this->pdo->prepare('UPDATE planning_entries SET
+            status = \'cancelled\',
+            validation_status = \'rejected\',
+            operational_status = \'cancelled\',
+            validation_comment = :comment,
+            validated_by = :actor,
+            validated_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+            WHERE id = :id AND tenant_id = :tenant_id');
+        $ok = $stmt->execute([
+            'comment' => $comment,
+            'actor' => $actorUserId,
+            'id' => $entryId,
+            'tenant_id' => $tenantId,
+        ]);
+        if ($ok) {
+            $this->logAction($entryId, $actorUserId, 'retire', $comment);
+            $this->registerRealtimeEvent($tenantId, $entryId, 'retired', ['title' => (string) ($entry['title'] ?? '')]);
+        }
+
         return $ok;
     }
 

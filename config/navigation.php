@@ -85,7 +85,7 @@ return [
                     'links' => [
                         ['label' => 'Mur opérationnel', 'path' => 'tableau-operationnel', 'permission' => 'operational.board.view', 'description' => 'Permanences et consignes publiées'],
                         ['label' => 'Pilotage du mur opérationnel', 'path' => 'back-office/tableau-operationnel', 'any_permissions' => ['operational.board.edit', 'admin.organization', 'admin.access', 'admin.system'], 'description' => 'Publication et mise à jour des entrées'],
-                        ['label' => 'ORBAT', 'path' => 'orbat', 'description' => 'Structure et effectifs'],
+                        ['label' => 'ORBAT', 'path' => 'orbat', 'permission' => 'organization.orbat.view', 'description' => 'Structure et effectifs'],
                         ['label' => 'Situation tactique (ATAK)', 'path' => 'atak', 'description' => 'Vue opérationnelle'],
                         ['label' => 'TACMAP', 'path' => 'tacmap', 'description' => 'Cartographie tactique'],
                         ['label' => 'Overwatch', 'path' => 'overwatch', 'description' => 'Supervision'],
@@ -231,7 +231,7 @@ return [
                     'slot' => 'center',
                     'links' => [
                         ['label' => 'Annuaire des profils', 'path' => 'personnel', 'description' => 'Rechercher un membre'],
-                        ['label' => 'Organisation (ORBAT)', 'path' => 'orbat', 'description' => 'Vue hiérarchique des effectifs'],
+                        ['label' => 'Organisation (ORBAT)', 'path' => 'orbat', 'permission' => 'organization.orbat.view', 'description' => 'Vue hiérarchique des effectifs'],
                     ],
                 ],
                 [

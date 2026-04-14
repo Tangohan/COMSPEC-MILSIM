@@ -144,16 +144,19 @@ final class TenantDefaultRoleDefinitions
         return [
             'member' => [
                 'operational.board.view',
+                'organization.orbat.view',
             ],
             'hr' => [
                 'documents.view', 'forum.view', 'forum.create_topic', 'forum.reply', 'training.view',
                 'invitations.send', 'admin.members.view', 'personnel.profile.view', 'personnel.profile.update',
                 'dashboard.pins.manage',
+                'organization.orbat.view',
             ],
             'recruiter' => [
                 'forum.view', 'forum.create_topic', 'forum.reply',
                 'invitations.send', 'admin.members.view', 'personnel.profile.view',
                 'operational.board.view',
+                'organization.orbat.view',
             ],
             'instructor' => [
                 'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
@@ -162,15 +165,18 @@ final class TenantDefaultRoleDefinitions
                 'personnel.profile.view',
                 'dashboard.pins.manage',
                 'operational.board.view',
+                'organization.orbat.view',
             ],
             'medic' => [
                 'forum.view', 'forum.reply',
                 'documents.view', 'documents.download.standard',
                 'personnel.profile.view', 'personnel.sensitive.view',
+                'organization.orbat.view',
             ],
             'logistics' => [
                 'forum.view', 'forum.create_topic', 'forum.reply',
                 'documents.view', 'documents.upload', 'documents.metadata.update',
+                'organization.orbat.view',
             ],
             'rto' => [
                 'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own',
@@ -178,6 +184,7 @@ final class TenantDefaultRoleDefinitions
                 'comms.email.send.orbat',
                 'comms.email.send.activity',
                 'comms.email.send.custom',
+                'organization.orbat.view',
             ],
             'probation' => [
                 'forum.view', 'forum.reply',
@@ -187,6 +194,7 @@ final class TenantDefaultRoleDefinitions
                 'documents.view', 'documents.download.standard', 'training.view',
                 'personnel.profile.view',
                 'operational.board.view',
+                'organization.orbat.view',
                 'dashboard.pins.manage',
                 'interteam.missions.respond',
                 'cooperation.missions.respond',

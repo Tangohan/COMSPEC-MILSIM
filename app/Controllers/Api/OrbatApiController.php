@@ -36,6 +36,9 @@ final class OrbatApiController
         }
 
         $gate = Gate::getInstance();
+        if (!$gate->allows('organization.orbat.view')) {
+            return Response::json(['success' => false, 'message' => 'Vous n’avez pas accès à l’organigramme.'], 403);
+        }
         $canBypass = $gate->allows('admin.organization') || $gate->allows('admin.access')
             || $gate->allows('organization.orbat.manage');
 

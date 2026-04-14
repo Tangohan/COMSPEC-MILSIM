@@ -34,6 +34,10 @@ final class PermissionImplication
             return true;
         }
 
+        if ($permission === 'organization.orbat.view' && in_array('organization.orbat.manage', $granted, true)) {
+            return true;
+        }
+
         if (in_array('admin.system', $granted, true)) {
             return true;
         }
@@ -167,6 +171,9 @@ final class PermissionImplication
             return true;
         }
         if (str_starts_with($permission, 'operational.board.')) {
+            return true;
+        }
+        if (str_starts_with($permission, 'organization.orbat.')) {
             return true;
         }
 
