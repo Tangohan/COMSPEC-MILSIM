@@ -94,11 +94,24 @@ if ($tenantName === '') {
 ?>
 <div class="mx-auto max-w-[1700px] space-y-4 pb-8">
     <?php if (!$boardSchemaReady): ?>
-        <div class="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-sm" role="alert">
-            <p class="font-bold">Tableau opérationnel : mise à jour de base requise</p>
-            <p class="mt-1">Les données de ce module ne sont pas encore installées sur ce serveur. Demandez à l’équipe qui gère l’hébergement d’exécuter la procédure d’initialisation de la base (incluant les migrations prévues dans le dépôt), puis rechargez cette page.</p>
+        <header class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6">
+            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">Pilotage</p>
+            <h1 class="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">Tableau opérationnel</h1>
+            <p class="mt-1 text-sm text-slate-600">Vue consolidée des permanences, informations et missions pour la période sélectionnée.</p>
+        </header>
+        <div class="rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50/40 to-white px-6 py-12 shadow-sm sm:px-10" role="status">
+            <div class="mx-auto max-w-xl text-center">
+                <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-900">Activation en attente</p>
+                <h2 class="mt-2 text-lg font-black tracking-tight text-slate-900 sm:text-xl">Ce module n’est pas encore disponible sur cet environnement</h2>
+                <p class="mt-4 text-sm leading-relaxed text-slate-600">
+                    Merci d’en informer la personne ou l’équipe qui administre l’hébergement du site : une étape d’installation prévue avec la version déployée doit encore être réalisée par cette équipe. Lorsque ce sera fait, actualisez cette page pour retrouver le tableau.
+                </p>
+                <button type="button" class="mt-8 inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2" onclick="location.reload()">
+                    Actualiser la page
+                </button>
+            </div>
         </div>
-    <?php endif; ?>
+    <?php else: ?>
     <header class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -313,8 +326,10 @@ if ($tenantName === '') {
             </div>
         </div>
     </section>
+    <?php endif; ?>
 </div>
 
+<?php if ($boardSchemaReady): ?>
 <script>
 (() => {
     const filters = document.querySelectorAll('[data-filter]');
@@ -383,3 +398,4 @@ if ($tenantName === '') {
 .board-mode-briefing .entry-card .entry-card-actions { display: none !important; }
 .board-mode-briefing .entry-card > h3 { margin-bottom: 0; }
 </style>
+<?php endif; ?>

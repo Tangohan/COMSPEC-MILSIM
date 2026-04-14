@@ -74,11 +74,26 @@ $renderBoardCard = static function (array $entry) use ($priorityClass, $priority
 ?>
 <div class="mx-auto max-w-[1700px] space-y-4 pb-8 px-4">
     <?php if (!$boardSchemaReady): ?>
-        <div class="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-sm" role="alert">
-            <p class="font-bold">Mur opérationnel indisponible</p>
-            <p class="mt-1">Les données ne sont pas encore installées sur ce serveur.</p>
+        <header class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">Diffusion</p>
+                <h1 class="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">Mur opérationnel</h1>
+                <p class="mt-1 text-sm text-slate-600">Synthèse à destination des membres autorisés.</p>
+            </div>
+        </header>
+        <div class="rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50/40 to-white px-6 py-12 shadow-sm sm:px-10" role="status">
+            <div class="mx-auto max-w-xl text-center">
+                <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-900">Indisponible pour le moment</p>
+                <h2 class="mt-2 text-lg font-black tracking-tight text-slate-900 sm:text-xl">Le mur opérationnel n’est pas encore activé ici</h2>
+                <p class="mt-4 text-sm leading-relaxed text-slate-600">
+                    L’équipe en charge de l’hébergement doit encore finaliser une étape d’installation prévue avec la version déployée. Revenez plus tard ou actualisez cette page après la mise en service.
+                </p>
+                <button type="button" class="mt-8 inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2" onclick="location.reload()">
+                    Actualiser la page
+                </button>
+            </div>
         </div>
-    <?php endif; ?>
+    <?php else: ?>
     <header class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -147,4 +162,5 @@ $renderBoardCard = static function (array $entry) use ($priorityClass, $priority
             } ?></div>
         </details>
     </div>
+    <?php endif; ?>
 </div>

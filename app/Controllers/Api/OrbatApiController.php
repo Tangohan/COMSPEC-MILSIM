@@ -72,6 +72,13 @@ final class OrbatApiController
             ],
             'structTypes' => $this->structTypeOptions(),
             'chartDisplayTypes' => $this->mergedChartDisplayTypes($tenantId),
+            'capabilities' => [
+                'mask_editing' => $this->unitRepository->hasTableColumn('units', 'orbat_mask_mode'),
+                'custom_chart_types' => $this->orbatChartTypeRepository->tableExists(),
+                'chart_media_upload' => $this->unitRepository->hasTableColumn('units', 'orbat_icon_path')
+                    && $this->unitRepository->hasTableColumn('units', 'orbat_image_path'),
+                'details_field' => $this->unitRepository->hasTableColumn('units', 'orbat_details'),
+            ],
         ]);
     }
 
@@ -91,7 +98,11 @@ final class OrbatApiController
             return Response::json(['success' => false, 'message' => 'Droits insuffisants'], 403);
         }
         if (!$this->orbatChartTypeRepository->tableExists()) {
-            return Response::json(['success' => false, 'message' => 'Fonctionnalité non disponible sur cette base.'], 503);
+            return Response::json([
+                'success' => false,
+                'code' => 'orbat_schema',
+                'message' => 'Les types d’affichage personnalisés ne sont pas encore disponibles sur cet environnement. L’équipe d’hébergement doit appliquer les mises à jour prévues avec la version déployée.',
+            ], 503);
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             return Response::json(['success' => false, 'message' => 'Session expirée, rechargez la page'], 403);
@@ -169,7 +180,11 @@ final class OrbatApiController
         }
         if (!$this->unitRepository->hasTableColumn('units', 'orbat_icon_path')
             || !$this->unitRepository->hasTableColumn('units', 'orbat_image_path')) {
-            return Response::json(['success' => false, 'message' => 'Fonctionnalité non disponible sur cette base.'], 503);
+            return Response::json([
+                'success' => false,
+                'code' => 'orbat_schema',
+                'message' => 'L’envoi d’icônes ou d’images pour les cartes n’est pas encore disponible ici. L’équipe d’hébergement doit appliquer les mises à jour prévues avec la version déployée.',
+            ], 503);
         }
 
         $slot = strtolower(trim((string) $request->input('slot', 'icon')));
@@ -396,7 +411,11 @@ final class OrbatApiController
     private function structureSetMask(Request $request, int $tenantId): Response
     {
         if (!$this->unitRepository->hasTableColumn('units', 'orbat_mask_mode')) {
-            return Response::json(['success' => false, 'message' => 'Fonctionnalité non disponible sur cette base.'], 503);
+            return Response::json([
+                'success' => false,
+                'code' => 'orbat_schema',
+                'message' => 'Les réglages de confidentialité sur l’organigramme ne sont pas encore disponibles ici. L’équipe d’hébergement doit appliquer les mises à jour prévues avec la version déployée.',
+            ], 503);
         }
 
         $unitId = (int) $request->input('unit_id', 0);

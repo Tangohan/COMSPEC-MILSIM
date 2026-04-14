@@ -252,12 +252,12 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
                             <label for="orbat-ed-mission" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Mission ou description courte</label>
                             <textarea id="orbat-ed-mission" rows="3" maxlength="8000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></textarea>
                         </div>
-                        <div>
+                        <div id="orbat-ed-details-block">
                             <label for="orbat-ed-details" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Détails complémentaires</label>
                             <p class="mb-2 text-[10px] text-slate-500 leading-snug">Informations de contexte affichées sur la fiche (repères, organisation interne, notes de pilotage).</p>
                             <textarea id="orbat-ed-details" rows="4" maxlength="16000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></textarea>
                         </div>
-                        <div class="rounded-xl border border-slate-200 bg-white p-3 space-y-3">
+                        <div id="orbat-chart-media-block" class="rounded-xl border border-slate-200 bg-white p-3 space-y-3">
                             <p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Visuels sur la carte</p>
                             <p class="text-[10px] text-slate-500 leading-snug">Icône (PNG, ICO, JPG) et image d’illustration (PNG, JPG), jusqu’à 2,5&nbsp;Mo.</p>
                             <div class="flex flex-wrap gap-3 items-end">
@@ -570,6 +570,19 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
         return arr;
     }
 
+    function applyOrbatCapabilities(j) {
+        if (!j || !j.capabilities) return;
+        var c = j.capabilities;
+        var maskBtn = document.querySelector('#orbat-ctx-menu [data-ctx="mask"]');
+        if (maskBtn) maskBtn.hidden = !c.mask_editing;
+        var btnCt = document.getElementById("orbat-btn-new-chart-type");
+        if (btnCt) btnCt.hidden = !c.custom_chart_types;
+        var mediaBlock = document.getElementById("orbat-chart-media-block");
+        if (mediaBlock) mediaBlock.hidden = !c.chart_media_upload;
+        var detailsBlock = document.getElementById("orbat-ed-details-block");
+        if (detailsBlock) detailsBlock.hidden = !c.details_field;
+    }
+
     async function ensureStructureOptions() {
         if (structureOptionsCache || !showOrbatEditTools) return structureOptionsCache;
         try {
@@ -577,6 +590,7 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
             var j = await res.json().catch(function() { return null; });
             if (res.ok && j && j.success) {
                 structureOptionsCache = j;
+                applyOrbatCapabilities(j);
             }
         } catch (e) {}
         return structureOptionsCache;
@@ -1009,6 +1023,10 @@ $orbatCommanderJson = json_encode($orbatCommanderOptions, JSON_HEX_TAG | JSON_HE
                     pendingMaskUnitId = uid;
                     closeCtxMenu();
                     ensureStructureOptions().then(function() {
+                        if (structureOptionsCache && structureOptionsCache.capabilities && !structureOptionsCache.capabilities.mask_editing) {
+                            alert("Les réglages de confidentialité sur l’organigramme ne sont pas encore disponibles sur cet environnement.");
+                            return;
+                        }
                         var sel = document.getElementById("orbat-mask-select");
                         if (!sel || !structureOptionsCache) return;
                         sel.innerHTML = "";

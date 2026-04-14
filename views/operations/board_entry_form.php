@@ -38,12 +38,22 @@ $entryTypes = [
 ?>
 <div class="mx-auto max-w-5xl space-y-6 pb-10 px-4">
     <?php if (!$boardSchemaReady): ?>
-        <div class="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="alert">
-            <p class="font-bold">Mise à jour de base requise</p>
-            <p class="mt-1">Le module n’est pas installé sur ce serveur.</p>
+        <div class="rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50/40 to-white px-6 py-10 shadow-sm sm:px-8" role="status">
+            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-900">Activation en attente</p>
+            <h2 class="mt-2 text-lg font-black tracking-tight text-slate-900 sm:text-xl">La saisie n’est pas disponible pour le moment</h2>
+            <p class="mt-4 text-sm leading-relaxed text-slate-600">
+                Le tableau opérationnel n’est pas encore activé sur cet environnement. Merci d’en informer la personne ou l’équipe qui administre l’hébergement du site : une étape d’installation prévue avec la version déployée doit encore être réalisée. Ensuite, actualisez cette page.
+            </p>
+            <div class="mt-8 flex flex-wrap items-center gap-3">
+                <button type="button" class="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2" onclick="location.reload()">
+                    Actualiser la page
+                </button>
+                <a href="<?= url('back-office/tableau-operationnel') ?>" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50">
+                    Retour au tableau
+                </a>
+            </div>
         </div>
-    <?php endif; ?>
-
+    <?php else: ?>
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
             <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">Tableau opérationnel</p>
@@ -342,9 +352,10 @@ $entryTypes = [
             <?php endif; ?>
         </div>
     </form>
+    <?php endif; ?>
 </div>
 
-<?php if ($isEdit): ?>
+<?php if ($boardSchemaReady && $isEdit): ?>
 <script>
 (() => {
     function addRow(containerId, templateHtml) {

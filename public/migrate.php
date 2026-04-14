@@ -1,11 +1,9 @@
 <?php
 
-/**
- * Point d'entrée web pour lancer les migrations (sans charger l'app).
- */
+declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+/**
+ * Point d’entrée web — même rendu que setup-database / run-migrations / appliquer-ce-qui-manque-en-base.
+ */
 
 require dirname(__DIR__) . '/migrate.php';
