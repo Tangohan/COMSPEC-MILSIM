@@ -147,7 +147,6 @@ use App\Controllers\Admin\Organization\ComplianceBundleExportController;
 use App\Controllers\Web\VerifyEmailController;
 use App\Controllers\Web\SecurityDeviceController;
 use App\Controllers\Web\OperationalBoardController;
-use App\Controllers\Web\HrCharterController;
 
 return function (Router $router) {
     $mwForum = [AuthMiddleware::class, ForumSanctionMiddleware::class];
