@@ -1,7 +1,8 @@
--- Découplage strict : tenants / modules / canaux de déploiement / communautés de test
+-- Découplage strict : produits déployables / canaux / communautés de test.
+-- Tables préfixées platform_* pour éviter tout conflit avec `modules` (parcours pédagogiques LMS, int unsigned).
 SET NAMES utf8mb4;
 
-CREATE TABLE IF NOT EXISTS `modules` (
+CREATE TABLE IF NOT EXISTS `platform_modules` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `code` varchar(120) NOT NULL,
   `name` varchar(180) NOT NULL,
@@ -10,11 +11,11 @@ CREATE TABLE IF NOT EXISTS `modules` (
   `is_public` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_modules_code` (`code`),
-  KEY `idx_modules_visibility` (`is_active`,`is_public`)
+  UNIQUE KEY `uniq_platform_modules_code` (`code`),
+  KEY `idx_platform_modules_visibility` (`is_active`,`is_public`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `module_versions` (
+CREATE TABLE IF NOT EXISTS `platform_module_versions` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `module_id` bigint unsigned NOT NULL,
   `version` varchar(80) NOT NULL,
@@ -26,10 +27,10 @@ CREATE TABLE IF NOT EXISTS `module_versions` (
   `created_by` int unsigned DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_module_version` (`module_id`,`version`),
-  KEY `idx_module_versions_status` (`module_id`,`status`,`created_at`),
-  CONSTRAINT `fk_module_versions_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_module_versions_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  UNIQUE KEY `uniq_platform_module_version` (`module_id`,`version`),
+  KEY `idx_platform_module_versions_status` (`module_id`,`status`,`created_at`),
+  CONSTRAINT `fk_platform_module_versions_module` FOREIGN KEY (`module_id`) REFERENCES `platform_modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_platform_module_versions_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `deployment_channels` (
@@ -42,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `deployment_channels` (
   KEY `idx_deployment_channels_priority` (`priority`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `module_channel_releases` (
+CREATE TABLE IF NOT EXISTS `platform_module_channel_releases` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `module_id` bigint unsigned NOT NULL,
   `module_version_id` bigint unsigned NOT NULL,
@@ -52,12 +53,12 @@ CREATE TABLE IF NOT EXISTS `module_channel_releases` (
   `deployed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `deployed_by` int unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_module_channel_current` (`module_id`,`channel_id`,`current_release_guard`),
-  KEY `idx_module_channel_releases_lookup` (`module_id`,`channel_id`,`deployed_at`),
-  CONSTRAINT `fk_module_channel_releases_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_module_channel_releases_version` FOREIGN KEY (`module_version_id`) REFERENCES `module_versions` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `fk_module_channel_releases_channel` FOREIGN KEY (`channel_id`) REFERENCES `deployment_channels` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `fk_module_channel_releases_by` FOREIGN KEY (`deployed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  UNIQUE KEY `uniq_platform_module_channel_current` (`module_id`,`channel_id`,`current_release_guard`),
+  KEY `idx_platform_module_channel_releases_lookup` (`module_id`,`channel_id`,`deployed_at`),
+  CONSTRAINT `fk_platform_mcr_module` FOREIGN KEY (`module_id`) REFERENCES `platform_modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_platform_mcr_version` FOREIGN KEY (`module_version_id`) REFERENCES `platform_module_versions` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_platform_mcr_channel` FOREIGN KEY (`channel_id`) REFERENCES `deployment_channels` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_platform_mcr_by` FOREIGN KEY (`deployed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `tester_communities` (
@@ -95,7 +96,7 @@ CREATE TABLE IF NOT EXISTS `tester_community_members` (
   CONSTRAINT `fk_tester_community_members_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `module_access_rules` (
+CREATE TABLE IF NOT EXISTS `platform_module_access_rules` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `module_id` bigint unsigned NOT NULL,
   `rule_type` enum('public','deny_all','allow_community','deny_community') NOT NULL,
@@ -106,14 +107,14 @@ CREATE TABLE IF NOT EXISTS `module_access_rules` (
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_module_access_rules_lookup` (`module_id`,`is_active`,`priority`),
-  CONSTRAINT `fk_module_access_rules_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_module_access_rules_community` FOREIGN KEY (`community_id`) REFERENCES `tester_communities` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_module_access_rules_version` FOREIGN KEY (`applies_to_version_id`) REFERENCES `module_versions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_module_access_rules_channel` FOREIGN KEY (`environment_channel_id`) REFERENCES `deployment_channels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `idx_platform_module_access_rules_lookup` (`module_id`,`is_active`,`priority`),
+  CONSTRAINT `fk_platform_mar_module` FOREIGN KEY (`module_id`) REFERENCES `platform_modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_platform_mar_community` FOREIGN KEY (`community_id`) REFERENCES `tester_communities` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_platform_mar_version` FOREIGN KEY (`applies_to_version_id`) REFERENCES `platform_module_versions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_platform_mar_channel` FOREIGN KEY (`environment_channel_id`) REFERENCES `deployment_channels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `feature_flags` (
+CREATE TABLE IF NOT EXISTS `platform_feature_flags` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `module_id` bigint unsigned NOT NULL,
   `code` varchar(120) NOT NULL,
@@ -122,11 +123,11 @@ CREATE TABLE IF NOT EXISTS `feature_flags` (
   `default_state` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_feature_flags_module_code` (`module_id`,`code`),
-  CONSTRAINT `fk_feature_flags_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  UNIQUE KEY `uniq_platform_feature_flags_module_code` (`module_id`,`code`),
+  CONSTRAINT `fk_platform_feature_flags_module` FOREIGN KEY (`module_id`) REFERENCES `platform_modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `feature_flag_rules` (
+CREATE TABLE IF NOT EXISTS `platform_feature_flag_rules` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `feature_flag_id` bigint unsigned NOT NULL,
   `rule_type` enum('allow_community','deny_community','allow_user','deny_user') NOT NULL,
@@ -136,10 +137,10 @@ CREATE TABLE IF NOT EXISTS `feature_flag_rules` (
   `priority` int NOT NULL DEFAULT 100,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
-  KEY `idx_feature_flag_rules_priority` (`feature_flag_id`,`priority`,`is_active`),
-  CONSTRAINT `fk_feature_flag_rules_flag` FOREIGN KEY (`feature_flag_id`) REFERENCES `feature_flags` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_feature_flag_rules_community` FOREIGN KEY (`community_id`) REFERENCES `tester_communities` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_feature_flag_rules_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `idx_platform_feature_flag_rules_priority` (`feature_flag_id`,`priority`,`is_active`),
+  CONSTRAINT `fk_platform_ffr_flag` FOREIGN KEY (`feature_flag_id`) REFERENCES `platform_feature_flags` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_platform_ffr_community` FOREIGN KEY (`community_id`) REFERENCES `tester_communities` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_platform_ffr_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `deployment_jobs` (
@@ -153,7 +154,7 @@ CREATE TABLE IF NOT EXISTS `deployment_jobs` (
   `log_path` varchar(500) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_deployment_jobs_status` (`status`,`target_channel_id`,`started_at`),
-  CONSTRAINT `fk_deployment_jobs_version` FOREIGN KEY (`module_version_id`) REFERENCES `module_versions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_deployment_jobs_version` FOREIGN KEY (`module_version_id`) REFERENCES `platform_module_versions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_deployment_jobs_channel` FOREIGN KEY (`target_channel_id`) REFERENCES `deployment_channels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_deployment_jobs_triggered_by` FOREIGN KEY (`triggered_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -179,9 +180,9 @@ CREATE TABLE IF NOT EXISTS `tester_feedback` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_tester_feedback_filters` (`module_id`,`module_version_id`,`community_id`,`severity`,`type`,`status`),
-  CONSTRAINT `fk_tester_feedback_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_tester_feedback_version` FOREIGN KEY (`module_version_id`) REFERENCES `module_versions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_tester_feedback_flag` FOREIGN KEY (`feature_flag_id`) REFERENCES `feature_flags` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_tester_feedback_module` FOREIGN KEY (`module_id`) REFERENCES `platform_modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_tester_feedback_version` FOREIGN KEY (`module_version_id`) REFERENCES `platform_module_versions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_tester_feedback_flag` FOREIGN KEY (`feature_flag_id`) REFERENCES `platform_feature_flags` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_tester_feedback_community` FOREIGN KEY (`community_id`) REFERENCES `tester_communities` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_tester_feedback_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

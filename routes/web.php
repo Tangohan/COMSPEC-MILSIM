@@ -12,6 +12,7 @@ use App\Controllers\Web\TrainingController;
 use App\Controllers\Web\TrainingCompetencyController;
 use App\Controllers\Web\AtakController;
 use App\Controllers\Web\AccountController;
+use App\Controllers\Web\HrCharterController;
 use App\Controllers\Web\ModpackController;
 use App\Controllers\Web\ForumController;
 use App\Controllers\Web\ForumCategoryController;
@@ -268,6 +269,8 @@ return function (Router $router) {
     $router->get('/account/recruitment-presets/{id}/edit', [AccountController::class, 'recruitmentPresetsEdit'], [AuthMiddleware::class]);
     $router->post('/account/recruitment-presets/{id}/edit', [AccountController::class, 'recruitmentPresetsEdit'], [AuthMiddleware::class]);
     $router->post('/account/recruitment-presets/{id}/delete', [AccountController::class, 'recruitmentPresetsDelete'], [AuthMiddleware::class]);
+    $router->get('/account/charte-formations', [HrCharterController::class, 'show'], [AuthMiddleware::class]);
+    $router->post('/account/charte-formations/accept', [HrCharterController::class, 'accept'], [AuthMiddleware::class]);
     $router->get('/personnel', [PersonnelController::class, 'personnelIndex'], [AuthMiddleware::class]);
     $router->get('/personnel/me', [PersonnelController::class, 'me'], [AuthMiddleware::class]);
     $router->get('/personnel/me/edit', [PersonnelController::class, 'edit'], [AuthMiddleware::class]);

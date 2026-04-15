@@ -162,6 +162,7 @@ $personnelModerationStaffLines = is_array($personnelModerationStaffLines ?? null
 $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_string($personnelModerationMemberBrief) && trim($personnelModerationMemberBrief) !== ''
     ? trim($personnelModerationMemberBrief)
     : null;
+$seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniorityLines : [];
 ?>
 <main class="min-h-screen pt-20 pb-24">
     <?php if ($personnelModerationStaffLines !== []): ?>
@@ -315,6 +316,12 @@ $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_s
                     <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($enlistmentFormatted) ?></p>
                 </div>
                 <?php endif; ?>
+                <?php foreach ($seniorityLines as $seniorityRow): ?>
+                <div>
+                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><?= htmlspecialchars((string) ($seniorityRow['label'] ?? 'Ancienneté')) ?></p>
+                    <p class="text-sm font-black text-slate-900"><?= htmlspecialchars((string) ($seniorityRow['formatted'] ?? '—')) ?></p>
+                </div>
+                <?php endforeach; ?>
             </div>
         </div>
     </section>

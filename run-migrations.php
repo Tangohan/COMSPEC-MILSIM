@@ -99,6 +99,7 @@ $bootstrapFiles = [
     'military_role_catalog_schema_migration.php',
     'moderation_granular_sanctions_migration.php',
     'seniority_engine_migration.php',
+    'hr_charter_lms_migration.php',
     'core_schema_extensions_migration.php',
 ];
 foreach ($bootstrapFiles as $bf) {
@@ -167,6 +168,7 @@ run_community_platform_migration($pdo);
 run_platform_unit_commander_migration($pdo);
 run_moderation_granular_sanctions_migration($pdo);
 run_seniority_engine_migration($pdo);
+run_hr_charter_lms_migration($pdo);
 run_production_import_gap_migrations($pdo, $root);
 run_rbac_three_layer_migration($pdo);
 run_user_roles_migration($pdo);
@@ -257,6 +259,53 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] competency_progression_framework : ' . $e->getMessage() . "\n";
 }
+
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'platform_modules'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Migration canaux de déploiement / communautés test (platform_modules, …)...\n";
+    $migrationFlush();
+    $platformReleasePath = $root . '/migrations/20260415000001_release_channels_and_tester_communities.sql';
+    if (is_file($platformReleasePath)) {
+        $sql = file_get_contents($platformReleasePath);
+        if ($sql !== false && $sql !== '') {
+            $sql = preg_replace('/--[^\r\n]*/s', '', $sql);
+            $sql = preg_replace('/SET NAMES utf8mb4;/', '', $sql);
+            $chunks = preg_split('/;\s*[\r\n]+/', trim($sql));
+            foreach ($chunks as $stmtSql) {
+                $stmtSql = trim($stmtSql);
+                if ($stmtSql !== '') {
+                    try {
+                        $pdo->exec($stmtSql . (str_ends_with($stmtSql, ';') ? '' : ';'));
+                    } catch (Throwable $e) {
+                        echo '  [ATTENTION] release_channels_tester_communities : ' . $e->getMessage() . "\n";
+                    }
+                }
+            }
+            echo "  [OK] release_channels_tester_communities\n";
+        }
+    } else {
+        echo "  [ATTENTION] Fichier absent : migrations/20260415000001_release_channels_and_tester_communities.sql\n";
+    }
+    require_once $root . '/bootstrap/platform_training_release_seed.php';
+    try {
+        run_platform_training_release_seed($pdo);
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] platform_training_release_seed : ' . $e->getMessage() . "\n";
+    }
+    $migrationFlush();
+}
+
+$stmtPm = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'platform_modules'");
+if ($stmtPm && $stmtPm->fetch()) {
+    require_once $root . '/bootstrap/platform_training_release_seed.php';
+    try {
+        run_platform_training_release_seed($pdo);
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] platform_training_release_seed : ' . $e->getMessage() . "\n";
+    }
+    $migrationFlush();
+}
+
 $usageAnalyticsMigrate = require $root . '/bootstrap/usage_analytics_migration.php';
 try {
     $usageAnalyticsMigrate($pdo);

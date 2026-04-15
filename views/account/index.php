@@ -156,14 +156,14 @@ $sections = [
     ],
     [
         'id' => 'compliance',
-        'kicker' => 'Conformité RH',
-        'title' => 'Charte & parcours LMS',
-        'intro' => 'Signez la charte d’utilisation RH et suivez les modules obligatoires liés aux accès SIRH.',
+        'kicker' => 'Formations',
+        'title' => 'Charte du catalogue pédagogique',
+        'intro' => 'Si votre communauté utilise les parcours de formation, une prise de connaissance peut être demandée avant l’accès au catalogue.',
         'tiles' => [
             [
-                'href' => url('rh/charte'),
-                'title' => 'Charte RH et conformité',
-                'desc' => 'Prise de connaissance annuelle, signature électronique et socle de formation obligatoire.',
+                'href' => url('account/charte-formations'),
+                'title' => 'Charte liée aux formations',
+                'desc' => 'Lire la charte publiée par votre communauté et confirmer votre prise en compte.',
                 'accent' => 'from-emerald-500 to-teal-700',
                 'ring' => 'group-hover:ring-emerald-500/25',
                 'icon' => '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2.25 2.25L15 9.75m6 2.25a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',

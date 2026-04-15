@@ -34,6 +34,7 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PlanningEntryRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Personnel\SenioritySummaryService;
 use App\Core\Gate;
 use App\Support\OrbatRosterPayload;
 
@@ -119,7 +120,8 @@ class PersonnelController
         private PersonnelJobRoleRepository $personnelJobRoleRepository,
         private PlanningEntryRepository $planningEntryRepository,
         private RoleRepository $roleRepository,
-        private TenantRepository $tenantRepository
+        private TenantRepository $tenantRepository,
+        private SenioritySummaryService $senioritySummaryService,
     ) {}
 
     /**
@@ -329,6 +331,10 @@ class PersonnelController
             || $gateInst->allows('admin.access')
             || $gateInst->allows('site.support');
 
+        $seniorityLines = ($isSelf || $canStaffView)
+            ? $this->senioritySummaryService->linesForPersonnelFile((int) $tenantId, $uid)
+            : [];
+
         return Response::view('layout.main', [
             'content' => 'personnel.file',
             'title' => 'Fiche personnel',
@@ -368,6 +374,7 @@ class PersonnelController
             'showMatriculePublic' => $showMatriculePublic,
             'personnelModerationStaffLines' => $personnelModerationStaffLines,
             'personnelModerationMemberBrief' => $personnelModerationMemberBrief,
+            'seniorityLines' => $seniorityLines,
         ]);
     }
 

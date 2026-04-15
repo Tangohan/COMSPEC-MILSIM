@@ -31,6 +31,18 @@ class Container
         return match ($id) {
             TenantRepository::class => new TenantRepository(),
             \App\Repositories\SubscriptionPlanRepository::class => new \App\Repositories\SubscriptionPlanRepository(),
+            \App\Repositories\PlatformModuleReleaseRepository::class => new \App\Repositories\PlatformModuleReleaseRepository(),
+            \App\Services\Platform\ModuleReleaseAccessResolver::class => new \App\Services\Platform\ModuleReleaseAccessResolver(),
+            \App\Services\Platform\PlatformFeatureDeploymentEvaluator::class => new \App\Services\Platform\PlatformFeatureDeploymentEvaluator(
+                self::get(\App\Repositories\PlatformModuleReleaseRepository::class),
+                self::get(\App\Services\Platform\ModuleReleaseAccessResolver::class),
+            ),
+            \App\Repositories\HrCharterRepository::class => new \App\Repositories\HrCharterRepository(),
+            \App\Repositories\SeniorityRepository::class => new \App\Repositories\SeniorityRepository(),
+            \App\Services\Personnel\SenioritySummaryService::class => new \App\Services\Personnel\SenioritySummaryService(
+                self::get(\App\Repositories\SeniorityRepository::class),
+                new \App\Services\Personnel\SeniorityEngine(),
+            ),
             \App\Services\Platform\FeatureGateService::class => new \App\Services\Platform\FeatureGateService(
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),
@@ -38,6 +50,7 @@ class Container
                 self::get(\App\Repositories\TenantUsageCounterRepository::class),
                 self::get(\App\Repositories\PlatformUsageRepository::class),
                 self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Services\Platform\PlatformFeatureDeploymentEvaluator::class),
             ),
             \App\Repositories\TenantUsageCounterRepository::class => new \App\Repositories\TenantUsageCounterRepository(),
             \App\Repositories\ReferralRepository::class => new \App\Repositories\ReferralRepository(),
@@ -315,6 +328,11 @@ class Container
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Services\Profile\UserUiPreferencesValidationService::class)
             ),
+            \App\Controllers\Web\HrCharterController::class => new \App\Controllers\Web\HrCharterController(
+                self::get(AuthService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Repositories\HrCharterRepository::class),
+            ),
             \App\Repositories\PersonnelJobRoleRepository::class => new \App\Repositories\PersonnelJobRoleRepository(),
             \App\Repositories\PlanningEntryRepository::class => new \App\Repositories\PlanningEntryRepository(),
             \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController::class => new \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController(
@@ -348,7 +366,8 @@ class Container
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Repositories\PlanningEntryRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
-                self::get(TenantRepository::class)
+                self::get(TenantRepository::class),
+                self::get(\App\Services\Personnel\SenioritySummaryService::class)
             ),
             \App\Repositories\PersonnelExtrasRepository::class => new \App\Repositories\PersonnelExtrasRepository(),
             \App\Repositories\PersonnelProfileRepository::class => new \App\Repositories\PersonnelProfileRepository(),
@@ -694,6 +713,7 @@ class Container
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Services\Analytics\AnalyticsEventService::class),
+                self::get(\App\Repositories\HrCharterRepository::class),
             ),
             \App\Controllers\Web\EquipmentController::class => new \App\Controllers\Web\EquipmentController(
                 self::get(\App\Repositories\EquipmentClassRepository::class),

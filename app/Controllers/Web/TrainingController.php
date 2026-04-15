@@ -30,6 +30,7 @@ use App\Services\Training\TrainingAuditService;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\HrCharterRepository;
 use App\Core\Csrf;
 use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
@@ -62,6 +63,7 @@ class TrainingController
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private UserRepository $userRepository,
         private AnalyticsEventService $analyticsEventService,
+        private HrCharterRepository $hrCharterRepository,
     ) {}
 
     /**
@@ -117,6 +119,28 @@ class TrainingController
         return false;
     }
 
+    private function responseIfHrCharterBlocking(Request $request, int $tenantId, ?int $userId): ?Response
+    {
+        if ($userId === null || $userId < 1) {
+            return null;
+        }
+        if (!$this->hrCharterRepository->schemaReady()) {
+            return null;
+        }
+        if (!$this->hrCharterRepository->userMustAcknowledgeBeforeTraining($tenantId, $userId)) {
+            return null;
+        }
+        $path = $request->path();
+        if ($path === '' || $path[0] !== '/') {
+            $path = '/formations';
+        }
+        if (str_starts_with($path, '//')) {
+            $path = '/formations';
+        }
+
+        return Response::redirect(url('account/charte-formations') . '?' . http_build_query(['redirect' => $path]));
+    }
+
     /** Catalogue des formations (nouveau LMS + legacy). */
     public function index(Request $request, array $params = []): Response
     {
@@ -133,6 +157,10 @@ class TrainingController
                 'feature' => 'training',
                 'planName' => 'standard',
             ]);
+        }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId ? (int) $userId : null);
+        if ($charterBlock !== null) {
+            return $charterBlock;
         }
         $category = $request->query('category');
         $search = $request->query('search');
@@ -225,6 +253,10 @@ class TrainingController
         if (!$tenantId || !$userId) {
             return Response::redirect(url('login'));
         }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, (int) $tenantId, (int) $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
         $enrollments = $this->enrollmentRepository->listByUserId((int) $userId, (int) $tenantId);
         $withProgress = [];
         foreach ($enrollments as $e) {
@@ -304,6 +336,10 @@ class TrainingController
                 'planName' => 'standard',
             ]);
         }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, (int) $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
 
         return Response::view('layout.main', [
             'title' => 'Trouver une formation par code',
@@ -321,6 +357,10 @@ class TrainingController
         $tenantId = (int) $tenantId;
         if (!$this->featureGate->allows($tenantId, 'training')) {
             return Response::redirect(url('formations'));
+        }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, (int) $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
         }
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée, réessayez.');
@@ -380,6 +420,10 @@ class TrainingController
             return Response::redirect(url('login'));
         }
         $tenantId = (int) $tenantId;
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId ? (int) $userId : null);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
         $slugOrId = $params['slug'] ?? $params['id'] ?? '';
         $course = $this->trainingService->getCourseBySlugOrId($tenantId, $slugOrId);
         if (!$course) {
@@ -724,6 +768,11 @@ class TrainingController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
+        $uidPost = Session::get('user_id');
+        $charterBlock = $this->responseIfHrCharterBlocking($request, (int) $tenantId, $uidPost ? (int) $uidPost : null);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
         $slug = trim((string) $request->input('course_slug', ''));
         $fn();
         if ($slug !== '') {
@@ -746,6 +795,10 @@ class TrainingController
             return Response::redirect(url('login'));
         }
         $tenantId = (int) $tenantId;
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId ? (int) $userId : null);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
         $slug = trim((string) ($params['slug'] ?? ''));
         if ($slug === '') {
             return Response::redirect(url('formations'));
@@ -821,6 +874,12 @@ class TrainingController
             return $this->course($request, $params);
         }
         if (training_legacy_enabled()) {
+            $legacyUid = Session::get('user_id');
+            $charterLegacy = $this->responseIfHrCharterBlocking($request, $tenantId, $legacyUid ? (int) $legacyUid : null);
+            if ($charterLegacy !== null) {
+                return $charterLegacy;
+            }
+
             return $this->show($request, $params);
         }
 
@@ -840,6 +899,10 @@ class TrainingController
         }
         $tenantId = (int) $tenantId;
         $userId = (int) $userId;
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
         $lessonId = (int) ($params['id'] ?? 0);
         $enrollmentId = (int) ($request->query('enrollment_id') ?? 0);
         if (!$lessonId || !$enrollmentId) {
@@ -952,6 +1015,10 @@ class TrainingController
         if (!$this->featureGate->allows($tenantId, 'training')) {
             return Response::redirect(url('formations'));
         }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
         $enrollmentId = (int) $request->query('enrollment_id', 0);
         $moduleId = (int) $request->query('module_id', 0);
         if ($enrollmentId < 1 || $moduleId < 1) {
@@ -1010,6 +1077,10 @@ class TrainingController
             Session::flash('error', 'Session expirée, réessayez.');
 
             return Response::redirect(url('formations/mes-formations'));
+        }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
         }
         $enrollmentId = (int) $request->input('enrollment_id', 0);
         $moduleId = (int) $request->input('module_id', 0);
@@ -1077,6 +1148,10 @@ class TrainingController
         if (!$this->featureGate->allows($tenantId, 'training')) {
             return Response::redirect(url('formations'));
         }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
         $quizId = (int) $request->input('quiz_id', 0);
         $enrollmentId = (int) $request->input('enrollment_id', 0);
         if (!$quizId || !$enrollmentId) {
@@ -1109,6 +1184,10 @@ class TrainingController
         }
         $tenantId = (int) $tenantId;
         $userId = (int) $userId;
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
         $attemptId = (int) ($params['id'] ?? 0);
         if ($attemptId < 1) {
             return Response::view('training.quiz_not_found', [])->setStatusCode(404);
@@ -1146,6 +1225,10 @@ class TrainingController
         $userId = Session::get('user_id');
         if (!$tenantId || !$userId) {
             return Response::redirect(url('login'));
+        }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, (int) $tenantId, (int) $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
         }
         $id = (int) ($params['id'] ?? 0);
         $cert = $this->certificateService->getById($id, (int) $tenantId);
@@ -1205,6 +1288,11 @@ class TrainingController
         $tenantId = Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
+        }
+        $legacyUid = Session::get('user_id');
+        $charterBlock = $this->responseIfHrCharterBlocking($request, (int) $tenantId, $legacyUid ? (int) $legacyUid : null);
+        if ($charterBlock !== null) {
+            return $charterBlock;
         }
         $slug = $params['slug'] ?? '';
         $module = $this->trainingRepository->findBySlug($slug, (int) $tenantId);
