@@ -223,6 +223,7 @@ return [
                     'links' => [
                         ['label' => 'Mon activité', 'path' => 'activite', 'description' => 'Fil personnel, rappels et raccourcis'],
                         ['label' => 'Ma fiche personnelle', 'path' => 'personnel/me'],
+                        ['label' => 'Espace RH & formations', 'path' => 'personnel/mon-espace-rh', 'description' => 'Charte, parcours, ancienneté et programmes de préqualification'],
                         ['label' => 'Guides dossier & préréglages', 'path' => 'personnel/tutorials', 'description' => 'ORBAT, forum, complétude, préréglages métier'],
                     ],
                 ],

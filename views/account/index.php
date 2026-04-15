@@ -136,6 +136,14 @@ $sections = [
                 'ring' => 'group-hover:ring-teal-500/25',
                 'icon' => '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>',
             ],
+            [
+                'href' => url('personnel/mon-espace-rh'),
+                'title' => 'Espace RH & formations',
+                'desc' => 'Formations, charte, ancienneté et programmes de préqualification éventuels.',
+                'accent' => 'from-emerald-500 to-cyan-700',
+                'ring' => 'group-hover:ring-emerald-500/25',
+                'icon' => '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-4.231 10.52c1.977 0 3.78-1.01 5.03-2.598a7.5 7.5 0 0 0-10.06 0c1.25 1.588 3.053 2.598 5.03 2.598Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg>',
+            ],
         ],
     ],
     [

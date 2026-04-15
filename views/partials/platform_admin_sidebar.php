@@ -45,6 +45,7 @@ $navSettings = $p === 'admin/settings';
 $navBlocklist = str_starts_with($p, 'admin/system/blocklist');
 $navSanctions = str_starts_with($p, 'admin/system/member-sanctions');
 $navBrief = str_starts_with($p, 'admin/system/brief');
+$navDeployment = str_starts_with($p, 'admin/system/deployment');
 $navAlerts = str_starts_with($p, 'admin/system/alerts');
 $alertsCreateActive = $p === 'admin/system/alerts/create';
 $alertsListActive = $navAlerts && !$alertsCreateActive;
@@ -77,6 +78,10 @@ $alertsOpen = $navAlerts;
             <?php $paSection('Configuration'); ?>
             <?php $paLink('admin/settings', 'Paramètres système', $navSettings); ?>
             <?php $paLink('admin/system/brief', 'Brief (accès membres)', $navBrief); ?>
+
+            <?php $paSection('Déploiement & préqualification'); ?>
+            <?php $paLink('admin/system/deployment', 'Publications & canaux', $navDeployment && !str_starts_with($p, 'admin/system/deployment/communities')); ?>
+            <?php $paLink('admin/system/deployment/communities', 'Communautés de test', str_starts_with($p, 'admin/system/deployment/communities')); ?>
 
             <div class="pa-submenu mt-2 px-1">
                 <details class="group rounded-lg border border-slate-800/80 bg-slate-900/40" <?= $alertsOpen ? 'open' : '' ?>>

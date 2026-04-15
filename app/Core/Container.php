@@ -333,6 +333,17 @@ class Container
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Repositories\HrCharterRepository::class),
             ),
+            \App\Controllers\Web\RhWorkspaceController::class => new \App\Controllers\Web\RhWorkspaceController(
+                self::get(AuthService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Repositories\HrCharterRepository::class),
+                self::get(\App\Services\Personnel\SenioritySummaryService::class),
+                self::get(\App\Repositories\PlatformModuleReleaseRepository::class),
+            ),
+            \App\Controllers\Admin\System\PlatformDeploymentAdminController::class => new \App\Controllers\Admin\System\PlatformDeploymentAdminController(
+                self::get(\App\Repositories\PlatformModuleReleaseRepository::class),
+                self::get(UserRepository::class),
+            ),
             \App\Repositories\PersonnelJobRoleRepository::class => new \App\Repositories\PersonnelJobRoleRepository(),
             \App\Repositories\PlanningEntryRepository::class => new \App\Repositories\PlanningEntryRepository(),
             \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController::class => new \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController(

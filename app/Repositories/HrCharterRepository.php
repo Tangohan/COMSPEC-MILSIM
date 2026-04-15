@@ -104,4 +104,28 @@ final class HrCharterRepository
         );
         $ins->execute([$tenantId, $title, $body]);
     }
+
+    /**
+     * Met à jour le document actif de la communauté (titre et corps).
+     */
+    public function updateActiveDocumentContent(int $tenantId, string $title, string $bodyHtml): bool
+    {
+        if (!$this->schemaReady() || $tenantId < 1 || trim($title) === '') {
+            return false;
+        }
+        $this->ensureSeedDocumentForTenant($tenantId);
+        $doc = $this->getActiveDocumentForTenant($tenantId);
+        if ($doc === null) {
+            return false;
+        }
+        $id = (int) ($doc['id'] ?? 0);
+        if ($id < 1) {
+            return false;
+        }
+        $st = $this->pdo()->prepare(
+            'UPDATE lms_hr_charter_documents SET title = ?, body_html = ?, published_at = NOW() WHERE id = ? AND tenant_id = ? AND is_active = 1'
+        );
+
+        return $st->execute([$title, $bodyHtml, $id, $tenantId]);
+    }
 }
