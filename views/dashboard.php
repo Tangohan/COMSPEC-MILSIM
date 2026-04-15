@@ -141,37 +141,71 @@ require base_path('views/partials/header_portal.php');
         updateOperationalClocks();
     </script>
     <?php if ($dashRibbonEntries !== []): ?>
-    <nav class="border-b border-slate-200/90 bg-gradient-to-b from-white to-slate-50/95 shadow-[0_1px_0_rgba(15,23,42,0.04)]" aria-label="Accès rapides du tableau de bord">
-        <div class="mx-auto max-w-[1800px] px-4 py-3 sm:px-6 lg:px-8">
-            <div class="mb-2 flex flex-wrap items-end justify-between gap-2">
-                <div>
-                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Sur cette page</p>
-                    <p class="text-sm font-semibold text-slate-900">Raccourcis vers vos modules</p>
-                </div>
-                <p class="max-w-md text-xs text-slate-500">Faites défiler horizontalement sur mobile pour voir toutes les entrées.</p>
+    <div id="dash-shortcuts-overlay" class="pointer-events-none fixed inset-0 z-[115] bg-slate-950/45 opacity-0 transition-opacity" aria-hidden="true"></div>
+    <aside id="dash-shortcuts-drawer" class="fixed inset-y-0 left-0 z-[120] flex w-[min(360px,calc(100vw-1.25rem))] -translate-x-full flex-col border-r border-slate-200/90 bg-slate-50 shadow-2xl transition-transform duration-300" aria-label="Raccourcis du tableau de bord" hidden>
+        <div class="flex items-center justify-between border-b border-slate-200/80 bg-white px-4 py-3">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Menu rapide</p>
+                <p class="text-sm font-semibold text-slate-900">Accès modules</p>
             </div>
-            <div class="relative -mx-1">
-                <div class="scrollbar-thin overflow-x-auto overscroll-x-contain px-1 pb-1">
-                    <ul class="flex w-max min-w-0 max-w-none flex-nowrap gap-2 md:flex-wrap md:gap-2.5">
-                <?php foreach ($dashRibbonEntries as $re): ?>
-                    <?php if (!is_array($re)) {
-                        continue;
-                    } ?>
-                    <li class="shrink-0">
-                        <a href="<?= htmlspecialchars((string) ($re['href'] ?? '#')) ?>"
-                           class="inline-flex max-w-[14rem] items-center truncate rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-sm ring-slate-900/5 transition hover:border-sky-300/80 hover:bg-sky-50/90 hover:text-sky-950 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"><?= htmlspecialchars((string) ($re['label'] ?? '')) ?></a>
-                    </li>
-                <?php endforeach; ?>
-                    </ul>
-                </div>
-            </div>
+            <button type="button" id="dash-shortcuts-close" class="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900" aria-label="Fermer le menu rapide">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
         </div>
-    </nav>
-    <style>
-        .scrollbar-thin { scrollbar-width: thin; scrollbar-color: rgb(203 213 225) transparent; }
-        .scrollbar-thin::-webkit-scrollbar { height: 6px; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgb(203 213 225); border-radius: 999px; }
-    </style>
+        <div class="border-b border-slate-200/80 bg-slate-50 px-4 py-3">
+            <p class="text-xs leading-relaxed text-slate-500">Navigation latérale dépliable alignée avec vos droits d’accès, comme sur la page d’accueil.</p>
+        </div>
+        <nav class="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-3">
+            <?php foreach ($dashRibbonEntries as $re): ?>
+                <?php if (!is_array($re)) { continue; } ?>
+                <a href="<?= htmlspecialchars((string) ($re['href'] ?? '#')) ?>" class="flex items-center rounded-xl border border-transparent bg-white/70 px-3 py-2.5 text-sm font-semibold text-slate-800 transition hover:border-emerald-200 hover:bg-white hover:text-emerald-900 hover:shadow-sm"><?= htmlspecialchars((string) ($re['label'] ?? '')) ?></a>
+            <?php endforeach; ?>
+        </nav>
+    </aside>
+
+    <section class="border-b border-slate-200/90 bg-gradient-to-b from-white to-slate-50/95" aria-label="Raccourcis du tableau de bord">
+        <div class="mx-auto flex max-w-[1800px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+            <div class="min-w-0">
+                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Navigation tableau de bord</p>
+                <p class="text-sm font-semibold text-slate-900">Menu latéral des modules</p>
+            </div>
+            <button type="button" id="dash-shortcuts-toggle" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.15em] text-slate-800 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500" aria-controls="dash-shortcuts-drawer" aria-expanded="false">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                Ouvrir le menu
+            </button>
+        </div>
+    </section>
+    <script>
+    (function () {
+        var drawer = document.getElementById('dash-shortcuts-drawer');
+        var overlay = document.getElementById('dash-shortcuts-overlay');
+        var toggle = document.getElementById('dash-shortcuts-toggle');
+        var closeBtn = document.getElementById('dash-shortcuts-close');
+        if (!drawer || !overlay || !toggle) return;
+        function setOpen(open) {
+            drawer.hidden = false;
+            requestAnimationFrame(function () {
+                drawer.classList.toggle('-translate-x-full', !open);
+                overlay.classList.toggle('opacity-0', !open);
+                overlay.classList.toggle('pointer-events-none', !open);
+                document.body.classList.toggle('overflow-hidden', open);
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+            if (!open) {
+                setTimeout(function () { drawer.hidden = true; }, 260);
+            }
+        }
+        toggle.addEventListener('click', function () {
+            var isOpen = toggle.getAttribute('aria-expanded') === 'true';
+            setOpen(!isOpen);
+        });
+        if (closeBtn) closeBtn.addEventListener('click', function () { setOpen(false); });
+        overlay.addEventListener('click', function () { setOpen(false); });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') setOpen(false);
+        });
+    })();
+    </script>
     <?php endif; ?>
 
     <main class="min-h-screen bg-[#f8fafc] text-slate-900">
@@ -220,66 +254,6 @@ require base_path('views/partials/header_portal.php');
         </section>
         <?php endif; ?>
 
-        <?php
-        $showFounderTrialBanner = $show_founder_trial_banner ?? false;
-        $founderTrialEndsAt = $founder_trial_ends_at ?? null;
-        $dashCtxCommunity = count($communityMemberships) > 0;
-        $dashCtxTrial = $showFounderTrialBanner && is_string($founderTrialEndsAt) && $founderTrialEndsAt !== '';
-        ?>
-        <?php if ($dashCtxCommunity || $dashCtxTrial): ?>
-        <section class="border-b border-slate-200/90 bg-gradient-to-b from-slate-50/95 to-white" aria-label="Contexte de session">
-            <div class="mx-auto max-w-5xl space-y-3 px-4 py-3 sm:px-8">
-                <?php if ($dashCtxCommunity): ?>
-                <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-[11px] leading-snug">
-                    <span class="shrink-0 text-[10px] font-black uppercase tracking-wider text-slate-500">Communauté</span>
-                    <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                        <?php foreach ($communityMemberships as $m): ?>
-                            <?php if ((int) $m['tenant_id'] === $currentTid): ?>
-                                <span class="rounded-lg bg-emerald-100 px-2.5 py-1 font-bold text-emerald-900"><?= htmlspecialchars(community_display_name($m)) ?></span>
-                            <?php else: ?>
-                                <form method="post" action="<?= url('community/switch') ?>" class="inline" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.setAttribute('aria-busy','true');b.textContent='Chargement…';}">
-                                    <?= \App\Core\Csrf::field() ?>
-                                    <input type="hidden" name="tenant_id" value="<?= (int) $m['tenant_id'] ?>">
-                                    <button type="submit" class="font-semibold text-slate-600 underline decoration-slate-300 underline-offset-2 hover:text-emerald-700"><?= htmlspecialchars(community_display_name($m)) ?></button>
-                                </form>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </div>
-                    <details class="dash-vers-details relative shrink-0">
-                        <summary class="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200/90 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/50 hover:text-emerald-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">
-                            <svg class="h-4 w-4 shrink-0 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-                            </svg>
-                            Vers
-                        </summary>
-                        <div class="absolute right-0 z-30 mt-1.5 min-w-[14rem] overflow-hidden rounded-xl border border-slate-200/90 bg-white py-1 shadow-lg shadow-slate-900/10 ring-1 ring-black/[0.03]" role="menu">
-                            <a href="<?= url('platform/invite-unit') ?>" class="block px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-emerald-800" role="menuitem">Inviter une unité</a>
-                            <a href="<?= url('communities/create') ?>" class="block border-t border-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-emerald-50/80 hover:text-emerald-900" role="menuitem">Nouvelle communauté</a>
-                        </div>
-                    </details>
-                </div>
-                <?php endif; ?>
-                <?php if ($dashCtxTrial): ?>
-                <div class="flex flex-col gap-3 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/95 via-white to-amber-50/40 p-4 shadow-sm sm:flex-row sm:items-center sm:gap-5 sm:p-5">
-                    <div class="flex shrink-0 items-center justify-center rounded-xl bg-amber-100/80 p-2.5 text-amber-900 ring-1 ring-amber-200/60 sm:p-3" aria-hidden="true">
-                        <svg class="h-7 w-7 sm:h-8 sm:w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-                        </svg>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-amber-900/90">Essai étendu</p>
-                        <p class="mt-1 text-sm leading-snug text-slate-700">
-                            En tant que fondateur, vous bénéficiez des fonctions avancées jusqu’au <strong class="font-bold text-slate-900"><?= htmlspecialchars(date('d/m/Y', strtotime($founderTrialEndsAt))) ?></strong>.
-                        </p>
-                    </div>
-                    <a href="<?= url('platform/upgrade') ?>" class="inline-flex shrink-0 items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80 sm:self-stretch sm:py-0 sm:min-h-[2.75rem]">
-                        Découvrir les offres
-                    </a>
-                </div>
-                <?php endif; ?>
-            </div>
-        </section>
-        <?php endif; ?>
 
         <?php
         $mission_briefing = $mission_briefing ?? null;
@@ -424,6 +398,68 @@ require base_path('views/partials/header_portal.php');
             if (btnShow) btnShow.addEventListener('click', function () { localStorage.removeItem(key); apply(); });
         })();
         </script>
+        <?php endif; ?>
+
+        <?php
+        $showFounderTrialBanner = $show_founder_trial_banner ?? false;
+        $founderTrialEndsAt = $founder_trial_ends_at ?? null;
+        $dashCtxCommunity = count($communityMemberships) > 0;
+        $dashCtxTrial = $showFounderTrialBanner && is_string($founderTrialEndsAt) && $founderTrialEndsAt !== '';
+        ?>
+        <?php if ($dashCtxCommunity || $dashCtxTrial): ?>
+        <section class="border-b border-slate-200/90 bg-gradient-to-b from-slate-50/95 to-white" aria-label="Contexte de session">
+            <div class="mx-auto max-w-5xl space-y-3 px-4 py-3 sm:px-8">
+                <?php if ($dashCtxCommunity): ?>
+                <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-[11px] leading-snug">
+                    <span class="shrink-0 text-[10px] font-black uppercase tracking-wider text-slate-500">Communauté</span>
+                    <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                        <?php foreach ($communityMemberships as $m): ?>
+                            <?php if ((int) $m['tenant_id'] === $currentTid): ?>
+                                <span class="rounded-lg bg-emerald-100 px-2.5 py-1 font-bold text-emerald-900"><?= htmlspecialchars(community_display_name($m)) ?></span>
+                            <?php else: ?>
+                                <form method="post" action="<?= url('community/switch') ?>" class="inline" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.setAttribute('aria-busy','true');b.textContent='Chargement…';}">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <input type="hidden" name="tenant_id" value="<?= (int) $m['tenant_id'] ?>">
+                                    <button type="submit" class="font-semibold text-slate-600 underline decoration-slate-300 underline-offset-2 hover:text-emerald-700"><?= htmlspecialchars(community_display_name($m)) ?></button>
+                                </form>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <details class="dash-vers-details relative shrink-0">
+                        <summary class="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200/90 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/50 hover:text-emerald-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">
+                            <svg class="h-4 w-4 shrink-0 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+                            </svg>
+                            Vers
+                        </summary>
+                        <div class="absolute right-0 z-30 mt-1.5 min-w-[14rem] overflow-hidden rounded-xl border border-slate-200/90 bg-white py-1 shadow-lg shadow-slate-900/10 ring-1 ring-black/[0.03]" role="menu">
+                            <a href="<?= url('platform/invite-unit') ?>" class="block px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-emerald-800" role="menuitem">Inviter une unité</a>
+                            <a href="<?= url('communities/create') ?>" class="block border-t border-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-emerald-50/80 hover:text-emerald-900" role="menuitem">Nouvelle communauté</a>
+                        </div>
+                    </details>
+                </div>
+                <?php endif; ?>
+                <?php if ($dashCtxTrial): ?>
+                <div class="relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-amber-300/80 bg-gradient-to-br from-amber-50 via-white to-orange-50/70 p-4 shadow-[0_16px_35px_-22px_rgba(180,83,9,0.45)] ring-1 ring-amber-200/40 sm:flex-row sm:items-center sm:gap-5 sm:p-5">
+                    <span class="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-amber-200/35 blur-2xl" aria-hidden="true"></span>
+                    <div class="flex shrink-0 items-center justify-center rounded-xl bg-amber-100/80 p-2.5 text-amber-900 ring-1 ring-amber-200/60 sm:p-3" aria-hidden="true">
+                        <svg class="h-7 w-7 sm:h-8 sm:w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                        </svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-amber-900">Essai étendu — Fondateur</p>
+                        <p class="mt-1 text-sm leading-snug text-slate-700">
+                            Votre accès premium est actif et débloque toutes les fonctionnalités avancées jusqu’au <strong class="font-bold text-slate-900"><?= htmlspecialchars(date('d/m/Y', strtotime($founderTrialEndsAt))) ?></strong>.
+                        </p>
+                    </div>
+                    <a href="<?= url('platform/upgrade') ?>" class="inline-flex shrink-0 items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80 sm:self-stretch sm:py-0 sm:min-h-[2.75rem]">
+                        Découvrir les offres
+                    </a>
+                </div>
+                <?php endif; ?>
+            </div>
+        </section>
         <?php endif; ?>
 
         <?php
