@@ -24,6 +24,7 @@ final class FeatureGateService
         private TenantUsageCounterRepository $counterRepository,
         private PlatformUsageRepository $usageRepository,
         private CommunityEventRepository $communityEventRepository,
+        private ?PlatformFeatureDeploymentEvaluator $deploymentEvaluator = null,
     ) {}
 
     /**
@@ -47,11 +48,12 @@ final class FeatureGateService
         if (!is_array($features)) {
             $features = [];
         }
-        if (!empty($features[$feature])) {
-            return true;
+        $base = !empty($features[$feature]) || $this->quotaConfigForFeature($plan, $feature) !== null;
+        if (!$base) {
+            return false;
         }
 
-        return $this->quotaConfigForFeature($plan, $feature) !== null;
+        return $this->applyDeploymentChannelGate($tenantId, $feature);
     }
 
     /**
@@ -76,11 +78,23 @@ final class FeatureGateService
             $features = [];
         }
 
-        if (!empty($features[$feature])) {
-            return true;
+        $allowed = !empty($features[$feature]) || $this->hasRemainingQuota($tenantId, $plan, $feature);
+        if (!$allowed) {
+            return false;
         }
 
-        return $this->hasRemainingQuota($tenantId, $plan, $feature);
+        return $this->applyDeploymentChannelGate($tenantId, $feature);
+    }
+
+    private function applyDeploymentChannelGate(int $tenantId, string $feature): bool
+    {
+        if ($this->deploymentEvaluator === null) {
+            return true;
+        }
+        $uidRaw = Session::get('user_id');
+        $uid = $uidRaw !== null && $uidRaw !== '' ? (int) $uidRaw : null;
+
+        return $this->deploymentEvaluator->isFeatureAccessibleInCurrentEnvironment($tenantId, $feature, $uid);
     }
 
     /**
