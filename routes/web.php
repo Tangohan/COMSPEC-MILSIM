@@ -146,6 +146,7 @@ use App\Controllers\Admin\Organization\ComplianceBundleExportController;
 use App\Controllers\Web\VerifyEmailController;
 use App\Controllers\Web\SecurityDeviceController;
 use App\Controllers\Web\OperationalBoardController;
+use App\Controllers\Web\HrCharterController;
 
 return function (Router $router) {
     $mwForum = [AuthMiddleware::class, ForumSanctionMiddleware::class];
@@ -249,6 +250,8 @@ return function (Router $router) {
     $router->post('/pointage/rsvp', [PointageController::class, 'rsvp'], [AuthMiddleware::class]);
     $router->post('/pointage/check-in', [PointageController::class, 'checkIn'], [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/rh/charte', [HrCharterController::class, 'show'], [AuthMiddleware::class]);
+    $router->post('/rh/charte/accepter', [HrCharterController::class, 'accept'], [AuthMiddleware::class]);
     $router->get('/account/preferences', [AccountController::class, 'preferences'], [AuthMiddleware::class]);
     $router->post('/account/preferences', [AccountController::class, 'preferences'], [AuthMiddleware::class]);
     $router->get('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);

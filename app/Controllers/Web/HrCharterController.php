@@ -46,7 +46,7 @@ final class HrCharterController
         $documentId = (int) ($doc['id'] ?? 0);
         $already = $this->hrCharterRepository->userHasAcceptedDocument($userId, $documentId);
         $redirectTo = trim((string) $request->query('redirect', ''));
-        if ($redirectTo !== '' && !str_starts_with($redirectTo, '/') && !str_starts_with($redirectTo, 'http')) {
+        if ($redirectTo !== '' && (!str_starts_with($redirectTo, '/') || str_starts_with($redirectTo, '//'))) {
             $redirectTo = '';
         }
 
@@ -92,7 +92,7 @@ final class HrCharterController
         $this->hrCharterRepository->recordAcceptance($tenantId, $userId, $docId, is_string($ip) ? $ip : null);
         Session::flash('success', 'Merci, votre prise en compte est enregistrée.');
         $next = trim((string) $request->input('redirect', ''));
-        if ($next !== '' && str_starts_with($next, '/')) {
+        if ($next !== '' && str_starts_with($next, '/') && !str_starts_with($next, '//')) {
             return Response::redirect($next);
         }
 
