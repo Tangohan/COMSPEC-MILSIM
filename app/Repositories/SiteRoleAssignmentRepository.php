@@ -109,4 +109,43 @@ final class SiteRoleAssignmentRepository
 
         return is_array($row) ? $row : null;
     }
+
+    /**
+     * @param list<string> $roleSlugs
+     * @return list<string>
+     */
+    public function listActiveEmailsByRoleSlugs(array $roleSlugs): array
+    {
+        $slugs = array_values(array_unique(array_filter(array_map(
+            static fn (mixed $v): string => strtolower(trim((string) $v)),
+            $roleSlugs
+        ), static fn (string $v): bool => $v !== '')));
+        if ($slugs === []) {
+            return [];
+        }
+
+        try {
+            $in = implode(',', array_fill(0, count($slugs), '?'));
+            $stmt = $this->pdo->prepare(
+                "SELECT DISTINCT sra.email_normalized
+                 FROM site_role_assignments sra
+                 INNER JOIN roles r ON r.id = sra.role_id AND r.tenant_id IS NULL AND r.role_layer = 'site'
+                 WHERE sra.revoked_at IS NULL
+                   AND r.slug IN ({$in})"
+            );
+            $stmt->execute($slugs);
+            $rows = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            $emails = [];
+            foreach ($rows as $email) {
+                $mail = strtolower(trim((string) $email));
+                if ($mail !== '' && filter_var($mail, FILTER_VALIDATE_EMAIL)) {
+                    $emails[] = $mail;
+                }
+            }
+
+            return array_values(array_unique($emails));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
 }

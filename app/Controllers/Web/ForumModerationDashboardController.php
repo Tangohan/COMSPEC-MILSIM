@@ -42,6 +42,20 @@ final class ForumModerationDashboardController
         }
 
         $handledReports = $this->reportRepository->listHandled($tenantId, 15);
+        $timelineIds = [];
+        foreach ($pendingReports as $row) {
+            $rid = (int) ($row['id'] ?? 0);
+            if ($rid > 0) {
+                $timelineIds[] = $rid;
+            }
+        }
+        foreach ($handledReports as $row) {
+            $rid = (int) ($row['id'] ?? 0);
+            if ($rid > 0) {
+                $timelineIds[] = $rid;
+            }
+        }
+        $reportTimelines = $this->reportRepository->timelineByReportIds($tenantId, $timelineIds, 8);
 
         $forumModerationLogsAvailable = $this->moderationLogRepository->tableExists();
         $forumModerationLogs = $forumModerationLogsAvailable
@@ -54,6 +68,7 @@ final class ForumModerationDashboardController
             'forumConfig' => forum_config_for_tenant($tenantId),
             'pendingReports' => $pendingReports,
             'handledReports' => $handledReports,
+            'reportTimelines' => $reportTimelines,
             'modScopeFilter' => $scopeFilter,
             'forumModerationLogs' => $forumModerationLogs,
             'forumModerationLogsAvailable' => $forumModerationLogsAvailable,

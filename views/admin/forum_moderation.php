@@ -9,6 +9,7 @@ $scopeFilter = $modScopeFilter ?? '';
 $pendingCount = count($pendingReports);
 $forumModerationLogs = $forumModerationLogs ?? [];
 $forumModerationLogsAvailable = $forumModerationLogsAvailable ?? false;
+$reportTimelines = is_array($reportTimelines ?? null) ? $reportTimelines : [];
 
 $reportTypeLabel = static function (?string $raw): string {
     $t = strtolower(trim((string) $raw));
@@ -29,6 +30,21 @@ $botActionMeta = static function (string $action): array {
         'flag' => ['label' => 'À revoir', 'class' => 'bg-amber-100 text-amber-950 ring-1 ring-amber-200/80'],
         'block', 'reject' => ['label' => 'Refusé', 'class' => 'bg-rose-100 text-rose-900 ring-1 ring-rose-200/80'],
         default => ['label' => $action !== '' ? $action : '—', 'class' => 'bg-slate-100 text-slate-800 ring-1 ring-slate-200/80'],
+    };
+};
+$followUpLabel = static function (?string $action): string {
+    $a = strtolower(trim((string) $action));
+    return match ($a) {
+        'request_correction' => 'Demande de correction',
+        'escalate_support' => 'Escalade assistance plateforme',
+        'watch_report' => 'Surveillance sans retrait',
+        'hide_post' => 'Message masqué',
+        'delete_post' => 'Message supprimé',
+        'lock_topic' => 'Sujet verrouillé',
+        'hide_topic' => 'Sujet masqué',
+        'sanction_warn' => 'Avertissement formel',
+        'close', '' => 'Clôture sans mesure',
+        default => $a,
     };
 };
 
@@ -216,6 +232,11 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
             if ($showWarnOption) {
                 ++$followUpExtraCount;
             }
+            $currentUserId = (int) (\App\Core\Session::get('user_id') ?? 0);
+            $assignedToId = (int) ($r['assigned_to'] ?? 0);
+            $isAssignedToMe = $assignedToId > 0 && $assignedToId === $currentUserId;
+            $isAssigned = $assignedToId > 0;
+            $timelineRows = $reportTimelines[(int) ($r['id'] ?? 0)] ?? [];
             ?>
             <li class="px-5 sm:px-6 py-6 sm:py-7 transition-colors hover:bg-slate-50/50">
               <article class="rounded-2xl border border-slate-200/80 bg-slate-50/30 sm:bg-white sm:border-slate-100 p-5 sm:p-6 shadow-sm">
@@ -256,12 +277,52 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
                       <span class="text-slate-300 hidden sm:inline" aria-hidden="true">·</span>
                       <span class="tabular-nums"><?= $r['created_at'] ? date('d/m/Y à H:i', strtotime((string) $r['created_at'])) : '' ?></span>
                     </div>
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                      <?php if ($isAssigned): ?>
+                        <span class="inline-flex rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-900">
+                          En cours : <?= htmlspecialchars((string) ($r['assigned_to_name'] ?? 'Modérateur'), ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                      <?php else: ?>
+                        <span class="inline-flex rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-semibold text-slate-600">Non attribué</span>
+                      <?php endif; ?>
+                      <?php if (!empty($r['assigned_at'])): ?>
+                        <span class="text-slate-500 tabular-nums">depuis <?= htmlspecialchars(date('d/m/Y H:i', strtotime((string) $r['assigned_at'])), ENT_QUOTES, 'UTF-8') ?></span>
+                      <?php endif; ?>
+                    </div>
                     <?php if ($topicId && !empty($r['topic_title'])): ?>
                       <p class="text-sm text-slate-600">
                         <span class="text-slate-400 font-medium">Sujet :</span>
                         <a href="<?= htmlspecialchars($baseUrl . '/forum/topic/' . $topicId, ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 hover:text-emerald-700 underline decoration-emerald-200 underline-offset-2"><?= htmlspecialchars((string) $r['topic_title'], ENT_QUOTES, 'UTF-8') ?></a>
                       </p>
                     <?php endif; ?>
+                    <div class="rounded-xl border border-slate-200/80 bg-white px-4 py-3">
+                      <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Timeline dossier</p>
+                      <?php if (empty($timelineRows)): ?>
+                        <p class="text-xs text-slate-500">Aucun événement pour l’instant.</p>
+                      <?php else: ?>
+                        <ul class="space-y-2">
+                          <?php foreach ($timelineRows as $evt): ?>
+                            <li class="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2">
+                              <div class="flex flex-wrap items-center gap-2 text-[11px]">
+                                <span class="font-semibold text-slate-700"><?= htmlspecialchars((string) ($evt['event_label'] ?? 'Événement'), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="text-slate-400">·</span>
+                                <span class="text-slate-500 tabular-nums"><?= !empty($evt['created_at']) ? htmlspecialchars(date('d/m/Y H:i', strtotime((string) $evt['created_at'])), ENT_QUOTES, 'UTF-8') : '—' ?></span>
+                                <span class="text-slate-400">·</span>
+                                <span class="text-slate-600"><?= htmlspecialchars((string) (($evt['actor_name'] ?? '') !== '' ? $evt['actor_name'] : 'Système'), ENT_QUOTES, 'UTF-8') ?></span>
+                              </div>
+                              <?php if (!empty($evt['event_detail'])): ?>
+                                <p class="mt-1 text-xs text-slate-600 leading-relaxed"><?= nl2br(htmlspecialchars((string) $evt['event_detail'], ENT_QUOTES, 'UTF-8')) ?></p>
+                              <?php endif; ?>
+                            </li>
+                          <?php endforeach; ?>
+                        </ul>
+                      <?php endif; ?>
+                      <form method="post" action="<?= htmlspecialchars($baseUrl . '/forum/report/' . (int) $r['id'] . '/comment', ENT_QUOTES, 'UTF-8') ?>" class="mt-3 space-y-2">
+                        <?= \App\Core\Csrf::field() ?>
+                        <textarea name="timeline_comment" rows="2" maxlength="1200" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none" placeholder="Ajouter un commentaire de traitement (visible dans la timeline)."></textarea>
+                        <button type="submit" class="inline-flex rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition-colors">Ajouter au dossier</button>
+                      </form>
+                    </div>
                   </div>
                   <div class="flex flex-col gap-4 shrink-0 lg:w-[min(100%,20rem)] lg:border-l lg:border-slate-100 lg:pl-6">
                     <div class="flex flex-col sm:flex-row lg:flex-col gap-2">
@@ -280,6 +341,20 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
                         </a>
                       <?php endif; ?>
                     </div>
+                    <div class="grid grid-cols-1 gap-2">
+                      <?php if (!$isAssigned || !$isAssignedToMe): ?>
+                        <form method="post" action="<?= htmlspecialchars($baseUrl . '/forum/report/' . (int) $r['id'] . '/claim', ENT_QUOTES, 'UTF-8') ?>">
+                          <?= \App\Core\Csrf::field() ?>
+                          <button type="submit" class="w-full rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-[11px] font-bold text-indigo-900 hover:bg-indigo-100 transition-colors">Prendre en charge</button>
+                        </form>
+                      <?php endif; ?>
+                      <?php if ($isAssignedToMe): ?>
+                        <form method="post" action="<?= htmlspecialchars($baseUrl . '/forum/report/' . (int) $r['id'] . '/unclaim', ENT_QUOTES, 'UTF-8') ?>">
+                          <?= \App\Core\Csrf::field() ?>
+                          <button type="submit" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition-colors">Relâcher</button>
+                        </form>
+                      <?php endif; ?>
+                    </div>
                     <form method="post" action="<?= htmlspecialchars($baseUrl . '/forum/report/' . (int) $r['id'] . '/handle', ENT_QUOTES, 'UTF-8') ?>" class="forum-mod-close-form space-y-4 rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm">
                       <?= \App\Core\Csrf::field() ?>
                       <?php if ($followUpExtraCount < 1): ?>
@@ -291,6 +366,9 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
                         <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2" for="follow-up-<?= (int) $r['id'] ?>">Mesure avant clôture</label>
                         <select name="follow_up" id="follow-up-<?= (int) $r['id'] ?>" class="forum-mod-follow-select w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm font-medium text-slate-800 shadow-inner focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 outline-none transition">
                           <option value="close">Clôturer sans autre mesure</option>
+                          <option value="request_correction">Demander une correction du contenu</option>
+                          <option value="escalate_support">Escalader vers l’assistance plateforme</option>
+                          <option value="watch_report">Laisser visible mais surveiller</option>
                           <?php if ($hasPost && $canForumContentMod): ?>
                             <option value="hide_post">Masquer le message signalé</option>
                           <?php endif; ?>
@@ -307,8 +385,8 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
                         </select>
                       </div>
                       <div class="forum-mod-note-field hidden rounded-lg border border-dashed border-violet-200 bg-violet-50/40 p-3">
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-violet-800 mb-1.5" for="mod-note-<?= (int) $r['id'] ?>">Précision pour le dossier membre (optionnel)</label>
-                        <textarea name="moderator_note" id="mod-note-<?= (int) $r['id'] ?>" rows="2" maxlength="500" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none" placeholder="Sera joint à l’avertissement enregistré."></textarea>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-violet-800 mb-1.5" for="mod-note-<?= (int) $r['id'] ?>">Précision de mesure (optionnel)</label>
+                        <textarea name="moderator_note" id="mod-note-<?= (int) $r['id'] ?>" rows="2" maxlength="500" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none" placeholder="Note interne ajoutée à la timeline du dossier."></textarea>
                       </div>
                       <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-rose-600 to-rose-700 px-4 py-3 text-xs font-bold text-white shadow-md shadow-rose-600/25 hover:from-rose-500 hover:to-rose-600 transition-colors">
                         <svg class="h-4 w-4 opacity-90 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
@@ -339,11 +417,20 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
       <?php else: ?>
         <ul class="divide-y divide-slate-100 bg-white">
           <?php foreach ($handledReports as $r): ?>
+            <?php $handledTimeline = $reportTimelines[(int) ($r['id'] ?? 0)] ?? []; ?>
             <li class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 hover:bg-slate-50/60 transition-colors">
               <div class="shrink-0">
                 <span class="inline-flex rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500 tabular-nums">#<?= (int) $r['id'] ?></span>
               </div>
-              <p class="min-w-0 flex-1 text-sm text-slate-700 line-clamp-2 leading-relaxed"><?= htmlspecialchars(mb_substr((string) ($r['reason'] ?? ''), 0, 200), ENT_QUOTES, 'UTF-8') ?><?= mb_strlen((string) ($r['reason'] ?? '')) > 200 ? '…' : '' ?></p>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm text-slate-700 line-clamp-2 leading-relaxed"><?= htmlspecialchars(mb_substr((string) ($r['reason'] ?? ''), 0, 200), ENT_QUOTES, 'UTF-8') ?><?= mb_strlen((string) ($r['reason'] ?? '')) > 200 ? '…' : '' ?></p>
+                <?php if (!empty($r['last_follow_up_action'])): ?>
+                  <p class="mt-1 text-xs text-slate-500">Mesure appliquée : <span class="font-semibold text-slate-700"><?= htmlspecialchars($followUpLabel((string) $r['last_follow_up_action']), ENT_QUOTES, 'UTF-8') ?></span></p>
+                <?php endif; ?>
+                <?php if (!empty($handledTimeline)): ?>
+                  <p class="mt-1 text-xs text-slate-500">Dernier événement : <?= htmlspecialchars((string) ($handledTimeline[0]['event_label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endif; ?>
+              </div>
               <div class="shrink-0 text-xs text-slate-500 sm:text-right sm:min-w-[10rem]">
                 <p class="font-semibold text-slate-700"><?= htmlspecialchars((string) ($r['handled_by_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
                 <p class="tabular-nums mt-0.5"><?= !empty($r['handled_at']) ? date('d/m/Y H:i', strtotime((string) $r['handled_at'])) : '' ?></p>
@@ -516,7 +603,8 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
     var note = f.querySelector('.forum-mod-note-field');
     function syncNote() {
       if (!sel || !note) return;
-      note.classList.toggle('hidden', sel.value !== 'sanction_warn');
+      var withNote = ['sanction_warn', 'request_correction', 'escalate_support', 'watch_report'];
+      note.classList.toggle('hidden', withNote.indexOf(sel.value) === -1);
     }
     if (sel) sel.addEventListener('change', syncNote);
     syncNote();

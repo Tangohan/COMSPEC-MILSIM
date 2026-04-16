@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Community;
 
 use App\Repositories\ForumNotificationRepository;
+use App\Repositories\SiteRoleAssignmentRepository;
 use App\Repositories\TenantCommunityFeedRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
@@ -24,6 +25,7 @@ final class CommunityReportNotificationService
         private ForumNotificationRepository $forumNotificationRepository,
         private TenantCommunityFeedRepository $tenantCommunityFeedRepository,
         private TenantRepository $tenantRepository,
+        private SiteRoleAssignmentRepository $siteRoleAssignmentRepository,
     ) {}
 
     public function notifyReportCreated(
@@ -86,6 +88,32 @@ final class CommunityReportNotificationService
                 $this->emailService->sendCommunityReportNewStaff(
                     $modEmail,
                     $modName,
+                    $tenantName,
+                    $summary,
+                    $reportId,
+                    $tenantId
+                );
+            } catch (\Throwable) {
+            }
+        }
+
+        $siteRoleEmails = $this->siteRoleAssignmentRepository->listActiveEmailsByRoleSlugs([
+            'site_super_admin',
+            'site_senior_moderator',
+            'site_moderator',
+            'site_report_supervisor',
+            'site_report_operator',
+            'site_support',
+        ]);
+        foreach ($siteRoleEmails as $email) {
+            if ($reporterEmail !== '' && strcasecmp($reporterEmail, $email) === 0) {
+                continue;
+            }
+            $display = $this->displayNameFromEmail($email);
+            try {
+                $this->emailService->sendCommunityReportNewStaff(
+                    $email,
+                    $display,
                     $tenantName,
                     $summary,
                     $reportId,
@@ -164,5 +192,24 @@ final class CommunityReportNotificationService
         }
 
         return substr($text, 0, $max - 1) . '…';
+    }
+
+    private function displayNameFromEmail(string $email): string
+    {
+        $local = trim((string) strstr($email, '@', true));
+        if ($local === '') {
+            return 'Équipe modération';
+        }
+        $clean = str_replace(['.', '_', '-'], ' ', $local);
+        $clean = preg_replace('/\s+/u', ' ', $clean) ?? $clean;
+        $clean = trim($clean);
+        if ($clean === '') {
+            return 'Équipe modération';
+        }
+        if (function_exists('mb_convert_case')) {
+            return mb_convert_case($clean, MB_CASE_TITLE, 'UTF-8');
+        }
+
+        return ucwords($clean);
     }
 }
