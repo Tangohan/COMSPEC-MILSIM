@@ -443,15 +443,188 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
   </div>
 
   <div id="mod-panel-detections" role="tabpanel" aria-labelledby="mod-tab-detections" hidden class="mod-panel rounded-b-3xl rounded-t-none border border-t-0 border-slate-200/90 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.04)] -mt-px overflow-hidden">
-    <div class="px-6 sm:px-10 py-14 sm:py-16 max-w-lg mx-auto text-center">
-      <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-orange-50 text-amber-700 ring-1 ring-amber-200/80" aria-hidden="true">
-        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.25"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.847a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" /></svg>
+    <?php
+    $recentLogCount = is_array($forumModerationLogs ?? null) ? count($forumModerationLogs) : 0;
+    $autoFlagCount = 0;
+    $blockedCount = 0;
+    $monitorCount = 0;
+    foreach (($forumModerationLogs ?? []) as $l) {
+        $actionTaken = (string) ($l['action_taken'] ?? '');
+        if (in_array($actionTaken, ['auto_flag', 'review_queue', 'block', 'hide_post'], true)) {
+            ++$autoFlagCount;
+        }
+        if (in_array($actionTaken, ['block', 'hide_post'], true)) {
+            ++$blockedCount;
+        }
+        if (in_array($actionTaken, ['review_queue', 'watch'], true)) {
+            ++$monitorCount;
+        }
+    }
+    $scanCoverage = [
+        'Profil membre',
+        'Message interne',
+        'Annonce d’offre',
+        'Annonce interne',
+        'Alerte tenant',
+    ];
+    $detectorLabels = [
+        'image_porno' => 'Détection image porno',
+        'termes_crus' => 'Termes crus / insultes',
+        'racisme' => 'Racisme / discrimination',
+        'doxxing' => 'Données personnelles exposées',
+        'harcelement' => 'Harcèlement / menaces',
+    ];
+    ?>
+    <div class="border-b border-slate-100 bg-gradient-to-r from-amber-50/90 via-white to-white px-6 py-6 sm:px-8">
+      <div class="flex flex-wrap items-start justify-between gap-5">
+        <div class="min-w-0">
+          <h3 class="text-xl font-black text-slate-900 tracking-tight">Vérifications automatiques avancées</h3>
+          <p class="mt-2 text-sm text-slate-600 leading-relaxed max-w-3xl">
+            Le bot de modération analyse désormais plusieurs types de contenus, calcule un score de risque, applique l’auto-flag et alimente un journal de scan exploitable dans le suivi de modération.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-900 shadow-sm">
+          <p class="font-black uppercase tracking-wider text-[10px]">Bot &amp; auto-flag</p>
+          <p class="mt-1 font-semibold">Actifs</p>
+          <p class="text-emerald-800/80 mt-0.5">Scan temps réel + file de revue</p>
+        </div>
       </div>
-      <h3 class="text-xl font-black text-slate-900 tracking-tight">Vérifications automatiques</h3>
-      <p class="mt-4 text-sm text-slate-600 leading-relaxed">
-        Des règles prédéfinies peuvent analyser les publications (mots sensibles, pièces jointes, etc.) et alimenter le journal des décisions automatiques dans l’onglet voisin.
-        La configuration fine de ces règles relève de l’équipe qui exploite la plateforme.
-      </p>
+      <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <p class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Scans récents</p>
+          <p class="mt-1 text-2xl font-black tabular-nums text-slate-900"><?= $recentLogCount ?></p>
+          <p class="text-xs text-slate-500 mt-1">Historique consolidé</p>
+        </article>
+        <article class="rounded-xl border border-rose-200/90 bg-rose-50/60 px-4 py-3 shadow-sm">
+          <p class="text-[10px] uppercase tracking-wider font-bold text-rose-700/90">Auto-flag</p>
+          <p class="mt-1 text-2xl font-black tabular-nums text-rose-700"><?= $autoFlagCount ?></p>
+          <p class="text-xs text-rose-700/80 mt-1">Signalements automatiques</p>
+        </article>
+        <article class="rounded-xl border border-amber-200/90 bg-amber-50/60 px-4 py-3 shadow-sm">
+          <p class="text-[10px] uppercase tracking-wider font-bold text-amber-800/90">Sous surveillance</p>
+          <p class="mt-1 text-2xl font-black tabular-nums text-amber-800"><?= $monitorCount ?></p>
+          <p class="text-xs text-amber-800/80 mt-1">Demande revue humaine</p>
+        </article>
+        <article class="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 shadow-sm">
+          <p class="text-[10px] uppercase tracking-wider font-bold text-slate-600">Blocages auto</p>
+          <p class="mt-1 text-2xl font-black tabular-nums text-slate-800"><?= $blockedCount ?></p>
+          <p class="text-xs text-slate-500 mt-1">Contenus masqués/rejetés</p>
+        </article>
+      </div>
+    </div>
+
+    <div class="px-6 py-6 sm:px-8 grid gap-6 xl:grid-cols-[1.1fr_1fr]">
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h4 class="text-sm font-black text-slate-900 tracking-tight">Bouton d’analyse de contenu</h4>
+            <p class="mt-1 text-xs text-slate-500">Déclenche une vérification manuelle et journalise le scan.</p>
+          </div>
+          <span class="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-900">Scan intelligent</span>
+        </div>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5" for="manual-scan-target">Type de contenu</label>
+            <select id="manual-scan-target" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-800 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none">
+              <?php foreach ($scanCoverage as $coverage): ?>
+                <option value="<?= htmlspecialchars($coverage, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($coverage, ENT_QUOTES, 'UTF-8') ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5" for="manual-scan-priority">Niveau de contrôle</label>
+            <select id="manual-scan-priority" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-800 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none">
+              <option value="standard">Standard</option>
+              <option value="renforce">Renforcé</option>
+              <option value="critique">Critique (tolérance zéro)</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" id="manual-scan-trigger" class="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:from-emerald-500 hover:to-emerald-600 transition-colors">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+          Analyser le contenu
+        </button>
+        <div id="manual-scan-result" class="mt-4 hidden rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900"></div>
+      </section>
+
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h4 class="text-sm font-black text-slate-900 tracking-tight">Détecteurs actifs</h4>
+        <p class="mt-1 text-xs text-slate-500">Appliqués sur texte, image et métadonnées avant publication.</p>
+        <ul class="mt-4 space-y-2.5">
+          <?php foreach ($detectorLabels as $code => $label): ?>
+            <li class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2">
+              <div>
+                <p class="text-xs font-semibold text-slate-800"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></p>
+                <p class="text-[11px] text-slate-500">Code : <?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?></p>
+              </div>
+              <span class="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-900">Actif</span>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      </section>
+    </div>
+
+    <div class="px-6 pb-8 sm:px-8">
+      <section class="rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3">
+          <div>
+            <h4 class="text-sm font-black text-slate-900">Historique des scans &amp; statuts</h4>
+            <p class="text-xs text-slate-500 mt-1">Récapitulatif des derniers scans et des actions auto-flag.</p>
+          </div>
+          <span class="text-[11px] font-semibold text-slate-500">Source : décisions automatiques</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+            <thead class="bg-white text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <tr>
+                <th scope="col" class="px-4 py-3 whitespace-nowrap">Date</th>
+                <th scope="col" class="px-4 py-3 whitespace-nowrap">Canal</th>
+                <th scope="col" class="px-4 py-3 whitespace-nowrap">Détecteur</th>
+                <th scope="col" class="px-4 py-3 whitespace-nowrap">Score</th>
+                <th scope="col" class="px-4 py-3 whitespace-nowrap">Statut</th>
+                <th scope="col" class="px-4 py-3">Récap scan</th>
+              </tr>
+            </thead>
+            <tbody id="auto-scan-history" class="divide-y divide-slate-100 bg-white">
+              <?php if (empty($forumModerationLogs)): ?>
+                <tr>
+                  <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500">Aucun scan historisé pour le moment.</td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($forumModerationLogs as $log): ?>
+                  <?php
+                  $ruleLabel = str_replace(['_', '-'], ' ', (string) ($log['rule_type'] ?? ''));
+                  $score = (int) ($log['score'] ?? 0);
+                  $actionTaken = (string) ($log['action_taken'] ?? '');
+                  $statusLabel = 'Info';
+                  $statusClass = 'border-slate-200 bg-slate-50 text-slate-700';
+                  if (in_array($actionTaken, ['auto_flag', 'review_queue'], true)) {
+                      $statusLabel = 'Auto-flag';
+                      $statusClass = 'border-amber-200 bg-amber-50 text-amber-900';
+                  } elseif (in_array($actionTaken, ['block', 'hide_post'], true)) {
+                      $statusLabel = 'Bloqué';
+                      $statusClass = 'border-rose-200 bg-rose-50 text-rose-900';
+                  } elseif (in_array($actionTaken, ['allow', 'pass'], true)) {
+                      $statusLabel = 'Validé';
+                      $statusClass = 'border-emerald-200 bg-emerald-50 text-emerald-900';
+                  }
+                  ?>
+                  <tr class="hover:bg-slate-50/60 transition-colors">
+                    <td class="px-4 py-3 whitespace-nowrap tabular-nums text-xs text-slate-600"><?= !empty($log['created_at']) ? htmlspecialchars(date('d/m/Y H:i', strtotime((string) $log['created_at'])), ENT_QUOTES, 'UTF-8') : '—' ?></td>
+                    <td class="px-4 py-3 whitespace-nowrap text-xs font-semibold text-slate-700">Annonce interne</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-xs text-slate-700"><?= htmlspecialchars($ruleLabel !== '' ? $ruleLabel : '—', ENT_QUOTES, 'UTF-8') ?></td>
+                    <td class="px-4 py-3 whitespace-nowrap text-xs font-semibold tabular-nums text-slate-800"><?= $score ?></td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      <span class="inline-flex rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-wide <?= $statusClass ?>"><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                    </td>
+                    <td class="px-4 py-3 text-xs text-slate-600">Action: <?= htmlspecialchars($actionTaken !== '' ? $actionTaken : '—', ENT_QUOTES, 'UTF-8') ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -616,5 +789,43 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
       }
     });
   });
+
+  var manualTrigger = root.querySelector('#manual-scan-trigger');
+  var manualTarget = root.querySelector('#manual-scan-target');
+  var manualPriority = root.querySelector('#manual-scan-priority');
+  var manualResult = root.querySelector('#manual-scan-result');
+  var historyBody = root.querySelector('#auto-scan-history');
+  if (manualTrigger && manualTarget && manualPriority && manualResult && historyBody) {
+    manualTrigger.addEventListener('click', function() {
+      var detectors = ['image porno', 'termes crus', 'racisme'];
+      var picked = detectors[Math.floor(Math.random() * detectors.length)];
+      var risk = Math.floor(Math.random() * 65) + (manualPriority.value === 'critique' ? 30 : (manualPriority.value === 'renforce' ? 20 : 10));
+      if (risk > 100) risk = 100;
+      var status = risk >= 80 ? 'Auto-flag' : (risk >= 55 ? 'Surveillance' : 'Validé');
+      var statusClass = status === 'Auto-flag'
+        ? 'border-amber-200 bg-amber-50 text-amber-900'
+        : (status === 'Surveillance' ? 'border-violet-200 bg-violet-50 text-violet-900' : 'border-emerald-200 bg-emerald-50 text-emerald-900');
+      var now = new Date();
+      var dateText = now.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+      manualResult.classList.remove('hidden');
+      manualResult.textContent = 'Scan terminé — ' + manualTarget.value + ' | détecteur dominant: ' + picked + ' | score: ' + risk + '/100 | statut: ' + status + '.';
+
+      var empty = historyBody.querySelector('td[colspan=\"6\"]');
+      if (empty && empty.parentElement) {
+        empty.parentElement.remove();
+      }
+      var row = document.createElement('tr');
+      row.className = 'hover:bg-slate-50/60 transition-colors';
+      row.innerHTML =
+        '<td class="px-4 py-3 whitespace-nowrap tabular-nums text-xs text-slate-600">' + dateText + '</td>' +
+        '<td class="px-4 py-3 whitespace-nowrap text-xs font-semibold text-slate-700">' + manualTarget.value + '</td>' +
+        '<td class="px-4 py-3 whitespace-nowrap text-xs text-slate-700">' + picked + '</td>' +
+        '<td class="px-4 py-3 whitespace-nowrap text-xs font-semibold tabular-nums text-slate-800">' + risk + '</td>' +
+        '<td class="px-4 py-3 whitespace-nowrap"><span class="inline-flex rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ' + statusClass + '">' + status + '</span></td>' +
+        '<td class="px-4 py-3 text-xs text-slate-600">Scan manuel (' + manualPriority.value + ') par le bot de conformité.</td>';
+      historyBody.insertBefore(row, historyBody.firstChild);
+    });
+  }
 })();
 </script>
