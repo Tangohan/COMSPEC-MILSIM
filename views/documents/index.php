@@ -80,7 +80,7 @@ $baseUrlList = url('documents');
                 </div>
             </div>
 
-            <form method="get" action="<?= htmlspecialchars($baseUrlList) ?>" class="px-6 py-6 md:px-8 md:py-8">
+            <form method="get" action="<?= htmlspecialchars($baseUrlList) ?>" class="px-6 py-6 md:px-8 md:py-8" id="doc-filter-form" data-doc-catalog-form>
                 <?php if ($entity_type !== null && $entity_type !== '' && $entity_id !== null): ?>
                 <input type="hidden" name="entity_type" value="<?= htmlspecialchars((string) $entity_type) ?>">
                 <input type="hidden" name="entity_id" value="<?= (int) $entity_id ?>">
@@ -183,16 +183,36 @@ $baseUrlList = url('documents');
                 </div>
             </div>
 
+            <div id="doc-catalog-skeleton" class="hidden p-6 md:p-8" aria-hidden="true">
+                <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <?php for ($__i = 0; $__i < 8; $__i++): ?>
+                    <div class="animate-pulse rounded-3xl border border-slate-100 bg-slate-50 p-5">
+                        <div class="h-12 w-12 rounded-2xl bg-slate-200"></div>
+                        <div class="mt-4 h-4 max-w-[85%] rounded bg-slate-200"></div>
+                        <div class="mt-3 h-3 w-full rounded bg-slate-200"></div>
+                        <div class="mt-2 h-3 max-w-[66%] rounded bg-slate-200"></div>
+                        <div class="mt-6 flex gap-2">
+                            <div class="h-9 flex-1 rounded-xl bg-slate-200"></div>
+                            <div class="h-9 flex-1 rounded-xl bg-slate-200"></div>
+                        </div>
+                    </div>
+                    <?php endfor; ?>
+                </div>
+                <p class="mt-6 text-center text-xs font-medium text-slate-500">Mise à jour du catalogue…</p>
+            </div>
+
             <?php if (empty($documents)): ?>
-            <div class="px-6 py-16 text-center md:px-8">
-                <p class="text-base font-bold text-slate-800">Aucun document à afficher</p>
-                <p class="mt-2 max-w-md mx-auto text-sm text-slate-500">Élargissez la recherche, changez de catégorie ou réinitialisez les filtres. Seuls les documents publiés et autorisés pour votre compte apparaissent ici.</p>
-                <p class="mt-8">
-                    <a href="<?= htmlspecialchars($baseUrlList) ?>" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50">Voir tout le catalogue</a>
-                </p>
+            <div class="px-6 py-10 md:px-8">
+                <?php
+                $ui_empty_title = 'Aucun document à afficher';
+                $ui_empty_description = 'Élargissez la recherche, changez de catégorie ou réinitialisez les filtres. Seuls les documents publiés et autorisés pour votre compte apparaissent ici.';
+                $ui_empty_primary_label = 'Voir tout le catalogue';
+                $ui_empty_primary_href = $baseUrlList;
+                require base_path('views/partials/ui/empty_state.php');
+                ?>
             </div>
             <?php else: ?>
-            <div class="grid gap-5 p-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:p-8">
+            <div id="doc-catalog-root" class="grid gap-5 p-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:p-8">
                 <?php foreach ($documents as $doc):
                     $catName = (string) ($doc['category_name'] ?? '');
                     $initial = $catName !== '' ? mb_strtoupper(mb_substr($catName, 0, 1)) : 'D';
@@ -259,4 +279,5 @@ $baseUrlList = url('documents');
         </p>
     </div>
 </div>
+<script defer src="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>/assets/js/doc_catalog_loading.js"></script>
 <?php require base_path('views/partials/documents_copy_protection.php'); ?>

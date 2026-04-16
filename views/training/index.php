@@ -111,6 +111,7 @@ $categories = ['all' => 'Tous les modules', 'tactique' => 'tactique', 'technique
         body { font-family: 'Inter', sans-serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white" x-data="trainingCatalogue()">
@@ -192,6 +193,14 @@ $categories = ['all' => 'Tous les modules', 'tactique' => 'tactique', 'technique
                     </div>
                 </article>
                 <?php endforeach; ?>
+            </div>
+
+            <div x-show="visibleCount === 0" x-cloak class="mx-auto max-w-xl rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
+                <p class="text-base font-bold text-slate-800">Aucun module dans cette catégorie</p>
+                <p class="mt-2 text-sm text-slate-600">Choisissez une autre famille de modules ou ouvrez le catalogue complet.</p>
+                <p class="mt-8">
+                    <a href="<?= htmlspecialchars(url('formations'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-emerald-700">Tout afficher</a>
+                </p>
             </div>
         </div>
     </main>
@@ -276,6 +285,11 @@ $categories = ['all' => 'Tous les modules', 'tactique' => 'tactique', 'technique
             return {
                 activeCategory: 'all',
                 openModalSlug: null,
+                get visibleCount() {
+                    return items.filter(
+                        (m) => this.activeCategory === 'all' || m.category === this.activeCategory
+                    ).length;
+                },
                 get selectedItem() {
                     if (!this.openModalSlug) return null;
                     return items.find(m => m.slug === this.openModalSlug) || null;

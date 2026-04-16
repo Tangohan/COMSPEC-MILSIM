@@ -7,6 +7,7 @@ namespace App\Controllers\Web;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Gate;
+use App\Services\Portal\PortalNextStepsService;
 
 class HubController
 {
@@ -229,6 +230,7 @@ class HubController
             'content' => 'hub.index',
             'title' => 'Centre opérationnel',
             'hubSections' => $sections,
+            'hub_next_steps' => PortalNextStepsService::forHub($gate),
         ]);
     }
 }

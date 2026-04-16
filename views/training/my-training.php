@@ -249,7 +249,7 @@ $coverUrl = static function (array $e): string {
                   </a>
                 <?php endif; ?>
                 <?php if ($showWithdrawBtn): ?>
-                  <form method="post" action="<?= htmlspecialchars($base) ?>/formations/inscription/annuler" class="inline-flex" onsubmit="return confirm('Annuler votre inscription à cette formation ? Vous pourrez vous réinscrire depuis le catalogue si les conditions le permettent.');">
+                  <form method="post" action="<?= htmlspecialchars($base) ?>/formations/inscription/annuler" class="inline-flex" data-ui-confirm="1" data-ui-confirm-title="Annuler l’inscription" data-ui-confirm-body="Annuler votre inscription à cette formation ? Vous pourrez vous réinscrire depuis le catalogue si les conditions le permettent.">
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="enrollment_id" value="<?= (int) $e['id'] ?>">
                     <input type="hidden" name="return_path" value="formations/mes-formations">

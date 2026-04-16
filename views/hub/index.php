@@ -126,6 +126,13 @@ $hubIconPaths = [
     <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Aucun accès n’est disponible pour le moment. Contactez un responsable de la communauté si vous pensez qu’il s’agit d’une erreur.</p>
     <?php endif; ?>
 
+    <?php
+    $next_steps = $hub_next_steps ?? [];
+    $next_steps_title = 'Pour la suite';
+    $next_steps_intro = 'Quelques actions utiles selon votre profil et les modules disponibles.';
+    require base_path('views/partials/ui/next_steps_block.php');
+    ?>
+
     <p class="mt-12 text-center text-sm text-slate-500">
         <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-800">Retour au tableau de bord</a>
     </p>

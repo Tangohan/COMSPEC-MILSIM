@@ -7,6 +7,8 @@ namespace App\Controllers\Web;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Core\Gate;
+use App\Services\Portal\PortalNextStepsService;
 
 class HomeController
 {
@@ -173,6 +175,17 @@ class HomeController
             }
         }
 
+        $dashboardNextSteps = [];
+        if ($tenantId && $currentUser) {
+            $gate = Gate::getInstance();
+            $dashboardNextSteps = PortalNextStepsService::forDashboard(
+                $gate,
+                $myEnlistmentsPending !== [],
+                $showStaffEnlistments && $staffEnlistmentsPending !== [],
+                $showcaseTrainingFeature
+            );
+        }
+
         return Response::view('dashboard', [
             'title' => 'Dashboard — Athena',
             'modpack' => $modpack,
@@ -192,6 +205,7 @@ class HomeController
             'dashboard_pins' => $dashboardPins,
             'mission_briefing' => $missionBriefing,
             'dashboard_tester_program' => $dashboardTesterProgram,
+            'dashboard_next_steps' => $dashboardNextSteps,
         ]);
     }
 

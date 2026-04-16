@@ -82,6 +82,8 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <?php require base_path('views/partials/header_portal.php'); ?>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/portal-alerts.js"></script>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>
+    <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/ui_confirm_modal.js"></script>
+    <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/portal_command_palette.js"></script>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <main class="<?= !empty($usesAdminSidebarShell) ? 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]' : 'min-h-[80vh]' ?>">

@@ -30,6 +30,7 @@ use App\Controllers\Web\ForumModerationDashboardController;
 use App\Controllers\Web\ContentModerationController;
 use App\Controllers\Api\ForumApiController;
 use App\Controllers\Api\ForumModerationApiController;
+use App\Controllers\Api\ForumModerationReportInsightApiController;
 use App\Controllers\Api\ForumUploadController;
 use App\Controllers\Api\ForumRestController;
 use App\Controllers\Api\CommunityReportController;
@@ -106,6 +107,7 @@ use App\Controllers\Web\InvitationAcceptController;
 use App\Controllers\Web\CommunityEventsController;
 use App\Controllers\Web\PointageController;
 use App\Controllers\Web\PortalSearchController;
+use App\Controllers\Web\ActionCenterController;
 use App\Controllers\Web\DocumentationController;
 use App\Controllers\Web\LegalController;
 use App\Controllers\Web\DossierOperateurController;
@@ -251,6 +253,7 @@ return function (Router $router) {
     $router->get('/dossier-operateur/accreditation', [DossierOperateurController::class, 'accreditation'], [AuthMiddleware::class]);
     $router->get('/api/portal/search', [PortalSearchController::class, 'apiSearch'], [AuthMiddleware::class]);
     $router->get('/hub', [HubController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/centre-actions', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/pointage', [PointageController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/pointage/rsvp', [PointageController::class, 'rsvp'], [AuthMiddleware::class]);
     $router->post('/pointage/check-in', [PointageController::class, 'checkIn'], [AuthMiddleware::class]);
@@ -791,6 +794,7 @@ return function (Router $router) {
     $router->get('/forum/new-topic', [ForumNewTopicController::class, 'form'], $mwForum);
     $router->post('/forum/new-topic', [ForumNewTopicController::class, 'store'], $mwForum);
     $router->get('/back-office/forum-moderation', [ForumModerationDashboardController::class, 'index'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
+    $router->get('/api/back-office/forum-report/{id}/insight', [ForumModerationReportInsightApiController::class, 'show'], [AuthMiddleware::class]);
     /** Console modération fichiers / quarantaine : URL canonique /admin/… (alias /back-office/… pour anciens liens). */
     $router->get('/admin/content-moderation', [ContentModerationController::class, 'index'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->get('/admin/content-moderation/{id}/preview', [ContentModerationController::class, 'preview'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
@@ -810,6 +814,7 @@ return function (Router $router) {
     $router->post('/forum/report/{id}/claim', [ForumModerationController::class, 'claimReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/report/{id}/unclaim', [ForumModerationController::class, 'unclaimReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/report/{id}/comment', [ForumModerationController::class, 'addReportComment'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
+    $router->post('/forum/report/{id}/sanction-after-close', [ForumModerationController::class, 'sanctionHandledReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/topic/{id}/lock', [ForumModerationController::class, 'lockTopic'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/topic/{id}/unlock', [ForumModerationController::class, 'unlockTopic'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/topic/{id}/pin', [ForumModerationController::class, 'pinTopic'], [AuthMiddleware::class, ForumModerateMiddleware::class]);

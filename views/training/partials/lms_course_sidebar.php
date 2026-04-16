@@ -150,7 +150,7 @@ if ($code === '') {
 
     <?php if ($enrollment && $canWithdrawEnrollment && $courseSlug !== ''): ?>
     <div class="mt-6 pt-4 border-t border-white/10">
-        <form method="post" action="<?= htmlspecialchars($lmsBase) ?>/formations/inscription/annuler" class="space-y-2" onsubmit="return confirm('Annuler votre inscription à ce parcours ? Vous pourrez vous réinscrire depuis le catalogue si les conditions le permettent.');">
+        <form method="post" action="<?= htmlspecialchars($lmsBase) ?>/formations/inscription/annuler" class="space-y-2" data-ui-confirm="1" data-ui-confirm-title="Annuler l’inscription" data-ui-confirm-body="Annuler votre inscription à ce parcours ? Vous pourrez vous réinscrire depuis le catalogue si les conditions le permettent.">
             <?= \App\Core\Csrf::field() ?>
             <input type="hidden" name="enrollment_id" value="<?= (int) $enrollment['id'] ?>">
             <input type="hidden" name="return_path" value="<?= htmlspecialchars('formations/' . $courseSlug, ENT_QUOTES, 'UTF-8') ?>">

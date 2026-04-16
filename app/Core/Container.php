@@ -633,6 +633,15 @@ class Container
                 self::get(\App\Repositories\ForumTopicRepository::class),
                 self::get(UserRepository::class)
             ),
+            \App\Services\Portal\UnifiedActionDigestService::class => new \App\Services\Portal\UnifiedActionDigestService(
+                self::get(\App\Repositories\ForumNotificationRepository::class),
+                self::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class),
+                self::get(\App\Repositories\EnlistmentRepository::class),
+            ),
+            \App\Controllers\Web\ActionCenterController::class => new \App\Controllers\Web\ActionCenterController(
+                self::get(\App\Services\Portal\UnifiedActionDigestService::class),
+                self::get(UserRepository::class),
+            ),
             \App\Controllers\Web\DocumentationController::class => new \App\Controllers\Web\DocumentationController(),
             \App\Controllers\Web\DossierOperateurController::class => new \App\Controllers\Web\DossierOperateurController(
                 self::get(AuthService::class),
@@ -1231,6 +1240,11 @@ class Container
                 self::get(\App\Repositories\ForumTopicRepository::class),
                 self::get(\App\Repositories\ForumPostRepository::class),
                 self::get(\App\Services\Audit\AuditService::class)
+            ),
+            \App\Controllers\Api\ForumModerationReportInsightApiController::class => new \App\Controllers\Api\ForumModerationReportInsightApiController(
+                self::get(\App\Repositories\ForumReportRepository::class),
+                self::get(\App\Repositories\ForumPostRepository::class),
+                self::get(UserRepository::class)
             ),
             \App\Controllers\Api\ForumUploadController::class => new \App\Controllers\Api\ForumUploadController(
                 self::get(\App\Services\Moderation\ContentModerationOrchestrator::class),

@@ -1,0 +1,146 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Portal;
+
+use App\Core\Gate;
+use App\Repositories\Courrier\CourrierDocumentNotificationRepository;
+use App\Repositories\EnlistmentRepository;
+use App\Repositories\ForumNotificationRepository;
+
+/**
+ * Agrégation « lecture seule » pour le centre d’actions et futurs résumés (e-mail / in-app).
+ */
+final class UnifiedActionDigestService
+{
+    public function __construct(
+        private ForumNotificationRepository $forumNotifications,
+        private CourrierDocumentNotificationRepository $courrierNotifications,
+        private EnlistmentRepository $enlistmentRepository,
+    ) {}
+
+    /**
+     * @return array{
+     *   forum_unread: int,
+     *   courrier_unread: int,
+     *   my_enlistments_pending: int,
+     *   staff_enlistments_pending: int,
+     *   sections: list<array{title: string, items: list<array{label: string, href: string, hint: string, count?: int}>}>
+     * }
+     */
+    public function buildActionCenter(
+        int $tenantId,
+        int $userId,
+        string $userEmail,
+        Gate $gate,
+        bool $showStaffRecruitment,
+    ): array {
+        $forumUnread = $this->forumNotifications->tableExists()
+            ? $this->forumNotifications->unreadCount($tenantId, $userId)
+            : 0;
+        $courrierUnread = $this->courrierNotifications->tableExists()
+            ? $this->courrierNotifications->countUnread($tenantId, $userId)
+            : 0;
+        $myPending = $this->enlistmentRepository->listPendingSubmittedForSubmitter($tenantId, $userId, $userEmail);
+        $myPendingN = count($myPending);
+        $staffPendingN = 0;
+        if ($showStaffRecruitment) {
+            $staffPending = $this->enlistmentRepository->listPendingSubmittedForTenant($tenantId, 200);
+            $staffPendingN = count($staffPending);
+        }
+
+        $sections = [];
+
+        $personal = [];
+        if ($forumUnread > 0 && $gate->allows('forum.view')) {
+            $personal[] = [
+                'label' => 'Alertes du forum',
+                'href' => url('activite'),
+                'hint' => 'Notifications non lues sur vos sujets suivis.',
+                'count' => $forumUnread,
+            ];
+        }
+        if ($courrierUnread > 0 && $gate->allows('courrier.view')) {
+            $personal[] = [
+                'label' => 'Courrier à consulter',
+                'href' => url('courrier/notifications'),
+                'hint' => 'Documents ou messages officiels non lus.',
+                'count' => $courrierUnread,
+            ];
+        }
+        if ($myPendingN > 0) {
+            $personal[] = [
+                'label' => 'Dossier de recrutement personnel',
+                'href' => url('account'),
+                'hint' => 'Une ou plusieurs étapes attendent votre complément.',
+                'count' => $myPendingN,
+            ];
+        }
+        if ($personal !== []) {
+            $sections[] = ['title' => 'À traiter pour vous', 'items' => $personal];
+        }
+
+        if ($showStaffRecruitment && $staffPendingN > 0) {
+            $sections[] = [
+                'title' => 'Encadrement',
+                'items' => [[
+                    'label' => 'Dossiers de recrutement à examiner',
+                    'href' => url('back-office/recruitments'),
+                    'hint' => 'Candidatures soumises en attente de traitement.',
+                    'count' => $staffPendingN,
+                ]],
+            ];
+        }
+
+        $sections[] = [
+            'title' => 'Raccourcis',
+            'items' => [
+                ['label' => 'Centre opérationnel', 'href' => url('hub'), 'hint' => 'Vue d’ensemble des modules.'],
+                ['label' => 'Recherche portail', 'href' => url('search'), 'hint' => 'Recherche unifiée sur les contenus autorisés.'],
+                ['label' => 'Mon activité', 'href' => url('activite'), 'hint' => 'Historique récent des échanges.'],
+            ],
+        ];
+
+        return [
+            'forum_unread' => $forumUnread,
+            'courrier_unread' => $courrierUnread,
+            'my_enlistments_pending' => $myPendingN,
+            'staff_enlistments_pending' => $staffPendingN,
+            'sections' => $sections,
+        ];
+    }
+
+    /**
+     * Textes prêts pour un futur envoi (résumé hebdomadaire) — réutilise les mêmes compteurs.
+     *
+     * @return list<string>
+     */
+    public function buildWeeklyDigestLines(
+        int $tenantId,
+        int $userId,
+        string $userEmail,
+        Gate $gate,
+        bool $showStaffRecruitment,
+    ): array {
+        $d = $this->buildActionCenter($tenantId, $userId, $userEmail, $gate, $showStaffRecruitment);
+        $lines = [];
+        if ($d['forum_unread'] > 0) {
+            $lines[] = 'Vous avez des alertes forum non lues : ouvrez « Mon activité » pour les traiter.';
+        }
+        if ($d['courrier_unread'] > 0) {
+            $lines[] = 'Des éléments du courrier interne attendent votre lecture.';
+        }
+        if ($d['my_enlistments_pending'] > 0) {
+            $lines[] = 'Votre dossier de recrutement contient des actions à finaliser.';
+        }
+        if ($d['staff_enlistments_pending'] > 0) {
+            $lines[] = 'Des candidatures sont en attente de traitement côté encadrement.';
+        }
+        if ($lines === []) {
+            $lines[] = 'Aucune action urgente détectée pour cette période. Pensez à consulter le centre opérationnel pour les actualités.';
+        }
+
+        return $lines;
+    }
+}

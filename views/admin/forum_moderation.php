@@ -29,7 +29,11 @@ $botActionMeta = static function (string $action): array {
         'allow' => ['label' => 'Autorisé', 'class' => 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200/80'],
         'flag' => ['label' => 'À revoir', 'class' => 'bg-amber-100 text-amber-950 ring-1 ring-amber-200/80'],
         'block', 'reject' => ['label' => 'Refusé', 'class' => 'bg-rose-100 text-rose-900 ring-1 ring-rose-200/80'],
-        default => ['label' => $action !== '' ? $action : '—', 'class' => 'bg-slate-100 text-slate-800 ring-1 ring-slate-200/80'],
+        'auto_flag' => ['label' => 'Alerte automatique', 'class' => 'bg-amber-100 text-amber-950 ring-1 ring-amber-200/80'],
+        'review_queue' => ['label' => 'File de revue', 'class' => 'bg-violet-100 text-violet-900 ring-1 ring-violet-200/80'],
+        'watch' => ['label' => 'Surveillance', 'class' => 'bg-slate-100 text-slate-800 ring-1 ring-slate-200/80'],
+        'hide_post' => ['label' => 'Message masqué', 'class' => 'bg-rose-100 text-rose-900 ring-1 ring-rose-200/80'],
+        default => ['label' => $action !== '' ? 'Décision auto' : '—', 'class' => 'bg-slate-100 text-slate-800 ring-1 ring-slate-200/80'],
     };
 };
 $followUpLabel = static function (?string $action): string {
@@ -44,7 +48,40 @@ $followUpLabel = static function (?string $action): string {
         'hide_topic' => 'Sujet masqué',
         'sanction_warn' => 'Avertissement formel',
         'close', '' => 'Clôture sans mesure',
-        default => $a,
+        default => $a !== '' ? 'Mesure enregistrée' : '—',
+    };
+};
+
+$humanizeTimelineLabel = static function (?string $label) use ($followUpLabel): string {
+    $s = trim((string) $label);
+    if ($s === '') {
+        return '—';
+    }
+    if (preg_match('/mesure\s*:\s*([a-z0-9_]+)/iu', $s, $m)) {
+        $fr = $followUpLabel($m[1]);
+
+        return (string) preg_replace('/mesure\s*:\s*([a-z0-9_]+)/iu', 'mesure : ' . $fr, $s, 1);
+    }
+    if (preg_match('/avec\s+mesure\s*:\s*([a-z0-9_]+)/iu', $s, $m)) {
+        $fr = $followUpLabel($m[1]);
+
+        return (string) preg_replace('/avec\s+mesure\s*:\s*([a-z0-9_]+)/iu', 'avec mesure : ' . $fr, $s, 1);
+    }
+
+    return $s;
+};
+
+$engineActionHuman = static function (string $action): string {
+    $a = strtolower(trim($action));
+
+    return match ($a) {
+        'auto_flag' => 'Alerte automatique',
+        'review_queue' => 'Mise en file de revue',
+        'block' => 'Blocage',
+        'hide_post' => 'Message masqué',
+        'watch' => 'Surveillance',
+        'allow', 'pass' => 'Publication acceptée',
+        default => $a !== '' ? 'Décision automatique' : '—',
     };
 };
 
@@ -52,8 +89,13 @@ $canForumContentMod = function_exists('forum_user_can_moderate') && forum_user_c
 $canDeleteForumPost = function_exists('can') && can('forum.post.delete_any');
 $gateMod = \App\Core\Gate::getInstance();
 $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
+$canBackOfficeMemberCard = $gateMod->allows('admin.organization') || $gateMod->allows('admin.access') || $gateMod->allows('site.support');
+$csrfTokenForumMod = \App\Core\Csrf::token();
 ?>
-<div class="forum-mod-console w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pb-16">
+<div class="forum-mod-console w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pb-16"
+     data-insight-base="<?= htmlspecialchars($baseUrl . '/api/back-office/forum-report/', ENT_QUOTES, 'UTF-8') ?>"
+     data-csrf="<?= htmlspecialchars($csrfTokenForumMod, ENT_QUOTES, 'UTF-8') ?>"
+     data-sanction-action-base="<?= htmlspecialchars($baseUrl . '/forum/report/', ENT_QUOTES, 'UTF-8') ?>">
   <nav class="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500 mb-8" aria-label="Fil d’Ariane">
     <a href="<?= htmlspecialchars($baseUrl . '/back-office', ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-emerald-700 transition-colors">Back-office</a>
     <span class="text-slate-300 select-none" aria-hidden="true">/</span>
@@ -277,6 +319,22 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
                       <span class="text-slate-300 hidden sm:inline" aria-hidden="true">·</span>
                       <span class="tabular-nums"><?= $r['created_at'] ? date('d/m/Y à H:i', strtotime((string) $r['created_at'])) : '' ?></span>
                     </div>
+                    <?php $reporterUidRow = (int) ($r['reporter_id'] ?? 0); ?>
+                    <div class="flex flex-wrap items-center gap-2 pt-2">
+                      <?php if ($reporterUidRow > 0): ?>
+                        <a href="<?= htmlspecialchars($baseUrl . '/personnel/' . $reporterUidRow, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:border-emerald-300 hover:text-emerald-900 transition-colors">Profil du signaleur</a>
+                        <?php if ($canBackOfficeMemberCard): ?>
+                          <a href="<?= htmlspecialchars($baseUrl . '/back-office/users/' . $reporterUidRow, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-950 hover:bg-violet-100 transition-colors">Fiche membre (signaleur)</a>
+                        <?php endif; ?>
+                      <?php endif; ?>
+                      <?php if ($resolvedTargetUid !== null && $resolvedTargetUid > 0 && $resolvedTargetUid !== $reporterUidRow): ?>
+                        <a href="<?= htmlspecialchars($baseUrl . '/personnel/' . (int) $resolvedTargetUid, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:border-emerald-300 hover:text-emerald-900 transition-colors">Profil du membre concerné</a>
+                        <?php if ($canBackOfficeMemberCard): ?>
+                          <a href="<?= htmlspecialchars($baseUrl . '/back-office/users/' . (int) $resolvedTargetUid, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-950 hover:bg-violet-100 transition-colors">Fiche membre (concerné)</a>
+                        <?php endif; ?>
+                      <?php endif; ?>
+                      <button type="button" class="forum-mod-open-dossier inline-flex items-center rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-950 hover:bg-amber-100 transition-colors" data-report-id="<?= (int) $r['id'] ?>">Synthèse du dossier</button>
+                    </div>
                     <div class="flex flex-wrap items-center gap-2 text-xs">
                       <?php if ($isAssigned): ?>
                         <span class="inline-flex rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-900">
@@ -304,7 +362,7 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
                           <?php foreach ($timelineRows as $evt): ?>
                             <li class="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2">
                               <div class="flex flex-wrap items-center gap-2 text-[11px]">
-                                <span class="font-semibold text-slate-700"><?= htmlspecialchars((string) ($evt['event_label'] ?? 'Événement'), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="font-semibold text-slate-700"><?= htmlspecialchars($humanizeTimelineLabel($evt['event_label'] ?? null), ENT_QUOTES, 'UTF-8') ?></span>
                                 <span class="text-slate-400">·</span>
                                 <span class="text-slate-500 tabular-nums"><?= !empty($evt['created_at']) ? htmlspecialchars(date('d/m/Y H:i', strtotime((string) $evt['created_at'])), ENT_QUOTES, 'UTF-8') : '—' ?></span>
                                 <span class="text-slate-400">·</span>
@@ -418,17 +476,18 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
         <ul class="divide-y divide-slate-100 bg-white">
           <?php foreach ($handledReports as $r): ?>
             <?php $handledTimeline = $reportTimelines[(int) ($r['id'] ?? 0)] ?? []; ?>
-            <li class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 hover:bg-slate-50/60 transition-colors">
-              <div class="shrink-0">
+            <li class="px-6 py-4 flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-6 hover:bg-slate-50/60 transition-colors border-l-4 border-transparent hover:border-emerald-200/80">
+              <div class="shrink-0 flex flex-col gap-2 sm:items-start">
                 <span class="inline-flex rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500 tabular-nums">#<?= (int) $r['id'] ?></span>
+                <button type="button" class="forum-mod-open-dossier text-left text-[11px] font-bold text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200 underline-offset-2" data-report-id="<?= (int) $r['id'] ?>">Ouvrir le dossier</button>
               </div>
               <div class="min-w-0 flex-1">
                 <p class="text-sm text-slate-700 line-clamp-2 leading-relaxed"><?= htmlspecialchars(mb_substr((string) ($r['reason'] ?? ''), 0, 200), ENT_QUOTES, 'UTF-8') ?><?= mb_strlen((string) ($r['reason'] ?? '')) > 200 ? '…' : '' ?></p>
                 <?php if (!empty($r['last_follow_up_action'])): ?>
-                  <p class="mt-1 text-xs text-slate-500">Mesure appliquée : <span class="font-semibold text-slate-700"><?= htmlspecialchars((string) $r['last_follow_up_action'], ENT_QUOTES, 'UTF-8') ?></span></p>
+                  <p class="mt-1 text-xs text-slate-500">Mesure appliquée : <span class="font-semibold text-slate-700"><?= htmlspecialchars($followUpLabel((string) $r['last_follow_up_action']), ENT_QUOTES, 'UTF-8') ?></span></p>
                 <?php endif; ?>
                 <?php if (!empty($handledTimeline)): ?>
-                  <p class="mt-1 text-xs text-slate-500">Dernier événement : <?= htmlspecialchars((string) ($handledTimeline[0]['event_label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                  <p class="mt-1 text-xs text-slate-500">Dernier événement : <?= htmlspecialchars($humanizeTimelineLabel($handledTimeline[0]['event_label'] ?? null), ENT_QUOTES, 'UTF-8') ?></p>
                 <?php endif; ?>
               </div>
               <div class="shrink-0 text-xs text-slate-500 sm:text-right sm:min-w-[10rem]">
@@ -555,7 +614,6 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
             <li class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2">
               <div>
                 <p class="text-xs font-semibold text-slate-800"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></p>
-                <p class="text-[11px] text-slate-500">Code : <?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?></p>
               </div>
               <span class="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-900">Actif</span>
             </li>
@@ -617,7 +675,7 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
                     <td class="px-4 py-3 whitespace-nowrap">
                       <span class="inline-flex rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-wide <?= $statusClass ?>"><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></span>
                     </td>
-                    <td class="px-4 py-3 text-xs text-slate-600">Action: <?= htmlspecialchars($actionTaken !== '' ? $actionTaken : '—', ENT_QUOTES, 'UTF-8') ?></td>
+                    <td class="px-4 py-3 text-xs text-slate-600"><?= htmlspecialchars($engineActionHuman($actionTaken), ENT_QUOTES, 'UTF-8') ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>
@@ -719,6 +777,38 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
         </div>
         <p class="mt-4 text-xs text-slate-500 leading-relaxed">Aperçu limité aux 40 dernières lignes pour votre communauté. Pour les fichiers en quarantaine, utilisez le raccourci en haut de page.</p>
       <?php endif; ?>
+    </div>
+  </div>
+
+  <div id="forum-mod-dossier-modal" class="fixed inset-0 z-[90] hidden flex items-center justify-center p-4" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="forum-mod-dossier-title">
+    <div class="absolute inset-0 bg-slate-900/55 backdrop-blur-[1px]" data-forum-mod-close-modal tabindex="-1"></div>
+    <div class="relative z-10 w-full max-w-lg max-h-[min(92vh,44rem)] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20">
+      <div class="sticky top-0 flex items-start justify-between gap-3 border-b border-slate-100 bg-white/95 px-5 py-4 backdrop-blur">
+        <div class="min-w-0">
+          <p id="forum-mod-dossier-title" class="text-lg font-black text-slate-900 tracking-tight">Dossier signalement</p>
+          <p id="forum-mod-dossier-sub" class="text-xs font-semibold text-slate-500 mt-0.5"></p>
+        </div>
+        <button type="button" class="shrink-0 rounded-lg border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50" data-forum-mod-close-modal aria-label="Fermer">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div id="forum-mod-dossier-body" class="px-5 py-4 space-y-4 text-sm text-slate-700"></div>
+      <div class="border-t border-slate-100 px-5 py-4 space-y-4 bg-slate-50/80">
+        <form id="forum-mod-modal-comment-form" method="post" action="" class="space-y-2">
+          <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfTokenForumMod, ENT_QUOTES, 'UTF-8') ?>" />
+          <label for="forum-mod-modal-comment" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Ajouter un commentaire au dossier</label>
+          <textarea id="forum-mod-modal-comment" name="timeline_comment" rows="2" maxlength="1200" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none" placeholder="Visible dans la timeline du dossier."></textarea>
+          <button type="submit" class="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50">Ajouter au dossier</button>
+        </form>
+        <form id="forum-mod-modal-sanction-form" method="post" action="" class="hidden space-y-2">
+          <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfTokenForumMod, ENT_QUOTES, 'UTF-8') ?>" />
+          <p class="text-xs font-semibold text-violet-900">Avertissement formel après clôture</p>
+          <p class="text-[11px] text-slate-600 leading-relaxed">Enregistre un avertissement sur la fiche du membre visé, sans rouvrir le signalement.</p>
+          <label for="forum-mod-modal-sanction-note" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Précision (optionnel)</label>
+          <textarea id="forum-mod-modal-sanction-note" name="moderator_note" rows="2" maxlength="500" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none"></textarea>
+          <button type="submit" class="inline-flex rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-violet-800">Enregistrer l’avertissement</button>
+        </form>
+      </div>
     </div>
   </div>
 </div>
@@ -825,6 +915,153 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
         '<td class="px-4 py-3 whitespace-nowrap"><span class="inline-flex rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ' + statusClass + '">' + status + '</span></td>' +
         '<td class="px-4 py-3 text-xs text-slate-600">Scan manuel (' + manualPriority.value + ') par le bot de conformité.</td>';
       historyBody.insertBefore(row, historyBody.firstChild);
+    });
+  }
+
+  var insightBase = root.getAttribute('data-insight-base') || '';
+  var csrfVal = root.getAttribute('data-csrf') || '';
+  var sanctionBase = root.getAttribute('data-sanction-action-base') || '';
+  var dossierModal = document.getElementById('forum-mod-dossier-modal');
+  var dossierBody = document.getElementById('forum-mod-dossier-body');
+  var dossierSub = document.getElementById('forum-mod-dossier-sub');
+  var modalCommentForm = document.getElementById('forum-mod-modal-comment-form');
+  var modalSanctionForm = document.getElementById('forum-mod-modal-sanction-form');
+  if (dossierModal && dossierBody && insightBase && modalCommentForm && modalSanctionForm) {
+    function esc(s) {
+      if (s == null) return '';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+    function closeDossierModal() {
+      dossierModal.classList.add('hidden');
+      dossierModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('overflow-hidden');
+    }
+    function openDossierModal(rid) {
+      dossierModal.classList.remove('hidden');
+      dossierModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('overflow-hidden');
+      dossierBody.innerHTML = '<p class="text-sm text-slate-500">Chargement…</p>';
+      dossierSub.textContent = 'Dossier nº ' + rid;
+      modalCommentForm.action = sanctionBase + rid + '/comment';
+      modalSanctionForm.action = sanctionBase + rid + '/sanction-after-close';
+      modalSanctionForm.classList.add('hidden');
+      var ta = modalCommentForm.querySelector('textarea');
+      if (ta) ta.value = '';
+      var sn = modalSanctionForm.querySelector('textarea');
+      if (sn) sn.value = '';
+      if (csrfVal) {
+        modalCommentForm.querySelectorAll('input[name=\"_csrf_token\"]').forEach(function(i) { i.value = csrfVal; });
+        modalSanctionForm.querySelectorAll('input[name=\"_csrf_token\"]').forEach(function(i) { i.value = csrfVal; });
+      }
+      fetch(insightBase + rid + '/insight', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (!d || !d.ok) {
+            dossierBody.innerHTML = '<p class="text-sm text-rose-700 font-semibold">' + esc((d && d.error) ? d.error : 'Impossible de charger le dossier.') + '</p>';
+            return;
+          }
+          var rep = d.report;
+          var st = d.stats || {};
+          var cap = d.capabilities || {};
+          var html = '';
+          html += '<div class=\"flex flex-wrap gap-2 items-center\">';
+          html += '<span class=\"inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700\">' + esc(rep.status_label) + '</span>';
+          if (rep.measure_label) {
+            html += '<span class=\"inline-flex rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-900\">' + esc(rep.measure_label) + '</span>';
+          }
+          html += '</div>';
+          if (rep.topic_url && rep.topic_title) {
+            html += '<p class=\"text-sm\"><a class=\"font-semibold text-emerald-800 underline decoration-emerald-200\" href=\"' + esc(rep.topic_url) + '\">' + esc(rep.topic_title) + '</a></p>';
+          }
+          if (rep.reported_url) {
+            html += '<p class=\"text-sm\"><span class=\"text-slate-500\">Lien concerné : </span><a class=\"font-semibold text-emerald-800 break-all underline\" href=\"' + esc(rep.reported_url) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + esc(rep.reported_url) + '</a></p>';
+          }
+          html += '<div><p class=\"text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1\">Motif</p><p class=\"text-sm leading-relaxed whitespace-pre-wrap text-slate-800\">' + esc(rep.reason) + '</p></div>';
+          if (rep.comment) {
+            html += '<blockquote class=\"border-l-[3px] border-slate-300 pl-3 text-sm text-slate-600 italic\">' + esc(rep.comment) + '</blockquote>';
+          }
+          if (rep.resolution_note) {
+            html += '<div class=\"rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600\"><span class=\"font-bold text-slate-500\">Note de clôture : </span>' + esc(rep.resolution_note) + '</div>';
+          }
+          html += '<div class=\"grid gap-3 sm:grid-cols-2\">';
+          if (rep.reporter) {
+            var u = rep.reporter;
+            html += '<div class=\"rounded-xl border border-slate-200 bg-white p-3 shadow-sm\">';
+            html += '<p class=\"text-[10px] font-bold uppercase tracking-wider text-slate-500\">Signaleur</p>';
+            html += '<p class=\"mt-1 font-semibold text-slate-900\">' + esc(u.name) + '</p>';
+            html += '<div class=\"mt-2 flex flex-wrap gap-2\">';
+            html += '<a class=\"inline-flex rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-800 hover:border-emerald-300\" href=\"' + esc(u.personnel_url) + '\">Profil</a>';
+            if (u.back_office_url) {
+              html += '<a class=\"inline-flex rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-950\" href=\"' + esc(u.back_office_url) + '\">Fiche membre</a>';
+            }
+            html += '</div></div>';
+          }
+          if (rep.target) {
+            var t = rep.target;
+            html += '<div class=\"rounded-xl border border-slate-200 bg-white p-3 shadow-sm\">';
+            html += '<p class=\"text-[10px] font-bold uppercase tracking-wider text-slate-500\">Membre concerné</p>';
+            html += '<p class=\"mt-1 font-semibold text-slate-900\">' + esc(t.name) + '</p>';
+            html += '<div class=\"mt-2 flex flex-wrap gap-2\">';
+            html += '<a class=\"inline-flex rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-800 hover:border-emerald-300\" href=\"' + esc(t.personnel_url) + '\">Profil</a>';
+            if (t.back_office_url) {
+              html += '<a class=\"inline-flex rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-950\" href=\"' + esc(t.back_office_url) + '\">Fiche membre</a>';
+            }
+            html += '</div></div>';
+          }
+          html += '</div>';
+          if (st.reporter) {
+            var sr = st.reporter;
+            html += '<div class=\"rounded-xl border border-amber-200/80 bg-amber-50/60 p-3\">';
+            html += '<p class=\"text-[10px] font-bold uppercase tracking-wider text-amber-900/90\">Indicateurs signaleur</p>';
+            html += '<ul class=\"mt-2 space-y-1 text-xs text-amber-950\">';
+            html += '<li>Signalements déposés sur cette communauté : <strong class=\"tabular-nums\">' + esc(String(sr.reports_filed)) + '</strong></li>';
+            html += '<li>Dont suite avec mesure sur le contenu ou avertissement : <strong class=\"tabular-nums\">' + esc(String(sr.reports_with_content_action)) + '</strong></li>';
+            html += '</ul>';
+            if (sr.hint) {
+              html += '<p class=\"mt-2 text-[11px] text-amber-900/85 leading-relaxed\">' + esc(sr.hint) + '</p>';
+            }
+            html += '</div>';
+          }
+          if (st.target) {
+            var tg = st.target;
+            html += '<div class=\"rounded-xl border border-slate-200 bg-slate-50 p-3\">';
+            html += '<p class=\"text-[10px] font-bold uppercase tracking-wider text-slate-600\">Indicateurs membre concerné</p>';
+            html += '<ul class=\"mt-2 space-y-1 text-xs text-slate-800\">';
+            html += '<li>Signalements sur ses messages du fil : <strong class=\"tabular-nums\">' + esc(String(tg.reports_on_forum_messages)) + '</strong></li>';
+            html += '<li>Dont suite avec mesure sur le contenu ou avertissement : <strong class=\"tabular-nums\">' + esc(String(tg.reports_on_messages_with_action)) + '</strong></li>';
+            html += '<li>Signalements hors fil mentionnant ce compte (estimation) : <strong class=\"tabular-nums\">' + esc(String(tg.profile_or_fiche_mentions)) + '</strong></li>';
+            html += '</ul>';
+            if (tg.hint) {
+              html += '<p class=\"mt-2 text-[11px] text-slate-600 leading-relaxed\">' + esc(tg.hint) + '</p>';
+            }
+            html += '</div>';
+          }
+          dossierBody.innerHTML = html;
+          if (cap.sanction_after_close) {
+            modalSanctionForm.classList.remove('hidden');
+          } else {
+            modalSanctionForm.classList.add('hidden');
+          }
+        })
+        .catch(function() {
+          dossierBody.innerHTML = '<p class=\"text-sm text-rose-700\">Impossible de joindre le serveur. Réessayez dans un instant.</p>';
+        });
+    }
+    dossierModal.querySelectorAll('[data-forum-mod-close-modal]').forEach(function(el) {
+      el.addEventListener('click', closeDossierModal);
+    });
+    document.addEventListener('keydown', function(ev) {
+      if (ev.key === 'Escape' && !dossierModal.classList.contains('hidden')) closeDossierModal();
+    });
+    root.querySelectorAll('.forum-mod-open-dossier').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var rid = btn.getAttribute('data-report-id');
+        if (rid) openDossierModal(rid);
+      });
     });
   }
 })();

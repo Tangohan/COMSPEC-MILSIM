@@ -85,10 +85,28 @@
         var total = docs.length + forum.length + pers.length;
 
         if (total === 0) {
+            var hubU = typeof window.__portalHubUrl === 'string' ? window.__portalHubUrl.trim() : '';
+            var searchU = typeof window.__portalSearchPageUrl === 'string' ? window.__portalSearchPageUrl.trim() : '';
+            var links = '';
+            if (hubU) {
+                links +=
+                    '<a href="' +
+                    esc(hubU) +
+                    '" class="inline-flex rounded-xl bg-slate-900 px-4 py-2 font-semibold text-white transition hover:bg-slate-800">Centre opérationnel</a>';
+            }
+            if (searchU) {
+                links +=
+                    '<a href="' +
+                    esc(searchU) +
+                    '" class="inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-800 transition hover:bg-slate-50">Recherche détaillée</a>';
+            }
             resultsEl.innerHTML =
                 '<div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-14 text-center">' +
                 '<p class="text-sm font-semibold text-slate-700">Aucun résultat pour cette recherche</p>' +
                 '<p class="mt-2 text-sm text-slate-500">Essayez d’autres mots-clés ou élargissez les sources cochées.</p>' +
+                (links
+                    ? '<p class="mt-6 flex flex-wrap justify-center gap-3 text-sm">' + links + '</p>'
+                    : '') +
                 '</div>';
             setLive('Aucun résultat');
             return;

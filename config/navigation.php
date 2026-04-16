@@ -65,6 +65,7 @@ return [
                     'slot' => 'primary',
                     'links' => [
                         ['label' => 'Hub', 'path' => 'hub', 'description' => 'Modules, raccourcis et synthèse'],
+                        ['label' => 'Centre d’actions', 'path' => 'centre-actions', 'description' => 'Synthèse des éléments à traiter et liens vers vos files'],
                         ['label' => 'Pointage', 'path' => 'pointage', 'description' => 'Présences et confirmations aux manœuvres'],
                         ['label' => 'Communautés', 'path' => 'communities', 'description' => 'Registre et accès aux espaces'],
                         ['label' => 'Événements', 'path' => 'evenements', 'description' => 'Calendrier et inscriptions'],

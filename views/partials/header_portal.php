@@ -302,4 +302,10 @@ $defaultAccent = 'slate';
             <?php endforeach; ?>
         </div>
     </div>
+    <?php if ($loggedIn && !empty($nav['search']['shortcut'])): ?>
+        <?php require base_path('views/partials/portal_command_palette.php'); ?>
+    <?php endif; ?>
+    <?php if ($loggedIn): ?>
+        <?php require base_path('views/partials/ui/confirm_dialog.php'); ?>
+    <?php endif; ?>
 </header>

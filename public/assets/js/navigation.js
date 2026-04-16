@@ -303,6 +303,12 @@
         if (t && t.closest && t.closest('input, textarea, select, [contenteditable="true"]')) {
             return;
         }
+        var palette = document.getElementById('portal-command-palette');
+        if (palette && typeof palette.showModal === 'function') {
+            e.preventDefault();
+            document.dispatchEvent(new Event('portal-command-palette-open'));
+            return;
+        }
         var link = document.querySelector('[data-portal-search-url]');
         if (!link) {
             return;

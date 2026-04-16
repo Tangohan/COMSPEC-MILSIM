@@ -93,9 +93,10 @@ class ForumModerationController
         $this->reportRepository->markHandled($id, $tenantId, $userId);
         $this->reportRepository->saveResolution($id, $tenantId, $followUp, $note);
         try {
+            $measureHuman = self::followUpPublicLabel($followUp);
             $actionLabel = $followUp === '' || $followUp === 'close'
                 ? 'Dossier clôturé sans mesure supplémentaire'
-                : 'Dossier clôturé avec mesure : ' . $followUp;
+                : 'Dossier clôturé — ' . $measureHuman;
             $this->reportRepository->addTimelineEvent(
                 $tenantId,
                 $id,
@@ -119,6 +120,87 @@ class ForumModerationController
 
         $summary = $outcomes !== [] ? implode(' ', $outcomes) . ' ' : '';
         Session::flash('success', $summary . 'Dossier clôturé.');
+
+        return Response::redirect(url('back-office/forum-moderation'));
+    }
+
+    /**
+     * Avertissement formel sur un dossier déjà clos (sans rouvrir le signalement).
+     */
+    public function sanctionHandledReport(Request $request, array $params = []): Response
+    {
+        $ok = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
+        if (!$ok) {
+            Session::flash('error', 'Accès refusé.');
+
+            return Response::redirect(url('forum'));
+        }
+
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+
+        if ($request->method() !== 'POST' || !Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+
+        if (!$this->mayApplyFormalMemberWarning()) {
+            Session::flash('error', 'Vous n’avez pas les droits pour enregistrer un avertissement formel.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $report = $this->reportRepository->findById($id, $tenantId);
+        if (!$report || (string) ($report['status'] ?? '') !== 'handled') {
+            Session::flash('error', 'Ce dossier n’est pas clos ou est introuvable.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+
+        $pid = (int) ($report['post_id'] ?? 0);
+        if ($pid > 0) {
+            $post = $this->postRepository->findById($pid, $tenantId);
+            if ($post) {
+                $report['post_author_id'] = (int) ($post['user_id'] ?? 0);
+                if ((int) ($report['topic_id'] ?? 0) < 1) {
+                    $report['post_topic_id'] = (int) ($post['topic_id'] ?? 0);
+                }
+            }
+        }
+
+        $note = trim((string) $request->input('moderator_note', ''));
+        if (strlen($note) > 500) {
+            $note = mb_substr($note, 0, 500);
+        }
+
+        $outcomes = [];
+        try {
+            $this->applyFollowUp('sanction_warn', $report, $tenantId, $userId, $id, $note, $outcomes);
+        } catch (\Throwable) {
+            Session::flash('error', 'Impossible d’enregistrer l’avertissement (membre cible introuvable ou droits insuffisants).');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+
+        try {
+            $this->reportRepository->addTimelineEvent(
+                $tenantId,
+                $id,
+                $userId,
+                'sanction_post_close',
+                'Avertissement formel ajouté après clôture du dossier',
+                $note !== '' ? $note : null
+            );
+        } catch (\Throwable) {
+        }
+
+        $summary = $outcomes !== [] ? implode(' ', $outcomes) . ' ' : '';
+        Session::flash('success', $summary . 'Mesure enregistrée sur le dossier clos.');
 
         return Response::redirect(url('back-office/forum-moderation'));
     }
@@ -417,6 +499,24 @@ class ForumModerationController
         }
 
         return can('admin.members.moderate');
+    }
+
+    private static function followUpPublicLabel(string $followUp): string
+    {
+        $a = strtolower(trim($followUp));
+
+        return match ($a) {
+            'request_correction' => 'demande de correction du contenu',
+            'escalate_support' => 'escalade vers l’assistance plateforme',
+            'watch_report' => 'surveillance sans retrait du contenu',
+            'hide_post' => 'masquage du message signalé',
+            'delete_post' => 'suppression du message signalé',
+            'lock_topic' => 'verrouillage du sujet',
+            'hide_topic' => 'retrait du sujet de la liste',
+            'sanction_warn' => 'avertissement formel au membre concerné',
+            'close', '' => 'clôture sans autre mesure',
+            default => 'mesure enregistrée',
+        };
     }
 
     private function setClaimState(Request $request, array $params, bool $claim): Response

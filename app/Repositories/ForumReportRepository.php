@@ -235,6 +235,123 @@ class ForumReportRepository
         return $row ?: null;
     }
 
+    /**
+     * Dossier signalement enrichi (même jointures que la file / l’historique console).
+     */
+    public function findEnrichedForConsole(int $id, int $tenantId): ?array
+    {
+        $hasAssignedTo = $this->columnExists('forum_reports', 'assigned_to');
+        $assignedSelect = $hasAssignedTo ? ', au.display_name AS assigned_to_name' : ', NULL AS assigned_to_name';
+        $assignedJoin = $hasAssignedTo ? ' LEFT JOIN users au ON au.id = fr.assigned_to ' : ' ';
+        $stmt = $this->pdo->prepare(
+            'SELECT fr.*, u.display_name AS reporter_name,
+                    fp.body AS post_excerpt, fp.topic_id AS post_topic_id, fp.user_id AS post_author_id,
+                    ft.title AS topic_title, hu.display_name AS handled_by_name' . $assignedSelect . ',
+                    COALESCE(fc.scope, \'general\') AS category_scope
+             FROM forum_reports fr
+             LEFT JOIN users u ON u.id = fr.reporter_id
+             LEFT JOIN forum_posts fp ON fp.id = fr.post_id
+             LEFT JOIN forum_topics ft ON ft.id = COALESCE(fr.topic_id, fp.topic_id)
+             LEFT JOIN users hu ON hu.id = fr.handled_by
+             ' . $assignedJoin . '
+             LEFT JOIN forum_categories fc ON fc.id = ft.category_id
+             WHERE fr.id = ? AND fr.tenant_id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$id, $tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /** Nombre total de signalements déposés par un membre sur cette communauté. */
+    public function countReportsFiledByReporter(int $tenantId, int $reporterId): int
+    {
+        if ($reporterId < 1) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM forum_reports WHERE tenant_id = ? AND reporter_id = ?');
+        $stmt->execute([$tenantId, $reporterId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Signalements de ce membre ayant abouti à une mesure sur le contenu ou un avertissement formel
+     * (dossiers clos uniquement).
+     */
+    public function countReportsFiledWithSubstantiveOutcome(int $tenantId, int $reporterId): int
+    {
+        if ($reporterId < 1 || !$this->columnExists('forum_reports', 'last_follow_up_action')) {
+            return 0;
+        }
+        $actions = ['hide_post', 'delete_post', 'lock_topic', 'hide_topic', 'sanction_warn'];
+        $ph = implode(',', array_fill(0, count($actions), '?'));
+        $sql = "SELECT COUNT(*) FROM forum_reports
+                WHERE tenant_id = ? AND reporter_id = ? AND status = 'handled'
+                  AND last_follow_up_action IN ({$ph})";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId, $reporterId], $actions));
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /** Signalements dont le message visé est rédigé par ce membre (messages du fil). */
+    public function countReportsOnAuthoredPosts(int $tenantId, int $postAuthorId): int
+    {
+        if ($postAuthorId < 1) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(DISTINCT fr.id) FROM forum_reports fr
+             INNER JOIN forum_posts fp ON fp.id = fr.post_id
+             WHERE fr.tenant_id = ? AND fp.user_id = ?'
+        );
+        $stmt->execute([$tenantId, $postAuthorId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Parmi les signalements ciblant un message de ce membre, dossiers clos avec mesure substantielle.
+     */
+    public function countReportsOnAuthoredPostsWithSubstantiveOutcome(int $tenantId, int $postAuthorId): int
+    {
+        if ($postAuthorId < 1 || !$this->columnExists('forum_reports', 'last_follow_up_action')) {
+            return 0;
+        }
+        $actions = ['hide_post', 'delete_post', 'lock_topic', 'hide_topic', 'sanction_warn'];
+        $ph = implode(',', array_fill(0, count($actions), '?'));
+        $sql = "SELECT COUNT(DISTINCT fr.id) FROM forum_reports fr
+                INNER JOIN forum_posts fp ON fp.id = fr.post_id
+                WHERE fr.tenant_id = ? AND fp.user_id = ? AND fr.status = 'handled'
+                  AND fr.last_follow_up_action IN ({$ph})";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId, $postAuthorId], $actions));
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Signalements sans message forum mais motif profil / fiche mentionnant explicitement ce compte.
+     */
+    public function countProfileStyleReportsMentioningUser(int $tenantId, int $userId): int
+    {
+        if ($userId < 1) {
+            return 0;
+        }
+        $like1 = '%compte n° ' . $userId . '%';
+        $like2 = '%(n° ' . $userId . ')%';
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM forum_reports
+             WHERE tenant_id = ? AND post_id IS NULL
+               AND (reason LIKE ? OR reason LIKE ?)"
+        );
+        $stmt->execute([$tenantId, $like1, $like2]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public function addTimelineEvent(
         int $tenantId,
         int $reportId,

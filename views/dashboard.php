@@ -54,6 +54,8 @@ require base_path('views/partials/header_portal.php');
 ?>
 <script defer src="<?= htmlspecialchars($base) ?>/assets/js/portal-alerts.js"></script>
 <script defer src="<?= htmlspecialchars($base) ?>/assets/js/navigation.js"></script>
+<script defer src="<?= htmlspecialchars($base) ?>/assets/js/ui_confirm_modal.js"></script>
+<script defer src="<?= htmlspecialchars($base) ?>/assets/js/portal_command_palette.js"></script>
 <?php require base_path('views/partials/alert_banners.php'); ?>
 <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
 
@@ -415,6 +417,18 @@ require base_path('views/partials/header_portal.php');
                 <?php endif; ?>
             </div>
         </section>
+        <?php endif; ?>
+
+        <?php
+        $next_steps = $dashboard_next_steps ?? [];
+        if ($next_steps !== []): ?>
+        <div class="mx-auto max-w-5xl px-4 sm:px-8 md:px-10">
+            <?php
+            $next_steps_title = 'Prochaines étapes sur le portail';
+            $next_steps_intro = 'Pistes basées sur votre situation actuelle dans cette communauté.';
+            require base_path('views/partials/ui/next_steps_block.php');
+            ?>
+        </div>
         <?php endif; ?>
 
         <?php

@@ -11,6 +11,10 @@ $q = $query ?? '';
 $canSearchDocuments = $canSearchDocuments ?? true;
 $canSearchPersonnel = $canSearchPersonnel ?? true;
 ?>
+<script>
+window.__portalHubUrl = <?= json_encode(url('hub'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+</script>
 <div
     id="portal-search-root"
     class="relative"
