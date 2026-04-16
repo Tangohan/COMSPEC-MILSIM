@@ -1202,7 +1202,8 @@ class Container
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Repositories\ForumNotificationRepository::class),
                 self::get(\App\Repositories\TenantCommunityFeedRepository::class),
-                self::get(TenantRepository::class)
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\SiteRoleAssignmentRepository::class)
             ),
             \App\Services\Community\CommunityReportService::class => new \App\Services\Community\CommunityReportService(
                 self::get(\App\Repositories\ForumReportRepository::class),
