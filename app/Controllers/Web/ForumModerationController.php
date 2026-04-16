@@ -215,6 +215,9 @@ class ForumModerationController
             'lock_topic' => $this->followUpLockTopic($report, $tenantId, $canModerateContent, $logModeration, $outcomes),
             'hide_topic' => $this->followUpHideTopic($report, $tenantId, $canModerateContent, $logModeration, $outcomes),
             'sanction_warn' => $this->followUpSanctionWarn($report, $tenantId, $actorUserId, $reportId, $moderatorNote, $logModeration, $outcomes),
+            'request_correction' => $this->followUpRequestCorrection($moderatorNote, $logModeration, $outcomes),
+            'escalate_support' => $this->followUpEscalateSupport($moderatorNote, $logModeration, $outcomes),
+            'watch_report' => $this->followUpWatchReport($moderatorNote, $logModeration, $outcomes),
             default => throw new \InvalidArgumentException('Action non reconnue.'),
         };
     }
@@ -375,6 +378,36 @@ class ForumModerationController
         );
         $logModeration('sanction_warn', (string) $targetId);
         $outcomes[] = 'Un avertissement formel a été enregistré sur la fiche du membre.';
+    }
+
+    /**
+     * @param callable(string, ?string): void $logModeration
+     * @param list<string> $outcomes
+     */
+    private function followUpRequestCorrection(string $moderatorNote, callable $logModeration, array &$outcomes): void
+    {
+        $logModeration('request_correction', $moderatorNote);
+        $outcomes[] = 'Mesure enregistrée : demande de correction du contenu signalé.';
+    }
+
+    /**
+     * @param callable(string, ?string): void $logModeration
+     * @param list<string> $outcomes
+     */
+    private function followUpEscalateSupport(string $moderatorNote, callable $logModeration, array &$outcomes): void
+    {
+        $logModeration('escalate_support', $moderatorNote);
+        $outcomes[] = 'Mesure enregistrée : dossier escaladé vers l’assistance plateforme.';
+    }
+
+    /**
+     * @param callable(string, ?string): void $logModeration
+     * @param list<string> $outcomes
+     */
+    private function followUpWatchReport(string $moderatorNote, callable $logModeration, array &$outcomes): void
+    {
+        $logModeration('watch_report', $moderatorNote);
+        $outcomes[] = 'Mesure enregistrée : contenu conservé sous surveillance.';
     }
 
     private function mayApplyFormalMemberWarning(): bool

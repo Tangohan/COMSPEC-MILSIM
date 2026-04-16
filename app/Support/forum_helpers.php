@@ -31,7 +31,7 @@ if (!function_exists('forum_user_can_moderate')) {
         if (!function_exists('can')) {
             return false;
         }
-        if (can('forum.moderate') || can('forum.moderate_organization')) {
+        if (can('forum.moderate') || can('forum.moderate_organization') || can('forum.reports.manage')) {
             return true;
         }
         if ($gate->allows('admin.organization') || $gate->allows('admin.access')) {
@@ -1060,7 +1060,7 @@ if (!function_exists('forum_user_can_moderate_for_user_id')) {
             $sitePerms = $rbac->loadSitePermissionsForEmail((string) ($user['email'] ?? ''));
             $granted = array_values(array_unique([...$tenantPerms, ...$sitePerms]));
             $pi = \App\Authorization\PermissionImplication::class;
-            if ($pi::isGranted($granted, 'forum.moderate') || $pi::isGranted($granted, 'forum.moderate_organization')) {
+            if ($pi::isGranted($granted, 'forum.moderate') || $pi::isGranted($granted, 'forum.moderate_organization') || $pi::isGranted($granted, 'forum.reports.manage')) {
                 return $cache[$k] = true;
             }
             if ($pi::isGranted($granted, 'admin.organization') || $pi::isGranted($granted, 'admin.access')) {

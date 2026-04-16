@@ -32,6 +32,21 @@ $botActionMeta = static function (string $action): array {
         default => ['label' => $action !== '' ? $action : '—', 'class' => 'bg-slate-100 text-slate-800 ring-1 ring-slate-200/80'],
     };
 };
+$followUpLabel = static function (?string $action): string {
+    $a = strtolower(trim((string) $action));
+    return match ($a) {
+        'request_correction' => 'Demande de correction',
+        'escalate_support' => 'Escalade assistance plateforme',
+        'watch_report' => 'Surveillance sans retrait',
+        'hide_post' => 'Message masqué',
+        'delete_post' => 'Message supprimé',
+        'lock_topic' => 'Sujet verrouillé',
+        'hide_topic' => 'Sujet masqué',
+        'sanction_warn' => 'Avertissement formel',
+        'close', '' => 'Clôture sans mesure',
+        default => $a,
+    };
+};
 
 $canForumContentMod = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
 $canDeleteForumPost = function_exists('can') && can('forum.post.delete_any');
@@ -351,6 +366,9 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
                         <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2" for="follow-up-<?= (int) $r['id'] ?>">Mesure avant clôture</label>
                         <select name="follow_up" id="follow-up-<?= (int) $r['id'] ?>" class="forum-mod-follow-select w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm font-medium text-slate-800 shadow-inner focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 outline-none transition">
                           <option value="close">Clôturer sans autre mesure</option>
+                          <option value="request_correction">Demander une correction du contenu</option>
+                          <option value="escalate_support">Escalader vers l’assistance plateforme</option>
+                          <option value="watch_report">Laisser visible mais surveiller</option>
                           <?php if ($hasPost && $canForumContentMod): ?>
                             <option value="hide_post">Masquer le message signalé</option>
                           <?php endif; ?>
@@ -367,8 +385,8 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
                         </select>
                       </div>
                       <div class="forum-mod-note-field hidden rounded-lg border border-dashed border-violet-200 bg-violet-50/40 p-3">
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-violet-800 mb-1.5" for="mod-note-<?= (int) $r['id'] ?>">Précision pour le dossier membre (optionnel)</label>
-                        <textarea name="moderator_note" id="mod-note-<?= (int) $r['id'] ?>" rows="2" maxlength="500" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none" placeholder="Sera joint à l’avertissement enregistré."></textarea>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-violet-800 mb-1.5" for="mod-note-<?= (int) $r['id'] ?>">Précision de mesure (optionnel)</label>
+                        <textarea name="moderator_note" id="mod-note-<?= (int) $r['id'] ?>" rows="2" maxlength="500" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none" placeholder="Note interne ajoutée à la timeline du dossier."></textarea>
                       </div>
                       <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-rose-600 to-rose-700 px-4 py-3 text-xs font-bold text-white shadow-md shadow-rose-600/25 hover:from-rose-500 hover:to-rose-600 transition-colors">
                         <svg class="h-4 w-4 opacity-90 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
@@ -585,7 +603,8 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
     var note = f.querySelector('.forum-mod-note-field');
     function syncNote() {
       if (!sel || !note) return;
-      note.classList.toggle('hidden', sel.value !== 'sanction_warn');
+      var withNote = ['sanction_warn', 'request_correction', 'escalate_support', 'watch_report'];
+      note.classList.toggle('hidden', withNote.indexOf(sel.value) === -1);
     }
     if (sel) sel.addEventListener('change', syncNote);
     syncNote();
