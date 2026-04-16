@@ -9,6 +9,7 @@ $scopeFilter = $modScopeFilter ?? '';
 $pendingCount = count($pendingReports);
 $forumModerationLogs = $forumModerationLogs ?? [];
 $forumModerationLogsAvailable = $forumModerationLogsAvailable ?? false;
+$reportTimelines = is_array($reportTimelines ?? null) ? $reportTimelines : [];
 
 $reportTypeLabel = static function (?string $raw): string {
     $t = strtolower(trim((string) $raw));
@@ -216,6 +217,11 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
             if ($showWarnOption) {
                 ++$followUpExtraCount;
             }
+            $currentUserId = (int) (\App\Core\Session::get('user_id') ?? 0);
+            $assignedToId = (int) ($r['assigned_to'] ?? 0);
+            $isAssignedToMe = $assignedToId > 0 && $assignedToId === $currentUserId;
+            $isAssigned = $assignedToId > 0;
+            $timelineRows = $reportTimelines[(int) ($r['id'] ?? 0)] ?? [];
             ?>
             <li class="px-5 sm:px-6 py-6 sm:py-7 transition-colors hover:bg-slate-50/50">
               <article class="rounded-2xl border border-slate-200/80 bg-slate-50/30 sm:bg-white sm:border-slate-100 p-5 sm:p-6 shadow-sm">
@@ -256,12 +262,52 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
                       <span class="text-slate-300 hidden sm:inline" aria-hidden="true">·</span>
                       <span class="tabular-nums"><?= $r['created_at'] ? date('d/m/Y à H:i', strtotime((string) $r['created_at'])) : '' ?></span>
                     </div>
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                      <?php if ($isAssigned): ?>
+                        <span class="inline-flex rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-900">
+                          En cours : <?= htmlspecialchars((string) ($r['assigned_to_name'] ?? 'Modérateur'), ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                      <?php else: ?>
+                        <span class="inline-flex rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-semibold text-slate-600">Non attribué</span>
+                      <?php endif; ?>
+                      <?php if (!empty($r['assigned_at'])): ?>
+                        <span class="text-slate-500 tabular-nums">depuis <?= htmlspecialchars(date('d/m/Y H:i', strtotime((string) $r['assigned_at'])), ENT_QUOTES, 'UTF-8') ?></span>
+                      <?php endif; ?>
+                    </div>
                     <?php if ($topicId && !empty($r['topic_title'])): ?>
                       <p class="text-sm text-slate-600">
                         <span class="text-slate-400 font-medium">Sujet :</span>
                         <a href="<?= htmlspecialchars($baseUrl . '/forum/topic/' . $topicId, ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 hover:text-emerald-700 underline decoration-emerald-200 underline-offset-2"><?= htmlspecialchars((string) $r['topic_title'], ENT_QUOTES, 'UTF-8') ?></a>
                       </p>
                     <?php endif; ?>
+                    <div class="rounded-xl border border-slate-200/80 bg-white px-4 py-3">
+                      <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Timeline dossier</p>
+                      <?php if (empty($timelineRows)): ?>
+                        <p class="text-xs text-slate-500">Aucun événement pour l’instant.</p>
+                      <?php else: ?>
+                        <ul class="space-y-2">
+                          <?php foreach ($timelineRows as $evt): ?>
+                            <li class="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2">
+                              <div class="flex flex-wrap items-center gap-2 text-[11px]">
+                                <span class="font-semibold text-slate-700"><?= htmlspecialchars((string) ($evt['event_label'] ?? 'Événement'), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="text-slate-400">·</span>
+                                <span class="text-slate-500 tabular-nums"><?= !empty($evt['created_at']) ? htmlspecialchars(date('d/m/Y H:i', strtotime((string) $evt['created_at'])), ENT_QUOTES, 'UTF-8') : '—' ?></span>
+                                <span class="text-slate-400">·</span>
+                                <span class="text-slate-600"><?= htmlspecialchars((string) (($evt['actor_name'] ?? '') !== '' ? $evt['actor_name'] : 'Système'), ENT_QUOTES, 'UTF-8') ?></span>
+                              </div>
+                              <?php if (!empty($evt['event_detail'])): ?>
+                                <p class="mt-1 text-xs text-slate-600 leading-relaxed"><?= nl2br(htmlspecialchars((string) $evt['event_detail'], ENT_QUOTES, 'UTF-8')) ?></p>
+                              <?php endif; ?>
+                            </li>
+                          <?php endforeach; ?>
+                        </ul>
+                      <?php endif; ?>
+                      <form method="post" action="<?= htmlspecialchars($baseUrl . '/forum/report/' . (int) $r['id'] . '/comment', ENT_QUOTES, 'UTF-8') ?>" class="mt-3 space-y-2">
+                        <?= \App\Core\Csrf::field() ?>
+                        <textarea name="timeline_comment" rows="2" maxlength="1200" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none" placeholder="Ajouter un commentaire de traitement (visible dans la timeline)."></textarea>
+                        <button type="submit" class="inline-flex rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition-colors">Ajouter au dossier</button>
+                      </form>
+                    </div>
                   </div>
                   <div class="flex flex-col gap-4 shrink-0 lg:w-[min(100%,20rem)] lg:border-l lg:border-slate-100 lg:pl-6">
                     <div class="flex flex-col sm:flex-row lg:flex-col gap-2">
@@ -278,6 +324,20 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
                         <a href="<?= htmlspecialchars($baseUrl . '/back-office/users/' . (int) $resolvedTargetUid, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center justify-center rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-xs font-bold text-violet-950 shadow-sm hover:bg-violet-100 transition-colors text-center">
                           Fiche membre
                         </a>
+                      <?php endif; ?>
+                    </div>
+                    <div class="grid grid-cols-1 gap-2">
+                      <?php if (!$isAssigned || !$isAssignedToMe): ?>
+                        <form method="post" action="<?= htmlspecialchars($baseUrl . '/forum/report/' . (int) $r['id'] . '/claim', ENT_QUOTES, 'UTF-8') ?>">
+                          <?= \App\Core\Csrf::field() ?>
+                          <button type="submit" class="w-full rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-[11px] font-bold text-indigo-900 hover:bg-indigo-100 transition-colors">Prendre en charge</button>
+                        </form>
+                      <?php endif; ?>
+                      <?php if ($isAssignedToMe): ?>
+                        <form method="post" action="<?= htmlspecialchars($baseUrl . '/forum/report/' . (int) $r['id'] . '/unclaim', ENT_QUOTES, 'UTF-8') ?>">
+                          <?= \App\Core\Csrf::field() ?>
+                          <button type="submit" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition-colors">Relâcher</button>
+                        </form>
                       <?php endif; ?>
                     </div>
                     <form method="post" action="<?= htmlspecialchars($baseUrl . '/forum/report/' . (int) $r['id'] . '/handle', ENT_QUOTES, 'UTF-8') ?>" class="forum-mod-close-form space-y-4 rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm">
@@ -339,11 +399,20 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
       <?php else: ?>
         <ul class="divide-y divide-slate-100 bg-white">
           <?php foreach ($handledReports as $r): ?>
+            <?php $handledTimeline = $reportTimelines[(int) ($r['id'] ?? 0)] ?? []; ?>
             <li class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 hover:bg-slate-50/60 transition-colors">
               <div class="shrink-0">
                 <span class="inline-flex rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500 tabular-nums">#<?= (int) $r['id'] ?></span>
               </div>
-              <p class="min-w-0 flex-1 text-sm text-slate-700 line-clamp-2 leading-relaxed"><?= htmlspecialchars(mb_substr((string) ($r['reason'] ?? ''), 0, 200), ENT_QUOTES, 'UTF-8') ?><?= mb_strlen((string) ($r['reason'] ?? '')) > 200 ? '…' : '' ?></p>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm text-slate-700 line-clamp-2 leading-relaxed"><?= htmlspecialchars(mb_substr((string) ($r['reason'] ?? ''), 0, 200), ENT_QUOTES, 'UTF-8') ?><?= mb_strlen((string) ($r['reason'] ?? '')) > 200 ? '…' : '' ?></p>
+                <?php if (!empty($r['last_follow_up_action'])): ?>
+                  <p class="mt-1 text-xs text-slate-500">Mesure appliquée : <span class="font-semibold text-slate-700"><?= htmlspecialchars((string) $r['last_follow_up_action'], ENT_QUOTES, 'UTF-8') ?></span></p>
+                <?php endif; ?>
+                <?php if (!empty($handledTimeline)): ?>
+                  <p class="mt-1 text-xs text-slate-500">Dernier événement : <?= htmlspecialchars((string) ($handledTimeline[0]['event_label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endif; ?>
+              </div>
               <div class="shrink-0 text-xs text-slate-500 sm:text-right sm:min-w-[10rem]">
                 <p class="font-semibold text-slate-700"><?= htmlspecialchars((string) ($r['handled_by_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
                 <p class="tabular-nums mt-0.5"><?= !empty($r['handled_at']) ? date('d/m/Y H:i', strtotime((string) $r['handled_at'])) : '' ?></p>

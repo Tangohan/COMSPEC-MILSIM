@@ -103,6 +103,7 @@ $bootstrapFiles = [
     'personnel_org_history_migration.php',
     'hr_charter_lms_migration.php',
     'core_schema_extensions_migration.php',
+    'forum_reporting_workflow_migration.php',
 ];
 foreach ($bootstrapFiles as $bf) {
     $path = $root . '/bootstrap/' . $bf;
@@ -183,6 +184,11 @@ try {
     echo '  [ATTENTION] co_unit_rbac_triggers : ' . $e->getMessage() . "\n";
 }
 run_permissions_action_migration($pdo);
+try {
+    run_forum_reporting_workflow_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] forum_reporting_workflow : ' . $e->getMessage() . "\n";
+}
 try {
     run_roles_organic_architecture_migration($pdo);
 } catch (Throwable $e) {

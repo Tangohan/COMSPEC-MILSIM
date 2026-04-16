@@ -91,6 +91,21 @@ class ForumModerationController
         }
 
         $this->reportRepository->markHandled($id, $tenantId, $userId);
+        $this->reportRepository->saveResolution($id, $tenantId, $followUp, $note);
+        try {
+            $actionLabel = $followUp === '' || $followUp === 'close'
+                ? 'Dossier clôturé sans mesure supplémentaire'
+                : 'Dossier clôturé avec mesure : ' . $followUp;
+            $this->reportRepository->addTimelineEvent(
+                $tenantId,
+                $id,
+                $userId,
+                'report_closed',
+                $actionLabel,
+                $note !== '' ? $note : null
+            );
+        } catch (\Throwable) {
+        }
 
         try {
             $this->communityReportNotificationService->notifyReportHandled(
@@ -104,6 +119,56 @@ class ForumModerationController
 
         $summary = $outcomes !== [] ? implode(' ', $outcomes) . ' ' : '';
         Session::flash('success', $summary . 'Dossier clôturé.');
+
+        return Response::redirect(url('back-office/forum-moderation'));
+    }
+
+    public function claimReport(Request $request, array $params = []): Response
+    {
+        return $this->setClaimState($request, $params, true);
+    }
+
+    public function unclaimReport(Request $request, array $params = []): Response
+    {
+        return $this->setClaimState($request, $params, false);
+    }
+
+    public function addReportComment(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $report = $this->reportRepository->findById($id, $tenantId);
+        if ($id < 1 || !$report) {
+            Session::flash('error', 'Dossier introuvable.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+        $comment = trim((string) $request->input('timeline_comment', ''));
+        if ($comment === '') {
+            Session::flash('error', 'Le commentaire est vide.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+        if (mb_strlen($comment) > 1200) {
+            $comment = mb_substr($comment, 0, 1200);
+        }
+        try {
+            $this->reportRepository->addTimelineEvent($tenantId, $id, $userId, 'comment', 'Commentaire modération', $comment);
+        } catch (\Throwable) {
+            Session::flash('error', 'Impossible d’enregistrer le commentaire.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+        Session::flash('success', 'Commentaire ajouté au dossier.');
 
         return Response::redirect(url('back-office/forum-moderation'));
     }
@@ -319,6 +384,49 @@ class ForumModerationController
         }
 
         return can('admin.members.moderate');
+    }
+
+    private function setClaimState(Request $request, array $params, bool $claim): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $report = $this->reportRepository->findById($id, $tenantId);
+        if ($id < 1 || !$report || (string) ($report['status'] ?? '') !== 'pending') {
+            Session::flash('error', 'Dossier non disponible.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+        $ok = $claim
+            ? $this->reportRepository->assignTo($id, $tenantId, $userId)
+            : $this->reportRepository->unassign($id, $tenantId);
+        if (!$ok) {
+            Session::flash('error', 'Action impossible sur l’affectation.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+        try {
+            $this->reportRepository->addTimelineEvent(
+                $tenantId,
+                $id,
+                $userId,
+                $claim ? 'claimed' : 'released',
+                $claim ? 'Dossier pris en charge' : 'Dossier remis dans la file',
+                null
+            );
+        } catch (\Throwable) {
+        }
+        Session::flash('success', $claim ? 'Dossier pris en charge.' : 'Affectation retirée.');
+
+        return Response::redirect(url('back-office/forum-moderation'));
     }
 
     private function resolveTopicIdFromReport(array $report, int $tenantId): int
