@@ -18,6 +18,9 @@ $csrf = htmlspecialchars((string) ($deploymentCsrf ?? ''), ENT_QUOTES, 'UTF-8');
             <p class="mt-4 text-sm text-slate-600">Une fois la migration exécutée, rechargez cette page pour accéder au pilotage des publications et aux communautés de test.</p>
         <?php else: ?>
             <div class="mt-6 flex flex-wrap gap-3">
+                <?php if (!empty($deploymentCampaignSchemaReady)): ?>
+                    <a href="<?= htmlspecialchars(url('admin/system/deployment/campaigns'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-950 hover:bg-amber-100">Campagnes de publication</a>
+                <?php endif; ?>
                 <a href="<?= htmlspecialchars(url('admin/system/deployment/communities'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Communautés de préqualification</a>
             </div>
 

@@ -444,4 +444,39 @@ class ForumPostRepository
 
         return $s !== '' ? $s : null;
     }
+
+    /**
+     * Contexte sujet pour plusieurs messages (file modération contenus).
+     *
+     * @param list<int> $postIds
+     * @return array<int, array{post_id: int, topic_id: int, topic_title: string}> indexé par post_id
+     */
+    public function findTopicBriefsForPosts(array $postIds, int $tenantId): array
+    {
+        $postIds = array_values(array_unique(array_filter(array_map('intval', $postIds), static fn (int $v): bool => $v > 0)));
+        if ($postIds === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($postIds), '?'));
+        $sql = 'SELECT fp.id AS post_id, fp.topic_id AS topic_id, ft.title AS topic_title
+                FROM forum_posts fp
+                INNER JOIN forum_topics ft ON ft.id = fp.topic_id AND ft.tenant_id = fp.tenant_id
+                WHERE fp.tenant_id = ? AND fp.id IN (' . $placeholders . ')';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId], $postIds));
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $pid = (int) ($row['post_id'] ?? 0);
+            if ($pid <= 0) {
+                continue;
+            }
+            $out[$pid] = [
+                'post_id' => $pid,
+                'topic_id' => (int) ($row['topic_id'] ?? 0),
+                'topic_title' => (string) ($row['topic_title'] ?? ''),
+            ];
+        }
+
+        return $out;
+    }
 }

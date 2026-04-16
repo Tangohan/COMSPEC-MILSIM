@@ -521,29 +521,6 @@ if (!function_exists('personnel_file_render_admin_value')) {
         </div>
     </section>
 
-    <?php if ($seniorityDetailLines !== []): ?>
-    <section class="w-full border-b border-slate-200 bg-slate-50/90" aria-labelledby="personnel-seniority-detail-heading">
-        <div class="max-w-7xl mx-auto px-6 md:px-8 py-6 md:py-8">
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-6 mb-5">
-                <div>
-                    <h2 id="personnel-seniority-detail-heading" class="text-xs font-black uppercase tracking-[0.28em] text-slate-500">Autres indicateurs d’ancienneté</h2>
-                    <p class="mt-2 max-w-3xl text-xs sm:text-sm text-slate-600 leading-relaxed">
-                        Chaque durée ci-dessous correspond à des <strong>périodes</strong> enregistrées sur le dossier (dates de début et, si besoin, de fin). Il n’y a pas de journal « minute par minute » affiché ici : seules les plages retenues pour le calcul sont visibles. L’organisation peut disposer d’une trace des saisies pour le dossier, sans détail sur cette page.
-                    </p>
-                </div>
-            </div>
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <?php foreach ($seniorityDetailLines as $seniorityRow): ?>
-                <div class="rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm">
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1"><?= htmlspecialchars((string) ($seniorityRow['label'] ?? 'Indicateur'), ENT_QUOTES, 'UTF-8') ?></p>
-                    <p class="text-sm font-black text-slate-900 tabular-nums"><?= htmlspecialchars((string) ($seniorityRow['formatted'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </section>
-    <?php endif; ?>
-
     <div class="max-w-7xl mx-auto px-6 md:px-8 py-10">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
             <!-- Sidebar -->
@@ -612,12 +589,36 @@ if (!function_exists('personnel_file_render_admin_value')) {
             <div class="lg:col-span-9 order-1 lg:order-2 space-y-6" x-data="{ tab: 'resume' }">
                 <nav class="flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-slate-50/90 p-1.5 shadow-sm" aria-label="Sections du dossier personnel">
                     <button type="button" @click="tab = 'resume'" :class="tab === 'resume' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Vue d’ensemble</button>
+                    <?php if ($seniorityDetailLines !== []): ?>
+                    <button type="button" @click="tab = 'seniorite'" :class="tab === 'seniorite' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Ancienneté</button>
+                    <?php endif; ?>
                     <button type="button" @click="tab = 'ops'" :class="tab === 'ops' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Poste & affectations</button>
                     <button type="button" @click="tab = 'formation'" :class="tab === 'formation' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Habilitations & parcours</button>
                     <button type="button" @click="tab = 'logistique'" :class="tab === 'logistique' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Dotation & préparation</button>
                     <button type="button" @click="tab = 'historique'" :class="tab === 'historique' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Historique & notes</button>
                     <button type="button" @click="tab = 'administratif'" :class="tab === 'administratif' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Coordonnées & dossier</button>
                 </nav>
+
+                <?php if ($seniorityDetailLines !== []): ?>
+                <div class="space-y-8" x-show="tab === 'seniorite'" x-cloak>
+                    <section class="rounded-3xl border border-slate-200 bg-slate-50/90 p-6 shadow-sm md:p-8" aria-labelledby="personnel-seniority-detail-heading">
+                        <div class="mb-5">
+                            <h2 id="personnel-seniority-detail-heading" class="text-xs font-black uppercase tracking-[0.28em] text-slate-600">Autres indicateurs d’ancienneté</h2>
+                            <p class="mt-2 max-w-3xl text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                Chaque durée ci-dessous correspond à des <strong>périodes</strong> enregistrées sur le dossier (dates de début et, si besoin, de fin). Il n’y a pas de journal « minute par minute » affiché ici : seules les plages retenues pour le calcul sont visibles. L’organisation peut disposer d’une trace des saisies pour le dossier, sans détail sur cette page.
+                            </p>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <?php foreach ($seniorityDetailLines as $seniorityRow): ?>
+                            <div class="rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm">
+                                <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1"><?= htmlspecialchars((string) ($seniorityRow['label'] ?? 'Indicateur'), ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="text-sm font-black text-slate-900 tabular-nums"><?= htmlspecialchars((string) ($seniorityRow['formatted'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
+                </div>
+                <?php endif; ?>
 
                 <div class="space-y-8" x-show="tab === 'resume'" x-cloak>
                     <?php if (!empty($rpDossierNeedsAttention)): ?>

@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\HrCharterRepository;
+use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PlatformModuleReleaseRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Personnel\SeniorityDossierInferenceSyncService;
+use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Platform\FeatureGateService;
 
@@ -21,6 +25,9 @@ final class RhWorkspaceController
         private HrCharterRepository $hrCharterRepository,
         private SenioritySummaryService $senioritySummaryService,
         private PlatformModuleReleaseRepository $platformModuleReleaseRepository,
+        private PersonnelAssignmentRepository $personnelAssignmentRepository,
+        private SeniorityEnrollmentBootstrapService $seniorityEnrollmentBootstrapService,
+        private SeniorityDossierInferenceSyncService $seniorityDossierInferenceSyncService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -78,7 +85,33 @@ final class RhWorkspaceController
             'rhSeniorityLines' => $seniorityLines,
             'rhTesterCommunities' => $testerCommunities,
             'rhRolloutRows' => $rolloutRows,
+            'rhWorkspaceCsrf' => Csrf::token(),
         ]);
+    }
+
+    public function refreshFromDossier(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$user || $tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
+
+            return Response::redirect(url('personnel/mon-espace-rh'));
+        }
+        try {
+            $this->personnelAssignmentRepository->syncMissingFromUserUnitsWhenPossible($userId);
+            $this->seniorityEnrollmentBootstrapService->syncTenureCommunityFromEnrollment($tenantId, $userId, null, false);
+            $this->seniorityDossierInferenceSyncService->syncForUser($tenantId, $userId, false);
+            Session::flash('success', 'Vos indicateurs ont été mis à jour à partir des informations de votre dossier.');
+        } catch (\Throwable) {
+            Session::flash('error', 'La mise à jour n’a pas pu aboutir. Réessayez dans quelques instants ou contactez l’encadrement si le problème persiste.');
+        }
+
+        return Response::redirect(url('personnel/mon-espace-rh'));
     }
 
     private function accessRuleLabel(string $ruleType): string

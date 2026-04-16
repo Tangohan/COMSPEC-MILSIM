@@ -316,6 +316,82 @@ if ($stmtPm && $stmtPm->fetch()) {
     $migrationFlush();
 }
 
+$stmtDj = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'deployment_jobs' LIMIT 1");
+if ($stmtDj && $stmtDj->fetch()) {
+    $stmtCampTbl = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'deployment_campaigns' LIMIT 1");
+    if (!$stmtCampTbl || !$stmtCampTbl->fetch()) {
+        echo "Migration campagnes de déploiement (deployment_campaigns)...\n";
+        $migrationFlush();
+        $campSqlPath = $root . '/migrations/20260415120000_deployment_campaigns.sql';
+        if (is_file($campSqlPath)) {
+            $sql = file_get_contents($campSqlPath);
+            if ($sql !== false && $sql !== '') {
+                $sql = preg_replace('/--[^\r\n]*/s', '', $sql);
+                $sql = preg_replace('/SET NAMES utf8mb4;/', '', $sql);
+                $chunks = preg_split('/;\s*[\r\n]+/', trim($sql));
+                foreach ($chunks as $stmtSql) {
+                    $stmtSql = trim($stmtSql);
+                    if ($stmtSql !== '') {
+                        try {
+                            $pdo->exec($stmtSql . (str_ends_with($stmtSql, ';') ? '' : ';'));
+                        } catch (Throwable $e) {
+                            echo '  [ATTENTION] deployment_campaigns : ' . $e->getMessage() . "\n";
+                        }
+                    }
+                }
+                echo "  [OK] deployment_campaigns\n";
+            }
+        } else {
+            echo "  [ATTENTION] Fichier absent : migrations/20260415120000_deployment_campaigns.sql\n";
+        }
+        $migrationFlush();
+    }
+    $colCamp = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'deployment_jobs' AND COLUMN_NAME = 'campaign_id' LIMIT 1");
+    if ($colCamp && !$colCamp->fetch()) {
+        echo "Migration deployment_jobs (campagnes : colonnes)...\n";
+        $migrationFlush();
+        try {
+            $pdo->exec('ALTER TABLE deployment_jobs ADD COLUMN campaign_id BIGINT UNSIGNED NULL AFTER id');
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] deployment_jobs.campaign_id : ' . $e->getMessage() . "\n";
+        }
+        try {
+            $pdo->exec('ALTER TABLE deployment_jobs ADD COLUMN step_order SMALLINT UNSIGNED NULL AFTER target_channel_id');
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] deployment_jobs.step_order : ' . $e->getMessage() . "\n";
+        }
+        try {
+            $pdo->exec('ALTER TABLE deployment_jobs ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER log_path');
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] deployment_jobs.created_at : ' . $e->getMessage() . "\n";
+        }
+        try {
+            $pdo->exec('ALTER TABLE deployment_jobs ADD COLUMN updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] deployment_jobs.updated_at : ' . $e->getMessage() . "\n";
+        }
+        try {
+            $pdo->exec('ALTER TABLE deployment_jobs ADD COLUMN error_message TEXT NULL AFTER updated_at');
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] deployment_jobs.error_message : ' . $e->getMessage() . "\n";
+        }
+        try {
+            $pdo->exec('ALTER TABLE deployment_jobs ADD KEY idx_deployment_jobs_campaign (campaign_id)');
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] deployment_jobs idx campaign : ' . $e->getMessage() . "\n";
+        }
+        try {
+            $pdo->exec(
+                'ALTER TABLE deployment_jobs ADD CONSTRAINT fk_deployment_jobs_campaign FOREIGN KEY (campaign_id) REFERENCES deployment_campaigns (id) ON DELETE CASCADE ON UPDATE CASCADE'
+            );
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] deployment_jobs FK campaign : ' . $e->getMessage() . "\n";
+        }
+        echo "  [OK] deployment_jobs colonnes campagne\n";
+        $migrationFlush();
+    }
+}
+
 $usageAnalyticsMigrate = require $root . '/bootstrap/usage_analytics_migration.php';
 try {
     $usageAnalyticsMigrate($pdo);

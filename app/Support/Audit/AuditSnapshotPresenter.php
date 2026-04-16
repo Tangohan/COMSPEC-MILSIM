@@ -32,7 +32,6 @@ final class AuditSnapshotPresenter
         'module_version_id' => 'Version publiée',
         'version' => 'Numéro de version',
         'channel' => 'Canal',
-        'status' => 'État',
         'rule_type' => 'Type de règle',
         'community_id' => 'Communauté de test',
         'environment_channel_id' => 'Canal d’environnement',
@@ -49,6 +48,13 @@ final class AuditSnapshotPresenter
         'tenant_id' => 'Communauté',
         'role_name' => 'Rôle',
         'role_id' => 'Référence rôle',
+        'sanction_kind' => 'Type de mesure',
+        'type' => 'Type de mesure',
+        'target_user_id' => 'Compte concerné',
+        'sanction_scope' => 'Niveau (organisation ou site)',
+        'restrictions' => 'Restrictions associées',
+        'statut' => 'État après action',
+        'expires_at' => 'Fin prévue',
     ];
 
     /**

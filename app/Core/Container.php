@@ -32,6 +32,15 @@ class Container
             TenantRepository::class => new TenantRepository(),
             \App\Repositories\SubscriptionPlanRepository::class => new \App\Repositories\SubscriptionPlanRepository(),
             \App\Repositories\PlatformModuleReleaseRepository::class => new \App\Repositories\PlatformModuleReleaseRepository(),
+            \App\Repositories\DeploymentCampaignRepository::class => new \App\Repositories\DeploymentCampaignRepository(),
+            \App\Services\Platform\DeploymentChannelReleaseService::class => new \App\Services\Platform\DeploymentChannelReleaseService(
+                self::get(\App\Repositories\PlatformModuleReleaseRepository::class),
+                self::get(\App\Services\Audit\AuditService::class),
+            ),
+            \App\Services\Platform\DeploymentCampaignProcessor::class => new \App\Services\Platform\DeploymentCampaignProcessor(
+                self::get(\App\Repositories\DeploymentCampaignRepository::class),
+                self::get(\App\Services\Platform\DeploymentChannelReleaseService::class),
+            ),
             \App\Services\Platform\ModuleReleaseAccessResolver::class => new \App\Services\Platform\ModuleReleaseAccessResolver(),
             \App\Services\Platform\PlatformFeatureDeploymentEvaluator::class => new \App\Services\Platform\PlatformFeatureDeploymentEvaluator(
                 self::get(\App\Repositories\PlatformModuleReleaseRepository::class),
@@ -360,11 +369,17 @@ class Container
                 self::get(\App\Repositories\HrCharterRepository::class),
                 self::get(\App\Services\Personnel\SenioritySummaryService::class),
                 self::get(\App\Repositories\PlatformModuleReleaseRepository::class),
+                self::get(\App\Repositories\PersonnelAssignmentRepository::class),
+                self::get(\App\Services\Personnel\SeniorityEnrollmentBootstrapService::class),
+                self::get(\App\Services\Personnel\SeniorityDossierInferenceSyncService::class),
             ),
             \App\Controllers\Admin\System\PlatformDeploymentAdminController::class => new \App\Controllers\Admin\System\PlatformDeploymentAdminController(
                 self::get(\App\Repositories\PlatformModuleReleaseRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Repositories\DeploymentCampaignRepository::class),
+                self::get(\App\Services\Platform\DeploymentCampaignProcessor::class),
+                self::get(\App\Services\Platform\DeploymentChannelReleaseService::class),
             ),
             \App\Controllers\Admin\System\SystemTenantsController::class => new \App\Controllers\Admin\System\SystemTenantsController(
                 self::get(TenantRepository::class),
@@ -1151,7 +1166,11 @@ class Container
             \App\Controllers\Web\ContentModerationController::class => new \App\Controllers\Web\ContentModerationController(
                 self::get(\App\Repositories\ModerationArtifactRepository::class),
                 self::get(\App\Repositories\ModerationDecisionRepository::class),
-                self::get(\App\Services\Documents\DocumentUploadService::class)
+                self::get(\App\Services\Documents\DocumentUploadService::class),
+                self::get(\App\Repositories\ForumPostRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Services\Moderation\ModerationService::class),
+                self::get(\App\Services\Auth\AuthService::class)
             ),
             \App\Repositories\ForumVoteRepository::class => new \App\Repositories\ForumVoteRepository(),
             \App\Repositories\ForumPostReactionRepository::class => new \App\Repositories\ForumPostReactionRepository(),

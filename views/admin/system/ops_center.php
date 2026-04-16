@@ -157,4 +157,4 @@ $priorityBadge = [
 </div>
 
 <script id="ops-center-data" type="application/json"><?= json_encode(['actions' => $actions], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
-<script src="<?= asset('assets/js/admin-ops-center.js') ?>" defer></script>
+<script src="<?= htmlspecialchars(url('assets/js/admin-ops-center.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>

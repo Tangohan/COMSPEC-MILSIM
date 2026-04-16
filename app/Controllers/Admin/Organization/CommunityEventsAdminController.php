@@ -64,14 +64,18 @@ final class CommunityEventsAdminController
 
     public function store(Request $request, array $params = []): Response
     {
+        $listVue = trim((string) $request->input('return_vue', 'a_venir'));
+        if (!in_array($listVue, ['a_venir', 'passes', 'annules'], true)) {
+            $listVue = 'a_venir';
+        }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/events'));
+            return $this->redirectEventsIndex($listVue);
         }
         $tenantId = (int) Session::get('tenant_id');
         if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
-            return Response::redirect(url('back-office/events'));
+            return $this->redirectEventsIndex($listVue);
         }
         $user = $this->authService->user();
         if (!$user) {
@@ -81,14 +85,27 @@ final class CommunityEventsAdminController
             $this->featureGate->recordQuotaLimitReached($tenantId, (int) $user['id'], 'events');
             Session::flash('error', "Quota mensuel de créations d'événements atteint. Passez à un plan supérieur pour en ajouter davantage.");
 
-            return Response::redirect(url('back-office/events'));
+            return $this->redirectEventsIndex($listVue);
         }
         $title = trim((string) $request->input('title'));
-        $starts = trim((string) $request->input('starts_at'));
-        if ($title === '' || $starts === '') {
+        $startsRaw = trim((string) $request->input('starts_at'));
+        if ($title === '' || $startsRaw === '') {
             Session::flash('error', 'Titre et date de début requis.');
 
-            return Response::redirect(url('back-office/events'));
+            return $this->redirectEventsIndex($listVue);
+        }
+        $starts = $this->parseEventDatetimeInput($startsRaw);
+        if ($starts === null) {
+            Session::flash('error', 'La date et l’heure de début ne sont pas valides. Vérifiez le créneau choisi.');
+
+            return $this->redirectEventsIndex($listVue);
+        }
+        $endsRaw = trim((string) $request->input('ends_at'));
+        $ends = $endsRaw === '' ? null : $this->parseEventDatetimeInput($endsRaw);
+        if ($endsRaw !== '' && $ends === null) {
+            Session::flash('error', 'La date et l’heure de fin ne sont pas valides.');
+
+            return $this->redirectEventsIndex($listVue);
         }
         $eventType = trim((string) $request->input('event_type', 'evenement'));
         if (!in_array($eventType, ['operation', 'evenement', 'formation', 'autre'], true)) {
@@ -101,14 +118,14 @@ final class CommunityEventsAdminController
             trim((string) $request->input('description')) ?: null,
             trim((string) $request->input('location')) ?: null,
             $starts,
-            trim((string) $request->input('ends_at')) ?: null,
+            $ends,
             trim((string) $request->input('campaign_tag')) ?: null,
             $eventType
         );
         $this->featureGate->recordQuotaUse($tenantId, 'events', (int) $user['id']);
         Session::flash('success', 'Événement créé.');
 
-        return Response::redirect(url('back-office/events'));
+        return $this->redirectEventsIndex($listVue);
     }
 
     public function show(Request $request, array $params = []): Response
@@ -363,6 +380,40 @@ final class CommunityEventsAdminController
         Session::flash('success', 'Événement annulé. Notifications envoyées : ' . (int) ($result['notified'] ?? 0) . '.');
 
         return Response::redirect(url('back-office/events'));
+    }
+
+    private function redirectEventsIndex(string $vue): Response
+    {
+        if (!in_array($vue, ['a_venir', 'passes', 'annules'], true)) {
+            $vue = 'a_venir';
+        }
+
+        return Response::redirect(url('back-office/events') . '?vue=' . rawurlencode($vue));
+    }
+
+    /**
+     * Accepte la valeur issue d’un champ datetime-local du navigateur (séparateur « T ») ou un libellé classique « Y-m-d H:i:s ».
+     */
+    private function parseEventDatetimeInput(string $raw): ?string
+    {
+        $s = trim($raw);
+        if ($s === '') {
+            return null;
+        }
+        $s = str_replace('T', ' ', $s);
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $s) === 1) {
+            return $s . ':00';
+        }
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $s) === 1) {
+            return $s;
+        }
+        try {
+            $d = new \DateTimeImmutable($s);
+
+            return $d->format('Y-m-d H:i:s');
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /** @param array<string, string> $params */

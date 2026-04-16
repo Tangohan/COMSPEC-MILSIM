@@ -88,6 +88,7 @@ $typeBadge = static function (string $et): array {
             </div>
             <form method="post" action="<?= url('back-office/events') ?>" class="p-5 sm:p-6 space-y-5">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                <input type="hidden" name="return_vue" value="<?= htmlspecialchars($eventsVue, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div class="sm:col-span-2">
                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Titre</label>
@@ -99,11 +100,12 @@ $typeBadge = static function (string $et): array {
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Date et heure de début</label>
-                        <input type="text" name="starts_at" required placeholder="ex. 2026-04-10 20:00:00" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" <?= !$canCreateEvent ? 'disabled' : '' ?>>
+                        <input type="datetime-local" name="starts_at" required step="60" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" <?= !$canCreateEvent ? 'disabled' : '' ?>>
+                        <p class="mt-1.5 text-xs text-slate-500">Utilisez le sélecteur du navigateur (date puis heure).</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Fin <span class="font-normal text-slate-500">(optionnel)</span></label>
-                        <input type="text" name="ends_at" placeholder="ex. 2026-04-10 23:00:00" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" <?= !$canCreateEvent ? 'disabled' : '' ?>>
+                        <input type="datetime-local" name="ends_at" step="60" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" <?= !$canCreateEvent ? 'disabled' : '' ?>>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Lieu <span class="font-normal text-slate-500">(optionnel)</span></label>

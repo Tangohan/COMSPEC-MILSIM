@@ -25,7 +25,7 @@ final class SeniorityEngine
             'active_only' => $this->computeActiveOnly($periods, $referenceDate),
             'custom_rule' => $this->computeCustomRule($periods, $referenceDate),
             default => [
-                'formatted' => '0 a 0 m 0 j',
+                'formatted' => '—',
                 'days' => 0,
                 'reference_date' => $referenceDate->format('Y-m-d'),
             ],
@@ -77,7 +77,7 @@ final class SeniorityEngine
 
         if ($normalized === []) {
             return [
-                'formatted' => '0 a 0 m 0 j',
+                'formatted' => '—',
                 'days' => 0,
                 'reference_date' => $referenceDate->format('Y-m-d'),
             ];
@@ -147,11 +147,25 @@ final class SeniorityEngine
 
     private function formatDays(int $days): string
     {
+        if ($days < 1) {
+            return '—';
+        }
         $years = intdiv($days, 365);
         $remaining = $days % 365;
         $months = intdiv($remaining, 30);
         $finalDays = $remaining % 30;
 
-        return sprintf('%d a %d m %d j', $years, $months, $finalDays);
+        $parts = [];
+        if ($years > 0) {
+            $parts[] = $years === 1 ? '1 an' : $years . ' ans';
+        }
+        if ($months > 0) {
+            $parts[] = $months . ' mois';
+        }
+        if ($finalDays > 0) {
+            $parts[] = $finalDays === 1 ? '1 jour' : $finalDays . ' jours';
+        }
+
+        return $parts !== [] ? implode(', ', $parts) : '—';
     }
 }

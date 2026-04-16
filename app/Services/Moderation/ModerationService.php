@@ -8,6 +8,7 @@ use App\Repositories\BlockedIndicatorRepository;
 use App\Repositories\ModerationRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Support\Audit\AuditFieldSnapshot;
 
 final class ModerationService
 {
@@ -90,17 +91,20 @@ final class ModerationService
 
     public function revoke(int $tenantId, int $actionId, int $revokedByUserId): bool
     {
+        $prev = $this->repository->findActionById($tenantId, $actionId);
         $ok = $this->repository->revokeAction($tenantId, $actionId, $revokedByUserId);
         if ($ok) {
             $this->blockedIndicatorRepository->revokeByModerationActionId($actionId);
+            $old = $this->snapshotFromModerationRow($prev);
+            [$os, $ns] = AuditFieldSnapshot::encodePair($old, ['scope' => 'any']);
             $this->auditService->log(
                 AuditAction::MODERATION_REVOKED,
                 $tenantId,
                 $revokedByUserId,
                 'moderation_action',
                 $actionId,
-                null,
-                json_encode(['scope' => 'any'], JSON_UNESCAPED_UNICODE) ?: null
+                $os,
+                $ns,
             );
         }
 
@@ -113,20 +117,52 @@ final class ModerationService
     public function revokeForScope(int $tenantId, int $actionId, int $revokedByUserId, string $sanctionScope): bool
     {
         $scope = $sanctionScope === 'platform' ? 'platform' : 'tenant';
+        $prev = $this->repository->findActionById($tenantId, $actionId);
         $ok = $this->repository->revokeActionForScope($tenantId, $actionId, $revokedByUserId, $scope);
         if ($ok) {
             $this->blockedIndicatorRepository->revokeByModerationActionId($actionId);
+            $old = $this->snapshotFromModerationRow($prev);
+            [$os, $ns] = AuditFieldSnapshot::encodePair($old, ['scope' => $scope, 'statut' => 'levée']);
             $this->auditService->log(
                 AuditAction::MODERATION_REVOKED,
                 $tenantId,
                 $revokedByUserId,
                 'moderation_action',
                 $actionId,
-                null,
-                json_encode(['scope' => $scope], JSON_UNESCAPED_UNICODE) ?: null
+                $os,
+                $ns,
             );
         }
 
         return $ok;
+    }
+
+    /**
+     * @param array<string, mixed>|null $row
+     *
+     * @return array<string, mixed>
+     */
+    private function snapshotFromModerationRow(?array $row): array
+    {
+        if ($row === null || $row === []) {
+            return [];
+        }
+        $restrictions = null;
+        $rj = $row['restrictions_json'] ?? null;
+        if (is_string($rj) && $rj !== '') {
+            try {
+                $restrictions = json_decode($rj, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\Throwable) {
+                $restrictions = null;
+            }
+        }
+
+        return [
+            'sanction_kind' => (string) ($row['action_type'] ?? ''),
+            'target_user_id' => (int) ($row['target_user_id'] ?? 0),
+            'sanction_scope' => (string) ($row['sanction_scope'] ?? ''),
+            'expires_at' => $row['expires_at'] !== null && $row['expires_at'] !== '' ? (string) $row['expires_at'] : null,
+            'restrictions' => $restrictions,
+        ];
     }
 }

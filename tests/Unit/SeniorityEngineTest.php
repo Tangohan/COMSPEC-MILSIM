@@ -24,7 +24,7 @@ final class SeniorityEngineTest extends TestCase
         );
 
         self::assertSame(1071, $result['days']);
-        self::assertSame('2 a 11 m 11 j', $result['formatted']);
+        self::assertSame('2 ans, 11 mois, 11 jours', $result['formatted']);
         self::assertSame('2026-04-15', $result['reference_date']);
     }
 
@@ -42,7 +42,7 @@ final class SeniorityEngineTest extends TestCase
         );
 
         self::assertSame(60, $result['days']);
-        self::assertSame('0 a 2 m 0 j', $result['formatted']);
+        self::assertSame('2 mois', $result['formatted']);
     }
 
     public function testComputeActiveOnlyFiltersInactiveRows(): void
@@ -59,6 +59,22 @@ final class SeniorityEngineTest extends TestCase
         );
 
         self::assertSame(30, $result['days']);
-        self::assertSame('0 a 1 m 0 j', $result['formatted']);
+        self::assertSame('1 mois', $result['formatted']);
+    }
+
+    public function testFormatDaysOmitsZeroParts(): void
+    {
+        $engine = new SeniorityEngine();
+
+        $result = $engine->compute(
+            ['calc_mode' => 'sum_periods'],
+            [
+                ['start_date' => '2026-04-01', 'end_date' => '2026-04-08'],
+            ],
+            new DateTimeImmutable('2026-04-15')
+        );
+
+        self::assertSame(7, $result['days']);
+        self::assertSame('7 jours', $result['formatted']);
     }
 }

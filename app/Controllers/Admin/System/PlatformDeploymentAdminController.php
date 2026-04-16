@@ -8,10 +8,13 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\DeploymentCampaignRepository;
 use App\Repositories\PlatformModuleReleaseRepository;
 use App\Repositories\UserRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Services\Platform\DeploymentCampaignProcessor;
+use App\Services\Platform\DeploymentChannelReleaseService;
 use App\Support\Audit\AuditFieldSnapshot;
 
 final class PlatformDeploymentAdminController
@@ -20,8 +23,14 @@ final class PlatformDeploymentAdminController
         private PlatformModuleReleaseRepository $repo,
         private UserRepository $userRepository,
         private ?AuditService $auditService = null,
+        private ?DeploymentCampaignRepository $campaignRepository = null,
+        private ?DeploymentCampaignProcessor $campaignProcessor = null,
+        private ?DeploymentChannelReleaseService $channelReleaseService = null,
     ) {
         $this->auditService ??= new AuditService();
+        $this->campaignRepository ??= new DeploymentCampaignRepository();
+        $this->channelReleaseService ??= new DeploymentChannelReleaseService($this->repo, $this->auditService);
+        $this->campaignProcessor ??= new DeploymentCampaignProcessor($this->campaignRepository, $this->channelReleaseService);
     }
 
     private function auditActorId(): ?int
@@ -81,6 +90,7 @@ final class PlatformDeploymentAdminController
                 'deploymentChannels' => [],
                 'deploymentMatrix' => [],
                 'deploymentModules' => [],
+                'deploymentCampaignSchemaReady' => false,
             ]);
         }
 
@@ -124,6 +134,7 @@ final class PlatformDeploymentAdminController
             'deploymentMatrix' => $matrix,
             'deploymentModules' => $this->repo->listPlatformModules(),
             'deploymentCsrf' => Csrf::token(),
+            'deploymentCampaignSchemaReady' => $this->campaignRepository->schemaReady(),
         ]);
     }
 
@@ -320,41 +331,207 @@ final class PlatformDeploymentAdminController
 
             return Response::redirect(url('admin/system/deployment/modules/' . $moduleId));
         }
-        $ch = $this->repo->findChannelById($channelId);
-        $chCode = strtoupper(trim((string) ($ch['code'] ?? '')));
-        $prevMap = $this->repo->findCurrentReleasesByChannelForModule($moduleId);
-        $prev = $prevMap[$chCode] ?? null;
-        $old = [
-            'channel' => $chCode,
-            'version' => $prev !== null ? (string) ($prev['version'] ?? '') : null,
-            'module_version_id' => $prev !== null ? (int) ($prev['module_version_id'] ?? 0) : null,
-        ];
-        $new = [
-            'channel' => $chCode,
-            'version' => (string) ($ver['version'] ?? ''),
-            'module_version_id' => $versionId,
-        ];
         $uid = Session::get('user_id') ? (int) Session::get('user_id') : null;
         try {
-            $this->repo->setCurrentReleaseForModuleChannel($moduleId, $channelId, $versionId, $uid);
+            $this->channelReleaseService->publishVersionOnChannel($moduleId, $channelId, $versionId, $uid);
             Session::flash('success', 'Publication sur le canal mise à jour.');
-            if ($uid !== null) {
-                [$o, $n] = AuditFieldSnapshot::diffOnly($old, $new, ['channel', 'version', 'module_version_id']);
-                $this->auditService->logChange(
-                    AuditAction::DEPLOYMENT_RELEASE_SET,
-                    null,
-                    $uid,
-                    'platform_module',
-                    $moduleId,
-                    $o,
-                    $n,
-                );
-            }
         } catch (\Throwable) {
             Session::flash('error', 'Mise à jour de la publication impossible.');
         }
 
         return Response::redirect(url('admin/system/deployment/modules/' . $moduleId));
+    }
+
+    public function campaignsIndex(Request $request, array $params = []): Response
+    {
+        if (!$this->repo->schemaReady() || !$this->campaignRepository->schemaReady()) {
+            Session::flash('error', 'Les campagnes de publication ne sont pas disponibles sur cette base. Exécutez les migrations prévues.');
+
+            return Response::redirect(url('admin/system/deployment'));
+        }
+
+        return Response::view('layout.main', [
+            'title' => 'Campagnes de publication',
+            'content' => 'admin.system.deployment_campaigns_index',
+            'deploymentCampaigns' => $this->campaignRepository->listCampaignsRecent(50),
+            'deploymentCsrf' => Csrf::token(),
+            'deploymentCampaignStatusLabels' => self::campaignStatusLabels(),
+        ]);
+    }
+
+    public function campaignsNew(Request $request, array $params = []): Response
+    {
+        if (!$this->repo->schemaReady() || !$this->campaignRepository->schemaReady()) {
+            Session::flash('error', 'Les campagnes de publication ne sont pas disponibles sur cette base.');
+
+            return Response::redirect(url('admin/system/deployment'));
+        }
+        $moduleId = (int) $request->query('module_id', 0);
+        $modules = $this->repo->listPlatformModules();
+        $versions = $moduleId > 0 && $this->repo->findModuleById($moduleId) !== null
+            ? $this->repo->listModuleVersions($moduleId)
+            : [];
+        $channels = $this->repo->listDeploymentChannels();
+
+        return Response::view('layout.main', [
+            'title' => 'Nouvelle campagne de publication',
+            'content' => 'admin.system.deployment_campaign_new',
+            'deploymentCampaignModules' => $modules,
+            'deploymentCampaignSelectedModuleId' => $moduleId,
+            'deploymentCampaignVersions' => $versions,
+            'deploymentCampaignChannels' => $channels,
+            'deploymentCsrf' => Csrf::token(),
+            'deploymentVersionStatusLabels' => self::versionStatusLabels(),
+        ]);
+    }
+
+    public function campaignsStore(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée, réessayez.');
+
+            return Response::redirect(url('admin/system/deployment/campaigns/nouveau'));
+        }
+        if (!$this->repo->schemaReady() || !$this->campaignRepository->schemaReady()) {
+            return Response::redirect(url('admin/system/deployment'));
+        }
+        $moduleId = (int) $request->input('module_id', 0);
+        $versionId = (int) $request->input('module_version_id', 0);
+        $rawChannels = (array) $request->input('channel_ids', []);
+        $channelIds = array_values(array_unique(array_filter(array_map('intval', $rawChannels), static fn (int $v): bool => $v > 0)));
+        $mod = $this->repo->findModuleById($moduleId);
+        $ver = $this->repo->findVersionById($versionId);
+        if ($mod === null || $ver === null || (int) ($ver['module_id'] ?? 0) !== $moduleId) {
+            Session::flash('error', 'Choisissez une fonctionnalité et une version compatibles.');
+
+            return Response::redirect(url('admin/system/deployment/campaigns/nouveau'));
+        }
+        if ($channelIds === []) {
+            Session::flash('error', 'Sélectionnez au moins un environnement cible pour cette campagne.');
+
+            return Response::redirect(url('admin/system/deployment/campaigns/nouveau?module_id=' . $moduleId));
+        }
+        $priorityById = [];
+        foreach ($this->repo->listDeploymentChannels() as $ch) {
+            $cid = (int) ($ch['id'] ?? 0);
+            if ($cid > 0) {
+                $priorityById[$cid] = (int) ($ch['priority'] ?? 0);
+            }
+        }
+        foreach ($channelIds as $cid) {
+            if (!isset($priorityById[$cid])) {
+                Session::flash('error', 'Un des environnements sélectionnés n’est pas reconnu.');
+
+                return Response::redirect(url('admin/system/deployment/campaigns/nouveau?module_id=' . $moduleId));
+            }
+        }
+        usort($channelIds, static fn (int $a, int $b): int => ($priorityById[$a] ?? 0) <=> ($priorityById[$b] ?? 0));
+        $channelIdsOrdered = $channelIds;
+        $uid = Session::get('user_id') ? (int) Session::get('user_id') : null;
+        try {
+            $campaignId = $this->campaignRepository->createCampaignWithJobs($moduleId, $versionId, $uid, $channelIdsOrdered);
+            Session::flash('success', 'Campagne enregistrée. Vous pouvez maintenant exécuter les étapes une par une ou par lots.');
+            if ($uid !== null && $campaignId > 0) {
+                $chNames = [];
+                foreach ($channelIdsOrdered as $cid) {
+                    $row = $this->repo->findChannelById($cid);
+                    if ($row !== null) {
+                        $chNames[] = (string) ($row['name'] ?? '');
+                    }
+                }
+                $this->auditService->logChange(
+                    AuditAction::DEPLOYMENT_CAMPAIGN_CREATED,
+                    null,
+                    $uid,
+                    'deployment_campaign',
+                    $campaignId,
+                    [],
+                    [
+                        'fonctionnalite' => (string) ($mod['name'] ?? ''),
+                        'version' => (string) ($ver['version'] ?? ''),
+                        'environnements' => $chNames,
+                    ],
+                );
+            }
+
+            return Response::redirect(url('admin/system/deployment/campaigns/' . $campaignId));
+        } catch (\Throwable) {
+            Session::flash('error', 'Création de la campagne impossible pour le moment.');
+        }
+
+        return Response::redirect(url('admin/system/deployment/campaigns/nouveau?module_id=' . $moduleId));
+    }
+
+    public function campaignsShow(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->repo->schemaReady() || !$this->campaignRepository->schemaReady() || $id < 1) {
+            return Response::redirect(url('admin/system/deployment'));
+        }
+        $camp = $this->campaignRepository->findCampaign($id);
+        if ($camp === null) {
+            Session::flash('error', 'Campagne introuvable.');
+
+            return Response::redirect(url('admin/system/deployment/campaigns'));
+        }
+        $jobs = $this->campaignRepository->listJobsForCampaign($id);
+
+        return Response::view('layout.main', [
+            'title' => 'Campagne de publication',
+            'content' => 'admin.system.deployment_campaign_show',
+            'deploymentCampaign' => $camp,
+            'deploymentCampaignJobs' => $jobs,
+            'deploymentCsrf' => Csrf::token(),
+            'deploymentCampaignStatusLabels' => self::campaignStatusLabels(),
+            'deploymentCampaignJobStatusLabels' => self::campaignJobStatusLabels(),
+        ]);
+    }
+
+    public function campaignsProcess(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée, réessayez.');
+
+            return Response::redirect(url('admin/system/deployment/campaigns'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->repo->schemaReady() || !$this->campaignRepository->schemaReady() || $id < 1) {
+            return Response::redirect(url('admin/system/deployment'));
+        }
+        $maxSteps = max(1, min(25, (int) $request->input('max_steps', 5)));
+        $uid = Session::get('user_id') ? (int) Session::get('user_id') : null;
+        $res = $this->campaignProcessor->processCampaignSteps($id, $uid, $maxSteps);
+        if ($res['last_error'] !== null) {
+            Session::flash('error', $res['last_error']);
+            if ($uid !== null && !empty($res['should_audit_failure'])) {
+                $this->auditService->logChange(
+                    AuditAction::DEPLOYMENT_CAMPAIGN_FAILED,
+                    null,
+                    $uid,
+                    'deployment_campaign',
+                    $id,
+                    [],
+                    ['message' => $res['last_error']],
+                );
+            }
+        } elseif (($res['processed'] ?? 0) > 0) {
+            if (($res['stopped_reason'] ?? '') === 'batch_limit') {
+                Session::flash('success', sprintf(
+                    '%d étape(s) exécutée(s). Relancez l’opération pour poursuivre vers les environnements restants.',
+                    (int) $res['processed'],
+                ));
+            } elseif (($res['stopped_reason'] ?? '') === 'campaign_done' && ($res['campaign_status'] ?? '') === 'completed') {
+                Session::flash('success', 'Toutes les étapes de la campagne sont terminées.');
+            } else {
+                Session::flash('success', sprintf('%d étape(s) exécutée(s).', (int) $res['processed']));
+            }
+        } elseif (($res['campaign_status'] ?? '') === 'completed') {
+            Session::flash('success', 'Cette campagne est déjà terminée.');
+        } else {
+            Session::flash('error', 'Aucune étape en attente n’a pu être lancée pour cette campagne.');
+        }
+
+        return Response::redirect(url('admin/system/deployment/campaigns/' . $id));
     }
 
     public function accessRuleStore(Request $request, array $params = []): Response
@@ -697,6 +874,30 @@ final class PlatformDeploymentAdminController
         }
 
         return Response::redirect(url('admin/system/deployment/communities/' . $id . '/edit'));
+    }
+
+    /** @return array<string, string> */
+    public static function campaignStatusLabels(): array
+    {
+        return [
+            'queued' => 'En attente',
+            'in_progress' => 'En cours',
+            'completed' => 'Terminée',
+            'failed' => 'Échouée',
+            'cancelled' => 'Annulée',
+        ];
+    }
+
+    /** @return array<string, string> */
+    public static function campaignJobStatusLabels(): array
+    {
+        return [
+            'queued' => 'En attente',
+            'running' => 'En cours d’exécution',
+            'success' => 'Réussie',
+            'failed' => 'Échouée',
+            'rolled_back' => 'Annulée (retour arrière)',
+        ];
     }
 
     /** @return array<string, string> */

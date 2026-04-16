@@ -1,0 +1,11 @@
+---
+description: Référence cycle de vie déploiement plateforme (canaux, versions, campagnes).
+globs: **/DeploymentCampaign*.php
+alwaysApply: false
+---
+
+# Déploiement plateforme
+
+Lire [docs/DEPLOIEMENT-CANAUX.md](docs/DEPLOIEMENT-CANAUX.md) pour la cartographie **DEV → INTERNAL → TEST → PREPROD → PROD**, les tables `platform_module_versions` / `platform_module_channel_releases`, et le flux **campagnes** (`deployment_campaigns`, `deployment_jobs`, `DeploymentCampaignProcessor`).
+
+Pour l’UI admin, respecter [.cursor/rules/ui-sans-jargon-technique.mdc](.cursor/rules/ui-sans-jargon-technique.mdc) : pas d’enums SQL ni de noms de colonnes visibles aux utilisateurs métier.

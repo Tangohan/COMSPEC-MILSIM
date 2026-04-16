@@ -120,6 +120,18 @@ class PersonnelAssignmentRepository
         return $stmt->rowCount();
     }
 
+    /**
+     * Comme {@see syncMissingFromUserUnits} lorsque les tables `personnel_assignments` et `user_units` sont disponibles ; sinon aucune opération.
+     */
+    public function syncMissingFromUserUnitsWhenPossible(int $userId): int
+    {
+        if ($userId < 1 || !$this->personnelAssignmentsTableExists() || !$this->userUnitsTableExists()) {
+            return 0;
+        }
+
+        return $this->syncMissingFromUserUnits($userId);
+    }
+
     public function personnelAssignmentsTableExists(): bool
     {
         try {

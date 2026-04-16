@@ -8,10 +8,15 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\ForumPostRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\ModerationDecisionRepository;
+use App\Repositories\UserRepository;
+use App\Services\Auth\AuthService;
 use App\Services\Documents\DocumentUploadService;
 use App\Services\Moderation\ModerationArtifactState;
+use App\Services\Moderation\ModerationRestrictionsCatalog;
+use App\Services\Moderation\ModerationService;
 use App\Services\Moderation\ModerationSourceType;
 
 /**
@@ -22,7 +27,11 @@ final class ContentModerationController
     public function __construct(
         private ModerationArtifactRepository $artifactRepository,
         private ModerationDecisionRepository $decisionRepository,
-        private DocumentUploadService $documentUploadService
+        private DocumentUploadService $documentUploadService,
+        private ForumPostRepository $forumPostRepository,
+        private UserRepository $userRepository,
+        private ModerationService $moderationService,
+        private AuthService $authService
     ) {
     }
 
@@ -42,6 +51,7 @@ final class ContentModerationController
                 'perPage' => 30,
                 'missingTables' => true,
                 'recentForumPublished' => [],
+                'moduleLabels' => ModerationRestrictionsCatalog::moduleLabels(),
             ]);
         }
         $page = max(1, (int) $request->query('page', 1));
@@ -49,6 +59,23 @@ final class ContentModerationController
         $artifacts = $this->artifactRepository->listQueue($tenantId, null, $page, $perPage);
         $total = $this->artifactRepository->countQueue($tenantId, null);
         $recentForumPublished = $this->artifactRepository->listRecentPublishedForumUploads($tenantId, 15);
+        $postIds = [];
+        $userIds = [];
+        foreach ($artifacts as $a) {
+            if (($a['source_type'] ?? '') === ModerationSourceType::FORUM_UPLOAD && (int) ($a['source_id'] ?? 0) > 0) {
+                $postIds[] = (int) $a['source_id'];
+            }
+            if ((int) ($a['user_id'] ?? 0) > 0) {
+                $userIds[] = (int) $a['user_id'];
+            }
+        }
+        foreach ($recentForumPublished as $r) {
+            if (($r['source_type'] ?? '') === ModerationSourceType::FORUM_UPLOAD && (int) ($r['source_id'] ?? 0) > 0) {
+                $postIds[] = (int) $r['source_id'];
+            }
+        }
+        $briefsByPost = $this->forumPostRepository->findTopicBriefsForPosts($postIds, $tenantId);
+        $usersById = $this->userRepository->findByIdsForTenant($tenantId, $userIds);
         foreach ($artifacts as &$a) {
             if (!empty($a['reason_codes']) && is_string($a['reason_codes'])) {
                 $a['reason_codes'] = json_decode($a['reason_codes'], true) ?: [];
@@ -56,8 +83,14 @@ final class ContentModerationController
             if (!empty($a['scan_log']) && is_string($a['scan_log'])) {
                 $a['scan_log'] = json_decode($a['scan_log'], true) ?: [];
             }
+            $this->attachModerationContext($a, $briefsByPost, $usersById);
         }
         unset($a);
+        foreach ($recentForumPublished as &$r) {
+            $pid = (int) ($r['source_id'] ?? 0);
+            $r['forum_context'] = ($pid > 0 && isset($briefsByPost[$pid])) ? $briefsByPost[$pid] : null;
+        }
+        unset($r);
 
         return Response::view('layout.main', [
             'content' => 'admin.content_moderation_index',
@@ -68,6 +101,7 @@ final class ContentModerationController
             'perPage' => $perPage,
             'missingTables' => false,
             'recentForumPublished' => $recentForumPublished,
+            'moduleLabels' => ModerationRestrictionsCatalog::moduleLabels(),
         ]);
     }
 
@@ -206,6 +240,159 @@ final class ContentModerationController
         Session::flash('success', 'Contenu rejeté.');
 
         return Response::redirect(url('admin/content-moderation'));
+    }
+
+    public function warnUploader(Request $request, array $params = []): Response
+    {
+        return $this->applyMemberSanction($request, $params, 'warn');
+    }
+
+    public function restrictUploader(Request $request, array $params = []): Response
+    {
+        return $this->applyMemberSanction($request, $params, 'restriction');
+    }
+
+    private function applyMemberSanction(Request $request, array $params, string $mode): Response
+    {
+        $redirect = Response::redirect(url('admin/content-moderation'));
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $redirect;
+        }
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        $actor = $this->authService->user();
+        if ($tenantId <= 0 || !$actor) {
+            return Response::redirect(url('login'));
+        }
+        $actorId = (int) ($actor['id'] ?? 0);
+        $id = (int) ($params['id'] ?? 0);
+        $artifact = $this->artifactRepository->findById($id, $tenantId);
+        $state = (string) ($artifact['state'] ?? '');
+        if (
+            !$artifact
+            || !in_array($state, [ModerationArtifactState::QUARANTINED, ModerationArtifactState::PENDING_SCAN], true)
+        ) {
+            Session::flash('error', 'Élément introuvable ou déjà traité.');
+
+            return $redirect;
+        }
+        $targetId = (int) ($artifact['user_id'] ?? 0);
+        if ($targetId <= 0 || $targetId === $actorId) {
+            Session::flash('error', 'Auteur du fichier introuvable ou action impossible sur vous-même.');
+
+            return $redirect;
+        }
+        $reason = trim((string) $request->input('member_sanction_reason', ''));
+
+        if ($mode === 'warn') {
+            try {
+                $this->moderationService->applySanction(
+                    $tenantId,
+                    $actorId,
+                    $targetId,
+                    'warn',
+                    $reason !== '' ? $reason : null,
+                    null,
+                    [],
+                    'tenant'
+                );
+                $this->decisionRepository->insert($id, $actorId, 'warn_uploader', 'tenant_warn', $reason !== '' ? $reason : null);
+                Session::flash('success', 'Avertissement enregistré sur le dossier du membre.');
+            } catch (\Throwable $e) {
+                Session::flash('error', $e->getMessage());
+            }
+
+            return $redirect;
+        }
+
+        if ($mode !== 'restriction') {
+            Session::flash('error', 'Type de mesure non reconnu.');
+
+            return $redirect;
+        }
+
+        $modsIn = $request->input('modules_blocked');
+        if (!is_array($modsIn)) {
+            $modsIn = [];
+        }
+        $modsClean = array_values(array_intersect(
+            array_map('strval', $modsIn),
+            ModerationRestrictionsCatalog::moduleKeys()
+        ));
+        if ($modsClean === []) {
+            Session::flash('error', 'Cochez au moins un domaine à restreindre (formations, documents, etc.).');
+
+            return $redirect;
+        }
+
+        $expires = null;
+        $durationMode = $request->input('duration_mode') === 'temporary' ? 'temporary' : 'permanent';
+        if ($durationMode === 'temporary') {
+            $days = max(1, (int) $request->input('duration_days'));
+            $expires = (new \DateTimeImmutable())->modify('+' . $days . ' days');
+        }
+
+        $restrictions = [
+            'account_lock' => false,
+            'forum' => 'full_access',
+            'messages_blocked' => false,
+            'join_blocked' => false,
+            'modules_blocked' => $modsClean,
+        ];
+
+        try {
+            $this->moderationService->applySanction(
+                $tenantId,
+                $actorId,
+                $targetId,
+                'mute',
+                $reason !== '' ? $reason : null,
+                $expires,
+                $restrictions,
+                'tenant'
+            );
+            $this->decisionRepository->insert($id, $actorId, 'restrict_uploader', 'tenant_mute', $reason !== '' ? $reason : null);
+            Session::flash('success', 'Restriction d’activité enregistrée sur le membre.');
+        } catch (\Throwable $e) {
+            Session::flash('error', $e->getMessage());
+        }
+
+        return $redirect;
+    }
+
+    /**
+     * @param array<string, mixed> $artifact
+     * @param array<int, array{post_id: int, topic_id: int, topic_title: string}> $briefsByPost
+     * @param array<int, array<string, mixed>> $usersById
+     */
+    private function attachModerationContext(array &$artifact, array $briefsByPost, array $usersById): void
+    {
+        $uid = (int) ($artifact['user_id'] ?? 0);
+        $artifact['uploader_label'] = null;
+        if ($uid > 0 && isset($usersById[$uid])) {
+            $artifact['uploader_label'] = $this->memberDisplayLabel($usersById[$uid]);
+        }
+        $artifact['forum_context'] = null;
+        if (($artifact['source_type'] ?? '') === ModerationSourceType::FORUM_UPLOAD) {
+            $pid = (int) ($artifact['source_id'] ?? 0);
+            if ($pid > 0 && isset($briefsByPost[$pid])) {
+                $artifact['forum_context'] = $briefsByPost[$pid];
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $userRow
+     */
+    private function memberDisplayLabel(array $userRow): string
+    {
+        $d = trim((string) ($userRow['display_name'] ?? ''));
+        if ($d !== '') {
+            return $d;
+        }
+
+        return trim((string) ($userRow['email'] ?? '')) !== '' ? (string) $userRow['email'] : 'Membre';
     }
 
     /**

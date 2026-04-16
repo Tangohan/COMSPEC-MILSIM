@@ -68,6 +68,8 @@ final class AuditActionLabel
         'deployment.tester_community_updated' => 'Déploiement — communauté de test modifiée',
         'deployment.tester_member_added' => 'Déploiement — membre ajouté à une communauté de test',
         'deployment.tester_member_removed' => 'Déploiement — membre retiré d’une communauté de test',
+        'deployment.campaign_created' => 'Déploiement — campagne de publication créée',
+        'deployment.campaign_failed' => 'Déploiement — campagne de publication en échec',
     ];
 
     /**

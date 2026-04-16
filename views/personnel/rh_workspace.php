@@ -7,6 +7,7 @@ $seniorityLines = is_array($rhSeniorityLines ?? null) ? $rhSeniorityLines : [];
 $testerCommunities = is_array($rhTesterCommunities ?? null) ? $rhTesterCommunities : [];
 $rolloutRows = is_array($rhRolloutRows ?? null) ? $rhRolloutRows : [];
 $greetingName = trim((string) ($rhGreetingName ?? ''));
+$rhWorkspaceCsrf = htmlspecialchars((string) ($rhWorkspaceCsrf ?? ''), ENT_QUOTES, 'UTF-8');
 
 $todoItems = [];
 if ($trainingAllowed && $charterReady && !$charterAccepted) {
@@ -187,13 +188,24 @@ if ($trainingAllowed && $charterReady && !$charterAccepted) {
             </section>
 
             <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
-                <div class="flex gap-4">
-                    <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-800 ring-1 ring-indigo-200/80" aria-hidden="true">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </span>
-                    <div class="min-w-0">
-                        <h2 class="text-lg font-bold text-slate-900">Ancienneté et parcours</h2>
-                        <p class="mt-1 text-sm text-slate-600 leading-relaxed">Indicateurs liés à votre présence et à votre historique au sein de la communauté.</p>
+                <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                    <div class="flex gap-4 min-w-0">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-800 ring-1 ring-indigo-200/80" aria-hidden="true">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </span>
+                        <div class="min-w-0">
+                            <h2 class="text-lg font-bold text-slate-900">Ancienneté et parcours</h2>
+                            <p class="mt-1 text-sm text-slate-600 leading-relaxed">Indicateurs liés à votre présence et à votre historique au sein de la communauté.</p>
+                        </div>
+                    </div>
+                    <div class="shrink-0 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 sm:max-w-sm">
+                        <p class="text-xs text-slate-600 leading-relaxed">Utile après un changement d’affectation ou de rôle enregistré par l’encadrement.</p>
+                        <form method="post" action="<?= htmlspecialchars(url('personnel/mon-espace-rh/actualiser'), ENT_QUOTES, 'UTF-8') ?>" class="mt-3">
+                            <input type="hidden" name="_csrf_token" value="<?= $rhWorkspaceCsrf ?>">
+                            <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 sm:w-auto">
+                                Actualiser depuis mon dossier
+                            </button>
+                        </form>
                     </div>
                 </div>
                 <?php if ($seniorityLines === []): ?>

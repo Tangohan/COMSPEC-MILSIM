@@ -522,6 +522,32 @@ class UserRepository
         return $row ?: null;
     }
 
+    /**
+     * @param list<int> $ids
+     * @return array<int, array<string, mixed>> indexé par id utilisateur
+     */
+    public function findByIdsForTenant(int $tenantId, array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $v): bool => $v > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM users WHERE tenant_id = ? AND id IN (' . $placeholders . ')'
+        );
+        $stmt->execute(array_merge([$tenantId], $ids));
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $uid = (int) ($row['id'] ?? 0);
+            if ($uid > 0) {
+                $out[$uid] = $row;
+            }
+        }
+
+        return $out;
+    }
+
     /** @return array<string, mixed>|null */
     public function findBySteamIdForTenant(int $tenantId, string $steamId): ?array
     {

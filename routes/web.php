@@ -280,6 +280,7 @@ return function (Router $router) {
     $router->get('/personnel/me', [PersonnelController::class, 'me'], [AuthMiddleware::class]);
     $router->get('/personnel/me/edit', [PersonnelController::class, 'edit'], [AuthMiddleware::class]);
     $router->get('/personnel/tutorials', [PersonnelController::class, 'tutorials'], [AuthMiddleware::class]);
+    $router->post('/personnel/mon-espace-rh/actualiser', [RhWorkspaceController::class, 'refreshFromDossier'], [AuthMiddleware::class]);
     $router->get('/personnel/mon-espace-rh', [RhWorkspaceController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/personnel/{id}', [PersonnelController::class, 'show'], [AuthMiddleware::class]);
     $router->get('/personnel/{id}/edit', [PersonnelController::class, 'edit'], [AuthMiddleware::class]);
@@ -380,6 +381,11 @@ return function (Router $router) {
     $router->get('/admin/system/cooperation/announcements', [SystemCooperationAnnouncementsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cooperation/announcements/edit', [SystemCooperationAnnouncementsController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cooperation/announcements/save', [SystemCooperationAnnouncementsController::class, 'save'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/deployment/campaigns/nouveau', [PlatformDeploymentAdminController::class, 'campaignsNew'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/deployment/campaigns', [PlatformDeploymentAdminController::class, 'campaignsStore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/deployment/campaigns/{id}/executer', [PlatformDeploymentAdminController::class, 'campaignsProcess'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/deployment/campaigns/{id}', [PlatformDeploymentAdminController::class, 'campaignsShow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/deployment/campaigns', [PlatformDeploymentAdminController::class, 'campaignsIndex'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/deployment/communities/{id}/edit', [PlatformDeploymentAdminController::class, 'communityEdit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/deployment/communities/{id}/edit', [PlatformDeploymentAdminController::class, 'communityUpdate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/deployment/communities/{id}/members', [PlatformDeploymentAdminController::class, 'communityMemberAdd'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -790,10 +796,14 @@ return function (Router $router) {
     $router->get('/admin/content-moderation/{id}/preview', [ContentModerationController::class, 'preview'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->post('/admin/content-moderation/{id}/approve', [ContentModerationController::class, 'approve'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->post('/admin/content-moderation/{id}/reject', [ContentModerationController::class, 'reject'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
+    $router->post('/admin/content-moderation/{id}/warn-uploader', [ContentModerationController::class, 'warnUploader'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
+    $router->post('/admin/content-moderation/{id}/restrict-uploader', [ContentModerationController::class, 'restrictUploader'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->get('/back-office/content-moderation', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/content-moderation')), [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->get('/back-office/content-moderation/{id}/preview', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/content-moderation/' . rawurlencode((string) ($p['id'] ?? '')) . '/preview')), [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->post('/back-office/content-moderation/{id}/approve', [ContentModerationController::class, 'approve'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->post('/back-office/content-moderation/{id}/reject', [ContentModerationController::class, 'reject'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
+    $router->post('/back-office/content-moderation/{id}/warn-uploader', [ContentModerationController::class, 'warnUploader'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
+    $router->post('/back-office/content-moderation/{id}/restrict-uploader', [ContentModerationController::class, 'restrictUploader'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->get('/admin/forum-moderation', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/forum-moderation')), [AuthMiddleware::class]);
     $router->get('/forum/moderation', [ForumModerationController::class, 'index'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/report/{id}/handle', [ForumModerationController::class, 'handleReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);

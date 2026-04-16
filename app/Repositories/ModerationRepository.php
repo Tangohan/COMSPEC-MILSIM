@@ -157,6 +157,23 @@ class ModerationRepository
         return $v;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findActionById(int $tenantId, int $actionId): ?array
+    {
+        if ($tenantId < 1 || $actionId < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM moderation_actions WHERE id = ? AND tenant_id = ? LIMIT 1'
+        );
+        $stmt->execute([$actionId, $tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
     public function revokeAction(int $tenantId, int $actionId, int $revokedByUserId): bool
     {
         $stmt = $this->pdo->prepare(

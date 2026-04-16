@@ -48,4 +48,8 @@ final class AuditAction
     public const DEPLOYMENT_TESTER_COMMUNITY_UPDATED = 'deployment.tester_community_updated';
     public const DEPLOYMENT_TESTER_MEMBER_ADDED = 'deployment.tester_member_added';
     public const DEPLOYMENT_TESTER_MEMBER_REMOVED = 'deployment.tester_member_removed';
+
+    public const DEPLOYMENT_CAMPAIGN_CREATED = 'deployment.campaign_created';
+
+    public const DEPLOYMENT_CAMPAIGN_FAILED = 'deployment.campaign_failed';
 }
