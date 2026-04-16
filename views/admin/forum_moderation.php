@@ -425,7 +425,7 @@ $canFormalMemberWarn = function_exists('can') && can('admin.members.moderate');
               <div class="min-w-0 flex-1">
                 <p class="text-sm text-slate-700 line-clamp-2 leading-relaxed"><?= htmlspecialchars(mb_substr((string) ($r['reason'] ?? ''), 0, 200), ENT_QUOTES, 'UTF-8') ?><?= mb_strlen((string) ($r['reason'] ?? '')) > 200 ? '…' : '' ?></p>
                 <?php if (!empty($r['last_follow_up_action'])): ?>
-                  <p class="mt-1 text-xs text-slate-500">Mesure appliquée : <span class="font-semibold text-slate-700"><?= htmlspecialchars($followUpLabel((string) $r['last_follow_up_action']), ENT_QUOTES, 'UTF-8') ?></span></p>
+                  <p class="mt-1 text-xs text-slate-500">Mesure appliquée : <span class="font-semibold text-slate-700"><?= htmlspecialchars((string) $r['last_follow_up_action'], ENT_QUOTES, 'UTF-8') ?></span></p>
                 <?php endif; ?>
                 <?php if (!empty($handledTimeline)): ?>
                   <p class="mt-1 text-xs text-slate-500">Dernier événement : <?= htmlspecialchars((string) ($handledTimeline[0]['event_label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
