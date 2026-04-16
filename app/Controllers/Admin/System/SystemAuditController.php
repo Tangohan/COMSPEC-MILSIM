@@ -27,8 +27,13 @@ class SystemAuditController
             'date_from' => $this->optionalString($request->query('date_from')),
             'date_to' => $this->optionalString($request->query('date_to')),
             'action' => $this->optionalString($request->query('action')),
+            'action_domain' => $this->optionalString($request->query('action_domain')),
+            'search' => $this->optionalString($request->query('search')),
             'user_id' => $this->optionalPositiveInt($request->query('user_id')),
             'tenant_id' => $this->optionalPositiveInt($request->query('tenant_id')),
+            'entity_type' => $this->optionalString($request->query('entity_type')),
+            'entity_id' => $this->optionalPositiveInt($request->query('entity_id')),
+            'actor_email' => $this->optionalString($request->query('actor_email')),
         ];
         if ($actionSlug !== null && $actionSlug !== '') {
             $repoFilters['action_exact'] = $actionSlug;

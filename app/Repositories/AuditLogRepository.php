@@ -24,8 +24,13 @@ final class AuditLogRepository
      *   date_to?: string|null,
      *   action?: string|null,
      *   action_exact?: string|null,
+     *   action_domain?: string|null,
+     *   search?: string|null,
      *   user_id?: int|null,
-     *   tenant_id?: int|null
+     *   tenant_id?: int|null,
+     *   entity_type?: string|null,
+     *   entity_id?: int|null,
+     *   actor_email?: string|null
      * } $filters
      * @return array{rows: list<array<string, mixed>>, total: int}
      */
@@ -51,6 +56,10 @@ final class AuditLogRepository
             $where[] = 'a.action LIKE ?';
             $params[] = '%' . $this->likeEscape((string) $filters['action']) . '%';
         }
+        if (!empty($filters['action_domain'])) {
+            $where[] = 'a.action LIKE ?';
+            $params[] = $this->likeEscape(trim((string) $filters['action_domain'])) . '.%';
+        }
         if (isset($filters['user_id']) && (int) $filters['user_id'] > 0) {
             $where[] = 'a.user_id = ?';
             $params[] = (int) $filters['user_id'];
@@ -58,6 +67,23 @@ final class AuditLogRepository
         if (isset($filters['tenant_id']) && (int) $filters['tenant_id'] > 0) {
             $where[] = 'a.tenant_id = ?';
             $params[] = (int) $filters['tenant_id'];
+        }
+        if (!empty($filters['entity_type'])) {
+            $where[] = 'a.entity_type LIKE ?';
+            $params[] = '%' . $this->likeEscape(trim((string) $filters['entity_type'])) . '%';
+        }
+        if (isset($filters['entity_id']) && (int) $filters['entity_id'] > 0) {
+            $where[] = 'a.entity_id = ?';
+            $params[] = (int) $filters['entity_id'];
+        }
+        if (!empty($filters['actor_email'])) {
+            $where[] = 'u.email LIKE ?';
+            $params[] = '%' . $this->likeEscape(trim((string) $filters['actor_email'])) . '%';
+        }
+        if (!empty($filters['search'])) {
+            $q = '%' . $this->likeEscape(trim((string) $filters['search'])) . '%';
+            $where[] = '(a.action LIKE ? OR a.entity_type LIKE ? OR CAST(a.entity_id AS CHAR) LIKE ? OR u.email LIKE ? OR t.name LIKE ? OR a.ip LIKE ? OR a.user_agent LIKE ? OR a.old_value LIKE ? OR a.new_value LIKE ?)';
+            array_push($params, $q, $q, $q, $q, $q, $q, $q, $q, $q);
         }
 
         if (!empty($filters['organization_journal'])) {
@@ -74,7 +100,13 @@ final class AuditLogRepository
         }
 
         $whereSql = implode(' AND ', $where);
-        $countStmt = $this->pdo->prepare("SELECT COUNT(*) FROM audit_logs a WHERE {$whereSql}");
+        $countStmt = $this->pdo->prepare(
+            "SELECT COUNT(*)
+             FROM audit_logs a
+             LEFT JOIN tenants t ON t.id = a.tenant_id
+             LEFT JOIN users u ON u.id = a.user_id
+             WHERE {$whereSql}"
+        );
         $countStmt->execute($params);
         $total = (int) $countStmt->fetchColumn();
 
