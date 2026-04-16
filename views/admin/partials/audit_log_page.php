@@ -22,6 +22,23 @@ $buildLink = static function (int $page) use ($auditFilters, $basePath): string 
     return url($basePath) . ($q ? '?' . http_build_query($q) : '');
 };
 $selectedSlug = (string) ($auditFilters['action_slug'] ?? '');
+$selectedDomain = (string) ($auditFilters['action_domain'] ?? '');
+$domainOptions = [
+    'auth' => 'Authentification',
+    'tenant' => 'Communauté / tenant',
+    'invitation' => 'Invitations',
+    'user' => 'Utilisateurs',
+    'role' => 'Rôles',
+    'group' => 'Groupes',
+    'document' => 'Documents',
+    'training' => 'Formation',
+    'course' => 'Formation (cours)',
+    'deployment' => 'Déploiement',
+    'platform' => 'Plateforme',
+    'site_role' => 'Rôles site',
+    'moderation' => 'Modération',
+    'security' => 'Sécurité',
+];
 ?>
 <div class="max-w-6xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
@@ -47,9 +64,34 @@ $selectedSlug = (string) ($auditFilters['action_slug'] ?? '');
                 <?php endforeach; ?>
             </select>
         </div>
+        <div class="min-w-[12rem]">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Domaine (systèmes/services)</label>
+            <select name="action_domain" class="w-full rounded border border-slate-300 text-sm px-2 py-1.5">
+                <option value="">Tous les domaines</option>
+                <?php foreach ($domainOptions as $domain => $label): ?>
+                    <option value="<?= htmlspecialchars($domain, ENT_QUOTES, 'UTF-8') ?>" <?= $selectedDomain === $domain ? ' selected' : '' ?>><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
         <div class="flex-1 min-w-[10rem]">
             <label class="block text-xs font-medium text-slate-600 mb-1">Recherche libre dans le code d’action</label>
             <input type="text" name="action" value="<?= htmlspecialchars((string) ($auditFilters['action'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded border border-slate-300 text-sm px-2 py-1.5" placeholder="Ex. user ou deployment" />
+        </div>
+        <div class="flex-1 min-w-[14rem]">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Recherche globale (logs/systèmes/services)</label>
+            <input type="text" name="search" value="<?= htmlspecialchars((string) ($auditFilters['search'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded border border-slate-300 text-sm px-2 py-1.5" placeholder="Action, acteur, IP, JSON, communauté…" />
+        </div>
+        <div class="min-w-[11rem]">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Acteur (e-mail)</label>
+            <input type="text" name="actor_email" value="<?= htmlspecialchars((string) ($auditFilters['actor_email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded border border-slate-300 text-sm px-2 py-1.5" placeholder="user@" />
+        </div>
+        <div class="min-w-[9rem]">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Type cible</label>
+            <input type="text" name="entity_type" value="<?= htmlspecialchars((string) ($auditFilters['entity_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded border border-slate-300 text-sm px-2 py-1.5" placeholder="user, doc..." />
+        </div>
+        <div class="w-28">
+            <label class="block text-xs font-medium text-slate-600 mb-1">ID cible</label>
+            <input type="number" name="entity_id" value="<?= $auditFilters['entity_id'] !== null && $auditFilters['entity_id'] !== '' ? (int) $auditFilters['entity_id'] : '' ?>" class="w-full rounded border border-slate-300 text-sm px-2 py-1.5" min="1" />
         </div>
         <div class="w-32">
             <label class="block text-xs font-medium text-slate-600 mb-1">Réf. compte acteur</label>

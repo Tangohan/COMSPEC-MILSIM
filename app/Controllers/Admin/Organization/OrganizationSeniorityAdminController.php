@@ -39,12 +39,14 @@ final class OrganizationSeniorityAdminController
 
         $schemaReady = $this->seniorityRepository->schemaReady();
         $definitions = $schemaReady ? $this->seniorityRepository->listAllDefinitionsForTenant($tenantId) : [];
+        $stats = $this->buildDefinitionStats($definitions);
 
         return Response::view('layout.main', [
             'title' => 'Indicateurs d’ancienneté',
             'content' => 'admin.organization.seniority',
             'senioritySchemaReady' => $schemaReady,
             'seniorityDefinitions' => $definitions,
+            'seniorityDefinitionStats' => $stats,
             'seniorityCsrf' => Csrf::token(),
         ]);
     }
@@ -216,5 +218,35 @@ final class OrganizationSeniorityAdminController
         Session::flash('success', $updated > 0 ? 'Vos modifications ont été enregistrées.' : 'Aucune modification enregistrée.');
 
         return Response::redirect(url('back-office/organisation/anciennete'));
+    }
+
+    /**
+     * @param list<array<string,mixed>> $definitions
+     * @return array<string,int>
+     */
+    private function buildDefinitionStats(array $definitions): array
+    {
+        $stats = [
+            'total' => 0,
+            'active' => 0,
+            'visible' => 0,
+            'inactive' => 0,
+            'hidden' => 0,
+        ];
+        foreach ($definitions as $def) {
+            $stats['total']++;
+            if (!empty($def['is_active'])) {
+                $stats['active']++;
+            } else {
+                $stats['inactive']++;
+            }
+            if (!empty($def['is_visible'])) {
+                $stats['visible']++;
+            } else {
+                $stats['hidden']++;
+            }
+        }
+
+        return $stats;
     }
 }
