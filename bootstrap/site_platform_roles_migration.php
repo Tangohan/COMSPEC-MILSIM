@@ -49,6 +49,11 @@ function run_site_platform_roles_migration(PDO $pdo): void
         'Assistance membres (accès guidé)',
         'admin'
     );
+    $pidReportsManage = $ensureGlobalPermission(
+        'forum.reports.manage',
+        'Pilotage des dossiers de signalement',
+        'forum'
+    );
 
     $definitions = [
         [
@@ -68,6 +73,18 @@ function run_site_platform_roles_migration(PDO $pdo): void
             'name' => 'Équipe assistance',
             'description' => 'Accompagnement des membres : consultation des éléments utiles au support dans le back-office, sans modération globale des canaux ni réglages système.',
             'permission_ids' => [$pidSupport],
+        ],
+        [
+            'slug' => 'site_report_operator',
+            'name' => 'Opérateur signalements',
+            'description' => 'Prise en charge des dossiers, qualification des mesures et ajout de commentaires de traitement dans la timeline.',
+            'permission_ids' => [$pidReportsManage],
+        ],
+        [
+            'slug' => 'site_report_supervisor',
+            'name' => 'Superviseur signalements',
+            'description' => 'Supervision de la file signalements, coordination des assignations et appui aux décisions de clôture.',
+            'permission_ids' => [$pidReportsManage, $pidModerate],
         ],
     ];
 
@@ -102,6 +119,10 @@ function run_site_platform_roles_migration(PDO $pdo): void
         $pdo->exec(
             "UPDATE roles SET semantic_tier = 'authority', display_group = 1, is_visual_only = 0
              WHERE tenant_id IS NULL AND slug IN ('site_senior_moderator','site_support')"
+        );
+        $pdo->exec(
+            "UPDATE roles SET semantic_tier = 'function', display_group = 1, is_visual_only = 0
+             WHERE tenant_id IS NULL AND slug IN ('site_report_operator','site_report_supervisor')"
         );
     } catch (\Throwable) {
     }

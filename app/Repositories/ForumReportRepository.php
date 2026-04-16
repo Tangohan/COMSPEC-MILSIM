@@ -126,15 +126,20 @@ class ForumReportRepository
 
     public function listPending(int $tenantId): array
     {
+        $hasAssignedTo = $this->columnExists('forum_reports', 'assigned_to');
+        $assignedSelect = $hasAssignedTo ? ', au.display_name AS assigned_to_name' : ', NULL AS assigned_to_name';
+        $assignedJoin = $hasAssignedTo ? ' LEFT JOIN users au ON au.id = fr.assigned_to ' : ' ';
         $stmt = $this->pdo->prepare(
             'SELECT fr.*, u.display_name AS reporter_name,
                     fp.body AS post_excerpt, fp.topic_id AS post_topic_id, fp.user_id AS post_author_id,
-                    ft.title AS topic_title,
+                    ft.title AS topic_title'
+                    . $assignedSelect . ',
                     COALESCE(fc.scope, \'general\') AS category_scope
              FROM forum_reports fr
              LEFT JOIN users u ON u.id = fr.reporter_id
              LEFT JOIN forum_posts fp ON fp.id = fr.post_id
              LEFT JOIN forum_topics ft ON ft.id = COALESCE(fr.topic_id, fp.topic_id)
+             ' . $assignedJoin . '
              LEFT JOIN forum_categories fc ON fc.id = ft.category_id
              WHERE fr.tenant_id = ? AND fr.status = \'pending\'
              ORDER BY fr.created_at DESC'
@@ -145,14 +150,18 @@ class ForumReportRepository
 
     public function listHandled(int $tenantId, int $limit = 20): array
     {
+        $hasAssignedTo = $this->columnExists('forum_reports', 'assigned_to');
+        $assignedSelect = $hasAssignedTo ? ', au.display_name AS assigned_to_name' : ', NULL AS assigned_to_name';
+        $assignedJoin = $hasAssignedTo ? ' LEFT JOIN users au ON au.id = fr.assigned_to ' : ' ';
         $stmt = $this->pdo->prepare(
             'SELECT fr.*, u.display_name AS reporter_name,
-                    fp.topic_id AS post_topic_id, ft.title AS topic_title, hu.display_name AS handled_by_name
+                    fp.topic_id AS post_topic_id, ft.title AS topic_title, hu.display_name AS handled_by_name' . $assignedSelect . '
              FROM forum_reports fr
              LEFT JOIN users u ON u.id = fr.reporter_id
              LEFT JOIN forum_posts fp ON fp.id = fr.post_id
              LEFT JOIN forum_topics ft ON ft.id = COALESCE(fr.topic_id, fp.topic_id)
              LEFT JOIN users hu ON hu.id = fr.handled_by
+             ' . $assignedJoin . '
              WHERE fr.tenant_id = ? AND fr.status = \'handled\'
              ORDER BY fr.handled_at DESC
              LIMIT ' . (int) $limit
@@ -163,8 +172,59 @@ class ForumReportRepository
 
     public function markHandled(int $id, int $tenantId, int $handledBy): bool
     {
-        $stmt = $this->pdo->prepare('UPDATE forum_reports SET status = \'handled\', handled_by = ?, handled_at = NOW() WHERE id = ? AND tenant_id = ?');
+        if (!$this->columnExists('forum_reports', 'assigned_to') || !$this->columnExists('forum_reports', 'assigned_at')) {
+            $stmt = $this->pdo->prepare('UPDATE forum_reports SET status = \'handled\', handled_by = ?, handled_at = NOW() WHERE id = ? AND tenant_id = ?');
+
+            return $stmt->execute([$handledBy, $id, $tenantId]);
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE forum_reports
+             SET status = \'handled\', handled_by = ?, handled_at = NOW(), assigned_to = NULL, assigned_at = NULL
+             WHERE id = ? AND tenant_id = ?'
+        );
         return $stmt->execute([$handledBy, $id, $tenantId]);
+    }
+
+    public function assignTo(int $id, int $tenantId, int $userId): bool
+    {
+        if (!$this->columnExists('forum_reports', 'assigned_to') || !$this->columnExists('forum_reports', 'assigned_at')) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE forum_reports
+             SET assigned_to = ?, assigned_at = NOW()
+             WHERE id = ? AND tenant_id = ? AND status = \'pending\''
+        );
+
+        return $stmt->execute([$userId, $id, $tenantId]);
+    }
+
+    public function unassign(int $id, int $tenantId): bool
+    {
+        if (!$this->columnExists('forum_reports', 'assigned_to') || !$this->columnExists('forum_reports', 'assigned_at')) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE forum_reports
+             SET assigned_to = NULL, assigned_at = NULL
+             WHERE id = ? AND tenant_id = ? AND status = \'pending\''
+        );
+
+        return $stmt->execute([$id, $tenantId]);
+    }
+
+    public function saveResolution(int $id, int $tenantId, string $followUp, string $note): bool
+    {
+        if (!$this->columnExists('forum_reports', 'last_follow_up_action') || !$this->columnExists('forum_reports', 'resolution_note')) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE forum_reports
+             SET last_follow_up_action = ?, resolution_note = ?
+             WHERE id = ? AND tenant_id = ?'
+        );
+
+        return $stmt->execute([$followUp !== '' ? $followUp : null, $note !== '' ? $note : null, $id, $tenantId]);
     }
 
     public function findById(int $id, int $tenantId): ?array
@@ -173,5 +233,87 @@ class ForumReportRepository
         $stmt->execute([$id, $tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
+    }
+
+    public function addTimelineEvent(
+        int $tenantId,
+        int $reportId,
+        ?int $actorUserId,
+        string $eventType,
+        string $eventLabel,
+        ?string $eventDetail = null
+    ): void {
+        if (!$this->tableExists('forum_report_timeline')) {
+            return;
+        }
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO forum_report_timeline (tenant_id, report_id, actor_user_id, event_type, event_label, event_detail, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, NOW())'
+        );
+        $stmt->execute([
+            $tenantId,
+            $reportId,
+            $actorUserId !== null && $actorUserId > 0 ? $actorUserId : null,
+            $eventType,
+            $eventLabel,
+            $eventDetail !== null && $eventDetail !== '' ? $eventDetail : null,
+        ]);
+    }
+
+    /**
+     * @param list<int> $reportIds
+     * @return array<int, list<array<string, mixed>>>
+     */
+    public function timelineByReportIds(int $tenantId, array $reportIds, int $limitPerReport = 8): array
+    {
+        if (!$this->tableExists('forum_report_timeline')) {
+            return [];
+        }
+        $reportIds = array_values(array_unique(array_filter(array_map('intval', $reportIds), static fn (int $id): bool => $id > 0)));
+        if ($reportIds === []) {
+            return [];
+        }
+        $limitPerReport = max(1, min(20, $limitPerReport));
+        $in = implode(',', array_fill(0, count($reportIds), '?'));
+        $sql = "SELECT tr.*, u.display_name AS actor_name
+                FROM forum_report_timeline tr
+                LEFT JOIN users u ON u.id = tr.actor_user_id
+                WHERE tr.tenant_id = ? AND tr.report_id IN ({$in})
+                ORDER BY tr.report_id ASC, tr.id DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId], $reportIds));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $out = [];
+        $counts = [];
+        foreach ($rows as $row) {
+            $rid = (int) ($row['report_id'] ?? 0);
+            if ($rid < 1) {
+                continue;
+            }
+            $counts[$rid] = (int) ($counts[$rid] ?? 0);
+            if ($counts[$rid] >= $limitPerReport) {
+                continue;
+            }
+            $out[$rid] ??= [];
+            $out[$rid][] = $row;
+            $counts[$rid]++;
+        }
+
+        return $out;
+    }
+
+    private function tableExists(string $table): bool
+    {
+        static $cache = [];
+        if (array_key_exists($table, $cache)) {
+            return $cache[$table];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+        );
+        $stmt->execute([$table]);
+        $cache[$table] = (bool) $stmt->fetchColumn();
+
+        return $cache[$table];
     }
 }

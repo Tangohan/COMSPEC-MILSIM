@@ -866,6 +866,8 @@ if (!function_exists('forum_visible_role_choice_label')) {
             'site_support' => 'Équipe assistance',
             'site_moderator' => 'Modérateur plateforme',
             'site_senior_moderator' => 'Modérateur senior plateforme',
+            'site_report_operator' => 'Opérateur signalements',
+            'site_report_supervisor' => 'Superviseur signalements',
         ];
         if ($layer === 'site') {
             if ($slug !== '' && isset($siteLabels[$slug])) {
