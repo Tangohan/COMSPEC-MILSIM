@@ -118,8 +118,10 @@ $categories = ['all' => 'Tous les modules', 'tactique' => 'tactique', 'technique
     <nav class="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <a href="<?= $base ?>/" class="text-[11px] font-black tracking-[0.28em] uppercase hover:text-emerald-600 transition-colors">Athena Compsec</a>
-            <div class="flex items-center gap-6">
-                <a href="<?= url('dashboard') ?>" class="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900">Dashboard</a>
+            <div class="flex flex-wrap items-center gap-4 md:gap-6">
+                <a href="<?= url('dashboard') ?>" class="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900">Tableau de bord</a>
+                <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="text-[9px] font-black text-violet-700 uppercase tracking-widest hover:text-violet-950">Espace RH</a>
+                <a href="<?= htmlspecialchars(url('account/charte-formations'), ENT_QUOTES, 'UTF-8') ?>" class="text-[9px] font-black text-emerald-700 uppercase tracking-widest hover:text-emerald-950">Charte</a>
                 <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Training_Protocol_v4.0</span>
                 <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
             </div>

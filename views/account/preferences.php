@@ -9,6 +9,8 @@ $notifEmailCatalog = $notifEmailCatalog ?? [];
 $notifEmailState = $notifEmailState ?? [];
 $accountSnapshot = $accountSnapshot ?? ['email_masked' => '—', 'email_verified' => false, 'last_login_label' => null];
 $timezoneSuggestions = $timezoneSuggestions ?? [];
+$steamWebConfigured = !empty($steamWebConfigured ?? false);
+$steamSyncReport = is_array($steamSyncReport ?? null) ? $steamSyncReport : null;
 
 $quickLinks = [
     ['href' => url('account'), 'label' => 'Vue d’ensemble compte', 'sub' => 'Tableau des réglages'],
@@ -39,6 +41,60 @@ foreach ($notifEmailCatalog as $item) {
     <?php endif; ?>
     <?php if ($error): ?>
     <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
+
+    <?php if ($steamSyncReport !== null): ?>
+    <div class="mb-6 rounded-2xl border <?= !empty($steamSyncReport['ok']) ? 'border-emerald-200 bg-emerald-50/90' : 'border-amber-200 bg-amber-50/90' ?> p-5 shadow-sm sm:p-6" role="region" aria-label="Détail de la synchronisation Steam">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <h2 class="text-sm font-black text-slate-900"><?= !empty($steamSyncReport['ok']) ? 'Synchronisation terminée' : 'Synchronisation interrompue' ?></h2>
+                <?php if (!empty($steamSyncReport['finished_at'])): ?>
+                <p class="mt-1 text-xs text-slate-600"><?= htmlspecialchars((string) $steamSyncReport['finished_at'], ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endif; ?>
+            </div>
+            <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold <?= !empty($steamSyncReport['ok']) ? 'bg-emerald-600 text-white' : 'bg-amber-700 text-white' ?>">
+                <?= !empty($steamSyncReport['ok']) ? 'Réussi' : 'À vérifier' ?>
+            </span>
+        </div>
+        <?php $steps = isset($steamSyncReport['steps']) && is_array($steamSyncReport['steps']) ? $steamSyncReport['steps'] : []; ?>
+        <?php if ($steps !== []): ?>
+        <ol class="mt-5 space-y-3">
+            <?php foreach ($steps as $idx => $st):
+                $ok = !empty($st['ok']);
+                $label = htmlspecialchars((string) ($st['label'] ?? 'Étape'), ENT_QUOTES, 'UTF-8');
+                $detail = htmlspecialchars((string) ($st['detail'] ?? ''), ENT_QUOTES, 'UTF-8');
+                ?>
+            <li class="flex gap-3 rounded-xl border border-white/60 bg-white/70 px-4 py-3">
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black <?= $ok ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white' ?>" aria-hidden="true"><?= (int) $idx + 1 ?></span>
+                <div class="min-w-0">
+                    <p class="text-sm font-bold text-slate-900"><?= $label ?></p>
+                    <?php if ($detail !== ''): ?><p class="mt-0.5 text-xs leading-relaxed text-slate-600"><?= $detail ?></p><?php endif; ?>
+                </div>
+            </li>
+            <?php endforeach; ?>
+        </ol>
+        <?php endif; ?>
+        <?php
+        $sd = isset($steamSyncReport['data']) && is_array($steamSyncReport['data']) ? $steamSyncReport['data'] : [];
+        $pseudo = isset($sd['public_pseudo']) ? trim((string) $sd['public_pseudo']) : '';
+        $sidShow = isset($sd['steam_id']) ? trim((string) $sd['steam_id']) : '';
+        ?>
+        <?php if ($pseudo !== '' || $sidShow !== '' || !empty($sd['avatar_updated']) || !empty($sd['display_name_updated'])): ?>
+        <div class="mt-5 rounded-xl border border-slate-200/80 bg-white/90 px-4 py-4">
+            <h3 class="text-[11px] font-black uppercase tracking-wider text-slate-500">Données lues sur le profil public</h3>
+            <dl class="mt-3 grid gap-3 sm:grid-cols-2">
+                <?php if ($pseudo !== ''): ?>
+                <div><dt class="text-[10px] font-bold uppercase text-slate-400">Pseudo affiché côté Steam</dt><dd class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($pseudo, ENT_QUOTES, 'UTF-8') ?></dd></div>
+                <?php endif; ?>
+                <?php if ($sidShow !== ''): ?>
+                <div><dt class="text-[10px] font-bold uppercase text-slate-400">Identifiant numérique confirmé</dt><dd class="text-sm font-mono font-semibold text-slate-900"><?= htmlspecialchars($sidShow, ENT_QUOTES, 'UTF-8') ?></dd></div>
+                <?php endif; ?>
+                <div><dt class="text-[10px] font-bold uppercase text-slate-400">Photo du compte</dt><dd class="text-sm text-slate-800"><?= !empty($sd['avatar_updated']) ? 'Mise à jour enregistrée' : 'Inchangée sur cette passe' ?></dd></div>
+                <div><dt class="text-[10px] font-bold uppercase text-slate-400">Nom d’affichage sur le portail</dt><dd class="text-sm text-slate-800"><?= !empty($sd['display_name_updated']) ? 'Aligné sur le pseudo Steam (option cochée)' : 'Inchangé sur cette passe' ?></dd></div>
+            </dl>
+        </div>
+        <?php endif; ?>
+    </div>
     <?php endif; ?>
 
     <!-- Accès rapide -->
@@ -112,18 +168,38 @@ foreach ($notifEmailCatalog as $item) {
                 </div>
                 <div>
                     <label for="profile_slug" class="block text-sm font-medium text-slate-700 mb-1">Adresse courte de votre fiche (optionnel)</label>
-                    <input type="text" name="profile_slug" id="profile_slug" value="<?= htmlspecialchars($user['profile_slug'] ?? '') ?>" pattern="[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?" class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono lowercase focus:ring-2 focus:ring-slate-900 focus:border-slate-900" maxlength="40" placeholder="ex. jean-dupont">
-                    <p class="mt-1 text-xs text-slate-500">Permet d’ouvrir votre fiche avec une adresse plus lisible dans le navigateur.</p>
+                    <input type="text" name="profile_slug" id="profile_slug" value="<?= htmlspecialchars($user['profile_slug'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono lowercase focus:ring-2 focus:ring-slate-900 focus:border-slate-900" maxlength="40" placeholder="ex. jean-dupont" autocomplete="username">
+                    <p class="mt-1 text-xs text-slate-500">Lettres minuscules, chiffres et tirets uniquement ; commence et finit par une lettre ou un chiffre. Laissez vide pour revenir à l’adresse par défaut.</p>
                     <?php if (!empty($errors['profile_slug'])): foreach ($errors['profile_slug'] as $e): ?>
                     <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
                     <?php endforeach; endif; ?>
                 </div>
-                <div>
-                    <label for="steam_id" class="block text-sm font-medium text-slate-700 mb-1">Steam ID (liaison ATAK)</label>
-                    <input type="text" name="steam_id" id="steam_id" value="<?= htmlspecialchars($user['steam_id'] ?? '') ?>" placeholder="76561198…" class="w-full max-w-md px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900" maxlength="20">
+                <div class="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 sm:p-5">
+                    <label for="steam_id" class="block text-sm font-medium text-slate-700 mb-1">Lien avec Steam (jeu et cartographie)</label>
+                    <input type="text" name="steam_id" id="steam_id" value="<?= htmlspecialchars($user['steam_id'] ?? '') ?>" placeholder="Numéro à 17 chiffres ou adresse de votre profil public" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 bg-white" maxlength="512" autocomplete="off">
+                    <p class="mt-2 text-xs text-slate-600 leading-relaxed">Vous pouvez coller le <strong>numéro</strong> affiché dans le jeu, une adresse du type <span class="whitespace-nowrap font-mono text-[11px] text-slate-700">…/profiles/76561198…</span><?php if ($steamWebConfigured): ?> ou une adresse <span class="whitespace-nowrap font-mono text-[11px] text-slate-700">…/id/votre-pseudo</span><?php endif; ?>. La synchronisation enregistre aussi l’identifiant si vous venez de le coller.</p>
                     <?php if (!empty($errors['steam_id'])): foreach ($errors['steam_id'] as $e): ?>
                     <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
                     <?php endforeach; endif; ?>
+
+                    <?php if ($steamWebConfigured): ?>
+                    <div class="mt-5 space-y-4 rounded-xl border border-slate-200/80 bg-white px-4 py-4 sm:px-5">
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-wider text-slate-500">Synchronisation du profil public</p>
+                            <p class="mt-1 text-xs text-slate-600 leading-relaxed">Cochez l’option souhaitée puis lancez la lecture du profil public (photo et éventuellement nom d’affichage). Les autres réglages de la page ne sont pas enregistrés tant que vous n’utilisez pas « Enregistrer tout ».</p>
+                        </div>
+                        <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-3 text-xs text-slate-800">
+                            <input type="checkbox" name="apply_steam_display_name" value="1" class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                            <span><strong>Aligner le nom d’affichage</strong> sur le pseudo public Steam (en plus de la photo).</span>
+                        </label>
+                        <button type="submit" formaction="<?= htmlspecialchars(url('account/steam-sync'), ENT_QUOTES, 'UTF-8') ?>" formmethod="post" formnovalidate class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2">
+                            Synchroniser photo &amp; profil Steam
+                        </button>
+                        <p class="text-[11px] text-slate-500">Un récapitulatif (étapes, état, détails) s’affiche après la synchronisation.</p>
+                    </div>
+                    <?php else: ?>
+                    <p class="mt-3 text-xs text-slate-600">La lecture automatique du profil public n’est pas activée sur ce serveur : vous pouvez tout de même enregistrer le numéro à 17 chiffres ou une adresse se terminant par <span class="font-mono">…/profiles/…</span> pour les outils qui en ont besoin.</p>
+                    <?php endif; ?>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

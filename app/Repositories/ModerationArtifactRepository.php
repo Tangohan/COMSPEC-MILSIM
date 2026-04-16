@@ -181,6 +181,31 @@ class ModerationArtifactRepository
         return (int) $stmt->fetchColumn();
     }
 
+    /**
+     * Pièces jointes forum déjà publiées (acceptées automatiquement ou après validation),
+     * pour affichage de suivi hors file d’urgence.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRecentPublishedForumUploads(int $tenantId, int $limit = 15): array
+    {
+        if (!$this->tableExists()) {
+            return [];
+        }
+        $limit = max(1, min(50, $limit));
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM moderation_artifacts
+             WHERE tenant_id = ? AND source_type = ?
+             AND state IN (\'clean\',\'approved_override\')
+             AND file_path LIKE \'public/uploads/forum/%\'
+             ORDER BY id DESC
+             LIMIT ' . (int) $limit
+        );
+        $stmt->execute([$tenantId, ModerationSourceType::FORUM_UPLOAD]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     /** Fichiers / pièces en attente de décision, toutes communautés. */
     public function countPendingQueueAllTenants(): int
     {

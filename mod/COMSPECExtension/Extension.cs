@@ -371,6 +371,19 @@ public static class Extension
                 return;
             }
 
+            if (function == "ReportPlaytime" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
+            {
+                var uid = args[0] ?? "";
+                var secStr = args[1] ?? "0";
+                var secs = long.TryParse(secStr, out var s) ? s : 0L;
+                if (secs < 1) return;
+                if (secs > 7200) secs = 7200;
+                var call = args.Length > 2 ? (args[2] ?? "") : "";
+                var payload = $"{{\"player_uid\":\"{EscapeJson(uid)}\",\"session_seconds\":{secs.ToString(System.Globalization.CultureInfo.InvariantCulture)},\"call_sign\":\"{EscapeJson(call)}\"}}";
+                EnqueueOrSend(_baseUrl + "/api/atak/playtime", payload);
+                return;
+            }
+
             if (function == "SendChat" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
                 var author = args[0] ?? "Unknown";

@@ -9,9 +9,13 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\Csrf;
 use App\Repositories\EnlistmentRepository;
+use App\Repositories\PersonnelAssignmentRepository;
+use App\Repositories\PersonnelJobRoleRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\RecruitmentPresetRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UnitRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
@@ -25,6 +29,7 @@ use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
 use App\Services\Analytics\AnalyticsEventService;
 use App\Services\Analytics\AnalyticsSubjectType;
+use App\Services\Recruitment\RecruitmentOpeningPresentation;
 
 class EnlistmentController
 {
@@ -41,6 +46,10 @@ class EnlistmentController
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
         private RecruitmentOpeningRepository $recruitmentOpeningRepository,
         private AnalyticsEventService $analyticsEventService,
+        private PersonnelProfileRepository $personnelProfileRepository,
+        private PersonnelAssignmentRepository $personnelAssignmentRepository,
+        private PersonnelJobRoleRepository $personnelJobRoleRepository,
+        private UnitRepository $unitRepository,
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -107,12 +116,19 @@ class EnlistmentController
             'subjectId' => $targetTenantId,
         ];
 
+        $enlistmentMemberOpeningInsight = $this->resolveEnlistmentMemberOpeningInsight(
+            $targetTenantId,
+            $enlistmentContext,
+            $selectedRecruitmentOpening
+        );
+
         $viewData = [
             'tenant' => $tenant,
             'communityConfig' => $communityConfig,
             'formAction' => $formAction,
             'enlistmentContext' => $enlistmentContext,
             'selectedRecruitmentOpening' => $selectedRecruitmentOpening,
+            'enlistmentMemberOpeningInsight' => $enlistmentMemberOpeningInsight,
             'analyticsBeacon' => $beacon,
         ];
 
@@ -758,6 +774,176 @@ class EnlistmentController
             return [];
         }
         return is_array($decoded['community'] ?? null) ? $decoded['community'] : [];
+    }
+
+    /**
+     * Encadré « évolution de carrière » : membre déjà dans le tenant + avis ciblé.
+     *
+     * @param array<string, mixed> $enlistmentContext
+     * @param array<string, mixed>|null $selectedRecruitmentOpening
+     * @return array<string, mixed>|null
+     */
+    private function resolveEnlistmentMemberOpeningInsight(
+        int $targetTenantId,
+        array $enlistmentContext,
+        ?array $selectedRecruitmentOpening
+    ): ?array {
+        if ($selectedRecruitmentOpening === null || empty($selectedRecruitmentOpening['id']) || empty($enlistmentContext['canUseAccount'])) {
+            return null;
+        }
+        if (!$this->authService->check() || (int) Session::get('tenant_id') !== $targetTenantId) {
+            return null;
+        }
+        $user = $this->authService->user();
+        if (!$user) {
+            return null;
+        }
+        $oid = (int) $selectedRecruitmentOpening['id'];
+        $ro = $this->recruitmentOpeningRepository->findByIdForTenant($oid, $targetTenantId);
+        if (!$ro || (string) ($ro['status'] ?? '') !== 'published') {
+            return null;
+        }
+
+        return $this->buildMemberOpeningCareerInsight($targetTenantId, (int) ($user['id'] ?? 0), $ro);
+    }
+
+    /**
+     * @param array<string, mixed> $opening
+     * @return array<string, mixed>
+     */
+    private function buildMemberOpeningCareerInsight(int $tenantId, int $userId, array $opening): array
+    {
+        $unknownDossier = 'Non renseigné sur votre dossier';
+
+        $assignments = $this->personnelAssignmentRepository->listActiveForUserResolved($userId);
+        $primary = $assignments[0] ?? null;
+        $currentUnit = '';
+        if ($primary !== null) {
+            $currentUnit = trim((string) ($primary['unit_name'] ?? ''));
+        }
+        $pp = $this->personnelProfileRepository->getByUserId($userId);
+        if ($currentUnit === '' && is_array($pp) && !empty($pp['primary_unit_id'])) {
+            $urow = $this->unitRepository->findById((int) $pp['primary_unit_id'], $tenantId);
+            if ($urow) {
+                $currentUnit = trim((string) ($urow['name'] ?? ''));
+            }
+        }
+
+        $currentAffectRole = '';
+        if ($primary !== null) {
+            $currentAffectRole = trim((string) ($primary['role_name'] ?? ''));
+        }
+
+        $currentJobLabel = $this->resolveCurrentPersonnelJobRoleLabel($tenantId, $userId, $pp);
+
+        $currentClearanceKey = is_array($pp) ? trim((string) ($pp['clearance_level'] ?? '')) : '';
+        $currentClearance = $currentClearanceKey !== ''
+            ? RecruitmentOpeningPresentation::clearanceLabel($currentClearanceKey)
+            : $unknownDossier;
+
+        $targetUnit = trim((string) ($opening['unit_name'] ?? ''));
+        $openingJobId = !empty($opening['personnel_job_role_id']) ? (int) $opening['personnel_job_role_id'] : 0;
+        $targetJob = $this->personnelJobRoleDisplayName($tenantId, $openingJobId);
+        if ($targetJob === '') {
+            $targetJob = trim((string) ($opening['title'] ?? ''));
+        }
+        $openingTitle = trim((string) ($opening['title'] ?? ''));
+        $targetEngagement = trim((string) ($opening['employment_contract_label'] ?? ''));
+        if ($targetEngagement === '') {
+            $targetEngagement = trim((string) ($opening['employment_context_label'] ?? ''));
+        }
+        if ($targetEngagement === '') {
+            $targetEngagement = '—';
+        }
+        $openingClearanceKey = trim((string) ($opening['clearance_level'] ?? 'none'));
+        $targetClearance = RecruitmentOpeningPresentation::clearanceLabel($openingClearanceKey !== '' ? $openingClearanceKey : 'none');
+
+        $targetCadre = RecruitmentOpeningPresentation::personnelCategoryLabel((string) ($opening['personnel_category'] ?? 'other'))
+            . ' · '
+            . RecruitmentOpeningPresentation::armDomainLabel(isset($opening['arm_domain']) ? (string) $opening['arm_domain'] : null);
+
+        $row = static function (string $theme, string $current, string $target, bool $emphasize): array {
+            return [
+                'theme' => $theme,
+                'current' => $current,
+                'target' => $target,
+                'emphasize' => $emphasize,
+            ];
+        };
+        $norm = static function (string $a, string $b): bool {
+            return mb_strtolower(trim($a)) !== mb_strtolower(trim($b));
+        };
+
+        $dispUnitCur = $currentUnit !== '' ? $currentUnit : $unknownDossier;
+        $dispUnitTgt = $targetUnit !== '' ? $targetUnit : '—';
+        $dispJobCur = $currentJobLabel !== '' ? $currentJobLabel : $unknownDossier;
+        $dispJobTgt = $targetJob !== '' ? $targetJob : '—';
+        $dispAffCur = $currentAffectRole !== '' ? $currentAffectRole : $unknownDossier;
+        $dispAffTgt = $openingTitle !== '' ? $openingTitle : '—';
+
+        $rows = [
+            $row('Unité / formation', $dispUnitCur, $dispUnitTgt, $norm($dispUnitCur, $dispUnitTgt)),
+            $row('Poste métier (référence dossier)', $dispJobCur, $dispJobTgt, $norm($dispJobCur, $dispJobTgt)),
+            $row('Fonction sur l’affectation', $dispAffCur, $dispAffTgt, $norm($dispAffCur, $dispAffTgt)),
+            $row(
+                'Engagement envisagé pour ce poste',
+                $unknownDossier,
+                $targetEngagement,
+                $targetEngagement !== '—' && $norm($unknownDossier, $targetEngagement)
+            ),
+            $row('Habilitation requise à l’issue', $currentClearance, $targetClearance, $norm($currentClearance, $targetClearance)),
+            $row('Cadre du poste (profil / domaine)', '—', $targetCadre, false),
+        ];
+
+        $lead = 'Vous êtes déjà membre de cette communauté : cette candidature ne correspond pas à une première inscription, '
+            . 'mais à une demande d’évolution de carrière (changement d’unité, de fonction sur l’affectation, de poste métier référencé sur le dossier, '
+            . 'd’engagement ou d’habilitation). Le tableau ci-dessous confronte ce que le portail affiche aujourd’hui dans votre dossier '
+            . 'et ce que décrit l’avis pour le poste visé. La décision finale et les ajustements exacts du dossier restent du ressort du commandement et des RH.';
+
+        $footnote = 'Si une ligne affiche « Non renseigné sur votre dossier », complétez votre fiche personnelle ou demandez au staff de mettre à jour votre affectation pour éviter tout malentendu.';
+
+        return [
+            'lead' => $lead,
+            'rows' => $rows,
+            'footnote' => $footnote,
+        ];
+    }
+
+    /** @param array<string, mixed>|null $personnelProfile */
+    private function resolveCurrentPersonnelJobRoleLabel(int $tenantId, int $userId, ?array $personnelProfile): string
+    {
+        if ($this->personnelJobRoleRepository->personnelProfilesHaveJobRoleColumns()
+            && is_array($personnelProfile)
+            && !empty($personnelProfile['personnel_job_role_id'])) {
+            $lbl = $this->personnelJobRoleDisplayName($tenantId, (int) $personnelProfile['personnel_job_role_id']);
+            if ($lbl !== '') {
+                return $lbl;
+            }
+        }
+        if ($this->personnelJobRoleRepository->pivotTableExists()) {
+            $map = $this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, [$userId]);
+            foreach ($map[$userId] ?? [] as $p) {
+                $rn = trim((string) ($p['role_name'] ?? ''));
+                if ($rn === '') {
+                    continue;
+                }
+                $rd = trim((string) ($p['role_detail'] ?? ''));
+
+                return $rd !== '' ? $rn . ' — ' . $rd : $rn;
+            }
+        }
+
+        return '';
+    }
+
+    private function personnelJobRoleDisplayName(int $tenantId, int $roleId): string
+    {
+        if ($roleId <= 0 || !$this->personnelJobRoleRepository->tablesExist()) {
+            return '';
+        }
+        $r = $this->personnelJobRoleRepository->findRoleById($roleId, $tenantId);
+
+        return trim((string) ($r['name'] ?? ''));
     }
 
     /** @param array<string,mixed> $tenant */

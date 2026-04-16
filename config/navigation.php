@@ -223,7 +223,7 @@ return [
                     'links' => [
                         ['label' => 'Mon activité', 'path' => 'activite', 'description' => 'Fil personnel, rappels et raccourcis'],
                         ['label' => 'Ma fiche personnelle', 'path' => 'personnel/me'],
-                        ['label' => 'Espace RH & formations', 'path' => 'personnel/mon-espace-rh', 'description' => 'Charte, parcours, ancienneté et programmes de préqualification'],
+                        ['label' => 'Espace RH et formations', 'path' => 'personnel/mon-espace-rh', 'description' => 'Charte, parcours, ancienneté et programmes de préqualification'],
                         ['label' => 'Guides dossier & préréglages', 'path' => 'personnel/tutorials', 'description' => 'ORBAT, forum, complétude, préréglages métier'],
                     ],
                 ],
@@ -294,6 +294,7 @@ return [
                     'links' => [
                         ['label' => 'Catalogue', 'path' => 'formations'],
                         ['label' => 'Mes parcours', 'path' => 'formations/mes-formations'],
+                        ['label' => 'Espace RH et formations', 'path' => 'personnel/mon-espace-rh', 'description' => 'Charte, ancienneté et programmes de préqualification'],
                         ['label' => 'Compétences', 'path' => 'formations/competences', 'permission' => 'training.view', 'description' => 'Progression transversale et jalons'],
                         ['label' => 'Code d’accès', 'path' => 'formations/code-acces', 'permission' => 'training.view', 'description' => 'Débloquer un parcours sur invitation'],
                     ],
@@ -303,6 +304,7 @@ return [
                     'slot' => 'center',
                     'links' => [
                         ['label' => 'Pilotage des formations', 'path' => 'back-office/ressources/training', 'any_permissions' => ['admin.access', 'training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish', 'training.delete'], 'description' => 'Tableau de bord LMS de la communauté'],
+                        ['label' => 'Charte RH (formations)', 'path' => 'back-office/ressources/training/charte-rh', 'any_permissions' => ['admin.access', 'training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish', 'training.delete'], 'description' => 'Texte présenté aux membres avant le catalogue'],
                         ['label' => 'Studio LMS', 'path' => 'back-office/ressources/training/studio', 'any_permissions' => ['admin.access', 'training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish', 'training.delete'], 'description' => 'Édition des parcours'],
                         ['label' => 'Pilotage des compétences', 'path' => 'back-office/ressources/training/competences/commandement', 'any_permissions' => ['training.manage', 'training.assign'], 'description' => 'Vue encadrement'],
                         ['label' => 'Validation instructeur', 'path' => 'back-office/ressources/training/competences/instructeur', 'any_permissions' => ['training.manage', 'training.assign', 'training.submissions.grade', 'training.results.view'], 'description' => 'Évaluations à traiter'],
@@ -364,6 +366,7 @@ return [
                         ['label' => 'Alertes plateforme', 'path' => 'admin/system/alerts', 'permission' => 'admin.system'],
                         ['label' => 'Maintenance BDD', 'path' => 'admin/maintenance', 'permission' => 'admin.system'],
                         ['label' => 'Journaux / audit', 'path' => 'admin/audit', 'permission' => 'admin.system'],
+                        ['label' => 'Publications et préqualification', 'path' => 'admin/system/deployment', 'permission' => 'admin.system', 'description' => 'Versions par environnement et communautés de test'],
                     ],
                 ],
                 [
@@ -404,7 +407,7 @@ return [
                         ['label' => 'Modération fichiers', 'path' => 'admin/content-moderation', 'any_permissions' => ['forum.moderate', 'forum.moderate_organization', 'forum.topic.pin', 'forum.reports.manage', 'admin.organization', 'admin.access']],
                         ['label' => 'Restrictions membres (organisation)', 'path' => 'back-office/moderation', 'any_permissions' => ['admin.members.moderate'], 'description' => 'Limitations d’activité dans la communauté (formations, documents, etc.)'],
                         ['label' => 'Export conformité', 'path' => 'back-office/conformite/export-dossier', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Dossier réglementaire pour audit'],
-                        ['label' => 'Intégrations externes', 'path' => 'back-office/integrations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Clés d’accès et services connectés'],
+                        ['label' => 'Intégrations externes', 'path' => 'back-office/integrations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Clés d’accès (selon formule d’hébergement ; sinon page d’information pour passer à une offre adaptée)'],
                         ['label' => 'Indicateurs d’activité', 'path' => 'back-office/analytics', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Configuration générale', 'path' => 'back-office/configuration', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Audit organisation', 'path' => 'back-office/audit', 'any_permissions' => ['admin.organization', 'admin.access']],

@@ -1007,6 +1007,7 @@ CREATE TABLE IF NOT EXISTS `forum_posts` (
   `topic_id` int unsigned NOT NULL,
   `user_id` int unsigned NOT NULL,
   `body` text NOT NULL,
+  `body_format` varchar(20) NOT NULL DEFAULT 'markdown',
   `is_hidden` tinyint(1) DEFAULT 0,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,

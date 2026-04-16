@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace App\Services\Auth;
 
 use App\Core\Session;
-use App\Repositories\UserRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserRepository;
+use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 
 class AuthService
 {
     public function __construct(
         private UserRepository $userRepository,
-        private TenantRepository $tenantRepository
+        private TenantRepository $tenantRepository,
+        private SeniorityEnrollmentBootstrapService $seniorityEnrollmentBootstrapService,
     ) {}
 
     public function attempt(int $tenantId, string $email, string $password): bool
@@ -41,6 +43,15 @@ class AuthService
         Session::set('callsign', $user['callsign'] ?? '');
         Session::set('role_id', $user['role_id'] ? (int) $user['role_id'] : null);
         $this->userRepository->updateLastLogin((int) $user['id']);
+        try {
+            $this->seniorityEnrollmentBootstrapService->syncTenureCommunityFromEnrollment(
+                (int) ($user['tenant_id'] ?? 0),
+                (int) $user['id'],
+                $user
+            );
+        } catch (\Throwable) {
+            // Ne jamais bloquer une connexion si le référentiel d’ancienneté est partiellement indisponible.
+        }
     }
 
     public function logout(): void

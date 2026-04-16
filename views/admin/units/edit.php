@@ -20,7 +20,7 @@ $unitTypes = $unitTypes ?? [];
         </div>
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Type</label>
-            <select name="type" class="w-full border border-slate-200 rounded px-3 py-2">
+            <select name="type" class="<?= htmlspecialchars(bo_select_class(), ENT_QUOTES, 'UTF-8') ?>">
                 <option value="">—</option>
                 <?php foreach ($unitTypes as $k => $v): ?>
                 <option value="<?= htmlspecialchars($k) ?>" <?= ($unit['type'] ?? '') === $k ? 'selected' : '' ?>><?= htmlspecialchars($v['label']) ?></option>
@@ -33,7 +33,7 @@ $unitTypes = $unitTypes ?? [];
         </div>
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Unité parente</label>
-            <select name="parent_id" class="w-full border border-slate-200 rounded px-3 py-2">
+            <select name="parent_id" class="<?= htmlspecialchars(bo_select_class(), ENT_QUOTES, 'UTF-8') ?>">
                 <option value="">— Aucune</option>
                 <?php foreach ($parents as $p): ?>
                 <option value="<?= (int) $p['id'] ?>" <?= ((int)($unit['parent_id'] ?? 0)) === (int)$p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
@@ -42,7 +42,7 @@ $unitTypes = $unitTypes ?? [];
         </div>
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Commandant</label>
-            <select name="commander_user_id" class="w-full border border-slate-200 rounded px-3 py-2">
+            <select name="commander_user_id" class="<?= htmlspecialchars(bo_select_class(), ENT_QUOTES, 'UTF-8') ?>">
                 <option value="">— Aucun</option>
                 <?php foreach ($users as $u): ?>
                 <option value="<?= (int) $u['id'] ?>" <?= ((int)($unit['commander_user_id'] ?? 0)) === (int)$u['id'] ? 'selected' : '' ?>><?= htmlspecialchars($u['display_name'] ?? $u['email']) ?></option>

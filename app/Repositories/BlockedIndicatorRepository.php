@@ -190,6 +190,21 @@ class BlockedIndicatorRepository
         return (int) $this->pdo->lastInsertId();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findById(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare('SELECT * FROM blocked_indicators WHERE id = ? LIMIT 1');
+        $st->execute([$id]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
     public function revoke(int $id, ?int $tenantIdForScope): bool
     {
         if ($tenantIdForScope !== null) {

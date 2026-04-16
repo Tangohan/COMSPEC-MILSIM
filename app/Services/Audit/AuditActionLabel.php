@@ -57,7 +57,29 @@ final class AuditActionLabel
         'quiz_attempt_submitted' => 'Quiz soumis',
         'certificate_issued' => 'Certificat délivré',
         'certificate_revoked' => 'Certificat révoqué',
+        // Plateforme — réglages et déploiement
+        'platform.settings_updated' => 'Réglage plateforme (brief) mis à jour',
+        'deployment.module_created' => 'Déploiement — fonctionnalité créée',
+        'deployment.module_updated' => 'Déploiement — fonctionnalité modifiée',
+        'deployment.version_created' => 'Déploiement — version créée',
+        'deployment.release_set' => 'Déploiement — publication sur un canal',
+        'deployment.access_rule_added' => 'Déploiement — règle d’accès ajoutée',
+        'deployment.access_rule_removed' => 'Déploiement — règle d’accès supprimée',
+        'deployment.tester_community_updated' => 'Déploiement — communauté de test modifiée',
+        'deployment.tester_member_added' => 'Déploiement — membre ajouté à une communauté de test',
+        'deployment.tester_member_removed' => 'Déploiement — membre retiré d’une communauté de test',
     ];
+
+    /**
+     * @return array<string, string> slug => libellé (tri par libellé)
+     */
+    public static function filterOptions(): array
+    {
+        $opts = self::MAP;
+        asort($opts, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $opts;
+    }
 
     public static function toFrench(string $action): string
     {

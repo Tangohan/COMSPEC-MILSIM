@@ -8,13 +8,14 @@ $csrf = htmlspecialchars((string) ($deploymentCsrf ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <h1 class="text-2xl font-black text-slate-900">Déploiement & préqualification</h1>
+        <h1 class="text-2xl font-black text-slate-900">Déploiement et préqualification</h1>
         <p class="mt-2 max-w-3xl text-sm text-slate-600">
             Tableau des versions actuellement proposées par canal d’environnement, gestion des fonctionnalités déployables et des communautés de test.
         </p>
 
         <?php if (!$ready): ?>
             <p class="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Les tables nécessaires ne sont pas installées sur cette base.</p>
+            <p class="mt-4 text-sm text-slate-600">Une fois la migration exécutée, rechargez cette page pour accéder au pilotage des publications et aux communautés de test.</p>
         <?php else: ?>
             <div class="mt-6 flex flex-wrap gap-3">
                 <a href="<?= htmlspecialchars(url('admin/system/deployment/communities'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Communautés de préqualification</a>
@@ -49,6 +50,13 @@ $csrf = htmlspecialchars((string) ($deploymentCsrf ?? ''), ENT_QUOTES, 'UTF-8');
                                 </td>
                             </tr>
                         <?php endforeach; ?>
+                        <?php if ($modules === []): ?>
+                            <tr>
+                                <td colspan="<?= 2 + count($channels) ?>" class="px-4 py-8 text-center text-sm text-slate-500">
+                                    Aucune fonctionnalité déployable enregistrée. Utilisez le formulaire ci-dessous pour en créer une, ou importez les données prévues par l’équipe plateforme.
+                                </td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>

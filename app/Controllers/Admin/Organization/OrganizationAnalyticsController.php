@@ -48,9 +48,11 @@ final class OrganizationAnalyticsController
         $categoryBreakdown = $this->tenantAnalyticsRepository->getTenantCategoryBreakdown($tenantId, $since);
         $topActors = $this->tenantAnalyticsRepository->listTenantTopActors($tenantId, $since, 8);
         $tenantUsageSummary = $this->tenantAnalyticsRepository->getTenantUsageSummary($tenantId, $since);
-        $tenantDailyEvents = $this->tenantAnalyticsRepository->getTenantDailyEventCounts($tenantId, $since);
+        $tenantDailyEvents = $this->tenantAnalyticsRepository->getTenantDailyEventCountsFilled($tenantId, $since, $days);
         $tenantTopEventNames = $this->tenantAnalyticsRepository->getTenantTopEventNames($tenantId, $since, 12);
         $trainingCatalogViews = $this->tenantAnalyticsRepository->getTenantTrainingCatalogViews($tenantId, $since);
+        $operationalKpis = $this->tenantAnalyticsRepository->getTenantOperationalKpis($tenantId, $since);
+        $enlistmentStatusBreakdown = $this->tenantAnalyticsRepository->getTenantEnlistmentStatusBreakdownSince($tenantId, $since);
 
         return Response::view('layout.main', [
             'title' => 'Indicateurs d’usage',
@@ -69,6 +71,8 @@ final class OrganizationAnalyticsController
             'tenantDailyEvents' => $tenantDailyEvents,
             'tenantTopEventNames' => $tenantTopEventNames,
             'trainingCatalogViews' => $trainingCatalogViews,
+            'operationalKpis' => $operationalKpis,
+            'enlistmentStatusBreakdown' => $enlistmentStatusBreakdown,
         ]);
     }
 }

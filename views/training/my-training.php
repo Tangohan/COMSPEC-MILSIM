@@ -69,11 +69,14 @@ $coverUrl = static function (array $e): string {
         <a href="<?= $base ?>/formations" class="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-white backdrop-blur-sm transition hover:bg-white/15">
           Catalogue
         </a>
+        <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center justify-center rounded-xl border border-violet-400/35 bg-violet-500/20 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-violet-100 backdrop-blur-sm transition hover:bg-violet-500/30">
+          Espace RH
+        </a>
         <a href="<?= $base ?>/formations/competences" class="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-white backdrop-blur-sm transition hover:bg-white/15">
           Compétences
         </a>
         <a href="<?= $base ?>/dashboard" class="inline-flex items-center justify-center rounded-xl border border-emerald-500/40 bg-emerald-500 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-emerald-950 shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-400">
-          Dashboard
+          Tableau de bord
         </a>
       </div>
     </div>

@@ -29,13 +29,15 @@ $featureLabels = [
     'atak' => 'Carte tactique ATAK',
     'analytics' => 'Tableaux de bord & statistiques',
     'events' => 'Événements & planning',
+    'advanced_integrations' => 'Intégrations avancées (clés d’accès)',
     'community_create' => null,
 ];
 
 $planMarketing = static function (string $slug): array {
     return match ($slug) {
-        'standard' => ['eyebrow' => 'Premium', 'title' => 'Pro', 'blurb' => 'Formations, documents et événements avec plafonds adaptés aux unités en croissance.'],
-        'pro' => ['eyebrow' => 'Premium Plus', 'title' => 'Pro +', 'blurb' => 'Plafonds élargis, analytics et options avancées pour une communauté outillée.'],
+        'standard' => ['eyebrow' => 'Premium', 'title' => 'Standard', 'blurb' => 'Formations, documents et événements avec plafonds adaptés aux unités en croissance.'],
+        'pro' => ['eyebrow' => 'Premium', 'title' => 'Pro', 'blurb' => 'Plafonds élargis, analytics et pilotage avancé pour une communauté outillée.'],
+        'pro_plus' => ['eyebrow' => 'Premium', 'title' => 'Pro+', 'blurb' => 'Effectifs très larges, parcours sans plafond fixe et connexions avancées pour l’interopérabilité.'],
         default => ['eyebrow' => 'Premium', 'title' => $slug, 'blurb' => ''],
     };
 };
@@ -43,7 +45,7 @@ $planMarketing = static function (string $slug): array {
 $renderPlanFeatures = static function (array $feat, array $limits, array $featureLabels): void {
     $seen = [];
     foreach ($feat as $k => $v) {
-        if ($k === 'max_members' || !is_scalar($v)) {
+        if ($k === 'max_members' || $k === 'max_training_courses' || !is_scalar($v)) {
             continue;
         }
         $lab = $featureLabels[$k] ?? $k;
@@ -60,6 +62,12 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
     $maxM = isset($feat['max_members']) ? (int) $feat['max_members'] : (isset($limits['max_members']) ? (int) $limits['max_members'] : 0);
     if ($maxM > 0) {
         echo '<li class="flex items-center gap-2 text-sm text-slate-700"><span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>Jusqu’à ' . (int) $maxM . ' membres (indicatif)</li>';
+    }
+    $maxC = isset($feat['max_training_courses']) ? (int) $feat['max_training_courses'] : 0;
+    if ($maxC > 0) {
+        echo '<li class="flex items-center gap-2 text-sm text-slate-700"><span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>Jusqu’à ' . (int) $maxC . ' parcours de formation (hors catalogue plateforme)</li>';
+    } elseif (array_key_exists('max_training_courses', $feat) && $maxC <= 0) {
+        echo '<li class="flex items-center gap-2 text-sm text-slate-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Parcours de formation sans plafond fixe (selon conditions d’hébergement)</li>';
     }
 };
 ?>
@@ -126,7 +134,7 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                                 <p class="mb-2 text-xs text-slate-500">Sans cette option, l’adresse web de la communauté est <strong>dérivée automatiquement</strong> du nom affiché (lettres minuscules et tirets).</p>
                                 <div id="wizard-community-slug-wrap" class="hidden">
                                     <label class="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Adresse courte (lien public)</label>
-                                    <input type="text" name="slug" id="wizard-community-slug-input" pattern="[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?" class="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 font-mono text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="ex. mon-unite">
+                                    <input type="text" name="slug" id="wizard-community-slug-input" pattern="[a-z0-9]([-a-z0-9]*[a-z0-9])?" class="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 font-mono text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="ex. mon-unite">
                                 </div>
                             </div>
                             <div>
@@ -504,7 +512,7 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                                     }
                                     $hasM = $stripeConfigured && trim((string) ($p['stripe_price_id_monthly'] ?? '')) !== '';
                                     $hasY = $stripeConfigured && trim((string) ($p['stripe_price_id_yearly'] ?? '')) !== '';
-                                    $planBadgeClass = $slug === 'pro' ? 'text-violet-700' : 'text-amber-600';
+                                    $planBadgeClass = ($slug === 'pro_plus' || $slug === 'pro') ? 'text-violet-700' : 'text-amber-600';
                                     ?>
                                 <div class="relative flex min-h-[22rem] flex-col rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                                     <div class="flex items-start justify-between gap-3">

@@ -12,9 +12,22 @@ class TenantAnalyticsRepository
 {
     private PDO $pdo;
 
+    /** @var bool|null */
+    private static ?bool $usersHasServiceAccountColumn = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    private function usersHasServiceAccountColumn(): bool
+    {
+        if (self::$usersHasServiceAccountColumn === null) {
+            $st = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_service_account' LIMIT 1");
+            self::$usersHasServiceAccountColumn = $st && (bool) $st->fetchColumn();
+        }
+
+        return self::$usersHasServiceAccountColumn;
     }
 
     private function hasUsageEvents(): bool
@@ -187,29 +200,35 @@ class TenantAnalyticsRepository
     }
 
     /**
+     * @param int $activityWindowDays fenêtre pour « communautés actives » et le classement (1 à 90)
+     *
      * @return array{tenants_with_events: int, events_24h: int, top_tenants: list<array{tenant_id: int, name: string, events: int}>}
      */
-    public function getPlatformUsageSnapshot(): array
+    public function getPlatformUsageSnapshot(int $activityWindowDays = 7): array
     {
         $out = ['tenants_with_events' => 0, 'events_24h' => 0, 'top_tenants' => []];
+        $activityWindowDays = max(1, min(90, $activityWindowDays));
         if (!$this->hasUsageEvents() || !$this->hasTable('tenants')) {
             return $out;
         }
-        $st = $this->pdo->query(
-            'SELECT COUNT(DISTINCT tenant_id) FROM usage_analytics_events WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)'
+        $st = $this->pdo->prepare(
+            'SELECT COUNT(DISTINCT tenant_id) FROM usage_analytics_events WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)'
         );
-        $out['tenants_with_events'] = $st ? (int) $st->fetchColumn() : 0;
+        $st->execute([$activityWindowDays]);
+        $out['tenants_with_events'] = (int) $st->fetchColumn();
         $st = $this->pdo->query('SELECT COUNT(*) FROM usage_analytics_events WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)');
         $out['events_24h'] = $st ? (int) $st->fetchColumn() : 0;
+        $limit = 15;
         $sql = 'SELECT e.tenant_id, t.name AS tenant_name, COUNT(*) AS cnt
                 FROM usage_analytics_events e
                 INNER JOIN tenants t ON t.id = e.tenant_id
-                WHERE e.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                WHERE e.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
                 GROUP BY e.tenant_id, t.name
                 ORDER BY cnt DESC
-                LIMIT 12';
-        $st = $this->pdo->query($sql);
-        $rows = $st ? $st->fetchAll(PDO::FETCH_ASSOC) : [];
+                LIMIT ' . $limit;
+        $st = $this->pdo->prepare($sql);
+        $st->execute([$activityWindowDays]);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as $r) {
             $out['top_tenants'][] = [
                 'tenant_id' => (int) ($r['tenant_id'] ?? 0),
@@ -285,6 +304,196 @@ class TenantAnalyticsRepository
         foreach ($rows as $row) {
             $out[] = [
                 'category' => (string) ($row['category'] ?? ''),
+                'events' => (int) ($row['cnt'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Comptages globaux (toutes communautés) issus des tables métier sur les {@code $days} derniers jours.
+     *
+     * @return array{
+     *   communities_total: int,
+     *   communities_with_active_members: int,
+     *   users_active_total: int,
+     *   users_registered_in_period: int,
+     *   audit_actions_in_period: int,
+     *   enlistments_created_in_period: int,
+     *   forum_topics_in_period: int,
+     *   forum_posts_in_period: int,
+     *   training_enrollments_assigned_in_period: int,
+     *   training_completions_in_period: int,
+     *   usage_events_in_period: int,
+     *   usage_distinct_actors_in_period: int,
+     *   usage_avg_duration_seconds: ?float
+     * }
+     */
+    public function getPlatformOperationalKpis(int $days): array
+    {
+        $days = max(1, min(120, $days));
+        $empty = [
+            'communities_total' => 0,
+            'communities_with_active_members' => 0,
+            'users_active_total' => 0,
+            'users_registered_in_period' => 0,
+            'audit_actions_in_period' => 0,
+            'enlistments_created_in_period' => 0,
+            'forum_topics_in_period' => 0,
+            'forum_posts_in_period' => 0,
+            'training_enrollments_assigned_in_period' => 0,
+            'training_completions_in_period' => 0,
+            'usage_events_in_period' => 0,
+            'usage_distinct_actors_in_period' => 0,
+            'usage_avg_duration_seconds' => null,
+        ];
+        if ($this->hasTable('tenants')) {
+            $st = $this->pdo->query('SELECT COUNT(*) FROM tenants');
+            $empty['communities_total'] = $st ? (int) $st->fetchColumn() : 0;
+        }
+        if ($this->hasTable('users')) {
+            $svc = $this->usersHasServiceAccountColumn();
+            $sqlActive = "SELECT COUNT(*) FROM users u WHERE u.status = 'active'";
+            if ($svc) {
+                $sqlActive .= ' AND (u.is_service_account IS NULL OR u.is_service_account = 0)';
+            }
+            $st = $this->pdo->query($sqlActive);
+            $empty['users_active_total'] = $st ? (int) $st->fetchColumn() : 0;
+            $sqlTenants = "SELECT COUNT(DISTINCT u.tenant_id) FROM users u WHERE u.status = 'active' AND u.tenant_id IS NOT NULL";
+            if ($svc) {
+                $sqlTenants .= ' AND (u.is_service_account IS NULL OR u.is_service_account = 0)';
+            }
+            $st = $this->pdo->query($sqlTenants);
+            $empty['communities_with_active_members'] = $st ? (int) $st->fetchColumn() : 0;
+            $sqlNew = 'SELECT COUNT(*) FROM users u WHERE u.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)';
+            $paramsNew = [$days];
+            if ($svc) {
+                $sqlNew .= ' AND (u.is_service_account IS NULL OR u.is_service_account = 0)';
+            }
+            $st = $this->pdo->prepare($sqlNew);
+            $st->execute($paramsNew);
+            $empty['users_registered_in_period'] = (int) $st->fetchColumn();
+        }
+        if ($this->hasTable('audit_logs')) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM audit_logs WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
+            $st->execute([$days]);
+            $empty['audit_actions_in_period'] = (int) $st->fetchColumn();
+        }
+        if ($this->hasTable('enlistments')) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM enlistments WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
+            $st->execute([$days]);
+            $empty['enlistments_created_in_period'] = (int) $st->fetchColumn();
+        }
+        if ($this->hasTable('forum_topics')) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_topics WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
+            $st->execute([$days]);
+            $empty['forum_topics_in_period'] = (int) $st->fetchColumn();
+        }
+        if ($this->hasTable('forum_posts')) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_posts WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
+            $st->execute([$days]);
+            $empty['forum_posts_in_period'] = (int) $st->fetchColumn();
+        }
+        if ($this->hasTable('training_enrollments')) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM training_enrollments WHERE assigned_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
+            $st->execute([$days]);
+            $empty['training_enrollments_assigned_in_period'] = (int) $st->fetchColumn();
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM training_enrollments WHERE status = 'completed' AND completed_at IS NOT NULL AND completed_at >= DATE_SUB(NOW(), INTERVAL ? DAY)"
+            );
+            $st->execute([$days]);
+            $empty['training_completions_in_period'] = (int) $st->fetchColumn();
+        }
+        if ($this->hasUsageEvents()) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM usage_analytics_events WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
+            $st->execute([$days]);
+            $empty['usage_events_in_period'] = (int) $st->fetchColumn();
+            $st = $this->pdo->prepare(
+                'SELECT COUNT(DISTINCT actor_user_id) FROM usage_analytics_events WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) AND actor_user_id IS NOT NULL'
+            );
+            $st->execute([$days]);
+            $empty['usage_distinct_actors_in_period'] = (int) $st->fetchColumn();
+            $st = $this->pdo->prepare(
+                'SELECT ROUND(AVG(NULLIF(duration_seconds, 0))) FROM usage_analytics_events WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) AND duration_seconds IS NOT NULL AND duration_seconds > 0'
+            );
+            $st->execute([$days]);
+            $avg = $st->fetchColumn();
+            $empty['usage_avg_duration_seconds'] = $avg !== null && $avg !== false && $avg !== ''
+                ? (float) $avg
+                : null;
+        }
+
+        return $empty;
+    }
+
+    /**
+     * @return list<array{day: string, events: int}>
+     */
+    public function getPlatformDailyEventsFilled(int $days): array
+    {
+        $days = max(1, min(120, $days));
+        $rawMap = [];
+        if ($this->hasUsageEvents()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT DATE(created_at) AS d, COUNT(*) AS cnt
+                 FROM usage_analytics_events
+                 WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+                 GROUP BY DATE(created_at)'
+            );
+            $stmt->execute([$days]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $d = (string) ($row['d'] ?? '');
+                if ($d !== '') {
+                    $rawMap[$d] = (int) ($row['cnt'] ?? 0);
+                }
+            }
+        }
+        try {
+            $end = (new \DateTimeImmutable('today'))->setTime(0, 0, 0);
+            $start = $end->modify('-' . ($days - 1) . ' days');
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        for ($d = $start; $d <= $end; $d = $d->modify('+1 day')) {
+            $key = $d->format('Y-m-d');
+            $out[] = [
+                'day' => $key,
+                'events' => (int) ($rawMap[$key] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{name: string, events: int}>
+     */
+    public function getPlatformTopEventNames(int $days, int $limit = 20): array
+    {
+        if (!$this->hasUsageEvents()) {
+            return [];
+        }
+        $days = max(1, min(120, $days));
+        $limit = max(1, min(40, $limit));
+        $stmt = $this->pdo->prepare(
+            'SELECT name, COUNT(*) AS cnt
+             FROM usage_analytics_events
+             WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+             GROUP BY name
+             ORDER BY cnt DESC, name ASC
+             LIMIT ' . $limit
+        );
+        $stmt->execute([$days]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'name' => (string) ($row['name'] ?? ''),
                 'events' => (int) ($row['cnt'] ?? 0),
             ];
         }
@@ -500,6 +709,153 @@ class TenantAnalyticsRepository
             $out[] = [
                 'actor_label' => (string) ($row['actor_label'] ?? 'Inconnu'),
                 'events' => (int) ($row['cnt'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Histogramme « suivi d’usage » avec un point par jour sur toute la fenêtre (0 si aucun événement ce jour-là).
+     *
+     * @return list<array{day: string, events: int}>
+     */
+    public function getTenantDailyEventCountsFilled(int $tenantId, string $sinceIso, int $periodDays): array
+    {
+        $periodDays = max(1, min(120, $periodDays));
+        $rawMap = [];
+        if ($tenantId >= 1 && $this->hasUsageEvents()) {
+            foreach ($this->getTenantDailyEventCounts($tenantId, $sinceIso) as $row) {
+                $day = (string) ($row['day'] ?? '');
+                if ($day !== '') {
+                    $rawMap[$day] = (int) ($row['events'] ?? 0);
+                }
+            }
+        }
+        try {
+            $end = (new \DateTimeImmutable('today'))->setTime(0, 0, 0);
+            $periodDays = max(1, min(120, $periodDays));
+            $start = $end->modify('-' . ($periodDays - 1) . ' days');
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        for ($d = $start; $d <= $end; $d = $d->modify('+1 day')) {
+            $key = $d->format('Y-m-d');
+            $out[] = [
+                'day' => $key,
+                'events' => (int) ($rawMap[$key] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Comptages issus des tables métier (hors balise de suivi d’usage), pour la période {@code $sinceIso} → maintenant.
+     *
+     * @return array{
+     *   members_active_total: int,
+     *   members_registered_in_period: int,
+     *   audit_actions_in_period: int,
+     *   enlistments_created_in_period: int,
+     *   forum_topics_in_period: int,
+     *   forum_posts_in_period: int,
+     *   training_enrollments_assigned_in_period: int,
+     *   training_completions_in_period: int
+     * }
+     */
+    public function getTenantOperationalKpis(int $tenantId, string $sinceIso): array
+    {
+        $empty = [
+            'members_active_total' => 0,
+            'members_registered_in_period' => 0,
+            'audit_actions_in_period' => 0,
+            'enlistments_created_in_period' => 0,
+            'forum_topics_in_period' => 0,
+            'forum_posts_in_period' => 0,
+            'training_enrollments_assigned_in_period' => 0,
+            'training_completions_in_period' => 0,
+        ];
+        if ($tenantId < 1 || !$this->hasTable('users')) {
+            return $empty;
+        }
+        $svc = $this->usersHasServiceAccountColumn();
+        $sqlActive = 'SELECT COUNT(*) FROM users u WHERE u.tenant_id = ? AND u.status = ?';
+        $paramsActive = [$tenantId, 'active'];
+        if ($svc) {
+            $sqlActive .= ' AND (u.is_service_account IS NULL OR u.is_service_account = 0)';
+        }
+        $st = $this->pdo->prepare($sqlActive);
+        $st->execute($paramsActive);
+        $empty['members_active_total'] = (int) $st->fetchColumn();
+
+        $sqlNew = 'SELECT COUNT(*) FROM users u WHERE u.tenant_id = ? AND u.created_at >= ?';
+        $paramsNew = [$tenantId, $sinceIso];
+        if ($svc) {
+            $sqlNew .= ' AND (u.is_service_account IS NULL OR u.is_service_account = 0)';
+        }
+        $st = $this->pdo->prepare($sqlNew);
+        $st->execute($paramsNew);
+        $empty['members_registered_in_period'] = (int) $st->fetchColumn();
+
+        if ($this->hasTable('audit_logs')) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM audit_logs WHERE tenant_id = ? AND created_at >= ?');
+            $st->execute([$tenantId, $sinceIso]);
+            $empty['audit_actions_in_period'] = (int) $st->fetchColumn();
+        }
+        if ($this->hasTable('enlistments')) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM enlistments WHERE tenant_id = ? AND created_at >= ?');
+            $st->execute([$tenantId, $sinceIso]);
+            $empty['enlistments_created_in_period'] = (int) $st->fetchColumn();
+        }
+        if ($this->hasTable('forum_topics')) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_topics WHERE tenant_id = ? AND created_at >= ?');
+            $st->execute([$tenantId, $sinceIso]);
+            $empty['forum_topics_in_period'] = (int) $st->fetchColumn();
+        }
+        if ($this->hasTable('forum_posts')) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_posts WHERE tenant_id = ? AND created_at >= ?');
+            $st->execute([$tenantId, $sinceIso]);
+            $empty['forum_posts_in_period'] = (int) $st->fetchColumn();
+        }
+        if ($this->hasTable('training_enrollments')) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM training_enrollments WHERE tenant_id = ? AND assigned_at >= ?');
+            $st->execute([$tenantId, $sinceIso]);
+            $empty['training_enrollments_assigned_in_period'] = (int) $st->fetchColumn();
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM training_enrollments WHERE tenant_id = ? AND status = 'completed' AND completed_at IS NOT NULL AND completed_at >= ?"
+            );
+            $st->execute([$tenantId, $sinceIso]);
+            $empty['training_completions_in_period'] = (int) $st->fetchColumn();
+        }
+
+        return $empty;
+    }
+
+    /**
+     * Candidatures dont le dépôt tombe dans la fenêtre, ventilées par état courant.
+     *
+     * @return list<array{status: string, count: int}>
+     */
+    public function getTenantEnlistmentStatusBreakdownSince(int $tenantId, string $sinceIso): array
+    {
+        if ($tenantId < 1 || !$this->hasTable('enlistments')) {
+            return [];
+        }
+        $st = $this->pdo->prepare(
+            'SELECT status, COUNT(*) AS c FROM enlistments WHERE tenant_id = ? AND created_at >= ? GROUP BY status ORDER BY c DESC, status ASC'
+        );
+        $st->execute([$tenantId, $sinceIso]);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'status' => (string) ($row['status'] ?? ''),
+                'count' => (int) ($row['c'] ?? 0),
             ];
         }
 

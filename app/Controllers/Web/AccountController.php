@@ -22,6 +22,7 @@ use App\Support\TenantEmailKind;
 use App\Services\Profile\RecruitmentPresetPayloadService;
 use App\Services\Profile\UserUiPreferencesValidationService;
 use App\Services\User\UserProfileSlugService;
+use App\Services\Steam\SteamWebApiService;
 use PDO;
 
 class AccountController
@@ -35,7 +36,8 @@ class AccountController
         private RecruitmentPresetPayloadService $recruitmentPresetPayloadService,
         private UserUiPreferencesRepository $userUiPreferencesRepository,
         private UserNotificationPreferencesRepository $userNotificationPreferencesRepository,
-        private UserUiPreferencesValidationService $userUiPreferencesValidationService
+        private UserUiPreferencesValidationService $userUiPreferencesValidationService,
+        private SteamWebApiService $steamWebApiService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -87,24 +89,18 @@ class AccountController
                 $stmt = $pdo->prepare('SELECT node_url FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
                 $stmt->execute([$tenantId]);
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                $nodeUrl = $row['node_url'] ?? null;
-                $health['api']['url'] = $nodeUrl ?: null;
-
-                if ($nodeUrl === null || $nodeUrl === '') {
-                    $health['api']['message'] = 'Aucun serveur cartographique n’est renseigné pour votre unité. Un administrateur peut compléter ce réglage.';
+                $base = atak_client_base_url($row ?: null);
+                $health['api']['url'] = $base;
+                $testUrl = url('api/atak/ping');
+                $ctx = stream_context_create([
+                    'http' => ['timeout' => 3, 'ignore_errors' => true],
+                ]);
+                $body = @file_get_contents($testUrl, false, $ctx);
+                if ($body !== false) {
+                    $health['api']['ok'] = true;
+                    $health['api']['message'] = 'Le service cartographique répond.';
                 } else {
-                    $base = rtrim($nodeUrl, '/');
-                    $testUrl = $base . '/api/atak/markers?mapId=default';
-                    $ctx = stream_context_create([
-                        'http' => ['timeout' => 3, 'ignore_errors' => true],
-                    ]);
-                    $body = @file_get_contents($testUrl, false, $ctx);
-                    if ($body !== false) {
-                        $health['api']['ok'] = true;
-                        $health['api']['message'] = 'Le service cartographique répond.';
-                    } else {
-                        $health['api']['message'] = 'Le service cartographique ne répond pas pour l’instant (réseau ou maintenance).';
-                    }
+                    $health['api']['message'] = 'Le service cartographique ne répond pas pour l’instant (réseau ou maintenance).';
                 }
             } catch (\Throwable) {
                 $health['api']['message'] = 'La vérification du service cartographique a échoué.';
@@ -128,6 +124,7 @@ class AccountController
         $errors = [];
         $success = Session::getFlash('success');
         $error = Session::getFlash('error');
+        $steamSyncReport = Session::getFlash('steam_sync_report');
 
         $uiPrefs = $this->userUiPreferencesRepository->getOrDefaults($uid, $tenantId);
         $notifRows = $this->userNotificationPreferencesRepository->listForUser($uid);
@@ -145,14 +142,20 @@ class AccountController
             $v = new Validator($request->all(), [
                 'display_name' => 'max:100',
                 'callsign' => 'max:50',
-                'steam_id' => 'max:20',
+                'steam_id' => 'max:512',
                 'timezone' => 'max:50',
                 'language' => 'max:10',
                 'profile_slug' => 'max:40',
             ]);
+            $themeIn = $request->input('ui_theme');
+            $densityIn = $request->input('ui_density');
             $uiPatch = [
-                'theme' => (string) $request->input('ui_theme'),
-                'density' => (string) $request->input('ui_density'),
+                'theme' => ($themeIn !== null && (string) $themeIn !== '')
+                    ? (string) $themeIn
+                    : (string) ($uiPrefs['theme'] ?? 'system'),
+                'density' => ($densityIn !== null && (string) $densityIn !== '')
+                    ? (string) $densityIn
+                    : (string) ($uiPrefs['density'] ?? 'comfortable'),
                 'sidebar_collapsed' => (string) $request->input('ui_sidebar_collapsed') === '1',
             ];
             $vUi = $this->userUiPreferencesValidationService->validatePatch($uiPatch);
@@ -161,10 +164,20 @@ class AccountController
             } elseif (!$vUi['ok']) {
                 Session::flash('error', implode(' ', $vUi['errors']));
             } else {
+                $rawSteam = trim((string) $request->input('steam_id'));
+                $resolvedSteam = $rawSteam === '' ? null : $this->steamWebApiService->resolveSteamIdFromUserInput($rawSteam);
+                if ($rawSteam !== '' && $resolvedSteam === null) {
+                    Session::flash(
+                        'error',
+                        'Impossible de reconnaître cet identifiant Steam. Utilisez le numéro à 17 chiffres, une adresse de profil se terminant par « …/profiles/… », ou un lien « …/id/votre-pseudo » si le service Steam du serveur est configuré.'
+                    );
+
+                    return Response::redirect(url('account/preferences'));
+                }
                 $updateUser = [
                     'display_name' => trim((string) $request->input('display_name')),
                     'callsign' => trim((string) $request->input('callsign')),
-                    'steam_id' => trim((string) $request->input('steam_id')) ?: null,
+                    'steam_id' => $resolvedSteam,
                 ];
                 $rawSlug = trim((string) $request->input('profile_slug'));
                 if ($rawSlug === '') {
@@ -225,7 +238,162 @@ class AccountController
             'errors' => $errors,
             'success' => $success,
             'error' => $error,
+            'steamWebConfigured' => $this->steamWebApiService->isConfigured(),
+            'steamSyncReport' => is_array($steamSyncReport) ? $steamSyncReport : null,
         ]);
+    }
+
+    public function syncSteamProfile(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée ou accès refusé.');
+
+            return Response::redirect(url('account/preferences'));
+        }
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        $uid = (int) $user['id'];
+        if ($tenantId < 1) {
+            Session::flash('error', 'Communauté introuvable.');
+
+            return Response::redirect(url('account/preferences'));
+        }
+        if (!$this->steamWebApiService->isConfigured()) {
+            Session::flash('error', 'L’import depuis Steam n’est pas configuré sur ce serveur. Contactez l’administration.');
+
+            return Response::redirect(url('account/preferences'));
+        }
+        $row = $this->userRepository->findById($uid, $tenantId);
+        if (!$row) {
+            Session::flash('error', 'Compte introuvable.');
+
+            return Response::redirect(url('account/preferences'));
+        }
+        $dbSteam = trim((string) ($row['steam_id'] ?? ''));
+        $steamId = $dbSteam;
+        $postedSteam = trim((string) $request->input('steam_id'));
+        $steamIdJustSavedFromForm = false;
+        if ($postedSteam !== '') {
+            $resolvedPosted = $this->steamWebApiService->resolveSteamIdFromUserInput($postedSteam);
+            if ($resolvedPosted === null) {
+                Session::flash('error', 'Impossible de reconnaître l’identifiant Steam indiqué dans le formulaire. Vérifiez le numéro ou l’adresse du profil public.');
+
+                return Response::redirect(url('account/preferences'));
+            }
+            if ($resolvedPosted !== $steamId) {
+                $this->userRepository->update($uid, $tenantId, ['steam_id' => $resolvedPosted]);
+                $steamId = $resolvedPosted;
+                $steamIdJustSavedFromForm = true;
+            }
+        }
+        if ($steamId === '') {
+            Session::flash('error', 'Indiquez un identifiant Steam dans le formulaire (numéro ou adresse de profil), puis relancez la synchronisation.');
+
+            return Response::redirect(url('account/preferences'));
+        }
+        $applyName = $request->input('apply_steam_display_name') === '1';
+        $steps = [];
+        if ($steamIdJustSavedFromForm) {
+            $steps[] = [
+                'key' => 'persist_steam',
+                'label' => 'Enregistrement de l’identifiant',
+                'ok' => true,
+                'detail' => 'La valeur saisie dans le formulaire a été enregistrée sur votre compte avant la lecture du profil public.',
+            ];
+        }
+        $steps[] = [
+            'key' => 'account',
+            'label' => 'Lecture du compte',
+            'ok' => true,
+            'detail' => $steamIdJustSavedFromForm
+                ? 'Identifiant Steam prêt pour la liaison avec le service.'
+                : 'Identifiant Steam déjà enregistré sur votre dossier.',
+        ];
+        $summary = $this->steamWebApiService->fetchPublicPlayer($steamId);
+        if ($summary === null) {
+            $steps[] = [
+                'key' => 'steam_api',
+                'label' => 'Lecture du profil public',
+                'ok' => false,
+                'detail' => 'Le service n’a pas renvoyé de profil pour cet identifiant. Vérifiez-le ou réessayez plus tard.',
+            ];
+            Session::flash('steam_sync_report', [
+                'ok' => false,
+                'finished_at' => date('d/m/Y \à H:i'),
+                'steps' => $steps,
+                'data' => [],
+            ]);
+            Session::flash('error', 'Impossible de récupérer le profil public pour cet identifiant. Vérifiez l’identifiant ou réessayez plus tard.');
+
+            return Response::redirect(url('account/preferences'));
+        }
+        $steps[] = [
+            'key' => 'steam_api',
+            'label' => 'Lecture du profil public',
+            'ok' => true,
+            'detail' => 'Pseudo et visuel du profil public récupérés.',
+        ];
+        $patch = [];
+        if ($summary['avatar_url'] !== '') {
+            $patch['avatar_url'] = function_exists('mb_substr')
+                ? mb_substr($summary['avatar_url'], 0, 500)
+                : substr($summary['avatar_url'], 0, 500);
+        }
+        if ($applyName && $summary['personaname'] !== '') {
+            $patch['display_name'] = function_exists('mb_substr')
+                ? mb_substr($summary['personaname'], 0, 100)
+                : substr($summary['personaname'], 0, 100);
+        }
+        if ($patch === []) {
+            $steps[] = [
+                'key' => 'apply',
+                'label' => 'Mise à jour du dossier',
+                'ok' => false,
+                'detail' => 'Aucune photo ni nom exploitable n’a été renvoyé pour ce profil.',
+            ];
+            Session::flash('steam_sync_report', [
+                'ok' => false,
+                'finished_at' => date('d/m/Y \à H:i'),
+                'steps' => $steps,
+                'data' => [
+                    'public_pseudo' => $summary['personaname'],
+                ],
+            ]);
+            Session::flash('error', 'Aucune donnée exploitable n’a été renvoyée pour ce profil.');
+
+            return Response::redirect(url('account/preferences'));
+        }
+        $this->userRepository->update($uid, $tenantId, $patch);
+        $fresh = $this->userRepository->findById($uid, $tenantId);
+        if ($fresh) {
+            Session::set('display_name', (string) ($fresh['display_name'] ?? ''));
+            Session::set('callsign', (string) ($fresh['callsign'] ?? ''));
+        }
+        $steps[] = [
+            'key' => 'apply',
+            'label' => 'Mise à jour du dossier',
+            'ok' => true,
+            'detail' => isset($patch['avatar_url']) ? 'Photo du compte actualisée.' : 'Nom d’affichage actualisé.',
+        ];
+        Session::flash('steam_sync_report', [
+            'ok' => true,
+            'finished_at' => date('d/m/Y \à H:i'),
+            'steps' => $steps,
+            'data' => [
+                'public_pseudo' => $summary['personaname'],
+                'avatar_updated' => isset($patch['avatar_url']),
+                'display_name_updated' => isset($patch['display_name']),
+                'steam_id' => $summary['steam_id'],
+            ],
+        ]);
+        Session::flash(
+            'success',
+            $applyName
+                ? 'Photo et nom d’affichage mis à jour depuis le profil public Steam.'
+                : 'Photo du compte mise à jour depuis le profil public Steam.'
+        );
+
+        return Response::redirect(url('account/preferences'));
     }
 
     /**
@@ -385,6 +553,11 @@ class AccountController
         }
 
         $recrutementItems = [
+            [
+                'key' => EmailEvents::RECRUITMENT_OPENING_PUBLISHED_STAFF,
+                'label' => 'Nouvelle offre de poste publiée (équipe recrutement)',
+                'hint' => 'Lorsqu’une offre passe de brouillon à publiée sur la vitrine.',
+            ],
             [
                 'key' => EmailEvents::ENLISTMENT_SUBMITTED_STAFF,
                 'label' => 'Nouvelle candidature (équipe recrutement)',

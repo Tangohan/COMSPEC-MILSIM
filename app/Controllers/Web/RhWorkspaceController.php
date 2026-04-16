@@ -63,9 +63,15 @@ final class RhWorkspaceController
             }
         }
 
+        $greetingName = trim((string) ($user['display_name'] ?? ''));
+        if ($greetingName === '') {
+            $greetingName = trim((string) ($user['callsign'] ?? ''));
+        }
+
         return Response::view('layout.main', [
-            'title' => 'Espace RH & formations',
+            'title' => 'Espace RH et formations',
             'content' => 'personnel.rh_workspace',
+            'rhGreetingName' => $greetingName,
             'rhTrainingAllowed' => $trainingAllowed,
             'rhCharterReady' => $charterReady,
             'rhCharterAccepted' => $charterAccepted,

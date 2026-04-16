@@ -75,11 +75,11 @@ class TeamAdminController
         ];
         if ($data['name'] === '') {
             Session::flash('error', 'Le nom est requis.');
-            return Response::redirect(url('back-office/teams/create'));
+            return Response::redirect(url('back-office/organisation/structure?ouvrir=equipe'));
         }
         if ($this->unitRepository->slugExists($tenantId, $effectiveSlug)) {
-            Session::flash('error', 'Ce slug existe déjà.');
-            return Response::redirect(url('back-office/teams/create'));
+            Session::flash('error', 'Cette adresse courte est déjà utilisée.');
+            return Response::redirect(url('back-office/organisation/structure?ouvrir=equipe'));
         }
         $unit = $this->unitRepository->create($tenantId, $data);
         Session::flash('success', 'Équipe créée.');

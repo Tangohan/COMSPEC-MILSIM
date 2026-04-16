@@ -185,7 +185,7 @@ final class RecruitmentOpeningForumPublisher
                 } catch (\Throwable) {
                 }
             }
-            $postId = $this->posts->create($tenantId, $topicId, $userId, $html, null, null, 'info');
+            $postId = $this->posts->create($tenantId, $topicId, $userId, $html, null, null, 'info', false, null, 'html');
             if ($postId > 0 && function_exists('forum_after_post_moderation')) {
                 forum_after_post_moderation($tenantId, $userId, $postId, $html);
             }

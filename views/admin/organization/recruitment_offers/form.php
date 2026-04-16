@@ -50,7 +50,7 @@ $stLocked = $isEdit && (string) ($openingRow['status'] ?? '') !== 'draft';
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-500">Identification</h2>
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Unité porteuse *</label>
-                <select name="unit_id" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" <?= $stLocked ? 'disabled' : '' ?> <?= !$canSubmit ? 'disabled' : '' ?>>
+                <select name="unit_id" required class="<?= htmlspecialchars(bo_select_class(), ENT_QUOTES, 'UTF-8') ?>" <?= $stLocked ? 'disabled' : '' ?> <?= !$canSubmit ? 'disabled' : '' ?>>
                     <option value="">— Choisir —</option>
                     <?php foreach ($units as $u): ?>
                         <option value="<?= (int) ($u['id'] ?? 0) ?>" <?= (int) ($od['unit_id'] ?? $openingRow['unit_id'] ?? 0) === (int) ($u['id'] ?? 0) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($u['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
@@ -62,7 +62,7 @@ $stLocked = $isEdit && (string) ($openingRow['status'] ?? '') !== 'draft';
             </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Emploi métier (référentiel)</label>
-                <select name="personnel_job_role_id" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" <?= $stLocked ? 'disabled' : '' ?> <?= !$canSubmit ? 'disabled' : '' ?>>
+                <select name="personnel_job_role_id" class="<?= htmlspecialchars(bo_select_class(), ENT_QUOTES, 'UTF-8') ?>" <?= $stLocked ? 'disabled' : '' ?> <?= !$canSubmit ? 'disabled' : '' ?>>
                     <option value="">— Aucun —</option>
                     <?php foreach ($jobRoles as $jr): ?>
                         <option value="<?= (int) ($jr['id'] ?? 0) ?>" <?= (int) ($od['personnel_job_role_id'] ?? $openingRow['personnel_job_role_id'] ?? 0) === (int) ($jr['id'] ?? 0) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($jr['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
@@ -87,7 +87,7 @@ $stLocked = $isEdit && (string) ($openingRow['status'] ?? '') !== 'draft';
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Catégorie de personnel</label>
-                    <select name="personnel_category" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" <?= $stLocked ? 'disabled' : '' ?> <?= !$canSubmit ? 'disabled' : '' ?>>
+                    <select name="personnel_category" class="<?= htmlspecialchars(bo_select_class(), ENT_QUOTES, 'UTF-8') ?>" <?= $stLocked ? 'disabled' : '' ?> <?= !$canSubmit ? 'disabled' : '' ?>>
                         <?php foreach ($personnelCategories as $k => $lab): ?>
                             <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($od['personnel_category'] ?? 'other') === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
                         <?php endforeach; ?>
@@ -95,7 +95,7 @@ $stLocked = $isEdit && (string) ($openingRow['status'] ?? '') !== 'draft';
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Arme / domaine</label>
-                    <select name="arm_domain" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" <?= $stLocked ? 'disabled' : '' ?> <?= !$canSubmit ? 'disabled' : '' ?>>
+                    <select name="arm_domain" class="<?= htmlspecialchars(bo_select_class(), ENT_QUOTES, 'UTF-8') ?>" <?= $stLocked ? 'disabled' : '' ?> <?= !$canSubmit ? 'disabled' : '' ?>>
                         <option value="">—</option>
                         <?php foreach ($armDomains as $k => $lab): ?>
                             <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($od['arm_domain'] ?? '') === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
@@ -112,7 +112,7 @@ $stLocked = $isEdit && (string) ($openingRow['status'] ?? '') !== 'draft';
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-slate-700 mb-1">Niveau d’habilitation demandé</label>
-                    <select name="clearance_level" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" <?= $stLocked ? 'disabled' : '' ?> <?= !$canSubmit ? 'disabled' : '' ?>>
+                    <select name="clearance_level" class="<?= htmlspecialchars(bo_select_class(), ENT_QUOTES, 'UTF-8') ?>" <?= $stLocked ? 'disabled' : '' ?> <?= !$canSubmit ? 'disabled' : '' ?>>
                         <?php foreach ($clearanceLevels as $k => $lab): ?>
                             <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($od['clearance_level'] ?? 'none') === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
                         <?php endforeach; ?>

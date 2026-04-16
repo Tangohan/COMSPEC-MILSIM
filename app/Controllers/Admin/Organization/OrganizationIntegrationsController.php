@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantApiKeyRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Platform\FeatureGateService;
 
 final class OrganizationIntegrationsController
 {
@@ -19,6 +20,7 @@ final class OrganizationIntegrationsController
     public function __construct(
         private AuthService $auth,
         private TenantApiKeyRepository $apiKeys,
+        private FeatureGateService $featureGate,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -34,6 +36,10 @@ final class OrganizationIntegrationsController
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         if ($tenantId < 2) {
             return Response::redirect(url('dashboard'));
+        }
+        $planDenied = $this->assertAdvancedIntegrationsPlan($tenantId);
+        if ($planDenied !== null) {
+            return $planDenied;
         }
         $keys = $this->apiKeys->listForTenant($tenantId);
         $flashKey = Session::getFlash('new_integration_key');
@@ -67,6 +73,10 @@ final class OrganizationIntegrationsController
             Session::flash('error', 'Fonction indisponible pour cette communauté.');
 
             return Response::redirect(url('back-office/integrations'));
+        }
+        $planDenied = $this->assertAdvancedIntegrationsPlan($tenantId);
+        if ($planDenied !== null) {
+            return $planDenied;
         }
         $name = trim((string) $request->input('name', 'Intégration'));
         if ($name === '') {
@@ -113,6 +123,10 @@ final class OrganizationIntegrationsController
         $id = (int) ($params['id'] ?? 0);
         $name = trim((string) $request->input('name', ''));
         $quota = (int) $request->input('quota_per_day', 10000);
+        $planDenied = $this->assertAdvancedIntegrationsPlan($tenantId);
+        if ($planDenied !== null) {
+            return $planDenied;
+        }
         if ($tenantId < 2 || $id < 1 || $name === '') {
             Session::flash('error', 'Paramètres invalides.');
 
@@ -150,6 +164,10 @@ final class OrganizationIntegrationsController
         }
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $id = (int) ($params['id'] ?? 0);
+        $planDenied = $this->assertAdvancedIntegrationsPlan($tenantId);
+        if ($planDenied !== null) {
+            return $planDenied;
+        }
         if ($tenantId > 1 && $id > 0) {
             $this->apiKeys->revoke($id, $tenantId);
             Session::flash('success', 'Clé révoquée.');
@@ -180,6 +198,10 @@ final class OrganizationIntegrationsController
 
             return Response::redirect(url('back-office/integrations'));
         }
+        $planDenied = $this->assertAdvancedIntegrationsPlan($tenantId);
+        if ($planDenied !== null) {
+            return $planDenied;
+        }
         $current = $this->apiKeys->findForTenant($id, $tenantId);
         if (!is_array($current) || !empty($current['revoked_at'])) {
             Session::flash('error', 'Clé introuvable ou déjà révoquée.');
@@ -208,6 +230,23 @@ final class OrganizationIntegrationsController
         Session::flash('success', 'Clé tournée avec succès. Mettez à jour vos services immédiatement.');
 
         return Response::redirect(url('back-office/integrations'));
+    }
+
+    private function assertAdvancedIntegrationsPlan(int $tenantId): ?Response
+    {
+        if ($tenantId < 2) {
+            return null;
+        }
+        if (!$this->featureGate->allows($tenantId, 'advanced_integrations')) {
+            return Response::view('layout.main', [
+                'title' => 'Intégrations',
+                'content' => 'platform.upgrade',
+                'feature' => 'Connexions avancées (clés d’accès)',
+                'planName' => 'Pro+',
+            ]);
+        }
+
+        return null;
     }
 
     /**

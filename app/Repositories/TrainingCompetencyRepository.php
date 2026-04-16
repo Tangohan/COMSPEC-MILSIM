@@ -32,7 +32,7 @@ final class TrainingCompetencyRepository
 
     public function competencyTrainerRolesSchemaAvailable(): bool
     {
-        return $this->hasTable('training_trainer_roles');
+        return $this->hasTable('training_trainer_roles') || $this->hasTable('tenant_pedagogy_role_sets');
     }
 
     private function hasTable(string $table): bool
@@ -53,35 +53,76 @@ final class TrainingCompetencyRepository
     /** @return list<array<string,mixed>> */
     public function listTrainerRoles(int $tenantId): array
     {
-        if (!$this->hasTable('training_trainer_roles')) {
-            return [];
-        }
-        $sql = "SELECT r.id, r.name, r.slug,
-                       CASE WHEN ttr.role_id IS NULL THEN 0 ELSE 1 END AS is_trainer_role
-                FROM roles r
-                LEFT JOIN training_trainer_roles ttr ON ttr.tenant_id = r.tenant_id AND ttr.role_id = r.id
-                WHERE r.tenant_id = ? AND r.role_layer IN ('community','intra')
-                ORDER BY r.name ASC";
-        $st = $this->pdo->prepare($sql);
-        $st->execute([$tenantId]);
+        return $this->listPedagogyRoleChecklist($tenantId, 'design_trainer');
+    }
 
-        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    /**
+     * Cases à cocher par rôle communauté pour un type pédagogique (ex. conception, animation).
+     *
+     * @param 'design_trainer'|'delivery_instructor'|'instructor_certifier'|'trainer_certifier' $kind
+     * @return list<array<string,mixed>>
+     */
+    public function listPedagogyRoleChecklist(int $tenantId, string $kind): array
+    {
+        if ($this->hasTable('tenant_pedagogy_role_sets')) {
+            $sql = "SELECT r.id, r.name, r.slug,
+                           CASE WHEN tprs.role_id IS NULL THEN 0 ELSE 1 END AS is_trainer_role
+                    FROM roles r
+                    LEFT JOIN tenant_pedagogy_role_sets tprs
+                      ON tprs.tenant_id = r.tenant_id AND tprs.role_id = r.id AND tprs.pedagogy_kind = ?
+                    WHERE r.tenant_id = ? AND r.role_layer IN ('community','intra')
+                    ORDER BY r.name ASC";
+            $st = $this->pdo->prepare($sql);
+            $st->execute([$kind, $tenantId]);
+
+            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+        if ($kind === 'design_trainer' && $this->hasTable('training_trainer_roles')) {
+            $sql = "SELECT r.id, r.name, r.slug,
+                           CASE WHEN ttr.role_id IS NULL THEN 0 ELSE 1 END AS is_trainer_role
+                    FROM roles r
+                    LEFT JOIN training_trainer_roles ttr ON ttr.tenant_id = r.tenant_id AND ttr.role_id = r.id
+                    WHERE r.tenant_id = ? AND r.role_layer IN ('community','intra')
+                    ORDER BY r.name ASC";
+            $st = $this->pdo->prepare($sql);
+            $st->execute([$tenantId]);
+
+            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+
+        return [];
     }
 
     /** @param list<int> $roleIds */
     public function saveTrainerRolePicking(int $tenantId, array $roleIds, int $actorUserId): void
     {
-        if (!$this->hasTable('training_trainer_roles')) {
-            return;
-        }
+        $this->savePedagogyRolePicking($tenantId, 'design_trainer', $roleIds, $actorUserId);
+    }
+
+    /** @param 'design_trainer'|'delivery_instructor'|'instructor_certifier'|'trainer_certifier' $kind */
+    public function savePedagogyRolePicking(int $tenantId, string $kind, array $roleIds, int $actorUserId): void
+    {
         $roleIds = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $v): bool => $v > 0)));
         $this->pdo->beginTransaction();
         try {
-            $this->pdo->prepare('DELETE FROM training_trainer_roles WHERE tenant_id = ?')->execute([$tenantId]);
-            if ($roleIds !== []) {
-                $ins = $this->pdo->prepare('INSERT INTO training_trainer_roles (tenant_id, role_id, created_by_user_id, created_at) VALUES (?, ?, ?, NOW())');
-                foreach ($roleIds as $rid) {
-                    $ins->execute([$tenantId, $rid, $actorUserId > 0 ? $actorUserId : null]);
+            if ($this->hasTable('tenant_pedagogy_role_sets')) {
+                $this->pdo->prepare('DELETE FROM tenant_pedagogy_role_sets WHERE tenant_id = ? AND pedagogy_kind = ?')->execute([$tenantId, $kind]);
+                if ($roleIds !== []) {
+                    $ins = $this->pdo->prepare(
+                        'INSERT INTO tenant_pedagogy_role_sets (tenant_id, role_id, pedagogy_kind, created_by_user_id, created_at) VALUES (?, ?, ?, ?, NOW())'
+                    );
+                    foreach ($roleIds as $rid) {
+                        $ins->execute([$tenantId, $rid, $kind, $actorUserId > 0 ? $actorUserId : null]);
+                    }
+                }
+            }
+            if ($kind === 'design_trainer' && $this->hasTable('training_trainer_roles')) {
+                $this->pdo->prepare('DELETE FROM training_trainer_roles WHERE tenant_id = ?')->execute([$tenantId]);
+                if ($roleIds !== []) {
+                    $ins = $this->pdo->prepare('INSERT INTO training_trainer_roles (tenant_id, role_id, created_by_user_id, created_at) VALUES (?, ?, ?, NOW())');
+                    foreach ($roleIds as $rid) {
+                        $ins->execute([$tenantId, $rid, $actorUserId > 0 ? $actorUserId : null]);
+                    }
                 }
             }
             $this->pdo->commit();
@@ -94,13 +135,28 @@ final class TrainingCompetencyRepository
     /** @return list<int> */
     public function trainerRoleIds(int $tenantId): array
     {
-        if (!$this->hasTable('training_trainer_roles')) {
-            return [];
-        }
-        $st = $this->pdo->prepare('SELECT role_id FROM training_trainer_roles WHERE tenant_id = ? ORDER BY role_id ASC');
-        $st->execute([$tenantId]);
+        return $this->pedagogyRoleIdsForKind($tenantId, 'design_trainer');
+    }
 
-        return array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+    /** @return list<int> */
+    public function pedagogyRoleIdsForKind(int $tenantId, string $kind): array
+    {
+        if ($this->hasTable('tenant_pedagogy_role_sets')) {
+            $st = $this->pdo->prepare(
+                'SELECT role_id FROM tenant_pedagogy_role_sets WHERE tenant_id = ? AND pedagogy_kind = ? ORDER BY role_id ASC'
+            );
+            $st->execute([$tenantId, $kind]);
+
+            return array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+        }
+        if ($kind === 'design_trainer' && $this->hasTable('training_trainer_roles')) {
+            $st = $this->pdo->prepare('SELECT role_id FROM training_trainer_roles WHERE tenant_id = ? ORDER BY role_id ASC');
+            $st->execute([$tenantId]);
+
+            return array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+        }
+
+        return [];
     }
 
     /** @return list<array<string,mixed>> */
@@ -131,6 +187,19 @@ final class TrainingCompetencyRepository
         $row = $st->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
+    }
+
+    public function matrixNameExists(int $tenantId, string $name): bool
+    {
+        if (!$this->hasTable('training_competency_matrices')) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT 1 FROM training_competency_matrices WHERE tenant_id = ? AND name = ? LIMIT 1'
+        );
+        $st->execute([$tenantId, mb_substr(trim($name), 0, 120)]);
+
+        return (bool) $st->fetchColumn();
     }
 
     public function saveMatrix(int $tenantId, int $actorUserId, string $name, string $description, array $autoRules): int
@@ -182,7 +251,11 @@ final class TrainingCompetencyRepository
         $params = [$tenantId];
         if ($roleIds !== []) {
             $ph = implode(',', array_fill(0, count($roleIds), '?'));
-            $where[] = "(u.role_id IN ($ph) OR EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id IN ($ph)))";
+            if ($this->hasTable('tenant_user_roles')) {
+                $where[] = "(u.role_id IN ($ph) OR EXISTS (SELECT 1 FROM tenant_user_roles tur WHERE tur.user_id = u.id AND tur.tenant_id = u.tenant_id AND tur.role_id IN ($ph)))";
+            } else {
+                $where[] = "(u.role_id IN ($ph) OR EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id IN ($ph)))";
+            }
             $params = array_merge($params, $roleIds, $roleIds);
         }
         if ($minCompleted > 0) {

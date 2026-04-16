@@ -34,6 +34,11 @@ final class HrCharterDocumentAdminController
         }
         $this->hrCharterRepository->ensureSeedDocumentForTenant($tenantId);
         $doc = $this->hrCharterRepository->getActiveDocumentForTenant($tenantId);
+        if ($doc === null) {
+            Session::flash('error', 'Impossible de charger ou d’initialiser la charte pour cette communauté.');
+
+            return Response::redirect(url(training_lms_admin_path()));
+        }
 
         return Response::view('layout.main', [
             'title' => 'Charte liée aux formations',

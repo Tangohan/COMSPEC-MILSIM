@@ -19,6 +19,8 @@ class PersonnelJobRoleRepository
 
     private static ?bool $jobRolesLabelEnColumn = null;
 
+    private static ?bool $jobRolesMosColumns = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -192,6 +194,22 @@ class PersonnelJobRoleRepository
         self::$jobRolesLabelEnColumn = (bool) ($stmt && $stmt->fetchColumn());
 
         return self::$jobRolesLabelEnColumn;
+    }
+
+    public function jobRolesHaveMosColumns(): bool
+    {
+        if (self::$jobRolesMosColumns !== null) {
+            return self::$jobRolesMosColumns;
+        }
+        if (!$this->tablesExist()) {
+            self::$jobRolesMosColumns = false;
+
+            return false;
+        }
+        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_job_roles' AND COLUMN_NAME = 'mos_code' LIMIT 1");
+        self::$jobRolesMosColumns = (bool) ($stmt && $stmt->fetchColumn());
+
+        return self::$jobRolesMosColumns;
     }
 
     /**
@@ -426,22 +444,54 @@ class PersonnelJobRoleRepository
         return (int) $this->pdo->lastInsertId();
     }
 
-    public function createRole(int $tenantId, int $categoryId, string $name, string $slug, ?string $description, int $sortOrder, bool $isSystem = false): int
-    {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO personnel_job_roles (tenant_id, category_id, name, slug, description, sort_order, is_system) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        );
-        $stmt->execute([$tenantId, $categoryId, $name, $slug, $description, $sortOrder, $isSystem ? 1 : 0]);
+    public function createRole(
+        int $tenantId,
+        int $categoryId,
+        string $name,
+        string $slug,
+        ?string $description,
+        int $sortOrder,
+        bool $isSystem = false,
+        ?string $mosCode = null,
+        ?string $mosSpecialtyTitle = null
+    ): int {
+        if ($this->jobRolesHaveMosColumns()) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO personnel_job_roles (tenant_id, category_id, name, slug, description, sort_order, is_system, mos_code, mos_specialty_title) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([$tenantId, $categoryId, $name, $slug, $description, $sortOrder, $isSystem ? 1 : 0, $mosCode, $mosSpecialtyTitle]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO personnel_job_roles (tenant_id, category_id, name, slug, description, sort_order, is_system) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([$tenantId, $categoryId, $name, $slug, $description, $sortOrder, $isSystem ? 1 : 0]);
+        }
 
         return (int) $this->pdo->lastInsertId();
     }
 
-    public function updateRole(int $id, int $tenantId, int $categoryId, string $name, string $slug, ?string $description, int $sortOrder): bool
-    {
-        $stmt = $this->pdo->prepare(
-            'UPDATE personnel_job_roles SET category_id = ?, name = ?, slug = ?, description = ?, sort_order = ? WHERE id = ? AND tenant_id = ?'
-        );
-        $stmt->execute([$categoryId, $name, $slug, $description, $sortOrder, $id, $tenantId]);
+    public function updateRole(
+        int $id,
+        int $tenantId,
+        int $categoryId,
+        string $name,
+        string $slug,
+        ?string $description,
+        int $sortOrder,
+        ?string $mosCode = null,
+        ?string $mosSpecialtyTitle = null
+    ): bool {
+        if ($this->jobRolesHaveMosColumns()) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE personnel_job_roles SET category_id = ?, name = ?, slug = ?, description = ?, sort_order = ?, mos_code = ?, mos_specialty_title = ? WHERE id = ? AND tenant_id = ?'
+            );
+            $stmt->execute([$categoryId, $name, $slug, $description, $sortOrder, $mosCode, $mosSpecialtyTitle, $id, $tenantId]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'UPDATE personnel_job_roles SET category_id = ?, name = ?, slug = ?, description = ?, sort_order = ? WHERE id = ? AND tenant_id = ?'
+            );
+            $stmt->execute([$categoryId, $name, $slug, $description, $sortOrder, $id, $tenantId]);
+        }
 
         return $stmt->rowCount() > 0;
     }
@@ -626,6 +676,14 @@ class PersonnelJobRoleRepository
             }
             if ($en !== '') {
                 $searchBits[] = $en;
+            }
+            $mosC = trim((string) ($r['mos_code'] ?? ''));
+            if ($mosC !== '') {
+                $searchBits[] = $mosC;
+            }
+            $mosT = trim((string) ($r['mos_specialty_title'] ?? ''));
+            if ($mosT !== '') {
+                $searchBits[] = $mosT;
             }
             $search = mb_strtolower(implode(' ', $searchBits), 'UTF-8');
             $row = [

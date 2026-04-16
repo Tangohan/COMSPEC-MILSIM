@@ -36,7 +36,28 @@ $publicEngagement = $publicEngagement ?? [
     'enlistment_submits' => 0,
     'cta_clicks' => 0,
 ];
+$operationalKpis = is_array($operationalKpis ?? null) ? $operationalKpis : [
+    'members_active_total' => 0,
+    'members_registered_in_period' => 0,
+    'audit_actions_in_period' => 0,
+    'enlistments_created_in_period' => 0,
+    'forum_topics_in_period' => 0,
+    'forum_posts_in_period' => 0,
+    'training_enrollments_assigned_in_period' => 0,
+    'training_completions_in_period' => 0,
+];
+$enlistmentStatusBreakdown = is_array($enlistmentStatusBreakdown ?? null) ? $enlistmentStatusBreakdown : [];
 $analyticsDays = (int) ($analyticsDays ?? 30);
+
+$enlistmentStatusLabelAnalytics = static function (string $status): string {
+    return match ($status) {
+        'submitted' => 'En attente de décision',
+        'reviewed' => 'Traitée',
+        'rejected' => 'Rejetée',
+        'blocked' => 'Bloquée',
+        default => 'Autre état',
+    };
+};
 
 $dailyMax = 0;
 foreach ($tenantDailyEvents as $de) {
@@ -67,7 +88,7 @@ $ratioPct = static function (int $num, int $den): string {
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Indicateurs d’usage</h1>
-            <p class="text-sm text-slate-600 mt-1">Synthèse pour votre communauté (depuis le <?= htmlspecialchars($since) ?> — fuseau serveur).</p>
+            <p class="text-sm text-slate-600 mt-1">Synthèse pour votre communauté sur <?= (int) $analyticsDays ?> jours glissants (à partir du <?= htmlspecialchars($since) ?> — fuseau serveur).</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
             <?= $periodLinks($analyticsDays) ?>
@@ -76,8 +97,74 @@ $ratioPct = static function (int $num, int $den): string {
     </div>
 
     <section class="mb-10">
+        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Activité portail (données enregistrées)</h2>
+        <p class="text-sm text-slate-600 mb-4 max-w-3xl">
+            Ces chiffres sont comptés directement dans la base du portail (comptes, journal d’audit, forum, candidatures, formations).
+            Ils reflètent l’activité réelle même lorsque le suivi d’usage optionnel (section suivante) est peu alimenté.
+        </p>
+        <dl class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Membres actifs (total)</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['members_active_total'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Nouveaux comptes sur la période</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['members_registered_in_period'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Écritures dans le journal d’audit</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['audit_actions_in_period'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Candidatures déposées (période)</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['enlistments_created_in_period'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Sujets de forum créés</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['forum_topics_in_period'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Messages de forum publiés</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['forum_posts_in_period'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Inscriptions aux parcours (période)</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['training_enrollments_assigned_in_period'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-emerald-50/80 shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-emerald-900">Parcours terminés (période)</dt>
+                <dd class="text-3xl font-black text-emerald-950 mt-1 tabular-nums"><?= (int) ($operationalKpis['training_completions_in_period'] ?? 0) ?></dd>
+            </div>
+        </dl>
+        <?php if ($enlistmentStatusBreakdown !== []): ?>
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm max-w-xl">
+                <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/80">
+                    <h3 class="text-sm font-bold text-slate-800">Candidatures déposées sur la période — répartition par état</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Uniquement les dossiers dont la date de dépôt tombe dans la fenêtre affichée.</p>
+                </div>
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-left text-[10px] uppercase tracking-wider text-slate-500">
+                            <th class="px-4 py-2 font-bold">État</th>
+                            <th class="px-4 py-2 font-bold text-right">Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($enlistmentStatusBreakdown as $es): ?>
+                            <tr class="border-b border-slate-100 last:border-0">
+                                <td class="px-4 py-2.5 font-medium text-slate-900"><?= htmlspecialchars($enlistmentStatusLabelAnalytics((string) ($es['status'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="px-4 py-2.5 text-right tabular-nums"><?= (int) ($es['count'] ?? 0) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </section>
+
+    <section class="mb-10">
         <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Volume d’activité (suivi d’usage)</h2>
-        <p class="text-sm text-slate-600 mb-4 max-w-3xl">Indicateurs agrégés à partir du journal d’usage du portail (y compris actions anonymes ou sans membre identifié). Les durées moyennes ne portent que sur les visites où une mesure a été acceptée.</p>
+        <p class="text-sm text-slate-600 mb-4 max-w-3xl">Indicateurs agrégés à partir du journal d’usage du portail (y compris actions anonymes ou sans membre identifié). Les durées moyennes ne portent que sur les visites où une mesure d’audience a été acceptée. Si ces totaux restent bas alors que l’activité ci-dessus est forte, vérifiez le consentement cookies côté visiteurs.</p>
         <dl class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
             <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
                 <dt class="text-[10px] uppercase tracking-wider text-slate-500">Événements enregistrés (période)</dt>
@@ -102,7 +189,7 @@ $ratioPct = static function (int $num, int $den): string {
         </dl>
 
         <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm mb-6">
-            <h3 class="text-sm font-bold text-slate-800 mb-4">Répartition par jour</h3>
+            <h3 class="text-sm font-bold text-slate-800 mb-4">Répartition par jour (un point par jour sur <?= (int) $analyticsDays ?> jours)</h3>
             <?php if ($tenantDailyEvents === []): ?>
                 <p class="text-sm text-slate-500 py-6 text-center">Pas encore de données journalières sur cette période.</p>
             <?php else: ?>

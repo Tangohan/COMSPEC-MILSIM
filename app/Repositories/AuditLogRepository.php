@@ -23,6 +23,7 @@ final class AuditLogRepository
      *   date_from?: string|null,
      *   date_to?: string|null,
      *   action?: string|null,
+     *   action_exact?: string|null,
      *   user_id?: int|null,
      *   tenant_id?: int|null
      * } $filters
@@ -43,7 +44,10 @@ final class AuditLogRepository
             $where[] = 'a.created_at <= ?';
             $params[] = $filters['date_to'] . ' 23:59:59';
         }
-        if (!empty($filters['action'])) {
+        if (!empty($filters['action_exact'])) {
+            $where[] = 'a.action = ?';
+            $params[] = trim((string) $filters['action_exact']);
+        } elseif (!empty($filters['action'])) {
             $where[] = 'a.action LIKE ?';
             $params[] = '%' . $this->likeEscape((string) $filters['action']) . '%';
         }
@@ -232,5 +236,66 @@ final class AuditLogRepository
     private function likeEscape(string $s): string
     {
         return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $s);
+    }
+
+    /**
+     * Détail d’une entrée. Si $tenantScope est défini (>0), refuse les lignes d’une autre communauté.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByIdForScope(int $id, ?int $tenantScope): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $sql = 'SELECT a.*, t.name AS tenant_name, u.email AS actor_email
+                FROM audit_logs a
+                LEFT JOIN tenants t ON t.id = a.tenant_id
+                LEFT JOIN users u ON u.id = a.user_id
+                WHERE a.id = ?';
+        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row) || $row === []) {
+            return null;
+        }
+        if ($tenantScope !== null && $tenantScope > 0) {
+            $tid = isset($row['tenant_id']) ? (int) $row['tenant_id'] : 0;
+            if ($tid !== $tenantScope) {
+                return null;
+            }
+        }
+
+        return $row;
+    }
+
+    /**
+     * Première trace connue d’attribution de rôle communauté pour ce membre (date jour).
+     */
+    public function earliestRoleAssignedDateYmdForTargetUser(int $tenantId, int $targetUserId): ?string
+    {
+        if ($tenantId < 1 || $targetUserId < 1) {
+            return null;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT DATE(MIN(created_at)) AS d
+                 FROM audit_logs
+                 WHERE tenant_id = ?
+                   AND action = 'role_assigned'
+                   AND entity_type = 'user'
+                   AND entity_id = ?"
+            );
+            $st->execute([$tenantId, $targetUserId]);
+            $v = $st->fetchColumn();
+        } catch (\Throwable) {
+            return null;
+        }
+        if ($v === false || $v === null) {
+            return null;
+        }
+        $s = trim((string) $v);
+
+        return $s !== '' ? $s : null;
     }
 }

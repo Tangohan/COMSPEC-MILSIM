@@ -16,13 +16,13 @@ class TenantCommunityFeedRepository
         $this->pdo = Database::getPdo();
     }
 
-    public function insert(int $tenantId, string $category, string $title, string $body = '', ?string $linkUrl = null, ?int $actorUserId = null): void
+    public function insert(int $tenantId, string $category, string $title, string $body = '', ?string $linkUrl = null, ?int $actorUserId = null, ?int $relatedEnrollmentId = null): void
     {
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO tenant_community_feed (tenant_id, category, title, body, link_url, actor_user_id) VALUES (?, ?, ?, ?, ?, ?)'
+                'INSERT INTO tenant_community_feed (tenant_id, category, title, body, link_url, actor_user_id, related_enrollment_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
             );
-            $stmt->execute([$tenantId, $category, $title, $body === '' ? null : $body, $linkUrl, $actorUserId]);
+            $stmt->execute([$tenantId, $category, $title, $body === '' ? null : $body, $linkUrl, $actorUserId, $relatedEnrollmentId]);
         } catch (\PDOException $e) {
             if ($e->getCode() === '42S02' || str_contains($e->getMessage(), "doesn't exist")) {
                 return;

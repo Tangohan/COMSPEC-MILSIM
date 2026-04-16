@@ -108,6 +108,13 @@ class HubController
                 'accent' => 'emerald',
             ],
             [
+                'label' => 'Espace RH et formations',
+                'url' => url('personnel/mon-espace-rh'),
+                'description' => 'Charte, parcours, ancienneté et programmes de préqualification éventuels.',
+                'icon' => 'rh_hub',
+                'accent' => 'violet',
+            ],
+            [
                 'label' => 'Pointage & présence',
                 'url' => url('pointage'),
                 'description' => 'Sessions, présence et activité du jour.',

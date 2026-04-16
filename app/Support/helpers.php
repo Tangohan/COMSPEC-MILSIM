@@ -256,6 +256,45 @@ if (!function_exists('url')) {
     }
 }
 
+if (!function_exists('atak_client_base_url')) {
+    /**
+     * Adresse de base à communiquer au mod Arma / aux écrans ATAK : portail courant,
+     * ou URL configurée pour l’équipe, en corrigeant l’oubli du sous-chemin d’appli
+     * (ex. /public) lorsque l’origine (hôte + schéma) est la même que le portail.
+     */
+    function atak_client_base_url(?array $tenantAtakConfig): string
+    {
+        $portal = rtrim(url(''), '/');
+        $fromDb = trim((string) ($tenantAtakConfig['node_url'] ?? ''));
+        $raw = $fromDb !== '' ? $fromDb : trim((string) env('NODE_ATAK_URL', ''));
+        if ($raw === '') {
+            return $portal;
+        }
+
+        $nodeBase = rtrim($raw, '/');
+        $pn = parse_url($portal) ?: [];
+        $nn = parse_url($nodeBase) ?: [];
+        if (($nn['host'] ?? '') === '' || ($pn['host'] ?? '') === '') {
+            return $nodeBase;
+        }
+        if (strcasecmp((string) $nn['host'], (string) $pn['host']) !== 0) {
+            return $nodeBase;
+        }
+        $pscheme = strtolower((string) ($pn['scheme'] ?? 'https'));
+        $nscheme = strtolower((string) ($nn['scheme'] ?? 'https'));
+        if ($pscheme !== $nscheme) {
+            return $nodeBase;
+        }
+        $ppath = rtrim((string) ($pn['path'] ?? ''), '/');
+        $npath = rtrim((string) ($nn['path'] ?? ''), '/');
+        if ($ppath !== '' && ($npath === '' || $npath === '/')) {
+            return $portal;
+        }
+
+        return $nodeBase;
+    }
+}
+
 if (!function_exists('back_office_path_suffix')) {
     /**
      * Chemin HTTP normalisé après le préfixe d’application (ex. « back-office/users »), sans slash initial/final.
@@ -291,7 +330,7 @@ if (!function_exists('is_platform_site_admin_shell_request')) {
             return false;
         }
         $rest = substr($p, strlen('admin/'));
-        $prefixes = ['ops-center', 'audit', 'maintenance', 'roles', 'settings', 'site-roles'];
+        $prefixes = ['ops-center', 'audit', 'analytics', 'content-moderation', 'maintenance', 'roles', 'settings', 'site-roles', 'tenants'];
         foreach ($prefixes as $prefix) {
             if ($rest === $prefix || str_starts_with($rest, $prefix . '/')) {
                 return true;
@@ -669,6 +708,24 @@ if (!function_exists('training_legacy_enabled')) {
         }
 
         return filter_var($v, FILTER_VALIDATE_BOOLEAN);
+    }
+}
+
+if (!function_exists('bo_select_class')) {
+    /**
+     * Classes pour les listes déroulantes du back-office (styles natifs renforcés via `select.bo-select` dans le layout).
+     *
+     * @param string $extra Classes Tailwind supplémentaires (ex. `mt-1`, `min-w-[14rem]`).
+     */
+    function bo_select_class(string $extra = ''): string
+    {
+        $base = 'bo-select w-full min-h-[2.75rem] rounded-lg border border-slate-300 bg-white py-2.5 pl-3 pr-10 text-sm font-medium text-slate-900 shadow-sm transition '
+            . 'hover:border-slate-400 '
+            . 'focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 '
+            . 'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 disabled:border-slate-200 disabled:shadow-none';
+        $extra = trim($extra);
+
+        return $extra !== '' ? $base . ' ' . $extra : $base;
     }
 }
 

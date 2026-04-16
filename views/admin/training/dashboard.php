@@ -47,6 +47,11 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                         <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Assignations</h2>
                         <p class="text-xs text-slate-600 mt-2 leading-relaxed">Inscriptions, validations et dates de validité.</p>
                     </a>
+                    <a href="<?= htmlspecialchars(training_lms_admin_url('charte-rh')) ?>" class="tc-course-card group block no-underline text-inherit ring-1 ring-transparent hover:ring-emerald-200/80">
+                        <p class="text-[9px] font-black tracking-[0.3em] uppercase text-emerald-600 mb-2">Engagement</p>
+                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 group-hover:text-emerald-800">Charte liée aux formations</h2>
+                        <p class="text-xs text-slate-600 mt-2 leading-relaxed">Texte affiché aux membres et suivi des mises à jour.</p>
+                    </a>
                     <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/commandement')) ?>" class="tc-course-card group block no-underline text-inherit sm:col-span-2">
                         <p class="text-[9px] font-black tracking-[0.3em] uppercase text-emerald-600 mb-2">Compétences</p>
                         <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Commandement &amp; instructeurs</h2>

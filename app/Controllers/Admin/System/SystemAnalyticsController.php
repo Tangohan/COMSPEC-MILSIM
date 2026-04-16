@@ -17,12 +17,14 @@ final class SystemAnalyticsController
     public function index(Request $request, array $params = []): Response
     {
         $days = (int) $request->query('days', 7);
-        if (!in_array($days, [1, 7, 30], true)) {
+        if (!in_array($days, [1, 7, 30, 90], true)) {
             $days = 7;
         }
-        $snapshot = $this->tenantAnalyticsRepository->getPlatformUsageSnapshot();
-        $daily = $this->tenantAnalyticsRepository->getPlatformDailyEvents($days);
+        $snapshot = $this->tenantAnalyticsRepository->getPlatformUsageSnapshot($days);
+        $daily = $this->tenantAnalyticsRepository->getPlatformDailyEventsFilled($days);
         $categories = $this->tenantAnalyticsRepository->getPlatformCategoryBreakdown($days);
+        $operationalKpis = $this->tenantAnalyticsRepository->getPlatformOperationalKpis($days);
+        $topEventNames = $this->tenantAnalyticsRepository->getPlatformTopEventNames($days, 24);
 
         return Response::view('layout.main', [
             'title' => 'Indicateurs transverses',
@@ -32,6 +34,8 @@ final class SystemAnalyticsController
             'platformDailyEvents' => $daily,
             'platformCategoryBreakdown' => $categories,
             'platformAnalyticsDays' => $days,
+            'platformOperationalKpis' => $operationalKpis,
+            'platformTopEventNames' => $topEventNames,
         ]);
     }
 }

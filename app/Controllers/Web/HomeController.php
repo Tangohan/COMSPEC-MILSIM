@@ -113,6 +113,7 @@ class HomeController
         $showStaffEnlistments = false;
         $dashboardPins = [];
         $missionBriefing = null;
+        $dashboardTesterProgram = null;
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
@@ -153,6 +154,22 @@ class HomeController
                 } catch (\Throwable) {
                     $missionBriefing = null;
                 }
+
+                try {
+                    $releaseRepo = \App\Core\Container::get(\App\Repositories\PlatformModuleReleaseRepository::class);
+                    if ($releaseRepo->schemaReady()) {
+                        $testerCommunities = $releaseRepo->listActiveTesterCommunitiesForUser($uid);
+                        if ($testerCommunities !== []) {
+                            $modRows = $releaseRepo->listModuleAccessRowsForUserTesterCommunities($uid);
+                            $dashboardTesterProgram = [
+                                'communities' => $testerCommunities,
+                                'modules' => self::buildDashboardTesterProgramModules($modRows),
+                            ];
+                        }
+                    }
+                } catch (\Throwable) {
+                    $dashboardTesterProgram = null;
+                }
             }
         }
 
@@ -174,7 +191,92 @@ class HomeController
             'show_staff_enlistments' => $showStaffEnlistments,
             'dashboard_pins' => $dashboardPins,
             'mission_briefing' => $missionBriefing,
+            'dashboard_tester_program' => $dashboardTesterProgram,
         ]);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rawRows
+     * @return list<array{name: string, code: string, notice: ?string, links: list<array{label: string, href: string}>}>
+     */
+    private static function buildDashboardTesterProgramModules(array $rawRows): array
+    {
+        $byId = [];
+        foreach ($rawRows as $row) {
+            $id = (int) ($row['module_id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            if (!isset($byId[$id])) {
+                $byId[$id] = [
+                    'name' => (string) ($row['module_name'] ?? ''),
+                    'code' => strtoupper(trim((string) ($row['module_code'] ?? ''))),
+                    'allows' => false,
+                    'denies' => false,
+                ];
+            }
+            $rt = (string) ($row['rule_type'] ?? '');
+            if ($rt === 'allow_community') {
+                $byId[$id]['allows'] = true;
+            }
+            if ($rt === 'deny_community') {
+                $byId[$id]['denies'] = true;
+            }
+        }
+        $out = [];
+        foreach ($byId as $blob) {
+            $code = $blob['code'];
+            $name = trim((string) $blob['name']) !== '' ? trim((string) $blob['name']) : 'Fonctionnalité concernée';
+            $notice = null;
+            if ($blob['denies'] && !$blob['allows']) {
+                $notice = 'Des limitations peuvent s’appliquer selon les règles définies pour le programme.';
+            } elseif ($blob['denies'] && $blob['allows']) {
+                $notice = 'Accès partiel : certaines actions peuvent rester restreintes.';
+            }
+            $links = $blob['allows']
+                ? self::testerProgramPortalLinksForModuleCode($code)
+                : [
+                    ['label' => 'Centre opérationnel', 'href' => url('hub')],
+                    ['label' => 'Espace RH et formations', 'href' => url('personnel/mon-espace-rh')],
+                ];
+            if ($links === []) {
+                $links = [['label' => 'Centre opérationnel', 'href' => url('hub')]];
+            }
+            $out[] = [
+                'name' => $name,
+                'code' => $code,
+                'notice' => $notice,
+                'links' => $links,
+            ];
+        }
+        usort($out, static fn (array $a, array $b): int => strcasecmp((string) $a['name'], (string) $b['name']));
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{label: string, href: string}>
+     */
+    private static function testerProgramPortalLinksForModuleCode(string $code): array
+    {
+        return match ($code) {
+            'TRAINING' => [
+                ['label' => 'Catalogue des formations', 'href' => url('formations')],
+                ['label' => 'Mes parcours', 'href' => url('formations/mes-formations')],
+            ],
+            'RH' => [
+                ['label' => 'Espace RH et formations', 'href' => url('personnel/mon-espace-rh')],
+                ['label' => 'Ma fiche personnelle', 'href' => url('personnel/me')],
+            ],
+            'SIRH' => [
+                ['label' => 'Annuaire du personnel', 'href' => url('personnel')],
+                ['label' => 'Organigramme', 'href' => url('orbat')],
+            ],
+            default => [
+                ['label' => 'Centre opérationnel', 'href' => url('hub')],
+                ['label' => 'Espace RH et formations', 'href' => url('personnel/mon-espace-rh')],
+            ],
+        };
     }
 
     /**

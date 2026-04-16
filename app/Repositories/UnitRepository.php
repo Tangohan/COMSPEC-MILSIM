@@ -631,6 +631,15 @@ class UnitRepository
         return $stmt->rowCount() > 0;
     }
 
+    public function findIdByTenantAndSlug(int $tenantId, string $slug): ?int
+    {
+        $stmt = $this->pdo->prepare('SELECT id FROM units WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $stmt->execute([$tenantId, $slug]);
+        $v = $stmt->fetchColumn();
+
+        return $v !== false && $v !== null ? (int) $v : null;
+    }
+
     public function slugExists(int $tenantId, string $slug, ?int $excludeId = null): bool
     {
         $sql = 'SELECT 1 FROM units WHERE tenant_id = ? AND slug = ?';

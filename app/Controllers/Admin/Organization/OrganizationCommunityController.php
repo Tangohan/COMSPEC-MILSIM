@@ -52,12 +52,19 @@ final class OrganizationCommunityController
         }
         $settings = $this->tenantRepository->getSettings($tenantId);
         $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
+        $registryCoverUrl = null;
+        $coverFs = $slug !== '' ? base_path('public/assets/img/communities/' . $slug . '-cover.jpg') : '';
+        if ($coverFs !== '' && is_file($coverFs)) {
+            $registryCoverUrl = url('assets/img/communities/' . $slug . '-cover.jpg') . '?v=' . (int) filemtime($coverFs);
+        }
 
         return Response::view('layout.main', [
             'title' => 'Fiche registre & contact',
             'content' => 'admin.organization.community_presentation',
             'tenant' => $tenant,
             'community' => $community,
+            'registryCoverUrl' => $registryCoverUrl,
         ]);
     }
 
@@ -80,9 +87,115 @@ final class OrganizationCommunityController
         $existing = is_array($settings['community'] ?? null) ? $settings['community'] : [];
         $built = $this->communityProfileService->normalizeFromRequest($request, $existing);
         $this->tenantRepository->mergeSettings($tenantId, ['community' => $built]);
-        Session::flash('success', 'Fiche registre et contact enregistrées.');
+
+        $coverOutcome = $this->processRegistryCoverUpload($tenant, $request);
+        if (is_string($coverOutcome) && str_starts_with($coverOutcome, '!!')) {
+            Session::flash('error', 'Les réglages ont été enregistrés. ' . trim(substr($coverOutcome, 2)));
+
+            return Response::redirect(url('back-office/community/presentation'));
+        }
+        $msg = 'Fiche registre et contact enregistrées.';
+        if ($coverOutcome === 'uploaded') {
+            $msg .= ' Image de carte du registre mise à jour.';
+        } elseif ($coverOutcome === 'removed') {
+            $msg .= ' Image de carte du registre retirée.';
+        }
+        Session::flash('success', $msg);
 
         return Response::redirect(url('back-office/community/presentation'));
+    }
+
+    /**
+     * @return ''|'uploaded'|'removed'|string préfixée par « !! » (erreur utilisateur)
+     */
+    private function processRegistryCoverUpload(array $tenant, Request $request): string
+    {
+        $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
+        $dir = base_path('public/assets/img/communities');
+        $dest = $dir . '/' . $slug . '-cover.jpg';
+
+        $file = $_FILES['registry_cover'] ?? null;
+        if (is_array($file)) {
+            $fe = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($fe !== UPLOAD_ERR_NO_FILE && $fe !== UPLOAD_ERR_OK) {
+                return '!!Envoi du fichier impossible. Vérifiez la taille (maximum 3 Mo) et le format, puis réessayez.';
+            }
+        }
+        if (is_array($file) && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+            if ($slug === '' || !preg_match('/^[a-z0-9-]{1,50}$/', $slug)) {
+                return '!!Définissez d’abord l’identifiant public de votre communauté (page Identité & code rejoindre), puis enregistrez à nouveau.';
+            }
+            $tmp = (string) ($file['tmp_name'] ?? '');
+            if ($tmp === '' || !is_uploaded_file($tmp)) {
+                return '!!Fichier reçu invalide. Réessayez.';
+            }
+            if ((int) ($file['size'] ?? 0) > 3 * 1024 * 1024) {
+                return '!!Image trop volumineuse : limite de 3 Mo.';
+            }
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $mime = $finfo->file($tmp) ?: '';
+            if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+                return '!!Format non pris en charge. Utilisez une image JPG, PNG ou WebP.';
+            }
+            if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                return '!!Le stockage des images n’est pas disponible sur le serveur pour le moment.';
+            }
+            if (!$this->writeRegistryCoverAsJpeg($tmp, $dest)) {
+                return '!!Impossible de traiter cette image. Essayez avec un autre fichier ou contactez l’hébergeur.';
+            }
+
+            return 'uploaded';
+        }
+
+        if ($request->input('remove_registry_cover') === '1' && $slug !== '' && is_file($dest)) {
+            @unlink($dest);
+
+            return 'removed';
+        }
+
+        return '';
+    }
+
+    private function writeRegistryCoverAsJpeg(string $tmpPath, string $destPath): bool
+    {
+        if (!function_exists('imagecreatefromstring')) {
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $mime = $finfo->file($tmpPath) ?: '';
+
+            return $mime === 'image/jpeg' && @copy($tmpPath, $destPath);
+        }
+        $bin = @file_get_contents($tmpPath);
+        if ($bin === false) {
+            return false;
+        }
+        $im = @imagecreatefromstring($bin);
+        if (!$im) {
+            return false;
+        }
+        $w = imagesx($im);
+        $h = imagesy($im);
+        if ($w < 1 || $h < 1) {
+            imagedestroy($im);
+
+            return false;
+        }
+        $maxW = 1800;
+        if ($w > $maxW) {
+            $newH = max(1, (int) round($h * ($maxW / $w)));
+            $scaled = imagecreatetruecolor($maxW, $newH);
+            if ($scaled === false) {
+                imagedestroy($im);
+
+                return false;
+            }
+            imagecopyresampled($scaled, $im, 0, 0, 0, 0, $maxW, $newH, $w, $h);
+            imagedestroy($im);
+            $im = $scaled;
+        }
+        $ok = @imagejpeg($im, $destPath, 86);
+        imagedestroy($im);
+
+        return $ok;
     }
 
     public function settingsUpdate(Request $request, array $params = []): Response

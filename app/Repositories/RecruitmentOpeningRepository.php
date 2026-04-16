@@ -32,6 +32,28 @@ class RecruitmentOpeningRepository
         return self::$tableExists;
     }
 
+    /**
+     * Nettoie le segment d’URL « avis » (copier-coller depuis du HTML, encodage partiel, etc.).
+     */
+    public static function normalizePublicPageSlugFromRequest(string $raw): string
+    {
+        $s = trim(str_replace('+', ' ', rawurldecode($raw)));
+        $s = html_entity_decode($s, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $s = trim($s);
+        for ($i = 0; $i < 12; $i++) {
+            $before = $s;
+            $s = preg_replace('/&(quot|#0*34);+$/iu', '', $s) ?? '';
+            $s = preg_replace('/&quot$/iu', '', $s) ?? '';
+            $s = preg_replace('/%22+$/i', '', $s) ?? '';
+            $s = rtrim($s, "\"'<>% \t\n\r");
+            if ($s === $before) {
+                break;
+            }
+        }
+
+        return trim($s);
+    }
+
     /** @return list<array<string, mixed>> */
     public function listPublishedForTenant(int $tenantId): array
     {
@@ -90,6 +112,7 @@ class RecruitmentOpeningRepository
 
     public function findPublishedByPublicSlug(int $tenantId, string $slug): ?array
     {
+        $slug = self::normalizePublicPageSlugFromRequest($slug);
         if (!$this->tablesExist() || $slug === '') {
             return null;
         }
@@ -127,6 +150,22 @@ class RecruitmentOpeningRepository
      * @param array<string, mixed> $tenant row
      * @param array<string, mixed> $tenantSettings decoded settings
      */
+    /** Dernier numéro d’ordre enregistré pour l’année (0 si aucune ligne). Lecture seule, sans réserver le suivant. */
+    public function currentLastSeq(int $tenantId, int $year): int
+    {
+        if (!$this->tablesExist()) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare('SELECT last_seq FROM recruitment_opening_counters WHERE tenant_id = ? AND year = ? LIMIT 1');
+        $stmt->execute([$tenantId, $year]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return 0;
+        }
+
+        return max(0, (int) ($row['last_seq'] ?? 0));
+    }
+
     public function allocateNextSeq(int $tenantId, int $year): int
     {
         $this->pdo->beginTransaction();

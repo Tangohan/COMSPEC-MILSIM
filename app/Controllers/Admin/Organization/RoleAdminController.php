@@ -152,7 +152,7 @@ class RoleAdminController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.roles.show',
-            'title' => 'Détail rôle',
+            'title' => 'Rôle : ' . (string) ($role['name'] ?? ''),
             'role' => $role,
             'rolePermissions' => $rolePermissions,
         ]);

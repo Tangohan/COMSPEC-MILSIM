@@ -5,10 +5,15 @@
 /** @var int $auditPage */
 /** @var int $auditTotalPages */
 /** @var array<string, mixed> $auditFilters */
+/** @var array<string, string> $auditActionFilterOptions */
+
+use App\Support\Audit\AuditSnapshotPresenter;
+
 $auditScope = $auditScope ?? 'system';
+$auditActionFilterOptions = is_array($auditActionFilterOptions ?? null) ? $auditActionFilterOptions : [];
 $basePath = $auditScope === 'organization' ? 'back-office/audit' : 'admin/audit';
 $showTenantCol = $auditScope === 'system';
-$tableColspan = $showTenantCol ? 5 : 4;
+$tableColspan = $showTenantCol ? 7 : 6;
 
 $buildLink = static function (int $page) use ($auditFilters, $basePath): string {
     $q = array_merge($auditFilters, ['page' => $page > 1 ? $page : null]);
@@ -16,6 +21,7 @@ $buildLink = static function (int $page) use ($auditFilters, $basePath): string 
 
     return url($basePath) . ($q ? '?' . http_build_query($q) : '');
 };
+$selectedSlug = (string) ($auditFilters['action_slug'] ?? '');
 ?>
 <div class="max-w-6xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
@@ -32,17 +38,26 @@ $buildLink = static function (int $page) use ($auditFilters, $basePath): string 
             <label class="block text-xs font-medium text-slate-600 mb-1">Au</label>
             <input type="date" name="date_to" value="<?= htmlspecialchars((string) ($auditFilters['date_to'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full min-w-[10rem] rounded border border-slate-300 text-sm px-2 py-1.5" />
         </div>
-        <div class="flex-1 min-w-[12rem]">
-            <label class="block text-xs font-medium text-slate-600 mb-1">Action (contient)</label>
-            <input type="text" name="action" value="<?= htmlspecialchars((string) ($auditFilters['action'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded border border-slate-300 text-sm px-2 py-1.5" placeholder="ex. user_updated" />
+        <div class="min-w-[14rem] flex-1">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Type d’événement</label>
+            <select name="action_slug" class="w-full rounded border border-slate-300 text-sm px-2 py-1.5 bo-select">
+                <option value="">Toutes</option>
+                <?php foreach ($auditActionFilterOptions as $slug => $label): ?>
+                    <option value="<?= htmlspecialchars((string) $slug, ENT_QUOTES, 'UTF-8') ?>" <?= $selectedSlug === (string) $slug ? ' selected' : '' ?>><?= htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8') ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
-        <div class="w-28">
-            <label class="block text-xs font-medium text-slate-600 mb-1">User ID</label>
+        <div class="flex-1 min-w-[10rem]">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Recherche libre dans le code d’action</label>
+            <input type="text" name="action" value="<?= htmlspecialchars((string) ($auditFilters['action'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded border border-slate-300 text-sm px-2 py-1.5" placeholder="Ex. user ou deployment" />
+        </div>
+        <div class="w-32">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Réf. compte acteur</label>
             <input type="number" name="user_id" value="<?= $auditFilters['user_id'] !== null && $auditFilters['user_id'] !== '' ? (int) $auditFilters['user_id'] : '' ?>" class="w-full rounded border border-slate-300 text-sm px-2 py-1.5" min="1" />
         </div>
         <?php if ($showTenantCol): ?>
-        <div class="w-28">
-            <label class="block text-xs font-medium text-slate-600 mb-1">Tenant ID</label>
+        <div class="w-32">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Réf. communauté</label>
             <input type="number" name="tenant_id" value="<?= isset($auditFilters['tenant_id']) && $auditFilters['tenant_id'] ? (int) $auditFilters['tenant_id'] : '' ?>" class="w-full rounded border border-slate-300 text-sm px-2 py-1.5" min="1" />
         </div>
         <?php endif; ?>
@@ -59,10 +74,12 @@ $buildLink = static function (int $page) use ($auditFilters, $basePath): string 
             <thead>
                 <tr class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                     <th class="px-3 py-2">Date</th>
-                    <?php if ($showTenantCol): ?><th class="px-3 py-2">Tenant</th><?php endif; ?>
+                    <?php if ($showTenantCol): ?><th class="px-3 py-2">Communauté</th><?php endif; ?>
                     <th class="px-3 py-2">Acteur</th>
                     <th class="px-3 py-2">Action</th>
                     <th class="px-3 py-2">Cible</th>
+                    <th class="px-3 py-2">Modifications</th>
+                    <th class="px-3 py-2">Détail</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -70,6 +87,10 @@ $buildLink = static function (int $page) use ($auditFilters, $basePath): string 
                     <tr><td colspan="<?= (int) $tableColspan ?>" class="px-3 py-8 text-center text-slate-500">Aucun enregistrement.</td></tr>
                 <?php else: ?>
                     <?php foreach ($auditRows as $row): ?>
+                        <?php
+                        $rid = (int) ($row['id'] ?? 0);
+                        $detailUrl = url($basePath . '/' . $rid);
+                        ?>
                         <tr class="hover:bg-slate-50/80">
                             <td class="px-3 py-2 whitespace-nowrap text-slate-700"><?= htmlspecialchars((string) ($row['created_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                             <?php if ($showTenantCol): ?>
@@ -78,9 +99,13 @@ $buildLink = static function (int $page) use ($auditFilters, $basePath): string 
                             <td class="px-3 py-2 text-slate-700"><?= htmlspecialchars((string) ($row['actor_email'] ?? ($row['user_id'] ?? '—')), ENT_QUOTES, 'UTF-8') ?></td>
                             <td class="px-3 py-2 text-slate-800">
                                 <?php $act = (string) ($row['action'] ?? ''); ?>
-                                <span class="text-sm font-medium" title="<?= htmlspecialchars($act !== '' ? 'ID : ' . $act : '', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(audit_action_label_fr($act), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="text-sm font-medium"><?= htmlspecialchars(audit_action_label_fr($act), ENT_QUOTES, 'UTF-8') ?></span>
                             </td>
                             <td class="px-3 py-2 text-xs text-slate-600"><?= htmlspecialchars(trim(($row['entity_type'] ?? '') . ' #' . (string) ($row['entity_id'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="px-3 py-2 text-xs text-slate-600"><?= htmlspecialchars(AuditSnapshotPresenter::listSummary(isset($row['old_value']) ? (string) $row['old_value'] : null, isset($row['new_value']) ? (string) $row['new_value'] : null), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="px-3 py-2">
+                                <a href="<?= htmlspecialchars($detailUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-semibold text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200">Voir</a>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>

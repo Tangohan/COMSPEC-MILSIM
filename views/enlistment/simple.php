@@ -18,6 +18,7 @@ $switchToTargetUrl = $ctx['switchToTargetUrl'] ?? null;
 $showMilsimUnavailableNotice = $showMilsimUnavailableNotice ?? false;
 $simpleEnlistmentUrl = $simpleEnlistmentUrl ?? $formAction;
 $selectedRecruitmentOpening = is_array($selectedRecruitmentOpening ?? null) ? $selectedRecruitmentOpening : null;
+$enlistmentMemberOpeningInsight = is_array($enlistmentMemberOpeningInsight ?? null) ? $enlistmentMemberOpeningInsight : null;
 ?>
 <script>
 document.addEventListener('alpine:init', function () {
@@ -81,6 +82,9 @@ document.addEventListener('alpine:init', function () {
                 <p class="mt-2 text-sm font-bold text-slate-900">Vous postulez pour : <?= htmlspecialchars((string) ($selectedRecruitmentOpening['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                 <p class="mt-1 text-xs text-sky-900/80 leading-relaxed">Votre dossier sera rattaché à cet avis pour le suivi côté équipe RH.</p>
             </div>
+            <?php if ($enlistmentMemberOpeningInsight !== null): ?>
+                <?php require base_path('views/partials/enlistment_member_opening_insight.php'); ?>
+            <?php endif; ?>
         <?php endif; ?>
         <input type="hidden" name="enlistment_flow" :value="flow">
 

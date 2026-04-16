@@ -139,10 +139,21 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
                 <h2 class="text-xs font-black uppercase tracking-[0.22em] text-violet-900/80 mb-1">Nouvelle formation</h2>
                 <p class="text-sm text-slate-600 mb-6 max-w-3xl">Créée en brouillon par défaut ; vous pourrez compléter la fiche ensuite.</p>
                 <?php
+                $tcap = $trainingCourseCapacity ?? null;
+                $tcapBlocked = is_array($tcap) && empty($tcap['unlimited']) && empty($tcap['can_create']);
+                ?>
+                <?php if ($tcapBlocked): ?>
+                <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                    Vous avez atteint le nombre maximal de parcours prévus pour votre formule (<?= (int) ($tcap['used'] ?? 0) ?> sur <?= (int) ($tcap['limit'] ?? 0) ?>). Passez à une offre supérieure ou supprimez un parcours existant pour en ajouter un nouveau.
+                </div>
+                <?php elseif (is_array($tcap) && empty($tcap['unlimited']) && (int) ($tcap['limit'] ?? 0) > 0): ?>
+                <p class="mb-4 text-xs text-slate-600">Parcours sur cette communauté : <strong class="text-slate-900"><?= (int) ($tcap['used'] ?? 0) ?></strong> / <?= (int) ($tcap['limit'] ?? 0) ?> prévus dans l’offre.</p>
+                <?php endif; ?>
+                <?php
                 $studioNewTitleCol = $studioCanSetPlatformScope ? 'xl:col-span-4' : 'xl:col-span-6';
                 $studioNewVisibilityMdCol = $studioCanSetPlatformScope ? 'md:col-span-2' : 'md:col-span-1';
                 ?>
-                <form method="post" action="<?= training_studio_url() ?>" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12 xl:gap-x-5 xl:gap-y-4 xl:items-end">
+                <form method="post" action="<?= training_studio_url() ?>" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12 xl:gap-x-5 xl:gap-y-4 xl:items-end"<?= $tcapBlocked ? ' aria-disabled="true"' : '' ?>>
                     <?= \App\Core\Csrf::field() ?>
                     <div class="flex flex-col gap-1.5 min-w-0 md:col-span-2 <?= $studioNewTitleCol ?>">
                         <label class="text-xs font-bold text-slate-600" for="studio-new-course-title">Titre</label>
@@ -169,8 +180,23 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php if (!empty($pedagogyColumnsReady)): ?>
+                    <div class="flex flex-col gap-1.5 min-w-0 md:col-span-2 xl:col-span-2">
+                        <label class="text-xs font-bold text-slate-600" for="studio-new-owner">Responsable pédagogique</label>
+                        <select id="studio-new-owner" name="pedagogical_owner_user_id" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner bg-white">
+                            <option value="">— Plus tard —</option>
+                            <?php foreach ($studioStaffPickUsers ?? [] as $su):
+                                $sid = (int) ($su['id'] ?? 0);
+                                $slab = trim((string) ($su['display_name'] ?? '')) !== '' ? (string) $su['display_name'] : ('#' . $sid);
+                            ?>
+                            <option value="<?= $sid ?>"><?= htmlspecialchars($slab) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="text-[11px] text-slate-500">Requis si vous publiez dès la création.</p>
+                    </div>
+                    <?php endif; ?>
                     <div class="flex min-w-0 md:col-span-2 xl:col-span-2 xl:items-end">
-                        <button type="submit" class="w-full min-h-[2.75rem] px-5 py-3 bg-gradient-to-br from-violet-600 to-violet-800 text-white text-sm font-black rounded-xl hover:from-violet-500 hover:to-violet-700 shadow-md shadow-violet-900/20 transition-all">Créer la formation</button>
+                        <button type="submit" class="w-full min-h-[2.75rem] px-5 py-3 bg-gradient-to-br from-violet-600 to-violet-800 text-white text-sm font-black rounded-xl hover:from-violet-500 hover:to-violet-700 shadow-md shadow-violet-900/20 transition-all disabled:cursor-not-allowed disabled:opacity-50"<?= $tcapBlocked ? ' disabled' : '' ?>>Créer la formation</button>
                     </div>
                 </form>
                 <?php if ($studioCanSetPlatformScope): ?>

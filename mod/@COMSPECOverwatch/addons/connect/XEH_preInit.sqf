@@ -35,6 +35,18 @@
 ] call CBA_fnc_addSetting;
 
 [
+    "comspec_overwatch_playtime_enabled", "CHECKBOX",
+    ["Enregistrer le temps de jeu", "Envoie au portail le temps passé en mission (mod connecté)"],
+    "COMSPEC Overwatch", true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_playtime_report_interval", "SLIDER",
+    ["Rapport temps de jeu (minutes)", "Fréquence d’envoi du cumul au portail"],
+    "COMSPEC Overwatch", [2, 60, 5, 0]
+] call CBA_fnc_addSetting;
+
+[
     "COMSPEC Overwatch", "comspec_open_chat", ["Ouvrir Chat", "Console"],
     {
         if (comspec_overwatch_enabled) then { createDialog "COMSPEC_Chat_Dialog"; };

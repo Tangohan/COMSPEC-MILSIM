@@ -8,15 +8,31 @@ declare(strict_types=1);
  */
 return [
     'category_icons' => [
-        'etat-major' => 'heroicon-o-building-library',
+        'administrations-et-services' => 'heroicon-o-building-library',
+        'aerocombat' => 'heroicon-o-paper-airplane',
+        'artillerie' => 'heroicon-o-fire',
+        'combat-blind' => 'heroicon-o-shield-exclamation',
+        'combat-blinde' => 'heroicon-o-shield-exclamation',
+        'enseignement-recherche-et-musique' => 'heroicon-o-academic-cap',
+        'forces-speciales' => 'heroicon-o-bolt',
+        'genie-de-combat-btp-et-nrbc' => 'heroicon-o-wrench-screwdriver',
         'infanterie' => 'heroicon-o-shield-check',
+        'cyber-informatique-et-telecoms' => 'heroicon-o-cpu-chip',
+        'logistique-et-transports' => 'heroicon-o-truck',
+        'maintenance' => 'heroicon-o-cog-6-tooth',
+        'renseignement' => 'heroicon-o-eye',
+        'restauration' => 'heroicon-o-shopping-bag',
+        'sante' => 'heroicon-o-heart',
+        'securite-et-prevention' => 'heroicon-o-lock-closed',
+        'sport' => 'heroicon-o-trophy',
+        'statut' => 'heroicon-o-tag',
+        // Anciennes racines (rétrocompatibilité si catégories orphelines encore référencées)
+        'etat-major' => 'heroicon-o-building-library',
         'appuis-feux' => 'heroicon-o-fire',
         'genie' => 'heroicon-o-wrench-screwdriver',
         'logistique' => 'heroicon-o-truck',
-        'sante' => 'heroicon-o-heart',
         'instruction' => 'heroicon-o-academic-cap',
         'administration' => 'heroicon-o-clipboard-document-list',
-        'statut' => 'heroicon-o-tag',
     ],
     /** Couleurs badge (couche sémantique) — compatibles mode clair. */
     'tier_badge_classes' => [

@@ -10,6 +10,7 @@ use App\Repositories\PlatformUsageRepository;
 use App\Repositories\SubscriptionPlanRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\TenantUsageCounterRepository;
+use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UserRepository;
 
 /**
@@ -24,6 +25,7 @@ final class FeatureGateService
         private TenantUsageCounterRepository $counterRepository,
         private PlatformUsageRepository $usageRepository,
         private CommunityEventRepository $communityEventRepository,
+        private TrainingCourseRepository $trainingCourseRepository,
         private ?PlatformFeatureDeploymentEvaluator $deploymentEvaluator = null,
     ) {}
 
@@ -282,6 +284,100 @@ final class FeatureGateService
     public function canAddMember(int $tenantId): bool
     {
         return $this->currentMemberCount($tenantId) < $this->maxMembers($tenantId);
+    }
+
+    /**
+     * Plafond de parcours « catalogue communauté » (0 = illimité). Clé `max_training_courses` dans features_json.
+     */
+    public function maxTrainingCoursesForTenant(int $tenantId): int
+    {
+        $tenant = $this->tenantRepository->findById($tenantId);
+        if (!$tenant) {
+            return 0;
+        }
+        if (($tenant['subscription_status'] ?? '') === 'past_due') {
+            return $this->maxTrainingCoursesFromTenantRow($tenant);
+        }
+        $planSlug = $this->effectivePlanSlug($tenant);
+        $plan = $this->planRepository->findBySlug($planSlug);
+
+        return $this->maxTrainingCoursesFromPlanRow($plan);
+    }
+
+    public function countTenantCatalogTrainingCourses(int $tenantId): int
+    {
+        return $this->trainingCourseRepository->countTenantCatalogCourses($tenantId);
+    }
+
+    public function canCreateTenantCatalogTrainingCourse(int $tenantId): bool
+    {
+        if (!$this->allows($tenantId, 'training')) {
+            return false;
+        }
+        $cap = $this->maxTrainingCoursesForTenant($tenantId);
+        if ($cap <= 0) {
+            return true;
+        }
+
+        return $this->countTenantCatalogTrainingCourses($tenantId) < $cap;
+    }
+
+    /**
+     * @return array{
+     *   unlimited: bool,
+     *   limit: int,
+     *   used: int,
+     *   remaining: int|null,
+     *   can_create: bool
+     * }
+     */
+    public function trainingCourseCapacityForTenant(int $tenantId): array
+    {
+        $cap = $this->maxTrainingCoursesForTenant($tenantId);
+        $used = $this->countTenantCatalogTrainingCourses($tenantId);
+        if ($cap <= 0) {
+            return [
+                'unlimited' => true,
+                'limit' => 0,
+                'used' => $used,
+                'remaining' => null,
+                'can_create' => $this->allows($tenantId, 'training'),
+            ];
+        }
+        $remaining = max(0, $cap - $used);
+
+        return [
+            'unlimited' => false,
+            'limit' => $cap,
+            'used' => $used,
+            'remaining' => $remaining,
+            'can_create' => $this->allows($tenantId, 'training') && $used < $cap,
+        ];
+    }
+
+    /** @param array<string, mixed>|null $plan */
+    private function maxTrainingCoursesFromPlanRow(?array $plan): int
+    {
+        if (!$plan) {
+            return 0;
+        }
+        $features = json_decode((string) ($plan['features_json'] ?? '{}'), true);
+        if (!is_array($features)) {
+            return 0;
+        }
+        if (!array_key_exists('max_training_courses', $features)) {
+            return 0;
+        }
+
+        return (int) $features['max_training_courses'];
+    }
+
+    /** @param array<string, mixed> $tenant */
+    private function maxTrainingCoursesFromTenantRow(array $tenant): int
+    {
+        $plan = $this->planRepository->findBySlug($tenant['plan_slug'] ?? 'free');
+
+        return $this->maxTrainingCoursesFromPlanRow($plan);
     }
 
     /** @param array<string, mixed> $plan */

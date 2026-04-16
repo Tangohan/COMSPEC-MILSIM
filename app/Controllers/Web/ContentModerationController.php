@@ -41,12 +41,14 @@ final class ContentModerationController
                 'page' => 1,
                 'perPage' => 30,
                 'missingTables' => true,
+                'recentForumPublished' => [],
             ]);
         }
         $page = max(1, (int) $request->query('page', 1));
         $perPage = 30;
         $artifacts = $this->artifactRepository->listQueue($tenantId, null, $page, $perPage);
         $total = $this->artifactRepository->countQueue($tenantId, null);
+        $recentForumPublished = $this->artifactRepository->listRecentPublishedForumUploads($tenantId, 15);
         foreach ($artifacts as &$a) {
             if (!empty($a['reason_codes']) && is_string($a['reason_codes'])) {
                 $a['reason_codes'] = json_decode($a['reason_codes'], true) ?: [];
@@ -65,7 +67,67 @@ final class ContentModerationController
             'page' => $page,
             'perPage' => $perPage,
             'missingTables' => false,
+            'recentForumPublished' => $recentForumPublished,
         ]);
+    }
+
+    /**
+     * Aperçu sécurisé d’une pièce encore en stockage (quarantaine), réservé aux modérateurs.
+     */
+    public function preview(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        if ($tenantId <= 0) {
+            return $this->previewDenied();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $artifact = $this->artifactRepository->findById($id, $tenantId);
+        if ($artifact === null) {
+            return $this->previewDenied();
+        }
+        $state = (string) ($artifact['state'] ?? '');
+        if (!in_array($state, [ModerationArtifactState::QUARANTINED, ModerationArtifactState::PENDING_SCAN], true)) {
+            return $this->previewDenied();
+        }
+        if (($artifact['source_type'] ?? '') !== ModerationSourceType::FORUM_UPLOAD) {
+            return $this->previewDenied();
+        }
+        $rel = str_replace('\\', '/', (string) ($artifact['file_path'] ?? ''));
+        $expectedPrefix = 'quarantine/' . $tenantId . '/';
+        if ($rel === '' || !str_starts_with($rel, $expectedPrefix) || str_contains($rel, '..')) {
+            return $this->previewDenied();
+        }
+        $full = base_path('storage/' . $rel);
+        $storageRoot = realpath(base_path('storage/quarantine/' . $tenantId));
+        $resolved = realpath($full);
+        if ($storageRoot === false || $resolved === false || !str_starts_with($resolved, $storageRoot)) {
+            return $this->previewDenied();
+        }
+        if (!is_file($resolved) || !is_readable($resolved)) {
+            return $this->previewDenied();
+        }
+        $mime = (string) ($artifact['mime'] ?? 'application/octet-stream');
+        if (!preg_match('#^(image/(jpeg|png|gif|webp)|application/pdf)$#', $mime)) {
+            return $this->previewDenied();
+        }
+        $filename = basename($rel);
+        $disp = 'inline; filename="' . str_replace(['"', "\r", "\n"], '', $filename) . '"';
+
+        $response = new Response();
+        $response->setStatusCode(200)
+            ->header('Content-Type', $mime)
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('Cache-Control', 'private, max-age=120')
+            ->header('Content-Disposition', $disp)
+            ->setBodyStream(static function () use ($resolved): void {
+                $h = fopen($resolved, 'rb');
+                if ($h !== false) {
+                    fpassthru($h);
+                    fclose($h);
+                }
+            });
+
+        return $response;
     }
 
     public function approve(Request $request, array $params = []): Response
@@ -175,5 +237,14 @@ final class ContentModerationController
             0,
             'public/uploads/forum/' . $key
         );
+    }
+
+    private function previewDenied(): Response
+    {
+        return (new Response())
+            ->setStatusCode(404)
+            ->header('Content-Type', 'text/plain; charset=utf-8')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->setBody('Aperçu indisponible.');
     }
 }

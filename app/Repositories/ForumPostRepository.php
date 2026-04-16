@@ -18,6 +18,8 @@ class ForumPostRepository
 
     private ?bool $hasPreferredDisplayRoleColumn = null;
 
+    private ?bool $hasBodyFormatColumnCache = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -47,6 +49,21 @@ class ForumPostRepository
         }
 
         return $this->hasPreferredDisplayRoleColumn;
+    }
+
+    private function hasBodyFormatColumn(): bool
+    {
+        if ($this->hasBodyFormatColumnCache !== null) {
+            return $this->hasBodyFormatColumnCache;
+        }
+        try {
+            $chk = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_posts' AND COLUMN_NAME = 'body_format' LIMIT 1");
+            $this->hasBodyFormatColumnCache = (bool) ($chk && $chk->fetchColumn());
+        } catch (\Throwable) {
+            $this->hasBodyFormatColumnCache = false;
+        }
+
+        return $this->hasBodyFormatColumnCache;
     }
 
     /**
@@ -229,7 +246,8 @@ class ForumPostRepository
         ?int $coopSourceTenantId = null,
         ?string $coopOfficialKind = null,
         bool $isDraft = false,
-        ?string $coopMissionRole = null
+        ?string $coopMissionRole = null,
+        string $bodyFormat = 'markdown'
     ): int {
         $hasCoop = false;
         $chkCoop = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_posts' AND COLUMN_NAME = 'coop_source_tenant_id' LIMIT 1");
@@ -294,7 +312,15 @@ class ForumPostRepository
             }
         }
 
-        return (int) $this->pdo->lastInsertId();
+        $newId = (int) $this->pdo->lastInsertId();
+        if ($newId > 0 && $this->hasBodyFormatColumn() && strtolower($bodyFormat) === 'html') {
+            try {
+                $this->pdo->prepare('UPDATE forum_posts SET body_format = ? WHERE id = ? AND tenant_id = ?')->execute(['html', $newId, $tenantId]);
+            } catch (\Throwable) {
+            }
+        }
+
+        return $newId;
     }
 
     public function update(int $id, int $tenantId, string $body): bool

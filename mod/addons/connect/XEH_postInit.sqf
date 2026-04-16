@@ -14,4 +14,6 @@ if (!hasInterface) exitWith {};
 
     private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 0.25];
     [comspec_overwatch_connect_fnc_updatePosition, _interval] call CBA_fnc_addPerFrameHandler;
+
+    [] spawn comspec_overwatch_connect_fnc_playtimeTracker;
 }] call CBA_fnc_addEventHandler;

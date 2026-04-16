@@ -28,6 +28,7 @@ $switchToTargetUrl = $enlistmentContext['switchToTargetUrl'] ?? null;
 $tenantSlugForForm = trim((string) ($tenant['slug'] ?? ''));
 $selectedRecruitmentOpening = is_array($selectedRecruitmentOpening ?? null) ? $selectedRecruitmentOpening : null;
 $analyticsBeacon = $analyticsBeacon ?? null;
+$enlistmentMemberOpeningInsight = is_array($enlistmentMemberOpeningInsight ?? null) ? $enlistmentMemberOpeningInsight : null;
 $compactAccountOpening = $canUseAccount && $selectedRecruitmentOpening !== null;
 $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/tailwind.css') : null;
 ?>
@@ -194,6 +195,9 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                             <p class="mt-2 text-sm font-bold text-slate-900">Vous postulez pour : <?= htmlspecialchars((string) ($selectedRecruitmentOpening['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                             <p class="mt-1 text-xs text-sky-900/80 leading-relaxed">Votre dossier sera rattaché à cet avis pour le suivi côté équipe RH.</p>
                         </div>
+                        <?php if ($enlistmentMemberOpeningInsight !== null): ?>
+                            <?php require base_path('views/partials/enlistment_member_opening_insight.php'); ?>
+                        <?php endif; ?>
                     <?php endif; ?>
                     <div class="p-6 bg-slate-50 border-l-4 border-slate-900 mb-10">
                         <p class="text-[11px] leading-relaxed text-slate-600 font-medium">

@@ -13,7 +13,11 @@ $rLabels = is_array($deploymentRuleTypeLabels ?? null) ? $deploymentRuleTypeLabe
 ?>
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <p class="text-xs font-semibold uppercase tracking-wider text-amber-700"><a href="<?= htmlspecialchars(url('admin/system/deployment'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Déploiement</a></p>
+        <p class="text-xs font-semibold uppercase tracking-wider text-amber-700">
+            <a href="<?= htmlspecialchars(url('admin/system/deployment'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Publications et canaux</a>
+            <span class="text-slate-400" aria-hidden="true"> · </span>
+            <a href="<?= htmlspecialchars(url('admin/system/deployment/communities'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Communautés de test</a>
+        </p>
         <h1 class="mt-2 text-2xl font-black text-slate-900"><?= htmlspecialchars((string) ($mod['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h1>
 
         <section class="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

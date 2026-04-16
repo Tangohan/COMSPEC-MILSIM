@@ -18,6 +18,7 @@ $trainingCmdCanEditContent = $gateNav->allows('admin.access') || $gateNav->allow
             <p class="training-cmd-toolbar-eyebrow">Pilotage des formations</p>
             <nav class="training-cmd-toolbar" aria-label="Sections pilotage des formations">
                 <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="<?= trim($is('dashboard')) ?>">Vue d’ensemble</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('charte-rh')) ?>" class="<?= trim($is('charter')) ?>">Charte RH</a>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('courses')) ?>" class="<?= trim($coursesNavActive) ?>">Catalogue</a>
                 <a href="<?= htmlspecialchars(training_studio_url()) ?>" class="<?= trim($is('studio')) ?>">Studio LMS</a>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments')) ?>" class="<?= trim($is('enrollments')) ?>">Assignations</a>

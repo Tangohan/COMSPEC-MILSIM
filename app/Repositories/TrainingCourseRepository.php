@@ -219,6 +219,23 @@ class TrainingCourseRepository
         return (bool) $stmt->fetch();
     }
 
+    /**
+     * Parcours « catalogue communauté » : lignes du tenant hors catalogue plateforme (brouillons et publiés comptent).
+     */
+    public function countTenantCatalogCourses(int $tenantId): int
+    {
+        if ($tenantId < 1) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM training_courses WHERE tenant_id = ? AND COALESCE(lms_scope, 'tenant') = 'tenant'"
+        );
+        $stmt->execute([$tenantId]);
+        $n = $stmt->fetchColumn();
+
+        return $n !== false ? (int) $n : 0;
+    }
+
     public function create(int $tenantId, array $data): int
     {
         $uuid = $data['uuid'] ?? $this->generateUuid();
@@ -264,7 +281,7 @@ class TrainingCourseRepository
     {
         $fields = [];
         $params = [];
-        $allowed = ['title', 'slug', 'course_code', 'short_description', 'description', 'learning_objectives', 'theme_json', 'enrollment_policy_json', 'enrollment_share_code', 'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by', 'lms_created_with_version', 'lms_last_saved_with_version', 'lms_scope'];
+        $allowed = ['title', 'slug', 'course_code', 'short_description', 'description', 'learning_objectives', 'theme_json', 'enrollment_policy_json', 'enrollment_share_code', 'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by', 'lms_created_with_version', 'lms_last_saved_with_version', 'lms_scope', 'pedagogical_owner_user_id', 'final_validator_user_id'];
         foreach ($allowed as $k) {
             if (array_key_exists($k, $data)) {
                 $fields[] = "`$k` = ?";

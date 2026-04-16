@@ -219,6 +219,57 @@ class TrainingQuizRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Tentatives d’évaluation envoyées (soumises ou notées), groupées par quiz, pour plusieurs inscriptions.
+     *
+     * @param list<int> $enrollmentIds
+     * @return array<int, list<array{quiz_id: int, quiz_title: string, submitted_attempts: int, best_score: ?float, passed_any: int}>>
+     */
+    public function summarizeSubmittedAttemptsForEnrollments(array $enrollmentIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(static fn ($v) => (int) $v, $enrollmentIds), static fn (int $id) => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = 'SELECT a.enrollment_id AS enrollment_id, a.quiz_id AS quiz_id, q.title AS quiz_title,
+                SUM(CASE WHEN a.status IN (\'submitted\', \'graded\') THEN 1 ELSE 0 END) AS submitted_attempts,
+                MAX(CASE WHEN a.status IN (\'submitted\', \'graded\') AND a.score IS NOT NULL THEN a.score END) AS best_score,
+                MAX(CASE WHEN a.passed = 1 THEN 1 ELSE 0 END) AS passed_any
+                FROM training_quiz_attempts a
+                INNER JOIN training_quizzes q ON q.id = a.quiz_id
+                WHERE a.enrollment_id IN (' . $placeholders . ')
+                GROUP BY a.enrollment_id, a.quiz_id, q.title
+                ORDER BY a.enrollment_id ASC, q.id ASC';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($ids);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $eid = (int) ($row['enrollment_id'] ?? 0);
+            if ($eid < 1) {
+                continue;
+            }
+            $best = $row['best_score'] ?? null;
+            $out[$eid][] = [
+                'quiz_id' => (int) ($row['quiz_id'] ?? 0),
+                'quiz_title' => (string) ($row['quiz_title'] ?? ''),
+                'submitted_attempts' => (int) ($row['submitted_attempts'] ?? 0),
+                'best_score' => $best !== null && $best !== '' ? (float) $best : null,
+                'passed_any' => (int) ($row['passed_any'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{quiz_id: int, quiz_title: string, submitted_attempts: int, best_score: ?float, passed_any: int}>
+     */
+    public function summarizeSubmittedAttemptsForEnrollment(int $enrollmentId): array
+    {
+        return $this->summarizeSubmittedAttemptsForEnrollments([$enrollmentId])[$enrollmentId] ?? [];
+    }
+
     public function getInProgressAttempt(int $enrollmentId, int $quizId): ?array
     {
         $stmt = $this->pdo->prepare(

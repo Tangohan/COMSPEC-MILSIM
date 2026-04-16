@@ -95,9 +95,9 @@ $atakModDownloadUrl = $atakModDownloadUrl ?? null;
             </h2>
             <div class="space-y-4">
                 <div>
-                    <p class="text-sm text-slate-700 mb-2">Vérifier que le nœud ATAK (serveur de la carte) répond bien.</p>
+                    <p class="text-sm text-slate-700 mb-2">Vérifier que le service ATAK de ce portail répond (même site que votre session, avec le chemin d’installation complet si besoin).</p>
                     <button type="button" id="setup-test-node" class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                        Tester la connexion au nœud
+                        Tester la liaison avec ce portail
                     </button>
                     <p id="setup-test-result" class="mt-2 text-sm hidden" role="status"></p>
                 </div>
@@ -126,6 +126,7 @@ $atakModDownloadUrl = $atakModDownloadUrl ?? null;
 <script>
 (function () {
   var nodeUrl = <?= json_encode($nodeAtakUrl) ?>;
+  var portalPingUrl = <?= json_encode(url('api/atak/ping')) ?>;
 
   document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -157,14 +158,13 @@ $atakModDownloadUrl = $atakModDownloadUrl ?? null;
       testResult.textContent = 'Test en cours…';
       testResult.className = 'mt-2 text-sm text-slate-600';
       testResult.classList.remove('hidden');
-      var pingUrl = nodeUrl.replace(/\/$/, '') + '/api/atak/ping';
-      fetch(pingUrl, { method: 'GET', mode: 'cors' })
+      fetch(portalPingUrl, { method: 'GET', credentials: 'include' })
         .then(function (r) {
           if (r.ok) return r.json();
           throw new Error('Réponse ' + r.status);
         })
         .then(function (data) {
-          testResult.textContent = 'Connexion au nœud OK. Le serveur ATAK répond.';
+          testResult.textContent = 'Liaison OK : le service ATAK de ce portail répond.';
           testResult.className = 'mt-2 text-sm text-emerald-700';
         })
         .catch(function (err) {

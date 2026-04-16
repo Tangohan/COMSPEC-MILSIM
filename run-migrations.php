@@ -99,6 +99,8 @@ $bootstrapFiles = [
     'military_role_catalog_schema_migration.php',
     'moderation_granular_sanctions_migration.php',
     'seniority_engine_migration.php',
+    'arma_playtime_migration.php',
+    'personnel_org_history_migration.php',
     'hr_charter_lms_migration.php',
     'core_schema_extensions_migration.php',
 ];
@@ -168,6 +170,8 @@ run_community_platform_migration($pdo);
 run_platform_unit_commander_migration($pdo);
 run_moderation_granular_sanctions_migration($pdo);
 run_seniority_engine_migration($pdo);
+run_arma_playtime_migration($pdo);
+run_personnel_org_history_migration($pdo);
 run_hr_charter_lms_migration($pdo);
 run_production_import_gap_migrations($pdo, $root);
 run_rbac_three_layer_migration($pdo);
@@ -258,6 +262,12 @@ try {
     $competencyProgressionFrameworkMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] competency_progression_framework : ' . $e->getMessage() . "\n";
+}
+$pedagogyChainMigrate = require $root . '/bootstrap/pedagogy_chain_migration.php';
+try {
+    $pedagogyChainMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] pedagogy_chain : ' . $e->getMessage() . "\n";
 }
 
 $stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'platform_modules'");
@@ -1605,6 +1615,16 @@ $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TA
 if ($stmt && !$stmt->fetch()) {
     echo "Ajout forum_posts.is_hidden...\n";
     $pdo->exec("ALTER TABLE forum_posts ADD COLUMN is_hidden tinyint(1) DEFAULT 0 AFTER body");
+}
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_posts' AND COLUMN_NAME = 'body_format'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Ajout forum_posts.body_format...\n";
+    $pdo->exec("ALTER TABLE forum_posts ADD COLUMN body_format VARCHAR(20) NOT NULL DEFAULT 'markdown' AFTER body");
+    try {
+        $pdo->exec("UPDATE forum_posts SET body_format = 'html' WHERE body LIKE '%rofa-wrap%'");
+    } catch (\Throwable $e) {
+        echo '  [note] backfill forum_posts.body_format : ' . $e->getMessage() . "\n";
+    }
 }
 $stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_category_subscriptions'");
 if ($stmt && !$stmt->fetch()) {

@@ -138,7 +138,7 @@ $sections = [
             ],
             [
                 'href' => url('personnel/mon-espace-rh'),
-                'title' => 'Espace RH & formations',
+                'title' => 'Espace RH et formations',
                 'desc' => 'Formations, charte, ancienneté et programmes de préqualification éventuels.',
                 'accent' => 'from-emerald-500 to-cyan-700',
                 'ring' => 'group-hover:ring-emerald-500/25',

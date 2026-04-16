@@ -261,6 +261,40 @@ $defaultCanvasJson = json_encode([
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <?php if (!empty($pedagogyColumnsReady)): ?>
+                <div class="md:col-span-2 rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 space-y-3">
+                    <p class="text-xs font-bold text-emerald-900 uppercase tracking-wide">Responsabilités pédagogiques</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Responsable pédagogique</label>
+                            <select name="pedagogical_owner_user_id" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                                <option value="">— Non renseigné —</option>
+                                <?php foreach ($studioStaffPickUsers ?? [] as $su):
+                                    $sid = (int) ($su['id'] ?? 0);
+                                    $slab = trim((string) ($su['display_name'] ?? '')) !== '' ? (string) $su['display_name'] : ('#' . $sid);
+                                    $curOwner = (int) ($course['pedagogical_owner_user_id'] ?? 0);
+                                ?>
+                                <option value="<?= $sid ?>" <?= $curOwner === $sid ? 'selected' : '' ?>><?= htmlspecialchars($slab) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="text-[11px] text-slate-600 mt-1">Obligatoire pour une mise en ligne publique.</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Validateur final (optionnel)</label>
+                            <select name="final_validator_user_id" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                                <option value="">— Aucun —</option>
+                                <?php foreach ($studioStaffPickUsers ?? [] as $su):
+                                    $sid = (int) ($su['id'] ?? 0);
+                                    $slab = trim((string) ($su['display_name'] ?? '')) !== '' ? (string) $su['display_name'] : ('#' . $sid);
+                                    $curVal = (int) ($course['final_validator_user_id'] ?? 0);
+                                ?>
+                                <option value="<?= $sid ?>" <?= $curVal === $sid ? 'selected' : '' ?>><?= htmlspecialchars($slab) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
                 <div class="md:col-span-2 rounded-xl border border-slate-100 bg-slate-50/80 p-4 space-y-2">
                     <label class="block text-xs font-bold text-slate-600">Portée du catalogue</label>
                     <?php if ($studioCanSetPlatformScope): ?>

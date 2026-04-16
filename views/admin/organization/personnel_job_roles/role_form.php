@@ -53,6 +53,35 @@ $selectedSet = array_fill_keys($selectedPerm, true);
                     <label class="mb-1 block text-xs font-semibold text-slate-600">Description</label>
                     <input type="text" name="description" value="<?= htmlspecialchars((string) ($role['description'] ?? '')) ?>" class="w-full rounded border border-slate-200 px-3 py-2 text-sm" maxlength="500">
                 </div>
+                <?php
+                $isSystemRole = !empty($role['is_system']);
+                $mosCodeVal = htmlspecialchars((string) ($role['mos_code'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $mosTitleVal = htmlspecialchars((string) ($role['mos_specialty_title'] ?? ''), ENT_QUOTES, 'UTF-8');
+                ?>
+                <div class="md:col-span-2 rounded-lg border border-slate-100 bg-slate-50/80 p-4">
+                    <p class="mb-3 text-xs font-bold uppercase tracking-wide text-slate-600">Correspondance spécialité (États-Unis)</p>
+                    <p class="mb-3 text-xs leading-relaxed text-slate-600">Code et intitulé alignés sur le référentiel public des spécialités de l’U.S. Army (MOS / AOC). Utile pour l’interopérabilité et les communautés en doctrine américaine.</p>
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-slate-600">Code de spécialité</label>
+                            <?php if ($isSystemRole): ?>
+                            <input type="text" readonly value="<?= $mosCodeVal ?>" class="w-full cursor-not-allowed rounded border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-700" maxlength="16">
+                            <p class="mt-1 text-[11px] text-slate-500">Valeur fournie par le référentiel national — mise à jour lors des synchronisations.</p>
+                            <?php else: ?>
+                            <input type="text" name="mos_code" value="<?= $mosCodeVal ?>" class="w-full rounded border border-slate-200 px-3 py-2 font-mono text-sm" maxlength="16" placeholder="Ex. 11B, 25U, 17C">
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-slate-600">Intitulé officiel (anglais)</label>
+                            <?php if ($isSystemRole): ?>
+                            <input type="text" readonly value="<?= $mosTitleVal ?>" class="w-full cursor-not-allowed rounded border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700" maxlength="255">
+                            <p class="mt-1 text-[11px] text-slate-500">Valeur fournie par le référentiel national — mise à jour lors des synchronisations.</p>
+                            <?php else: ?>
+                            <input type="text" name="mos_specialty_title" value="<?= $mosTitleVal ?>" class="w-full rounded border border-slate-200 px-3 py-2 text-sm" maxlength="255" placeholder="Ex. Infantryman">
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

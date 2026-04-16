@@ -29,7 +29,7 @@ $flashErr = \App\Core\Session::getFlash('error');
 
     <form method="get" action="<?= htmlspecialchars(url('back-office/recruitment/offers'), ENT_QUOTES, 'UTF-8') ?>" class="mb-6 flex flex-wrap items-center gap-3">
         <label class="text-sm font-medium text-slate-700">Filtrer</label>
-        <select name="status" class="rounded-lg border border-slate-200 px-3 py-2 text-sm" onchange="this.form.submit()">
+        <select name="status" class="<?= htmlspecialchars(bo_select_class('min-w-[11rem] sm:min-w-[13rem]'), ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
             <option value="all" <?= $statusFilter === 'all' ? 'selected' : '' ?>>Tous les statuts</option>
             <?php foreach ($statusLabels as $k => $lab): ?>
                 <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>" <?= $statusFilter === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>

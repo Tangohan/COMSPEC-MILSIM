@@ -4,10 +4,19 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin\Organization;
 
+use App\Core\Csrf;
+use App\Core\Container;
 use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\GradeCategoryRepository;
+use App\Repositories\GradeRepository;
+use App\Repositories\RoleRepository;
+use App\Repositories\UnitRepository;
+use App\Repositories\UserRepository;
+use App\Support\OrganizationRoleLabels;
+use App\Support\OrbatRosterPayload;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\EnlistmentRepository;
@@ -16,7 +25,11 @@ use App\Repositories\OpsBoardRepository;
 use App\Repositories\TenantAlertRepository;
 use App\Repositories\TenantCommunityFeedRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\TrainingEnrollmentRepository;
+use App\Repositories\TrainingQuizRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
+use App\Services\Platform\FeatureGateService;
+use App\Services\Training\TrainingEnrollmentCompletionAnalytics;
 
 class OrganizationDashboardController
 {
@@ -28,7 +41,8 @@ class OrganizationDashboardController
         private ?TenantCommunityFeedRepository $communityFeed = null,
         private ?CommunityEventRepository $eventRepository = null,
         private ?TenantAlertRepository $tenantAlertRepository = null,
-        private ?OpsBoardRepository $opsBoardRepository = null
+        private ?OpsBoardRepository $opsBoardRepository = null,
+        private ?TrainingEnrollmentCompletionAnalytics $trainingFeedCompletionAnalytics = null,
     ) {
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
@@ -38,6 +52,10 @@ class OrganizationDashboardController
         $this->eventRepository ??= new CommunityEventRepository();
         $this->tenantAlertRepository ??= new TenantAlertRepository();
         $this->opsBoardRepository ??= new OpsBoardRepository();
+        $this->trainingFeedCompletionAnalytics ??= new TrainingEnrollmentCompletionAnalytics(
+            new TrainingEnrollmentRepository(),
+            new TrainingQuizRepository()
+        );
     }
 
     public function index(Request $request, array $params = []): Response
@@ -91,6 +109,26 @@ class OrganizationDashboardController
         } catch (\Throwable) {
             $orgTrainingFeedError = 'Fil formations indisponible.';
         }
+        $orgTrainingFeedCompletionAnalytics = [];
+        if ($orgTrainingFeedError === null && $orgTrainingFeed !== []) {
+            try {
+                $orgTrainingFeedCompletionAnalytics = $this->trainingFeedCompletionAnalytics->buildForTrainingFeedRows(
+                    $tenantId,
+                    $orgTrainingFeed
+                );
+            } catch (\Throwable) {
+                $orgTrainingFeedCompletionAnalytics = [];
+            }
+        }
+
+        $orgIntegrationsPlanAllowed = false;
+        if ($tenantId > 1) {
+            try {
+                $orgIntegrationsPlanAllowed = Container::get(FeatureGateService::class)->allows($tenantId, 'advanced_integrations');
+            } catch (\Throwable) {
+                $orgIntegrationsPlanAllowed = false;
+            }
+        }
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.dashboard',
@@ -110,6 +148,8 @@ class OrganizationDashboardController
             'orgModerationError' => $moderationError,
             'orgTrainingFeed' => $orgTrainingFeed,
             'orgTrainingFeedError' => $orgTrainingFeedError,
+            'orgTrainingFeedCompletionAnalytics' => $orgTrainingFeedCompletionAnalytics,
+            'orgIntegrationsPlanAllowed' => $orgIntegrationsPlanAllowed,
             'tenantName' => $tenantName,
         ]);
     }
@@ -258,6 +298,95 @@ class OrganizationDashboardController
             'canPresets' => $gate->allows('admin.organization') || $gate->allows('admin.roles.manage') || $gate->allows('admin.permissions.manage'),
             'canGrades' => $gate->allows('admin.organization') || $gate->allows('admin.access'),
             'canStructure' => $gate->allows('admin.organization') || $gate->allows('admin.access'),
+            'canStructureRecruitmentHub' => $gate->allows('organization.orbat.view')
+                || $gate->allows('organization.orbat.manage')
+                || $gate->allows('admin.organization')
+                || $gate->allows('admin.access')
+                || $gate->allows('site.support'),
+            'canSeniorityAdmin' => $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support'),
+        ]);
+    }
+
+    /**
+     * Hub ORBAT + invitations / créations regroupements et équipes (back-office communauté).
+     */
+    public function structureRecruitmentHub(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId <= 0) {
+            return Response::redirect(url('login'));
+        }
+        $gate = Gate::getInstance();
+        $canSeeOrbat = $gate->allows('organization.orbat.view')
+            || $gate->allows('organization.orbat.manage')
+            || $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('site.support');
+        if (!$canSeeOrbat) {
+            Session::flash('error', 'Vous n’avez pas accès à l’organigramme des unités.');
+
+            return Response::redirect(url('back-office'));
+        }
+        $orbatCanManage = $gate->allows('admin.organization') || $gate->allows('admin.access')
+            || $gate->allows('organization.orbat.manage');
+        $viewerId = (int) Session::get('user_id');
+        $unitRepository = new UnitRepository();
+        $userRepository = new UserRepository();
+        $rosterData = OrbatRosterPayload::buildForTenant($unitRepository, $tenantId, $viewerId, $orbatCanManage);
+        $orbatCommanderOptions = [];
+        if ($orbatCanManage) {
+            foreach ($userRepository->allForTenant($tenantId) as $u) {
+                if (($u['status'] ?? '') !== 'active') {
+                    continue;
+                }
+                $id = (int) ($u['id'] ?? 0);
+                if ($id < 1) {
+                    continue;
+                }
+                $dn = trim((string) ($u['display_name'] ?? ''));
+                $cs = trim((string) ($u['callsign'] ?? ''));
+                $em = trim((string) ($u['email'] ?? ''));
+                $label = $dn !== '' ? $dn : ($cs !== '' ? $cs : $em);
+                if ($label === '') {
+                    $label = 'Compte #' . $id;
+                }
+                $orbatCommanderOptions[] = ['id' => $id, 'label' => $label];
+            }
+        }
+        $tenantRepository = new TenantRepository();
+        $settings = $tenantRepository->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $tenantRow = $tenantRepository->findById($tenantId) ?: [];
+        $organizationRoleLabelMode = OrganizationRoleLabels::mode($community, $tenantRow);
+
+        $roleRepository = new RoleRepository();
+        $gradeRepository = new GradeRepository();
+        $gradeCategoryRepository = new GradeCategoryRepository();
+
+        $rawOpen = strtolower(trim((string) $request->query('ouvrir', '')));
+        $structureHubOpen = in_array($rawOpen, ['membre', 'groupe', 'equipe'], true) ? $rawOpen : '';
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.structure_hub',
+            'title' => 'Structure & recrutement',
+            'orbatRosterData' => $rosterData,
+            'orbatCanManage' => $orbatCanManage,
+            'orbatCommanderOptions' => $orbatCommanderOptions,
+            'orbatCsrfToken' => Csrf::token(),
+            'orbatRecruitmentHub' => true,
+            'orbatEmptyStateBackUrl' => url('back-office/organisation/structure'),
+            'orbatPageEyebrow' => 'Structure',
+            'orbatPageTitle' => 'Organigramme',
+            'orbatPageLead' => 'Vue hiérarchique des unités ; utilisez la barre d’actions ou le clic droit sur une carte pour créer un regroupement ou une équipe.',
+            'structureHubOpen' => $structureHubOpen,
+            'groupParents' => $unitRepository->getGroups($tenantId),
+            'teamParents' => $unitRepository->getTeams($tenantId),
+            'usersForCommander' => $userRepository->allForTenant($tenantId),
+            'roles' => $roleRepository->forTenantOrganization($tenantId),
+            'roleMatrix' => $roleRepository->organizationRolesPermissionMatrix($tenantId),
+            'grades' => $gradeRepository->listForTenant($tenantId),
+            'gradeCategories' => $gradeCategoryRepository->listActive(),
+            'organizationRoleLabelMode' => $organizationRoleLabelMode,
         ]);
     }
 }

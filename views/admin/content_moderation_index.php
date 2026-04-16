@@ -7,6 +7,7 @@ use App\Services\Moderation\ModerationSourceType;
 $baseUrl = url('');
 $contentModerationUrl = rtrim(url('admin/content-moderation'), '/');
 $artifacts = $artifacts ?? [];
+$recentForumPublished = $recentForumPublished ?? [];
 $total = (int) ($total ?? 0);
 $page = (int) ($page ?? 1);
 $perPage = (int) ($perPage ?? 30);
@@ -44,7 +45,8 @@ $sourceLabel = static function (string $type): string {
   <header class="mb-8 border-b border-slate-200 pb-6">
     <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">File d’attente et quarantaine</h1>
     <p class="mt-2 text-base text-slate-600 max-w-2xl leading-relaxed">
-      Fichiers et contenus mis en attente de validation (forum, documents, courrier). Approuvez ou rejetez chaque élément ci-dessous.
+      Cette page liste d’abord les éléments <strong class="font-semibold text-slate-800">en quarantaine ou en analyse</strong> (décision humaine requise).
+      Les pièces jointes forum jugées sûres automatiquement n’y figurent pas : elles apparaissent plus bas dans le suivi récent, avec aperçu lorsque c’est possible.
     </p>
   </header>
 
@@ -62,7 +64,7 @@ $sourceLabel = static function (string $type): string {
     </p>
   <?php elseif (empty($artifacts)): ?>
     <p class="rounded-xl border border-emerald-200 bg-white px-5 py-6 text-base font-medium text-slate-800 shadow-sm">
-      Aucun élément en file d’attente.
+      Aucun élément en file d’attente pour l’instant. Si vous venez de joindre une image au forum et qu’elle s’affiche déjà dans le sujet, l’analyse automatique l’a probablement acceptée sans quarantaine : consultez la section « Suivi des pièces jointes forum » ci-dessous.
     </p>
   <?php else: ?>
     <p class="text-sm text-slate-600 mb-5">
@@ -82,6 +84,23 @@ $sourceLabel = static function (string $type): string {
         <li class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0 flex-1 space-y-2">
+              <?php
+              $mime = (string) ($a['mime'] ?? '');
+              $isImage = str_starts_with($mime, 'image/');
+              $isPdf = $mime === 'application/pdf';
+              $securePreview = $contentModerationUrl . '/' . $id . '/preview';
+              ?>
+              <?php if ($isImage): ?>
+                <div class="mb-3">
+                  <img src="<?= htmlspecialchars($securePreview, ENT_QUOTES, 'UTF-8') ?>" alt="" class="max-h-48 max-w-full rounded-lg border border-slate-200 bg-slate-50 object-contain shadow-inner" loading="lazy" width="320" height="240" />
+                </div>
+              <?php elseif ($isPdf): ?>
+                <div class="mb-3">
+                  <a href="<?= htmlspecialchars($securePreview, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-white">
+                    Ouvrir l’aperçu du PDF
+                  </a>
+                </div>
+              <?php endif; ?>
               <p class="text-xs font-bold uppercase tracking-wide text-amber-800">
                 Dossier n°<?= $id ?> · <?= htmlspecialchars($displaySource) ?>
               </p>
@@ -99,10 +118,10 @@ $sourceLabel = static function (string $type): string {
                 </p>
               <?php endif; ?>
               <?php if (!empty($a['file_path'])): ?>
-                <p class="text-xs text-slate-500 break-all leading-relaxed">
-                  <span class="font-medium text-slate-600">Référence interne :</span>
-                  <?= htmlspecialchars((string) $a['file_path']) ?>
-                </p>
+                <details class="text-xs text-slate-500">
+                  <summary class="cursor-pointer font-medium text-slate-600 hover:text-slate-800">Détails techniques (support)</summary>
+                  <p class="mt-2 break-all leading-relaxed pl-1 border-l-2 border-slate-200"><?= htmlspecialchars((string) $a['file_path']) ?></p>
+                </details>
               <?php endif; ?>
               <?php
               $codes = $a['reason_codes'] ?? [];
@@ -134,5 +153,42 @@ $sourceLabel = static function (string $type): string {
         </li>
       <?php endforeach; ?>
     </ul>
+  <?php endif; ?>
+
+  <?php if (!$missingTables && $recentForumPublished !== []): ?>
+    <section class="mt-12 border-t border-slate-200 pt-10" aria-labelledby="forum-recent-heading">
+      <h2 id="forum-recent-heading" class="text-lg font-bold text-slate-900">Suivi des pièces jointes forum (récentes)</h2>
+      <p class="mt-2 text-sm text-slate-600 max-w-2xl">
+        Fichiers déjà publiés ou validés après quarantaine. Aucune action requise ici ; l’aperçu sert au contrôle visuel.
+      </p>
+      <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <?php foreach ($recentForumPublished as $r): ?>
+          <?php
+          $rid = (int) ($r['id'] ?? 0);
+          $fn = basename(str_replace('\\', '/', (string) ($r['file_path'] ?? '')));
+          $pubUrl = $fn !== '' && $fn !== '.' && $fn !== '..' ? url('uploads/forum/' . $fn) : '';
+          $rmime = (string) ($r['mime'] ?? '');
+          $rIsImage = str_starts_with($rmime, 'image/');
+          ?>
+          <li class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col gap-2">
+            <?php if ($rIsImage && $pubUrl !== ''): ?>
+              <a href="<?= htmlspecialchars($pubUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="block overflow-hidden rounded-lg border border-slate-100 bg-slate-50 aspect-video">
+                <img src="<?= htmlspecialchars($pubUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-full w-full object-contain" loading="lazy" />
+              </a>
+            <?php elseif ($rmime === 'application/pdf' && $pubUrl !== ''): ?>
+              <a href="<?= htmlspecialchars($pubUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-8 text-sm font-semibold text-slate-700 hover:bg-white">
+                Document PDF
+              </a>
+            <?php endif; ?>
+            <?php if (!empty($r['original_name'])): ?>
+              <p class="text-xs text-slate-700 truncate" title="<?= htmlspecialchars((string) $r['original_name'], ENT_QUOTES, 'UTF-8') ?>">
+                <?= htmlspecialchars((string) $r['original_name']) ?>
+              </p>
+            <?php endif; ?>
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Réf. <?= $rid ?></p>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    </section>
   <?php endif; ?>
 </div>

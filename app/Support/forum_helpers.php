@@ -727,12 +727,38 @@ if (!function_exists('forum_markdown_to_html')) {
     }
 }
 
+if (!function_exists('forum_sanitize_server_html_fragment')) {
+    /**
+     * Assainit un fragment HTML produit par l’application (annonces automatiques, etc.).
+     * À n’utiliser que pour du contenu déjà contrôlé côté serveur, jamais pour une saisie libre.
+     */
+    function forum_sanitize_server_html_fragment(string $html): string
+    {
+        $out = $html;
+        $out = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $out) ?? '';
+        $out = preg_replace('#<style\b[^>]*>.*?</style>#is', '', $out) ?? '';
+        $out = preg_replace('#<iframe\b[^>]*>.*?</iframe>#is', '', $out) ?? '';
+        $out = preg_replace('#<(object|embed|form)\b[^>]*>.*?</\1>#is', '', $out) ?? '';
+        $out = preg_replace('#</?(?:base|link|meta)\b[^>]*>#is', '', $out) ?? '';
+        $out = preg_replace('/\s(on\w*|xmlns)\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/iu', '', $out) ?? '';
+        $out = preg_replace('/javascript\s*:/iu', 'blocked:', $out) ?? '';
+        $out = preg_replace('/data\s*:\s*text\s*\/\s*html/iu', 'data: blocked', $out) ?? '';
+
+        return $out;
+    }
+}
+
 if (!function_exists('forum_render_content')) {
     /**
-     * Rendu sécurisé du contenu forum (Markdown simple → HTML).
+     * Rendu du contenu forum : Markdown (défaut) ou HTML de confiance pour les messages automatiques.
+     *
+     * @param string $bodyFormat « markdown » (défaut) ou « html » (messages système uniquement).
      */
-    function forum_render_content(string $content): string
+    function forum_render_content(string $content, string $bodyFormat = 'markdown'): string
     {
+        if (strtolower(trim($bodyFormat)) === 'html') {
+            return forum_sanitize_server_html_fragment($content);
+        }
         $tid = (int) \App\Core\Session::get('tenant_id');
         $expanded = forum_expand_forum_mentions_in_markdown($content, $tid);
 

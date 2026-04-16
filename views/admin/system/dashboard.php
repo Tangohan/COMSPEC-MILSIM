@@ -71,11 +71,16 @@ $subnavLink = 'rounded-lg px-3 py-2 transition hover:bg-slate-100 hover:text-sla
 
         <nav class="flex flex-wrap items-center gap-2" aria-label="Sections du tableau de bord">
             <span class="<?= htmlspecialchars($subnavClass, ENT_QUOTES, 'UTF-8') ?>">
+                <a href="#hub-annuaire" class="<?= htmlspecialchars($subnavLink, ENT_QUOTES, 'UTF-8') ?>">Annuaire &amp; offres</a>
                 <a href="#hub-plateforme" class="<?= htmlspecialchars($subnavLink, ENT_QUOTES, 'UTF-8') ?>">Plateforme</a>
                 <a href="#hub-moderation" class="<?= htmlspecialchars($subnavLink, ENT_QUOTES, 'UTF-8') ?>">Modération</a>
                 <a href="#hub-assistance" class="<?= htmlspecialchars($subnavLink, ENT_QUOTES, 'UTF-8') ?>">Assistance</a>
             </span>
         </nav>
+
+        <?php if ($isPlatformAdmin): ?>
+            <?php require base_path('views/admin/partials/platform_site_directory.php'); ?>
+        <?php endif; ?>
 
         <section id="hub-plateforme" class="scroll-mt-24 space-y-8 lg:space-y-10">
             <section aria-labelledby="scope-split-heading" class="grid grid-cols-1 md:grid-cols-2 gap-4">

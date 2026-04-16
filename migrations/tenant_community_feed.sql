@@ -9,9 +9,11 @@ CREATE TABLE IF NOT EXISTS `tenant_community_feed` (
   `body` TEXT,
   `link_url` VARCHAR(512) DEFAULT NULL,
   `actor_user_id` INT UNSIGNED DEFAULT NULL,
+  `related_enrollment_id` BIGINT UNSIGNED NULL DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_tcf_tenant_created` (`tenant_id`,`created_at`),
+  KEY `idx_tcf_related_enrollment` (`tenant_id`,`related_enrollment_id`),
   CONSTRAINT `tcf_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

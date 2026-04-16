@@ -88,4 +88,25 @@ final class SiteRoleAssignmentRepository
 
         return $st->rowCount() > 0;
     }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findActiveAssignmentById(int $assignmentId): ?array
+    {
+        if ($assignmentId < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            "SELECT sra.id, sra.email_normalized, sra.role_id, r.name AS role_name, r.slug AS role_slug
+             FROM site_role_assignments sra
+             INNER JOIN roles r ON r.id = sra.role_id AND r.tenant_id IS NULL AND r.role_layer = 'site'
+             WHERE sra.id = ? AND sra.revoked_at IS NULL
+             LIMIT 1"
+        );
+        $st->execute([$assignmentId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
 }

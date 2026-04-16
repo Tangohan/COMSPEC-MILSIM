@@ -7,6 +7,15 @@ $userProfile = $userProfile ?? null;
 $grade = $grade ?? null;
 $grades = $grades ?? [];
 $assignments = $assignments ?? [];
+$personnelAssignmentHistory = is_array($personnelAssignmentHistory ?? null) ? $personnelAssignmentHistory : [];
+$personnelAssignmentHistoryUnitTotals = is_array($personnelAssignmentHistoryUnitTotals ?? null) ? $personnelAssignmentHistoryUnitTotals : [];
+$histUnitPeriodCount = [];
+foreach ($personnelAssignmentHistory as $_hx) {
+    $_uid = (int) ($_hx['unit_id'] ?? 0);
+    if ($_uid > 0) {
+        $histUnitPeriodCount[$_uid] = ($histUnitPeriodCount[$_uid] ?? 0) + 1;
+    }
+}
 $primaryAssignment = $primaryAssignment ?? null;
 $commander = $commander ?? null;
 $commanderLabelsById = is_array($commanderLabelsById ?? null) ? $commanderLabelsById : [];
@@ -24,6 +33,7 @@ $canEditNotes = $canEditNotes ?? false;
 $canEditProfile = $canEditProfile ?? false;
 $canViewCivil = $canViewCivil ?? false;
 $canViewCivilSection = $canViewCivilSection ?? $canViewCivil;
+$privatePersonnelIdentity = !empty($privatePersonnelIdentity ?? false);
 $redactPersonalPresentation = $redactPersonalPresentation ?? false;
 $canViewCommandNotes = $canViewCommandNotes ?? true;
 $displaySettings = $displaySettings ?? [];
@@ -34,6 +44,11 @@ $civilSourceLabel = $civilSourceLabel ?? '';
 $primaryUnitFallbackName = $primaryUnitFallbackName ?? null;
 $rpDossierNeedsAttention = $rpDossierNeedsAttention ?? false;
 $latestEnlistment = $latestEnlistment ?? null;
+$communityRoleLabelRaw = isset($communityRoleLabel) && is_string($communityRoleLabel) ? trim($communityRoleLabel) : '';
+$communityRoleLabel = $communityRoleLabelRaw !== '' ? $communityRoleLabelRaw : null;
+$qualificationIssuerLabels = is_array($qualificationIssuerLabels ?? null) ? $qualificationIssuerLabels : [];
+$personnelOrgHistory = is_array($personnelOrgHistory ?? null) ? $personnelOrgHistory : [];
+$personnelOrgHistorySection = !empty($personnelOrgHistorySection ?? null);
 
 $lmsEnrollmentStatusFr = static function (string $s): string {
     return match ($s) {
@@ -70,7 +85,9 @@ $accountStatusFr = static function (?string $s): string {
 $qualificationStatusFr = static function (?string $s): string {
     return match (trim((string) $s)) {
         'valid' => 'À jour',
+        'expiring' => 'Bientôt périmée',
         'expired' => 'Expirée',
+        'in_progress' => 'En cours d’obtention',
         'revoked' => 'Retirée',
         'pending' => 'En attente de validation',
         'suspended' => 'Suspendue',
@@ -98,6 +115,58 @@ $planningOperationalStatusFr = static function (?string $t): string {
         default => '',
     };
 };
+$lmsEnrollmentAssignTypeFr = static function (?string $t): string {
+    return match (trim((string) $t)) {
+        'manual' => 'Attribution manuelle',
+        'role' => 'Selon le rôle',
+        'unit' => 'Selon l’unité',
+        'campaign' => 'Campagne',
+        'self_enroll' => 'Inscription volontaire',
+        default => '',
+    };
+};
+$personnelAssignmentStatusFr = static function (?string $t): string {
+    return match (trim((string) $t)) {
+        'active' => 'Active',
+        'inactive' => 'Inactive',
+        'pending' => 'En attente',
+        default => '',
+    };
+};
+$unitTypeFr = static function (?string $t): string {
+    return match (trim((string) $t)) {
+        'hq' => 'État-major',
+        'company' => 'Compagnie',
+        'platoon' => 'Peloton',
+        'squad' => 'Escouade',
+        'team' => 'Équipe',
+        'section' => 'Section',
+        'other' => 'Autre formation',
+        default => '',
+    };
+};
+$personnelDurationDaysFr = static function (int $days): string {
+    if ($days < 1) {
+        return '—';
+    }
+    if ($days === 1) {
+        return '1 jour';
+    }
+
+    return $days . ' jours';
+};
+$serviceHistoryEventTypeFr = static function (?string $t): string {
+    return match (trim((string) $t)) {
+        'assignment' => 'Affectation',
+        'promotion' => 'Avancement',
+        'qualification' => 'Qualification',
+        'deployment' => 'Déploiement',
+        'award' => 'Distinction',
+        'discipline' => 'Suivi disciplinaire',
+        'note' => 'Note de dossier',
+        default => 'Événement',
+    };
+};
 
 if (!$targetUser) {
     echo '<p>Utilisateur non trouvé.</p>';
@@ -117,12 +186,24 @@ if ($rpCharacterName !== '') {
     $displayName = $rpCharacterName;
 } elseif (!empty($redactPersonalPresentation)) {
     $dn = trim((string) ($targetUser['display_name'] ?? ''));
-    $displayName = $dn !== '' ? $dn : (string) ($targetUser['email'] ?? '—');
+    if ($privatePersonnelIdentity) {
+        $displayName = $dn !== '' ? $dn : (string) ($targetUser['email'] ?? '—');
+    } else {
+        $cs = trim((string) ($callsign ?? ''));
+        $displayName = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Membre');
+    }
+} elseif (!$privatePersonnelIdentity) {
+    $dn = trim((string) ($targetUser['display_name'] ?? ''));
+    $cs = trim((string) ($callsign ?? ''));
+    $displayName = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Membre');
 } else {
     $civilFull = trim(($civilIdentity['first_name'] ?? '') . ' ' . ($civilIdentity['last_name'] ?? ''));
     $displayName = $civilFull !== '' ? $civilFull : ($targetUser['display_name'] ?: $targetUser['email']);
 }
-$readiness = isset($personnelProfile['readiness_score']) ? (int)$personnelProfile['readiness_score'] : (isset($personnelExtras['readiness_percent']) ? (int)$personnelExtras['readiness_percent'] : null);
+$rScore = (int) ($personnelProfile['readiness_score'] ?? 0);
+$rExtra = (int) ($personnelExtras['readiness_percent'] ?? 0);
+$readinessMerged = max($rScore, $rExtra);
+$readiness = $readinessMerged > 0 ? $readinessMerged : null;
 $adminNotes = trim((string)($personnelProfile['command_notes'] ?? '')) ?: ($personnelExtras['admin_notes'] ?? null);
 $clearanceLevel = trim((string)($personnelProfile['clearance_level'] ?? '')) ?: trim((string)($personnelExtras['clearance_level'] ?? ''));
 
@@ -162,7 +243,99 @@ $personnelModerationStaffLines = is_array($personnelModerationStaffLines ?? null
 $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_string($personnelModerationMemberBrief) && trim($personnelModerationMemberBrief) !== ''
     ? trim($personnelModerationMemberBrief)
     : null;
-$seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniorityLines : [];
+$seniorityGlobal = isset($seniorityGlobal) && is_array($seniorityGlobal) ? $seniorityGlobal : null;
+$seniorityDetailLines = isset($seniorityDetailLines) && is_array($seniorityDetailLines) ? $seniorityDetailLines : [];
+$personnelIsSelf = !empty($personnelIsSelf ?? null);
+$steamProfileSyncOffered = !empty($steamProfileSyncOffered ?? false);
+
+$completenessDetails = is_array($completeness['details'] ?? null) ? $completeness['details'] : [];
+$completenessCheckLabels = [
+    'identity_name' => 'Nom opérateur / RP',
+    'identity_callsign' => 'Indicatif radio',
+    'identity_matricule' => 'Matricule',
+    'identity_role' => 'Rôle principal (dossier)',
+    'identity_unit' => 'Unité ou affectation',
+    'identity_enlistment' => 'Date d’incorporation',
+    'assignment_role' => 'Rôle dans l’organigramme',
+    'security_clearance' => 'Niveau documentaire (clearance)',
+    'security_review' => 'Revue de l’habilitation (date)',
+    'qualifications' => 'Qualification ou formation certifiée',
+    'readiness' => 'Indicateur de disponibilité',
+    'contact_email' => 'Adresse e-mail de contact',
+    'civil_identity' => 'Prénom et nom (compte ou candidature)',
+];
+$bannerPath = trim((string) ($personnelProfile['character_banner_path'] ?? ''));
+$bannerUrl = $bannerPath !== '' ? $baseUrl . '/' . ltrim($bannerPath, '/') : null;
+$isDeployableFile = ((int) ($personnelProfile['deployable'] ?? 1)) === 1;
+$legacyServiceNumber = trim((string) ($personnelExtras['service_number'] ?? ''));
+$matriculeInternalOnly = trim((string) ($personnelProfile['matricule_internal'] ?? ''));
+$showLegacyServiceNumber = $legacyServiceNumber !== '' && ($matriculeInternalOnly === '' || strcasecmp($legacyServiceNumber, $matriculeInternalOnly) !== 0);
+$steamId = trim((string) ($targetUser['steam_id'] ?? ''));
+$steamId = $steamId !== '' ? $steamId : null;
+$accountCreatedDisplay = null;
+if (!empty($targetUser['created_at'])) {
+    $tsAcc = strtotime((string) $targetUser['created_at']);
+    $accountCreatedDisplay = $tsAcc ? date('d/m/Y', $tsAcc) : null;
+}
+$profilePublicSegment = trim((string) ($targetUser['profile_slug'] ?? ''));
+$profilePublicSegment = $profilePublicSegment !== '' ? $profilePublicSegment : null;
+$displayNameAccount = trim((string) ($targetUser['display_name'] ?? ''));
+$rpCharacterNameDisplay = trim((string) ($personnelProfile['character_name'] ?? ''));
+$squadronExtra = trim((string) ($personnelExtras['squadron'] ?? ''));
+
+$enlistmentAppStatusFr = static function (?string $s): string {
+    return match (trim((string) $s)) {
+        'submitted' => 'Dossier transmis',
+        'reviewed' => 'Examinée (suite à traiter ou compte à rattacher)',
+        'rejected' => 'Non retenue',
+        'blocked' => 'Dossier bloqué',
+        'withdrawn' => 'Retirée par le candidat',
+        default => $s !== '' ? 'Statut à confirmer auprès du recrutement' : '—',
+    };
+};
+$enlistmentSubmittedViaFr = static function (?string $s): string {
+    return match (trim((string) $s)) {
+        'guest' => 'Sans compte (formulaire invité)',
+        'account' => 'Depuis un compte connecté',
+        default => '',
+    };
+};
+
+if (!function_exists('personnel_file_render_admin_value')) {
+    /**
+     * @param mixed $value
+     */
+    function personnel_file_render_admin_value($value, int $depth = 0): void
+    {
+        if ($depth > 4) {
+            echo '<span class="text-slate-500">…</span>';
+
+            return;
+        }
+        if (is_array($value)) {
+            if ($value === []) {
+                echo '<span class="text-slate-400">—</span>';
+
+                return;
+            }
+            $isList = array_keys($value) === range(0, count($value) - 1);
+            echo '<ul class="mt-1 list-disc space-y-1 pl-4 text-xs text-slate-800">';
+            foreach ($value as $k => $v) {
+                echo '<li>';
+                if (!$isList && is_string($k) && $k !== '') {
+                    echo '<span class="font-semibold text-slate-600">' . htmlspecialchars($k, ENT_QUOTES, 'UTF-8') . ' : </span>';
+                }
+                personnel_file_render_admin_value($v, $depth + 1);
+                echo '</li>';
+            }
+            echo '</ul>';
+
+            return;
+        }
+        $str = $value === null || $value === false ? '' : (string) $value;
+        echo $str !== '' ? nl2br(htmlspecialchars($str, ENT_QUOTES, 'UTF-8')) : '<span class="text-slate-400">—</span>';
+    }
+}
 ?>
 <main class="min-h-screen pt-20 pb-24">
     <?php if ($personnelModerationStaffLines !== []): ?>
@@ -181,6 +354,20 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
         <div class="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm" role="status">
             <?= htmlspecialchars($personnelModerationMemberBrief, ENT_QUOTES, 'UTF-8') ?>
         </div>
+    </div>
+    <?php endif; ?>
+    <?php
+    $personnelFlashSuccess = \App\Core\Session::getFlash('success');
+    $personnelFlashError = \App\Core\Session::getFlash('error');
+    ?>
+    <?php if ($personnelFlashSuccess || $personnelFlashError): ?>
+    <div class="max-w-7xl mx-auto px-6 md:px-8 pt-4">
+        <?php if ($personnelFlashSuccess): ?>
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-sm font-medium text-emerald-900 shadow-sm" role="status"><?= htmlspecialchars((string) $personnelFlashSuccess, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+        <?php if ($personnelFlashError): ?>
+        <div class="mt-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900 shadow-sm" role="alert"><?= htmlspecialchars((string) $personnelFlashError, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
     <!-- Hero -->
@@ -204,16 +391,20 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                     <p class="text-sm text-slate-400"><?= htmlspecialchars($unitName) ?></p>
                     <?php endif; ?>
                     <div class="flex flex-wrap gap-2 mt-2">
+                        <?php if ($privatePersonnelIdentity): ?>
                         <?php $rawAccountStatus = (string) ($targetUser['status'] ?? ''); ?>
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-black uppercase <?= $rawAccountStatus === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600/30 text-slate-400' ?>">
                             <span class="w-1.5 h-1.5 rounded-full <?= $rawAccountStatus === 'active' ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500' ?>"></span>
                             <?= htmlspecialchars($accountStatusFr($rawAccountStatus)) ?>
                         </span>
+                        <?php endif; ?>
                         <?php if ($clearanceLevel): ?>
                         <span class="inline-flex px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-slate-600/30 text-slate-300">Clearance <?= htmlspecialchars($clearanceLevel) ?></span>
                         <?php endif; ?>
-                        <?php if (($personnelProfile['deployable'] ?? 1)): ?>
+                        <?php if ($isDeployableFile): ?>
                         <span class="inline-flex px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400">Déployable</span>
+                        <?php else: ?>
+                        <span class="inline-flex px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-amber-500/15 text-amber-200">Non déployable</span>
                         <?php endif; ?>
                     </div>
                     <?php if (\App\Core\Session::get('user_id')): ?>
@@ -280,8 +471,9 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                     <div class="h-full bg-emerald-500 rounded-full transition-all" style="width: <?= min(100, max(0, $completenessScore)) ?>%"></div>
                 </div>
                 <?php if (!empty($sectionsCritiques) && $canEditProfile): ?>
-                <span class="text-xs text-amber-700 font-semibold"><?= count($sectionsCritiques) ?> section(s) critique(s) incomplète(s) : <?= htmlspecialchars(implode(', ', $sectionsCritiques)) ?></span>
+                <span class="text-xs text-amber-700 font-semibold"><?= count($sectionsCritiques) ?> point(s) prioritaire(s) : <?= htmlspecialchars(implode(', ', $sectionsCritiques)) ?></span>
                 <?php endif; ?>
+                <p class="basis-full text-[10px] text-slate-500">Le détail de chaque critère se trouve dans l’onglet <span class="font-semibold text-slate-700">Vue d’ensemble</span>.</p>
             </div>
         </div>
     </section>
@@ -303,28 +495,54 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                     <p class="text-sm font-black text-emerald-600 italic"><?= $clearanceLevel ? htmlspecialchars($clearanceLevel) : '—' ?></p>
                 </div>
                 <div>
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Readiness</p>
-                    <p class="text-sm font-black text-slate-900"><?= $readiness !== null ? $readiness . '%' : '—' ?></p>
+                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Préparation</p>
+                    <p class="text-sm font-black text-slate-900"><?= $readiness !== null ? $readiness . ' %' : '—' ?></p>
                 </div>
+                <?php if ($privatePersonnelIdentity): ?>
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Statut réseau</p>
                     <p class="text-sm font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?> italic"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p>
                 </div>
+                <?php endif; ?>
                 <?php if ($enlistmentFormatted): ?>
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Enrôlement</p>
                     <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($enlistmentFormatted) ?></p>
                 </div>
                 <?php endif; ?>
-                <?php foreach ($seniorityLines as $seniorityRow): ?>
+                <?php if ($seniorityGlobal !== null): ?>
+                <div class="min-w-[9.5rem] max-w-[14rem] shrink-0">
+                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Ancienneté globale</p>
+                    <p class="text-base font-black leading-tight text-slate-900 tabular-nums" title="<?= htmlspecialchars((string) ($seniorityGlobal['basis_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($seniorityGlobal['formatted'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                    <p class="mt-1 text-[9px] font-medium leading-snug text-slate-500 line-clamp-2"><?= htmlspecialchars((string) ($seniorityGlobal['basis_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </section>
+
+    <?php if ($seniorityDetailLines !== []): ?>
+    <section class="w-full border-b border-slate-200 bg-slate-50/90" aria-labelledby="personnel-seniority-detail-heading">
+        <div class="max-w-7xl mx-auto px-6 md:px-8 py-6 md:py-8">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-6 mb-5">
                 <div>
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><?= htmlspecialchars((string) ($seniorityRow['label'] ?? 'Ancienneté')) ?></p>
-                    <p class="text-sm font-black text-slate-900"><?= htmlspecialchars((string) ($seniorityRow['formatted'] ?? '—')) ?></p>
+                    <h2 id="personnel-seniority-detail-heading" class="text-xs font-black uppercase tracking-[0.28em] text-slate-500">Autres indicateurs d’ancienneté</h2>
+                    <p class="mt-2 max-w-3xl text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        Chaque durée ci-dessous correspond à des <strong>périodes</strong> enregistrées sur le dossier (dates de début et, si besoin, de fin). Il n’y a pas de journal « minute par minute » affiché ici : seules les plages retenues pour le calcul sont visibles. L’organisation peut disposer d’une trace des saisies pour le dossier, sans détail sur cette page.
+                    </p>
+                </div>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <?php foreach ($seniorityDetailLines as $seniorityRow): ?>
+                <div class="rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm">
+                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1"><?= htmlspecialchars((string) ($seniorityRow['label'] ?? 'Indicateur'), ENT_QUOTES, 'UTF-8') ?></p>
+                    <p class="text-sm font-black text-slate-900 tabular-nums"><?= htmlspecialchars((string) ($seniorityRow['formatted'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
                 <?php endforeach; ?>
             </div>
         </div>
     </section>
+    <?php endif; ?>
 
     <div class="max-w-7xl mx-auto px-6 md:px-8 py-10">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -385,19 +603,237 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                 <a href="<?= url('documents') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Documents</a>
                 <?php if ($viewerIsPersonnelSubject): ?>
                 <a href="<?= url('formations/mes-formations') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Mes parcours</a>
+                <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-violet-600 hover:text-violet-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-violet-200"></span>Espace RH</a>
                 <?php endif; ?>
                 <a href="<?= url('formations') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Formations</a>
                 <a href="<?= url('dashboard') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Dashboard</a>
             </aside>
 
-            <div class="lg:col-span-9 space-y-8 order-1 lg:order-2">
+            <div class="lg:col-span-9 order-1 lg:order-2 space-y-6" x-data="{ tab: 'resume' }">
+                <nav class="flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-slate-50/90 p-1.5 shadow-sm" aria-label="Sections du dossier personnel">
+                    <button type="button" @click="tab = 'resume'" :class="tab === 'resume' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Vue d’ensemble</button>
+                    <button type="button" @click="tab = 'ops'" :class="tab === 'ops' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Poste & affectations</button>
+                    <button type="button" @click="tab = 'formation'" :class="tab === 'formation' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Habilitations & parcours</button>
+                    <button type="button" @click="tab = 'logistique'" :class="tab === 'logistique' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Dotation & préparation</button>
+                    <button type="button" @click="tab = 'historique'" :class="tab === 'historique' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Historique & notes</button>
+                    <button type="button" @click="tab = 'administratif'" :class="tab === 'administratif' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Coordonnées & dossier</button>
+                </nav>
+
+                <div class="space-y-8" x-show="tab === 'resume'" x-cloak>
+                    <?php if (!empty($rpDossierNeedsAttention)): ?>
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950 shadow-sm" role="status">
+                        <p class="font-semibold">Nom d’opérateur (personnage) à compléter</p>
+                        <p class="mt-1 text-xs leading-relaxed text-amber-900/90">Indiquez un nom de scène cohérent avec votre unité pour finaliser l’identité opérationnelle affichée sur les documents et listes.</p>
+                        <?php if ($canEditProfile): ?>
+                        <a href="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/edit'), ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex text-[10px] font-black uppercase tracking-wider text-amber-900 underline decoration-amber-700/50 underline-offset-2 hover:decoration-amber-900">Ouvrir l’édition du dossier</a>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($bannerUrl): ?>
+                    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
+                        <img src="<?= htmlspecialchars($bannerUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-36 w-full object-cover sm:h-44 md:h-52" loading="lazy" decoding="async" />
+                    </div>
+                    <?php endif; ?>
+                    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                        <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-5">Synthèse</h2>
+                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <?php if ($personnelIsSelf): ?>
+                            <div class="sm:col-span-2 xl:col-span-3 rounded-2xl border border-violet-200/80 bg-gradient-to-br from-violet-50/90 to-white px-4 py-4 shadow-sm sm:px-5 sm:py-4">
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div class="min-w-0">
+                                        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-violet-700/90">Espace RH et formations</p>
+                                        <p class="mt-1 text-sm leading-snug text-slate-800">Charte, parcours, ancienneté affichée sur cette fiche et programmes de préqualification éventuels — au même endroit.</p>
+                                    </div>
+                                    <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 items-center justify-center self-start rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-violet-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 sm:self-center">Ouvrir l’espace RH</a>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Unité indiquée</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : '—' ?></p>
+                                <?php if ($squadronExtra !== '' && ($unitName === null || $squadronExtra !== trim((string) $unitName))): ?>
+                                <p class="mt-2 text-[10px] text-slate-600">Mention dossier : <span class="font-semibold"><?= htmlspecialchars($squadronExtra) ?></span></p>
+                                <?php endif; ?>
+                            </div>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Habilitation documentaire</p>
+                                <p class="mt-1 text-sm font-bold text-emerald-700"><?= $clearanceLevel ? htmlspecialchars($clearanceLevel) : '—' ?></p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Préparation opérationnelle</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= $readiness !== null ? $readiness . ' %' : '—' ?></p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Déployabilité</p>
+                                <p class="mt-1 text-sm font-bold <?= $isDeployableFile ? 'text-emerald-700' : 'text-amber-800' ?>"><?= $isDeployableFile ? 'Oui' : 'Non' ?></p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Incorporation</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= $enlistmentFormatted ? htmlspecialchars($enlistmentFormatted) : '—' ?></p>
+                            </div>
+                            <?php if ($communityRoleLabel !== null): ?>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Rôle dans la communauté</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($communityRoleLabel) ?></p>
+                            </div>
+                            <?php endif; ?>
+                            <?php if ($steamId !== null): ?>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Identifiant Steam</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($steamId) ?></p>
+                                <?php if ($steamProfileSyncOffered): ?>
+                                <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/sync-steam'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 space-y-3 border-t border-slate-200/80 pt-4">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <label class="flex cursor-pointer items-start gap-2 text-xs text-slate-700">
+                                        <input type="checkbox" name="apply_steam_display_name" value="1" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                                        <span>Mettre aussi à jour le <strong>nom d’affichage</strong> du compte pour qu’il corresponde au profil public Steam (en plus de la photo).</span>
+                                    </label>
+                                    <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 sm:w-auto">Importer photo depuis Steam</button>
+                                    <p class="text-[10px] text-slate-500">Utilise les informations publiques associées à l’identifiant ci-dessus. Le membre peut modifier l’identifiant dans les préférences du compte.</p>
+                                </form>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (is_array($armaPlaytime ?? null)): ?>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Temps de jeu en mission</p>
+                                <?php if (!empty($armaPlaytime['show_steam_hint_self'])): ?>
+                                    <p class="mt-2 text-sm text-slate-700">Indiquez dans les préférences du compte le même identifiant que dans le jeu pour que le cumul puisse être rattaché à votre dossier.</p>
+                                <?php elseif (!empty($armaPlaytime['no_steam_staff'])): ?>
+                                    <p class="mt-2 text-sm text-slate-600">Non renseigné sur ce dossier.</p>
+                                <?php elseif (!empty($armaPlaytime['schema_ready']) && $steamId !== null && ($armaPlaytime['hours_label'] ?? null) !== null): ?>
+                                    <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars((string) $armaPlaytime['hours_label'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php if (!empty($armaPlaytime['last_sync_label'])): ?>
+                                        <p class="mt-2 text-xs text-slate-500">Dernière remontée : <?= htmlspecialchars((string) $armaPlaytime['last_sync_label'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php endif; ?>
+                                    <p class="mt-2 text-[10px] text-slate-500">Cumul issu des sessions avec le mod connecté au portail.</p>
+                                <?php elseif ($steamId !== null): ?>
+                                    <p class="mt-2 text-sm text-slate-600">Le cumul sera affiché après mise à jour du suivi côté portail.</p>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
+                            <?php if ($accountCreatedDisplay !== null): ?>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Membre depuis</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($accountCreatedDisplay) ?></p>
+                            </div>
+                            <?php endif; ?>
+                            <?php if ($showLegacyServiceNumber): ?>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Ancienne référence dossier</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($legacyServiceNumber) ?></p>
+                                <p class="mt-1 text-[10px] text-slate-500">Conserve une trace si le matricule actuel a été réattribué plus tard.</p>
+                            </div>
+                            <?php endif; ?>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Activité du dossier</p>
+                                <ul class="mt-2 space-y-1 text-xs text-slate-700">
+                                    <li><span class="font-semibold text-slate-900"><?= count($assignments) ?></span> affectation(s) active(s)</li>
+                                    <li><span class="font-semibold text-slate-900"><?= count($qualifications) ?></span> qualification(s)</li>
+                                    <li><span class="font-semibold text-slate-900"><?= count($lmsEnrollmentsForPersonnel) ?></span> parcours suivi(s)</li>
+                                    <li><span class="font-semibold text-slate-900"><?= count($trainingCertificates) ?></span> attestation(s)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <?php if ($privatePersonnelIdentity && $displayNameAccount !== '' && $displayNameAccount !== $displayName): ?>
+                        <p class="mt-5 text-xs text-slate-600">Nom affiché sur le compte : <span class="font-semibold text-slate-800"><?= htmlspecialchars($displayNameAccount) ?></span><?php if ($rpCharacterNameDisplay !== '' && $rpCharacterNameDisplay !== $displayName): ?> · Nom de scène dossier : <span class="font-semibold text-slate-800"><?= htmlspecialchars($rpCharacterNameDisplay) ?></span><?php endif; ?>.</p>
+                        <?php elseif ($rpCharacterNameDisplay !== '' && $rpCharacterNameDisplay !== $displayName): ?>
+                        <p class="mt-5 text-xs text-slate-600">Nom de scène dossier : <span class="font-semibold text-slate-800"><?= htmlspecialchars($rpCharacterNameDisplay) ?></span>.</p>
+                        <?php endif; ?>
+                    </section>
+                    <?php if ($privatePersonnelIdentity && is_array($latestEnlistment) && $latestEnlistment !== []): ?>
+                    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                        <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Dernière candidature recrutement</h2>
+                        <p class="text-xs text-slate-600 mb-4">Résumé issu du dernier dossier transmis (identité telle que saisie à l’époque).</p>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Prénom et nom</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars(trim((string) ($latestEnlistment['first_name'] ?? '') . ' ' . (string) ($latestEnlistment['last_name'] ?? ''))) ?></p></div>
+                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">État du dossier</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($enlistmentAppStatusFr((string) ($latestEnlistment['status'] ?? ''))) ?></p></div>
+                            <?php if (!empty($latestEnlistment['created_at'])): ?>
+                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Envoyée le</p><p class="text-sm text-slate-800"><?= htmlspecialchars(date('d/m/Y', strtotime((string) $latestEnlistment['created_at']))) ?></p></div>
+                            <?php endif; ?>
+                            <?php if (!empty($latestEnlistment['reviewed_at'])): ?>
+                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Examinée le</p><p class="text-sm text-slate-800"><?= htmlspecialchars(date('d/m/Y', strtotime((string) $latestEnlistment['reviewed_at']))) ?></p></div>
+                            <?php endif; ?>
+                            <?php
+                            $enrCall = trim((string) ($latestEnlistment['callsign'] ?? ''));
+                            $enrMail = trim((string) ($latestEnlistment['email'] ?? ''));
+                            ?>
+                            <?php if ($enrCall !== ''): ?>
+                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Indicatif indiqué</p><p class="text-sm text-slate-800"><?= htmlspecialchars($enrCall) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($enrMail !== ''): ?>
+                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">E-mail de contact (dossier)</p><p class="text-sm text-slate-800 break-all"><?= htmlspecialchars($enrMail) ?></p></div>
+                            <?php endif; ?>
+                            <?php if (!empty(trim((string) ($latestEnlistment['country'] ?? '')))): ?>
+                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Pays / fuseau indiqué</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $latestEnlistment['country'])) ?></p></div>
+                            <?php endif; ?>
+                            <?php if (!empty(trim((string) ($latestEnlistment['experience'] ?? '')))): ?>
+                            <div class="sm:col-span-2"><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Expérience décrite</p><p class="text-sm text-slate-800 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $latestEnlistment['experience']))) ?></p></div>
+                            <?php endif; ?>
+                            <?php if (!empty(trim((string) ($latestEnlistment['specialty'] ?? '')))): ?>
+                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Spécialité indiquée</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $latestEnlistment['specialty'])) ?></p></div>
+                            <?php endif; ?>
+                            <?php if (!empty(trim((string) ($latestEnlistment['platform'] ?? '')))): ?>
+                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Plateforme de jeu</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $latestEnlistment['platform'])) ?></p></div>
+                            <?php endif; ?>
+                            <?php if (!empty(trim((string) ($latestEnlistment['availability'] ?? '')))): ?>
+                            <div class="sm:col-span-2"><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Disponibilités indiquées</p><p class="text-sm text-slate-800 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $latestEnlistment['availability']))) ?></p></div>
+                            <?php endif; ?>
+                            <?php if (!empty(trim((string) ($latestEnlistment['notes'] ?? '')))): ?>
+                            <div class="sm:col-span-2"><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Message joint au dossier</p><p class="text-sm text-slate-800 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $latestEnlistment['notes']))) ?></p></div>
+                            <?php endif; ?>
+                            <?php
+                            $viaFr = $enlistmentSubmittedViaFr((string) ($latestEnlistment['submitted_via'] ?? ''));
+                            ?>
+                            <?php if ($viaFr !== ''): ?>
+                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Mode de transmission</p><p class="text-sm text-slate-800"><?= htmlspecialchars($viaFr) ?></p></div>
+                            <?php endif; ?>
+                        </div>
+                    </section>
+                    <?php endif; ?>
+                    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-6">
+                            <div>
+                                <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Avancement du dossier</h2>
+                                <p class="mt-2 text-sm text-slate-600 leading-relaxed">Chaque point complété améliore la lisibilité de votre dossier pour l’encadrement et les outils du portail.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl font-black text-slate-900 tabular-nums"><?= (int) $completenessScore ?> %</span>
+                                <div class="h-2 w-28 overflow-hidden rounded-full bg-slate-100">
+                                    <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all" style="width: <?= min(100, max(0, $completenessScore)) ?>%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <ul class="grid gap-2 sm:grid-cols-2">
+                            <?php foreach ($completenessCheckLabels as $cKey => $cLabel):
+                                $ok = !empty($completenessDetails[$cKey]);
+                                ?>
+                            <li class="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5 text-xs text-slate-800">
+                                <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black <?= $ok ? 'bg-emerald-500 text-white' : 'bg-amber-100 text-amber-800' ?>" aria-hidden="true"><?= $ok ? '✓' : '!' ?></span>
+                                <span><span class="font-semibold text-slate-900"><?= htmlspecialchars($cLabel) ?></span><?php if (!$ok && $canEditProfile): ?> <span class="text-slate-500">— à compléter</span><?php endif; ?></span>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php if ($canEditProfile && !empty($sectionsCritiques)): ?>
+                        <p class="mt-5 text-xs font-semibold text-amber-800">Priorité : <?= htmlspecialchars(implode(' · ', $sectionsCritiques)) ?>.</p>
+                        <?php endif; ?>
+                    </section>
+                </div>
+
+                <div class="space-y-8" x-show="tab === 'ops'" x-cloak>
                 <!-- Identité opérationnelle -->
-                <section class="bg-white border border-slate-200 rounded-3xl p-8">
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Identité opérationnelle</h2>
                     <div class="grid md:grid-cols-2 gap-6">
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom opérateur</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($displayName) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatif radio</p><p class="text-sm font-black text-slate-900"><?= $callsign ? htmlspecialchars($callsign) : '—' ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Matricule</p><p class="text-sm font-black text-slate-900"><?= !empty($showMatriculePublic) ? ($matricule ? htmlspecialchars($matricule) : '—') : '—' ?></p></div>
+                        <?php if ($rpCharacterNameDisplay !== ''): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom de scène (personnage)</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($rpCharacterNameDisplay) ?></p></div>
+                        <?php endif; ?>
+                        <?php if ($privatePersonnelIdentity && $displayNameAccount !== '' && $displayNameAccount !== $displayName): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom affiché sur le compte</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($displayNameAccount) ?></p></div>
+                        <?php endif; ?>
                         <?php if ($gradeLabel !== '' && $gradeLabel !== $effectiveRankDisplay): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Grade de référence</p><p class="text-sm text-slate-700"><?= htmlspecialchars($gradeLabel) ?></p></div>
                         <?php endif; ?>
@@ -406,6 +842,15 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : '—' ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef direct</p><p class="text-sm font-black text-slate-900"><?= $commander ? htmlspecialchars($commander['display_name'] ?? $commander['callsign'] ?? '') : '—' ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date d'incorporation</p><p class="text-sm font-black text-slate-900"><?= $enlistmentFormatted ?? '—' ?></p></div>
+                        <?php if ($showLegacyServiceNumber): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Ancienne référence dossier</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($legacyServiceNumber) ?></p></div>
+                        <?php endif; ?>
+                        <?php if ($communityRoleLabel !== null): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Rôle dans la communauté</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($communityRoleLabel) ?></p></div>
+                        <?php endif; ?>
+                        <?php if ($steamId !== null): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Identifiant Steam</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($steamId) ?></p></div>
+                        <?php endif; ?>
                     </div>
                     <?php
                     $rpMotto = trim((string) ($personnelProfile['motto'] ?? ''));
@@ -471,6 +916,14 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                             $asgPrimary = !empty($asg['is_primary']);
                             $cmdId = (int) ($asg['commander_user_id'] ?? 0);
                             $cmdLabel = $cmdId > 0 ? ($commanderLabelsById[$cmdId] ?? '—') : '—';
+                            $asgStartedRaw = trim((string) ($asg['started_at'] ?? ''));
+                            $asgStartedDisp = $asgStartedRaw !== '' && strtotime($asgStartedRaw) ? date('d/m/Y', strtotime($asgStartedRaw)) : ($asgStartedRaw !== '' ? $asgStartedRaw : null);
+                            $utypeRaw = trim((string) ($asg['unit_type'] ?? ''));
+                            $utypeDisp = $unitTypeFr($utypeRaw);
+                            $asgStatRaw = trim((string) ($asg['status'] ?? 'active'));
+                            $asgStatDisp = $personnelAssignmentStatusFr($asgStatRaw);
+                            $asgDurLabel = trim((string) ($asg['duration_label_fr'] ?? ''));
+                            $asgSpanOpen = !empty($asg['assignment_span_open']);
                             ?>
                         <div class="rounded-2xl border border-slate-200 p-5 flex flex-col gap-3">
                             <div class="flex flex-wrap items-center gap-2">
@@ -479,11 +932,27 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                                 <?php else: ?>
                                 <span class="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase text-slate-600">Affectation complémentaire</span>
                                 <?php endif; ?>
+                                <?php if ($asgStatDisp !== ''): ?>
+                                <span class="inline-flex rounded-md bg-slate-50 px-2 py-0.5 text-[9px] font-bold uppercase text-slate-600 ring-1 ring-slate-200"><?= htmlspecialchars($asgStatDisp) ?></span>
+                                <?php endif; ?>
                             </div>
                             <div class="grid md:grid-cols-2 gap-4">
                                 <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $asgUnit !== '' ? htmlspecialchars($asgUnit) : '—' ?></p></div>
                                 <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Fonction dans l’équipe</p><p class="text-sm font-black text-slate-900"><?= $asgRole !== '' ? htmlspecialchars($asgRole) : '—' ?></p></div>
                                 <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef d’unité</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($cmdLabel) ?></p></div>
+                                <?php if ($asgStartedDisp !== null): ?>
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Depuis le</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($asgStartedDisp) ?></p></div>
+                                <?php endif; ?>
+                                <?php if ($utypeDisp !== ''): ?>
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nature de l’unité</p><p class="text-sm text-slate-800"><?= htmlspecialchars($utypeDisp) ?></p></div>
+                                <?php endif; ?>
+                                <?php if ($asgDurLabel !== '' && $asgDurLabel !== '—'): ?>
+                                <div class="md:col-span-2">
+                                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Durée sur cette affectation</p>
+                                    <p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($asgDurLabel) ?><?php if ($asgSpanOpen): ?> <span class="text-xs font-medium text-slate-500 normal-case">(à ce jour)</span><?php endif; ?></p>
+                                    <p class="mt-1 text-[10px] text-slate-500 leading-relaxed">Temps passé dans l’unité sur cette période et sur la fonction indiquée (même durée).</p>
+                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <?php endforeach; ?>
@@ -493,6 +962,72 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                     <?php endif; ?>
                     <?php endif; ?>
                 </section>
+
+                <?php if ($personnelAssignmentHistory !== []): ?>
+                <section class="bg-white border border-slate-200 rounded-3xl p-8">
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Historique des affectations</h2>
+                    <p class="text-sm text-slate-600 mb-6 max-w-3xl leading-relaxed">Toutes les périodes enregistrées dans le dossier (y compris les affectations terminées). Les durées sont en jours calendaires (début et fin inclus). Pour chaque ligne, le temps dans l’unité et le temps sur le poste affiché sont les mêmes ; si la personne a eu plusieurs passages dans la même unité, le cumul regroupe l’ensemble des périodes.</p>
+                    <div class="space-y-5">
+                        <?php foreach ($personnelAssignmentHistory as $hist):
+                            $hUnit = trim((string) ($hist['unit_name'] ?? ''));
+                            $hRole = trim((string) ($hist['role_name'] ?? ''));
+                            $hPrimary = !empty($hist['is_primary']);
+                            $hCmdId = (int) ($hist['commander_user_id'] ?? 0);
+                            $hCmdLabel = $hCmdId > 0 ? ($commanderLabelsById[$hCmdId] ?? '—') : '—';
+                            $hStartRaw = trim((string) ($hist['started_at'] ?? ''));
+                            $hStartDisp = $hStartRaw !== '' && strtotime($hStartRaw) ? date('d/m/Y', strtotime($hStartRaw)) : ($hStartRaw !== '' ? $hStartRaw : '—');
+                            $hEndRaw = trim((string) ($hist['ended_at'] ?? ''));
+                            $hEndDisp = $hEndRaw !== '' && strtotime($hEndRaw) ? date('d/m/Y', strtotime($hEndRaw)) : null;
+                            $hOpen = !empty($hist['assignment_span_open']);
+                            $hStatRaw = trim((string) ($hist['status'] ?? ''));
+                            $hStatDisp = $personnelAssignmentStatusFr($hStatRaw);
+                            $hUtype = $unitTypeFr(trim((string) ($hist['unit_type'] ?? '')));
+                            $hDur = trim((string) ($hist['duration_label_fr'] ?? ''));
+                            $hUnitId = (int) ($hist['unit_id'] ?? 0);
+                            $hCumulDays = (int) ($personnelAssignmentHistoryUnitTotals[$hUnitId] ?? 0);
+                            $hPeriodsInUnit = (int) ($histUnitPeriodCount[$hUnitId] ?? 0);
+                            $hShowCumul = $hPeriodsInUnit > 1 && $hCumulDays > 0;
+                            ?>
+                        <div class="rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 bg-slate-50/40">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <?php if ($hPrimary): ?>
+                                <span class="inline-flex rounded-md bg-emerald-100/90 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-900">Période principale</span>
+                                <?php else: ?>
+                                <span class="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase text-slate-600">Période complémentaire</span>
+                                <?php endif; ?>
+                                <?php if ($hStatDisp !== ''): ?>
+                                <span class="inline-flex rounded-md bg-white px-2 py-0.5 text-[9px] font-bold uppercase text-slate-600 ring-1 ring-slate-200"><?= htmlspecialchars($hStatDisp) ?></span>
+                                <?php endif; ?>
+                                <?php if ($hOpen): ?>
+                                <span class="inline-flex rounded-md bg-sky-100 px-2 py-0.5 text-[9px] font-black uppercase text-sky-900">En cours</span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $hUnit !== '' ? htmlspecialchars($hUnit) : '—' ?></p></div>
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Fonction dans l’équipe</p><p class="text-sm font-black text-slate-900"><?= $hRole !== '' ? htmlspecialchars($hRole) : '—' ?></p></div>
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef d’unité (référence)</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($hCmdLabel) ?></p></div>
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Du</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($hStartDisp) ?></p></div>
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Au</p><p class="text-sm font-semibold text-slate-800"><?= $hOpen ? '—' : htmlspecialchars($hEndDisp ?? '—') ?></p></div>
+                                <?php if ($hUtype !== ''): ?>
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nature de l’unité</p><p class="text-sm text-slate-800"><?= htmlspecialchars($hUtype) ?></p></div>
+                                <?php endif; ?>
+                                <?php if ($hDur !== '' && $hDur !== '—'): ?>
+                                <div class="md:col-span-2 rounded-xl border border-slate-100 bg-white/80 px-4 py-3">
+                                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Durée sur cette période</p>
+                                    <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($hDur) ?><?php if ($hOpen): ?> <span class="text-xs font-medium text-slate-500 normal-case">(à ce jour)</span><?php endif; ?></p>
+                                    <p class="mt-1 text-[10px] text-slate-500 leading-relaxed">Temps dans l’unité et sur ce poste : même durée pour cette ligne.</p>
+                                    <?php if ($hShowCumul): ?>
+                                    <p class="mt-2 text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Cumul dans cette unité (toutes périodes)</p>
+                                    <p class="text-sm font-semibold text-emerald-800"><?= htmlspecialchars($personnelDurationDaysFr($hCumulDays)) ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+                <?php endif; ?>
 
                 <?php if ($personnelPlanningEntries !== []): ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
@@ -529,9 +1064,11 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                     </div>
                 </section>
                 <?php endif; ?>
+                </div>
 
+                <div class="space-y-8" x-show="tab === 'formation'" x-cloak>
                 <!-- Sécurité / habilitation -->
-                <section class="bg-white border border-slate-200 rounded-3xl p-8">
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Sécurité / habilitation</h2>
                     <div class="grid md:grid-cols-2 gap-6">
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Niveau documentaire</p><p class="text-sm font-black text-emerald-600"><?= $clearanceLevel ? htmlspecialchars($clearanceLevel) : '—' ?></p></div>
@@ -544,7 +1081,7 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                 $hasLmsSummary = $lmsEnrollmentsForPersonnel !== [] || $trainingCertificates !== [];
                 $hasDossierQuals = $qualifications !== [] || (bool) $specializations;
                 ?>
-                <section class="bg-white border border-slate-200 rounded-3xl p-8">
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
                         <div>
                             <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Formations, attestations et certifications</h2>
@@ -599,6 +1136,31 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                                 <?php if (!empty($enr['expires_at']) && !in_array($est, ['completed', 'revoked', 'expired', 'withdrawn'], true)): ?>
                                 <p class="text-[10px] text-slate-500">Échéance <?= date('d/m/Y', strtotime((string) $enr['expires_at'])) ?></p>
                                 <?php endif; ?>
+                                <?php
+                                $atFr = $lmsEnrollmentAssignTypeFr((string) ($enr['assignment_type'] ?? ''));
+                                $estMin = (int) ($enr['estimated_minutes'] ?? 0);
+                                $catRaw = trim((string) ($enr['category'] ?? ''));
+                                $lvlRaw = trim((string) ($enr['level'] ?? ''));
+                                $asg = !empty($enr['assigned_at']) ? date('d/m/Y H:i', strtotime((string) $enr['assigned_at'])) : null;
+                                $stAt = !empty($enr['started_at']) ? date('d/m/Y H:i', strtotime((string) $enr['started_at'])) : null;
+                                $cmpAt = !empty($enr['completed_at']) ? date('d/m/Y H:i', strtotime((string) $enr['completed_at'])) : null;
+                                ?>
+                                <div class="mt-1 space-y-1 border-t border-slate-200/80 pt-2 text-[10px] text-slate-600">
+                                    <?php if ($asg !== null): ?><p>Assigné le <span class="font-semibold text-slate-800"><?= htmlspecialchars($asg) ?></span></p><?php endif; ?>
+                                    <?php if ($stAt !== null): ?><p>Première ouverture le <span class="font-semibold text-slate-800"><?= htmlspecialchars($stAt) ?></span></p><?php endif; ?>
+                                    <?php if ($cmpAt !== null): ?><p>Terminé le <span class="font-semibold text-slate-800"><?= htmlspecialchars($cmpAt) ?></span></p><?php endif; ?>
+                                    <?php if ($atFr !== ''): ?><p>Mode d’inscription : <span class="font-semibold text-slate-800"><?= htmlspecialchars($atFr) ?></span></p><?php endif; ?>
+                                    <?php if (!empty($enr['is_mandatory'])): ?><p class="font-semibold text-amber-900">Parcours marqué comme obligatoire</p><?php endif; ?>
+                                    <?php if ($estMin > 0):
+                                        $dh = intdiv($estMin, 60);
+                                        $dm = $estMin % 60;
+                                        $durLabel = $dh > 0 ? $dh . ' h' . ($dm > 0 ? ' ' . $dm . ' min' : '') : $dm . ' min';
+                                        ?>
+                                    <p>Durée indicative : <span class="font-semibold text-slate-800"><?= htmlspecialchars($durLabel) ?></span></p>
+                                    <?php endif; ?>
+                                    <?php if ($catRaw !== ''): ?><p>Thématique indiquée : <span class="font-semibold text-slate-800"><?= htmlspecialchars($catRaw) ?></span></p><?php endif; ?>
+                                    <?php if ($lvlRaw !== ''): ?><p>Niveau indiqué : <span class="font-semibold text-slate-800"><?= htmlspecialchars($lvlRaw) ?></span></p><?php endif; ?>
+                                </div>
                             </div>
                             <?php endforeach; ?>
                         </div>
@@ -620,6 +1182,9 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                                     <span class="font-bold text-slate-900"><?= htmlspecialchars($lmsCertificateStatusFr($cst)) ?></span>
                                     <?php if (!empty($cert['issued_at'])): ?>
                                     <span class="text-slate-500"> · Délivré le <?= date('d/m/Y', strtotime((string) $cert['issued_at'])) ?></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($cert['completed_at'])): ?>
+                                    <span class="text-slate-500"> · Parcours achevé le <?= date('d/m/Y', strtotime((string) $cert['completed_at'])) ?></span>
                                     <?php endif; ?>
                                 </p>
                                 <?php
@@ -655,11 +1220,18 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                                 <p class="text-xs font-bold text-slate-900 leading-relaxed"><?= nl2br(htmlspecialchars($specializations)) ?></p>
                             </div>
                             <?php endif; ?>
-                            <?php foreach ($qualifications as $q): ?>
+                            <?php foreach ($qualifications as $q):
+                                $qLevel = trim((string) ($q['level'] ?? ''));
+                                $qIss = (int) ($q['issued_by'] ?? 0);
+                                $qIssuer = $qIss > 0 && isset($qualificationIssuerLabels[$qIss]) ? (string) $qualificationIssuerLabels[$qIss] : null;
+                                $qObt = !empty($q['obtained_at']) ? date('d/m/Y', strtotime((string) $q['obtained_at'])) : null;
+                                ?>
                             <div class="px-6 py-4 border border-slate-200 rounded-2xl flex flex-col gap-2">
-                                <span class="text-[7px] font-black tracking-widest text-slate-400 uppercase"><?= htmlspecialchars($q['qualification_name']) ?></span>
-                                <p class="text-xs font-bold text-slate-900"><?= htmlspecialchars((string) ($q['level'] ?? '')) ?> — <?= htmlspecialchars($qualificationStatusFr((string) ($q['status'] ?? ''))) ?></p>
-                                <?php if (!empty($q['expires_at'])): ?><p class="text-[10px] text-slate-500">Expire <?= date('d/m/Y', strtotime($q['expires_at'])) ?></p><?php endif; ?>
+                                <span class="text-[7px] font-black tracking-widest text-slate-400 uppercase"><?= htmlspecialchars((string) ($q['qualification_name'] ?? '')) ?></span>
+                                <p class="text-xs font-bold text-slate-900"><?php if ($qLevel !== ''): ?><?= htmlspecialchars($qLevel) ?> — <?php endif; ?><?= htmlspecialchars($qualificationStatusFr((string) ($q['status'] ?? ''))) ?></p>
+                                <?php if ($qObt !== null): ?><p class="text-[10px] text-slate-600">Obtenue le <?= htmlspecialchars($qObt) ?></p><?php endif; ?>
+                                <?php if (!empty($q['expires_at'])): ?><p class="text-[10px] text-slate-500">Échéance <?= date('d/m/Y', strtotime((string) $q['expires_at'])) ?></p><?php endif; ?>
+                                <?php if ($qIssuer !== null && $qIssuer !== ''): ?><p class="text-[10px] text-slate-600">Référent enregistrement : <span class="font-semibold text-slate-800"><?= htmlspecialchars($qIssuer) ?></span></p><?php endif; ?>
                             </div>
                             <?php endforeach; ?>
                         </div>
@@ -675,9 +1247,11 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                     </div>
                     <?php endif; ?>
                 </section>
+                </div>
 
+                <div class="space-y-8" x-show="tab === 'logistique'" x-cloak>
                 <!-- Équipement / dotation -->
-                <section class="bg-white border border-slate-200 rounded-3xl p-8">
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Équipement / dotation</h2>
                     <div class="grid md:grid-cols-2 gap-6">
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Classe d'équipement</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($personnelProfile['equipment_class'] ?? '—') ?></p></div>
@@ -688,46 +1262,89 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                     </div>
                 </section>
 
-                <!-- Readiness -->
-                <section class="bg-white border border-slate-200 rounded-3xl p-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6 flex items-center justify-between">
-                        Operational Readiness
+                <!-- Préparation opérationnelle -->
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6 flex flex-wrap items-center justify-between gap-3">
+                        Préparation opérationnelle
                         <div class="flex items-center gap-2">
-                            <span class="text-sm font-black italic"><?= $readiness !== null ? $readiness : 0 ?>%</span>
+                            <span class="text-sm font-black italic tabular-nums"><?= $readiness !== null ? $readiness : '—' ?><?= $readiness !== null ? ' %' : '' ?></span>
+                            <?php if ($readiness !== null): ?>
                             <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-emerald-500 rounded-full" style="width: <?= min(100, max(0, $readiness ?? 0)) ?>%"></div>
+                                <div class="h-full bg-emerald-500 rounded-full" style="width: <?= min(100, max(0, $readiness)) ?>%"></div>
                             </div>
+                            <?php endif; ?>
                         </div>
                     </h2>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <?php if ($flightHours !== null && $flightHours !== ''): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase mb-1">Heures de vol</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars((string)$flightHours) ?></p></div>
                         <?php endif; ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase mb-1">Déployable</p><p class="text-sm font-black text-slate-900"><?= ($personnelProfile['deployable'] ?? 1) ? 'Oui' : 'Non' ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase mb-1">Déployable</p><p class="text-sm font-black text-slate-900"><?= $isDeployableFile ? 'Oui' : 'Non' ?></p></div>
                     </div>
                 </section>
+                </div>
 
-                <!-- Historique de service -->
-                <?php if (!empty($serviceHistory)): ?>
-                <section class="bg-white border border-slate-200 rounded-3xl p-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Historique de service</h2>
-                    <div class="space-y-4">
-                        <?php foreach ($serviceHistory as $event): ?>
-                        <div class="flex gap-4 border-l-2 border-slate-200 pl-4 py-1">
-                            <span class="text-[10px] font-mono text-slate-500 shrink-0"><?= date('Y-m', strtotime($event['event_date'])) ?></span>
-                            <div>
-                                <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($event['title']) ?></p>
-                                <?php if (!empty($event['description'])): ?><p class="text-xs text-slate-600"><?= nl2br(htmlspecialchars($event['description'])) ?></p><?php endif; ?>
+                <div class="space-y-8" x-show="tab === 'historique'" x-cloak>
+                <?php if ($personnelOrgHistorySection): ?>
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Journal du dossier</h2>
+                    <p class="text-[10px] text-slate-500 mb-6 leading-relaxed">Modifications enregistrées par l’organisation (grade, rôles, statut du compte, coordonnées visibles sur la fiche, etc.).</p>
+                    <?php if ($personnelOrgHistory !== []): ?>
+                    <div class="space-y-3">
+                        <?php foreach ($personnelOrgHistory as $oh):
+                            $ohTs = strtotime((string) ($oh['created_at'] ?? ''));
+                            $ohWhen = $ohTs ? date('d/m/Y à H:i', $ohTs) : '—';
+                            $ohActor = isset($oh['actor_label']) && is_string($oh['actor_label']) && trim($oh['actor_label']) !== '' ? trim((string) $oh['actor_label']) : null;
+                            ?>
+                        <div class="flex gap-4 border-l-2 border-indigo-200 pl-4 py-2">
+                            <span class="text-[10px] font-semibold tabular-nums text-slate-500 shrink-0 w-[7.5rem] sm:w-36"><?= htmlspecialchars($ohWhen) ?></span>
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-slate-900 leading-snug"><?= htmlspecialchars((string) ($oh['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php if ($ohActor !== null): ?>
+                                <p class="text-[10px] text-slate-500 mt-1">Par <?= htmlspecialchars($ohActor, ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <?php endforeach; ?>
                     </div>
+                    <?php else: ?>
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-8 text-center text-sm text-slate-600">
+                        Aucune modification n’a encore été consignée dans ce journal.
+                    </div>
+                    <?php endif; ?>
                 </section>
                 <?php endif; ?>
 
+                <!-- Historique de service -->
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Historique de service</h2>
+                    <?php if (!empty($serviceHistory)): ?>
+                    <div class="space-y-4">
+                        <?php foreach ($serviceHistory as $event):
+                            $evTypeLabel = $serviceHistoryEventTypeFr((string) ($event['event_type'] ?? ''));
+                            ?>
+                        <div class="flex gap-4 border-l-2 border-emerald-200 pl-4 py-2">
+                            <span class="text-[10px] font-semibold tabular-nums text-slate-500 shrink-0 w-16"><?= date('m/Y', strtotime((string) ($event['event_date'] ?? 'now'))) ?></span>
+                            <div>
+                                <?php if ($evTypeLabel !== '' && $evTypeLabel !== 'Événement'): ?>
+                                <p class="text-[9px] font-black uppercase tracking-wider text-emerald-800/90 mb-1"><?= htmlspecialchars($evTypeLabel) ?></p>
+                                <?php endif; ?>
+                                <p class="text-sm font-black text-slate-900"><?= htmlspecialchars((string) ($event['title'] ?? '')) ?></p>
+                                <?php if (!empty($event['description'])): ?><p class="text-xs text-slate-600 mt-1 leading-relaxed"><?= nl2br(htmlspecialchars((string) $event['description'])) ?></p><?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php else: ?>
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-8 text-center text-sm text-slate-600">
+                        Aucun événement d’ancienneté ou de carrière n’est encore enregistré dans ce dossier.
+                    </div>
+                    <?php endif; ?>
+                </section>
+
                 <!-- Notes de commandement -->
                 <?php if ($canViewCommandNotes): ?>
-                <section class="bg-white border border-slate-200 rounded-3xl p-8">
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6 flex items-center gap-3">
                         <span class="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
                         Notes de commandement <?= $canEditNotes ? '(éditable)' : '' ?>
@@ -743,13 +1360,36 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                     <?php endif; ?>
                 </section>
                 <?php endif; ?>
+                </div>
 
+                <div class="space-y-8" x-show="tab === 'administratif'" x-cloak>
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-4">Compte & accès</h2>
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <?php if ($accountCreatedDisplay !== null): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Membre depuis</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($accountCreatedDisplay) ?></p></div>
+                        <?php endif; ?>
+                        <?php if ($communityRoleLabel !== null): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Rôle dans la communauté</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($communityRoleLabel) ?></p></div>
+                        <?php endif; ?>
+                        <?php if ($steamId !== null): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Identifiant Steam</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($steamId) ?></p></div>
+                        <?php endif; ?>
+                        <?php if ($profilePublicSegment !== null): ?>
+                        <div class="md:col-span-2">
+                            <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Lien de partage de cette fiche</p>
+                            <a href="<?= htmlspecialchars(url('personnel/' . rawurlencode($profilePublicSegment)), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-semibold text-emerald-700 underline decoration-emerald-600/30 underline-offset-2 hover:text-emerald-900">Ouvrir la fiche partageable</a>
+                            <p class="mt-1 text-[10px] text-slate-500">Même contenu que cette page, utile pour la transmettre à votre encadrement.</p>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </section>
                 <!-- Identité civile / administrative -->
                 <?php if ($canViewCivilSection): ?>
-                <section class="bg-white border border-slate-200 rounded-3xl p-8">
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Identité civile / administrative</h2>
                     <?php if ($civilSourceLabel): ?>
-                    <p class="text-[10px] text-slate-500 mb-6">Source prénom / nom : <span class="font-semibold text-slate-700"><?= htmlspecialchars($civilSourceLabel) ?></span><?php if (($civilIdentity['source'] ?? null) === 'enlistment' && $latestEnlistment): ?> (candidature #<?= (int) ($latestEnlistment['id'] ?? 0) ?>, <?= htmlspecialchars((string) ($latestEnlistment['status'] ?? '')) ?>)<?php endif; ?>.</p>
+                    <p class="text-[10px] text-slate-500 mb-6">Source prénom / nom : <span class="font-semibold text-slate-700"><?= htmlspecialchars($civilSourceLabel) ?></span><?php if (($civilIdentity['source'] ?? null) === 'enlistment' && is_array($latestEnlistment) && $latestEnlistment !== []): ?> · Dossier de recrutement associé : <span class="font-semibold text-slate-700"><?= htmlspecialchars($enlistmentAppStatusFr((string) ($latestEnlistment['status'] ?? ''))) ?></span><?php if (!empty($latestEnlistment['created_at'])): ?> (transmis le <?= htmlspecialchars(date('d/m/Y', strtotime((string) $latestEnlistment['created_at']))) ?>)<?php endif; ?><?php endif; ?>.</p>
                     <?php else: ?>
                     <p class="text-[10px] text-slate-500 mb-6">Renseignez le prénom et le nom dans <a href="<?= url('account/preferences') ?>" class="font-semibold text-emerald-700 underline">Compte → Préférences</a> pour alimenter la fiche.</p>
                     <?php endif; ?>
@@ -758,14 +1398,24 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($civilIdentity['last_name'] !== '' ? $civilIdentity['last_name'] : '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-bold text-slate-900"><?= htmlspecialchars($targetUser['email']) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut compte</p><p class="text-sm font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?>"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
-                        <?php if (!empty($userProfile['birth_date'])): ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date de naissance</p><p class="text-sm text-slate-800"><?= htmlspecialchars((string) $userProfile['birth_date']) ?></p></div>
+                        <?php if (!empty($userProfile['birth_date'])):
+                            $birthRaw = trim((string) $userProfile['birth_date']);
+                            $birthTs = $birthRaw !== '' ? strtotime($birthRaw) : false;
+                            $birthDisplay = $birthTs ? date('d/m/Y', $birthTs) : $birthRaw;
+                            ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date de naissance</p><p class="text-sm text-slate-800"><?= htmlspecialchars($birthDisplay) ?></p></div>
                         <?php endif; ?>
                         <?php if (!empty(trim((string) ($userProfile['nationality'] ?? '')))): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nationalité (dossier)</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['nationality'])) ?></p></div>
                         <?php endif; ?>
                         <?php if (!empty(trim((string) ($userProfile['phone'] ?? '')))): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Téléphone</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['phone'])) ?></p></div>
+                        <?php endif; ?>
+                        <?php if (!empty(trim((string) ($userProfile['arma_callsign'] ?? '')))): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatif Arma (préférences)</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['arma_callsign'])) ?></p></div>
+                        <?php endif; ?>
+                        <?php if ($canEditProfile && !empty(trim((string) ($userProfile['emergency_contact'] ?? '')))): ?>
+                        <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Contact d’urgence</p><p class="text-sm text-slate-800 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $userProfile['emergency_contact']))) ?></p></div>
                         <?php endif; ?>
                         <?php if (!empty(trim((string) ($userProfile['timezone'] ?? '')))): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Fuseau</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['timezone'])) ?></p></div>
@@ -780,38 +1430,59 @@ $seniorityLines = isset($seniorityLines) && is_array($seniorityLines) ? $seniori
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Dernière connexion</p><p class="text-sm text-slate-700"><?= date('d/m/Y H:i', strtotime($targetUser['last_login_at'])) ?></p></div>
                         <?php endif; ?>
                     </div>
+                    <div class="mt-8 border-t border-slate-100 pt-6">
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mb-4">Coordonnées visibles sur cette fiche</h3>
+                        <div class="space-y-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
+                            <?php if (!empty($showEmailInContact)): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars((string) ($targetUser['email'] ?? '')) ?></p></div>
+                            <?php else: ?>
+                            <p class="text-xs text-slate-600">L’adresse e-mail est masquée selon les préférences du titulaire.</p>
+                            <?php endif; ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut du compte</p><p class="text-sm font-semibold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-600' ?>"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
+                        </div>
+                    </div>
+                </section>
+                <?php elseif ($privatePersonnelIdentity): ?>
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-4">Coordonnées</h2>
+                    <div class="space-y-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
+                        <?php if (!empty($showEmailInContact)): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars((string) ($targetUser['email'] ?? '')) ?></p></div>
+                        <?php else: ?>
+                        <p class="text-xs text-slate-600">L’adresse e-mail n’est pas affichée sur cette fiche.</p>
+                        <?php endif; ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut du compte</p><p class="text-sm font-semibold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-600' ?>"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
+                    </div>
+                </section>
+                <?php else: ?>
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-3">Informations réservées</h2>
+                    <p class="text-sm text-slate-600 leading-relaxed">L’identité civile, l’état civil administratif et le détail des candidatures de recrutement ne sont pas affichés aux autres membres. Seuls le titulaire du dossier et le personnel habilité (gestion des effectifs ou accès RH sensible) peuvent les consulter.</p>
                 </section>
                 <?php endif; ?>
 
-                <!-- Contact -->
-                <section class="bg-white border border-slate-200 rounded-3xl p-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Contact</h2>
-                    <div class="space-y-4">
-                        <?php if (!empty($showEmailInContact)): ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail Ops</p><p class="text-[11px] font-bold text-slate-900 italic"><?= htmlspecialchars($targetUser['email']) ?></p></div>
-                        <?php else: ?>
-                        <p class="text-[11px] text-slate-500 italic">E-mail masqué par les préférences de visibilité du titulaire.</p>
-                        <?php endif; ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut Réseau</p><p class="text-[11px] font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?> italic"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
-                    </div>
-                </section>
-
                 <?php foreach ($adminPanels as $panel): ?>
                 <?php $panelId = (int)$panel['id']; $data = $adminDataByPanel[$panelId] ?? []; ?>
-                <section class="bg-white border border-slate-200 rounded-3xl p-8">
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6"><?= htmlspecialchars($panel['name']) ?></h2>
                     <?php if (empty($data)): ?>
-                    <p class="text-[10px] text-slate-400 italic uppercase tracking-wider">Non renseigné</p>
+                    <p class="text-sm text-slate-500">Aucune information saisie pour ce bloc.</p>
                     <?php else: ?>
-                    <div class="space-y-4">
+                    <div class="space-y-5">
                         <?php foreach ($data as $key => $value): ?>
-                        <?php if ($value === null || $value === '') continue; ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase mb-1"><?= htmlspecialchars(is_string($key) ? $key : 'Champ') ?></p><p class="text-[11px] font-bold text-slate-900"><?= nl2br(htmlspecialchars(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : (string)$value)) ?></p></div>
+                        <?php if ($value === null || $value === '') {
+                            continue;
+                        } ?>
+                        <div class="rounded-xl border border-slate-100 bg-slate-50/40 px-4 py-3">
+                            <p class="text-[9px] font-black uppercase tracking-wider text-slate-500 mb-2"><?= htmlspecialchars(is_string($key) ? $key : 'Information') ?></p>
+                            <div class="text-sm font-medium text-slate-900"><?php personnel_file_render_admin_value($value); ?></div>
+                        </div>
                         <?php endforeach; ?>
                     </div>
                     <?php endif; ?>
                 </section>
                 <?php endforeach; ?>
+                </div>
             </div>
         </div>
     </div>

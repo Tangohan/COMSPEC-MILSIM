@@ -35,6 +35,7 @@ $paSubLink = static function (string $path, string $label, bool $active): void {
 };
 
 $navDash = $p === 'admin';
+$navTenants = $p === 'admin/tenants';
 $navAnalytics = $p === 'admin/analytics';
 $navOps = $p === 'admin/ops-center';
 $navAudit = $p === 'admin/audit' || str_starts_with($p, 'admin/audit/');
@@ -65,6 +66,9 @@ $alertsOpen = $navAlerts;
     <nav class="pa-side-scroll min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-5" aria-label="Navigation administration plateforme">
         <?php $paSection('Vue d’ensemble'); ?>
         <?php $paLink('admin', 'Tableau de bord', $navDash); ?>
+        <?php if ($isPlatformAdmin): ?>
+            <?php $paLink('admin/tenants', 'Annuaire des communautés', $navTenants); ?>
+        <?php endif; ?>
         <?php $paLink('admin/analytics', 'Indicateurs transverses', $navAnalytics); ?>
         <?php $paLink('admin/ops-center', 'Synthèse opérationnelle', $navOps); ?>
 
@@ -79,7 +83,7 @@ $alertsOpen = $navAlerts;
             <?php $paLink('admin/settings', 'Paramètres système', $navSettings); ?>
             <?php $paLink('admin/system/brief', 'Brief (accès membres)', $navBrief); ?>
 
-            <?php $paSection('Déploiement & préqualification'); ?>
+            <?php $paSection('Déploiement et préqualification'); ?>
             <?php $paLink('admin/system/deployment', 'Publications & canaux', $navDeployment && !str_starts_with($p, 'admin/system/deployment/communities')); ?>
             <?php $paLink('admin/system/deployment/communities', 'Communautés de test', str_starts_with($p, 'admin/system/deployment/communities')); ?>
 

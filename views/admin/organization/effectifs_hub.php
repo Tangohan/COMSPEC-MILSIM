@@ -6,9 +6,17 @@ $canRolesCanvas = $canRolesCanvas ?? false;
 $canPresets = $canPresets ?? false;
 $canGrades = $canGrades ?? false;
 $canStructure = $canStructure ?? false;
+$canStructureRecruitmentHub = $canStructureRecruitmentHub ?? false;
+$canSeniorityAdmin = $canSeniorityAdmin ?? false;
 
 /** @var list<array{title: string, desc: string, href: string, ok: bool}> $hubCards */
 $hubCards = [
+    [
+        'title' => 'Structure & recrutement',
+        'desc' => 'Organigramme interactif, invitations de membres et création de regroupements ou d’équipes au même endroit.',
+        'href' => url('back-office/organisation/structure'),
+        'ok' => $canStructureRecruitmentHub,
+    ],
     [
         'title' => 'Rôles et droits de la communauté',
         'desc' => 'Consultez les rôles de gouvernance et opérationnels, et le détail des habilitations associées à chacun.',
@@ -56,6 +64,12 @@ $hubCards = [
         'desc' => 'Associez ces fonctions aux membres et contrôlez qui peut exercer quelles missions sur le terrain ou en support.',
         'href' => url('back-office/personnel-job-roles/assignments'),
         'ok' => $canStructure,
+    ],
+    [
+        'title' => 'Ancienneté affichée aux membres',
+        'desc' => 'Activez les indicateurs (ancienneté dans la communauté, périodes cumulées, etc.) et lancez l’installation des réglages standards si la fiche reste vide.',
+        'href' => url('back-office/organisation/anciennete'),
+        'ok' => $canSeniorityAdmin,
     ],
 ];
 ?>

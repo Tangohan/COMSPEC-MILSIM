@@ -28,7 +28,7 @@ class AdminAtakConfigController
         $atakMaps = $this->atakMapRepository->getAll();
         return Response::view('layout.main', [
             'content' => 'admin.atak-config.index',
-            'title' => 'Configuration ATAK / Arma',
+            'title' => 'Configuration ATAK / Tacmap',
             'config' => $config,
             'atakMaps' => $atakMaps,
         ]);
@@ -55,7 +55,7 @@ class AdminAtakConfigController
             'default_map_slug' => trim((string) $request->input('default_map_slug', 'altis')) ?: 'altis',
         ]);
 
-        Session::flash('success', 'Configuration ATAK / Arma enregistrée.');
+        Session::flash('success', 'Configuration ATAK / Tacmap enregistrée.');
         return Response::redirect(url('admin/atak-config'));
     }
 }

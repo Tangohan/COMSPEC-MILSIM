@@ -37,6 +37,8 @@ final class MilitaryRoleCatalogSyncService
 
         $hasPjr = self::hasTable($pdo, 'personnel_job_roles') && self::hasTable($pdo, 'personnel_job_role_categories');
         $hasLabelEnPjr = $hasPjr && self::hasColumn($pdo, 'personnel_job_roles', 'label_en');
+        $hasMosCodePjr = $hasPjr && self::hasColumn($pdo, 'personnel_job_roles', 'mos_code');
+        $hasMosTitlePjr = $hasPjr && self::hasColumn($pdo, 'personnel_job_roles', 'mos_specialty_title');
         $hasCategory = self::hasColumn($pdo, 'roles', 'category');
         $hasSubcategory = self::hasColumn($pdo, 'roles', 'subcategory');
         $hasLabelEnRole = self::hasColumn($pdo, 'roles', 'label_en');
@@ -196,6 +198,10 @@ final class MilitaryRoleCatalogSyncService
                 $pairKey = self::categoryKeyFromLabel($entry['category']) . '|' . self::categoryKeyFromLabel($entry['subcategory']);
                 $leafId = $categoryLeafIds[$pairKey] ?? 0;
                 if ($leafId > 0) {
+                    $mosCode = isset($entry['mos_code']) ? trim((string) $entry['mos_code']) : '';
+                    $mosCode = $mosCode !== '' ? $mosCode : null;
+                    $mosTitle = isset($entry['mos_specialty_title']) ? trim((string) $entry['mos_specialty_title']) : '';
+                    $mosTitle = $mosTitle !== '' ? $mosTitle : null;
                     self::upsertPersonnelJobRole(
                         $pdo,
                         $tenantId,
@@ -205,7 +211,11 @@ final class MilitaryRoleCatalogSyncService
                         $entry['description'],
                         $hasLabelEnPjr ? $entry['label_en'] : null,
                         (int) $entry['display_weight'],
-                        $hasLabelEnPjr
+                        $hasLabelEnPjr,
+                        $mosCode,
+                        $mosTitle,
+                        $hasMosCodePjr,
+                        $hasMosTitlePjr
                     );
                 }
             }
@@ -305,33 +315,62 @@ final class MilitaryRoleCatalogSyncService
         string $description,
         ?string $labelEn,
         int $sortOrder,
-        bool $hasLabelEnColumn
+        bool $hasLabelEnColumn,
+        ?string $mosCode,
+        ?string $mosSpecialtyTitle,
+        bool $hasMosCodeColumn,
+        bool $hasMosTitleColumn
     ): void {
         $chk = $pdo->prepare('SELECT id FROM personnel_job_roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
         $chk->execute([$tenantId, $slug]);
         $existing = $chk->fetchColumn();
         if ($existing) {
+            $sets = ['category_id = ?', 'name = ?', 'description = ?', 'sort_order = ?', 'is_system = 1'];
+            $params = [$categoryLeafId, $name, $description, $sortOrder];
             if ($hasLabelEnColumn) {
-                $pdo->prepare(
-                    'UPDATE personnel_job_roles SET category_id = ?, name = ?, description = ?, label_en = ?, sort_order = ?, is_system = 1 WHERE tenant_id = ? AND slug = ?'
-                )->execute([$categoryLeafId, $name, $description, $labelEn, $sortOrder, $tenantId, $slug]);
-            } else {
-                $pdo->prepare(
-                    'UPDATE personnel_job_roles SET category_id = ?, name = ?, description = ?, sort_order = ?, is_system = 1 WHERE tenant_id = ? AND slug = ?'
-                )->execute([$categoryLeafId, $name, $description, $sortOrder, $tenantId, $slug]);
+                $sets[] = 'label_en = ?';
+                $params[] = $labelEn;
             }
+            if ($hasMosCodeColumn) {
+                $sets[] = 'mos_code = ?';
+                $params[] = $mosCode;
+            }
+            if ($hasMosTitleColumn) {
+                $sets[] = 'mos_specialty_title = ?';
+                $params[] = $mosSpecialtyTitle;
+            }
+            $params[] = $tenantId;
+            $params[] = $slug;
+            $sql = 'UPDATE personnel_job_roles SET ' . implode(', ', $sets) . ' WHERE tenant_id = ? AND slug = ?';
+            $pdo->prepare($sql)->execute($params);
 
             return;
         }
+        $cols = ['tenant_id', 'category_id', 'name', 'slug', 'description'];
+        $holders = ['?', '?', '?', '?', '?'];
+        $insParams = [$tenantId, $categoryLeafId, $name, $slug, $description];
         if ($hasLabelEnColumn) {
-            $pdo->prepare(
-                'INSERT INTO personnel_job_roles (tenant_id, category_id, name, slug, description, label_en, sort_order, is_system) VALUES (?, ?, ?, ?, ?, ?, ?, 1)'
-            )->execute([$tenantId, $categoryLeafId, $name, $slug, $description, $labelEn, $sortOrder]);
-        } else {
-            $pdo->prepare(
-                'INSERT INTO personnel_job_roles (tenant_id, category_id, name, slug, description, sort_order, is_system) VALUES (?, ?, ?, ?, ?, ?, 1)'
-            )->execute([$tenantId, $categoryLeafId, $name, $slug, $description, $sortOrder]);
+            $cols[] = 'label_en';
+            $holders[] = '?';
+            $insParams[] = $labelEn;
         }
+        if ($hasMosCodeColumn) {
+            $cols[] = 'mos_code';
+            $holders[] = '?';
+            $insParams[] = $mosCode;
+        }
+        if ($hasMosTitleColumn) {
+            $cols[] = 'mos_specialty_title';
+            $holders[] = '?';
+            $insParams[] = $mosSpecialtyTitle;
+        }
+        $cols[] = 'sort_order';
+        $holders[] = '?';
+        $insParams[] = $sortOrder;
+        $cols[] = 'is_system';
+        $holders[] = '1';
+        $sql = 'INSERT INTO personnel_job_roles (' . implode(', ', $cols) . ') VALUES (' . implode(', ', $holders) . ')';
+        $pdo->prepare($sql)->execute($insParams);
     }
 
     private static function hasTable(PDO $pdo, string $table): bool

@@ -4,6 +4,9 @@ $competencyMatrices = $competencyMatrices ?? [];
 $competencyUsers = $competencyUsers ?? [];
 $competencyRoles = $competencyRoles ?? [];
 $competencySchemaAvailable = !empty($competencySchemaAvailable);
+$competencyTrainerSchemaReady = !empty($competencyTrainerSchemaReady);
+$competencyMatricesSchemaReady = !empty($competencyMatricesSchemaReady);
+$pedagogyChainAssess = $pedagogyChainAssess ?? ['ok' => true, 'gaps' => []];
 ?>
 <header class="tc-panel p-6 md:p-8">
     <p class="tc-kicker">Vue commandement</p>
@@ -18,6 +21,65 @@ $competencySchemaAvailable = !empty($competencySchemaAvailable);
     <article class="tc-panel p-5"><p class="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">Personnel assignable</p><p class="mt-2 text-3xl font-black text-slate-900"><?= count($competencyUsers) ?></p></article>
     <article class="tc-panel p-5"><p class="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">Schéma compétence</p><p class="mt-2 text-sm font-black <?= $competencySchemaAvailable ? 'text-emerald-700' : 'text-amber-700' ?>"><?= $competencySchemaAvailable ? 'Actif' : 'Migration à exécuter' ?></p></article>
 </section>
+
+<section class="tc-panel p-6 space-y-3">
+    <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Chaîne pédagogique</h2>
+    <?php if (!empty($pedagogyChainAssess['ok'])): ?>
+    <p class="text-sm text-emerald-800 font-medium">Les profils clés attendus sont présents dans votre organisation.</p>
+    <?php else: ?>
+    <ul class="list-disc pl-5 text-sm text-amber-900 space-y-1">
+        <?php foreach ($pedagogyChainAssess['gaps'] as $gap): ?>
+        <li><?= htmlspecialchars((string) $gap, ENT_QUOTES, 'UTF-8') ?></li>
+        <?php endforeach; ?>
+    </ul>
+    <?php endif; ?>
+    <div class="flex flex-wrap gap-2 items-center">
+        <form method="post" class="inline">
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="action" value="ensure_org_sections">
+            <button type="submit" class="tc-btn-primary tc-btn-ghost text-sm">Vérifier les sections « pilotage » et « bureau des compétences »</button>
+        </form>
+    </div>
+    <?php if ($competencyUsers !== []): ?>
+    <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-2">
+        <h3 class="text-xs font-black uppercase tracking-[0.15em] text-slate-700">Désigner un référent rapidement</h3>
+        <p class="text-xs text-slate-600 leading-relaxed max-w-2xl">
+            Choisissez la personne qui valide les encadrants et assure la gouvernance des concepteurs. Les habilitations attendues lui seront proposées ; vous pourrez les ajuster ensuite dans l’espace formateur.
+        </p>
+        <form method="post" class="flex flex-wrap gap-2 items-end">
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="action" value="quick_chain_referent">
+            <div class="min-w-[220px] flex-1">
+                <label class="block text-xs font-bold text-slate-600 mb-1">Membre</label>
+                <select name="target_user_id" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                    <option value="">— Choisir —</option>
+                    <?php foreach ($competencyUsers as $u): ?>
+                    <option value="<?= (int) $u['id'] ?>"><?= htmlspecialchars((string) ($u['display_name'] ?? $u['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <button type="submit" class="tc-btn-primary tc-btn-emerald text-sm">Désigner ce référent</button>
+        </form>
+        <?php if (!$competencyTrainerSchemaReady): ?>
+        <p class="text-xs text-slate-500">Après migration complète, les cases à cocher de l’espace formateur se synchroniseront automatiquement avec cette désignation.</p>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+</section>
+
+<?php if ($competencyMatricesSchemaReady): ?>
+<section class="tc-panel p-6 space-y-3">
+    <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Matrices suggérées</h2>
+    <p class="text-xs text-slate-600 leading-relaxed max-w-3xl">
+        Trois modèles courants (direction, animation, ancienneté de formation) sont créés s’ils n’existent pas encore sous le même intitulé.
+    </p>
+    <form method="post" class="inline">
+        <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="action" value="seed_preset_matrices">
+        <button type="submit" class="tc-btn-primary tc-btn-ghost text-sm">Ajouter les matrices suggérées</button>
+    </form>
+</section>
+<?php endif; ?>
 
 <section class="tc-panel p-6 space-y-4">
     <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Créer une matrice</h2>
@@ -52,8 +114,12 @@ $competencySchemaAvailable = !empty($competencySchemaAvailable);
 
 <section class="tc-panel p-6">
     <div class="mt-1 flex flex-wrap gap-3">
+        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/bureau-personnel'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Bureau du personnel</a>
+        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/pole-formation'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Pôle formation</a>
+        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/validation'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Validation / certification</a>
+        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/sections'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Sections organisationnelles</a>
         <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/formateur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-emerald">Espace formateur</a>
-        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/instructeur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Ouvrir la vue instructeur</a>
+        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/instructeur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Vue instructeur</a>
     </div>
 </section>
 <?php require base_path('views/admin/training/partials/command_shell_close.php'); ?>

@@ -252,7 +252,7 @@ $statusBand = match ($statusRaw) {
                                 <div class="flex flex-wrap items-center gap-2">
                                     <?php if (!empty($enlistmentCannedMessages)): ?>
                                     <label for="canned-msg-select" class="sr-only">Modèle de texte</label>
-                                    <select id="canned-msg-select" class="max-w-[min(100%,18rem)] rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-950 shadow-sm">
+                                    <select id="canned-msg-select" class="<?= htmlspecialchars(bo_select_class('max-w-[min(100%,18rem)] border-amber-300 text-xs font-semibold text-amber-950 focus:border-amber-500 focus:ring-amber-500/25'), ENT_QUOTES, 'UTF-8') ?>">
                                         <option value="">— Insérer un modèle —</option>
                                         <?php foreach ($enlistmentCannedMessages as $cm): ?>
                                         <option value="<?= (int) ($cm['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($cm['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>

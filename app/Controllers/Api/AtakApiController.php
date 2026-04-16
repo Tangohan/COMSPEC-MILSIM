@@ -14,6 +14,8 @@ use App\Repositories\ReconImageRepository;
 use App\Repositories\MapShapeRepository;
 use App\Repositories\LaserCodeRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserRepository;
+use App\Repositories\ArmaPlaytimeRepository;
 
 class AtakApiController
 {
@@ -28,7 +30,9 @@ class AtakApiController
         private ReconImageRepository $reconRepo,
         private MapShapeRepository $mapShapeRepo,
         private LaserCodeRepository $laserCodeRepo,
-        private TenantRepository $tenantRepository
+        private TenantRepository $tenantRepository,
+        private UserRepository $userRepository,
+        private ArmaPlaytimeRepository $armaPlaytimeRepository,
     ) {
     }
 
@@ -300,6 +304,41 @@ class AtakApiController
             }
         }
         return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Cumul temps de jeu côté client Arma (mod + extension) — identifiant jeu aligné sur le champ Steam du compte.
+     */
+    public function playtime(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $body = $this->jsonBody($request);
+        $uidRaw = trim((string) ($body['player_uid'] ?? $body['playerUid'] ?? $body['steam_id'] ?? ''));
+        if ($uidRaw === '') {
+            return Response::json(['error' => 'player_uid required'], 400);
+        }
+        $seconds = (int) ($body['session_seconds'] ?? $body['seconds'] ?? 0);
+        if ($seconds < 1) {
+            return Response::json(['ok' => true, 'matched' => false, 'recorded' => false]);
+        }
+        $seconds = min($seconds, 7200);
+        if (!$this->armaPlaytimeRepository->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $user = $this->userRepository->findBySteamIdForTenant($tenantId, $uidRaw);
+        if ($user === null) {
+            return Response::json(['ok' => true, 'matched' => false, 'recorded' => false]);
+        }
+        $this->armaPlaytimeRepository->addSeconds($tenantId, (int) $user['id'], $seconds);
+
+        return Response::json(['ok' => true, 'matched' => true, 'recorded' => true, 'recorded_seconds' => $seconds]);
     }
 
     public function chatIndex(Request $request, array $params = []): Response

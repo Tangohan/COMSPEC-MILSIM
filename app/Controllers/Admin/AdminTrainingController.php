@@ -413,7 +413,7 @@ class AdminTrainingController
                 ? 'Un document PDF a été généré.'
                 : $n . ' documents PDF ont été générés.');
         } else {
-            Session::flash('success', 'Aucun document en attente : tout est à jour.');
+            Session::flash('info', 'Aucun PDF en attente : la file est vide ou les attestations sont déjà à jour.');
         }
 
         return $redirect;

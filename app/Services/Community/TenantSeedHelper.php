@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Community;
 
 use App\Authorization\TenantPermissionCatalog;
+use App\Repositories\UnitRepository;
 use App\Services\Rbac\MilitaryRoleCatalogSyncService;
+use App\Services\Training\TenantPedagogyStructureService;
 use PDO;
 use PDOException;
 
@@ -19,6 +21,8 @@ final class TenantSeedHelper
         $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
         $stmt->execute([$tenantId, 'forum.view']);
         if ($stmt->fetch()) {
+            self::ensurePedagogyMandatoryUnits($tenantId);
+
             return;
         }
 
@@ -109,6 +113,7 @@ final class TenantSeedHelper
                 MilitaryRoleCatalogSyncService::syncForTenant($pdo, $tenantId);
             } catch (\Throwable $_) {
             }
+            self::ensurePedagogyMandatoryUnits($tenantId);
 
             return;
         }
@@ -127,6 +132,18 @@ final class TenantSeedHelper
 
         try {
             MilitaryRoleCatalogSyncService::syncForTenant($pdo, $tenantId);
+        } catch (\Throwable $_) {
+        }
+        self::ensurePedagogyMandatoryUnits($tenantId);
+    }
+
+    private static function ensurePedagogyMandatoryUnits(int $tenantId): void
+    {
+        if ($tenantId < 1) {
+            return;
+        }
+        try {
+            (new TenantPedagogyStructureService(new UnitRepository()))->ensureMandatorySectionsForTenant($tenantId);
         } catch (\Throwable $_) {
         }
     }
@@ -553,6 +570,51 @@ final class TenantSeedHelper
                 \App\Services\Rbac\RoleDefinitionCatalog::seedTenantRoleRelations($pdo, $tenantId);
             }
         } catch (\Throwable) {
+        }
+    }
+
+    /**
+     * Crée les rôles opérationnels manquants (nouveaux slugs ajoutés au catalogue) et rattache les permissions par défaut.
+     * Idempotent — utile pour les tenants créés avant l’extension du jeu de rôles (chaîne pédagogique).
+     */
+    public static function ensureOperationalRolesForTenant(PDO $pdo, int $tenantId): void
+    {
+        if ($tenantId <= 0) {
+            return;
+        }
+        $chkRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $insRole = $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())');
+        foreach (TenantDefaultRoleDefinitions::operationalRoles() as $def) {
+            $chkRole->execute([$tenantId, $def['slug']]);
+            if (!$chkRole->fetch()) {
+                $insRole->execute([
+                    $tenantId,
+                    $def['name'],
+                    $def['slug'],
+                    $def['description'],
+                    $def['is_system'],
+                    $def['is_locked'],
+                    $def['role_layer'],
+                ]);
+            }
+        }
+        $permIdsBySlug = [];
+        $q = $pdo->prepare('SELECT id, slug FROM permissions WHERE tenant_id = ?');
+        $q->execute([$tenantId]);
+        while ($pr = $q->fetch(PDO::FETCH_ASSOC)) {
+            $permIdsBySlug[(string) $pr['slug']] = (int) $pr['id'];
+        }
+        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+        foreach (TenantDefaultRoleDefinitions::defaultPermissionSlugsForOperationalRoles() as $roleSlug => $permSlugs) {
+            $rid = self::roleId($pdo, $tenantId, $roleSlug);
+            if (!$rid) {
+                continue;
+            }
+            foreach ($permSlugs as $p) {
+                if (isset($permIdsBySlug[$p])) {
+                    $link->execute([$rid, $permIdsBySlug[$p]]);
+                }
+            }
         }
     }
 

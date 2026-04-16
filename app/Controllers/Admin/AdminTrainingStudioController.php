@@ -20,10 +20,13 @@ use App\Repositories\TrainingLessonRepository;
 use App\Repositories\TrainingModuleRepository;
 use App\Repositories\TrainingResourceRepository;
 use App\Services\Platform\FeatureGateService;
+use App\Repositories\PedagogyRepository;
 use App\Services\Training\TrainingAuditService;
+use App\Services\Training\TrainingCoursePublicationGuard;
 use App\Services\Training\TrainingCourseSessionNotificationService;
 use App\Services\Training\TrainingLessonResourceStorageService;
 use App\Services\Training\TrainingService;
+use App\Services\Training\TrainingSessionInstructorGuard;
 use App\Support\TrainingLmsStaffAccess;
 
 class AdminTrainingStudioController
@@ -187,6 +190,9 @@ class AdminTrainingStudioController
         private TrainingCourseSessionNotificationService $courseSessionNotificationService,
         private DocumentRepository $documentRepository,
         private TrainingLessonResourceStorageService $lessonResourceStorageService,
+        private TrainingCoursePublicationGuard $coursePublicationGuard,
+        private TrainingSessionInstructorGuard $sessionInstructorGuard,
+        private PedagogyRepository $pedagogyRepository,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -208,12 +214,15 @@ class AdminTrainingStudioController
             'courses' => $courses,
             'visibilityFilter' => $filter,
             'canPublish' => $this->canPublish(),
+            'trainingCourseCapacity' => $this->featureGate->trainingCourseCapacityForTenant($tenantId),
             'trainingStudioMode' => 'index',
             'trainingStudioCourseCount' => count($courses),
             'trainingStudioCourse' => null,
             'lmsPlatformVersion' => function_exists('lms_platform_version') ? lms_platform_version() : '',
             'lmsChangelogUrl' => training_studio_url('versions'),
             'studioCanSetPlatformScope' => $this->canSetPlatformLmsScope(),
+            'pedagogyColumnsReady' => $this->pedagogyRepository->trainingCoursesHavePedagogyColumns(),
+            'studioStaffPickUsers' => $this->userRepository->listForTenant($tenantId, null, 'active', null, 500, 0, true, null, null),
         ]);
     }
 
@@ -270,6 +279,15 @@ class AdminTrainingStudioController
                 ? TrainingCourseRepository::LMS_SCOPE_PLATFORM
                 : TrainingCourseRepository::LMS_SCOPE_TENANT;
         }
+        if ($lmsScope === TrainingCourseRepository::LMS_SCOPE_TENANT
+            && !$this->featureGate->canCreateTenantCatalogTrainingCourse($tenantId)) {
+            Session::flash(
+                'error',
+                'Vous avez atteint le nombre maximal de parcours prévus pour votre formule. Passez à une offre supérieure, supprimez un parcours existant ou contactez l’encadrement pour ajuster l’offre.'
+            );
+
+            return Response::redirect(training_studio_url());
+        }
         if ($lmsScope === TrainingCourseRepository::LMS_SCOPE_PLATFORM) {
             if ($this->courseRepository->platformSlugExists($slug)) {
                 Session::flash('error', 'Cet identifiant d’URL est déjà utilisé pour un autre parcours proposé sur toute la plateforme.');
@@ -291,8 +309,19 @@ class AdminTrainingStudioController
             return Response::redirect(training_studio_url());
         }
 
+        $mergedPreview = [
+            'visibility' => $visibility,
+            'pedagogical_owner_user_id' => $this->pedagogyRepository->trainingCoursesHavePedagogyColumns()
+                ? max(0, (int) $request->input('pedagogical_owner_user_id', 0)) : null,
+        ];
+        if ($visibility === 'published' && !$this->coursePublicationGuard->canPublish($tenantId, $mergedPreview, $userId)) {
+            Session::flash('error', $this->coursePublicationGuard->lastUserMessage() ?? 'Publication impossible pour le moment.');
+
+            return Response::redirect(training_studio_url());
+        }
+
         $lmsVer = function_exists('lms_platform_version') ? lms_platform_version() : '1.0.0';
-        $newId = $this->courseRepository->create($tenantId, [
+        $createPayload = [
             'title' => $title,
             'slug' => $slug,
             'short_description' => null,
@@ -305,7 +334,17 @@ class AdminTrainingStudioController
             'lms_created_with_version' => $lmsVer,
             'lms_last_saved_with_version' => $lmsVer,
             'lms_scope' => $lmsScope,
-        ]);
+        ];
+        $newId = $this->courseRepository->create($tenantId, $createPayload);
+        if ($this->pedagogyRepository->trainingCoursesHavePedagogyColumns()) {
+            $oid = max(0, (int) $request->input('pedagogical_owner_user_id', 0));
+            $fid = max(0, (int) $request->input('final_validator_user_id', 0));
+            $this->courseRepository->update($newId, [
+                'pedagogical_owner_user_id' => $oid > 0 ? $oid : null,
+                'final_validator_user_id' => $fid > 0 ? $fid : null,
+                'updated_by' => $userId,
+            ]);
+        }
         $this->auditService->logCourseCreated($tenantId, $userId, $newId, [
             'title' => $title,
             'slug' => $slug,
@@ -424,6 +463,7 @@ class AdminTrainingStudioController
             'studioQuestions' => $pendingQuestions,
             'studioStaffPickUsers' => $staffPickUsers,
             'studioCanSetPlatformScope' => $this->canSetPlatformLmsScope(),
+            'pedagogyColumnsReady' => $this->pedagogyRepository->trainingCoursesHavePedagogyColumns(),
             'libraryDocumentsForPicker' => $this->documentRepository->listForTenant(
                 $tenantId,
                 null,
@@ -619,6 +659,19 @@ class AdminTrainingStudioController
         ];
         if (function_exists('lms_platform_version')) {
             $patch['lms_last_saved_with_version'] = lms_platform_version();
+        }
+        if ($this->pedagogyRepository->trainingCoursesHavePedagogyColumns()) {
+            $oid = max(0, (int) $request->input('pedagogical_owner_user_id', (int) ($course['pedagogical_owner_user_id'] ?? 0)));
+            $fid = max(0, (int) $request->input('final_validator_user_id', (int) ($course['final_validator_user_id'] ?? 0)));
+            $patch['pedagogical_owner_user_id'] = $oid > 0 ? $oid : null;
+            $patch['final_validator_user_id'] = $fid > 0 ? $fid : null;
+        }
+        $mergedForPublish = array_merge($course, $patch);
+        if ($newVis === 'published' && $oldVis !== 'published'
+            && !$this->coursePublicationGuard->canPublish($tenantId, $mergedForPublish, $userId)) {
+            Session::flash('error', $this->coursePublicationGuard->lastUserMessage() ?? 'Publication impossible pour le moment.');
+
+            return Response::redirect($this->studioEditUrl($courseId, 'fiche'));
         }
 
         $oldSnapshot = [
@@ -1288,13 +1341,20 @@ class AdminTrainingStudioController
 
             return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-sessions-qa');
         }
+        $instructorId = ($i = (int) $request->input('session_instructor_user_id', 0)) > 0 ? $i : null;
+        if ($instructorId !== null
+            && !$this->sessionInstructorGuard->canAssignInstructor($tenantId, $instructorId, $courseId)) {
+            Session::flash('error', $this->sessionInstructorGuard->lastUserMessage() ?? 'Encadrant non autorisé pour ce créneau.');
+
+            return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-sessions-qa');
+        }
         $id = $this->lmsSocialRepository->createSession($tenantId, $courseId, [
             'starts_at' => $starts,
             'ends_at' => $ends,
             'label' => trim((string) $request->input('session_label', '')) ?: null,
             'location' => trim((string) $request->input('session_location', '')) ?: null,
             'max_seats' => ($m = trim((string) $request->input('session_max_seats', ''))) === '' ? null : max(0, (int) $m),
-            'instructor_user_id' => ($i = (int) $request->input('session_instructor_user_id', 0)) > 0 ? $i : null,
+            'instructor_user_id' => $instructorId,
             'audio_briefing_url' => ($a = trim((string) $request->input('session_audio_url', ''))) === '' ? null : substr($a, 0, 512),
             'notes' => trim((string) $request->input('session_notes', '')) ?: null,
         ]);

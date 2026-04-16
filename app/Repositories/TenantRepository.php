@@ -296,4 +296,47 @@ class TenantRepository
 
         return is_array($rows) ? $rows : [];
     }
+
+    /**
+     * Annuaire opérateur : toutes les communautés « réelles » (hors tenant technique id = 1),
+     * avec effectif des comptes rattachés.
+     *
+     * @return list<array{id: int, name: string, slug: string, created_at: string|null, user_count: int}>
+     */
+    public function listOverviewForPlatform(): array
+    {
+        $humanUsers = UserRepository::sqlLiteralExcludeTechnicalInternalEmails('u');
+        $sql = <<<SQL
+SELECT t.id,
+       t.name,
+       t.slug,
+       t.created_at AS created_at,
+       (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id AND {$humanUsers}) AS user_count
+FROM tenants t
+WHERE t.id > 1
+ORDER BY t.name ASC
+SQL;
+        $stmt = $this->pdo->query($sql);
+        if ($stmt === false) {
+            return [];
+        }
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'name' => (string) ($row['name'] ?? ''),
+                'slug' => (string) ($row['slug'] ?? ''),
+                'created_at' => isset($row['created_at']) && $row['created_at'] !== null && $row['created_at'] !== ''
+                    ? (string) $row['created_at']
+                    : null,
+                'user_count' => (int) ($row['user_count'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
 }

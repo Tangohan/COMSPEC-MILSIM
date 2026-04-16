@@ -14,6 +14,11 @@ $canDocs = $gate->allows('documents.upload') || $gate->allows('admin.access');
 $canTraining = \App\Support\TrainingLmsStaffAccess::allows($gate);
 $canTenantModules = $gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access');
 $canForumModConsole = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
+$canStructureRecruitmentHub = $gate->allows('organization.orbat.view')
+    || $gate->allows('organization.orbat.manage')
+    || $gate->allows('admin.organization')
+    || $gate->allows('admin.access')
+    || $gate->allows('site.support');
 
 $tenantLabel = '';
 try {
@@ -23,6 +28,15 @@ try {
         if ($tr !== null) {
             $tenantLabel = trim((string) ($tr['name'] ?? ''));
         }
+    }
+} catch (\Throwable) {
+}
+
+$canIntegrationsBo = false;
+try {
+    $tidNav = (int) \App\Core\Session::get('tenant_id');
+    if ($tidNav > 1 && ($gate->allows('admin.organization') || $gate->allows('admin.access'))) {
+        $canIntegrationsBo = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tidNav, 'advanced_integrations');
     }
 } catch (\Throwable) {
 }
@@ -50,6 +64,7 @@ $boNavRoles = $p === 'back-office/roles' || str_starts_with($p, 'back-office/rol
 $boNavRolesFx = $p === 'back-office/roles-functions' || str_starts_with($p, 'back-office/roles-functions/');
 $boNavPjr = str_starts_with($p, 'back-office/personnel-job-roles');
 $boNavEff = str_starts_with($p, 'back-office/organisation-effectifs');
+$boNavStructureHub = str_starts_with($p, 'back-office/organisation/structure');
 $boNavGroups = str_starts_with($p, 'back-office/groups');
 $boNavCommunications = str_starts_with($p, 'back-office/communications');
 $canCommsSection = $gate->allows('comms.email.send.orbat')
@@ -62,8 +77,10 @@ $canCommsSection = $gate->allows('comms.email.send.orbat')
 $boNavTeams = str_starts_with($p, 'back-office/teams');
 $boNavCats = str_starts_with($p, 'back-office/categories');
 $boNavGrades = str_starts_with($p, 'back-office/referentiels/grades');
+$boNavSeniority = str_starts_with($p, 'back-office/organisation/anciennete');
 $boNavCommCode = $p === 'back-office/community';
 $boNavCommPres = str_starts_with($p, 'back-office/community/presentation');
+$boNavInteg = str_starts_with($p, 'back-office/integrations');
 $boNavAlerts = str_starts_with($p, 'back-office/alerts');
 $boNavConfig = str_starts_with($p, 'back-office/configuration');
 $boNavAnalytics = str_starts_with($p, 'back-office/analytics');
@@ -79,6 +96,7 @@ $studioPath = function_exists('training_studio_path') ? training_studio_path() :
 $boNavStudioActive = str_starts_with($p, $studioPath . '/') || $p === $studioPath;
 $lmsResPath = function_exists('training_lms_admin_path') ? training_lms_admin_path() : 'back-office/ressources/training';
 $boNavLmsRes = $p === $lmsResPath || str_starts_with($p, $lmsResPath . '/');
+$boNavHrCharter = str_starts_with($p, 'back-office/ressources/training/charte-rh');
 $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request();
 ?>
 <div class="flex h-full min-h-0 flex-col border-r border-slate-800/80 bg-slate-950">
@@ -112,10 +130,16 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
 
         <?php $boSection('Organisation'); ?>
         <?php $boLink('back-office/organisation-effectifs', 'Structure des effectifs', $boNavEff); ?>
+        <?php if ($canStructureRecruitmentHub): ?>
+            <?php $boLink('back-office/organisation/structure', 'Structure & recrutement', $boNavStructureHub); ?>
+        <?php endif; ?>
         <?php $boLink('back-office/groups', 'Groupes', $boNavGroups); ?>
         <?php $boLink('back-office/teams', 'Équipes', $boNavTeams); ?>
         <?php $boLink('back-office/categories', 'Catégories', $boNavCats); ?>
         <?php $boLink('back-office/referentiels/grades', 'Référentiel des grades', $boNavGrades); ?>
+        <?php if ($canTenantModules || $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support')): ?>
+            <?php $boLink('back-office/organisation/anciennete', 'Ancienneté (fiches & RH)', $boNavSeniority); ?>
+        <?php endif; ?>
         <?php if ($canCommsSection): ?>
             <?php $boLink('back-office/communications', 'E-mails aux membres', $boNavCommunications); ?>
         <?php endif; ?>
@@ -125,6 +149,9 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
         <?php $boLink('back-office/community/presentation', 'Page d’accueil publique', $boNavCommPres); ?>
         <?php $boLink('back-office/alerts', 'Annonces & alertes', $boNavAlerts); ?>
         <?php $boLink('back-office/configuration', 'Paramètres avancés', $boNavConfig); ?>
+        <?php if ($canIntegrationsBo): ?>
+            <?php $boLink('back-office/integrations', 'Intégrations externes', $boNavInteg); ?>
+        <?php endif; ?>
         <?php $boLink('back-office/analytics', 'Indicateurs d’usage', $boNavAnalytics); ?>
         <?php $boLink('back-office/dashboard-pins', 'Raccourcis du portail', $boNavPins); ?>
         <?php $boLink('back-office/onboarding-recovery', 'Aide après inscription', $boNavOnb); ?>
@@ -143,7 +170,8 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
                 <?php $boLink('documents/gestion', 'Bibliothèque documentaire', false); ?>
             <?php endif; ?>
             <?php if ($canTraining): ?>
-                <?php $boLink($lmsResPath, 'Formations', $boNavLmsRes); ?>
+                <?php $boLink($lmsResPath, 'Formations', $boNavLmsRes && !$boNavHrCharter); ?>
+                <?php $boLink('back-office/ressources/training/charte-rh', 'Charte RH (formations)', $boNavHrCharter); ?>
                 <?php $boLink(training_studio_path(), 'Studio des parcours', $boNavStudioActive); ?>
             <?php endif; ?>
             <?php if ($canTenantModules): ?>

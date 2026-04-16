@@ -22,7 +22,6 @@ $usersQuery = static function (int $page) use ($filters): string {
         'filter_incomplete' => !empty($filters['filter_incomplete']) ? '1' : null,
         'filter_no_unit' => !empty($filters['filter_no_unit']) ? '1' : null,
         'filter_no_role' => !empty($filters['filter_no_role']) ? '1' : null,
-        'show_technical' => !empty($filters['show_technical']) ? '1' : null,
         'page' => $page > 1 ? $page : null,
     ];
     $q = array_filter($q, static fn ($v) => $v !== null && $v !== '');
@@ -134,7 +133,7 @@ $truncateRole = static function (string $label, int $max = 22): string {
                             <select
                                 id="status"
                                 name="status"
-                                class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                                class="<?= htmlspecialchars(bo_select_class('h-11'), ENT_QUOTES, 'UTF-8') ?>"
                             >
                                 <option value="">Tous les statuts</option>
                                 <option value="active" <?= ($filters['status'] ?? '') === 'active' ? 'selected' : '' ?>>Actif</option>
@@ -150,7 +149,7 @@ $truncateRole = static function (string $label, int $max = 22): string {
                             <select
                                 id="role_id"
                                 name="role_id"
-                                class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                                class="<?= htmlspecialchars(bo_select_class('h-11'), ENT_QUOTES, 'UTF-8') ?>"
                             >
                                 <option value="">Tous les rôles</option>
                                 <?php foreach ($roles as $r): ?>
@@ -203,20 +202,6 @@ $truncateRole = static function (string $label, int $max = 22): string {
                                 class="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                                 Réinitialiser
                             </a>
-                        </div>
-
-                        <div class="md:col-span-2 xl:col-span-full">
-                            <label class="inline-flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 transition hover:border-slate-300">
-                                <input
-                                    type="checkbox"
-                                    name="show_technical"
-                                    value="1"
-                                    class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300"
-                                    <?= !empty($filters['show_technical']) ? 'checked' : '' ?>
-                                    onchange="this.form.submit()"
-                                >
-                                <span>Afficher les comptes techniques (modération automatique)</span>
-                            </label>
                         </div>
                     </form>
                 </div>

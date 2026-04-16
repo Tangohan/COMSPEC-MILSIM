@@ -770,3 +770,51 @@ body.atak-page {
   display: none;
 }
 .atak-connection-lost.show { display: block; }
+
+/* Chargement initial Tacmap */
+.atak-boot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 15, 0.92);
+  backdrop-filter: blur(6px);
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+.atak-boot-overlay.atak-boot-overlay--hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.atak-boot-inner {
+  text-align: center;
+  padding: 2rem;
+  max-width: 22rem;
+}
+.atak-boot-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto 1.25rem;
+  border: 3px solid var(--atak-border);
+  border-top-color: var(--atak-accent);
+  border-radius: 50%;
+  animation: atak-boot-spin 0.75s linear infinite;
+}
+@keyframes atak-boot-spin {
+  to { transform: rotate(360deg); }
+}
+.atak-boot-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--atak-text);
+  letter-spacing: 0.02em;
+}
+.atak-boot-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--atak-muted);
+}

@@ -36,4 +36,6 @@ if (!hasInterface) exitWith {};
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         [] call comspec_overwatch_connect_fnc_pollMapShapes;
     }, 10, []] call CBA_fnc_addPerFrameHandler;
+
+    [] spawn comspec_overwatch_connect_fnc_playtimeTracker;
 }] call CBA_fnc_addEventHandler;

@@ -195,7 +195,7 @@ $isServiceAccount = !empty($isServiceAccount);
                 <?= \App\Core\Csrf::field() ?>
                 <div class="sm:col-span-2">
                     <label for="position_id" class="block text-xs font-medium text-slate-600">Poste</label>
-                    <select id="position_id" name="position_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm">
+                    <select id="position_id" name="position_id" required class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
                         <option value="">— Choisir —</option>
                         <?php foreach ($positionsList as $pos): ?>
                         <option value="<?= (int) ($pos['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($pos['name'] ?? '')) ?></option>
@@ -225,7 +225,7 @@ $isServiceAccount = !empty($isServiceAccount);
                 <?= \App\Core\Csrf::field() ?>
                 <div class="flex-1 min-w-[200px]">
                     <label for="role_set_id" class="block text-xs font-medium text-slate-600">Pack</label>
-                    <select id="role_set_id" name="role_set_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm">
+                    <select id="role_set_id" name="role_set_id" required class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
                         <option value="">— Choisir —</option>
                         <?php foreach ($roleSetsList as $rs): ?>
                         <option value="<?= (int) ($rs['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($rs['name'] ?? '')) ?></option>
@@ -239,7 +239,7 @@ $isServiceAccount = !empty($isServiceAccount);
 
         <div>
             <label for="nationality_code" class="block text-sm font-medium text-slate-700">Nationalité / doctrine</label>
-            <select id="nationality_code" name="nationality_code" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
+            <select id="nationality_code" name="nationality_code" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
                 <option value="">—</option>
                 <option value="FR" <?= ($user['nationality_code'] ?? '') === 'FR' ? 'selected' : '' ?>>Français</option>
                 <option value="US" <?= ($user['nationality_code'] ?? '') === 'US' ? 'selected' : '' ?>>Américain</option>
@@ -256,7 +256,7 @@ $isServiceAccount = !empty($isServiceAccount);
         </div>
         <div>
             <label for="grade_id" class="block text-sm font-medium text-slate-700">Grade</label>
-            <select id="grade_id" name="grade_id" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
+            <select id="grade_id" name="grade_id" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
                 <option value="">—</option>
                 <?php foreach ($grades as $g): ?>
                 <option value="<?= (int) $g['id'] ?>" <?= (int) ($user['grade_id'] ?? 0) === (int) $g['id'] ? 'selected' : '' ?>><?= htmlspecialchars($g['label_long'] ?? $g['name'] ?? '') ?></option>
@@ -265,7 +265,7 @@ $isServiceAccount = !empty($isServiceAccount);
         </div>
         <div>
             <label for="preferred_grade_format" class="block text-sm font-medium text-slate-700">Format d'affichage du grade</label>
-            <select id="preferred_grade_format" name="preferred_grade_format" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
+            <select id="preferred_grade_format" name="preferred_grade_format" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
                 <option value="classic" <?= ($user['preferred_grade_format'] ?? 'classic') === 'classic' ? 'selected' : '' ?>>Classique (texte)</option>
                 <option value="otan" <?= ($user['preferred_grade_format'] ?? '') === 'otan' ? 'selected' : '' ?>>OTAN</option>
                 <option value="hybrid" <?= ($user['preferred_grade_format'] ?? '') === 'hybrid' ? 'selected' : '' ?>>Hybride (ex. Capitaine (OF-2))</option>
@@ -273,7 +273,7 @@ $isServiceAccount = !empty($isServiceAccount);
         </div>
         <div>
             <label for="status" class="block text-sm font-medium text-slate-700">Statut</label>
-            <select id="status" name="status" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
+            <select id="status" name="status" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
                 <option value="pending_verification" <?= ($user['status'] ?? '') === 'pending_verification' ? 'selected' : '' ?>>En attente de vérification de l’e-mail</option>
                 <option value="active" <?= ($user['status'] ?? '') === 'active' ? 'selected' : '' ?>>Actif</option>
                 <option value="inactive" <?= ($user['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>Inactif</option>

@@ -30,6 +30,8 @@ use App\Services\EmailService;
 use App\Services\GradeValidationService;
 use App\Services\Personnel\PersonnelCompletenessService;
 use App\Services\Moderation\IndicatorBlocklistService;
+use App\Services\Personnel\PersonnelOrgHistoryRecorder;
+use App\Support\Audit\AuditFieldSnapshot;
 use App\Support\OrganizationRoleLabels;
 
 class UserAdminController
@@ -66,7 +68,8 @@ class UserAdminController
         private EmailTokenRepository $emailTokenRepository,
         private PositionRepository $positionRepository,
         private RoleSetRepository $roleSetRepository,
-        private IndicatorBlocklistService $indicatorBlocklist
+        private IndicatorBlocklistService $indicatorBlocklist,
+        private PersonnelOrgHistoryRecorder $personnelOrgHistoryRecorder,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -84,8 +87,7 @@ class UserAdminController
         $filterIncomplete = $request->query('filter_incomplete') === '1' || $request->query('filter_incomplete') === 'true';
         $filterNoUnit = $request->query('filter_no_unit') === '1' || $request->query('filter_no_unit') === 'true';
         $filterNoRole = $request->query('filter_no_role') === '1' || $request->query('filter_no_role') === 'true';
-        $showTechnicalAccounts = $request->query('show_technical') === '1' || $request->query('show_technical') === 'true';
-        $excludeServiceAccounts = ! $showTechnicalAccounts;
+        $excludeServiceAccounts = true;
         $page = max(1, (int) $request->query('page', 1));
         $perPage = 25;
         $statusFilter = ($status !== null && $status !== '') ? $status : null;
@@ -148,7 +150,6 @@ class UserAdminController
                 'filter_incomplete' => $filterIncomplete,
                 'filter_no_unit' => $filterNoUnit,
                 'filter_no_role' => $filterNoRole,
-                'show_technical' => $showTechnicalAccounts,
             ],
             'usersTotal' => $total,
             'usersPage' => $page,
@@ -358,7 +359,7 @@ class UserAdminController
             if (!$this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
                 Session::flash('error', 'Un rôle sélectionné ne peut pas être attribué depuis l’administration communauté.');
 
-                return Response::redirect(url('back-office/users/create'));
+                return Response::redirect(url('back-office/organisation/structure?ouvrir=membre'));
             }
         }
         $primaryRoleId = $this->userRepository->peekPrimaryRoleIdForTenant($tenantId, $roleIds);
@@ -372,17 +373,17 @@ class UserAdminController
 
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Session::flash('error', 'Une adresse e-mail valide est requise.');
-            return Response::redirect(url('back-office/users/create'));
+            return Response::redirect(url('back-office/organisation/structure?ouvrir=membre'));
         }
         if ($this->userRepository->emailExistsInTenant($tenantId, $email)) {
             Session::flash('error', 'Cet email est déjà utilisé.');
-            return Response::redirect(url('back-office/users/create'));
+            return Response::redirect(url('back-office/organisation/structure?ouvrir=membre'));
         }
 
         $gate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
         if (!$gate->canAddMember($tenantId)) {
             Session::flash('error', 'Limite de membres du plan atteinte.');
-            return Response::redirect(url('back-office/users/create'));
+            return Response::redirect(url('back-office/organisation/structure?ouvrir=membre'));
         }
         $passwordPlaceholder = password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID);
         $userId = $this->userRepository->create($tenantId, [
@@ -402,7 +403,7 @@ class UserAdminController
         } catch (\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
 
-            return Response::redirect(url('back-office/users/create'));
+            return Response::redirect(url('back-office/organisation/structure?ouvrir=membre'));
         }
 
         $this->passwordResetRepository->deleteExpired();
@@ -504,6 +505,10 @@ class UserAdminController
         }
 
         $rolesSynced = false;
+        /** @var list<int>|null */
+        $historyOldOrgRoleIds = null;
+        /** @var list<int>|null */
+        $historyNewOrgRoleIds = null;
         $data = [];
         if ($request->input('display_name') !== null) {
             $data['display_name'] = trim((string) $request->input('display_name'));
@@ -560,6 +565,12 @@ class UserAdminController
                 $roleIds !== [] ? implode(',', $roleIds) : null
             );
             $rolesSynced = true;
+            $historyOldOrgRoleIds = $oldRoleIds;
+            $userAfterRoles = $this->userRepository->findById($id, $tenantId) ?? [];
+            $historyNewOrgRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
+            if ($historyNewOrgRoleIds === [] && !empty($userAfterRoles['role_id'])) {
+                $historyNewOrgRoleIds = [(int) $userAfterRoles['role_id']];
+            }
         }
         if ($request->input('grade_id') !== null) {
             $data['grade_id'] = $request->input('grade_id') ? (int) $request->input('grade_id') : null;
@@ -603,9 +614,43 @@ class UserAdminController
             }
         }
 
+        $actorLabel = trim((string) Session::get('display_name'));
+
+        if ($rolesSynced && $historyOldOrgRoleIds !== null && $historyNewOrgRoleIds !== null) {
+            $this->personnelOrgHistoryRecorder->recordOrganizationRolesChange(
+                $tenantId,
+                $id,
+                $actorUserId,
+                $actorLabel,
+                $historyOldOrgRoleIds,
+                $historyNewOrgRoleIds
+            );
+        }
+
         if (!empty($data)) {
+            $auditKeys = ['email', 'grade_id', 'status', 'nationality_code', 'preferred_grade_format', 'professional_category_code', 'display_name', 'callsign', 'profile_slug'];
+            $passwordWillChange = isset($data['password_hash']);
+            $beforeAugmented = array_merge($user, ['connexion_mot_de_passe' => false]);
+            $keys = $auditKeys;
+            if ($passwordWillChange) {
+                $keys[] = 'connexion_mot_de_passe';
+            }
             $this->userRepository->update($id, $tenantId, $data);
-            $this->adminAuditService->logUserUpdated($tenantId, $actorUserId, $id);
+            $afterUser = $this->userRepository->findById($id, $tenantId) ?? [];
+            $afterAugmented = array_merge($afterUser, ['connexion_mot_de_passe' => $passwordWillChange]);
+            [$o, $n] = AuditFieldSnapshot::diffOnly($beforeAugmented, $afterAugmented, $keys);
+            [$os, $ns] = AuditFieldSnapshot::encodePair($o, $n);
+            $this->adminAuditService->logUserUpdated($tenantId, $actorUserId, $id, $os, $ns);
+        }
+
+        if ($rolesSynced || !empty($data)) {
+            $final = $this->userRepository->findById($id, $tenantId) ?? [];
+            if ($final !== []) {
+                $this->personnelOrgHistoryRecorder->recordUserTableDiff($tenantId, $user, $final, $actorUserId, $actorLabel);
+            }
+        }
+
+        if (!empty($data)) {
             Session::flash('success', 'Utilisateur mis à jour.');
         } elseif ($rolesSynced) {
             Session::flash('success', 'Rôles mis à jour.');

@@ -8,7 +8,7 @@ Ce document aligne la méthode produit (score, tiers, limites) sur l’implémen
 |-------------------|----------------|
 | **Gratuit** | Plan `free` — fonctionnalités booléennes dans `features_json` + **limites** optionnelles dans `limits_json` (gratuit limité sans nouveau slug Stripe). |
 | **Gratuit limité** | Même plan `free` : quotas / rétention décrits par entrée dans `limits_json.quotas` ; l’accès partiel est accordé tant qu’il reste du quota (voir `FeatureGateService::allows`). |
-| **Premium** | Plans payants `standard` et `pro` (facturation Stripe) : fonctionnalités activées dans `features_json` ; `limits_json` vide ou sans quota pour la feature (accès illimité côté quota). |
+| **Premium** | Plans payants `standard`, `pro` et `pro_plus` (facturation Stripe) : fonctionnalités activées dans `features_json` ; `limits_json` vide ou sans quota pour la feature (accès illimité côté quota). |
 
 **Pourquoi un seul slug pour le gratuit limité** : `effectivePlanSlug()` et le webhook Stripe restent simples ; les plafonds sont **configurables en base** sans nouveau produit Stripe.
 
@@ -26,6 +26,29 @@ Les clés suivantes sont utilisées dans `features_json` et/ou dans le gating ap
 | `events` | `CommunityEventsController`, `CommunityEventsAdminController` | Booléen Pro **ou** quota gratuit (`limits_json.quotas.events`) — **premier flux quota implémenté**. |
 | `community_create` | Bootstrap / création communauté | Booléen. |
 | `max_members` | `FeatureGateService::maxMembers` / invitations | Quota sièges (nombre, pas période). |
+| `max_training_courses` | `FeatureGateService::trainingCourseCapacityForTenant` / création parcours Studio, API admin, import JSON | Plafond absolu sur les parcours « catalogue communauté » (`lms_scope` tenant) ; `0` = sans plafond fixe. |
+| `advanced_integrations` | `OrganizationIntegrationsController`, navigation back-office / tableau de bord org | Booléen ; **Pro+** (`pro_plus`) dans le seed bootstrap. |
+
+## Matrice d’audit modules (synthèse)
+
+| Domaine | Surface / action | Contrôle actuel (tenant) | Clé / limite |
+|---------|------------------|--------------------------|--------------|
+| Forum, documents | Divers | Booléens `forum`, `documents` (selon routes) | `forum`, `documents` |
+| Formations LMS | Accès apprenant / admin | `training` | `training` |
+| Formations — **nouveau parcours** | Studio création, import échange, API `adminCourseSave` | `canCreateTenantCatalogTrainingCourse` | `max_training_courses` |
+| ATAK | `AtakController` | `atak` | `atak` |
+| Analytics | `OrganizationAnalyticsController` | `analytics` | `analytics` |
+| Événements | Web + admin + API lecture | `allows` / `allowsLimitedFeatureModule` + quota `events` | `events`, `limits_json` |
+| Intégrations (clés API) | `/back-office/integrations` | `allows(..., 'advanced_integrations')` | `advanced_integrations` |
+| Membres | Invitations, enrôlement, admin utilisateurs | `canAddMember` | `max_members` |
+
+Les zones « sensibles » encore **sans** gate tenant dédié (RBAC seul ou aucun plafond) : à compléter au fil des priorités produit (ex. volume e-mails, exports lourds, coopération) — repérage initial via navigation [`config/navigation.php`](../config/navigation.php) et contrôleurs `app/Controllers`.
+
+## Changelog pricing (interne)
+
+| Date (approx.) | Changement |
+|----------------|------------|
+| 2026-04 | Ajout plan `pro_plus` ; clés `max_training_courses`, `advanced_integrations` ; plafond parcours communauté ; intégrations réservées Pro+. |
 
 ## Tableau de classification (template produit)
 
@@ -86,6 +109,8 @@ Toute action soumise à quota doit appeler la même logique côté **web** et **
 | `FeatureGateService::recordQuotaUse` | À appeler après une action réussie (ex. création d’événement). |
 | `FeatureGateService::recordQuotaLimitReached` | Tentative bloquée (analytics `feature_key` = `quota_limit_reached`). |
 | `FeatureGateService::maybeRecordQuotaSoftBlock` | Seuil atteint (analytics `feature_key` = `quota_soft_block`, dédup session). |
+| `FeatureGateService::canCreateTenantCatalogTrainingCourse` | Création de parcours autorisée si `training` + plafond `max_training_courses` non atteint (`0` = illimité). |
+| `FeatureGateService::trainingCourseCapacityForTenant` | Chiffres utilisés par le Studio (bandeau / bouton désactivé). |
 
 Table `tenant_usage_counters` ; colonne `subscription_plans.limits_json`.
 
@@ -107,6 +132,8 @@ Ajuster `limits_json` (sans redéploiement si édition SQL/admin futur) ; docume
 | **Réconciliation multi-période** | Comptage SQL des créations aligné sur `monthly`, `weekly` et `daily` (bornes `created_at`). |
 | **Index perf** | `community_events.ce_tenant_created` `(tenant_id, created_at)` pour les agrégations quota. |
 | **Page upgrade** | Texte complémentaire automatique si `?from=quota_events` (ou autre clé `quota_*`). |
+| **Plan Pro+** | Slug `pro_plus`, `sort_order` 40, seed dans `bootstrap/community_platform_migration.php`. |
+| **Parcours** | Comptage `TrainingCourseRepository::countTenantCatalogCourses` (hors `lms_scope = platform`). |
 
 ## Pistes d’évolution (non implémentées)
 

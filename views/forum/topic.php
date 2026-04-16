@@ -172,9 +172,13 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
   <div id="posts-list" class="flex flex-col gap-3 mb-10">
     <?php
     $postBodiesForJs = [];
+    $postBodyFormatsForJs = [];
     if (!empty($posts)) {
         foreach ($posts as $p) {
-            $postBodiesForJs[(int) $p['id']] = $p['body'] ?? '';
+            $pid = (int) $p['id'];
+            $postBodiesForJs[$pid] = $p['body'] ?? '';
+            $fmt = strtolower(trim((string) ($p['body_format'] ?? 'markdown')));
+            $postBodyFormatsForJs[$pid] = $fmt === 'html' ? 'html' : 'markdown';
         }
     }
     ?>
@@ -195,6 +199,15 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
         'bravo' => 'Bien joué',
         'review' => 'À revoir',
     ];
+    ?>
+    <?php
+    $forumAuthorStatRow = static function (string $lab, string $val, ?string $title = null): void {
+        $t = $title !== null && $title !== '' ? ' title="' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '"' : '';
+        echo '<div class="flex flex-col gap-0.5 border-b border-slate-100/80 pb-1.5 last:border-0 last:pb-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2 sm:border-0 sm:pb-0">';
+        echo '<span class="shrink-0 text-[7px] font-bold text-slate-500 uppercase tracking-widest">' . htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') . '</span>';
+        echo '<span class="min-w-0 text-[8px] font-black text-slate-900 leading-snug break-words sm:text-right"' . $t . '>' . htmlspecialchars($val, ENT_QUOTES, 'UTF-8') . '</span>';
+        echo '</div>';
+    };
     ?>
     <?php if (empty($posts)): ?>
       <p class="py-8 text-center text-slate-500 bg-white">Aucun message dans ce sujet.</p>
@@ -239,19 +252,10 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
         $authorAwards = isset($post['author_awards']) && trim((string) $post['author_awards']) !== '' ? trim($post['author_awards']) : null;
         $accentIsOrange = $firstPostId && (int) $post['id'] === $firstPostId;
         $level = $authorPostCount > 0 ? min(99, 1 + (int) floor($authorPostCount / 5)) : 1;
-        $authorUnitDisplaySig = ($authorUnitCode && $authorUnitName) ? $authorUnitCode . ' – ' . $authorUnitName : ($authorUnitName ?? $authorUnitCode ?? '');
+        /** Ligne d’activité forum uniquement (évite le doublon avec le badge rôle et le tableau grade / unité / rôle). */
         $sigLine = [];
-        if ($roleName) {
-            $sigLine[] = $roleName;
-        }
-        if ($authorUnitDisplaySig !== '') {
-            $sigLine[] = $authorUnitDisplaySig;
-        }
-        if ($authorPrimaryRole) {
-            $sigLine[] = $authorPrimaryRole;
-        }
         if ((int) ($post['author_hide_forum_level'] ?? 0) === 0) {
-            $sigLine[] = 'Niv. ' . $level;
+            $sigLine[] = 'Niveau forum ' . $level;
         }
         $sigLine[] = $authorPostCount . ' message' . ($authorPostCount !== 1 ? 's' : '');
         if (!empty($post['author_cert_course_title'])) {
@@ -260,7 +264,7 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
         ?>
         <div id="post-<?= (int) $post['id'] ?>" class="group post-card forum-post-card <?= $roleClass ?>" data-post-id="<?= (int) $post['id'] ?>">
           <div class="flex flex-col md:flex-row">
-            <div class="author-card shrink-0 md:w-44 bg-gradient-to-b from-slate-50 to-slate-100/90 border-b md:border-b-0 md:border-r border-slate-200/90 p-5 flex md:flex-col items-center md:items-start gap-5 relative overflow-hidden">
+            <div class="author-card shrink-0 w-full sm:w-auto md:w-56 lg:w-[15.5rem] bg-gradient-to-b from-slate-50 to-slate-100/90 border-b md:border-b-0 md:border-r border-slate-200/90 p-4 sm:p-5 flex md:flex-col items-center md:items-start gap-4 md:gap-5 relative overflow-hidden">
               <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:100%_4px] pointer-events-none opacity-20"></div>
               <?php if ($isOwnPost): ?>
               <button type="button" data-open-forum-settings title="Compte, forum et communauté" class="absolute top-2 right-2 z-20 w-5 h-5 flex items-center justify-center text-slate-600 hover:text-emerald-700 transition-colors">
@@ -281,13 +285,13 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
               </div>
               <div class="flex-1 md:flex-none min-w-0 w-full space-y-2.5 z-10 md:mt-3">
                 <div>
-                  <p class="hidden md:block text-[8px] font-bold text-neutral-700 uppercase tracking-[0.2em] mb-0.5">Identifiant</p>
-                  <p class="text-[11px] font-black uppercase tracking-tighter italic leading-none truncate max-w-[150px]"><?= htmlspecialchars($authorDisplayName) ?></p>
+                  <p class="text-[8px] font-bold text-neutral-600 uppercase tracking-[0.2em] mb-0.5">Identifiant</p>
+                  <p class="text-[11px] sm:text-xs font-black uppercase tracking-tighter italic leading-tight break-words"><?= htmlspecialchars($authorDisplayName) ?></p>
                   <?php if ($tenantDisplayName !== ''): ?>
-                  <p class="text-[8px] text-neutral-500 font-bold uppercase tracking-wider truncate max-w-[150px] mt-0.5" title="<?= htmlspecialchars($tenantDisplayName) ?>"><?= htmlspecialchars($tenantDisplayName) ?></p>
+                  <p class="text-[8px] text-neutral-500 font-bold uppercase tracking-wider mt-0.5 break-words" title="<?= htmlspecialchars($tenantDisplayName) ?>"><?= htmlspecialchars($tenantDisplayName) ?></p>
                   <?php endif; ?>
                   <?php if ($sigLine !== []): ?>
-                  <p class="text-[9px] text-neutral-600 font-semibold leading-snug mt-1.5 max-w-[200px]"><?= htmlspecialchars(implode(' · ', $sigLine), ENT_QUOTES, 'UTF-8') ?></p>
+                  <p class="text-[9px] text-neutral-600 font-medium leading-snug mt-1.5"><?= htmlspecialchars(implode(' · ', $sigLine), ENT_QUOTES, 'UTF-8') ?></p>
                   <?php endif; ?>
                 </div>
                 <?php if ($authorMatricule): ?>
@@ -302,61 +306,70 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
                 </div>
                 <?php endif; ?>
                 <?php if ($authorGradeName || $authorGradeNato || $authorPrimaryRole || $authorUnitName || $authorUnitCode || $authorUnitDepth !== null || $authorAwards): ?>
-                <div class="hidden md:block pt-2.5 border-t border-slate-200 space-y-1.5">
+                <div class="md:hidden w-full max-w-xs mx-auto md:mx-0 rounded-xl border border-slate-200/80 bg-white/60 px-3 py-2.5 space-y-1.5">
+                  <p class="text-[7px] font-black uppercase tracking-wider text-slate-500">Dossier affiché</p>
                   <?php if ($authorGradeName): ?>
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-[7px] font-bold text-slate-500 uppercase tracking-widest">Grade</span>
-                    <span class="text-[8px] font-black text-slate-900"><?= htmlspecialchars($authorGradeName) ?></span>
-                  </div>
-                  <?php endif; ?>
-                  <?php if ($authorGradeNato): ?>
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest">Grade OTAN</span>
-                    <span class="text-[8px] font-black text-slate-600"><?= htmlspecialchars($authorGradeNato) ?></span>
-                  </div>
-                  <?php endif; ?>
-                  <?php if ($authorPrimaryRole): ?>
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest">Rôle</span>
-                    <span class="text-[8px] font-black text-slate-900 truncate max-w-[100px]" title="<?= htmlspecialchars($authorPrimaryRole) ?>"><?= htmlspecialchars($authorPrimaryRole) ?></span>
-                  </div>
+                  <?php $forumAuthorStatRow('Grade', $authorGradeName); ?>
                   <?php endif; ?>
                   <?php if ($authorUnitName || $authorUnitCode): ?>
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest">Unité</span>
-                    <?php $authorUnitDisplay = ($authorUnitCode && $authorUnitName) ? $authorUnitCode . ' – ' . $authorUnitName : ($authorUnitName ?? $authorUnitCode ?? ''); ?>
-<span class="text-[8px] font-black text-slate-900 truncate max-w-[100px]" title="<?= htmlspecialchars($authorUnitDisplay) ?>"><?= htmlspecialchars($authorUnitDisplay) ?></span>
-                  </div>
+                  <?php
+                      $authorUnitDisplayM = ($authorUnitCode && $authorUnitName) ? $authorUnitCode . ' – ' . $authorUnitName : ($authorUnitName ?? $authorUnitCode ?? '');
+                      $forumAuthorStatRow('Unité', $authorUnitDisplayM, $authorUnitDisplayM);
+                  ?>
+                  <?php endif; ?>
+                  <?php if ($authorPrimaryRole): ?>
+                  <?php $forumAuthorStatRow('Rôle', $authorPrimaryRole, $authorPrimaryRole); ?>
+                  <?php endif; ?>
+                </div>
+                <div class="hidden md:block pt-2.5 border-t border-slate-200 space-y-2">
+                  <p class="text-[7px] font-black uppercase tracking-wider text-slate-400">Dossier</p>
+                  <div class="space-y-1.5">
+                  <?php if ($authorGradeName): ?>
+                  <?php $forumAuthorStatRow('Grade', $authorGradeName); ?>
+                  <?php endif; ?>
+                  <?php if ($authorGradeNato): ?>
+                  <?php $forumAuthorStatRow('Grade OTAN', $authorGradeNato); ?>
+                  <?php endif; ?>
+                  <?php if ($authorPrimaryRole): ?>
+                  <?php $forumAuthorStatRow('Rôle', $authorPrimaryRole, $authorPrimaryRole); ?>
+                  <?php endif; ?>
+                  <?php if ($authorUnitName || $authorUnitCode): ?>
+                  <?php
+                      $authorUnitDisplay = ($authorUnitCode && $authorUnitName) ? $authorUnitCode . ' – ' . $authorUnitName : ($authorUnitName ?? $authorUnitCode ?? '');
+                      $forumAuthorStatRow('Unité', $authorUnitDisplay, $authorUnitDisplay);
+                  ?>
                   <?php endif; ?>
                   <?php if ($authorUnitDepth !== null): ?>
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest">Niv. ORBAT</span>
-                    <span class="text-[8px] font-black <?= $accentIsOrange ? 'text-emerald-700' : 'text-red-400' ?>"><?= $authorUnitDepth ?></span>
+                  <div class="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+                    <span class="shrink-0 text-[7px] font-bold text-slate-500 uppercase tracking-widest">Niveau ORBAT</span>
+                    <span class="min-w-0 text-[8px] font-black tabular-nums <?= $accentIsOrange ? 'text-emerald-700' : 'text-red-400' ?> sm:text-right"><?= (int) $authorUnitDepth ?></span>
                   </div>
                   <?php endif; ?>
                   <?php if ($authorAwards): ?>
-                  <div class="pt-1">
-                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest block mb-0.5">Décorations / Médailles</span>
-                    <p class="text-[8px] text-neutral-400 leading-tight break-words line-clamp-3" title="<?= htmlspecialchars($authorAwards) ?>"><?= htmlspecialchars($authorAwards) ?></p>
+                  <div class="pt-0.5">
+                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest block mb-0.5">Décorations</span>
+                    <p class="text-[8px] text-slate-600 leading-snug break-words line-clamp-4" title="<?= htmlspecialchars($authorAwards) ?>"><?= htmlspecialchars($authorAwards) ?></p>
                   </div>
                   <?php endif; ?>
+                  </div>
                 </div>
                 <?php endif; ?>
-                <div class="hidden md:block pt-2.5 border-t border-white/[0.05] space-y-1.5">
+                <div class="hidden md:block pt-2.5 border-t border-slate-200/90 space-y-1.5">
+                  <p class="text-[7px] font-black uppercase tracking-wider text-slate-400">Activité</p>
                   <?php if ((int) ($post['author_hide_forum_level'] ?? 0) === 0): ?>
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest">Niveau</span>
-                    <span class="text-[8px] font-black tabular-nums <?= $accentIsOrange ? 'text-emerald-700' : 'text-red-400' ?>">LVL_<?= $level ?></span>
+                  <div class="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest">Niveau forum</span>
+                    <span class="text-[8px] font-black tabular-nums <?= $accentIsOrange ? 'text-emerald-700' : 'text-red-400' ?> sm:text-right"><?= $level ?></span>
                   </div>
                   <?php endif; ?>
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest">Contrib.</span>
-                    <span class="text-[8px] font-black text-slate-900 tabular-nums"><?= str_pad((string) $authorPostCount, 3, '0', STR_PAD_LEFT) ?></span>
+                  <div class="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest">Messages</span>
+                    <span class="text-[8px] font-black text-slate-900 tabular-nums sm:text-right"><?= str_pad((string) $authorPostCount, 3, '0', STR_PAD_LEFT) ?></span>
                   </div>
                   <?php if ($authorCreatedAt): ?>
-                  <div class="flex items-center justify-between gap-2" title="Membre depuis le <?= date('d/m/Y', strtotime($authorCreatedAt)) ?>">
-                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest">Inscrit</span>
-                    <span class="text-[8px] font-black text-neutral-500 tabular-nums"><?= date('d/m/Y', strtotime($authorCreatedAt)) ?></span>
+                  <div class="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2" title="Membre depuis le <?= date('d/m/Y', strtotime($authorCreatedAt)) ?>">
+                    <span class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest">Membre depuis</span>
+                    <span class="text-[8px] font-black text-slate-600 tabular-nums sm:text-right"><?= date('d/m/Y', strtotime($authorCreatedAt)) ?></span>
                   </div>
                   <?php endif; ?>
                 </div>
@@ -367,13 +380,18 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
                 </div>
                 <?php endif; ?>
                 <?php if (!empty($isModo) && !empty($post['mod_legal_full_name'])): ?>
-                <div class="mt-2 p-2 bg-rose-100 border border-rose-300 rounded text-[7px] text-rose-950 space-y-1 leading-snug">
-                  <p class="font-black uppercase tracking-wider text-rose-800">Modération — identité réelle</p>
-                  <p><span class="font-bold">ID utilisateur</span> #<?= (int) ($post['mod_author_user_id'] ?? 0) ?></p>
-                  <p><span class="font-bold">Nom légal</span> <?= htmlspecialchars($post['mod_legal_full_name']) ?></p>
-                  <p><span class="font-bold">Email</span> <?= htmlspecialchars($post['mod_author_email'] ?? '') ?></p>
-                  <p class="text-rose-800"><span class="font-bold">Affichage public</span> <?= htmlspecialchars($authorDisplayName) ?> · <?= htmlspecialchars(trim((string) ($post['author_callsign'] ?? ''))) ?></p>
-                </div>
+                <details class="mt-2 rounded-lg border border-slate-200 bg-slate-900/95 text-slate-100 shadow-sm">
+                  <summary class="cursor-pointer list-none px-2.5 py-2 text-[8px] font-black uppercase tracking-wider text-slate-300 hover:text-white [&::-webkit-details-marker]:hidden flex items-center justify-between gap-2">
+                    <span>Vue modération</span>
+                    <span class="text-slate-500 text-[10px] opacity-80" aria-hidden="true">▼</span>
+                  </summary>
+                  <div class="border-t border-white/10 px-2.5 py-2 space-y-1.5 text-[7px] leading-snug text-slate-200">
+                    <p><span class="font-bold text-slate-400">Référence dossier</span> #<?= (int) ($post['mod_author_user_id'] ?? 0) ?></p>
+                    <p><span class="font-bold text-slate-400">Identité administrative</span> <?= htmlspecialchars($post['mod_legal_full_name']) ?></p>
+                    <p><span class="font-bold text-slate-400">Courriel</span> <?= htmlspecialchars($post['mod_author_email'] ?? '') ?></p>
+                    <p class="text-slate-300"><span class="font-bold text-slate-400">Affiché sur le forum</span> <?= htmlspecialchars($authorDisplayName) ?> · <?= htmlspecialchars(trim((string) ($post['author_callsign'] ?? ''))) ?></p>
+                  </div>
+                </details>
                 <?php endif; ?>
               </div>
               <div class="absolute bottom-2 right-2 opacity-[0.03] pointer-events-none hidden md:block">
@@ -405,7 +423,7 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
                 </div>
                 <?php endif; ?>
                 <div class="post-content prose prose-slate max-w-none text-sm text-slate-800 leading-relaxed rounded-2xl border border-slate-200/90 bg-white p-4 md:p-5 ring-1 ring-slate-900/[0.04] shadow-[0_1px_3px_rgba(15,23,42,0.06)] prose-p:leading-relaxed prose-a:text-emerald-700" style="font-family: Inter, ui-sans-serif, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;">
-                  <?= function_exists('forum_render_content') ? forum_render_content($post['body'] ?? '') : nl2br(htmlspecialchars($post['body'] ?? '')) ?>
+                  <?= function_exists('forum_render_content') ? forum_render_content($post['body'] ?? '', (string) ($post['body_format'] ?? 'markdown')) : nl2br(htmlspecialchars($post['body'] ?? '')) ?>
                 </div>
                 <?php if (!empty($post['attachments'])): ?>
                 <div class="mt-3 flex flex-wrap gap-2 items-start">
@@ -747,6 +765,20 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
   var maxPostLen = <?= (int) $forumMaxPostLen ?>;
   var coopReplyUrl = <?= json_encode($interteamCoopReplyUrl !== '' ? $interteamCoopReplyUrl : '', JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
   window.__forumPostBodies = <?= json_encode($postBodiesForJs ?? []) ?>;
+  window.__forumPostBodyFormats = <?= json_encode($postBodyFormatsForJs ?? []) ?>;
+
+  function forumPlainTextForQuote(body, format) {
+    if (!body) return '';
+    if (format !== 'html') return String(body);
+    try {
+      var wrapped = '<div id="forum-quote-parse-root">' + String(body) + '</div>';
+      var doc = new DOMParser().parseFromString(wrapped, 'text/html');
+      var root = doc.getElementById('forum-quote-parse-root');
+      return root ? (root.textContent || '').trim() : String(body);
+    } catch (e) {
+      return String(body);
+    }
+  }
 
   window.openForumSettings = function () {
     var m = document.getElementById('forum-settings-modal');
@@ -1095,7 +1127,9 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
       var postId = parseInt(btn.getAttribute('data-post-id'), 10);
       var author = btn.getAttribute('data-author') || 'Anon';
       var body = (window.__forumPostBodies && window.__forumPostBodies[postId]) ? String(window.__forumPostBodies[postId]) : '';
-      var quoted = '> ' + author + ' a écrit :\n' + body.split('\n').map(function(line) { return '> ' + line; }).join('\n') + '\n\n';
+      var fmt = (window.__forumPostBodyFormats && window.__forumPostBodyFormats[postId]) ? String(window.__forumPostBodyFormats[postId]) : 'markdown';
+      var plain = forumPlainTextForQuote(body, fmt);
+      var quoted = '> ' + author + ' a écrit :\n' + plain.split('\n').map(function(line) { return '> ' + line; }).join('\n') + '\n\n';
       if (replyContent && FC) {
         setReplyTarget(postId);
         FC.insertAtCursor(replyContent, quoted);

@@ -15,6 +15,7 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
+use App\Support\MosInputValidator;
 use App\Support\OrganizationRoleLabels;
 
 class PersonnelJobRoleAdminController
@@ -120,6 +121,21 @@ class PersonnelJobRoleAdminController
             return Response::redirect(url('back-office/personnel-job-roles'));
         }
 
+        $mosCodeRaw = trim((string) $request->input('mos_code', ''));
+        $mosTitleRaw = trim((string) $request->input('mos_specialty_title', ''));
+        $mosCode = MosInputValidator::normalizeCode($mosCodeRaw !== '' ? $mosCodeRaw : null);
+        $mosTitle = MosInputValidator::normalizeSpecialtyTitle($mosTitleRaw !== '' ? $mosTitleRaw : null);
+        if ($mosCodeRaw !== '' && $mosCode === null) {
+            Session::flash('error', 'Le code de spécialité de référence (format type 11B, 25U, 17C) est invalide.');
+
+            return Response::redirect($id > 0 ? url('back-office/personnel-job-roles/roles/' . $id . '/edit') : url('back-office/personnel-job-roles/roles/create'));
+        }
+        if ($mosTitleRaw !== '' && $mosTitle === null) {
+            Session::flash('error', 'L’intitulé officiel anglais est trop long ou invalide.');
+
+            return Response::redirect($id > 0 ? url('back-office/personnel-job-roles/roles/' . $id . '/edit') : url('back-office/personnel-job-roles/roles/create'));
+        }
+
         if ($id > 0) {
             $existing = $this->jobRoleRepository->findRoleById($id, $tenantId);
             if (!$existing) {
@@ -127,11 +143,17 @@ class PersonnelJobRoleAdminController
 
                 return Response::redirect(url('back-office/personnel-job-roles'));
             }
-            $this->jobRoleRepository->updateRole($id, $tenantId, $categoryId, $name, $slug, $description, $sortOrder);
+            if (!empty($existing['is_system'])) {
+                $mosCode = isset($existing['mos_code']) ? (is_string($existing['mos_code']) ? trim($existing['mos_code']) : null) : null;
+                $mosCode = $mosCode !== '' ? $mosCode : null;
+                $mosTitle = isset($existing['mos_specialty_title']) ? (is_string($existing['mos_specialty_title']) ? trim($existing['mos_specialty_title']) : null) : null;
+                $mosTitle = $mosTitle !== '' ? $mosTitle : null;
+            }
+            $this->jobRoleRepository->updateRole($id, $tenantId, $categoryId, $name, $slug, $description, $sortOrder, $mosCode, $mosTitle);
             $this->jobRoleRepository->setPermissionsForRole($id, $permIds);
             Session::flash('success', 'Rôle métier enregistré.');
         } else {
-            $newId = $this->jobRoleRepository->createRole($tenantId, $categoryId, $name, $slug, $description, $sortOrder, false);
+            $newId = $this->jobRoleRepository->createRole($tenantId, $categoryId, $name, $slug, $description, $sortOrder, false, $mosCode, $mosTitle);
             $this->jobRoleRepository->setPermissionsForRole($newId, $permIds);
             Session::flash('success', 'Rôle métier créé.');
         }

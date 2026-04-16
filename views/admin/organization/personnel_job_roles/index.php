@@ -70,6 +70,7 @@ $personnelProfilesJobRoleReady = $personnelProfilesJobRoleReady ?? true;
                     <th class="p-3 text-xs font-semibold uppercase text-slate-600">Catégorie</th>
                     <th class="p-3 text-xs font-semibold uppercase text-slate-600">Rôle</th>
                     <th class="p-3 text-xs font-semibold uppercase text-slate-600">Référence</th>
+                    <th class="p-3 text-xs font-semibold uppercase text-slate-600">Spécialité US</th>
                     <th class="p-3 text-xs font-semibold uppercase text-slate-600">Perms</th>
                     <th class="p-3 text-xs font-semibold uppercase text-slate-600">Actions</th>
                 </tr>
@@ -80,6 +81,20 @@ $personnelProfilesJobRoleReady = $personnelProfilesJobRoleReady ?? true;
                     <td class="p-3 text-slate-700"><?= htmlspecialchars((string) ($r['category_name'] ?? '—')) ?></td>
                     <td class="p-3 font-medium text-slate-900"><?= htmlspecialchars((string) ($r['name'] ?? '')) ?></td>
                     <td class="p-3 font-mono text-xs text-slate-600"><?= htmlspecialchars((string) ($r['slug'] ?? '')) ?></td>
+                    <td class="p-3 text-xs text-slate-700">
+                        <?php
+                        $mc = trim((string) ($r['mos_code'] ?? ''));
+                        $mt = trim((string) ($r['mos_specialty_title'] ?? ''));
+                        ?>
+                        <?php if ($mc !== ''): ?>
+                        <span class="font-mono font-semibold text-slate-900"><?= htmlspecialchars($mc) ?></span>
+                        <?php if ($mt !== ''): ?>
+                        <span class="block text-[11px] text-slate-500"><?= htmlspecialchars($mt) ?></span>
+                        <?php endif; ?>
+                        <?php else: ?>
+                        <span class="text-slate-400">—</span>
+                        <?php endif; ?>
+                    </td>
                     <td class="p-3 text-slate-600"><?= (int) ($permCounts[(int) $r['id']] ?? 0) ?></td>
                     <td class="p-3">
                         <a href="<?= url('back-office/personnel-job-roles/roles/' . (int) $r['id'] . '/edit') ?>" class="text-slate-700 hover:underline">Modifier</a>

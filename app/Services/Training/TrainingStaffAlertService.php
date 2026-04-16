@@ -113,15 +113,16 @@ class TrainingStaffAlertService
             $learner = $this->userRepository->findById($learnerUserId, $tenantId);
             $learnerLabel = $this->displayNameForUser($learner);
             $title = (string) ($course['title'] ?? 'Formation');
-            $slug = trim((string) ($course['slug'] ?? ''));
-            $link = $slug !== '' ? \url('formations/' . rawurlencode($slug)) : \training_lms_admin_url('enrollments');
+            $courseIdSafe = (int) ($course['id'] ?? $courseId);
+            $link = \training_lms_admin_url('enrollments') . '?course_id=' . $courseIdSafe;
             $this->feedRepository->insert(
                 $tenantId,
                 'training_course_completed',
                 'Parcours terminé — ' . $title,
                 $learnerLabel . ' a validé l’ensemble des exigences de cette formation.',
                 $link,
-                $learnerUserId
+                $learnerUserId,
+                $enrollmentId
             );
         } catch (\Throwable) {
         }

@@ -59,6 +59,8 @@ function run_community_platform_migration(PDO $pdo): void
             'training' => true,
             'atak' => false,
             'max_members' => 50,
+            'max_training_courses' => 5,
+            'advanced_integrations' => false,
             'community_create' => true,
         ], JSON_THROW_ON_ERROR);
         $std = json_encode([
@@ -68,6 +70,8 @@ function run_community_platform_migration(PDO $pdo): void
             'atak' => true,
             'events' => true,
             'max_members' => 200,
+            'max_training_courses' => 25,
+            'advanced_integrations' => false,
             'community_create' => true,
         ], JSON_THROW_ON_ERROR);
         $pro = json_encode([
@@ -78,13 +82,28 @@ function run_community_platform_migration(PDO $pdo): void
             'analytics' => true,
             'events' => true,
             'max_members' => 2000,
+            'max_training_courses' => 100,
+            'advanced_integrations' => false,
+            'community_create' => true,
+        ], JSON_THROW_ON_ERROR);
+        $proPlus = json_encode([
+            'forum' => true,
+            'documents' => true,
+            'training' => true,
+            'atak' => true,
+            'analytics' => true,
+            'events' => true,
+            'max_members' => 10000,
+            'max_training_courses' => 0,
+            'advanced_integrations' => true,
             'community_create' => true,
         ], JSON_THROW_ON_ERROR);
         $ins = $pdo->prepare('INSERT INTO subscription_plans (slug, name, sort_order, features_json, limits_json, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
         $ins->execute(['free', 'Gratuit', 10, $free, $freeLimitsDefault]);
         $ins->execute(['standard', 'Standard', 20, $std, null]);
         $ins->execute(['pro', 'Pro', 30, $pro, null]);
-        echo "Plans subscription_plans insérés (free, standard, pro).\n";
+        $ins->execute(['pro_plus', 'Pro+', 40, $proPlus, null]);
+        echo "Plans subscription_plans insérés (free, standard, pro, pro_plus).\n";
     } else {
         $up = $pdo->prepare("UPDATE subscription_plans SET limits_json = ? WHERE slug = 'free' AND (limits_json IS NULL OR limits_json = '')");
         $up->execute([$freeLimitsDefault]);
@@ -102,6 +121,62 @@ function run_community_platform_migration(PDO $pdo): void
             }
         }
     }
+
+    $proPlusExists = $pdo->query("SELECT 1 FROM subscription_plans WHERE slug = 'pro_plus' LIMIT 1");
+    if ($proPlusExists && !$proPlusExists->fetch()) {
+        $proPlusFeat = json_encode([
+            'forum' => true,
+            'documents' => true,
+            'training' => true,
+            'atak' => true,
+            'analytics' => true,
+            'events' => true,
+            'max_members' => 10000,
+            'max_training_courses' => 0,
+            'advanced_integrations' => true,
+            'community_create' => true,
+        ], JSON_THROW_ON_ERROR);
+        $insPp = $pdo->prepare('INSERT INTO subscription_plans (slug, name, sort_order, features_json, limits_json, created_at) VALUES (?, ?, ?, ?, NULL, NOW())');
+        $insPp->execute(['pro_plus', 'Pro+', 40, $proPlusFeat]);
+        echo "Plan pro_plus inséré.\n";
+    }
+
+    $mergeMissingPlanFeatures = static function (PDO $pdoConn, string $slug, array $defaults): void {
+        $st = $pdoConn->prepare('SELECT features_json FROM subscription_plans WHERE slug = ? LIMIT 1');
+        $st->execute([$slug]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return;
+        }
+        $cur = json_decode((string) ($row['features_json'] ?? '{}'), true);
+        if (!is_array($cur)) {
+            $cur = [];
+        }
+        $changed = false;
+        foreach ($defaults as $k => $v) {
+            if (!array_key_exists($k, $cur)) {
+                $cur[$k] = $v;
+                $changed = true;
+            }
+        }
+        if ($changed) {
+            $up = $pdoConn->prepare('UPDATE subscription_plans SET features_json = ? WHERE slug = ?');
+            $up->execute([json_encode($cur, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $slug]);
+            echo "Plan {$slug} : clés de fonctionnalités complétées (limites / intégrations).\n";
+        }
+    };
+    $mergeMissingPlanFeatures($pdo, 'free', [
+        'max_training_courses' => 5,
+        'advanced_integrations' => false,
+    ]);
+    $mergeMissingPlanFeatures($pdo, 'standard', [
+        'max_training_courses' => 25,
+        'advanced_integrations' => false,
+    ]);
+    $mergeMissingPlanFeatures($pdo, 'pro', [
+        'max_training_courses' => 100,
+        'advanced_integrations' => false,
+    ]);
 
     $cols = [
         'owner_user_id' => "ADD COLUMN owner_user_id int unsigned DEFAULT NULL COMMENT 'Utilisateur propriétaire créateur' AFTER settings",

@@ -203,4 +203,51 @@ class RoleRepository
 
         return $st->execute([$json !== false ? $json : '{}', $roleId, $tenantId]);
     }
+
+    /**
+     * Crée le rôle tenant aligné sur le catalogue global (role_definitions) s’il manque encore.
+     * Utilisé pour la chaîne pédagogique (slugs catalogue non livrés dans le jeu minimal opérationnel).
+     */
+    public function ensureCatalogRoleForTenant(int $tenantId, string $slug): ?int
+    {
+        $slug = trim($slug);
+        if ($tenantId < 1 || $slug === '') {
+            return null;
+        }
+        $existing = $this->getIdBySlug($tenantId, $slug);
+        if ($existing !== null) {
+            return $existing;
+        }
+        try {
+            $chk = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'role_definitions' LIMIT 1");
+            if (!$chk || !$chk->fetchColumn()) {
+                return null;
+            }
+        } catch (\Throwable) {
+            return null;
+        }
+        $st = $this->pdo->prepare('SELECT id, name_fr, description FROM role_definitions WHERE slug = ? LIMIT 1');
+        $st->execute([$slug]);
+        $def = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$def) {
+            return null;
+        }
+        $defId = (int) ($def['id'] ?? 0);
+        if ($defId < 1) {
+            return null;
+        }
+        $name = mb_substr(trim((string) ($def['name_fr'] ?? $slug)), 0, 160);
+        $desc = isset($def['description']) ? mb_substr(trim((string) $def['description']), 0, 500) : null;
+        try {
+            $ins = $this->pdo->prepare(
+                'INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, definition_id, created_at)
+                 VALUES (?, ?, ?, ?, 1, 0, \'intra\', ?, NOW())'
+            );
+            $ins->execute([$tenantId, $name, $slug, $desc, $defId]);
+
+            return (int) $this->pdo->lastInsertId();
+        } catch (\Throwable) {
+            return $this->getIdBySlug($tenantId, $slug);
+        }
+    }
 }

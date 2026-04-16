@@ -61,6 +61,18 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     $alpineSrc = is_file($alpineLocal) ? $baseUrl . '/assets/js/alpine.min.js' : 'https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js';
 ?>
     <script defer src="<?= htmlspecialchars($alpineSrc) ?>"></script>
+    <style>
+      select.bo-select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.65rem center;
+        background-size: 1.125rem 1.125rem;
+      }
+      select.bo-select::-ms-expand { display: none; }
+    </style>
     <?php if (!empty($usesAdminSidebarShell)): ?>
     <style>[x-cloak]{display:none!important}</style>
     <?php endif; ?>
@@ -73,6 +85,7 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <main class="<?= !empty($usesAdminSidebarShell) ? 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]' : 'min-h-[80vh]' ?>">
+        <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
         <?php if (!empty($usesAdminSidebarShell)): ?>
         <div
             x-data="{ navOpen: false }"

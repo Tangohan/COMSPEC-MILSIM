@@ -757,6 +757,11 @@ class TrainingApiController
         if ($this->courseRepository->slugExists($tenantId, $slug)) {
             return Response::json(['error' => 'Ce slug existe déjà.'], 400);
         }
+        if (!$this->featureGate->canCreateTenantCatalogTrainingCourse($tenantId)) {
+            return Response::json([
+                'error' => 'Nombre maximal de parcours atteint pour cette communauté. Passez à une offre supérieure ou supprimez un parcours existant.',
+            ], 403);
+        }
         $newId = $this->courseRepository->create($tenantId, [
             'title' => $data['title'] ?? 'Nouvelle formation',
             'slug' => $slug,

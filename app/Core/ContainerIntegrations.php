@@ -37,6 +37,7 @@ final class ContainerIntegrations
             \App\Controllers\Admin\Organization\OrganizationIntegrationsController::class => new \App\Controllers\Admin\Organization\OrganizationIntegrationsController(
                 Container::get(\App\Services\Auth\AuthService::class),
                 Container::get(\App\Repositories\TenantApiKeyRepository::class),
+                Container::get(\App\Services\Platform\FeatureGateService::class),
             ),
             \App\Controllers\Admin\Organization\ComplianceBundleExportController::class => new \App\Controllers\Admin\Organization\ComplianceBundleExportController(
                 Container::get(\App\Services\Auth\AuthService::class),

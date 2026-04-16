@@ -8,6 +8,7 @@ use App\Repositories\BlockedIndicatorRepository;
 use App\Repositories\UserRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Support\Audit\AuditFieldSnapshot;
 
 final class IndicatorBlocklistService
 {
@@ -58,14 +59,20 @@ final class IndicatorBlocklistService
             $actorUserId,
             $moderationActionId
         );
-        $this->auditService->log(
+        $new = [
+            'indicator_id' => $id,
+            'indicator_type' => 'email',
+            'scope' => $scope,
+            'tenant_id' => $tid,
+        ];
+        $this->auditService->logChange(
             AuditAction::MODERATION_ACTION,
             $tenantId ?? 0,
             $actorUserId,
             'blocked_indicator',
             $id,
-            null,
-            json_encode(['type' => 'email', 'scope' => $scope], JSON_UNESCAPED_UNICODE) ?: null
+            [],
+            $new,
         );
 
         return $id;
@@ -101,14 +108,20 @@ final class IndicatorBlocklistService
             $actorUserId,
             null
         );
-        $this->auditService->log(
+        $new = [
+            'indicator_id' => $id,
+            'indicator_type' => 'ip',
+            'scope' => $scope,
+            'tenant_id' => $tid,
+        ];
+        $this->auditService->logChange(
             AuditAction::MODERATION_ACTION,
             $tenantId ?? 0,
             $actorUserId,
             'blocked_indicator',
             $id,
-            null,
-            json_encode(['type' => 'ip', 'scope' => $scope], JSON_UNESCAPED_UNICODE) ?: null
+            [],
+            $new,
         );
 
         return $id;
@@ -116,14 +129,28 @@ final class IndicatorBlocklistService
 
     public function revokeIndicator(int $actorUserId, int $indicatorId, ?int $tenantIdForTenantScope): bool
     {
+        $row = $this->blockedIndicatorRepository->findById($indicatorId);
         $ok = $this->blockedIndicatorRepository->revoke($indicatorId, $tenantIdForTenantScope);
         if ($ok) {
+            $old = [];
+            if (is_array($row)) {
+                $old = [
+                    'indicator_id' => $indicatorId,
+                    'indicator_type' => (string) ($row['indicator_type'] ?? ''),
+                    'scope' => (string) ($row['scope'] ?? ''),
+                    'tenant_id' => $row['tenant_id'] !== null ? (int) $row['tenant_id'] : null,
+                ];
+            }
+            $old = AuditFieldSnapshot::stripSensitive($old);
+            [$os, $ns] = AuditFieldSnapshot::encodePair($old, []);
             $this->auditService->log(
                 AuditAction::MODERATION_REVOKED,
                 $tenantIdForTenantScope ?? 0,
                 $actorUserId,
                 'blocked_indicator',
-                $indicatorId
+                $indicatorId,
+                $os,
+                $ns,
             );
         }
 

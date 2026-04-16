@@ -18,13 +18,25 @@ return function (PDO $pdo): void {
             body TEXT,
             link_url VARCHAR(512) DEFAULT NULL,
             actor_user_id INT UNSIGNED DEFAULT NULL,
+            related_enrollment_id BIGINT UNSIGNED NULL DEFAULT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY idx_tcf_tenant_created (tenant_id, created_at),
+            KEY idx_tcf_related_enrollment (tenant_id, related_enrollment_id),
             CONSTRAINT tcf_tenant_fk FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
         echo "Table tenant_community_feed créée.\n";
+    }
+
+    $colRel = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_community_feed' AND COLUMN_NAME = 'related_enrollment_id' LIMIT 1");
+    if (!$colRel || !$colRel->fetch()) {
+        $pdo->exec(
+            'ALTER TABLE tenant_community_feed
+            ADD COLUMN related_enrollment_id BIGINT UNSIGNED NULL DEFAULT NULL AFTER actor_user_id,
+            ADD KEY idx_tcf_related_enrollment (tenant_id, related_enrollment_id)'
+        );
+        echo "Colonne tenant_community_feed.related_enrollment_id ajoutée.\n";
     }
 
     $hasPing = $pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'training_staff_ping_log' LIMIT 1");

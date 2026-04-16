@@ -350,6 +350,38 @@ final class EmailService
     }
 
     /**
+     * Offre de poste publiée — notification recruteur / fondateur / RH.
+     */
+    public function sendRecruitmentOpeningPublishedStaffNotify(
+        string $to,
+        string $tenantName,
+        string $openingTitle,
+        string $referencePublic,
+        string $publicAvisUrl,
+        string $candidaterUrl,
+        int $openingId,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::RECRUITMENT_OPENING_PUBLISHED_STAFF,
+            'recruitment_opening_published_staff',
+            $to,
+            'Nouvelle offre publiée — ' . $tenantName,
+            [
+                'tenantName' => $tenantName,
+                'openingTitle' => $openingTitle,
+                'referencePublic' => $referencePublic,
+                'publicAvisUrl' => $publicAvisUrl,
+                'candidaterUrl' => $candidaterUrl,
+                'openingId' => $openingId,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'recruitment_opening_published', 'opening_id' => $openingId]
+        );
+    }
+
+    /**
      * Candidature acceptée — message au candidat (message du recruteur + lien espace).
      *
      * @param 'existing'|'new_password_pending' $accountScenario existing : compte déjà présent sur la communauté ; new_password_pending : compte tout juste créé, autre mail pour le mot de passe.

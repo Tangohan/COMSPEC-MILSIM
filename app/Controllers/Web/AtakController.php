@@ -40,8 +40,7 @@ class AtakController
         }
         $config = $tenantId ? $this->atakConfigRepository->getByTenantId($tenantId) : null;
 
-        $nodeUrl = $config['node_url'] ?? env('NODE_ATAK_URL', '');
-        $nodeUrl = $nodeUrl === '' ? '' : rtrim($nodeUrl, '/');
+        $nodeUrl = atak_client_base_url($config);
 
         $visitorIp = $_SERVER['REMOTE_ADDR'] ?? '';
         if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
@@ -206,11 +205,7 @@ class AtakController
         $tenantId = (int) Session::get('tenant_id');
         $config = $tenantId ? $this->atakConfigRepository->getByTenantId($tenantId) : null;
 
-        $nodeUrl = $config['node_url'] ?? env('NODE_ATAK_URL', '');
-        if ($nodeUrl === '') {
-            $nodeUrl = 'http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . ':3001';
-        }
-        $nodeUrl = rtrim($nodeUrl, '/');
+        $nodeUrl = atak_client_base_url($config);
 
         $atakModDownloadUrl = null;
         if ($tenantId) {

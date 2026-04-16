@@ -34,7 +34,10 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PlanningEntryRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\ArmaPlaytimeRepository;
+use App\Repositories\PersonnelOrgHistoryRepository;
 use App\Services\Personnel\SenioritySummaryService;
+use App\Services\Steam\SteamWebApiService;
 use App\Core\Gate;
 use App\Support\OrbatRosterPayload;
 
@@ -122,7 +125,27 @@ class PersonnelController
         private RoleRepository $roleRepository,
         private TenantRepository $tenantRepository,
         private SenioritySummaryService $senioritySummaryService,
+        private ArmaPlaytimeRepository $armaPlaytimeRepository,
+        private SteamWebApiService $steamWebApiService,
+        private PersonnelOrgHistoryRepository $personnelOrgHistoryRepository,
     ) {}
+
+    private function formatArmaPlaytimeFrench(int $seconds): string
+    {
+        if ($seconds <= 0) {
+            return 'Pas encore de temps enregistré';
+        }
+        $h = intdiv($seconds, 3600);
+        $m = intdiv($seconds % 3600, 60);
+        if ($h > 0) {
+            return $m > 0 ? "{$h} h {$m} min" : "{$h} h";
+        }
+        if ($m > 0) {
+            return "{$m} min";
+        }
+
+        return 'Moins d’une minute';
+    }
 
     /**
      * @return list<array<string, mixed>>
@@ -212,6 +235,7 @@ class PersonnelController
         }
 
         $assignments = $this->personnelAssignmentRepository->listActiveForUserResolved($uid);
+        $assignments = $this->personnelAssignmentRepository->enrichAssignmentHistoryWithDurations($assignments);
         $primaryAssignment = $assignments[0] ?? null;
         $primaryUnitFallbackName = null;
         if ($primaryAssignment === null && !empty($personnelProfile['primary_unit_id'])) {
@@ -221,6 +245,14 @@ class PersonnelController
             }
         }
 
+        $personnelAssignmentHistory = [];
+        $personnelAssignmentHistoryUnitTotals = [];
+        if ($this->personnelAssignmentRepository->personnelAssignmentsTableExists()) {
+            $histRaw = $this->personnelAssignmentRepository->listAssignmentHistoryForTenantUser((int) $tenantId, $uid, 120);
+            $personnelAssignmentHistory = $this->personnelAssignmentRepository->enrichAssignmentHistoryWithDurations($histRaw);
+            $personnelAssignmentHistoryUnitTotals = $this->personnelAssignmentRepository->sumDurationDaysByUnit($personnelAssignmentHistory);
+        }
+
         $commander = null;
         if (!empty($primaryAssignment['commander_user_id'])) {
             $commander = $this->userRepository->findById((int) $primaryAssignment['commander_user_id'], (int) $tenantId);
@@ -228,7 +260,7 @@ class PersonnelController
 
         $commanderLabelsById = [];
         $seenCommanderIds = [];
-        foreach ($assignments as $a) {
+        foreach (array_merge($assignments, $personnelAssignmentHistory) as $a) {
             $cid = (int) ($a['commander_user_id'] ?? 0);
             if ($cid < 1 || isset($seenCommanderIds[$cid])) {
                 continue;
@@ -304,17 +336,24 @@ class PersonnelController
         $canStaffView = $this->canStaffViewPersonnel();
         $canSensitive = $this->canViewSensitivePersonnel();
         $isForumMod = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
+        /** Lecture identité civile, état civil, dossier recrutement détaillé : titulaire + staff / RH habilités (pas les autres membres). */
+        $privatePersonnelIdentity = $isSelf || $canStaffView || $canStaffEdit || $canSensitive;
         $canEditNotes = $isSelf || $canStaffEdit;
         $canEditProfile = $isSelf || $canStaffEdit;
-        $canViewCivil = $isSelf || $canStaffView || $canSensitive || $isForumMod;
+        $canViewCivil = $privatePersonnelIdentity;
         $canViewCommandNotes = $isSelf || $canStaffEdit;
         $displaySettings = $this->displaySettingsRepository->getOrDefaults((int) $target['id']);
         $hidePersonalInfo = (int) ($displaySettings['hide_personal_info'] ?? 0) === 1;
         $viewerPrivilegedForPersonal = $isSelf || $canStaffView || $canStaffEdit || $isForumMod;
         $redactPersonalPresentation = $hidePersonalInfo && !$viewerPrivilegedForPersonal;
         $canViewCivilSection = $canViewCivil && !$redactPersonalPresentation;
-        $showEmailInContact = !$redactPersonalPresentation && ($isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_email_to_others'] ?? 0) === 1);
+        $showEmailInContact = !$redactPersonalPresentation && $privatePersonnelIdentity;
         $showMatriculePublic = $isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_matricule_to_others'] ?? 1) === 1;
+        if (!$privatePersonnelIdentity) {
+            $adminPanels = array_values(array_filter($adminPanels, static function (array $p): bool {
+                return strtolower(trim((string) ($p['slug'] ?? ''))) !== 'etat-civil';
+            }));
+        }
 
         /** @var ModerationRestrictionResolver $modResolver */
         $modResolver = Container::get(ModerationRestrictionResolver::class);
@@ -331,9 +370,92 @@ class PersonnelController
             || $gateInst->allows('admin.access')
             || $gateInst->allows('site.support');
 
-        $seniorityLines = ($isSelf || $canStaffView)
-            ? $this->senioritySummaryService->linesForPersonnelFile((int) $tenantId, $uid)
-            : [];
+        $senioritySummary = ($isSelf || $canStaffView)
+            ? $this->senioritySummaryService->personnelSenioritySummary((int) $tenantId, $uid)
+            : ['global' => null, 'detail' => []];
+        $seniorityGlobal = $senioritySummary['global'] ?? null;
+        $seniorityDetailLines = is_array($senioritySummary['detail'] ?? null) ? $senioritySummary['detail'] : [];
+
+        $steamIdResolved = trim((string) ($target['steam_id'] ?? ''));
+        $steamIdResolved = $steamIdResolved !== '' ? $steamIdResolved : null;
+
+        $steamProfileSyncOffered = $this->steamWebApiService->isConfigured()
+            && $steamIdResolved !== null
+            && $canEditProfile;
+
+        $armaPlaytime = null;
+        if ($isSelf || $canStaffView) {
+            $ready = $this->armaPlaytimeRepository->schemaReady();
+            $armaPlaytime = [
+                'show_steam_hint_self' => $isSelf && $steamIdResolved === null,
+                'no_steam_staff' => !$isSelf && $steamIdResolved === null,
+                'schema_ready' => $ready,
+                'hours_label' => null,
+                'last_sync_label' => null,
+            ];
+            if ($steamIdResolved !== null && $ready) {
+                $ptRow = $this->armaPlaytimeRepository->getSummaryForUser((int) $tenantId, $uid);
+                $ptSecs = $ptRow !== null ? (int) ($ptRow['total_seconds'] ?? 0) : 0;
+                $armaPlaytime['hours_label'] = $this->formatArmaPlaytimeFrench($ptSecs);
+                if ($ptRow && !empty($ptRow['last_report_at'])) {
+                    $tsPt = strtotime((string) $ptRow['last_report_at']);
+                    if ($tsPt) {
+                        $armaPlaytime['last_sync_label'] = date('d/m/Y \à H:i', $tsPt);
+                    }
+                }
+            }
+        }
+
+        $communityRoleLabel = null;
+        $roleId = (int) ($target['role_id'] ?? 0);
+        if ($roleId > 0) {
+            $roleRow = $this->roleRepository->findById($roleId, (int) $tenantId)
+                ?? $this->roleRepository->findById($roleId, null);
+            if ($roleRow) {
+                $n = trim((string) ($roleRow['name'] ?? ''));
+                $communityRoleLabel = $n !== '' ? $n : null;
+            }
+        }
+
+        $personnelOrgHistory = [];
+        $personnelOrgHistorySection = ($isSelf || $canStaffView) && $this->personnelOrgHistoryRepository->schemaReady();
+        if ($personnelOrgHistorySection) {
+            $histRows = $this->personnelOrgHistoryRepository->listForUser((int) $tenantId, $uid, 25);
+            foreach ($histRows as &$hRow) {
+                $hRow['actor_label'] = null;
+                $aid = isset($hRow['actor_user_id']) ? (int) $hRow['actor_user_id'] : 0;
+                if ($aid > 0) {
+                    $au = $this->userRepository->findById($aid, (int) $tenantId);
+                    if ($au) {
+                        $dn = trim((string) ($au['display_name'] ?? ''));
+                        $cs = trim((string) ($au['callsign'] ?? ''));
+                        $hRow['actor_label'] = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Référent');
+                    }
+                }
+            }
+            unset($hRow);
+            $personnelOrgHistory = $histRows;
+        }
+
+        $qualificationIssuerLabels = [];
+        $issuerIds = [];
+        foreach ($qualifications as $q) {
+            $ib = (int) ($q['issued_by'] ?? 0);
+            if ($ib > 0) {
+                $issuerIds[$ib] = true;
+            }
+        }
+        foreach (array_keys($issuerIds) as $issuerUserId) {
+            $iu = $this->userRepository->findById($issuerUserId, (int) $tenantId);
+            if ($iu) {
+                $dn = trim((string) ($iu['display_name'] ?? ''));
+                $cs = trim((string) ($iu['callsign'] ?? ''));
+                $em = trim((string) ($iu['email'] ?? ''));
+                $qualificationIssuerLabels[$issuerUserId] = $dn !== '' ? $dn : ($cs !== '' ? $cs : $em);
+            } else {
+                $qualificationIssuerLabels[$issuerUserId] = 'Référent inconnu';
+            }
+        }
 
         return Response::view('layout.main', [
             'content' => 'personnel.file',
@@ -350,6 +472,8 @@ class PersonnelController
             'grade' => $grade,
             'grades' => $grades,
             'assignments' => $assignments,
+            'personnelAssignmentHistory' => $personnelAssignmentHistory,
+            'personnelAssignmentHistoryUnitTotals' => $personnelAssignmentHistoryUnitTotals,
             'primaryAssignment' => $primaryAssignment,
             'commander' => $commander,
             'commanderLabelsById' => $commanderLabelsById,
@@ -367,6 +491,7 @@ class PersonnelController
             'canEditProfile' => $canEditProfile,
             'canViewCivil' => $canViewCivil,
             'canViewCivilSection' => $canViewCivilSection,
+            'privatePersonnelIdentity' => $privatePersonnelIdentity,
             'redactPersonalPresentation' => $redactPersonalPresentation,
             'canViewCommandNotes' => $canViewCommandNotes,
             'displaySettings' => $displaySettings,
@@ -374,7 +499,15 @@ class PersonnelController
             'showMatriculePublic' => $showMatriculePublic,
             'personnelModerationStaffLines' => $personnelModerationStaffLines,
             'personnelModerationMemberBrief' => $personnelModerationMemberBrief,
-            'seniorityLines' => $seniorityLines,
+            'seniorityGlobal' => is_array($seniorityGlobal) ? $seniorityGlobal : null,
+            'seniorityDetailLines' => $seniorityDetailLines,
+            'armaPlaytime' => $armaPlaytime,
+            'steamProfileSyncOffered' => $steamProfileSyncOffered,
+            'personnelOrgHistory' => $personnelOrgHistory,
+            'personnelOrgHistorySection' => $personnelOrgHistorySection,
+            'personnelIsSelf' => $isSelf,
+            'communityRoleLabel' => $communityRoleLabel,
+            'qualificationIssuerLabels' => $qualificationIssuerLabels,
         ]);
     }
 
@@ -784,6 +917,83 @@ class PersonnelController
         Session::flash('success', 'Dossier mis à jour.');
         $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
         return Response::redirect($redirect);
+    }
+
+    public function syncSteamProfile(Request $request, array $params = []): Response
+    {
+        $currentUser = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId || !$currentUser) {
+            return Response::redirect(url('login'));
+        }
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('personnel/me'));
+        }
+        $raw = (string) ($params['id'] ?? '');
+        $target = $this->resolvePersonnelTarget($raw, $tenantId);
+        if (!$target) {
+            return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
+        }
+        $currentUserId = (int) $currentUser['id'];
+        $isSelf = $currentUserId === (int) $target['id'];
+        if (!$isSelf && !$this->canStaffEditPersonnel()) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+        }
+        if (!$this->steamWebApiService->isConfigured()) {
+            Session::flash('error', 'L’import depuis Steam n’est pas configuré sur ce serveur.');
+
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+        }
+        $steamId = trim((string) ($target['steam_id'] ?? ''));
+        if ($steamId === '') {
+            Session::flash('error', 'Aucun identifiant Steam n’est renseigné sur ce dossier. Indiquez-le dans les préférences du compte du membre, puis réessayez.');
+
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+        }
+        $applyName = $request->input('apply_steam_display_name') === '1';
+        $summary = $this->steamWebApiService->fetchPublicPlayer($steamId);
+        if ($summary === null) {
+            Session::flash('error', 'Impossible de récupérer le profil public pour cet identifiant. Vérifiez l’identifiant ou réessayez plus tard.');
+
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+        }
+        $patch = [];
+        if ($summary['avatar_url'] !== '') {
+            $patch['avatar_url'] = function_exists('mb_substr')
+                ? mb_substr($summary['avatar_url'], 0, 500)
+                : substr($summary['avatar_url'], 0, 500);
+        }
+        if ($applyName && $summary['personaname'] !== '') {
+            $patch['display_name'] = function_exists('mb_substr')
+                ? mb_substr($summary['personaname'], 0, 100)
+                : substr($summary['personaname'], 0, 100);
+        }
+        if ($patch === []) {
+            Session::flash('error', 'Aucune donnée exploitable n’a été renvoyée pour ce profil.');
+
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+        }
+        $targetUid = (int) $target['id'];
+        $this->userRepository->update($targetUid, $tenantId, $patch);
+        if ($isSelf) {
+            $fresh = $this->userRepository->findById($targetUid, $tenantId);
+            if ($fresh) {
+                Session::set('display_name', (string) ($fresh['display_name'] ?? ''));
+                Session::set('callsign', (string) ($fresh['callsign'] ?? ''));
+            }
+        }
+        Session::flash(
+            'success',
+            $applyName
+                ? 'Photo et nom d’affichage mis à jour depuis le profil public Steam.'
+                : 'Photo du compte mise à jour depuis le profil public Steam.'
+        );
+
+        return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
     }
 
     private function canStaffViewPersonnel(): bool

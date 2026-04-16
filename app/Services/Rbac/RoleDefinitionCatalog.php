@@ -34,8 +34,11 @@ final class RoleDefinitionCatalog
             ['slug' => 'applications_analyst', 'name_fr' => 'Analyste candidatures', 'name_us' => 'Applications Analyst', 'family' => 'hr', 'description' => 'Analyse des dossiers.', 'sort_order' => 120],
             ['slug' => 'selection_officer', 'name_fr' => 'Officier sélection', 'name_us' => 'Selection Officer', 'family' => 'hr', 'description' => 'Décision de sélection.', 'sort_order' => 130],
             ['slug' => 'integration_lead', 'name_fr' => 'Responsable intégration', 'name_us' => 'Integration Lead', 'family' => 'hr', 'description' => 'Onboarding des nouveaux membres.', 'sort_order' => 140],
-            // Formation
-            ['slug' => 'trainer', 'name_fr' => 'Formateur', 'name_us' => 'Trainer', 'family' => 'training', 'description' => 'Animation de formation.', 'sort_order' => 200],
+            // Formation (chaîne pédagogique : cumul possible par tenant / unité)
+            ['slug' => 'instructor', 'name_fr' => 'Instructeur', 'name_us' => 'Instructor', 'family' => 'training', 'description' => 'Dispense un parcours conçu par ailleurs ; animation et évaluation sur le terrain.', 'sort_order' => 195],
+            ['slug' => 'trainer', 'name_fr' => 'Formateur', 'name_us' => 'Trainer', 'family' => 'training', 'description' => 'Conçoit et structure les parcours, objectifs, modules, prérequis et critères de validation.', 'sort_order' => 200],
+            ['slug' => 'instructor_trainer', 'name_fr' => 'Formateur d’instructeurs', 'name_us' => 'Instructor Trainer', 'family' => 'training', 'description' => 'Forme, valide et suit les instructeurs ; peut retirer ou suspendre une capacité d’animation.', 'sort_order' => 205],
+            ['slug' => 'trainer_of_trainers', 'name_fr' => 'Formateur de formateurs', 'name_us' => 'Trainer of Trainers', 'family' => 'training', 'description' => 'Gouvernance des concepteurs, référentiels, normes d’évaluation et qualité pédagogique.', 'sort_order' => 208],
             ['slug' => 'senior_instructor', 'name_fr' => 'Instructeur senior', 'name_us' => 'Senior Instructor', 'family' => 'training', 'description' => 'Expertise pédagogique avancée.', 'sort_order' => 210],
             ['slug' => 'training_officer', 'name_fr' => 'Responsable instruction', 'name_us' => 'Training Officer', 'family' => 'training', 'description' => 'Pilotage des programmes.', 'sort_order' => 220],
             ['slug' => 'evaluator', 'name_fr' => 'Évaluateur', 'name_us' => 'Evaluator', 'family' => 'training', 'description' => 'Évaluation des compétences.', 'sort_order' => 230],
@@ -77,6 +80,9 @@ final class RoleDefinitionCatalog
             ['from' => 'executive_officer', 'to' => 'unit_commander', 'type' => 'reports_to'],
             ['from' => 'operations_officer', 'to' => 'unit_commander', 'type' => 'reports_to'],
             ['from' => 'recruiter', 'to' => 'recruitment_lead', 'type' => 'reports_to'],
+            ['from' => 'instructor', 'to' => 'instructor_trainer', 'type' => 'mentored_by'],
+            ['from' => 'trainer', 'to' => 'trainer_of_trainers', 'type' => 'mentored_by'],
+            ['from' => 'instructor_trainer', 'to' => 'trainer_of_trainers', 'type' => 'reports_to'],
             ['from' => 'trainer', 'to' => 'training_officer', 'type' => 'reports_to'],
             ['from' => 'trainer', 'to' => 'squad_leader', 'type' => 'independent'],
             ['from' => 'recruiter', 'to' => 'unit_responsible', 'type' => 'cross_cutting'],

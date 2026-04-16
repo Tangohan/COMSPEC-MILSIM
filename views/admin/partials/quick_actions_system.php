@@ -13,7 +13,7 @@ if (!$gate->allows('admin.system')) {
         <h2 id="qa-platform-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Modules plateforme</h2>
         <p class="mt-1 text-sm text-slate-600">Accès direct aux fonctions <strong class="font-semibold text-slate-800">transverses</strong> (hors configuration d’une communauté précise).</p>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col">
             <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Sécurité &amp; accès</p>
             <h3 class="text-base font-bold text-slate-900">Identité globale</h3>
@@ -45,6 +45,16 @@ if (!$gate->allows('admin.system')) {
                 <a href="<?= url('admin/maintenance') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800">Maintenance BDD</a>
                 <a href="<?= url('admin/ops-center') ?>" class="inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-xs font-semibold text-indigo-900 hover:bg-indigo-100">Ops Center rôles</a>
                 <a href="<?= url('admin/audit') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Journal d’audit</a>
+            </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col md:col-span-2 xl:col-span-1">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700/90 mb-2">Déploiement</p>
+            <h3 class="text-base font-bold text-slate-900">Publications et préqualification</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4 flex-1">Canaux d’environnement, versions courantes et communautés de test.</p>
+            <div class="flex flex-col gap-2">
+                <a href="<?= url('admin/tenants') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Annuaire des communautés</a>
+                <a href="<?= url('admin/system/deployment') ?>" class="inline-flex items-center justify-center rounded-lg bg-amber-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-amber-700">Tableau des publications</a>
+                <a href="<?= url('admin/system/deployment/communities') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Communautés de test</a>
             </div>
         </div>
     </div>

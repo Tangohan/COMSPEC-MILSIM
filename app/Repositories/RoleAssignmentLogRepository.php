@@ -55,4 +55,41 @@ final class RoleAssignmentLogRepository
         );
         $st->execute([$tenantId, $userId, $roleId, $assignedBy ?: null, $reason !== null && $reason !== '' ? mb_substr($reason, 0, 500) : null]);
     }
+
+    public function isTableReady(): bool
+    {
+        return $this->tableExists();
+    }
+
+    /**
+     * Plus ancienne date d’attribution (jour) parmi les rôles indiqués.
+     *
+     * @param list<int> $roleIds
+     */
+    public function earliestAssignDateYmdForRoles(int $tenantId, int $userId, array $roleIds): ?string
+    {
+        if (!$this->tableExists() || $tenantId < 1 || $userId < 1 || $roleIds === []) {
+            return null;
+        }
+        $roleIds = array_values(array_unique(array_filter(array_map(static fn ($v): int => (int) $v, $roleIds), static fn (int $id): bool => $id > 0)));
+        if ($roleIds === []) {
+            return null;
+        }
+        $ph = implode(',', array_fill(0, count($roleIds), '?'));
+        $params = array_merge([$tenantId, $userId], $roleIds);
+        $st = $this->pdo->prepare(
+            "SELECT DATE(MIN(assigned_at)) AS d
+             FROM role_assignments_log
+             WHERE tenant_id = ? AND user_id = ? AND action = 'assign'
+               AND role_id IN ({$ph})"
+        );
+        $st->execute($params);
+        $v = $st->fetchColumn();
+        if ($v === false || $v === null) {
+            return null;
+        }
+        $s = trim((string) $v);
+
+        return $s !== '' ? $s : null;
+    }
 }

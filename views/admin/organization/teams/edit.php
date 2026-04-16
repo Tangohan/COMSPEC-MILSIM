@@ -33,7 +33,7 @@ $sop = array_key_exists('show_on_public_page', $team) ? (int) $team['show_on_pub
         </div>
         <div>
             <label for="parent_id" class="block text-sm font-medium text-slate-700">Parent</label>
-            <select id="parent_id" name="parent_id" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
+            <select id="parent_id" name="parent_id" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
                 <option value="">—</option>
                 <?php foreach ($parents as $p): ?>
                 <option value="<?= (int) $p['id'] ?>" <?= (int) ($team['parent_id'] ?? 0) === (int) $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
@@ -42,7 +42,7 @@ $sop = array_key_exists('show_on_public_page', $team) ? (int) $team['show_on_pub
         </div>
         <div>
             <label for="commander_user_id" class="block text-sm font-medium text-slate-700">Responsable</label>
-            <select id="commander_user_id" name="commander_user_id" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
+            <select id="commander_user_id" name="commander_user_id" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
                 <option value="">—</option>
                 <?php foreach ($users as $u): ?>
                 <option value="<?= (int) $u['id'] ?>" <?= (int) ($team['commander_user_id'] ?? 0) === (int) $u['id'] ? 'selected' : '' ?>><?= htmlspecialchars($u['display_name'] ?? $u['email']) ?></option>

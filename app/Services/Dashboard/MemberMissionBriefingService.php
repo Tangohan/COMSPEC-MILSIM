@@ -25,7 +25,7 @@ final class MemberMissionBriefingService
      * @param list<array{id: int, kind: string, label: string, href: ?string, notice_text: ?string}> $dashboardPins
      * @return array{
      *   next_op: ?array{title: string, starts_at: string, list_href: string, rsvp_label: ?string},
-     *   trainings: list<array{title: string, href: string, subtitle: string, urgent: bool}>,
+     *   trainings: list<array{title: string, href: string, subtitle: string, urgent: bool, progress_pct: int}>,
      *   modpack: ?array{title: string, detail_href: string, has_pack: bool},
      *   consigne_excerpt: ?string,
      *   pins_anchor_href: string
@@ -113,6 +113,7 @@ final class MemberMissionBriefingService
                     'href' => $href,
                     'subtitle' => implode(' · ', $parts),
                     'urgent' => $urgent,
+                    'progress_pct' => max(0, min(100, $pct)),
                 ];
             }
         }

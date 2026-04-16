@@ -175,14 +175,14 @@ final class PlatformModuleReleaseRepository
     /**
      * Fonctionnalités plateforme liées aux communautés de test du membre (règles actives).
      *
-     * @return list<array{module_id: int, module_name: string, module_description: ?string, rule_type: string}>
+     * @return list<array{module_id: int, module_code: string, module_name: string, module_description: ?string, rule_type: string}>
      */
     public function listModuleAccessRowsForUserTesterCommunities(int $userId): array
     {
         if ($userId < 1 || !$this->schemaReady() || !$this->testerMembershipSchemaReady()) {
             return [];
         }
-        $sql = 'SELECT DISTINCT pm.id AS module_id, pm.name AS module_name, pm.description AS module_description,
+        $sql = 'SELECT DISTINCT pm.id AS module_id, UPPER(TRIM(pm.code)) AS module_code, pm.name AS module_name, pm.description AS module_description,
                 mar.rule_type
                 FROM platform_module_access_rules mar
                 INNER JOIN platform_modules pm ON pm.id = mar.module_id
@@ -203,6 +203,7 @@ final class PlatformModuleReleaseRepository
             }
             $out[] = [
                 'module_id' => $mid,
+                'module_code' => strtoupper(trim((string) ($row['module_code'] ?? ''))),
                 'module_name' => (string) ($row['module_name'] ?? ''),
                 'module_description' => isset($row['module_description']) && $row['module_description'] !== ''
                     ? (string) $row['module_description']
@@ -496,6 +497,21 @@ final class PlatformModuleReleaseRepository
         return is_array($rows) ? $rows : [];
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findModuleAccessRuleById(int $ruleId): ?array
+    {
+        if (!$this->schemaReady() || $ruleId < 1) {
+            return null;
+        }
+        $st = $this->pdo()->prepare('SELECT * FROM platform_module_access_rules WHERE id = ? LIMIT 1');
+        $st->execute([$ruleId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
     public function insertModuleAccessRule(
         int $moduleId,
         string $ruleType,
@@ -533,5 +549,104 @@ final class PlatformModuleReleaseRepository
     {
         $st = $this->pdo()->prepare('UPDATE platform_module_access_rules SET is_active = ? WHERE id = ?');
         $st->execute([$active ? 1 : 0, $ruleId]);
+    }
+
+    public function testerFeedbackTableReady(): bool
+    {
+        try {
+            $st = $this->pdo()->query(
+                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tester_feedback' LIMIT 1"
+            );
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function countTesterCommunityMembersActive(int $communityId): int
+    {
+        if (!$this->testerMembershipSchemaReady() || $communityId < 1) {
+            return 0;
+        }
+        $st = $this->pdo()->prepare(
+            "SELECT COUNT(*) FROM tester_community_members WHERE community_id = ? AND status = 'active'"
+        );
+        $st->execute([$communityId]);
+
+        return (int) $st->fetchColumn();
+    }
+
+    public function countTesterFeedbackForCommunity(int $communityId, bool $openOnly = false): int
+    {
+        if (!$this->testerFeedbackTableReady() || $communityId < 1) {
+            return 0;
+        }
+        if ($openOnly) {
+            $st = $this->pdo()->prepare(
+                "SELECT COUNT(*) FROM tester_feedback WHERE community_id = ? AND status IN ('new','triaged','in_progress')"
+            );
+        } else {
+            $st = $this->pdo()->prepare('SELECT COUNT(*) FROM tester_feedback WHERE community_id = ?');
+        }
+        $st->execute([$communityId]);
+
+        return (int) $st->fetchColumn();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listTesterFeedbackForCommunity(int $communityId, int $limit = 60): array
+    {
+        if (!$this->testerFeedbackTableReady() || $communityId < 1) {
+            return [];
+        }
+        $lim = max(1, min(100, $limit));
+        $sql = 'SELECT tf.*, u.email AS user_email, u.callsign AS user_callsign, u.display_name AS user_display_name,
+                pm.name AS module_name, pm.code AS module_code, mv.version AS module_version
+                FROM tester_feedback tf
+                INNER JOIN users u ON u.id = tf.user_id
+                INNER JOIN platform_modules pm ON pm.id = tf.module_id
+                INNER JOIN platform_module_versions mv ON mv.id = tf.module_version_id
+                WHERE tf.community_id = ?
+                ORDER BY tf.created_at DESC, tf.id DESC
+                LIMIT ' . $lim;
+        $st = $this->pdo()->prepare($sql);
+        $st->execute([$communityId]);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * Derniers retours toutes communautés (vue synthèse admin).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRecentTesterFeedbackAll(int $limit = 25): array
+    {
+        if (!$this->testerFeedbackTableReady() || !$this->testerCommunitiesTableReady()) {
+            return [];
+        }
+        $lim = max(1, min(80, $limit));
+        $sql = 'SELECT tf.*, tc.name AS community_name, tc.code AS community_code,
+                u.email AS user_email, u.callsign AS user_callsign,
+                pm.code AS module_code, mv.version AS module_version
+                FROM tester_feedback tf
+                INNER JOIN tester_communities tc ON tc.id = tf.community_id
+                INNER JOIN users u ON u.id = tf.user_id
+                INNER JOIN platform_modules pm ON pm.id = tf.module_id
+                INNER JOIN platform_module_versions mv ON mv.id = tf.module_version_id
+                ORDER BY tf.created_at DESC, tf.id DESC
+                LIMIT ' . $lim;
+        try {
+            $st = $this->pdo()->query($sql);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return is_array($rows) ? $rows : [];
     }
 }

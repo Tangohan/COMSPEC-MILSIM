@@ -32,6 +32,7 @@ $canMemberModeration = $gate->allows('admin.members.moderate');
 $canDocs = $gate->allows('documents.upload') || $gate->allows('admin.access');
 $canTraining = $gate->allows('training.manage') || $gate->allows('training.assign') || $gate->allows('admin.access');
 $canTenantTechModules = $gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access');
+$canSeniorityBoTile = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support');
 
 $orgFormatDt = static function (?string $raw): string {
     if ($raw === null || $raw === '') {
@@ -349,6 +350,7 @@ $modActionLabelFr = static function (string $t): string {
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
                     </span>
                 </a>
+                <?php if (!empty($orgIntegrationsPlanAllowed)): ?>
                 <a href="<?= url('back-office/integrations') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-violet-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-900/5">
                     <div>
                         <div class="flex items-start justify-between gap-3">
@@ -363,6 +365,7 @@ $modActionLabelFr = static function (string $t): string {
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
                     </span>
                 </a>
+                <?php endif; ?>
                 <?php if (\App\Core\Gate::getInstance()->allows('admin.compliance.export')): ?>
                 <a href="<?= url('back-office/conformite/export-dossier') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-emerald-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-900/5">
                     <div>
@@ -375,6 +378,22 @@ $modActionLabelFr = static function (string $t): string {
                     </div>
                     <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-emerald-800">
                         Ouvrir
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </span>
+                </a>
+                <?php endif; ?>
+                <?php if ($canSeniorityBoTile): ?>
+                <a href="<?= url('back-office/organisation/anciennete') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-indigo-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-900/5">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center bg-indigo-600 text-lg font-black italic text-white">A</div>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-indigo-800">Effectifs</span>
+                        </div>
+                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Ancienneté</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Publiez les indicateurs visibles sur les fiches et dans l’espace RH, ou installez le jeu standard en un clic.</p>
+                    </div>
+                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-indigo-800">
+                        Configurer
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
                     </span>
                 </a>
@@ -401,6 +420,7 @@ $modActionLabelFr = static function (string $t): string {
         <?php
         $orgTrainingFeed = $orgTrainingFeed ?? [];
         $orgTrainingFeedErr = $orgTrainingFeedError ?? null;
+        $orgTrainingFeedCompletionAnalytics = $orgTrainingFeedCompletionAnalytics ?? [];
         $trainingFeedBadge = static function (string $cat): array {
             return match ($cat) {
                 'training_enrollment_pending' => ['Inscription', 'bg-violet-100 text-violet-950 ring-violet-200/80'],
@@ -440,6 +460,18 @@ $modActionLabelFr = static function (string $t): string {
                                         <?php $fb = trim((string) ($frow['body'] ?? '')); ?>
                                         <?php if ($fb !== ''): ?>
                                         <p class="text-sm text-slate-600 mt-1"><?= htmlspecialchars($fb, ENT_QUOTES, 'UTF-8') ?></p>
+                                        <?php endif; ?>
+                                        <?php
+                                        $feedRowId = (int) ($frow['id'] ?? 0);
+                                        $analyticsBlock = $feedRowId > 0 ? ($orgTrainingFeedCompletionAnalytics[$feedRowId] ?? null) : null;
+                                        $analyticsLines = is_array($analyticsBlock) ? ($analyticsBlock['lines'] ?? []) : [];
+                                        ?>
+                                        <?php if ($cat === 'training_course_completed' && $analyticsLines !== []): ?>
+                                        <div class="mt-2 space-y-1 text-xs text-slate-600 leading-relaxed">
+                                            <?php foreach ($analyticsLines as $aline): ?>
+                                            <p><?= htmlspecialchars((string) $aline, ENT_QUOTES, 'UTF-8') ?></p>
+                                            <?php endforeach; ?>
+                                        </div>
                                         <?php endif; ?>
                                         <div class="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
                                             <span class="tabular-nums"><?= htmlspecialchars($orgFormatDt(isset($frow['created_at']) ? (string) $frow['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></span>

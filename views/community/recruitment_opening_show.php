@@ -64,49 +64,49 @@ $enlistUrl = url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) (
   }
 </style>
 <div class="recruitment-print-main bg-slate-50 min-h-screen relative recruitment-opening-grain">
-  <nav class="no-print h-16 border-b border-slate-200 flex items-center px-6 md:px-10 bg-white/90 backdrop-blur-md sticky top-0 z-50">
-    <div class="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest max-w-7xl mx-auto w-full">
+  <nav class="no-print h-16 border-b border-slate-200 flex items-center bg-white/90 backdrop-blur-md sticky top-0 z-50 px-4 sm:px-6 md:px-10 lg:px-12">
+    <div class="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest max-w-7xl mx-auto w-full min-w-0">
       <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug)), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-400 hover:text-slate-900 transition-colors italic"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
       <span class="text-slate-300">/</span>
       <span class="text-blue-700">Avis de vacance de poste</span>
     </div>
   </nav>
 
-  <main class="max-w-7xl mx-auto p-6 md:p-8">
-    <div class="grid grid-cols-12 gap-8">
+  <main class="max-w-7xl mx-auto w-full px-5 pb-10 pt-6 sm:px-8 sm:pb-12 sm:pt-8 md:px-12 md:pb-14 md:pt-10 lg:px-14 lg:pt-12">
+    <div class="grid grid-cols-12 gap-6 sm:gap-8 lg:gap-10">
       <section class="col-span-12 lg:col-span-9">
-        <div class="recruitment-panneau-tactique rounded-lg border border-slate-200 border-t-[6px] border-t-blue-700 overflow-hidden relative bg-white">
-          <div class="absolute top-10 right-10 text-[50px] font-black opacity-[0.05] -rotate-12 pointer-events-none uppercase select-none" aria-hidden="true">Document officiel</div>
+        <div class="recruitment-panneau-tactique rounded-xl border border-slate-200 border-t-[6px] border-t-blue-700 overflow-hidden relative bg-white shadow-sm">
+          <div class="absolute top-8 right-6 sm:top-10 sm:right-8 md:top-12 md:right-10 text-[clamp(2rem,8vw,3rem)] font-black opacity-[0.05] -rotate-12 pointer-events-none uppercase select-none leading-none" aria-hidden="true">Document officiel</div>
 
-          <header class="p-8 md:p-10 border-b border-slate-100 bg-slate-50/50">
-            <div class="flex justify-between items-start mb-8 gap-4 flex-wrap">
+          <header class="p-6 sm:p-8 md:p-10 lg:p-12 border-b border-slate-100 bg-slate-50/50">
+            <div class="flex justify-between items-start mb-6 sm:mb-8 gap-4 sm:gap-6 flex-wrap">
               <div>
                 <span class="text-[11px] font-black text-blue-700 tracking-[0.2em] uppercase border-b-2 border-blue-700 pb-1"><?= htmlspecialchars($bandeau, ENT_QUOTES, 'UTF-8') ?></span>
                 <h1 class="text-2xl md:text-4xl font-black italic tracking-tighter text-slate-900 uppercase mt-4"><?= htmlspecialchars($h1, ENT_QUOTES, 'UTF-8') ?></h1>
                 <p class="text-lg md:text-xl font-bold text-slate-500 mt-2 uppercase"><?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></p>
               </div>
               <div class="text-right shrink-0">
-                <div class="inline-block border-2 border-emerald-500/20 px-4 py-2 bg-emerald-50">
+                <div class="inline-block border-2 border-emerald-500/20 px-4 py-2.5 sm:px-5 sm:py-3 bg-emerald-50 rounded-md">
                   <p class="text-[9px] font-black text-emerald-700 uppercase">Statut</p>
                   <p class="text-emerald-600 font-black tracking-widest uppercase"><?= htmlspecialchars(\App\Services\Recruitment\RecruitmentOpeningPresentation::statusPublicBadge((string) ($opening['status'] ?? '')), ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              <div class="p-4 border border-slate-200 rounded">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
+              <div class="p-4 sm:p-5 border border-slate-200 rounded-lg min-w-0">
                 <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Catégorie</p>
                 <p class="text-sm font-black text-slate-800 uppercase mt-1"><?= htmlspecialchars($pc, ENT_QUOTES, 'UTF-8') ?></p>
               </div>
-              <div class="p-4 border border-slate-200 rounded">
+              <div class="p-4 sm:p-5 border border-slate-200 rounded-lg min-w-0">
                 <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Arme / domaine</p>
                 <p class="text-sm font-black text-slate-800 uppercase mt-1"><?= htmlspecialchars($arm, ENT_QUOTES, 'UTF-8') ?></p>
               </div>
-              <div class="p-4 border border-slate-200 rounded">
+              <div class="p-4 sm:p-5 border border-slate-200 rounded-lg min-w-0">
                 <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Engagement</p>
                 <p class="text-sm font-black text-slate-800 uppercase italic mt-1"><?= htmlspecialchars(trim((string) ($opening['employment_contract_label'] ?? '')) !== '' ? (string) $opening['employment_contract_label'] : '—', ENT_QUOTES, 'UTF-8') ?></p>
               </div>
-              <div class="p-4 border border-orange-200 bg-orange-50/30 rounded">
+              <div class="p-4 sm:p-5 border border-orange-200 bg-orange-50/30 rounded-lg min-w-0">
                 <p class="text-[10px] text-orange-500 font-bold uppercase tracking-tight">Habilitation</p>
                 <p class="text-sm font-black text-orange-700 uppercase mt-1"><?= htmlspecialchars($clr, ENT_QUOTES, 'UTF-8') ?></p>
               </div>
@@ -114,7 +114,7 @@ $enlistUrl = url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) (
           </header>
 
           <div class="grid grid-cols-12">
-            <aside class="col-span-12 lg:col-span-4 border-r border-slate-100 p-8 md:p-10 bg-slate-50/30 space-y-10">
+            <aside class="col-span-12 lg:col-span-4 border-r border-slate-100 p-6 sm:p-8 md:p-10 lg:p-12 bg-slate-50/30 space-y-8 sm:space-y-10">
               <?php if ($profiles !== []): ?>
               <div>
                 <h3 class="text-[11px] font-black text-slate-400 mb-6 tracking-widest uppercase flex items-center gap-2">
@@ -141,8 +141,8 @@ $enlistUrl = url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) (
               <?php endif; ?>
             </aside>
 
-            <article class="col-span-12 lg:col-span-8 p-8 md:p-10">
-              <h3 class="text-[11px] font-black text-slate-400 mb-6 tracking-widest uppercase">Description de la mission</h3>
+            <article class="col-span-12 lg:col-span-8 p-6 sm:p-8 md:p-10 lg:p-12">
+              <h3 class="text-[11px] font-black text-slate-400 mb-5 sm:mb-6 tracking-widest uppercase">Description de la mission</h3>
               <?php $lead = trim((string) ($opening['mission_lead'] ?? '')); ?>
               <?php if ($lead !== ''): ?>
               <p class="text-lg text-slate-700 leading-relaxed mb-10 font-medium"><?= nl2br(htmlspecialchars($lead, ENT_QUOTES, 'UTF-8')) ?></p>
@@ -165,22 +165,22 @@ $enlistUrl = url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) (
               </div>
               <?php endif; ?>
 
-              <div class="no-print mt-16 flex flex-col sm:flex-row gap-4">
+              <div class="no-print mt-12 sm:mt-16 mb-2 flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <?php if (!$communityLocked): ?>
-                <a href="<?= htmlspecialchars($enlistUrl, ENT_QUOTES, 'UTF-8') ?>" class="comspec-analytics-cta flex-1 py-5 bg-slate-900 hover:bg-blue-800 text-white text-center text-[12px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3" data-comspec-zone="fiche_poste" data-comspec-opening="<?= (int) ($opening['id'] ?? 0) ?>">Candidater au poste</a>
+                <a href="<?= htmlspecialchars($enlistUrl, ENT_QUOTES, 'UTF-8') ?>" class="comspec-analytics-cta flex-1 rounded-lg py-4 sm:py-5 px-4 bg-slate-900 hover:bg-blue-800 text-white text-center text-[12px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3" data-comspec-zone="fiche_poste" data-comspec-opening="<?= (int) ($opening['id'] ?? 0) ?>">Candidater au poste</a>
                 <?php else: ?>
-                <p class="flex-1 py-5 text-center text-sm text-slate-500 border border-slate-200 rounded-lg">Le recrutement est fermé pour cette communauté.</p>
+                <p class="flex-1 py-4 sm:py-5 px-4 text-center text-sm text-slate-500 border border-slate-200 rounded-lg">Le recrutement est fermé pour cette communauté.</p>
                 <?php endif; ?>
-                <button type="button" class="px-8 py-5 border-2 border-slate-200 hover:bg-slate-50 text-slate-900 text-[12px] font-black uppercase transition-all" onclick="window.print()">Version imprimable</button>
+                <button type="button" class="shrink-0 rounded-lg px-6 sm:px-8 py-4 sm:py-5 border-2 border-slate-200 hover:bg-slate-50 text-slate-900 text-[12px] font-black uppercase transition-all" onclick="window.print()">Version imprimable</button>
               </div>
             </article>
           </div>
         </div>
       </section>
 
-      <aside class="no-print col-span-12 lg:col-span-3 space-y-6">
+      <aside class="no-print col-span-12 lg:col-span-3 space-y-6 pt-2 lg:pt-0">
         <?php if ($relatedOpenings !== []): ?>
-        <div class="bg-white border border-slate-200 p-6 rounded shadow-sm">
+        <div class="bg-white border border-slate-200 p-5 sm:p-6 rounded-lg shadow-sm">
           <h4 class="text-[10px] font-black text-slate-900 mb-4 uppercase flex items-center gap-2">
             <span class="w-3 h-[1px] bg-slate-900"></span> Postes liés
           </h4>

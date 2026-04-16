@@ -12,6 +12,10 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
+use App\Repositories\UserRepository;
+use App\Services\Email\EmailEvents;
+use App\Services\EmailService;
 use App\Services\Recruitment\RecruitmentOpeningForumPublisher;
 use App\Services\Recruitment\RecruitmentOpeningPresentation;
 use App\Services\Recruitment\RecruitmentOpeningReferenceService;
@@ -25,6 +29,9 @@ class RecruitmentOffersController
         private TenantRepository $tenantRepository,
         private PersonnelJobRoleRepository $jobRoleRepository,
         private RecruitmentOpeningForumPublisher $recruitmentForumPublisher,
+        private UserRepository $userRepository,
+        private EmailService $emailService,
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository,
         private RecruitmentOpeningReferenceService $referenceService = new RecruitmentOpeningReferenceService()
     ) {}
 
@@ -161,6 +168,10 @@ class RecruitmentOffersController
         $ok = $this->openings->publish($id, $tenantId, $tenant, $settings, $unit);
         $msg = $ok ? 'Offre publiée. Elle apparaît sur la vitrine.' : 'Échec de la publication.';
         if ($ok) {
+            $published = $this->openings->findByIdForTenant($id, $tenantId);
+            if ($published) {
+                $this->notifyStaffRecruitmentOpeningPublished($tenantId, $tenant, $published);
+            }
             $wantExterne = $request->input('forum_annonce_generale') === '1';
             $wantInterne = $request->input('forum_annonce_organisation') === '1';
             $uid = (int) Session::get('user_id');
@@ -207,9 +218,17 @@ class RecruitmentOffersController
         $fmt = TenantRecruitmentSettings::mergeReferenceFormat($rec, []);
         $docRef = trim((string) ($rec['prospection_document_ref'] ?? ''));
 
-        $previewTenant = ['name' => '92e Régiment d’infanterie', 'slug' => '92ri', 'community_code' => '92RI'];
-        $previewUnit = ['name' => '1re compagnie', 'slug' => '1cie', 'code' => '1CIE'];
-        $previewRef = $this->referenceService->buildReference($fmt, $previewTenant, $previewUnit, (int) date('Y'), 7);
+        $tenantRow = $this->tenantRepository->findById($tenantId) ?? [];
+        $units = $this->unitRepository->allForTenant($tenantId);
+        $previewUnit = $units[0] ?? ['name' => '', 'slug' => '', 'code' => ''];
+        $previewUnitLabel = trim((string) ($previewUnit['name'] ?? ''));
+        if ($previewUnitLabel === '') {
+            $previewUnitLabel = 'Aucune unité enregistrée';
+        }
+        $year = (int) date('Y');
+        $lastSeq = $this->openings->tablesExist() ? $this->openings->currentLastSeq($tenantId, $year) : 0;
+        $previewSeq = $lastSeq < 1 ? 1 : $lastSeq + 1;
+        $previewRef = $this->referenceService->buildReference($fmt, $tenantRow, $previewUnit, $year, $previewSeq);
 
         return Response::view('layout.main', [
             'title' => 'Format des références des offres',
@@ -217,6 +236,12 @@ class RecruitmentOffersController
             'format' => $fmt,
             'prospectionDocumentRef' => $docRef,
             'previewReference' => $previewRef,
+            'previewYear' => $year,
+            'previewSeq' => $previewSeq,
+            'previewLastSeq' => $lastSeq,
+            'previewUnitLabel' => $previewUnitLabel,
+            'previewTenantName' => trim((string) ($tenantRow['name'] ?? '')),
+            'previewHasUnits' => $units !== [],
         ]);
     }
 
@@ -254,6 +279,55 @@ class RecruitmentOffersController
         Session::flash('success', 'Paramètres enregistrés.');
 
         return Response::redirect(url('back-office/recruitment/reference-format'));
+    }
+
+    /**
+     * Notifie recruteur / RH / fondateur (et à défaut la gouvernance) qu’une offre vient d’être publiée.
+     *
+     * @param array<string, mixed> $tenant
+     * @param array<string, mixed> $opening Ligne offre au statut publié
+     */
+    private function notifyStaffRecruitmentOpeningPublished(int $tenantId, array $tenant, array $opening): void
+    {
+        $recipients = $this->userRepository->listRecruitmentNotificationEmailsForTenant($tenantId);
+        if ($recipients === []) {
+            $recipients = $this->userRepository->listGovernanceEmailsForTenant($tenantId);
+        }
+        if ($recipients === []) {
+            return;
+        }
+
+        $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
+        $slug = trim((string) ($tenant['slug'] ?? ''));
+        $publicPage = trim((string) ($opening['public_page_slug'] ?? ''));
+        $oid = (int) ($opening['id'] ?? 0);
+        $hrefFiche = ($slug !== '' && $publicPage !== '')
+            ? url('c/' . rawurlencode($slug) . '/avis/' . rawurlencode($publicPage))
+            : '';
+        $hrefCand = $slug !== '' ? url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . $oid) : '';
+        $title = trim((string) ($opening['title'] ?? 'Offre'));
+        $ref = trim((string) ($opening['reference_public'] ?? ''));
+
+        foreach ($recipients as $to) {
+            try {
+                $em = strtolower(trim($to));
+                $u = $em !== '' ? $this->userRepository->findByEmail($tenantId, $em) : null;
+                if ($u && !$this->notificationPreferencesRepository->isEmailEventEnabled((int) ($u['id'] ?? 0), EmailEvents::RECRUITMENT_OPENING_PUBLISHED_STAFF)) {
+                    continue;
+                }
+                $this->emailService->sendRecruitmentOpeningPublishedStaffNotify(
+                    $to,
+                    $tenantName,
+                    $title !== '' ? $title : 'Offre',
+                    $ref !== '' ? $ref : '—',
+                    $hrefFiche,
+                    $hrefCand,
+                    $oid,
+                    $tenantId
+                );
+            } catch (\Throwable) {
+            }
+        }
     }
 
     /** @param array<string, mixed>|null $opening */

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Community;
 
+use PDO;
+
 /**
  * Rôles communauté / opérationnels par défaut : libellés et descriptions réalistes (milsim / unité).
  * Les slugs sont stables (références code, e-mails recrutement, etc.).
@@ -100,6 +102,38 @@ final class TenantDefaultRoleDefinitions
                 'is_locked' => 0,
             ],
             [
+                'slug' => 'trainer',
+                'name' => 'Formateur',
+                'description' => 'Conçoit et structure les parcours, objectifs, modules, prérequis et critères de validation.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'senior_instructor',
+                'name' => 'Instructeur senior',
+                'description' => 'Expertise pédagogique avancée et mentorat des instructeurs.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'instructor_trainer',
+                'name' => 'Formateur d’instructeurs',
+                'description' => 'Forme, valide et suit les instructeurs ; peut retirer ou suspendre une capacité d’animation.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'trainer_of_trainers',
+                'name' => 'Formateur de formateurs',
+                'description' => 'Gouvernance des concepteurs, référentiels, normes d’évaluation et qualité pédagogique.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
                 'slug' => 'medic',
                 'name' => 'OPSAN',
                 'description' => 'Santé / secours : visibilité renforcée sur les informations médicales autorisées et coordination sanitaire.',
@@ -167,6 +201,42 @@ final class TenantDefaultRoleDefinitions
                 'operational.board.view',
                 'organization.orbat.view',
             ],
+            'trainer' => [
+                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
+                'documents.view', 'documents.download.standard',
+                'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
+                'personnel.profile.view',
+                'dashboard.pins.manage',
+                'operational.board.view',
+                'organization.orbat.view',
+            ],
+            'senior_instructor' => [
+                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
+                'documents.view', 'documents.download.standard',
+                'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
+                'personnel.profile.view',
+                'dashboard.pins.manage',
+                'operational.board.view',
+                'organization.orbat.view',
+            ],
+            'instructor_trainer' => [
+                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
+                'documents.view', 'documents.download.standard',
+                'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
+                'personnel.profile.view',
+                'dashboard.pins.manage',
+                'operational.board.view',
+                'organization.orbat.view',
+            ],
+            'trainer_of_trainers' => [
+                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
+                'documents.view', 'documents.download.standard',
+                'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
+                'personnel.profile.view',
+                'dashboard.pins.manage',
+                'operational.board.view',
+                'organization.orbat.view',
+            ],
             'medic' => [
                 'forum.view', 'forum.reply',
                 'documents.view', 'documents.download.standard',
@@ -223,6 +293,10 @@ final class TenantDefaultRoleDefinitions
             'recruiter' => 'Recruiter',
             'invite' => 'Visitor',
             'instructor' => 'Instructor',
+            'trainer' => 'Trainer',
+            'senior_instructor' => 'Senior Instructor',
+            'instructor_trainer' => 'Instructor Trainer',
+            'trainer_of_trainers' => 'Trainer of Trainers',
             'medic' => 'Medic',
             'logistics' => 'Logistics',
             'rto' => 'RTO (communications)',
@@ -254,7 +328,7 @@ final class TenantDefaultRoleDefinitions
         return array_merge($fromDefs, $organic);
     }
 
-    public static function rolesTableHasLabelEnColumn(\PDO $pdo): bool
+    public static function rolesTableHasLabelEnColumn(PDO $pdo): bool
     {
         try {
             $st = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'roles' AND COLUMN_NAME = 'label_en' LIMIT 1");
@@ -270,7 +344,7 @@ final class TenantDefaultRoleDefinitions
      *
      * @param ?int $tenantId null = tous les tenants (backfill / migration)
      */
-    public static function applyCanonicalEnglishLabels(\PDO $pdo, ?int $tenantId = null): void
+    public static function applyCanonicalEnglishLabels(PDO $pdo, ?int $tenantId = null): void
     {
         if (!self::rolesTableHasLabelEnColumn($pdo)) {
             return;
@@ -305,7 +379,7 @@ final class TenantDefaultRoleDefinitions
     /**
      * Met à jour nom + description pour les slugs connus (idempotent, sans toucher aux rôles personnalisés).
      */
-    public static function applyCanonicalLabels(\PDO $pdo, int $tenantId): void
+    public static function applyCanonicalLabels(PDO $pdo, int $tenantId): void
     {
         if ($tenantId <= 0) {
             return;

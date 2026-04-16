@@ -7,6 +7,7 @@ namespace App\Services\Training;
 use App\Core\Database;
 use App\Repositories\DocumentRepository;
 use App\Repositories\TrainingCourseRepository;
+use App\Services\Platform\FeatureGateService;
 use App\Repositories\TrainingLessonRepository;
 use App\Repositories\TrainingModuleRepository;
 use App\Repositories\TrainingQuizRepository;
@@ -45,6 +46,7 @@ class TrainingCourseExchangeService
         private TrainingResourceRepository $resourceRepository,
         private TrainingService $trainingService,
         private DocumentRepository $documentRepository,
+        private FeatureGateService $featureGateService,
     ) {}
 
     /** @return array<string, mixed> */
@@ -115,6 +117,9 @@ class TrainingCourseExchangeService
                 $courseId = $existingCourseId;
                 $this->applyCoursePatch($courseId, $tenantId, $coursePayload, $userId, $canPublishImported);
             } else {
+                if (!$this->featureGateService->canCreateTenantCatalogTrainingCourse($tenantId)) {
+                    throw new InvalidArgumentException('Vous avez atteint le nombre maximal de parcours prévus pour votre formule. Passez à une offre supérieure ou archivez un parcours existant avant d’en importer un nouveau.');
+                }
                 $courseId = $this->createCourseFromPayload($tenantId, $userId, $coursePayload, $canPublishImported);
             }
 

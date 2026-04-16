@@ -14,6 +14,7 @@ class CfgFunctions {
     class comspec_overwatch_connect {
         tag = "comspec_overwatch_connect";
         class connect { file = "functions\fn_connect.sqf"; };
+        class playtimeTracker { file = "functions\fn_playtimeTracker.sqf"; };
         class updatePosition { file = "functions\fn_updatePosition.sqf"; };
         class sendIntel { file = "functions\fn_sendIntel.sqf"; };
         class initACE { file = "functions\fn_initACE.sqf"; };

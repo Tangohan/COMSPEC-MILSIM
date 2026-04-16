@@ -15,8 +15,7 @@ if ($military === []) {
         ['label' => 'SECUNDO', 'title' => '', 'body' => ''],
     ];
 }
-$err = \App\Core\Session::getFlash('error');
-$ok = \App\Core\Session::getFlash('success');
+$registryCoverUrl = $registryCoverUrl ?? null;
 $presentationMode = ($c['presentation_mode'] ?? 'simple') === 'military' ? 'military' : 'simple';
 $registrationMode = ($c['registration_mode'] ?? 'milsim') === 'simple' ? 'simple' : 'milsim';
 $em = \App\Services\Community\EnlistmentMilsimPackService::forCommunity($c);
@@ -72,9 +71,6 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
         <p class="text-slate-500 text-xs mt-2"><a href="<?= htmlspecialchars(url('back-office/community')) ?>" class="underline hover:text-slate-800">← Identité &amp; code rejoindre</a></p>
     </header>
 
-    <?php if ($err): ?><p class="text-red-600 text-sm mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3"><?= htmlspecialchars($err) ?></p><?php endif; ?>
-    <?php if ($ok): ?><p class="text-emerald-800 text-sm mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3"><?= htmlspecialchars($ok) ?></p><?php endif; ?>
-
     <section class="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-sm">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -105,7 +101,7 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
         </div>
     </nav>
 
-    <form id="community-presentation-form" method="post" action="<?= htmlspecialchars(url('back-office/community/presentation')) ?>" class="pb-28">
+    <form id="community-presentation-form" method="post" enctype="multipart/form-data" action="<?= htmlspecialchars(url('back-office/community/presentation')) ?>" class="pb-28">
         <?= \App\Core\Csrf::field() ?>
 
         <div class="cp-panel space-y-8 lg:space-y-10" data-cp-panel="visibilite" id="cp-panel-visibilite">
@@ -122,14 +118,38 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
                 <span class="text-sm text-slate-700">Forum réservé aux membres (masquer le bouton « Accéder au forum » pour les visiteurs non membres)</span>
             </label>
             <?php $slugHint = trim((string) ($tenant['slug'] ?? '')); ?>
-            <div class="rounded-xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-sm text-slate-700">
-                <p class="font-semibold text-slate-900">Image d’en-tête sur la carte du registre (facultatif)</p>
-                <p class="mt-1 text-xs text-slate-600 leading-relaxed">
-                    Pour remplacer le fond coloré par une photo paysage, enregistrez un fichier image sur le serveur du site, dans l’emplacement réservé aux visuels des communautés,
-                    sous le nom <strong class="font-semibold text-slate-800"><?= htmlspecialchars($slugHint !== '' ? $slugHint . '-cover.jpg' : 'votre-adresse-courte-cover.jpg') ?></strong>
-                    <?= $slugHint !== '' ? '' : ' (remplacez « votre-adresse-courte » par l’identifiant affiché dans Identité &amp; code rejoindre).' ?>
-                    Si vous ne gérez pas les fichiers du site vous-même, envoyez simplement l’image à la personne qui héberge le portail.
-                </p>
+            <div class="rounded-xl border border-slate-200 bg-slate-50/90 px-4 py-4 text-sm text-slate-700 space-y-4">
+                <div>
+                    <p class="font-semibold text-slate-900">Image d’en-tête sur la carte du registre (facultatif)</p>
+                    <p class="mt-1 text-xs text-slate-600 leading-relaxed">
+                        Une photo <strong class="font-semibold text-slate-800">paysage</strong> (type bandeau) donne le meilleur rendu sur la carte du registre des unités.
+                        Formats acceptés : JPG, PNG ou WebP — jusqu’à 3&nbsp;Mo.
+                        <?php if ($slugHint === ''): ?>
+                        Définissez d’abord l’identifiant public de votre communauté dans
+                        <a class="font-semibold text-emerald-700 underline" href="<?= htmlspecialchars(url('back-office/community'), ENT_QUOTES, 'UTF-8') ?>">Identité &amp; code rejoindre</a>
+                        pour activer l’envoi.
+                        <?php endif; ?>
+                    </p>
+                </div>
+                <?php if ($registryCoverUrl): ?>
+                <div class="rounded-lg border border-slate-200 bg-white p-2 overflow-hidden">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Aperçu actuel</p>
+                    <img src="<?= htmlspecialchars($registryCoverUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="w-full max-h-40 object-cover rounded-md">
+                </div>
+                <?php endif; ?>
+                <div class="space-y-2">
+                    <label for="registry_cover" class="block text-xs font-bold text-slate-700">Choisir une image</label>
+                    <input type="file" name="registry_cover" id="registry_cover" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                           class="block w-full max-w-md text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-700 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-emerald-800 disabled:opacity-50 disabled:pointer-events-none"
+                           <?= $slugHint === '' ? 'disabled aria-disabled="true" title="Identifiant public requis"' : '' ?>>
+                </div>
+                <?php if ($registryCoverUrl): ?>
+                <label class="flex items-start gap-3 cursor-pointer text-xs text-slate-700">
+                    <input type="hidden" name="remove_registry_cover" value="0">
+                    <input type="checkbox" name="remove_registry_cover" value="1" class="mt-0.5">
+                    <span>Retirer l’image et revenir au fond coloré automatique sur la carte du registre</span>
+                </label>
+                <?php endif; ?>
             </div>
         </section>
         </div>

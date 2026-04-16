@@ -197,7 +197,7 @@ class CommunityController
     public function recruitmentOpeningShow(Request $request, array $params = []): Response
     {
         $slug = (string) ($params['slug'] ?? '');
-        $avis = (string) ($params['avis'] ?? '');
+        $avis = RecruitmentOpeningRepository::normalizePublicPageSlugFromRequest((string) ($params['avis'] ?? ''));
         $tenant = $this->tenantRepository->findBySlug($slug);
         if (!$tenant || $avis === '' || !$this->recruitmentOpeningRepository->tablesExist()) {
             return Response::view('errors.404', ['title' => 'Avis introuvable'])->setStatusCode(404);
@@ -365,7 +365,7 @@ class CommunityController
             Session::set('pending_referrer_code', $ref);
         }
         $plans = $this->subscriptionPlanRepository->allOrdered();
-        $paidPlans = array_values(array_filter($plans, static fn ($p) => in_array((string) ($p['slug'] ?? ''), ['standard', 'pro'], true)));
+        $paidPlans = array_values(array_filter($plans, static fn ($p) => in_array((string) ($p['slug'] ?? ''), ['standard', 'pro', 'pro_plus'], true)));
         $stripeConfigured = (getenv('STRIPE_SECRET_KEY') ?: '') !== '';
 
         $grades = new GradeRepository();
@@ -743,7 +743,7 @@ class CommunityController
         }
         $slug = strtolower(trim($parts[0]));
         $interval = strtolower(trim($parts[1]));
-        if (!in_array($slug, ['standard', 'pro'], true) || !in_array($interval, ['monthly', 'yearly'], true)) {
+        if (!in_array($slug, ['standard', 'pro', 'pro_plus'], true) || !in_array($interval, ['monthly', 'yearly'], true)) {
             throw new \InvalidArgumentException('Choix de formule invalide.');
         }
 

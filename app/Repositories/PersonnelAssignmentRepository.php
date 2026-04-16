@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use DateTimeImmutable;
 use PDO;
 
 class PersonnelAssignmentRepository
@@ -130,6 +131,159 @@ class PersonnelAssignmentRepository
         }
     }
 
+    /**
+     * Nombre de jours calendaires inclus entre deux dates (A..B inclus).
+     * Si $endYmd est null et $nullEndMeansToday : la borne haute est aujourd’hui (UTC date serveur).
+     */
+    public static function inclusiveCalendarDaysBetween(?string $startYmd, ?string $endYmdInclusive, bool $nullEndMeansToday): int
+    {
+        $startRaw = $startYmd !== null ? trim($startYmd) : '';
+        if ($startRaw === '') {
+            return 0;
+        }
+        try {
+            $start = new DateTimeImmutable(self::normalizeDateString($startRaw));
+        } catch (\Throwable) {
+            return 0;
+        }
+        if ($nullEndMeansToday || $endYmdInclusive === null || trim((string) $endYmdInclusive) === '') {
+            $end = new DateTimeImmutable('today');
+        } else {
+            try {
+                $end = new DateTimeImmutable(self::normalizeDateString((string) $endYmdInclusive));
+            } catch (\Throwable) {
+                return 0;
+            }
+        }
+        if ($end < $start) {
+            return 0;
+        }
+
+        return (int) $start->diff($end)->days + 1;
+    }
+
+    public static function formatDurationFrench(int $days): string
+    {
+        if ($days < 1) {
+            return '—';
+        }
+        if ($days === 1) {
+            return '1 jour';
+        }
+
+        return $days . ' jours';
+    }
+
+    private static function normalizeDateString(string $d): string
+    {
+        if (preg_match('/^(\d{4}-\d{2}-\d{2})/', $d, $m)) {
+            return $m[1];
+        }
+
+        return $d;
+    }
+
+    /**
+     * Toutes les périodes d’affectation enregistrées (actives et closes), scoping tenant.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listAssignmentHistoryForTenantUser(int $tenantId, int $userId, int $limit = 100): array
+    {
+        if (!$this->personnelAssignmentsTableExists() || $tenantId < 1 || $userId < 1) {
+            return [];
+        }
+        $limit = max(1, min(200, $limit));
+        $stmt = $this->pdo->prepare(
+            'SELECT pa.id, pa.user_id, pa.unit_id, pa.role_name, pa.is_primary, pa.started_at, pa.ended_at, pa.status, pa.created_at,
+                    u.name AS unit_name, u.slug AS unit_slug, u.type AS unit_type, u.commander_user_id
+             FROM personnel_assignments pa
+             INNER JOIN units u ON u.id = pa.unit_id AND u.tenant_id = ?
+             INNER JOIN users usr ON usr.id = pa.user_id AND usr.tenant_id = ?
+             WHERE pa.user_id = ?
+             ORDER BY COALESCE(pa.started_at, DATE(pa.created_at)) DESC, pa.id DESC
+             LIMIT ?'
+        );
+        $stmt->execute([$tenantId, $tenantId, $userId, $limit]);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * Ajoute duration_days, duration_label_fr, assignment_span_open (période toujours ouverte).
+     *
+     * @param list<array<string, mixed>> $rows
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function enrichAssignmentHistoryWithDurations(array $rows): array
+    {
+        $today = new DateTimeImmutable('today');
+        $out = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $status = trim((string) ($row['status'] ?? ''));
+            $endedRaw = trim((string) ($row['ended_at'] ?? ''));
+            $endedAt = null;
+            if ($endedRaw !== '') {
+                try {
+                    $endedAt = new DateTimeImmutable(self::normalizeDateString($endedRaw));
+                } catch (\Throwable) {
+                    $endedAt = null;
+                }
+            }
+            $effectiveActive = $status === 'active' || ($status === '' && $endedRaw === '');
+            $open = $effectiveActive && ($endedAt === null || $endedAt >= $today);
+            $startSlice = isset($row['started_at']) ? trim((string) $row['started_at']) : '';
+            $startYmd = $startSlice !== '' ? self::normalizeDateString($startSlice) : null;
+            if ($open) {
+                $days = self::inclusiveCalendarDaysBetween($startYmd, null, true);
+            } elseif ($endedRaw !== '') {
+                $days = self::inclusiveCalendarDaysBetween($startYmd, self::normalizeDateString($endedRaw), false);
+            } elseif ($startYmd !== null) {
+                $days = 1;
+            } else {
+                $days = 0;
+            }
+            $row['assignment_span_open'] = $open;
+            $row['duration_days'] = $days;
+            $row['duration_label_fr'] = self::formatDurationFrench($days);
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $enrichedRows rows avec unit_id et duration_days
+     *
+     * @return array<int, int> unit_id => somme des jours (toutes périodes confondues pour l’unité)
+     */
+    public function sumDurationDaysByUnit(array $enrichedRows): array
+    {
+        $map = [];
+        foreach ($enrichedRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $uid = (int) ($row['unit_id'] ?? 0);
+            if ($uid < 1) {
+                continue;
+            }
+            $d = (int) ($row['duration_days'] ?? 0);
+            if ($d < 1) {
+                continue;
+            }
+            $map[$uid] = ($map[$uid] ?? 0) + $d;
+        }
+
+        return $map;
+    }
+
     private function userUnitsTableExists(): bool
     {
         try {
@@ -188,5 +342,57 @@ class PersonnelAssignmentRepository
             $this->pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * Date de début (Y-m-d) de l’affectation active retenue : unité d’emploi (hors groupe fonctionnel) ou groupe seul.
+     */
+    public function inferCurrentAttachmentStartYmd(int $tenantId, int $userId, bool $functionalGroupOnly): ?string
+    {
+        if ($tenantId < 1 || $userId < 1) {
+            return null;
+        }
+        $unitFilter = $functionalGroupOnly ? "u.type = 'group'" : "(u.type IS NULL OR u.type <> 'group')";
+        if ($this->personnelAssignmentsTableExists()) {
+            $stmt = $this->pdo->prepare(
+                "SELECT DATE(COALESCE(pa.started_at, DATE(pa.created_at))) AS ymd
+                 FROM personnel_assignments pa
+                 INNER JOIN units u ON u.id = pa.unit_id AND u.tenant_id = ?
+                 INNER JOIN users usr ON usr.id = pa.user_id AND usr.tenant_id = ?
+                 WHERE pa.user_id = ?
+                   AND pa.status = 'active'
+                   AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())
+                   AND {$unitFilter}
+                 ORDER BY pa.is_primary DESC, COALESCE(pa.started_at, DATE(pa.created_at)) ASC, pa.id ASC
+                 LIMIT 1"
+            );
+            $stmt->execute([$tenantId, $tenantId, $userId]);
+            $ymd = $stmt->fetchColumn();
+            if ($ymd !== false && $ymd !== null && trim((string) $ymd) !== '') {
+                return trim((string) $ymd);
+            }
+        }
+        if (!$this->userUnitsTableExists()) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT DATE(COALESCE(uu.assigned_at, CURDATE())) AS ymd
+             FROM user_units uu
+             INNER JOIN units u ON u.id = uu.unit_id AND u.tenant_id = ?
+             INNER JOIN users usr ON usr.id = uu.user_id AND usr.tenant_id = ?
+             WHERE uu.user_id = ?
+               AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+               AND {$unitFilter}
+             ORDER BY uu.is_primary DESC, uu.assigned_at ASC, uu.id ASC
+             LIMIT 1"
+        );
+        $stmt->execute([$tenantId, $tenantId, $userId]);
+        $ymd = $stmt->fetchColumn();
+        if ($ymd === false || $ymd === null) {
+            return null;
+        }
+        $s = trim((string) $ymd);
+
+        return $s !== '' ? $s : null;
     }
 }

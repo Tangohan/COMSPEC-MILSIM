@@ -66,5 +66,20 @@ function run_military_role_catalog_schema_migration(PDO $pdo): void
         }
     }
 
+    if ($hasTable('personnel_job_roles') && !$hasColumn('personnel_job_roles', 'mos_code')) {
+        try {
+            $pdo->exec('ALTER TABLE personnel_job_roles ADD COLUMN mos_code VARCHAR(16) NULL');
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] personnel_job_roles.mos_code : ' . $e->getMessage() . "\n";
+        }
+    }
+    if ($hasTable('personnel_job_roles') && !$hasColumn('personnel_job_roles', 'mos_specialty_title')) {
+        try {
+            $pdo->exec('ALTER TABLE personnel_job_roles ADD COLUMN mos_specialty_title VARCHAR(255) NULL');
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] personnel_job_roles.mos_specialty_title : ' . $e->getMessage() . "\n";
+        }
+    }
+
     echo "  [OK] military_role_catalog_schema_migration\n";
 }

@@ -54,6 +54,38 @@ class UserRepository
         return self::$hasServiceAccountColumn;
     }
 
+    /**
+     * Fragment SQL (sans paramètres) pour exclure les courriels de comptes système sur le domaine interne.
+     * Utile dans des sous-requêtes où l’on ne souhaite pas lier de paramètres.
+     */
+    public static function sqlLiteralExcludeTechnicalInternalEmails(string $alias = 'u'): string
+    {
+        $a = $alias;
+        $lit = str_replace("'", "''", strtolower(self::SYSTEM_MODERATOR_EMAIL));
+
+        return "LOWER(TRIM({$a}.email)) <> '{$lit}' AND LOWER(TRIM({$a}.email)) NOT LIKE 'system.%@internal.local'";
+    }
+
+    /**
+     * Prédicat SQL + paramètres : comptes de service (si colonne) + courriels réservés du domaine interne.
+     *
+     * @return array{sql: string, params: list<mixed>}
+     */
+    private function technicalAccountExclusionPredicate(string $alias = 'u'): array
+    {
+        $fragments = [];
+        $params = [];
+        if ($this->hasServiceAccountColumn()) {
+            $fragments[] = "({$alias}.is_service_account IS NULL OR {$alias}.is_service_account = 0)";
+        }
+        $fragments[] = "LOWER(TRIM({$alias}.email)) <> ?";
+        $params[] = strtolower(self::SYSTEM_MODERATOR_EMAIL);
+        $fragments[] = "LOWER(TRIM({$alias}.email)) NOT LIKE ?";
+        $params[] = 'system.%@internal.local';
+
+        return ['sql' => '(' . implode(' AND ', $fragments) . ')', 'params' => $params];
+    }
+
     private function hasUserUnitsTable(): bool
     {
         if (self::$hasUserUnitsTable === null) {
@@ -490,6 +522,20 @@ class UserRepository
         return $row ?: null;
     }
 
+    /** @return array<string, mixed>|null */
+    public function findBySteamIdForTenant(int $tenantId, string $steamId): ?array
+    {
+        $sid = trim($steamId);
+        if ($sid === '') {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE tenant_id = ? AND steam_id = ? LIMIT 1');
+        $stmt->execute([$tenantId, $sid]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function create(int $tenantId, array $data): int
     {
         $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'preferred_grade_format' LIMIT 1");
@@ -592,11 +638,43 @@ class UserRepository
 
     public function allForTenant(int $tenantId): array
     {
+        $pack = $this->technicalAccountExclusionPredicate('u');
         $stmt = $this->pdo->prepare(
-            'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE u.tenant_id = ? ORDER BY u.email ASC'
+            'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON r.id = u.role_id
+             WHERE u.tenant_id = ? AND ' . $pack['sql'] . ' ORDER BY u.email ASC'
         );
-        $stmt->execute([$tenantId]);
+        $stmt->execute(array_merge([$tenantId], $pack['params']));
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Identifiants des comptes actifs de la communauté (hors comptes de service si la colonne existe).
+     *
+     * @return list<int>
+     */
+    public function listActiveUserIdsForTenant(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $parts = ['u.tenant_id = ?', "u.status = 'active'"];
+        $params = [$tenantId];
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $parts[] = $pack['sql'];
+        $params = array_merge($params, $pack['params']);
+        $sql = 'SELECT u.id FROM users u WHERE ' . implode(' AND ', $parts) . ' ORDER BY u.id ASC';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0) {
+                $out[] = $id;
+            }
+        }
+
+        return $out;
     }
 
     /** Liste avec filtres optionnels (recherche, statut, rôle). */
@@ -651,8 +729,10 @@ class UserRepository
                 $params[] = $roleId;
             }
         }
-        if ($excludeServiceAccounts && $this->hasServiceAccountColumn()) {
-            $parts[] = '(u.is_service_account IS NULL OR u.is_service_account = 0)';
+        if ($excludeServiceAccounts) {
+            $pack = $this->technicalAccountExclusionPredicate('u');
+            $parts[] = $pack['sql'];
+            $params = array_merge($params, $pack['params']);
         }
         if ($onlyWithoutRole === true) {
             if ($this->hasUserRolesTable()) {
@@ -796,18 +876,20 @@ class UserRepository
             return [];
         }
         $term = '%' . $q . '%';
+        $pack = $this->technicalAccountExclusionPredicate('u');
         $stmt = $this->pdo->prepare(
-            'SELECT id, display_name, callsign, profile_slug FROM users
-             WHERE tenant_id = ?
+            'SELECT u.id, u.display_name, u.callsign, u.profile_slug FROM users u
+             WHERE u.tenant_id = ?
+             AND ' . $pack['sql'] . '
              AND (
-                 display_name LIKE ?
-                 OR (callsign IS NOT NULL AND TRIM(callsign) <> \'\' AND callsign LIKE ?)
-                 OR (profile_slug IS NOT NULL AND TRIM(profile_slug) <> \'\' AND profile_slug LIKE ?)
+                 u.display_name LIKE ?
+                 OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
+                 OR (u.profile_slug IS NOT NULL AND TRIM(u.profile_slug) <> \'\' AND u.profile_slug LIKE ?)
              )
-             ORDER BY display_name ASC
+             ORDER BY u.display_name ASC
              LIMIT ?'
         );
-        $stmt->execute([$tenantId, $term, $term, $term, $limit]);
+        $stmt->execute(array_merge([$tenantId], $pack['params'], [$term, $term, $term, $limit]));
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -828,10 +910,7 @@ class UserRepository
         $q = function_exists('mb_substr') ? mb_substr($q, 0, 120) : substr($q, 0, 120);
         $term = '%' . $q . '%';
         $limit = max(1, min(30, $limit));
-        $svcSql = '';
-        if ($this->hasServiceAccountColumn()) {
-            $svcSql = ' AND (u.is_service_account IS NULL OR u.is_service_account = 0)';
-        }
+        $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = 'SELECT u.id, u.email, u.display_name, u.callsign, t.name AS tenant_name, u.status
              FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id
@@ -839,11 +918,11 @@ class UserRepository
                  u.email LIKE ?
                  OR u.display_name LIKE ?
                  OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
-             )' . $svcSql . '
+             ) AND ' . $pack['sql'] . '
              ORDER BY t.name ASC, u.email ASC
              LIMIT ' . $limit;
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$term, $term, $term]);
+        $stmt->execute(array_merge([$term, $term, $term], $pack['params']));
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -1238,17 +1317,36 @@ class UserRepository
      */
     public function listGovernanceEmailsForTenant(int $tenantId): array
     {
+        $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE u.tenant_id = ? AND u.status = 'active'
+            WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ('tenant_admin', 'community_owner')";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$tenantId]);
+        $stmt->execute(array_merge([$tenantId], $pack['params']));
         $emails = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $e = strtolower(trim((string) ($row['email'] ?? '')));
             if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
                 $emails[] = $e;
+            }
+        }
+        if ($this->hasTenantUserRolesTable()) {
+            $sql2 = "SELECT DISTINCT u.email FROM users u
+                INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
+                INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
+                WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
+                AND r.slug IN ('tenant_admin', 'community_owner')";
+            try {
+                $st = $this->pdo->prepare($sql2);
+                $st->execute(array_merge([$tenantId], $pack['params']));
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $e = strtolower(trim((string) ($row['email'] ?? '')));
+                    if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                        $emails[] = $e;
+                    }
+                }
+            } catch (\Throwable) {
             }
         }
 
@@ -1263,15 +1361,16 @@ class UserRepository
     public function listEmailsForTenantAccessDelegation(int $tenantId): array
     {
         $emails = $this->listGovernanceEmailsForTenant($tenantId);
+        $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             INNER JOIN role_permissions rp ON rp.role_id = r.id
             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-            WHERE u.tenant_id = ? AND u.status = 'active'
+            WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
             AND p.slug IN ('admin.organization', 'admin.access')";
         try {
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$tenantId]);
+            $stmt->execute(array_merge([$tenantId], $pack['params']));
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $e = strtolower(trim((string) ($row['email'] ?? '')));
                 if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
@@ -1286,11 +1385,11 @@ class UserRepository
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
                 INNER JOIN role_permissions rp ON rp.role_id = r.id
                 INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-                WHERE u.tenant_id = ? AND u.status = 'active'
+                WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
                 AND p.slug IN ('admin.organization', 'admin.access')";
             try {
                 $st = $this->pdo->prepare($sql2);
-                $st->execute([$tenantId]);
+                $st->execute(array_merge([$tenantId], $pack['params']));
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $e = strtolower(trim((string) ($row['email'] ?? '')));
                     if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
@@ -1311,17 +1410,36 @@ class UserRepository
      */
     public function listRecruitmentNotificationEmailsForTenant(int $tenantId): array
     {
+        $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE u.tenant_id = ? AND u.status = 'active'
+            WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ('recruiter', 'community_owner', 'hr')";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$tenantId]);
+        $stmt->execute(array_merge([$tenantId], $pack['params']));
         $emails = [];
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $e = strtolower(trim((string) ($row['email'] ?? '')));
             if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
                 $emails[] = $e;
+            }
+        }
+        if ($this->hasTenantUserRolesTable()) {
+            $sql2 = "SELECT DISTINCT u.email FROM users u
+                INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
+                INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
+                WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
+                AND r.slug IN ('recruiter', 'community_owner', 'hr')";
+            try {
+                $st = $this->pdo->prepare($sql2);
+                $st->execute(array_merge([$tenantId], $pack['params']));
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $e = strtolower(trim((string) ($row['email'] ?? '')));
+                    if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                        $emails[] = $e;
+                    }
+                }
+            } catch (\Throwable) {
             }
         }
 
@@ -1336,15 +1454,15 @@ class UserRepository
     public function listForumAlertRecipientUserIds(int $tenantId): array
     {
         $ids = [];
-        $svcExcl = $this->hasServiceAccountColumn() ? '(u.is_service_account IS NULL OR u.is_service_account = 0)' : '1';
+        $pack = $this->technicalAccountExclusionPredicate('u');
         $slugs = "'tenant_admin', 'community_owner', 'forum_moderator', 'administrator'";
         $sql = "SELECT DISTINCT u.id FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE u.tenant_id = ? AND u.status = 'active' AND {$svcExcl}
+            WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ({$slugs})";
         try {
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$tenantId]);
+            $stmt->execute(array_merge([$tenantId], $pack['params']));
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $ids[] = (int) ($row['id'] ?? 0);
             }
@@ -1355,11 +1473,11 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.id FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE u.tenant_id = ? AND u.status = 'active' AND {$svcExcl}
+                WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ({$slugs})";
             try {
                 $st = $this->pdo->prepare($sql2);
-                $st->execute([$tenantId]);
+                $st->execute(array_merge([$tenantId], $pack['params']));
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $ids[] = (int) ($row['id'] ?? 0);
                 }
@@ -1380,14 +1498,14 @@ class UserRepository
         if ($tenantId < 1) {
             return [];
         }
-        $svcExcl = $this->hasServiceAccountColumn() ? '(u.is_service_account IS NULL OR u.is_service_account = 0)' : '1';
+        $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT u.id FROM users u
-            WHERE u.tenant_id = ? AND u.status = 'active' AND {$svcExcl}
+            WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
             AND u.email IS NOT NULL AND TRIM(u.email) <> ''
             AND u.email LIKE '%@%'";
         try {
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$tenantId]);
+            $stmt->execute(array_merge([$tenantId], $pack['params']));
             $ids = [];
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $ids[] = (int) ($row['id'] ?? 0);
@@ -1412,11 +1530,12 @@ class UserRepository
             return [];
         }
         $placeholders = implode(',', array_fill(0, count($roleSlugs), '?'));
-        $params = array_merge([$tenantId], $roleSlugs);
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $params = array_merge([$tenantId], $pack['params'], $roleSlugs);
         $ids = [];
         $sql = "SELECT DISTINCT u.id FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE u.tenant_id = ? AND u.status = 'active' AND r.slug IN ({$placeholders})";
+            WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
         try {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
@@ -1430,7 +1549,7 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.id FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id AND tur.org_unit_id IS NULL
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE u.tenant_id = ? AND u.status = 'active' AND r.slug IN ({$placeholders})";
+                WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
             try {
                 $st = $this->pdo->prepare($sql2);
                 $st->execute($params);
@@ -1460,13 +1579,14 @@ class UserRepository
             return [];
         }
         $placeholders = implode(',', array_fill(0, count($permissionSlugs), '?'));
-        $params = array_merge([$tenantId], $permissionSlugs);
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $params = array_merge([$tenantId], $pack['params'], $permissionSlugs);
         $ids = [];
         $sql = "SELECT DISTINCT u.id FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             INNER JOIN role_permissions rp ON rp.role_id = r.id
             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-            WHERE u.tenant_id = ? AND u.status = 'active' AND p.slug IN ({$placeholders})";
+            WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
         try {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
@@ -1482,7 +1602,7 @@ class UserRepository
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
                 INNER JOIN role_permissions rp ON rp.role_id = r.id
                 INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-                WHERE u.tenant_id = ? AND u.status = 'active' AND p.slug IN ({$placeholders})";
+                WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
             try {
                 $st = $this->pdo->prepare($sql2);
                 $st->execute($params);

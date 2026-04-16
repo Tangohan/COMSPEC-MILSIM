@@ -419,8 +419,9 @@ $bloodOptions = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Inconnu'
             </div>
             <div>
               <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Fiche personnelle (autres membres)</p>
+              <input type="hidden" name="fiche_show_email_to_others" value="0">
+              <p class="mb-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-xs text-slate-600 leading-relaxed">Pour protéger votre vie privée, votre adresse e-mail n’apparaît pas sur votre fiche pour les autres membres. Elle reste visible pour vous et pour le personnel habilité (gestion des effectifs ou accès RH sensible).</p>
               <div class="grid gap-2 sm:grid-cols-2">
-                <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="fiche_show_email_to_others" value="1" <?= !empty($d['fiche_show_email_to_others']) ? 'checked' : '' ?>> Afficher l’e-mail</label>
                 <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="fiche_show_matricule_to_others" value="1" <?= !empty($d['fiche_show_matricule_to_others']) ? 'checked' : '' ?>> Afficher le matricule (en-tête)</label>
               </div>
             </div>

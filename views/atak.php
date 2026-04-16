@@ -58,6 +58,13 @@ if ($atakMapConfig) {
   </script>
 </head>
 <body class="atak-page">
+  <div id="atak-boot-overlay" class="atak-boot-overlay" role="status" aria-live="polite" aria-busy="true">
+    <div class="atak-boot-inner">
+      <div class="atak-boot-spinner" aria-hidden="true"></div>
+      <p class="atak-boot-label">Chargement de la Tacmap…</p>
+      <p class="atak-boot-hint">Les informations affichées correspondent uniquement à la communauté à laquelle vous êtes connecté.</p>
+    </div>
+  </div>
   <header class="atak-header">
     <div class="atak-logo-wrap">
       <span class="atak-logo">COMSPEC</span>
@@ -358,15 +365,36 @@ if ($atakMapConfig) {
         el._toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
       };
 
+      var bootOverlay = document.getElementById('atak-boot-overlay');
+      var bootDismissed = false;
+      function dismissAtakBoot() {
+        if (bootDismissed) return;
+        bootDismissed = true;
+        if (bootOverlay) {
+          bootOverlay.classList.add('atak-boot-overlay--hidden');
+          bootOverlay.setAttribute('aria-busy', 'false');
+          bootOverlay.setAttribute('aria-hidden', 'true');
+        }
+      }
+
+      var bootAbort = new AbortController();
+      var bootTimer = setTimeout(function () { bootAbort.abort(); }, 12000);
+      var atakLiveConnectedOnce = false;
+
+      function startAtakApplication() {
       var mapId = (window.ATAK_DEFAULT_MAP_ID != null && window.ATAK_DEFAULT_MAP_ID > 0) ? window.ATAK_DEFAULT_MAP_ID : 1;
-      ATAKSocket.setMapId(mapId);
+      if (window.ATAKSocket && typeof window.ATAKSocket.setMapId === 'function') {
+        ATAKSocket.setMapId(mapId);
+      }
       var mapSelect = document.getElementById('atak-map-select');
       var workspaceSelect = document.getElementById('atak-workspace-select');
       if (workspaceSelect && window.ATAK_WORKSPACES && window.ATAK_WORKSPACES.length > 0) {
         workspaceSelect.addEventListener('change', function () {
           var mid = parseInt(this.value, 10);
           if (isNaN(mid)) return;
-          ATAKSocket.setMapId(mid);
+          if (window.ATAKSocket && typeof window.ATAKSocket.setMapId === 'function') {
+            ATAKSocket.setMapId(mid);
+          }
           if (window.ATAKUnits) ATAKUnits.fetchUnits();
           if (window.ATAKChat) ATAKChat.fetchMessages();
           if (window.ATAKPings) ATAKPings.fetchPings();
@@ -410,11 +438,25 @@ if ($atakMapConfig) {
       ATAKSocket.connect({
         mapId: mapId,
         onConnect: function () {
+          atakLiveConnectedOnce = true;
+          dismissAtakBoot();
           if (statusEl) statusEl.classList.remove('offline');
           if (statusEl) { var sp = statusEl.querySelector('span:last-child'); if (sp) sp.textContent = 'Réseau actif'; }
           if (connectionLostEl) connectionLostEl.classList.remove('show');
+        },
+        onConnectionLost: function () {
+          if (connectionLostEl) connectionLostEl.classList.add('show');
+          if (statusEl) {
+            statusEl.classList.add('offline');
+            var sp2 = statusEl.querySelector('span:last-child');
+            if (sp2) sp2.textContent = 'Hors ligne';
+          }
+          if (atakLiveConnectedOnce) {
+            window.ATAKShowError('La liaison en direct avec la Tacmap est interrompue. Les données se rafraîchissent de façon moins fréquente.');
+          }
         }
       });
+      setTimeout(function () { dismissAtakBoot(); }, 6000);
 
       function atakPoll() {
         if (window.ATAKUnits) ATAKUnits.fetchUnits();
@@ -563,6 +605,26 @@ if ($atakMapConfig) {
         });
       }
       if (healthRefresh) healthRefresh.addEventListener('click', refreshHealth);
+      }
+
+      fetch('<?= url("api/atak/ping") ?>', { credentials: 'include', signal: bootAbort.signal })
+        .then(function (r) {
+          clearTimeout(bootTimer);
+          if (!r.ok) throw new Error('ping');
+          return r.json();
+        })
+        .then(function (data) {
+          if (!data || !data.ok) throw new Error('ping');
+          startAtakApplication();
+        })
+        .catch(function (err) {
+          clearTimeout(bootTimer);
+          dismissAtakBoot();
+          var msg = err && err.name === 'AbortError'
+            ? 'La Tacmap met trop de temps à répondre. Vérifiez votre connexion ou réessayez.'
+            : 'Connexion impossible aux services de la Tacmap pour le moment.';
+          window.ATAKShowError(msg);
+        });
     })();
   </script>
 </body>

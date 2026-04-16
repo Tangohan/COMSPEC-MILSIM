@@ -55,14 +55,14 @@ final class SystemSiteRoleAssignmentController
 
             return Response::redirect(url('admin/site-roles'));
         }
-        $this->auditService->log(
+        $this->auditService->logChange(
             AuditAction::SITE_ROLE_ASSIGNED,
             $tenantId,
             $actorId,
             'site_role',
             $roleId,
-            null,
-            $email
+            [],
+            ['email' => $email, 'role_id' => $roleId],
         );
         Session::flash('success', 'Rôle site affecté.');
 
@@ -82,17 +82,27 @@ final class SystemSiteRoleAssignmentController
             return Response::redirect(url('login'));
         }
         $id = (int) $request->input('id');
+        $row = $this->siteRoleAssignments->findActiveAssignmentById($id);
         if ($id <= 0 || !$this->siteRoleAssignments->revoke($id)) {
             Session::flash('error', 'Révocation impossible.');
 
             return Response::redirect(url('admin/site-roles'));
         }
-        $this->auditService->log(
+        $old = $row !== null
+            ? [
+                'email' => (string) ($row['email_normalized'] ?? ''),
+                'role_id' => (int) ($row['role_id'] ?? 0),
+                'role_name' => (string) ($row['role_name'] ?? ''),
+            ]
+            : [];
+        $this->auditService->logChange(
             AuditAction::SITE_ROLE_REVOKED,
             $tenantId,
             $actorId,
             'site_role_assignment',
-            $id
+            $id,
+            $old,
+            [],
         );
         Session::flash('success', 'Affectation révoquée.');
 

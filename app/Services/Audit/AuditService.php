@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Audit;
 
 use App\Core\Database;
+use App\Support\Audit\AuditFieldSnapshot;
 use PDO;
 
 class AuditService
@@ -14,6 +15,25 @@ class AuditService
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    /**
+     * Journalise un changement d’état avec snapshots JSON (champs filtrés côté appelant).
+     *
+     * @param array<string, mixed> $oldFields
+     * @param array<string, mixed> $newFields
+     */
+    public function logChange(
+        string $action,
+        ?int $tenantId,
+        ?int $userId,
+        ?string $entityType,
+        ?int $entityId,
+        array $oldFields,
+        array $newFields,
+    ): void {
+        [$os, $ns] = AuditFieldSnapshot::encodePair($oldFields, $newFields);
+        $this->log($action, $tenantId, $userId, $entityType, $entityId, $os, $ns);
     }
 
     public function log(
@@ -27,6 +47,9 @@ class AuditService
         ?string $ip = null,
         ?string $userAgent = null
     ): void {
+        $action = substr($action, 0, 100);
+        $oldValue = self::truncateAuditText($oldValue);
+        $newValue = self::truncateAuditText($newValue);
         $ip = $ip ?? ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null);
         $userAgent = $userAgent ?? ($_SERVER['HTTP_USER_AGENT'] ?? null);
         if (is_string($ip) && strpos($ip, ',') !== false) {
@@ -50,6 +73,19 @@ class AuditService
             $ip,
             $userAgent,
         ]);
+    }
+
+    private static function truncateAuditText(?string $v): ?string
+    {
+        if ($v === null) {
+            return null;
+        }
+        $max = 65000;
+        if (strlen($v) <= $max) {
+            return $v;
+        }
+
+        return substr($v, 0, $max - 20) . '…(tronqué)';
     }
 
     public function logDocumentUploaded(int $tenantId, int $userId, int $documentId, int $versionId): void

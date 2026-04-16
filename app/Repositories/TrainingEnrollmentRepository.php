@@ -90,6 +90,36 @@ class TrainingEnrollmentRepository
         return $row ?: null;
     }
 
+    /**
+     * @param list<int> $ids
+     * @return array<int, array<string, mixed>> id => row
+     */
+    public function findByIdsForTenant(array $ids, int $tenantId): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(static fn ($v) => (int) $v, $ids), static fn (int $id) => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = 'SELECT e.*, c.title AS course_title, c.slug AS course_slug, c.estimated_minutes, c.passing_score, c.is_certifying, c.validity_days, c.lms_scope
+                FROM training_enrollments e
+                JOIN training_courses c ON c.id = e.course_id
+                WHERE e.id IN (' . $placeholders . ')
+                  AND (e.tenant_id = ? OR c.lms_scope = \'platform\')';
+        $params = [...$ids, $tenantId];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $eid = (int) ($row['id'] ?? 0);
+            if ($eid > 0) {
+                $out[$eid] = $row;
+            }
+        }
+
+        return $out;
+    }
+
     public function findByCourseAndUser(int $courseId, int $userId): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM training_enrollments WHERE course_id = ? AND user_id = ? LIMIT 1');
