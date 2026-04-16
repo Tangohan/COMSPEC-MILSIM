@@ -76,7 +76,8 @@ $eyebrowFor = static function (string $variant, string $message): string {
 };
 ?>
 <div id="flash-toast-root"
-     class="fixed z-[250] top-4 right-4 flex max-h-[calc(100vh-2rem)] w-[min(100vw-2rem,22rem)] sm:w-[min(100vw-3rem,26rem)] flex-col gap-2 overflow-y-auto pointer-events-none sm:top-6 sm:right-6">
+     class="fixed z-[250] right-4 flex max-h-[calc(100vh-2rem)] w-[min(100vw-2rem,22rem)] sm:w-[min(100vw-3rem,26rem)] flex-col gap-2 overflow-y-auto pointer-events-none sm:right-6"
+     style="top:calc(var(--flash-toast-top-offset, 1rem));">
     <?php foreach ($items as $idx => $item): ?>
         <?php
         $variant = $item['variant'];
@@ -144,6 +145,21 @@ $eyebrowFor = static function (string $variant, string $message): string {
 </style>
 <script>
 (function () {
+  function updateToastOffset() {
+    var root = document.getElementById('flash-toast-root');
+    if (!root) return;
+    var nav = document.querySelector('[data-portal-nav]');
+    var safeTop = 16; // 1rem fallback
+    if (nav && typeof nav.getBoundingClientRect === 'function') {
+      var rect = nav.getBoundingClientRect();
+      if (rect && Number.isFinite(rect.bottom)) {
+        safeTop = Math.max(safeTop, Math.round(rect.bottom + 10));
+      }
+    }
+    root.style.setProperty('--flash-toast-top-offset', safeTop + 'px');
+    root.style.maxHeight = 'calc(100vh - ' + (safeTop + 16) + 'px)';
+  }
+
   function hideToast(el) {
     if (!el || el.getAttribute('data-toast-closing') === '1') return;
     el.setAttribute('data-toast-closing', '1');
@@ -153,6 +169,8 @@ $eyebrowFor = static function (string $variant, string $message): string {
   }
   var root = document.getElementById('flash-toast-root');
   if (!root) return;
+  updateToastOffset();
+  window.addEventListener('resize', updateToastOffset, { passive: true });
   root.querySelectorAll('[data-flash-toast]').forEach(function (el) {
     var ms = parseInt(el.getAttribute('data-dismiss-ms') || '6000', 10);
     var t = window.setTimeout(function () { hideToast(el); }, ms);
