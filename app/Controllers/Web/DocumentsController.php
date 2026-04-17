@@ -12,6 +12,7 @@ use App\Repositories\DocumentCategoryRepository;
 use App\Repositories\DocumentLinkRepository;
 use App\Repositories\DocumentRepository;
 use App\Repositories\ModerationArtifactRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Services\Audit\AuditService;
 use App\Services\Documents\DocumentAccessService;
 use App\Services\Documents\DocumentTrainingReferencesService;
@@ -28,7 +29,8 @@ class DocumentsController
         private DocumentAccessService $documentAccessService,
         private AuditService $auditService,
         private ModerationArtifactRepository $moderationArtifactRepository,
-        private DocumentTrainingReferencesService $documentTrainingReferencesService
+        private DocumentTrainingReferencesService $documentTrainingReferencesService,
+        private PersonnelProfileRepository $personnelProfileRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -67,6 +69,8 @@ class DocumentsController
         $docs = array_values(array_filter($docs, fn ($d) => $this->documentAccessService->canRead($d, $userId, $tenantId)));
         $categoriesList = $this->categoryRepository->listForTenant($tenantId);
         $documentTrainingRefs = $this->documentTrainingReferencesService->mapByDocumentId($tenantId, $docs);
+        $collections = $this->buildCollections($docs, $categoriesList);
+        $accreditation = $this->personnelProfileRepository->getByUserId($userId);
         return Response::view('layout.main', [
             'content' => 'documents.index',
             'title' => 'Documents',
@@ -79,7 +83,59 @@ class DocumentsController
             'entity_type' => $entityType,
             'entity_id' => $entityId,
             'documentTrainingRefs' => $documentTrainingRefs,
+            'collections' => $collections,
+            'viewerAccreditationLevel' => (string) ($accreditation['clearance_level'] ?? 'interne'),
         ]);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $docs
+     * @param list<array<string, mixed>> $categories
+     * @return list<array{title: string, description: string, href: string, count: int}>
+     */
+    private function buildCollections(array $docs, array $categories): array
+    {
+        $collections = [];
+        $typeCounts = [];
+        foreach ($docs as $doc) {
+            $type = trim((string) ($doc['document_type'] ?? ''));
+            if ($type === '') {
+                continue;
+            }
+            $typeCounts[$type] = ($typeCounts[$type] ?? 0) + 1;
+        }
+        arsort($typeCounts);
+        foreach (array_slice($typeCounts, 0, 3, true) as $type => $count) {
+            $collections[] = [
+                'title' => 'Collection ' . str_replace('_', ' ', ucfirst($type)),
+                'description' => 'Regroupe les documents de type "' . str_replace('_', ' ', $type) . '".',
+                'href' => url('documents?document_type=' . rawurlencode($type)),
+                'count' => (int) $count,
+            ];
+        }
+
+        foreach (array_slice($categories, 0, 2) as $cat) {
+            $catId = (int) ($cat['id'] ?? 0);
+            if ($catId <= 0) {
+                continue;
+            }
+            $count = 0;
+            foreach ($docs as $doc) {
+                if ((int) ($doc['document_category_id'] ?? 0) === $catId) {
+                    $count++;
+                }
+            }
+            if ($count > 0) {
+                $collections[] = [
+                    'title' => 'Dossier ' . (string) ($cat['name'] ?? 'Catégorie'),
+                    'description' => 'Collection thématique configurable depuis la gestion documentaire.',
+                    'href' => url('documents?category=' . $catId),
+                    'count' => $count,
+                ];
+            }
+        }
+
+        return array_slice($collections, 0, 5);
     }
 
     public function show(Request $request, array $params = []): Response

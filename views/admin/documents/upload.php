@@ -17,6 +17,7 @@ $documentTypes = [
     'fiche_equipement' => 'Fiche équipement',
     'document_operationnel' => 'Document opérationnel',
     'piece_jointe' => 'Pièce jointe',
+    'collection' => 'Collection documentaire',
 ];
 $classificationLevels = [
     'public' => 'Public',
@@ -200,8 +201,14 @@ $permTypeLabels = [
                         </label>
                         <div id="file-zone">
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-600">Fichier</label>
-                            <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.mp4,application/pdf,image/jpeg,image/png,image/webp,video/mp4" class="w-full rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-4 py-8 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white hover:border-emerald-400" />
-                            <p class="mt-2 text-[11px] text-slate-500">PDF, images, vidéo — selon limites serveur.</p>
+                            <label id="drop-zone" for="doc-file-input" class="block cursor-pointer rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/70 px-4 py-8 text-center transition hover:border-emerald-400 hover:bg-emerald-50/40">
+                                <span class="block text-sm font-semibold text-slate-700">Glissez-déposez un fichier ici</span>
+                                <span class="mt-1 block text-xs text-slate-500">ou cliquez pour parcourir — PDF, JPG, PNG, WEBP, MP4 (max 10 Mo)</span>
+                                <input id="doc-file-input" type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.mp4,application/pdf,image/jpeg,image/png,image/webp,video/mp4" class="sr-only" />
+                            </label>
+                            <div id="file-meta" class="mt-3 hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"></div>
+                            <img id="file-preview-image" alt="Prévisualisation image" class="mt-3 hidden max-h-56 rounded-xl border border-slate-200 object-contain" />
+                            <p class="mt-2 text-[11px] text-slate-500">La modération automatique vérifie le binaire avant publication.</p>
                         </div>
                     </div>
                 </section>
@@ -617,9 +624,58 @@ $permTypeLabels = [
     });
   });
   refresh();
-})();
-document.getElementById('doc-without-file').addEventListener('change', function() {
+
+  var withoutFile = document.getElementById('doc-without-file');
   var zone = document.getElementById('file-zone');
-  zone.style.display = this.checked ? 'none' : 'block';
-});
+  if (withoutFile && zone) {
+    withoutFile.addEventListener('change', function() {
+      zone.style.display = this.checked ? 'none' : 'block';
+    });
+  }
+
+  var input = document.getElementById('doc-file-input');
+  var dropZone = document.getElementById('drop-zone');
+  var meta = document.getElementById('file-meta');
+  var preview = document.getElementById('file-preview-image');
+
+  function renderFile(file) {
+    if (!meta || !preview) return;
+    meta.classList.remove('hidden');
+    meta.textContent = file.name + ' — ' + Math.max(1, Math.round(file.size / 1024)) + ' Ko — ' + (file.type || 'type inconnu');
+    if ((file.type || '').indexOf('image/') === 0) {
+      preview.src = URL.createObjectURL(file);
+      preview.classList.remove('hidden');
+      return;
+    }
+    preview.classList.add('hidden');
+    preview.removeAttribute('src');
+  }
+
+  if (input) {
+    input.addEventListener('change', function() {
+      if (input.files && input.files[0]) renderFile(input.files[0]);
+    });
+  }
+  if (dropZone && input) {
+    ['dragenter', 'dragover'].forEach(function(evt) {
+      dropZone.addEventListener(evt, function(e) {
+        e.preventDefault();
+        dropZone.classList.add('border-emerald-500', 'bg-emerald-50');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function(evt) {
+      dropZone.addEventListener(evt, function(e) {
+        e.preventDefault();
+        dropZone.classList.remove('border-emerald-500', 'bg-emerald-50');
+      });
+    });
+    dropZone.addEventListener('drop', function(e) {
+      if (!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files[0]) return;
+      var dt = new DataTransfer();
+      dt.items.add(e.dataTransfer.files[0]);
+      input.files = dt.files;
+      renderFile(e.dataTransfer.files[0]);
+    });
+  }
+})();
 </script>
