@@ -28,7 +28,7 @@ class DocumentRepository
         ?string $classificationLevel = null,
         ?string $sort = null
     ): array {
-        $sql = 'SELECT d.*, dc.name AS category_name, dc.slug AS category_slug, dv.id AS version_id, dv.file_path, dv.mime_type, dv.size, dv.version_number
+        $sql = 'SELECT d.*, dc.name AS category_name, dc.slug AS category_slug, dc.color AS category_color, dv.id AS version_id, dv.file_path, dv.mime_type, dv.size, dv.version_number
                 FROM documents d
                 LEFT JOIN document_categories dc ON dc.id = d.document_category_id
                 LEFT JOIN document_versions dv ON dv.document_id = d.id AND dv.is_current = 1
@@ -95,7 +95,7 @@ class DocumentRepository
 
     public function findBySlug(string $slug, int $tenantId): ?array
     {
-        $sql = 'SELECT d.*, dc.name AS category_name, dv.id AS version_id, dv.version_number, dv.file_path, dv.mime_type, dv.size, dv.checksum
+        $sql = 'SELECT d.*, dc.name AS category_name, dc.color AS category_color, dv.id AS version_id, dv.version_number, dv.file_path, dv.mime_type, dv.size, dv.checksum
                 FROM documents d
                 LEFT JOIN document_categories dc ON dc.id = d.document_category_id
                 LEFT JOIN document_versions dv ON dv.document_id = d.id AND dv.is_current = 1
