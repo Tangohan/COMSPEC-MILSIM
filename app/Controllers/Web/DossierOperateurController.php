@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\Courrier\UserSignatureRepository;
+use App\Repositories\PersonnelAdminDataRepository;
 use App\Repositories\PersonnelExtrasRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelQualificationRepository;
@@ -19,6 +20,8 @@ use App\Services\Personnel\PersonnelCompletenessService;
 
 final class DossierOperateurController
 {
+    private const ACCREDITATION_PANEL_ID = 9101;
+
     public function __construct(
         private AuthService $authService,
         private PersonnelProfileRepository $personnelProfileRepository,
@@ -28,6 +31,7 @@ final class DossierOperateurController
         private TrainingCertificateRepository $trainingCertificateRepository,
         private PersonnelCompletenessService $completenessService,
         private UserSignatureRepository $userSignatureRepository,
+        private PersonnelAdminDataRepository $personnelAdminDataRepository,
     ) {}
 
     public function accreditation(Request $request, array $params = []): Response
@@ -66,6 +70,12 @@ final class DossierOperateurController
                 break;
             }
         }
+        $accreditationManagement = $this->personnelAdminDataRepository->getForUserAndPanel($uid, self::ACCREDITATION_PANEL_ID);
+        $accessNotes = is_array($accreditationManagement['notes'] ?? null) ? array_values($accreditationManagement['notes']) : [];
+        $reviewSteps = is_array($accreditationManagement['reviews'] ?? null) ? array_values($accreditationManagement['reviews']) : [];
+        $signatureRequiredByPolicy = isset($accreditationManagement['signature_required'])
+            ? (bool) $accreditationManagement['signature_required']
+            : true;
 
         $gate = Gate::getInstance();
 
@@ -78,6 +88,9 @@ final class DossierOperateurController
             'certificates' => $certificates,
             'next_qualification_expiration' => $nextQualificationExpiration,
             'has_default_signature' => $hasDefaultSignature,
+            'access_notes' => $accessNotes,
+            'review_steps' => $reviewSteps,
+            'signature_required_by_policy' => $signatureRequiredByPolicy,
             'can_view_documents' => $gate->allows('documents.view'),
         ]);
     }

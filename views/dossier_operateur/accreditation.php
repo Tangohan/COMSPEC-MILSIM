@@ -7,44 +7,30 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $certificates */
 /** @var string|null $next_qualification_expiration */
 /** @var bool $has_default_signature */
+/** @var bool $signature_required_by_policy */
+/** @var list<array<string, mixed>> $access_notes */
+/** @var list<array<string, mixed>> $review_steps */
 /** @var bool $can_view_documents */
 
 $score = (int) ($completeness['score'] ?? 0);
 $missing = $completeness['missing_labels'] ?? [];
 $critical = $completeness['sections_critiques'] ?? [];
 $hasDefaultSignature = (bool) ($has_default_signature ?? false);
+$signatureRequiredByPolicy = (bool) ($signature_required_by_policy ?? true);
 $now = time();
 $scoreTone = $score >= 85 ? 'emerald' : ($score >= 65 ? 'amber' : 'rose');
 $scoreToneLabel = $score >= 85 ? 'Conforme' : ($score >= 65 ? 'Sous surveillance' : 'Non conforme');
 $complianceWindow = date('d/m/Y H:i', $now - 3600);
-
-$accessNotes = [
-    [
-        'reference' => 'ACR-OPS-' . date('ymd', $now) . '-01',
-        'title' => 'Contrôle initial d’accès plateforme',
-        'author' => 'Cellule Contrôle Interne',
-        'classification' => 'Interne — Diffusion restreinte',
-        'summary' => 'Vérification de cohérence du dossier opérateur, des qualifications et des attestations.',
-        'result' => $score >= 85 ? 'Conforme sans réserve.' : 'Conforme avec réserves. Mise à jour requise.',
-        'stamp' => date('d/m/Y H:i', $now - 9000),
-    ],
-    [
-        'reference' => 'ACR-OPS-' . date('ymd', $now) . '-02',
-        'title' => 'Revue de maintien de privilèges',
-        'author' => 'État-major RH & Conformité',
-        'classification' => 'Opérationnel',
-        'summary' => 'Contrôle des prérequis documentaires avant maintien de l’accès documentaire avancé.',
-        'result' => $hasDefaultSignature ? 'Signature numérique enregistrée et exploitable.' : 'Signature numérique manquante : accès limité.',
-        'stamp' => date('d/m/Y H:i', $now - 3600),
-    ],
-];
-
-$reviewSteps = [
-    ['title' => 'Pré-contrôle administratif', 'status' => $score >= 75 ? 'validé' : 'à corriger', 'detail' => 'Identité, contact, dossier personnel.'],
-    ['title' => 'Revue qualifications', 'status' => $qualifications !== [] ? 'validé' : 'à corriger', 'detail' => 'Niveaux, échéances, statuts opérationnels.'],
-    ['title' => 'Revue attestations', 'status' => $certificates !== [] ? 'validé' : 'en attente', 'detail' => 'Certificats de formation et traçabilité.'],
-    ['title' => 'Contrôle signature numérique', 'status' => $hasDefaultSignature ? 'validé' : 'bloquant', 'detail' => 'Signature par défaut obligatoire pour circuit documentaire.'],
-];
+$accessNotes = is_array($access_notes ?? null) ? array_values($access_notes) : [];
+$reviewSteps = is_array($review_steps ?? null) ? array_values($review_steps) : [];
+if ($reviewSteps === []) {
+    $reviewSteps = [
+        ['title' => 'Pré-contrôle administratif', 'status' => $score >= 75 ? 'validé' : 'à corriger', 'detail' => 'Identité, contact, dossier personnel.'],
+        ['title' => 'Revue qualifications', 'status' => $qualifications !== [] ? 'validé' : 'à corriger', 'detail' => 'Niveaux, échéances, statuts opérationnels.'],
+        ['title' => 'Revue attestations', 'status' => $certificates !== [] ? 'validé' : 'en attente', 'detail' => 'Certificats de formation et traçabilité.'],
+        ['title' => 'Contrôle signature numérique', 'status' => $hasDefaultSignature ? 'validé' : 'bloquant', 'detail' => 'Signature par défaut obligatoire pour circuit documentaire.'],
+    ];
+}
 
 $qualStatusLabel = static function (string $s): string {
     return match ($s) {
@@ -165,7 +151,10 @@ $fmtDate = static function (?string $d): string {
                         </div>
                         <p class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-700">Traçabilité active</p>
                     </div>
-                    <ul class="mt-6 space-y-4">
+                    <ul id="accreditation-notes-list" class="mt-6 space-y-4">
+                        <?php if ($accessNotes === []): ?>
+                        <li class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500">Aucune note enregistrée. Utilisez le panneau de gestion pour créer une note d’accès.</li>
+                        <?php endif; ?>
                         <?php foreach ($accessNotes as $note): ?>
                         <li class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -184,7 +173,10 @@ $fmtDate = static function (?string $d): string {
                 <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                     <h2 class="text-xs font-black uppercase tracking-[0.28em] text-slate-500">Revues d’accréditation</h2>
                     <p class="mt-2 text-sm text-slate-600">Pipeline de validation interne avant autorisation complète.</p>
-                    <ol class="mt-6 space-y-3">
+                    <ol id="accreditation-reviews-list" class="mt-6 space-y-3">
+                        <?php if ($reviewSteps === []): ?>
+                        <li class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500">Aucune revue enregistrée.</li>
+                        <?php endif; ?>
                         <?php foreach ($reviewSteps as $index => $step): ?>
                         <li class="flex gap-3 rounded-2xl border border-slate-200 px-4 py-3">
                             <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700"><?= (int) $index + 1 ?></div>
@@ -202,12 +194,17 @@ $fmtDate = static function (?string $d): string {
                     </ol>
                 </section>
 
-                <section class="rounded-3xl border <?= $hasDefaultSignature ? 'border-emerald-200 bg-emerald-50/40' : 'border-rose-200 bg-rose-50/40' ?> p-6 shadow-sm md:p-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.28em] <?= $hasDefaultSignature ? 'text-emerald-700' : 'text-rose-700' ?>">Signature numérique obligatoire</h2>
-                    <p class="mt-2 text-sm <?= $hasDefaultSignature ? 'text-emerald-900' : 'text-rose-900' ?>">
-                        <?= $hasDefaultSignature
-                            ? 'Une signature par défaut est enregistrée. Le circuit de validation documentaire est conforme.'
-                            : 'Aucune signature par défaut détectée. Les validations critiques doivent être bloquées tant qu’aucune signature n’est enregistrée.' ?>
+                <?php $signaturePolicyOk = !$signatureRequiredByPolicy || $hasDefaultSignature; ?>
+                <section class="rounded-3xl border <?= $signaturePolicyOk ? 'border-emerald-200 bg-emerald-50/40' : 'border-rose-200 bg-rose-50/40' ?> p-6 shadow-sm md:p-8">
+                    <h2 class="text-xs font-black uppercase tracking-[0.28em] <?= $signaturePolicyOk ? 'text-emerald-700' : 'text-rose-700' ?>">Signature numérique obligatoire</h2>
+                    <p class="mt-2 text-sm <?= $signaturePolicyOk ? 'text-emerald-900' : 'text-rose-900' ?>">
+                        <?php if (!$signatureRequiredByPolicy): ?>
+                            Politique locale : la signature numérique est actuellement optionnelle pour ce dossier.
+                        <?php elseif ($hasDefaultSignature): ?>
+                            Une signature par défaut est enregistrée. Le circuit de validation documentaire est conforme.
+                        <?php else: ?>
+                            Aucune signature par défaut détectée. Les validations critiques doivent être bloquées tant qu’aucune signature n’est enregistrée.
+                        <?php endif; ?>
                     </p>
                     <div class="mt-4 flex flex-wrap gap-3">
                         <a href="<?= htmlspecialchars(url('courrier')) ?>" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-xs font-black uppercase tracking-wide text-white hover:bg-slate-800">
@@ -217,6 +214,45 @@ $fmtDate = static function (?string $d): string {
                             API signatures
                         </a>
                     </div>
+                </section>
+
+                <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <h2 class="text-xs font-black uppercase tracking-[0.28em] text-slate-500">Gestion accréditation (API)</h2>
+                        <span id="accreditation-api-feedback" class="text-xs text-slate-500"></span>
+                    </div>
+                    <p class="mt-2 text-sm text-slate-600">Création de notes, revues et politique de signature via les routes API du dossier opérateur.</p>
+
+                    <div class="mt-5 grid gap-4 lg:grid-cols-2">
+                        <form id="accreditation-note-form" class="rounded-2xl border border-slate-200 p-4">
+                            <p class="text-xs font-black uppercase tracking-wide text-slate-500">Nouvelle note d’accès</p>
+                            <input type="text" name="title" required maxlength="120" placeholder="Titre de la note" class="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                            <input type="text" name="classification" maxlength="80" value="Interne — Diffusion restreinte" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                            <textarea name="body" required rows="4" maxlength="800" placeholder="Résumé opérationnel / décision..." class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+                            <button type="submit" class="mt-3 inline-flex rounded-xl bg-slate-900 px-4 py-2 text-xs font-black uppercase tracking-wide text-white hover:bg-slate-800">Ajouter la note</button>
+                        </form>
+
+                        <form id="accreditation-review-form" class="rounded-2xl border border-slate-200 p-4">
+                            <p class="text-xs font-black uppercase tracking-wide text-slate-500">Nouvelle revue</p>
+                            <input type="text" name="title" required maxlength="120" placeholder="Étape de revue" class="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                            <select name="status" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                <option value="validé">Validé</option>
+                                <option value="à corriger">À corriger</option>
+                                <option value="en attente">En attente</option>
+                                <option value="bloquant">Bloquant</option>
+                            </select>
+                            <textarea name="detail" required rows="4" maxlength="320" placeholder="Conclusion de revue..." class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+                            <button type="submit" class="mt-3 inline-flex rounded-xl bg-slate-900 px-4 py-2 text-xs font-black uppercase tracking-wide text-white hover:bg-slate-800">Ajouter la revue</button>
+                        </form>
+                    </div>
+
+                    <form id="accreditation-policy-form" class="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 p-4">
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                            <input type="checkbox" name="signature_required" value="1" <?= $signatureRequiredByPolicy ? 'checked' : '' ?> class="rounded border-slate-300">
+                            Signature numérique exigée pour valider le dossier
+                        </label>
+                        <button type="submit" class="inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-800 hover:border-slate-400">Enregistrer la politique</button>
+                    </form>
                 </section>
 
                 <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
@@ -318,3 +354,79 @@ $fmtDate = static function (?string $d): string {
         </div>
     </div>
 </div>
+<script>
+(function () {
+    const csrf = <?= json_encode(\App\Core\Csrf::token()) ?>;
+    const feedback = document.getElementById('accreditation-api-feedback');
+    const noteForm = document.getElementById('accreditation-note-form');
+    const reviewForm = document.getElementById('accreditation-review-form');
+    const policyForm = document.getElementById('accreditation-policy-form');
+    if (!noteForm || !reviewForm || !policyForm || !feedback) return;
+
+    const setFeedback = (msg, isError = false) => {
+        feedback.textContent = msg;
+        feedback.className = 'text-xs ' + (isError ? 'text-rose-600' : 'text-emerald-700');
+    };
+
+    const postJson = async (url, payload) => {
+        const res = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) throw new Error(data.message || 'Erreur API');
+        return data;
+    };
+
+    noteForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(noteForm);
+        try {
+            await postJson('<?= htmlspecialchars(url('api/dossier-operateur/accreditation-management/note')) ?>', {
+                _csrf_token: csrf,
+                title: fd.get('title') || '',
+                classification: fd.get('classification') || '',
+                body: fd.get('body') || ''
+            });
+            setFeedback('Note enregistrée. Rechargement de la page…');
+            window.location.reload();
+        } catch (err) {
+            setFeedback(err.message || 'Échec ajout note.', true);
+        }
+    });
+
+    reviewForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(reviewForm);
+        try {
+            await postJson('<?= htmlspecialchars(url('api/dossier-operateur/accreditation-management/review')) ?>', {
+                _csrf_token: csrf,
+                title: fd.get('title') || '',
+                status: fd.get('status') || 'en attente',
+                detail: fd.get('detail') || ''
+            });
+            setFeedback('Revue enregistrée. Rechargement de la page…');
+            window.location.reload();
+        } catch (err) {
+            setFeedback(err.message || 'Échec ajout revue.', true);
+        }
+    });
+
+    policyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(policyForm);
+        try {
+            await postJson('<?= htmlspecialchars(url('api/dossier-operateur/accreditation-management/policy')) ?>', {
+                _csrf_token: csrf,
+                signature_required: fd.get('signature_required') === '1'
+            });
+            setFeedback('Politique enregistrée. Rechargement de la page…');
+            window.location.reload();
+        } catch (err) {
+            setFeedback(err.message || 'Échec enregistrement politique.', true);
+        }
+    });
+})();
+</script>
