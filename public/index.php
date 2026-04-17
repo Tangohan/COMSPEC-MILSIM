@@ -109,7 +109,10 @@ if (!$maintenanceSkipped) {
                 if ($u) {
                     $rbac->setPermissionsForGateFromUserRow($u, $userRepo);
                     $slug = $userRepo->getRoleSlugForUser($uid);
-                    $userContext = ['role_slug' => $slug];
+                    $userContext = [
+                        'user_id' => $uid,
+                        'role_slug' => $slug,
+                    ];
                 }
             }
             $module = detect_current_module($requestPath);
