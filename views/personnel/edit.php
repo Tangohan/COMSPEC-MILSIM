@@ -18,6 +18,7 @@ $forumOrgRoleChoices = is_array($forumOrgRoleChoices ?? null) ? $forumOrgRoleCho
 $memberCanChooseDisplayRole = !empty($memberCanChooseDisplayRole);
 $roleplayFollowupConfig = is_array($roleplayFollowupConfig ?? null) ? $roleplayFollowupConfig : ['enabled' => false, 'stages' => [], 'recruitment_tracks' => []];
 $rpTutorChoices = is_array($rpTutorChoices ?? null) ? $rpTutorChoices : [];
+$roleplayEventTypes = is_array($roleplayEventTypes ?? null) ? $roleplayEventTypes : ['administratif'];
 
 $isMe = (int) ($targetUser['id'] ?? 0) === (int) (\App\Core\Session::get('user_id'));
 $formAction = url('personnel/' . (int) $targetUser['id'] . '/update');
@@ -400,6 +401,49 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
             <div class="md:col-span-2">
               <label for="rp_followup_notes" class="mb-1 block text-xs font-bold text-slate-600">Notes de suivi roleplay</label>
               <textarea name="rp_followup_notes" id="rp_followup_notes" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Objectifs individuels, points de vigilance, observations tutorat…"><?= htmlspecialchars((string) ($p['rp_followup_notes'] ?? '')) ?></textarea>
+            </div>
+            <div class="md:col-span-2 rounded-xl border border-emerald-200/90 bg-emerald-50/50 p-4">
+              <p class="text-[10px] font-black uppercase tracking-wider text-emerald-900">Ajouter un événement timeline</p>
+              <p class="mt-1 text-[11px] text-emerald-900/80">Optionnel : crée un événement historisé au moment de l’enregistrement (suivi individuel détaillé).</p>
+              <div class="mt-3 grid gap-3 md:grid-cols-2">
+                <div>
+                  <label for="rp_timeline_type" class="mb-1 block text-xs font-bold text-slate-600">Type d’événement</label>
+                  <select id="rp_timeline_type" name="rp_timeline_type" class="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm">
+                    <?php foreach ($roleplayEventTypes as $evt): $evt = trim((string) $evt); if ($evt === '') { continue; } ?>
+                    <option value="<?= htmlspecialchars($evt) ?>"><?= htmlspecialchars(ucfirst($evt)) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div>
+                  <label for="rp_timeline_status" class="mb-1 block text-xs font-bold text-slate-600">Statut</label>
+                  <select id="rp_timeline_status" name="rp_timeline_status" class="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm">
+                    <option value="planned">Prévu</option>
+                    <option value="completed">Terminé</option>
+                    <option value="blocked">Bloqué</option>
+                    <option value="cancelled">Annulé</option>
+                  </select>
+                </div>
+                <div class="md:col-span-2">
+                  <label for="rp_timeline_title" class="mb-1 block text-xs font-bold text-slate-600">Titre (si vide : aucun événement ajouté)</label>
+                  <input type="text" id="rp_timeline_title" name="rp_timeline_title" maxlength="180" class="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm" placeholder="Ex. Debrief tutorat semaine 3">
+                </div>
+                <div>
+                  <label for="rp_timeline_event_date" class="mb-1 block text-xs font-bold text-slate-600">Date événement</label>
+                  <input type="date" id="rp_timeline_event_date" name="rp_timeline_event_date" class="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                  <label for="rp_timeline_due_date" class="mb-1 block text-xs font-bold text-slate-600">Échéance</label>
+                  <input type="date" id="rp_timeline_due_date" name="rp_timeline_due_date" class="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                  <label for="rp_timeline_progress_delta" class="mb-1 block text-xs font-bold text-slate-600">Impact progression (-100 à +100)</label>
+                  <input type="number" min="-100" max="100" id="rp_timeline_progress_delta" name="rp_timeline_progress_delta" class="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm" placeholder="+10">
+                </div>
+                <div class="md:col-span-2">
+                  <label for="rp_timeline_detail" class="mb-1 block text-xs font-bold text-slate-600">Détail</label>
+                  <textarea id="rp_timeline_detail" name="rp_timeline_detail" rows="2" class="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm" placeholder="Compte-rendu, décision, blocage, plan d’action…"></textarea>
+                </div>
+              </div>
             </div>
           </div>
         </section>

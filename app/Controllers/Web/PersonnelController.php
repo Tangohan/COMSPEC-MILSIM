@@ -36,6 +36,7 @@ use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\ArmaPlaytimeRepository;
 use App\Repositories\PersonnelOrgHistoryRepository;
+use App\Repositories\PersonnelRoleplayTimelineRepository;
 use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Steam\SteamWebApiService;
 use App\Core\Gate;
@@ -194,6 +195,7 @@ class PersonnelController
         private ArmaPlaytimeRepository $armaPlaytimeRepository,
         private SteamWebApiService $steamWebApiService,
         private PersonnelOrgHistoryRepository $personnelOrgHistoryRepository,
+        private PersonnelRoleplayTimelineRepository $personnelRoleplayTimelineRepository,
     ) {}
 
     private function formatArmaPlaytimeFrench(int $seconds): string
@@ -398,7 +400,6 @@ class PersonnelController
                 $rpTutorLabel = trim((string) ($rpTutor['display_name'] ?? '')) ?: (trim((string) ($rpTutor['callsign'] ?? '')) ?: trim((string) ($rpTutor['email'] ?? '')));
             }
         }
-
         $grades = $this->gradeRepository->listForTenant((int) $tenantId);
         $grade = null;
         if (!empty($target['grade_id'])) {
@@ -416,6 +417,10 @@ class PersonnelController
         $canStaffEdit = $this->canStaffEditPersonnel();
         $canStaffView = $this->canStaffViewPersonnel();
         $canSensitive = $this->canViewSensitivePersonnel();
+        $roleplayTimelineEvents = [];
+        if ($roleplayFollowupConfig['enabled'] && ($isSelf || $canStaffView || $canStaffEdit) && $this->personnelRoleplayTimelineRepository->tableExists()) {
+            $roleplayTimelineEvents = $this->personnelRoleplayTimelineRepository->listForUser((int) $tenantId, $uid, 80);
+        }
         $isForumMod = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
         /** Lecture identité civile, état civil, dossier recrutement détaillé : titulaire + staff / RH habilités (pas les autres membres). */
         $privatePersonnelIdentity = $isSelf || $canStaffView || $canStaffEdit || $canSensitive;
@@ -592,6 +597,7 @@ class PersonnelController
             'roleplayFollowupConfig' => $roleplayFollowupConfig,
             'roleplayEligibility' => $roleplayEligibility,
             'rpTutorLabel' => $rpTutorLabel,
+            'roleplayTimelineEvents' => $roleplayTimelineEvents,
         ]);
     }
 
@@ -776,6 +782,7 @@ class PersonnelController
         $memberCanChooseDisplayRole = !empty($community['member_can_choose_display_role']);
         $roleplayFollowupConfig = $this->roleplayFollowupConfig($tenantId);
         $rpTutorChoices = [];
+        $roleplayEventTypes = ['entretien', 'medical', 'rotation', 'formation', 'recrutement', 'tutorat', 'administratif'];
         if ($roleplayFollowupConfig['enabled'] && ($isSelf || $this->canStaffEditPersonnel())) {
             foreach ($this->userRepository->allForTenant($tenantId) as $u) {
                 if (($u['status'] ?? 'active') !== 'active') {
@@ -817,6 +824,7 @@ class PersonnelController
             'memberCanChooseDisplayRole' => $memberCanChooseDisplayRole,
             'roleplayFollowupConfig' => $roleplayFollowupConfig,
             'rpTutorChoices' => $rpTutorChoices,
+            'roleplayEventTypes' => $roleplayEventTypes,
         ]);
     }
 
@@ -846,6 +854,7 @@ class PersonnelController
         $readinessRaw = $request->input('readiness_score');
         $readinessScore = ($readinessRaw === null || $readinessRaw === '') ? null : max(0, min(100, (int) $readinessRaw));
         $roleplayFollowupConfig = $this->roleplayFollowupConfig($tenantId);
+        $existingProfile = $this->personnelProfileRepository->getByUserId((int) $target['id']) ?? [];
 
         $primaryUnitIdRaw = $request->input('primary_unit_id');
         $primaryUnitId = $primaryUnitIdRaw ? (int) $primaryUnitIdRaw : null;
@@ -969,6 +978,91 @@ class PersonnelController
             $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
         }
         $this->personnelProfileRepository->update((int) $target['id'], $data);
+        if ($roleplayFollowupConfig['enabled']) {
+            $actorId = (int) Session::get('user_id');
+            $newStage = (string) ($data['rp_followup_stage'] ?? '');
+            $oldStage = trim((string) ($existingProfile['rp_followup_stage'] ?? ''));
+            if ($newStage !== '' && $newStage !== $oldStage) {
+                $this->personnelRoleplayTimelineRepository->addEvent(
+                    $tenantId,
+                    (int) $target['id'],
+                    'stage',
+                    'Changement d’étape RP',
+                    'Nouvelle étape : ' . $newStage,
+                    date('Y-m-d'),
+                    null,
+                    'completed',
+                    null,
+                    $actorId > 0 ? $actorId : null
+                );
+            }
+            $newTutorId = isset($data['rp_tutor_user_id']) ? (int) $data['rp_tutor_user_id'] : 0;
+            $oldTutorId = (int) ($existingProfile['rp_tutor_user_id'] ?? 0);
+            if ($newTutorId > 0 && $newTutorId !== $oldTutorId) {
+                $tu = $this->userRepository->findById($newTutorId, $tenantId);
+                $tuLabel = $tu ? (trim((string) ($tu['display_name'] ?? '')) ?: trim((string) ($tu['callsign'] ?? ''))) : ('#' . $newTutorId);
+                $this->personnelRoleplayTimelineRepository->addEvent(
+                    $tenantId,
+                    (int) $target['id'],
+                    'tutorat',
+                    'Affectation tuteur',
+                    'Tuteur assigné : ' . $tuLabel,
+                    date('Y-m-d'),
+                    null,
+                    'completed',
+                    null,
+                    $actorId > 0 ? $actorId : null
+                );
+            }
+            $dateFieldMap = [
+                'rp_next_interview_date' => ['entretien', 'Planification entretien individuel'],
+                'rp_medical_due_date' => ['medical', 'Planification visite médicale'],
+                'rp_service_rotation_date' => ['rotation', 'Planification rotation de service'],
+            ];
+            foreach ($dateFieldMap as $key => [$type, $title]) {
+                $old = trim((string) ($existingProfile[$key] ?? ''));
+                $new = trim((string) ($data[$key] ?? ''));
+                if ($new !== '' && $new !== $old) {
+                    $this->personnelRoleplayTimelineRepository->addEvent(
+                        $tenantId,
+                        (int) $target['id'],
+                        $type,
+                        $title,
+                        null,
+                        date('Y-m-d'),
+                        $new,
+                        'planned',
+                        null,
+                        $actorId > 0 ? $actorId : null
+                    );
+                }
+            }
+            $manualTitle = trim((string) $request->input('rp_timeline_title'));
+            if ($manualTitle !== '') {
+                $manualType = trim((string) $request->input('rp_timeline_type'));
+                if ($manualType === '') {
+                    $manualType = 'administratif';
+                }
+                $manualStatus = trim((string) $request->input('rp_timeline_status'));
+                if ($manualStatus === '') {
+                    $manualStatus = 'planned';
+                }
+                $manualDeltaRaw = $request->input('rp_timeline_progress_delta');
+                $manualDelta = ($manualDeltaRaw === null || $manualDeltaRaw === '') ? null : (int) $manualDeltaRaw;
+                $this->personnelRoleplayTimelineRepository->addEvent(
+                    $tenantId,
+                    (int) $target['id'],
+                    $manualType,
+                    $manualTitle,
+                    trim((string) $request->input('rp_timeline_detail')) ?: null,
+                    trim((string) $request->input('rp_timeline_event_date')) ?: date('Y-m-d'),
+                    trim((string) $request->input('rp_timeline_due_date')) ?: null,
+                    $manualStatus,
+                    $manualDelta,
+                    $actorId > 0 ? $actorId : null
+                );
+            }
+        }
 
         if ($jobRolesEnabled && $this->personnelJobRoleRepository->pivotTableExists()) {
             try {
