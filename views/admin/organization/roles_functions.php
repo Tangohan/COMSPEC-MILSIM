@@ -7,12 +7,12 @@ $units = $units ?? [];
 $rolePresetMeta = $rolePresetMeta ?? [];
 $graphJsonUrl = url('back-office/roles-functions/graph.json');
 ?>
-<div class="max-w-6xl mx-auto px-6 py-10 space-y-10">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
     <div class="rounded-lg border border-blue-100 bg-blue-50/90 px-4 py-3 text-sm text-slate-800">
         Cette page décrit les liens entre les rôles de <strong class="font-semibold">votre communauté</strong> et le référentiel des fonctions.
         Seuls les rôles internes à la communauté apparaissent dans le graphe ; les habilitations plateforme sont gérées ailleurs.
     </div>
-    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+    <div class="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Gestion des rôles et fonctions</h1>
             <p class="text-sm text-slate-600 mt-2 max-w-2xl">
@@ -20,11 +20,23 @@ $graphJsonUrl = url('back-office/roles-functions/graph.json');
                 Les droits effectifs combinent les rôles attribués, les permissions et les spécificités par unité.
             </p>
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-xs font-black uppercase tracking-wider text-slate-500">Bibliothèque de données</p>
+            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+                <div class="rounded-xl bg-slate-50 p-2"><p class="text-xl font-black text-slate-900"><?= count($roleDefinitions) ?></p><p class="text-[10px] uppercase text-slate-500">Fonctions</p></div>
+                <div class="rounded-xl bg-slate-50 p-2"><p class="text-xl font-black text-slate-900"><?= count($tenantRoles) ?></p><p class="text-[10px] uppercase text-slate-500">Rôles</p></div>
+                <div class="rounded-xl bg-slate-50 p-2"><p class="text-xl font-black text-slate-900"><?= count($roleRelations) ?></p><p class="text-[10px] uppercase text-slate-500">Relations</p></div>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+                <a href="<?= url('back-office/personnel-job-roles') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50">Référentiel emplois</a>
+                <a href="<?= url('back-office/personnel-job-roles/assignments') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50">Attributions</a>
+            </div>
+        </div>
+    </div>
+    <div class="flex flex-wrap gap-2">
             <a href="<?= url('back-office/users') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Utilisateurs</a>
             <a href="<?= url('back-office/roles') ?>" class="inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800">Rôles &amp; permissions</a>
             <a href="<?= url('back-office/roles/presets') ?>" class="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-100">Profils prédéfinis</a>
-        </div>
     </div>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -70,10 +82,23 @@ $graphJsonUrl = url('back-office/roles-functions/graph.json');
         </div>
     </section>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <h2 class="text-lg font-bold text-slate-900 mb-3">D. Catalogue global (définitions)</h2>
+        <div class="grid gap-3 sm:grid-cols-2">
+            <label class="text-xs font-semibold text-slate-600">Recherche rapide
+                <input id="rf-library-search" type="search" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Slug, nom FR/US, famille…">
+            </label>
+            <label class="text-xs font-semibold text-slate-600">Filtrer par famille
+                <select id="rf-library-family" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                    <option value="">Toutes les familles</option>
+                    <?php foreach (array_values(array_unique(array_filter(array_map(static fn(array $d): string => trim((string) ($d['family'] ?? '')), $roleDefinitions)))) as $fam): ?>
+                        <option value="<?= htmlspecialchars($fam, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($fam, ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+        </div>
         <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
+            <table class="min-w-full text-sm" id="rf-library-table">
                 <thead>
                     <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-200">
                         <th class="py-2 pr-4">Référence courte</th>
@@ -84,7 +109,7 @@ $graphJsonUrl = url('back-office/roles-functions/graph.json');
                 </thead>
                 <tbody>
                     <?php foreach ($roleDefinitions as $d): ?>
-                        <tr class="border-b border-slate-100">
+                        <tr class="border-b border-slate-100" data-rf-row data-family="<?= htmlspecialchars((string) ($d['family'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(mb_strtolower(trim((string) (($d['slug'] ?? '') . ' ' . ($d['name_fr'] ?? '') . ' ' . ($d['name_us'] ?? '') . ' ' . ($d['family'] ?? ''))), 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>">
                             <td class="py-2 pr-4 font-mono text-xs"><?= htmlspecialchars((string) ($d['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                             <td class="py-2 pr-4"><?= htmlspecialchars((string) ($d['name_fr'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                             <td class="py-2 pr-4"><?= htmlspecialchars((string) ($d['name_us'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
@@ -94,6 +119,7 @@ $graphJsonUrl = url('back-office/roles-functions/graph.json');
                 </tbody>
             </table>
         </div>
+        <p id="rf-library-empty" class="hidden rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">Aucune entrée ne correspond au filtre courant.</p>
         <?php if ($definitionRelations !== []): ?>
             <h3 class="text-sm font-bold text-slate-800 mt-6 mb-2">Graphe catalogue (définitions)</h3>
             <ul class="text-xs text-slate-600 space-y-1">
@@ -173,5 +199,28 @@ $graphJsonUrl = url('back-office/roles-functions/graph.json');
       ctx.fillText((n.label || n.slug || '').slice(0, 24), p.x + 10, p.y + 4);
     });
   }).catch(function () {});
+})();
+
+(function () {
+  var search = document.getElementById('rf-library-search');
+  var family = document.getElementById('rf-library-family');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('[data-rf-row]'));
+  var empty = document.getElementById('rf-library-empty');
+  if (!rows.length || !search || !family) return;
+  function apply() {
+    var q = (search.value || '').trim().toLowerCase();
+    var fam = family.value || '';
+    var visible = 0;
+    rows.forEach(function (row) {
+      var okQ = !q || (row.getAttribute('data-search') || '').indexOf(q) !== -1;
+      var okFam = !fam || (row.getAttribute('data-family') || '') === fam;
+      var show = okQ && okFam;
+      row.classList.toggle('hidden', !show);
+      if (show) visible++;
+    });
+    if (empty) empty.classList.toggle('hidden', visible !== 0);
+  }
+  search.addEventListener('input', apply);
+  family.addEventListener('change', apply);
 })();
 </script>
