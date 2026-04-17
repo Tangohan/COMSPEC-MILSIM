@@ -9,9 +9,17 @@ if (!$document) {
 $title = htmlspecialchars($document['title']);
 $fileUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/file';
 $downloadUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/download';
+$lifecycleBlocked = (bool) ($lifecycleBlocked ?? false);
+$updatedAt = !empty($document['updated_at']) ? date('d/m/Y H:i', strtotime((string) $document['updated_at'])) : '—';
+$reviewDueAt = !empty($document['review_due_at']) ? date('d/m/Y', strtotime((string) $document['review_due_at'])) : 'Non défini';
+$expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) $document['expires_at'])) : 'Non défini';
 ?>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8" data-doc-protect>
-    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+    <?php if ($lifecycleBlocked): ?>
+    <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Ce document est marqué comme obsolète (revue/correction requise).</div>
+    <?php endif; ?>
+    <div class="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-emerald-50/40 p-5 sm:p-6 mb-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
             <a href="<?= url('documents') ?>" class="text-sm text-slate-500 hover:text-slate-900 mb-2 inline-block">← Retour aux documents</a>
             <h1 class="text-2xl font-black text-slate-900"><?= $title ?></h1>
@@ -30,7 +38,10 @@ $downloadUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/download';
             </a>
         </div>
     </div>
+    </div>
 
+    <div class="grid gap-6 xl:grid-cols-[1fr_320px]">
+    <div>
     <?php if ($viewType === 'image'): ?>
     <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         <div class="relative p-4 flex justify-center bg-slate-50 min-h-[60vh]" data-doc-viewport x-data="{ open: false }">
@@ -233,5 +244,17 @@ $downloadUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/download';
       });
     </script>
     <?php endif; ?>
+    </div>
+    <aside class="rounded-2xl border border-slate-200 bg-white p-4 h-fit xl:sticky xl:top-6">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Métadonnées</p>
+        <dl class="mt-3 space-y-3 text-sm">
+            <div><dt class="text-slate-500">Type d'aperçu</dt><dd class="font-semibold text-slate-900"><?= $viewType === 'image' ? 'Image' : 'PDF' ?></dd></div>
+            <div><dt class="text-slate-500">Dernière mise à jour</dt><dd class="font-semibold text-slate-900"><?= htmlspecialchars($updatedAt) ?></dd></div>
+            <div><dt class="text-slate-500">Revue prévue</dt><dd class="font-semibold text-slate-900"><?= htmlspecialchars($reviewDueAt) ?></dd></div>
+            <div><dt class="text-slate-500">Expiration</dt><dd class="font-semibold text-slate-900"><?= htmlspecialchars($expiresAt) ?></dd></div>
+        </dl>
+        <p class="mt-4 text-xs text-slate-500">Astuce: flèches clavier pour naviguer, +/− pour zoomer rapidement.</p>
+    </aside>
+    </div>
 </div>
 <?php require base_path('views/partials/documents_copy_protection.php'); ?>

@@ -66,7 +66,13 @@ class DocumentsController
             $sort
         );
         $userId = (int) Session::get('user_id');
-        $docs = array_values(array_filter($docs, fn ($d) => $this->documentAccessService->canRead($d, $userId, $tenantId)));
+        $docs = array_values(array_filter($docs, function ($d) use ($userId, $tenantId) {
+            if (!$this->documentAccessService->canRead($d, $userId, $tenantId)) {
+                return false;
+            }
+
+            return !$this->isDocumentLifecycleBlocked($d) || $this->viewerMayBypassLifecycleBlock();
+        }));
         $categoriesList = $this->categoryRepository->listForTenant($tenantId);
         $documentTrainingRefs = $this->documentTrainingReferencesService->mapByDocumentId($tenantId, $docs);
         $collections = $this->buildCollections($docs, $categoriesList);
@@ -158,6 +164,9 @@ class DocumentsController
         if (($doc['status'] ?? '') !== 'published') {
             return (new Response())->setStatusCode(404)->setBody('Document non disponible.');
         }
+        if ($this->isDocumentLifecycleBlocked($doc) && !$this->viewerMayBypassLifecycleBlock()) {
+            return (new Response())->setStatusCode(423)->setBody('Document bloqué : revue/correction/suppression requise.');
+        }
         if (empty($doc['file_path']) || empty($doc['mime_type'])) {
             return (new Response())->setStatusCode(404)->setBody('Aucune version de fichier.');
         }
@@ -173,6 +182,7 @@ class DocumentsController
             'title' => $doc['title'],
             'document' => $doc,
             'viewType' => $viewType,
+            'lifecycleBlocked' => $this->isDocumentLifecycleBlocked($doc),
         ]);
     }
 
@@ -196,6 +206,9 @@ class DocumentsController
         }
         if (($doc['status'] ?? '') !== 'published') {
             return (new Response())->setStatusCode(404)->setBody('Document non disponible');
+        }
+        if ($this->isDocumentLifecycleBlocked($doc) && !$this->viewerMayBypassLifecycleBlock()) {
+            return (new Response())->setStatusCode(423)->setBody('Document bloqué : revue/correction/suppression requise.');
         }
         if ($this->isDocumentFileBlockedForViewer($doc)) {
             return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
@@ -239,6 +252,9 @@ class DocumentsController
         if (($doc['status'] ?? '') !== 'published') {
             return (new Response())->setStatusCode(404)->setBody('Document non disponible');
         }
+        if ($this->isDocumentLifecycleBlocked($doc) && !$this->viewerMayBypassLifecycleBlock()) {
+            return (new Response())->setStatusCode(423)->setBody('Document bloqué : revue/correction/suppression requise.');
+        }
         if ($this->isDocumentFileBlockedForViewer($doc)) {
             return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
         }
@@ -259,6 +275,30 @@ class DocumentsController
             }
         });
         return $response;
+    }
+
+    /** @param array<string, mixed> $doc */
+    private function isDocumentLifecycleBlocked(array $doc): bool
+    {
+        $status = (string) ($doc['status'] ?? '');
+        if ($status !== 'published') {
+            return false;
+        }
+        $reviewDueAt = trim((string) ($doc['review_due_at'] ?? ''));
+        if ($reviewDueAt !== '' && strtotime($reviewDueAt) !== false && strtotime($reviewDueAt) < time()) {
+            return true;
+        }
+        $updatedAt = trim((string) ($doc['updated_at'] ?? ''));
+        $createdAt = trim((string) ($doc['created_at'] ?? ''));
+        $pivot = $updatedAt !== '' ? $updatedAt : $createdAt;
+        if ($pivot !== '' && strtotime($pivot) !== false) {
+            $staleLimit = strtotime('-180 days');
+            if ($staleLimit !== false && strtotime($pivot) < $staleLimit) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -287,6 +327,16 @@ class DocumentsController
             ModerationArtifactState::QUARANTINED,
             ModerationArtifactState::REJECTED,
         ], true);
+    }
+
+    private function viewerMayBypassLifecycleBlock(): bool
+    {
+        $gate = Gate::getInstance();
+
+        return (function_exists('can') && (can('documents.update') || can('admin.access')))
+            || $gate->allows('admin.access')
+            || $gate->allows('admin.organization')
+            || $gate->allows('admin.system');
     }
 
     private function viewerMayBypassModerationBlock(): bool

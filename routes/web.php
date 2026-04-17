@@ -332,6 +332,7 @@ return function (Router $router) {
     $router->get('/documents/gestion/{id}/modifier', [AdminDocumentsController::class, 'edit'], $mwDocuments);
     $router->post('/documents/gestion/{id}/modifier', [AdminDocumentsController::class, 'update'], $mwDocuments);
     $router->post('/documents/gestion/{id}/nouvelle-version', [AdminDocumentsController::class, 'newVersion'], $mwDocuments);
+    $router->post('/documents/gestion/{id}/cycle', [AdminDocumentsController::class, 'lifecycleAction'], $mwDocuments);
     $router->post('/documents/gestion/{id}/archiver', [AdminDocumentsController::class, 'archive'], $mwDocuments);
     $router->get('/documents/gestion/{id}/historique', [AdminDocumentsController::class, 'history'], $mwDocuments);
     $router->get('/documents/gestion/{id}/acces', [AdminDocumentsController::class, 'access'], $mwDocuments);

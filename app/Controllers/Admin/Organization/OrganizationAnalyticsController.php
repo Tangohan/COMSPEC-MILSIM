@@ -53,6 +53,7 @@ final class OrganizationAnalyticsController
         $trainingCatalogViews = $this->tenantAnalyticsRepository->getTenantTrainingCatalogViews($tenantId, $since);
         $operationalKpis = $this->tenantAnalyticsRepository->getTenantOperationalKpis($tenantId, $since);
         $enlistmentStatusBreakdown = $this->tenantAnalyticsRepository->getTenantEnlistmentStatusBreakdownSince($tenantId, $since);
+        $documentInsights = $this->tenantAnalyticsRepository->getTenantDocumentInsights($tenantId, $since);
 
         return Response::view('layout.main', [
             'title' => 'Indicateurs d’usage',
@@ -73,6 +74,7 @@ final class OrganizationAnalyticsController
             'trainingCatalogViews' => $trainingCatalogViews,
             'operationalKpis' => $operationalKpis,
             'enlistmentStatusBreakdown' => $enlistmentStatusBreakdown,
+            'documentInsights' => $documentInsights,
         ]);
     }
 }
