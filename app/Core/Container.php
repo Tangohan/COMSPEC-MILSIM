@@ -655,7 +655,8 @@ class Container
                 self::get(\App\Repositories\UserProfileRepository::class),
                 self::get(\App\Repositories\PersonnelQualificationRepository::class),
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
-                self::get(\App\Services\Personnel\PersonnelCompletenessService::class)
+                self::get(\App\Services\Personnel\PersonnelCompletenessService::class),
+                self::get(\App\Repositories\Courrier\UserSignatureRepository::class)
             ),
             \App\Repositories\ModpackRepository::class => new \App\Repositories\ModpackRepository(),
             \App\Controllers\Web\ModpackController::class => new \App\Controllers\Web\ModpackController(
