@@ -67,6 +67,10 @@ final class MaintenanceService
             return true;
         }
 
+        if ($this->hasAllowedUser($maintenance['allowed_user_ids'] ?? null, $userContext)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -155,5 +159,26 @@ final class MaintenanceService
         }
 
         return false;
+    }
+
+    /**
+     * @param array<string, mixed>|null $userContext
+     */
+    private function hasAllowedUser(?string $allowedUsers, ?array $userContext): bool
+    {
+        if ($allowedUsers === null || trim($allowedUsers) === '' || $userContext === null) {
+            return false;
+        }
+
+        $userId = (int) ($userContext['user_id'] ?? 0);
+        if ($userId <= 0) {
+            return false;
+        }
+
+        $ids = array_filter(array_map(static function (string $value): int {
+            return (int) trim($value);
+        }, explode(',', $allowedUsers)));
+
+        return in_array($userId, $ids, true);
     }
 }

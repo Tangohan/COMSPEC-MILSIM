@@ -57,6 +57,13 @@ CREATE TABLE IF NOT EXISTS `app_maintenance` (
     `allow_admin_bypass` TINYINT(1) NOT NULL DEFAULT 1,
     `allowed_ips` TEXT NULL,
     `allowed_roles` TEXT NULL,
+    `allowed_user_ids` TEXT NULL,
+    `message_preset` VARCHAR(80) NULL,
+    `ui_variant` VARCHAR(40) NOT NULL DEFAULT 'military',
+    `ui_animation` TINYINT(1) NOT NULL DEFAULT 1,
+    `notify_members_by_email` TINYINT(1) NOT NULL DEFAULT 0,
+    `notify_email_subject` VARCHAR(255) NULL,
+    `notify_email_message` TEXT NULL,
     `redirect_url` VARCHAR(255) NULL,
     `http_status` SMALLINT NOT NULL DEFAULT 503,
     `priority` INT NOT NULL DEFAULT 100,
@@ -71,6 +78,30 @@ CREATE TABLE IF NOT EXISTS `app_maintenance` (
     KEY `idx_ends_at` (`ends_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'app_maintenance');
+
+    if ($tableExists($pdo, 'app_maintenance')) {
+        if (!$columnExists($pdo, 'app_maintenance', 'allowed_user_ids')) {
+            $execTry($pdo, 'ALTER TABLE `app_maintenance` ADD COLUMN `allowed_user_ids` TEXT NULL AFTER `allowed_roles`', 'app_maintenance.allowed_user_ids');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'message_preset')) {
+            $execTry($pdo, "ALTER TABLE `app_maintenance` ADD COLUMN `message_preset` VARCHAR(80) NULL AFTER `allowed_user_ids`", 'app_maintenance.message_preset');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'ui_variant')) {
+            $execTry($pdo, "ALTER TABLE `app_maintenance` ADD COLUMN `ui_variant` VARCHAR(40) NOT NULL DEFAULT 'military' AFTER `message_preset`", 'app_maintenance.ui_variant');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'ui_animation')) {
+            $execTry($pdo, 'ALTER TABLE `app_maintenance` ADD COLUMN `ui_animation` TINYINT(1) NOT NULL DEFAULT 1 AFTER `ui_variant`', 'app_maintenance.ui_animation');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'notify_members_by_email')) {
+            $execTry($pdo, 'ALTER TABLE `app_maintenance` ADD COLUMN `notify_members_by_email` TINYINT(1) NOT NULL DEFAULT 0 AFTER `ui_animation`', 'app_maintenance.notify_members_by_email');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'notify_email_subject')) {
+            $execTry($pdo, 'ALTER TABLE `app_maintenance` ADD COLUMN `notify_email_subject` VARCHAR(255) NULL AFTER `notify_members_by_email`', 'app_maintenance.notify_email_subject');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'notify_email_message')) {
+            $execTry($pdo, 'ALTER TABLE `app_maintenance` ADD COLUMN `notify_email_message` TEXT NULL AFTER `notify_email_subject`', 'app_maintenance.notify_email_message');
+        }
+    }
 
     $execTry($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS `app_maintenance_audit` (
