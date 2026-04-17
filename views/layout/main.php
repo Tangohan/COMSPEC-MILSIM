@@ -172,16 +172,62 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
         <?php endif; ?>
     </main>
     <?php if (empty($trainingAdminNav) && ($showPortalFooter ?? true) && empty($usesAdminSidebarShell)): ?>
-    <footer class="border-t border-slate-200 py-6 mt-12">
-        <div class="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-center text-xs text-slate-500">
-            <span>Athena — SaaS RH tactique MILSIM Arma 3</span>
-            <span class="hidden sm:inline text-slate-300" aria-hidden="true">|</span>
-            <span class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 max-w-full">
-                <?php
-                $legal_link_class = 'text-slate-600 hover:text-emerald-700 font-medium';
-                require base_path('views/partials/legal_site_links.php');
-                ?>
-            </span>
+    <footer class="mt-14 border-t border-slate-200 bg-gradient-to-b from-white to-slate-50/80">
+        <div class="mx-auto grid max-w-6xl gap-10 px-6 py-12 md:grid-cols-12 md:py-14">
+            <div class="md:col-span-5">
+                <p class="text-[10px] font-black uppercase tracking-[0.32em] text-emerald-700">Athena Compsec</p>
+                <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-900">Le portail pro pour unités MILSIM Arma 3.</h2>
+                <p class="mt-4 max-w-md text-sm leading-relaxed text-slate-600">
+                    Centralisez le recrutement, la présence, les formations et la coordination opérationnelle dans une interface claire et fiable.
+                </p>
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <a href="<?= url('register') ?>" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.14em] text-white transition hover:bg-slate-800">
+                        Créer un compte
+                    </a>
+                    <a href="<?= url('communities') ?>" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-800 transition hover:border-slate-400 hover:bg-slate-100">
+                        Explorer les communautés
+                    </a>
+                </div>
+            </div>
+
+            <div class="grid gap-8 sm:grid-cols-3 md:col-span-7">
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Accès rapide</h3>
+                    <ul class="mt-3 space-y-2 text-sm">
+                        <li><a href="<?= url('home') ?>" class="text-slate-700 transition hover:text-emerald-700">Accueil</a></li>
+                        <li><a href="<?= url('documents') ?>" class="text-slate-700 transition hover:text-emerald-700">Documents</a></li>
+                        <li><a href="<?= url('formations') ?>" class="text-slate-700 transition hover:text-emerald-700">Formations</a></li>
+                        <li><a href="<?= url('atak') ?>" class="text-slate-700 transition hover:text-emerald-700">ATAK &amp; Cartographie</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Plateforme</h3>
+                    <ul class="mt-3 space-y-2 text-sm">
+                        <li><a href="<?= url('enlistment') ?>" class="text-slate-700 transition hover:text-emerald-700">Enrôlement</a></li>
+                        <li><a href="<?= url('overwatch') ?>" class="text-slate-700 transition hover:text-emerald-700">Overwatch</a></li>
+                        <li><a href="<?= url('tacmap') ?>" class="text-slate-700 transition hover:text-emerald-700">Tacmap</a></li>
+                        <li><a href="<?= url('equipment') ?>" class="text-slate-700 transition hover:text-emerald-700">Fiches matériel</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Légal</h3>
+                    <div class="mt-3 flex flex-col gap-2 text-sm">
+                        <?php
+                        $legal_link_class = 'text-slate-700 transition hover:text-emerald-700 font-medium';
+                        require base_path('views/partials/legal_site_links.php');
+                        ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t border-slate-200/80 bg-white/80">
+            <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-4 text-center sm:flex-row sm:text-left">
+                <p class="text-xs text-slate-500">© <?= date('Y') ?> Athena Compsec. Tous droits réservés.</p>
+                <p class="text-[11px] font-semibold text-slate-500">SaaS RH tactique pour communautés MILSIM.</p>
+            </div>
         </div>
     </footer>
     <?php endif; ?>
