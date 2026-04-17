@@ -185,6 +185,7 @@ $personnelExtras = is_array($personnelExtras ?? null) ? $personnelExtras : [];
 
 $matricule = $personnelProfile['matricule_internal'] ?? $personnelExtras['service_number'] ?? null;
 $callsign = $personnelProfile['callsign'] ?? $targetUser['callsign'] ?? null;
+$athenaIdentifier = trim((string) ($targetUser['athena_identifier'] ?? ''));
 $rpCharacterName = trim((string) ($personnelProfile['character_name'] ?? ''));
 if ($rpCharacterName !== '') {
     $displayName = $rpCharacterName;
@@ -613,6 +614,10 @@ if (!function_exists('personnel_file_render_admin_value')) {
                             <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($callsign) ?></p>
                         </div>
                         <?php endif; ?>
+                        <div>
+                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Athena ID</p>
+                            <p class="text-sm font-black text-slate-900"><?= $athenaIdentifier !== '' ? htmlspecialchars($athenaIdentifier) : '—' ?></p>
+                        </div>
                         <?php if ($unitName): ?>
                         <div>
                             <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Unité</p>

@@ -243,10 +243,28 @@ class PersonnelController
         ]);
     }
 
-    /** Redirection /personnel → fiche de l’utilisateur connecté. */
     public function personnelIndex(Request $request, array $params = []): Response
     {
-        return Response::redirect(url('personnel/me'));
+        $user = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$user || $tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!$this->canStaffViewPersonnel()) {
+            return Response::redirect(url('personnel/me'));
+        }
+
+        $query = trim((string) $request->query('q', ''));
+        $results = $query !== ''
+            ? $this->userRepository->searchForPortal($tenantId, $query, 120)
+            : $this->userRepository->listForPersonnelDirectory($tenantId, 120);
+
+        return Response::view('layout.main', [
+            'content' => 'personnel.directory',
+            'title' => 'Annuaire des profils',
+            'query' => $query,
+            'results' => $results,
+        ]);
     }
 
     public function me(Request $request, array $params = []): Response
