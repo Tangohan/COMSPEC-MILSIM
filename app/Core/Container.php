@@ -68,6 +68,8 @@ class Container
                 self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
                 new \App\Repositories\AuditLogRepository(),
                 self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelQualificationRepository::class),
+                self::get(\App\Repositories\TrainingCertificateRepository::class),
             ),
             \App\Services\Platform\FeatureGateService::class => new \App\Services\Platform\FeatureGateService(
                 self::get(TenantRepository::class),

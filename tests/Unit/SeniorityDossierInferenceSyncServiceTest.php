@@ -7,8 +7,10 @@ namespace Tests\Unit;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelOrgHistoryRepository;
+use App\Repositories\PersonnelQualificationRepository;
 use App\Repositories\RoleAssignmentLogRepository;
 use App\Repositories\SeniorityRepository;
+use App\Repositories\TrainingCertificateRepository;
 use App\Repositories\UserRepository;
 use App\Services\Personnel\SeniorityDossierInferenceSyncService;
 use App\Services\Personnel\SeniorityTenantDefaultsService;
@@ -28,10 +30,13 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
     {
         self::assertSame(
             [
+                'tenure_service',
                 'tenure_unit_primary',
                 'tenure_group_attachment',
                 'tenure_role_community',
                 'tenure_rank_current',
+                'tenure_training_track',
+                'tenure_qualification_hold',
             ],
             SeniorityDossierInferenceSyncService::INFERENCE_CODES
         );
@@ -52,10 +57,12 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
             $this->createMock(PersonnelOrgHistoryRepository::class),
             $this->createMock(AuditLogRepository::class),
             $this->createMock(UserRepository::class),
+            $this->createMock(PersonnelQualificationRepository::class),
+            $this->createMock(TrainingCertificateRepository::class),
         );
 
         $stats = $svc->syncForUser(1, 2, true);
-        self::assertSame(4, $stats['skipped_manual']);
+        self::assertSame(count(SeniorityDossierInferenceSyncService::INFERENCE_CODES), $stats['skipped_manual']);
         self::assertSame(0, $stats['inserted']);
     }
 
@@ -66,7 +73,7 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
         $seniority->method('findDefinitionIdByTenantAndCode')->willReturn(100);
         $seniority->method('userHasBlockingPeriodOutsideInferenceMarker')->willReturn(false);
         $seniority->method('findPeriodIdByRelatedType')->willReturn(null);
-        $seniority->expects(self::exactly(4))->method('insertPeriod')->willReturn(1);
+        $seniority->expects(self::exactly(count(SeniorityDossierInferenceSyncService::INFERENCE_CODES)))->method('insertPeriod')->willReturn(1);
 
         $pa = $this->createMock(PersonnelAssignmentRepository::class);
         $pa->method('inferCurrentAttachmentStartYmd')->willReturnCallback(
@@ -85,6 +92,13 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
 
         $users = $this->createMock(UserRepository::class);
         $users->method('listOrganizationRoleIdsForUser')->willReturn([9]);
+        $users->method('findById')->willReturn(['created_at' => '2021-01-01 00:00:00']);
+
+        $quals = $this->createMock(PersonnelQualificationRepository::class);
+        $quals->method('listForUser')->willReturn([]);
+
+        $certs = $this->createMock(TrainingCertificateRepository::class);
+        $certs->method('listByUserId')->willReturn([]);
 
         $svc = new SeniorityDossierInferenceSyncService(
             $seniority,
@@ -94,10 +108,12 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
             $poh,
             $audit,
             $users,
+            $quals,
+            $certs,
         );
 
         $stats = $svc->syncForUser(1, 2, true);
-        self::assertSame(4, $stats['inserted']);
+        self::assertSame(count(SeniorityDossierInferenceSyncService::INFERENCE_CODES), $stats['inserted']);
         self::assertSame(0, $stats['skipped_manual']);
     }
 
@@ -133,10 +149,12 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
             $this->createMock(PersonnelOrgHistoryRepository::class),
             $this->createMock(AuditLogRepository::class),
             $this->createMock(UserRepository::class),
+            $this->createMock(PersonnelQualificationRepository::class),
+            $this->createMock(TrainingCertificateRepository::class),
         );
 
         $stats = $svc->syncForUser(1, 2, true);
         self::assertSame(1, $stats['cleared']);
-        self::assertSame(3, $stats['skipped_no_definition']);
+        self::assertSame(count(SeniorityDossierInferenceSyncService::INFERENCE_CODES) - 1, $stats['skipped_no_definition']);
     }
 }

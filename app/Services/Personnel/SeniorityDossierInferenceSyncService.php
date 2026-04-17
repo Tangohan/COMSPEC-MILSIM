@@ -7,8 +7,10 @@ namespace App\Services\Personnel;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelOrgHistoryRepository;
+use App\Repositories\PersonnelQualificationRepository;
 use App\Repositories\RoleAssignmentLogRepository;
 use App\Repositories\SeniorityRepository;
+use App\Repositories\TrainingCertificateRepository;
 use App\Repositories\UserRepository;
 
 /**
@@ -19,10 +21,13 @@ final class SeniorityDossierInferenceSyncService
 {
     /** @var list<string> */
     public const INFERENCE_CODES = [
+        'tenure_service',
         'tenure_unit_primary',
         'tenure_group_attachment',
         'tenure_role_community',
         'tenure_rank_current',
+        'tenure_training_track',
+        'tenure_qualification_hold',
     ];
 
     public function __construct(
@@ -33,6 +38,8 @@ final class SeniorityDossierInferenceSyncService
         private PersonnelOrgHistoryRepository $personnelOrgHistoryRepository,
         private AuditLogRepository $auditLogRepository,
         private UserRepository $userRepository,
+        private PersonnelQualificationRepository $personnelQualificationRepository,
+        private TrainingCertificateRepository $trainingCertificateRepository,
     ) {}
 
     public static function inferenceMarker(string $code): string
@@ -168,12 +175,56 @@ final class SeniorityDossierInferenceSyncService
     private function resolveStartYmd(int $tenantId, int $userId, string $code): ?string
     {
         return match ($code) {
+            'tenure_service' => $this->resolveServiceStartYmd($tenantId, $userId),
             'tenure_unit_primary' => $this->personnelAssignmentRepository->inferCurrentAttachmentStartYmd($tenantId, $userId, false),
             'tenure_group_attachment' => $this->personnelAssignmentRepository->inferCurrentAttachmentStartYmd($tenantId, $userId, true),
             'tenure_role_community' => $this->resolveRoleCommunityStartYmd($tenantId, $userId),
             'tenure_rank_current' => $this->resolveRankStartYmd($tenantId, $userId),
+            'tenure_training_track' => $this->resolveTrainingTrackStartYmd($tenantId, $userId),
+            'tenure_qualification_hold' => $this->resolveQualificationHoldStartYmd($tenantId, $userId),
             default => null,
         };
+    }
+
+    private function resolveServiceStartYmd(int $tenantId, int $userId): ?string
+    {
+        $candidates = [
+            $this->personnelAssignmentRepository->inferCurrentAttachmentStartYmd($tenantId, $userId, false),
+            $this->resolveRoleCommunityStartYmd($tenantId, $userId),
+            $this->resolveRankStartYmd($tenantId, $userId),
+        ];
+        $row = $this->userRepository->findById($userId, $tenantId);
+        $candidates[] = $this->normalizeDateYmd(isset($row['created_at']) ? (string) $row['created_at'] : null);
+
+        return $this->pickEarliestDate($candidates);
+    }
+
+    private function resolveTrainingTrackStartYmd(int $tenantId, int $userId): ?string
+    {
+        $qualificationDate = $this->resolveEarliestQualificationDateYmd($userId);
+        $certificateDate = $this->resolveEarliestCertificateDateYmd($tenantId, $userId);
+
+        return $this->pickEarliestDate([$qualificationDate, $certificateDate]);
+    }
+
+    private function resolveQualificationHoldStartYmd(int $tenantId, int $userId): ?string
+    {
+        $activeQualificationDate = null;
+        foreach ($this->personnelQualificationRepository->listForUser($userId) as $row) {
+            $status = strtolower(trim((string) ($row['status'] ?? '')));
+            if (in_array($status, ['revoked', 'expired', 'inactive', 'invalid'], true)) {
+                continue;
+            }
+            $candidate = $this->normalizeDateYmd(isset($row['obtained_at']) ? (string) $row['obtained_at'] : null)
+                ?? $this->normalizeDateYmd(isset($row['created_at']) ? (string) $row['created_at'] : null);
+            if ($candidate !== null && ($activeQualificationDate === null || $candidate < $activeQualificationDate)) {
+                $activeQualificationDate = $candidate;
+            }
+        }
+
+        $certificateDate = $this->resolveEarliestCertificateDateYmd($tenantId, $userId);
+
+        return $this->pickEarliestDate([$activeQualificationDate, $certificateDate]);
     }
 
     private function resolveRoleCommunityStartYmd(int $tenantId, int $userId): ?string
@@ -220,6 +271,56 @@ final class SeniorityDossierInferenceSyncService
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    private function resolveEarliestQualificationDateYmd(int $userId): ?string
+    {
+        $earliest = null;
+        foreach ($this->personnelQualificationRepository->listForUser($userId) as $row) {
+            $candidate = $this->normalizeDateYmd(isset($row['obtained_at']) ? (string) $row['obtained_at'] : null)
+                ?? $this->normalizeDateYmd(isset($row['created_at']) ? (string) $row['created_at'] : null);
+            if ($candidate !== null && ($earliest === null || $candidate < $earliest)) {
+                $earliest = $candidate;
+            }
+        }
+
+        return $earliest;
+    }
+
+    private function resolveEarliestCertificateDateYmd(int $tenantId, int $userId): ?string
+    {
+        $earliest = null;
+        foreach ($this->trainingCertificateRepository->listByUserId($userId, $tenantId) as $row) {
+            $status = strtolower(trim((string) ($row['status'] ?? '')));
+            if (in_array($status, ['revoked', 'invalid'], true)) {
+                continue;
+            }
+            $candidate = $this->normalizeDateYmd(isset($row['issued_at']) ? (string) $row['issued_at'] : null)
+                ?? $this->normalizeDateYmd(isset($row['completed_at']) ? (string) $row['completed_at'] : null);
+            if ($candidate !== null && ($earliest === null || $candidate < $earliest)) {
+                $earliest = $candidate;
+            }
+        }
+
+        return $earliest;
+    }
+
+    /**
+     * @param list<?string> $dates
+     */
+    private function pickEarliestDate(array $dates): ?string
+    {
+        $earliest = null;
+        foreach ($dates as $date) {
+            if ($date === null) {
+                continue;
+            }
+            if ($earliest === null || $date < $earliest) {
+                $earliest = $date;
+            }
+        }
+
+        return $earliest;
     }
 
     /**
