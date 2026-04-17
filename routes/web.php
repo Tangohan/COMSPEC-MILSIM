@@ -323,6 +323,8 @@ return function (Router $router) {
     $router->get('/recrutement', [HomeController::class, 'recrutement']);
     $router->get('/equipement', [HomeController::class, 'equipement']);
     $router->get('/documents', [DocumentsController::class, 'index'], $mwDocuments);
+    $router->get('/documents/collections', [DocumentsController::class, 'collections'], $mwDocuments);
+    $router->get('/documents/accreditation', [DocumentsController::class, 'accreditation'], $mwDocuments);
     // Gestion documentaire (liste, détail, édition, historique, accès, arborescence) — accès par permissions documents.*
     $router->get('/documents/gestion', [AdminDocumentsController::class, 'index'], $mwDocuments);
     $router->get('/documents/gestion/ajout', [AdminDocumentsController::class, 'uploadForm'], $mwDocuments);

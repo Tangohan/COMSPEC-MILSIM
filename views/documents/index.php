@@ -9,6 +9,8 @@ $entity_type = $entity_type ?? null;
 $entity_id = $entity_id ?? null;
 $collections = $collections ?? [];
 $viewerAccreditationLevel = $viewerAccreditationLevel ?? 'interne';
+$canManageCollections = (bool) ($canManageCollections ?? false);
+$focus = (string) ($focus ?? '');
 /** @var array<int, list<array{label: string, href: string}>> $documentTrainingRefs */
 $documentTrainingRefs = $documentTrainingRefs ?? [];
 $totalDocs = count($documents);
@@ -172,12 +174,12 @@ $baseUrlList = url('documents');
             </form>
         </section>
 
-        <section class="mt-8 grid gap-5 lg:grid-cols-3">
+        <section id="collections" class="mt-8 grid gap-5 lg:grid-cols-3 <?= $focus === 'collections' ? 'ring-2 ring-emerald-300 rounded-3xl p-2' : '' ?>">
             <article class="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5 shadow-sm lg:col-span-1">
                 <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800">Accréditation profil</p>
                 <p class="mt-2 text-2xl font-black text-emerald-950"><?= htmlspecialchars(strtoupper((string) $viewerAccreditationLevel)) ?></p>
                 <p class="mt-2 text-xs leading-relaxed text-emerald-900/85">Votre niveau d’accréditation de dossier opérateur est désormais pris en compte pour les contenus sensibles.</p>
-                <a class="mt-4 inline-flex rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-900 hover:bg-emerald-100" href="<?= url('dossier-operateur/accreditation') ?>">Gérer mon accréditation</a>
+                <a class="mt-4 inline-flex rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-900 hover:bg-emerald-100" href="<?= url('documents/accreditation') ?>">Gérer mon accréditation</a>
             </article>
             <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
                 <div class="flex items-center justify-between gap-3">
@@ -185,7 +187,9 @@ $baseUrlList = url('documents');
                         <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Collections</p>
                         <h2 class="mt-1 text-lg font-black text-slate-950">Collections & dossiers personnalisés</h2>
                     </div>
+                    <?php if ($canManageCollections): ?>
                     <a href="<?= url('documents/gestion/ajout') ?>" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100">Créer une collection</a>
+                    <?php endif; ?>
                 </div>
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
                     <?php if ($collections === []): ?>
@@ -301,7 +305,9 @@ $baseUrlList = url('documents');
                     <?php endif; ?>
                     <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
                         <a href="<?= htmlspecialchars($docUrl) ?>" class="inline-flex flex-1 min-w-[6rem] items-center justify-center rounded-xl bg-slate-900 px-3 py-2 text-center text-[11px] font-black uppercase tracking-[0.12em] text-white transition hover:bg-slate-800">Ouvrir</a>
+                        <?php if ((int) ($doc['download_allowed'] ?? 1) === 1): ?>
                         <a href="<?= url('documents/' . (int) ($doc['id'] ?? 0) . '/download') ?>" class="inline-flex flex-1 min-w-[6rem] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-center text-[11px] font-black uppercase tracking-[0.12em] text-slate-700 transition hover:bg-slate-50">Télécharger</a>
+                        <?php endif; ?>
                     </div>
                 </article>
                 <?php endforeach; ?>

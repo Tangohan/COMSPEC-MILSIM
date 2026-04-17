@@ -163,6 +163,8 @@ return [
                     'slot' => 'primary',
                     'links' => [
                         ['label' => 'Bibliothèque', 'path' => 'documents', 'permission' => 'documents.view', 'description' => 'Consulter les documents publiés'],
+                        ['label' => 'Collections', 'path' => 'documents/collections', 'permission' => 'documents.view', 'description' => 'Parcourir les collections documentaires'],
+                        ['label' => 'Mon accréditation', 'path' => 'documents/accreditation', 'permission' => 'documents.view', 'description' => 'Vérifier votre niveau de clearance'],
                         ['label' => 'Gestion documentaire', 'path' => 'documents/gestion', 'permission' => 'documents.upload', 'description' => 'Ajouter, classer et suivre les versions'],
                     ],
                 ],

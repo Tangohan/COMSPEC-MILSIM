@@ -77,6 +77,7 @@ class DocumentsController
         $documentTrainingRefs = $this->documentTrainingReferencesService->mapByDocumentId($tenantId, $docs);
         $collections = $this->buildCollections($docs, $categoriesList);
         $accreditation = $this->personnelProfileRepository->getByUserId($userId);
+        $canManageCollections = Gate::getInstance()->allows('documents.upload') || Gate::getInstance()->allows('admin.access');
         return Response::view('layout.main', [
             'content' => 'documents.index',
             'title' => 'Documents',
@@ -91,7 +92,27 @@ class DocumentsController
             'documentTrainingRefs' => $documentTrainingRefs,
             'collections' => $collections,
             'viewerAccreditationLevel' => (string) ($accreditation['clearance_level'] ?? 'interne'),
+            'canManageCollections' => $canManageCollections,
+            'focus' => (string) ($request->input('focus') ?? ''),
         ]);
+    }
+
+    public function collections(Request $request, array $params = []): Response
+    {
+        if (Gate::getInstance()->deny('documents.view')) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
+        }
+
+        return Response::redirect(url('documents?focus=collections'));
+    }
+
+    public function accreditation(Request $request, array $params = []): Response
+    {
+        if (Gate::getInstance()->deny('documents.view')) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
+        }
+
+        return Response::redirect(url('dossier-operateur/accreditation'));
     }
 
     /**
@@ -201,6 +222,9 @@ class DocumentsController
         if (!$doc || empty($doc['file_path'])) {
             return (new Response())->setStatusCode(404)->setBody('Document non trouvé');
         }
+        if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
+            return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
+        }
         if (!$this->documentAccessService->canRead($doc, (int) Session::get('user_id'), (int) $tenantId)) {
             return (new Response())->setStatusCode(403)->setBody('Accès refusé');
         }
@@ -245,6 +269,9 @@ class DocumentsController
         $doc = $this->documentRepository->findById($id, (int) $tenantId);
         if (!$doc || empty($doc['file_path'])) {
             return (new Response())->setStatusCode(404)->setBody('Document non trouvé');
+        }
+        if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
+            return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
         }
         if (!$this->documentAccessService->canRead($doc, (int) Session::get('user_id'), (int) $tenantId)) {
             return (new Response())->setStatusCode(403)->setBody('Accès refusé');
