@@ -84,6 +84,7 @@ final class ForumModerationReportInsightApiController
         $hasPost = (int) ($report['post_id'] ?? 0) > 0;
         $topicIdResolved = (int) ($report['topic_id'] ?? 0) ?: (int) ($report['post_topic_id'] ?? 0);
 
+        $canSanctionTarget = $targetId !== null && $targetId > 0 && $reporterId !== $targetId;
         $postCloseActions = [];
         if ($status === 'handled' && $canModContent) {
             if ($hasPost) {
@@ -100,8 +101,7 @@ final class ForumModerationReportInsightApiController
             $postCloseActions[] = ['value' => 'escalate_support', 'label' => 'Escalader vers l’assistance plateforme', 'requires_confirm' => false];
             $postCloseActions[] = ['value' => 'watch_report', 'label' => 'Conserver visible avec surveillance', 'requires_confirm' => false];
         }
-        if ($status === 'handled' && $canFormalWarn && $targetId !== null && $targetId > 0
-            && $reporterId !== $targetId) {
+        if ($status === 'handled' && $canFormalWarn && $canSanctionTarget) {
             $postCloseActions[] = ['value' => 'sanction_warn', 'label' => 'Avertissement formel sur le membre visé', 'requires_confirm' => false];
             $postCloseActions[] = ['value' => 'sanction_mute_24h', 'label' => 'Silence 24 h sur le compte du membre visé', 'requires_confirm' => false];
             $postCloseActions[] = ['value' => 'sanction_mute_7d', 'label' => 'Silence 7 jours sur le compte du membre visé', 'requires_confirm' => false];
@@ -109,6 +109,15 @@ final class ForumModerationReportInsightApiController
             $postCloseActions[] = ['value' => 'sanction_suspend_7d', 'label' => 'Suspension 7 jours sur le compte du membre visé', 'requires_confirm' => false];
             $postCloseActions[] = ['value' => 'sanction_suspend_30d', 'label' => 'Suspension 30 jours sur le compte du membre visé', 'requires_confirm' => false];
             $postCloseActions[] = ['value' => 'sanction_ban', 'label' => 'Exclusion définitive du compte du membre visé', 'requires_confirm' => true];
+        }
+        $sanctionBlockers = [];
+        if ($status === 'handled' && !$canFormalWarn) {
+            $sanctionBlockers[] = 'missing_member_moderation_permission';
+        }
+        if ($status === 'handled' && !$canSanctionTarget) {
+            $sanctionBlockers[] = $targetId === null || $targetId < 1
+                ? 'missing_target_member'
+                : 'target_is_reporter';
         }
 
         $userCard = static function (int $uid, string $name) use ($personnel, $base, $canBackOfficeMember): array {
@@ -185,6 +194,7 @@ final class ForumModerationReportInsightApiController
                 'reopen' => $status === 'handled' && $canModContent,
                 'notify_reporter_on_reopen_default' => true,
                 'post_close_actions' => $postCloseActions,
+                'member_sanction_blockers' => $sanctionBlockers,
             ],
         ]);
     }
