@@ -13,10 +13,12 @@ use App\Services\Auth\AuthService;
 use App\Services\Rbac\RbacService;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\EmailTokenRepository;
 use App\Repositories\PasswordResetRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\LoginSecurityNotificationService;
+use App\Services\Email\EmailTokenPurpose;
 use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Support\LoginIntendedDestination;
@@ -30,18 +32,97 @@ class AuthController
 
     /** Tenants techniques non proposés à l’utilisateur (ex. tenant « par défaut » plateforme). */
     private const HIDDEN_COMMUNITY_SLUGS = ['default'];
+    private const LOGIN_OTP_TTL_MIN = 10;
+    private const LOGIN_OTP_RESEND_SEC = 60;
 
     public function __construct(
         private AuthService $authService,
         private RbacService $rbacService,
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
+        private EmailTokenRepository $emailTokenRepository,
         private PasswordResetRepository $passwordResetRepository,
         private AuditService $auditService,
         private EmailService $emailService,
         private LoginSecurityNotificationService $loginSecurityNotifications,
         private IndicatorBlocklistService $indicatorBlocklist
     ) {}
+
+    private function requiresSecurityOtp(array $user): bool
+    {
+        $slug = strtolower(trim((string) $this->userRepository->getRoleSlugForUser((int) ($user['id'] ?? 0))));
+
+        return in_array($slug, ['security_admin', 'security_officer'], true);
+    }
+
+    private function beginSecurityOtpLogin(array $user): Response
+    {
+        $userId = (int) ($user['id'] ?? 0);
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        if ($userId < 1 || $tenantId < 1) {
+            Session::flash('error', 'Compte introuvable pour validation OTP.');
+
+            return Response::redirect(url('login'));
+        }
+
+        $code = (string) random_int(100000, 999999);
+        $nonce = bin2hex(random_bytes(16));
+        $tokenHash = hash('sha256', $code . '|' . $nonce);
+        $expires = new \DateTimeImmutable('+' . self::LOGIN_OTP_TTL_MIN . ' minutes');
+        $this->emailTokenRepository->deletePendingForUserPurpose($userId, EmailTokenPurpose::LOGIN_SECURITY_OTP);
+        $this->emailTokenRepository->create(
+            $tenantId,
+            $userId,
+            EmailTokenPurpose::LOGIN_SECURITY_OTP,
+            $tokenHash,
+            $nonce,
+            $expires,
+            ['channel' => 'login_security_otp']
+        );
+
+        $tenant = $this->tenantRepository->findById($tenantId);
+        $tenantName = trim((string) ($tenant['name'] ?? 'Votre communauté'));
+        $email = trim((string) ($user['email'] ?? ''));
+        $displayName = trim((string) ($user['display_name'] ?? '')) ?: $email;
+        $ok = $this->emailService->sendLoginSecurityOtp(
+            $email,
+            $displayName,
+            $tenantName,
+            $code,
+            self::LOGIN_OTP_TTL_MIN,
+            $tenantId
+        );
+        if (!$ok) {
+            Session::flash('error', 'Impossible d’envoyer le code OTP par e-mail actuellement.');
+
+            return Response::redirect(url('login'));
+        }
+        Session::set('pending_login_security_otp', [
+            'user_id' => $userId,
+            'tenant_id' => $tenantId,
+            'email_masked' => $this->maskEmailForDisplay($email),
+            'token_hash' => $tokenHash,
+            'expires_at' => $expires->getTimestamp(),
+            'generated_at' => time(),
+        ]);
+        Session::flash('info', 'Un code OTP vient d’être envoyé par e-mail.');
+
+        return Response::redirect(url('login/otp'));
+    }
+
+    private function maskEmailForDisplay(string $email): string
+    {
+        $email = trim($email);
+        $at = strpos($email, '@');
+        if ($at === false || $at < 1) {
+            return $email === '' ? '—' : $email;
+        }
+        $local = substr($email, 0, $at);
+        $domain = substr($email, $at + 1);
+        $prefix = substr($local, 0, min(2, strlen($local)));
+
+        return $prefix . '•••@' . $domain;
+    }
 
     /**
      * @param list<array{tenant_id: int, user_id: int, tenant_name: string, tenant_slug: string}> $candidates
@@ -97,6 +178,10 @@ class AuthController
     {
         if ($this->authService->check()) {
             return Response::redirect(url('dashboard'));
+        }
+        $pendingOtp = Session::get('pending_login_security_otp');
+        if (is_array($pendingOtp) && (int) ($pendingOtp['expires_at'] ?? 0) >= time()) {
+            return Response::redirect(url('login/otp'));
         }
         $pending = Session::get('pending_community_selection');
         if (
@@ -186,6 +271,9 @@ class AuthController
                 Session::flash('error', 'Compte introuvable.');
                 return Response::redirect(url('login'));
             }
+            if ($this->requiresSecurityOtp($user)) {
+                return $this->beginSecurityOtpLogin($user);
+            }
             return $this->redirectToDashboardAfterLogin($user, $request);
         }
 
@@ -219,6 +307,9 @@ class AuthController
             if (!in_array(($user['status'] ?? ''), ['active', 'pending_verification'], true)) {
                 Session::flash('error', 'Compte indisponible.');
                 return Response::redirect(url('login'));
+            }
+            if (($user['status'] ?? '') === 'active' && $this->requiresSecurityOtp($user)) {
+                return $this->beginSecurityOtpLogin($user);
             }
 
             return $this->redirectToDashboardAfterLogin($user, $request);
@@ -330,8 +421,111 @@ class AuthController
 
         Session::forget('pending_community_selection');
         Session::forget('pending_verification_email');
+        if ($this->requiresSecurityOtp($user)) {
+            return $this->beginSecurityOtpLogin($user);
+        }
 
         return $this->redirectToDashboardAfterLogin($user, $request);
+    }
+
+    public function showLoginOtp(Request $request, array $params = []): Response
+    {
+        if ($this->authService->check()) {
+            return Response::redirect(url('dashboard'));
+        }
+        $pending = Session::get('pending_login_security_otp');
+        if (!is_array($pending) || (int) ($pending['expires_at'] ?? 0) < time()) {
+            Session::forget('pending_login_security_otp');
+            Session::flash('error', 'Code OTP expiré. Reconnectez-vous.');
+
+            return Response::redirect(url('login'));
+        }
+
+        return Response::view('auth.login-otp', [
+            'title' => 'Validation OTP',
+            'emailMasked' => (string) ($pending['email_masked'] ?? '—'),
+            'expiresAt' => (int) ($pending['expires_at'] ?? 0),
+        ]);
+    }
+
+    public function verifyLoginOtp(Request $request, array $params = []): Response
+    {
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('login/otp'));
+        }
+        $pending = Session::get('pending_login_security_otp');
+        if (!is_array($pending) || (int) ($pending['expires_at'] ?? 0) < time()) {
+            Session::forget('pending_login_security_otp');
+            Session::flash('error', 'Code OTP expiré. Reconnectez-vous.');
+
+            return Response::redirect(url('login'));
+        }
+        $code = preg_replace('/\D/', '', (string) $request->input('otp_code', '')) ?? '';
+        $stored = (string) ($pending['token_hash'] ?? '');
+        $userId = (int) ($pending['user_id'] ?? 0);
+        $tenantId = (int) ($pending['tenant_id'] ?? 0);
+        if ($code === '' || strlen($code) !== 6 || $stored === '') {
+            Session::flash('error', 'Code OTP invalide.');
+
+            return Response::redirect(url('login/otp'));
+        }
+
+        // On retrouve le token exact en vérifiant les jetons valides de l’utilisateur.
+        $row = $this->emailTokenRepository->findValidByHash($stored);
+        if (!$row || (string) ($row['purpose'] ?? '') !== EmailTokenPurpose::LOGIN_SECURITY_OTP || (int) ($row['user_id'] ?? 0) !== $userId) {
+            Session::flash('error', 'Code OTP invalide ou expiré.');
+
+            return Response::redirect(url('login/otp'));
+        }
+        $nonce = (string) ($row['nonce'] ?? '');
+        $candidateHash = hash('sha256', $code . '|' . $nonce);
+        if (!hash_equals((string) $row['token_hash'], $candidateHash)) {
+            Session::flash('error', 'Code OTP incorrect.');
+
+            return Response::redirect(url('login/otp'));
+        }
+        $this->emailTokenRepository->markConsumed((int) $row['id']);
+        Session::forget('pending_login_security_otp');
+        $user = $this->userRepository->findById($userId, $tenantId);
+        if (!$user || ($user['status'] ?? '') !== 'active') {
+            Session::flash('error', 'Compte indisponible.');
+
+            return Response::redirect(url('login'));
+        }
+
+        return $this->redirectToDashboardAfterLogin($user, $request);
+    }
+
+    public function resendLoginOtp(Request $request, array $params = []): Response
+    {
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('login/otp'));
+        }
+        $pending = Session::get('pending_login_security_otp');
+        if (!is_array($pending)) {
+            Session::flash('error', 'Aucune session OTP en cours.');
+
+            return Response::redirect(url('login'));
+        }
+        $generated = (int) ($pending['generated_at'] ?? 0);
+        if ($generated > 0 && (time() - $generated) < self::LOGIN_OTP_RESEND_SEC) {
+            Session::flash('error', 'Attendez quelques secondes avant de renvoyer un code.');
+
+            return Response::redirect(url('login/otp'));
+        }
+        $user = $this->userRepository->findById((int) ($pending['user_id'] ?? 0), (int) ($pending['tenant_id'] ?? 0));
+        if (!$user) {
+            Session::forget('pending_login_security_otp');
+            Session::flash('error', 'Compte introuvable.');
+
+            return Response::redirect(url('login'));
+        }
+
+        return $this->beginSecurityOtpLogin($user);
     }
 
     public function logout(Request $request, array $params = []): Response

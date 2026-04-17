@@ -212,6 +212,9 @@ return function (Router $router) {
     $router->post('/invitations/accept', [InvitationAcceptController::class, 'accept']);
     $router->get('/login', [AuthController::class, 'showLogin'], [GuestMiddleware::class]);
     $router->post('/login', [AuthController::class, 'login'], [GuestMiddleware::class]);
+    $router->get('/login/otp', [AuthController::class, 'showLoginOtp'], [GuestMiddleware::class]);
+    $router->post('/login/otp', [AuthController::class, 'verifyLoginOtp'], [GuestMiddleware::class]);
+    $router->post('/login/otp/resend', [AuthController::class, 'resendLoginOtp'], [GuestMiddleware::class]);
     $router->get('/login/select-community', [AuthController::class, 'showSelectCommunity'], [GuestMiddleware::class]);
     $router->post('/login/select-community', [AuthController::class, 'selectCommunity'], [GuestMiddleware::class]);
     $router->post('/logout', [AuthController::class, 'logout']);

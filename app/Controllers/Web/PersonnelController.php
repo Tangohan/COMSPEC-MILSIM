@@ -29,6 +29,7 @@ use App\Services\Personnel\MatriculeService;
 use App\Services\Personnel\PersonnelCompletenessService;
 use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Repositories\UserProfileRepository;
+use App\Repositories\UserLegalIdentityRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PlanningEntryRepository;
@@ -186,6 +187,7 @@ class PersonnelController
         private PersonnelCompletenessService $completenessService,
         private UserProfileDisplaySettingsRepository $displaySettingsRepository,
         private UserProfileRepository $userProfileRepository,
+        private UserLegalIdentityRepository $userLegalIdentityRepository,
         private EnlistmentRepository $enlistmentRepository,
         private PersonnelJobRoleRepository $personnelJobRoleRepository,
         private PlanningEntryRepository $planningEntryRepository,
@@ -744,7 +746,15 @@ class PersonnelController
         $personnelProfile = $this->personnelProfileRepository->getByUserId($uid);
         $displaySettings = $this->displaySettingsRepository->getOrDefaults($uid);
         $units = $this->unitRepository->allForTenant($tenantId);
-        $userProfile = $this->userProfileRepository->getByUserId($uid);
+        $userProfile = $this->userProfileRepository->getByUserId($uid) ?? [];
+        $legalIdentity = $this->userLegalIdentityRepository->getByUserId($uid) ?? [];
+        if ($legalIdentity !== []) {
+            $userProfile['first_name'] = $legalIdentity['first_name'] ?? ($userProfile['first_name'] ?? '');
+            $userProfile['last_name'] = $legalIdentity['last_name'] ?? ($userProfile['last_name'] ?? '');
+            $userProfile['phone'] = $legalIdentity['phone'] ?? ($userProfile['phone'] ?? '');
+            $userProfile['birth_date'] = $legalIdentity['birth_date'] ?? ($userProfile['birth_date'] ?? '');
+            $userProfile['nationality'] = $legalIdentity['nationality'] ?? ($userProfile['nationality'] ?? '');
+        }
         $personnelExtras = $this->personnelExtrasRepository->getByUserId($uid) ?? [];
         $grades = $this->gradeRepository->listForTenant($tenantId);
         $currentGrade = null;
@@ -1108,12 +1118,14 @@ class PersonnelController
         if ($isSelf) {
             $this->userProfileRepository->ensureRow((int) $target['id']);
             $this->userProfileRepository->upsert((int) $target['id'], [
-                'first_name' => trim((string) $request->input('civil_first_name')),
-                'last_name' => trim((string) $request->input('civil_last_name')),
                 'bio' => trim((string) $request->input('civil_bio')) ?: null,
-                'phone' => trim((string) $request->input('civil_phone')) ?: null,
                 'timezone' => trim((string) $request->input('civil_timezone')) ?: null,
                 'language' => trim((string) $request->input('civil_language')) ?: null,
+            ]);
+            $this->userLegalIdentityRepository->upsert((int) $target['id'], $tenantId, [
+                'first_name' => trim((string) $request->input('civil_first_name')),
+                'last_name' => trim((string) $request->input('civil_last_name')),
+                'phone' => trim((string) $request->input('civil_phone')) ?: null,
                 'nationality' => trim((string) $request->input('civil_nationality')) ?: null,
                 'birth_date' => trim((string) $request->input('civil_birth_date')) ?: null,
             ]);

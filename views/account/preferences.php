@@ -32,7 +32,7 @@ foreach ($notifEmailCatalog as $item) {
         <p class="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-700/90">Compte</p>
         <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900">Préférences</h1>
         <p class="mt-2 max-w-2xl text-slate-600">
-            Identité sur la plateforme, confort d’affichage et e-mails utiles — au même endroit que votre indicatif et votre fuseau horaire.
+            Données légales (identité civile), données de profil opérationnel et préférences d’interface sont séparées pour limiter l’exposition des informations sensibles.
         </p>
     </div>
 
@@ -148,8 +148,8 @@ foreach ($notifEmailCatalog as $item) {
 
         <!-- Identité -->
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 class="text-lg font-black text-slate-900">Identité & contact</h2>
-            <p class="mt-1 text-sm text-slate-600">Ces informations alimentent l’affichage sur le portail, le forum et les intégrations (ex. ATAK).</p>
+            <h2 class="text-lg font-black text-slate-900">Profil portail & contact opérationnel</h2>
+            <p class="mt-1 text-sm text-slate-600">Nom affiché, indicatif et liens techniques pour le portail. L’identité légale est gérée séparément ci-dessous.</p>
             <div class="mt-6 space-y-4">
                 <div>
                     <label for="display_name" class="block text-sm font-medium text-slate-700 mb-1">Nom d'affichage</label>
@@ -201,7 +201,10 @@ foreach ($notifEmailCatalog as $item) {
                     <p class="mt-3 text-xs text-slate-600">La lecture automatique du profil public n’est pas activée sur ce serveur : vous pouvez tout de même enregistrer le numéro à 17 chiffres ou une adresse se terminant par <span class="font-mono">…/profiles/…</span> pour les outils qui en ont besoin.</p>
                     <?php endif; ?>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 sm:p-5">
+                    <h3 class="text-sm font-black text-amber-900">Identité légale (isolée)</h3>
+                    <p class="mt-1 text-xs text-amber-900/80">Ces champs sont stockés dans un espace de données séparé de votre profil opérationnel.</p>
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label for="first_name" class="block text-sm font-medium text-slate-700 mb-1">Prénom</label>
                         <input type="text" name="first_name" id="first_name" value="<?= htmlspecialchars($profile['first_name'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900" maxlength="100">
@@ -214,6 +217,8 @@ foreach ($notifEmailCatalog as $item) {
                 <div>
                     <label for="phone" class="block text-sm font-medium text-slate-700 mb-1">Téléphone</label>
                     <input type="text" name="phone" id="phone" value="<?= htmlspecialchars($profile['phone'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900" maxlength="50">
+                </div>
+                    </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

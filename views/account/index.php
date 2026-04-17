@@ -196,7 +196,7 @@ $sections = [
                         Mon compte
                     </h1>
                     <p class="mt-4 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
-                        Les <strong class="font-semibold text-white">informations personnelles</strong> (prénom, nom, téléphone, fuseau, langue) se modifient dans <strong class="font-semibold text-emerald-200">Préférences</strong>. Le <strong class="font-semibold text-white">dossier opérationnel</strong> (personnage, unité, clearance) est sur <strong class="font-semibold text-emerald-200">votre fiche personnelle</strong>.
+                        Les <strong class="font-semibold text-white">données légales</strong> (identité civile, téléphone) sont isolées des autres réglages du portail. Le <strong class="font-semibold text-white">dossier opérationnel</strong> (personnage, unité, clearance) reste sur <strong class="font-semibold text-emerald-200">votre fiche personnelle</strong>.
                     </p>
                     <div class="mt-6 flex flex-wrap items-center gap-3">
                         <?php if ($displayName !== ''): ?>
