@@ -591,6 +591,32 @@ return function (Router $router) {
     $router->post('/back-office/recruitment/offers/{id}/close', [RecruitmentOffersController::class, 'close'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitment/reference-format', [RecruitmentOffersController::class, 'referenceFormat'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitment/reference-format', [RecruitmentOffersController::class, 'referenceFormatSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Alias de robustesse (variantes de saisie / anciens favoris) : évite les 404 sur admin et back-office.
+    $router->get('/admin/', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin')), [AuthMiddleware::class]);
+    $router->get('/back-office/', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office')), [AuthMiddleware::class]);
+    $router->get('/backoffice', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office')), [AuthMiddleware::class]);
+    $router->get('/backoffice/', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office')), [AuthMiddleware::class]);
+    foreach ([
+        'users',
+        'invitations',
+        'recruitments',
+        'roles',
+        'roles-functions',
+        'groups',
+        'teams',
+        'categories',
+        'analytics',
+        'events',
+        'audit',
+        'configuration',
+        'community',
+        'alerts',
+        'dashboard-pins',
+        'integrations',
+    ] as $boLegacyTop) {
+        $router->get('/backoffice/' . $boLegacyTop, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/' . $boLegacyTop)), [AuthMiddleware::class]);
+    }
+
     // Anciennes URL — redirections
     $router->get('/admin/system', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin')), [AuthMiddleware::class]);
     $router->get('/admin/organization', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office')), [AuthMiddleware::class]);
