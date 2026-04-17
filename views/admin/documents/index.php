@@ -2,7 +2,7 @@
 $documents = $documents ?? [];
 $users = $users ?? [];
 $categories = $categories ?? [];
-$documentStats = $documentStats ?? ['published_count' => 0, 'categories_count' => 0, 'latest_activity_at' => null];
+$documentStats = $documentStats ?? ['published_count' => 0, 'categories_count' => 0, 'latest_activity_at' => null, 'stale_count' => 0];
 $filters = $filters ?? ['category' => null, 'status' => null, 'q' => '', 'document_type' => '', 'classification_level' => ''];
 $statuses = ['draft' => 'Brouillon', 'review' => 'En relecture', 'approval' => 'À valider', 'published' => 'Publié', 'suspended' => 'Suspendu', 'archived' => 'Archivé', 'obsolete' => 'Obsolète'];
 $documentTypes = ['manuel' => 'Manuel', 'procedure' => 'Procédure', 'note' => 'Note', 'annexe' => 'Annexe', 'support_formation' => 'Support formation', 'fiche_equipement' => 'Fiche équipement', 'document_operationnel' => 'Document opérationnel', 'piece_jointe' => 'Pièce jointe'];
@@ -78,10 +78,10 @@ $latestLabel = $latestAt ? date('d.m.Y', strtotime($latestAt)) : '—';
                             <p class="mt-1 text-xs text-slate-500">Référencées</p>
                         </div>
 
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Classification</p>
-                            <p class="mt-2 text-lg font-black tracking-tight text-slate-950">Multi-niveaux</p>
-                            <p class="mt-1 text-xs text-slate-500">Public à opérationnel</p>
+                        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Obsolètes détectés</p>
+                            <p class="mt-2 text-3xl font-black tracking-tight text-amber-900"><?= (int) ($documentStats['stale_count'] ?? 0) ?></p>
+                            <p class="mt-1 text-xs text-amber-700/80">Revue/correction/suppression requise</p>
                         </div>
                     </div>
                 </div>
@@ -270,6 +270,7 @@ $latestLabel = $latestAt ? date('d.m.Y', strtotime($latestAt)) : '—';
                             }
                             $dateStr = !empty($d['updated_at']) ? date('d.m.Y', strtotime($d['updated_at'])) : (!empty($d['created_at']) ? date('d.m.Y', strtotime($d['created_at'])) : '—');
                             $dateIso = !empty($d['updated_at']) ? date('c', strtotime($d['updated_at'])) : (!empty($d['created_at']) ? date('c', strtotime($d['created_at'])) : '');
+                            $isStale = !empty($d['lifecycle_stale']);
                             ?>
                         <tr class="group align-middle transition-colors duration-150 hover:bg-gradient-to-r hover:from-emerald-50/[0.45] hover:to-slate-50/90">
                             <td class="border-l-[3px] border-l-transparent px-5 py-4 align-top transition-[border-color] group-hover:border-l-emerald-500">
@@ -301,9 +302,14 @@ $latestLabel = $latestAt ? date('d.m.Y', strtotime($latestAt)) : '—';
                             </td>
 
                             <td class="px-5 py-4 align-middle">
-                                <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold leading-none <?= $badgeClass ?>">
-                                    <?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?>
-                                </span>
+                                <div class="flex flex-col gap-1">
+                                    <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold leading-none <?= $badgeClass ?>">
+                                        <?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                    <?php if ($isStale): ?>
+                                    <span class="inline-flex whitespace-nowrap rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800">Obsolète — action obligatoire</span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
 
                             <td class="px-5 py-4 align-middle">
@@ -332,6 +338,23 @@ $latestLabel = $latestAt ? date('d.m.Y', strtotime($latestAt)) : '—';
                                        class="inline-flex items-center justify-center rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-3 py-2 text-center text-xs font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100">
                                         Public
                                     </a>
+                                    <?php endif; ?>
+                                    <?php if ($isStale): ?>
+                                    <form action="<?= url('documents/gestion/' . $d['id'] . '/cycle') ?>" method="post" class="m-0 inline w-full sm:w-auto">
+                                        <?= \App\Core\Csrf::field() ?>
+                                        <input type="hidden" name="action" value="review">
+                                        <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-blue-100 sm:w-auto">Forcer revue</button>
+                                    </form>
+                                    <form action="<?= url('documents/gestion/' . $d['id'] . '/cycle') ?>" method="post" class="m-0 inline w-full sm:w-auto">
+                                        <?= \App\Core\Csrf::field() ?>
+                                        <input type="hidden" name="action" value="correct">
+                                        <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-800 transition hover:bg-violet-100 sm:w-auto">Correction</button>
+                                    </form>
+                                    <form action="<?= url('documents/gestion/' . $d['id'] . '/cycle') ?>" method="post" class="m-0 inline w-full sm:w-auto" onsubmit="return confirm('Archiver ce document obsolète ?');">
+                                        <?= \App\Core\Csrf::field() ?>
+                                        <input type="hidden" name="action" value="remove">
+                                        <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800 transition hover:bg-rose-100 sm:w-auto">Suppression logique</button>
+                                    </form>
                                     <?php endif; ?>
                                     <?php if ($d['status'] !== 'archived' && \App\Core\Gate::getInstance()->allows('documents.archive')): ?>
                                     <form action="<?= url('documents/gestion/' . $d['id'] . '/archiver') ?>"

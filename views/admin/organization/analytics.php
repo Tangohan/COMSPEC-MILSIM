@@ -48,6 +48,15 @@ $operationalKpis = is_array($operationalKpis ?? null) ? $operationalKpis : [
 ];
 $enlistmentStatusBreakdown = is_array($enlistmentStatusBreakdown ?? null) ? $enlistmentStatusBreakdown : [];
 $analyticsDays = (int) ($analyticsDays ?? 30);
+$documentInsights = is_array($documentInsights ?? null) ? $documentInsights : [
+    'total_documents' => 0,
+    'published_documents' => 0,
+    'updated_in_period' => 0,
+    'stale_published_documents' => 0,
+    'review_overdue_documents' => 0,
+    'expiring_soon_documents' => 0,
+    'top_types' => [],
+];
 
 $enlistmentStatusLabelAnalytics = static function (string $status): string {
     return match ($status) {
@@ -229,6 +238,60 @@ $ratioPct = static function (int $num, int $den): string {
                     </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+
+    <section class="mb-10">
+        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Gouvernance documentaire</h2>
+        <p class="text-sm text-slate-600 mb-4 max-w-3xl">Pilotage automatique de l’hygiène documentaire (obsolescence, revue, échéances) calculé depuis les métadonnées des documents.</p>
+        <dl class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Documents référencés</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($documentInsights['total_documents'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Documents publiés</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($documentInsights['published_documents'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Mis à jour sur la période</dt>
+                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($documentInsights['updated_in_period'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-amber-200 rounded-xl p-4 bg-amber-50/70 shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-amber-800">Publiés obsolètes (action requise)</dt>
+                <dd class="text-3xl font-black text-amber-900 mt-1"><?= (int) ($documentInsights['stale_published_documents'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-orange-200 rounded-xl p-4 bg-orange-50/70 shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-orange-800">Revues en retard</dt>
+                <dd class="text-3xl font-black text-orange-900 mt-1"><?= (int) ($documentInsights['review_overdue_documents'] ?? 0) ?></dd>
+            </div>
+            <div class="border border-rose-200 rounded-xl p-4 bg-rose-50/70 shadow-sm">
+                <dt class="text-[10px] uppercase tracking-wider text-rose-800">Expirent &lt; 30 jours</dt>
+                <dd class="text-3xl font-black text-rose-900 mt-1"><?= (int) ($documentInsights['expiring_soon_documents'] ?? 0) ?></dd>
+            </div>
+        </dl>
+        <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm max-w-2xl">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="border-b border-slate-200 bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500">
+                        <th class="px-4 py-3 font-bold">Type documentaire</th>
+                        <th class="px-4 py-3 font-bold text-right">Volume</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (($documentInsights['top_types'] ?? []) === []): ?>
+                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucun type documentaire identifié.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ((array) ($documentInsights['top_types'] ?? []) as $t): ?>
+                        <tr class="border-b border-slate-100">
+                            <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars(str_replace('_', ' ', (string) ($t['document_type'] ?? 'non_renseigne')), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($t['count'] ?? 0) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>

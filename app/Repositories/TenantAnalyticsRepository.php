@@ -861,4 +861,103 @@ class TenantAnalyticsRepository
 
         return $out;
     }
+
+
+    /**
+     * @return array{
+     *   total_documents: int,
+     *   published_documents: int,
+     *   updated_in_period: int,
+     *   stale_published_documents: int,
+     *   review_overdue_documents: int,
+     *   expiring_soon_documents: int,
+     *   top_types: list<array{document_type: string, count: int}>
+     * }
+     */
+    public function getTenantDocumentInsights(int $tenantId, string $sinceIso, int $staleAfterDays = 180): array
+    {
+        $empty = [
+            'total_documents' => 0,
+            'published_documents' => 0,
+            'updated_in_period' => 0,
+            'stale_published_documents' => 0,
+            'review_overdue_documents' => 0,
+            'expiring_soon_documents' => 0,
+            'top_types' => [],
+        ];
+        if ($tenantId < 1 || !$this->hasTable('documents')) {
+            return $empty;
+        }
+        $staleAfterDays = max(30, min(720, $staleAfterDays));
+
+        $st = $this->pdo->prepare('SELECT COUNT(*) FROM documents WHERE tenant_id = ?');
+        $st->execute([$tenantId]);
+        $empty['total_documents'] = (int) $st->fetchColumn();
+
+        $st = $this->pdo->prepare("SELECT COUNT(*) FROM documents WHERE tenant_id = ? AND status = 'published'");
+        $st->execute([$tenantId]);
+        $empty['published_documents'] = (int) $st->fetchColumn();
+
+        $st = $this->pdo->prepare('SELECT COUNT(*) FROM documents WHERE tenant_id = ? AND COALESCE(updated_at, created_at) >= ?');
+        $st->execute([$tenantId, $sinceIso]);
+        $empty['updated_in_period'] = (int) $st->fetchColumn();
+
+        $st = $this->pdo->prepare(
+            "SELECT COUNT(*)
+             FROM documents
+             WHERE tenant_id = ?
+               AND status = 'published'
+               AND (
+                   (review_due_at IS NOT NULL AND review_due_at < NOW())
+                   OR COALESCE(updated_at, created_at) < DATE_SUB(NOW(), INTERVAL ? DAY)
+               )"
+        );
+        $st->execute([$tenantId, $staleAfterDays]);
+        $empty['stale_published_documents'] = (int) $st->fetchColumn();
+
+        $st = $this->pdo->prepare(
+            "SELECT COUNT(*)
+             FROM documents
+             WHERE tenant_id = ?
+               AND status IN ('published', 'review', 'approval')
+               AND review_due_at IS NOT NULL
+               AND review_due_at < NOW()"
+        );
+        $st->execute([$tenantId]);
+        $empty['review_overdue_documents'] = (int) $st->fetchColumn();
+
+        $st = $this->pdo->prepare(
+            "SELECT COUNT(*)
+             FROM documents
+             WHERE tenant_id = ?
+               AND status IN ('published', 'review', 'approval')
+               AND expires_at IS NOT NULL
+               AND expires_at >= NOW()
+               AND expires_at <= DATE_ADD(NOW(), INTERVAL 30 DAY)"
+        );
+        $st->execute([$tenantId]);
+        $empty['expiring_soon_documents'] = (int) $st->fetchColumn();
+
+        $st = $this->pdo->prepare(
+            "SELECT COALESCE(NULLIF(TRIM(document_type), ''), 'non_renseigne') AS doc_type, COUNT(*) AS cnt
+             FROM documents
+             WHERE tenant_id = ?
+             GROUP BY doc_type
+             ORDER BY cnt DESC, doc_type ASC
+             LIMIT 5"
+        );
+        $st->execute([$tenantId]);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+        if (is_array($rows)) {
+            foreach ($rows as $row) {
+                $empty['top_types'][] = [
+                    'document_type' => (string) ($row['doc_type'] ?? 'non_renseigne'),
+                    'count' => (int) ($row['cnt'] ?? 0),
+                ];
+            }
+        }
+
+        return $empty;
+    }
+
 }

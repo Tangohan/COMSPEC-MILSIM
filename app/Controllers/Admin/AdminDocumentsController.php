@@ -71,6 +71,14 @@ class AdminDocumentsController
         $documentType = $request->input('document_type') ? trim((string) $request->input('document_type')) : null;
         $classificationLevel = $request->input('classification_level') ? trim((string) $request->input('classification_level')) : null;
         $documents = $this->documentRepository->listForTenant($tenantId, $categoryId, $status, $search, null, null, $documentType, $classificationLevel);
+        $staleCount = 0;
+        foreach ($documents as &$docRow) {
+            $docRow['lifecycle_stale'] = $this->isLifecycleStale($docRow);
+            if (!empty($docRow['lifecycle_stale'])) {
+                $staleCount++;
+            }
+        }
+        unset($docRow);
         $userIds = array_unique(array_filter(array_merge(
             array_column($documents, 'created_by'),
             array_column($documents, 'owner_user_id')
@@ -95,6 +103,7 @@ class AdminDocumentsController
                 'published_count' => $this->documentRepository->countPublishedForTenant($tenantId),
                 'categories_count' => count($categories),
                 'latest_activity_at' => $this->documentRepository->latestActivityAtForTenant($tenantId),
+                'stale_count' => $staleCount,
             ],
             'filters' => [
                 'category' => $categoryId,
@@ -577,6 +586,54 @@ class AdminDocumentsController
         ]);
     }
 
+
+    public function lifecycleAction(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $gate = Gate::getInstance();
+        if ($gate->deny('admin.access') && $gate->deny('documents.update')) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::set('error', 'Session expirée.');
+            return Response::redirect(url('documents/gestion'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $action = trim((string) $request->input('action'));
+        $doc = $this->documentRepository->findById($id, (int) $tenantId);
+        if (!$doc) {
+            return (new Response())->setStatusCode(404)->setBody('Document non trouvé.');
+        }
+        if (!$this->isLifecycleStale($doc)) {
+            Session::set('success', 'Le document n\'est pas considéré obsolète.');
+            return Response::redirect(url('documents/gestion'));
+        }
+
+        if ($action === 'review') {
+            $newDue = (new \DateTimeImmutable('+30 days'))->format('Y-m-d H:i:s');
+            $this->documentRepository->update($id, (int) $tenantId, ['status' => 'review', 'review_due_at' => $newDue]);
+            $this->documentAuditRepository->log($id, (int) $userId, 'lifecycle_review_required', ['status' => $doc['status'] ?? null], ['status' => 'review', 'review_due_at' => $newDue]);
+            Session::set('success', 'Document basculé en revue obligatoire.');
+        } elseif ($action === 'correct') {
+            $this->documentRepository->update($id, (int) $tenantId, ['status' => 'draft']);
+            $this->documentAuditRepository->log($id, (int) $userId, 'lifecycle_correction_required', ['status' => $doc['status'] ?? null], ['status' => 'draft']);
+            Session::set('success', 'Document repassé en brouillon pour correction.');
+            return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+        } elseif ($action === 'remove') {
+            $this->documentRepository->update($id, (int) $tenantId, ['status' => 'archived']);
+            $this->documentAuditRepository->log($id, (int) $userId, 'lifecycle_removed', ['status' => $doc['status'] ?? null], ['status' => 'archived']);
+            Session::set('success', 'Document archivé (sortie du catalogue public).');
+        } else {
+            Session::set('error', 'Action de cycle de vie inconnue.');
+        }
+
+        return Response::redirect(url('documents/gestion'));
+    }
+
     public function archive(Request $request, array $params = []): Response
     {
         $tenantId = Session::get('tenant_id');
@@ -602,6 +659,28 @@ class AdminDocumentsController
         $this->auditService->logDocumentArchived((int) $tenantId, (int) $userId, $id);
         Session::set('success', 'Document archivé.');
         return Response::redirect(url('documents/gestion'));
+    }
+
+
+    /** @param array<string, mixed> $doc */
+    private function isLifecycleStale(array $doc): bool
+    {
+        if ((string) ($doc['status'] ?? '') !== 'published') {
+            return false;
+        }
+        $reviewDueAt = trim((string) ($doc['review_due_at'] ?? ''));
+        if ($reviewDueAt !== '' && strtotime($reviewDueAt) !== false && strtotime($reviewDueAt) < time()) {
+            return true;
+        }
+        $pivot = (string) ($doc['updated_at'] ?? $doc['created_at'] ?? '');
+        if ($pivot !== '' && strtotime($pivot) !== false) {
+            $staleLimit = strtotime('-180 days');
+            if ($staleLimit !== false && strtotime($pivot) < $staleLimit) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function saveLinksFromRequest(int $documentId, int $tenantId, Request $request): void
