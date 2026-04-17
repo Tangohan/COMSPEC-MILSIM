@@ -818,6 +818,7 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
           <p class="text-[11px] text-violet-900/85 leading-relaxed">Sans rouvrir le dossier : agir sur le contenu du forum ou sur le compte du membre visé, selon vos habilitations.</p>
           <label for="forum-mod-postclose-select" class="block text-[10px] font-bold uppercase tracking-wider text-slate-600">Choisir la mesure</label>
           <select id="forum-mod-postclose-select" name="post_close_action" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 outline-none focus:ring-1 focus:ring-violet-400"></select>
+          <p id="forum-mod-sanction-info" class="hidden rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-[11px] leading-relaxed text-amber-900"></p>
           <div id="forum-mod-ban-confirm-wrap" class="hidden space-y-1">
             <label class="flex items-start gap-2 text-xs text-rose-900 cursor-pointer">
               <input type="checkbox" name="confirm_permanent_ban" value="1" id="forum-mod-ban-confirm" class="mt-0.5 rounded border-rose-300 text-rose-700" />
@@ -948,6 +949,7 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
   var modalReopenForm = document.getElementById('forum-mod-modal-reopen-form');
   var modalPostCloseForm = document.getElementById('forum-mod-modal-postclose-form');
   var postCloseSelect = document.getElementById('forum-mod-postclose-select');
+  var sanctionInfo = document.getElementById('forum-mod-sanction-info');
   var banWrap = document.getElementById('forum-mod-ban-confirm-wrap');
   var banCb = document.getElementById('forum-mod-ban-confirm');
   if (dossierModal && dossierBody && insightBase && modalCommentForm && modalReopenForm && modalPostCloseForm && postCloseSelect) {
@@ -1083,6 +1085,8 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
             modalReopenForm.classList.add('hidden');
           }
           var actions = cap.post_close_actions || [];
+          var blockers = cap.member_sanction_blockers || [];
+          var hasSanctionAction = actions.some(function(a) { return String(a.value || '').indexOf('sanction_') === 0; });
           postCloseSelect.innerHTML = '';
           if (actions.length > 0) {
             var opt0 = document.createElement('option');
@@ -1099,6 +1103,21 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
             modalPostCloseForm.classList.remove('hidden');
           } else {
             modalPostCloseForm.classList.add('hidden');
+          }
+          if (sanctionInfo) {
+            if (!hasSanctionAction && blockers.length > 0) {
+              var blockerLabels = {
+                missing_member_moderation_permission: 'Vous n’avez pas l’habilitation « Gérer les restrictions d’activité des membres » (admin.members.moderate).',
+                missing_target_member: 'Aucun membre visé n’a été identifié sur ce signalement.',
+                target_is_reporter: 'Les sanctions de compte sont désactivées quand le signaleur et le membre visé sont la même personne.'
+              };
+              var txt = blockers.map(function(code) { return blockerLabels[code] || code; }).join(' ');
+              sanctionInfo.textContent = 'Mesures coercitives indisponibles : ' + txt;
+              sanctionInfo.classList.remove('hidden');
+            } else {
+              sanctionInfo.classList.add('hidden');
+              sanctionInfo.textContent = '';
+            }
           }
           if (banWrap) banWrap.classList.add('hidden');
           if (banCb) banCb.checked = false;
