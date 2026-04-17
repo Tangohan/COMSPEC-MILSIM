@@ -43,6 +43,63 @@ function run_core_schema_extensions_migration(PDO $pdo, string $root, callable $
         }
     };
 
+    // --- Utilisateurs : identifiant Athena (9 caractères, unique) ---
+    if ($tableExists($pdo, 'users')) {
+        if (!$columnExists($pdo, 'users', 'athena_identifier')) {
+            $execTry(
+                $pdo,
+                "ALTER TABLE users ADD COLUMN athena_identifier CHAR(9) NULL AFTER profile_slug",
+                'users.athena_identifier'
+            );
+        }
+        try {
+            $idxStmt = $pdo->query("SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND INDEX_NAME = 'users_athena_identifier_unique' LIMIT 1");
+            $hasIdx = $idxStmt && (bool) $idxStmt->fetchColumn();
+            if (!$hasIdx && $columnExists($pdo, 'users', 'athena_identifier')) {
+                $execTry(
+                    $pdo,
+                    "ALTER TABLE users ADD UNIQUE KEY users_athena_identifier_unique (athena_identifier)",
+                    'users_athena_identifier_unique'
+                );
+            }
+        } catch (PDOException $e) {
+            echo '  [ATTENTION] users_athena_identifier_unique : ' . $e->getMessage() . "\n";
+            $flush();
+        }
+
+        if ($columnExists($pdo, 'users', 'athena_identifier')) {
+            $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            $max = strlen($alphabet) - 1;
+            $sel = $pdo->query("SELECT id FROM users WHERE athena_identifier IS NULL OR TRIM(athena_identifier) = ''");
+            $rows = $sel ? ($sel->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+            if ($rows !== []) {
+                $checkStmt = $pdo->prepare('SELECT 1 FROM users WHERE athena_identifier = ? AND id <> ? LIMIT 1');
+                $updStmt = $pdo->prepare('UPDATE users SET athena_identifier = ? WHERE id = ?');
+                foreach ($rows as $r) {
+                    $uid = (int) ($r['id'] ?? 0);
+                    if ($uid < 1) {
+                        continue;
+                    }
+                    $tries = 0;
+                    $candidate = '';
+                    do {
+                        $tries++;
+                        $raw = random_bytes(9);
+                        $candidate = '';
+                        for ($i = 0; $i < 9; $i++) {
+                            $candidate .= $alphabet[ord($raw[$i]) % ($max + 1)];
+                        }
+                        $checkStmt->execute([$candidate, $uid]);
+                        $exists = (bool) $checkStmt->fetchColumn();
+                    } while ($exists && $tries < 30);
+                    if ($candidate !== '') {
+                        $updStmt->execute([$candidate, $uid]);
+                    }
+                }
+            }
+        }
+    }
+
     // --- app_maintenance (20260404000001) ---
     $execTry($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS `app_maintenance` (
