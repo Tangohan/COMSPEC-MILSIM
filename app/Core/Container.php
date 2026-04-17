@@ -506,7 +506,8 @@ class Container
             \App\Services\Documents\DocumentAccessService::class => new \App\Services\Documents\DocumentAccessService(
                 self::get(\App\Repositories\DocumentCollaboratorRepository::class),
                 self::get(\App\Repositories\DocumentPermissionRepository::class),
-                self::get(UserRepository::class)
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class)
             ),
             \App\Services\Audit\AuditService::class => new \App\Services\Audit\AuditService(),
             \App\Repositories\RoleRepository::class => new \App\Repositories\RoleRepository(),
@@ -627,7 +628,8 @@ class Container
                 self::get(\App\Services\Documents\DocumentAccessService::class),
                 self::get(\App\Services\Audit\AuditService::class),
                 self::get(\App\Repositories\ModerationArtifactRepository::class),
-                self::get(\App\Services\Documents\DocumentTrainingReferencesService::class)
+                self::get(\App\Services\Documents\DocumentTrainingReferencesService::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class)
             ),
             \App\Controllers\Web\PortalSearchController::class => new \App\Controllers\Web\PortalSearchController(
                 self::get(\App\Repositories\DocumentRepository::class),
