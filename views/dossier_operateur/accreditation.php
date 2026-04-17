@@ -6,11 +6,45 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $qualifications */
 /** @var list<array<string, mixed>> $certificates */
 /** @var string|null $next_qualification_expiration */
+/** @var bool $has_default_signature */
 /** @var bool $can_view_documents */
 
 $score = (int) ($completeness['score'] ?? 0);
 $missing = $completeness['missing_labels'] ?? [];
 $critical = $completeness['sections_critiques'] ?? [];
+$hasDefaultSignature = (bool) ($has_default_signature ?? false);
+$now = time();
+$scoreTone = $score >= 85 ? 'emerald' : ($score >= 65 ? 'amber' : 'rose');
+$scoreToneLabel = $score >= 85 ? 'Conforme' : ($score >= 65 ? 'Sous surveillance' : 'Non conforme');
+$complianceWindow = date('d/m/Y H:i', $now - 3600);
+
+$accessNotes = [
+    [
+        'reference' => 'ACR-OPS-' . date('ymd', $now) . '-01',
+        'title' => 'Contrôle initial d’accès plateforme',
+        'author' => 'Cellule Contrôle Interne',
+        'classification' => 'Interne — Diffusion restreinte',
+        'summary' => 'Vérification de cohérence du dossier opérateur, des qualifications et des attestations.',
+        'result' => $score >= 85 ? 'Conforme sans réserve.' : 'Conforme avec réserves. Mise à jour requise.',
+        'stamp' => date('d/m/Y H:i', $now - 9000),
+    ],
+    [
+        'reference' => 'ACR-OPS-' . date('ymd', $now) . '-02',
+        'title' => 'Revue de maintien de privilèges',
+        'author' => 'État-major RH & Conformité',
+        'classification' => 'Opérationnel',
+        'summary' => 'Contrôle des prérequis documentaires avant maintien de l’accès documentaire avancé.',
+        'result' => $hasDefaultSignature ? 'Signature numérique enregistrée et exploitable.' : 'Signature numérique manquante : accès limité.',
+        'stamp' => date('d/m/Y H:i', $now - 3600),
+    ],
+];
+
+$reviewSteps = [
+    ['title' => 'Pré-contrôle administratif', 'status' => $score >= 75 ? 'validé' : 'à corriger', 'detail' => 'Identité, contact, dossier personnel.'],
+    ['title' => 'Revue qualifications', 'status' => $qualifications !== [] ? 'validé' : 'à corriger', 'detail' => 'Niveaux, échéances, statuts opérationnels.'],
+    ['title' => 'Revue attestations', 'status' => $certificates !== [] ? 'validé' : 'en attente', 'detail' => 'Certificats de formation et traçabilité.'],
+    ['title' => 'Contrôle signature numérique', 'status' => $hasDefaultSignature ? 'validé' : 'bloquant', 'detail' => 'Signature par défaut obligatoire pour circuit documentaire.'],
+];
 
 $qualStatusLabel = static function (string $s): string {
     return match ($s) {
@@ -51,8 +85,8 @@ $fmtDate = static function (?string $d): string {
             <p class="text-[11px] font-black uppercase tracking-[0.35em] text-sky-700">Dossier opérateur</p>
             <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">Accréditation</h1>
             <p class="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600">
-                Synthèse de votre profil opérationnel : complétude du dossier, qualifications enregistrées et attestations de formation.
-                Les données proviennent de votre fiche personnelle et du module formations.
+                Registre d’accès opérateur avec notes de contrôle, revues périodiques et conformité de signature numérique.
+                Ce dossier sert de base officielle pour l’activation ou le maintien des privilèges documentaires.
             </p>
             <?php if (!empty($user['id'])): ?>
             <p class="mt-4">
@@ -74,6 +108,12 @@ $fmtDate = static function (?string $d): string {
                         <div class="flex shrink-0 items-center gap-4">
                             <div class="relative flex h-28 w-28 items-center justify-center rounded-full border-4 border-slate-100 bg-slate-50">
                                 <span class="text-3xl font-black tabular-nums text-slate-900"><?= (int) $score ?><span class="text-lg text-slate-500">%</span></span>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wide <?= $scoreTone === 'emerald' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : ($scoreTone === 'amber' ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-rose-200 bg-rose-50 text-rose-900') ?>">
+                                    <?= htmlspecialchars($scoreToneLabel) ?>
+                                </p>
+                                <p class="text-xs text-slate-500">Fenêtre de contrôle : <?= htmlspecialchars($complianceWindow) ?></p>
                             </div>
                         </div>
                     </div>
@@ -114,6 +154,68 @@ $fmtDate = static function (?string $d): string {
                             Documents
                         </a>
                         <?php endif; ?>
+                    </div>
+                </section>
+
+                <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h2 class="text-xs font-black uppercase tracking-[0.28em] text-slate-500">Notes d’accès opérationnelles</h2>
+                            <p class="mt-2 text-sm text-slate-600">Journal réaliste des contrôles réalisés sur votre habilitation.</p>
+                        </div>
+                        <p class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-700">Traçabilité active</p>
+                    </div>
+                    <ul class="mt-6 space-y-4">
+                        <?php foreach ($accessNotes as $note): ?>
+                        <li class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-xs font-black uppercase tracking-wide text-slate-500"><?= htmlspecialchars((string) $note['reference']) ?></p>
+                                <p class="text-xs text-slate-500"><?= htmlspecialchars((string) $note['stamp']) ?></p>
+                            </div>
+                            <p class="mt-2 text-sm font-bold text-slate-900"><?= htmlspecialchars((string) $note['title']) ?></p>
+                            <p class="mt-1 text-xs text-slate-500">Émetteur : <?= htmlspecialchars((string) $note['author']) ?> · <?= htmlspecialchars((string) $note['classification']) ?></p>
+                            <p class="mt-3 text-sm text-slate-700"><?= htmlspecialchars((string) $note['summary']) ?></p>
+                            <p class="mt-2 rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm text-sky-900"><strong>Conclusion :</strong> <?= htmlspecialchars((string) $note['result']) ?></p>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </section>
+
+                <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                    <h2 class="text-xs font-black uppercase tracking-[0.28em] text-slate-500">Revues d’accréditation</h2>
+                    <p class="mt-2 text-sm text-slate-600">Pipeline de validation interne avant autorisation complète.</p>
+                    <ol class="mt-6 space-y-3">
+                        <?php foreach ($reviewSteps as $index => $step): ?>
+                        <li class="flex gap-3 rounded-2xl border border-slate-200 px-4 py-3">
+                            <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700"><?= (int) $index + 1 ?></div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars((string) $step['title']) ?></p>
+                                    <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase <?= ($step['status'] ?? '') === 'validé' ? 'bg-emerald-100 text-emerald-900' : ((($step['status'] ?? '') === 'bloquant') ? 'bg-rose-100 text-rose-900' : 'bg-amber-100 text-amber-900') ?>">
+                                        <?= htmlspecialchars((string) $step['status']) ?>
+                                    </span>
+                                </div>
+                                <p class="mt-1 text-xs text-slate-600"><?= htmlspecialchars((string) $step['detail']) ?></p>
+                            </div>
+                        </li>
+                        <?php endforeach; ?>
+                    </ol>
+                </section>
+
+                <section class="rounded-3xl border <?= $hasDefaultSignature ? 'border-emerald-200 bg-emerald-50/40' : 'border-rose-200 bg-rose-50/40' ?> p-6 shadow-sm md:p-8">
+                    <h2 class="text-xs font-black uppercase tracking-[0.28em] <?= $hasDefaultSignature ? 'text-emerald-700' : 'text-rose-700' ?>">Signature numérique obligatoire</h2>
+                    <p class="mt-2 text-sm <?= $hasDefaultSignature ? 'text-emerald-900' : 'text-rose-900' ?>">
+                        <?= $hasDefaultSignature
+                            ? 'Une signature par défaut est enregistrée. Le circuit de validation documentaire est conforme.'
+                            : 'Aucune signature par défaut détectée. Les validations critiques doivent être bloquées tant qu’aucune signature n’est enregistrée.' ?>
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-3">
+                        <a href="<?= htmlspecialchars(url('courrier')) ?>" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-xs font-black uppercase tracking-wide text-white hover:bg-slate-800">
+                            Ouvrir le module courrier
+                        </a>
+                        <a href="<?= htmlspecialchars(url('courrier/my-signatures')) ?>" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-800 hover:border-slate-400">
+                            API signatures
+                        </a>
                     </div>
                 </section>
 

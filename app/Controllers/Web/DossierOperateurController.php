@@ -8,6 +8,7 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\Courrier\UserSignatureRepository;
 use App\Repositories\PersonnelExtrasRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelQualificationRepository;
@@ -26,6 +27,7 @@ final class DossierOperateurController
         private PersonnelQualificationRepository $qualificationRepository,
         private TrainingCertificateRepository $trainingCertificateRepository,
         private PersonnelCompletenessService $completenessService,
+        private UserSignatureRepository $userSignatureRepository,
     ) {}
 
     public function accreditation(Request $request, array $params = []): Response
@@ -56,6 +58,14 @@ final class DossierOperateurController
         $qualifications = $this->qualificationRepository->listForUser($uid);
         $certificates = $this->trainingCertificateRepository->listByUserId($uid, $tenantId);
         $nextQualificationExpiration = $this->qualificationRepository->getNextExpiration($uid);
+        $userSignatures = $this->userSignatureRepository->listByUser($uid, $tenantId);
+        $hasDefaultSignature = false;
+        foreach ($userSignatures as $signature) {
+            if ((int) ($signature['is_default'] ?? 0) === 1) {
+                $hasDefaultSignature = true;
+                break;
+            }
+        }
 
         $gate = Gate::getInstance();
 
@@ -67,6 +77,7 @@ final class DossierOperateurController
             'qualifications' => $qualifications,
             'certificates' => $certificates,
             'next_qualification_expiration' => $nextQualificationExpiration,
+            'has_default_signature' => $hasDefaultSignature,
             'can_view_documents' => $gate->allows('documents.view'),
         ]);
     }
