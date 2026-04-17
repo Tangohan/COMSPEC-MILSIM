@@ -800,13 +800,33 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
           <textarea id="forum-mod-modal-comment" name="timeline_comment" rows="2" maxlength="1200" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none" placeholder="Visible dans la timeline du dossier."></textarea>
           <button type="submit" class="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50">Ajouter au dossier</button>
         </form>
-        <form id="forum-mod-modal-sanction-form" method="post" action="" class="hidden space-y-2">
+        <form id="forum-mod-modal-reopen-form" method="post" action="" class="hidden space-y-3 rounded-xl border border-amber-200/80 bg-amber-50/50 p-4">
           <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfTokenForumMod, ENT_QUOTES, 'UTF-8') ?>" />
-          <p class="text-xs font-semibold text-violet-900">Avertissement formel après clôture</p>
-          <p class="text-[11px] text-slate-600 leading-relaxed">Enregistre un avertissement sur la fiche du membre visé, sans rouvrir le signalement.</p>
-          <label for="forum-mod-modal-sanction-note" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Précision (optionnel)</label>
-          <textarea id="forum-mod-modal-sanction-note" name="moderator_note" rows="2" maxlength="500" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none"></textarea>
-          <button type="submit" class="inline-flex rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-violet-800">Enregistrer l’avertissement</button>
+          <p class="text-xs font-black text-amber-950 uppercase tracking-wide">Rouvrir le dossier</p>
+          <p class="text-[11px] text-amber-900/90 leading-relaxed">Le signalement retourne dans la file d’attente. L’équipe de modération reçoit une alerte par e-mail (selon les préférences de chacun).</p>
+          <label for="forum-mod-reopen-note" class="block text-[10px] font-bold uppercase tracking-wider text-amber-900/80">Motif interne (facultatif)</label>
+          <textarea id="forum-mod-reopen-note" name="reopen_note" rows="2" maxlength="500" class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:ring-1 focus:ring-amber-400"></textarea>
+          <label class="flex items-start gap-2 text-xs text-amber-950 cursor-pointer">
+            <input type="checkbox" name="notify_reporter" value="1" class="mt-0.5 rounded border-amber-300 text-amber-700 focus:ring-amber-500" checked />
+            <span>Prévenir aussi le signaleur par e-mail que l’examen reprend.</span>
+          </label>
+          <button type="submit" class="inline-flex rounded-xl bg-amber-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-amber-800">Rouvrir le dossier</button>
+        </form>
+        <form id="forum-mod-modal-postclose-form" method="post" action="" class="hidden space-y-3 rounded-xl border border-violet-200/80 bg-violet-50/40 p-4">
+          <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfTokenForumMod, ENT_QUOTES, 'UTF-8') ?>" />
+          <p class="text-xs font-black text-violet-950 uppercase tracking-wide">Mesure après clôture</p>
+          <p class="text-[11px] text-violet-900/85 leading-relaxed">Sans rouvrir le dossier : agir sur le contenu du forum ou sur le compte du membre visé, selon vos habilitations.</p>
+          <label for="forum-mod-postclose-select" class="block text-[10px] font-bold uppercase tracking-wider text-slate-600">Choisir la mesure</label>
+          <select id="forum-mod-postclose-select" name="post_close_action" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 outline-none focus:ring-1 focus:ring-violet-400"></select>
+          <div id="forum-mod-ban-confirm-wrap" class="hidden space-y-1">
+            <label class="flex items-start gap-2 text-xs text-rose-900 cursor-pointer">
+              <input type="checkbox" name="confirm_permanent_ban" value="1" id="forum-mod-ban-confirm" class="mt-0.5 rounded border-rose-300 text-rose-700" />
+              <span>Je confirme l’exclusion définitive du compte visé.</span>
+            </label>
+          </div>
+          <label for="forum-mod-postclose-note" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Précision pour la timeline (optionnel)</label>
+          <textarea id="forum-mod-postclose-note" name="moderator_note" rows="2" maxlength="500" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:ring-1 focus:ring-violet-400"></textarea>
+          <button type="submit" class="inline-flex rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-violet-800">Appliquer la mesure</button>
         </form>
       </div>
     </div>
@@ -925,8 +945,12 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
   var dossierBody = document.getElementById('forum-mod-dossier-body');
   var dossierSub = document.getElementById('forum-mod-dossier-sub');
   var modalCommentForm = document.getElementById('forum-mod-modal-comment-form');
-  var modalSanctionForm = document.getElementById('forum-mod-modal-sanction-form');
-  if (dossierModal && dossierBody && insightBase && modalCommentForm && modalSanctionForm) {
+  var modalReopenForm = document.getElementById('forum-mod-modal-reopen-form');
+  var modalPostCloseForm = document.getElementById('forum-mod-modal-postclose-form');
+  var postCloseSelect = document.getElementById('forum-mod-postclose-select');
+  var banWrap = document.getElementById('forum-mod-ban-confirm-wrap');
+  var banCb = document.getElementById('forum-mod-ban-confirm');
+  if (dossierModal && dossierBody && insightBase && modalCommentForm && modalReopenForm && modalPostCloseForm && postCloseSelect) {
     function esc(s) {
       if (s == null) return '';
       return String(s)
@@ -947,15 +971,25 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
       dossierBody.innerHTML = '<p class="text-sm text-slate-500">Chargement…</p>';
       dossierSub.textContent = 'Dossier nº ' + rid;
       modalCommentForm.action = sanctionBase + rid + '/comment';
-      modalSanctionForm.action = sanctionBase + rid + '/sanction-after-close';
-      modalSanctionForm.classList.add('hidden');
+      modalReopenForm.action = sanctionBase + rid + '/reopen';
+      modalPostCloseForm.action = sanctionBase + rid + '/post-close-follow-up';
+      modalReopenForm.classList.add('hidden');
+      modalPostCloseForm.classList.add('hidden');
+      postCloseSelect.innerHTML = '';
+      if (banWrap) banWrap.classList.add('hidden');
+      if (banCb) banCb.checked = false;
       var ta = modalCommentForm.querySelector('textarea');
       if (ta) ta.value = '';
-      var sn = modalSanctionForm.querySelector('textarea');
-      if (sn) sn.value = '';
+      var reopenTa = modalReopenForm.querySelector('textarea[name=\"reopen_note\"]');
+      if (reopenTa) reopenTa.value = '';
+      var pcTa = modalPostCloseForm.querySelector('textarea[name=\"moderator_note\"]');
+      if (pcTa) pcTa.value = '';
+      var nr = modalReopenForm.querySelector('input[name=\"notify_reporter\"]');
+      if (nr) nr.checked = true;
       if (csrfVal) {
         modalCommentForm.querySelectorAll('input[name=\"_csrf_token\"]').forEach(function(i) { i.value = csrfVal; });
-        modalSanctionForm.querySelectorAll('input[name=\"_csrf_token\"]').forEach(function(i) { i.value = csrfVal; });
+        modalReopenForm.querySelectorAll('input[name=\"_csrf_token\"]').forEach(function(i) { i.value = csrfVal; });
+        modalPostCloseForm.querySelectorAll('input[name=\"_csrf_token\"]').forEach(function(i) { i.value = csrfVal; });
       }
       fetch(insightBase + rid + '/insight', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
         .then(function(r) { return r.json(); })
@@ -1041,11 +1075,33 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
             html += '</div>';
           }
           dossierBody.innerHTML = html;
-          if (cap.sanction_after_close) {
-            modalSanctionForm.classList.remove('hidden');
+          if (cap.reopen) {
+            modalReopenForm.classList.remove('hidden');
+            var nrEl = modalReopenForm.querySelector('input[name=\"notify_reporter\"]');
+            if (nrEl) nrEl.checked = cap.notify_reporter_on_reopen_default !== false;
           } else {
-            modalSanctionForm.classList.add('hidden');
+            modalReopenForm.classList.add('hidden');
           }
+          var actions = cap.post_close_actions || [];
+          postCloseSelect.innerHTML = '';
+          if (actions.length > 0) {
+            var opt0 = document.createElement('option');
+            opt0.value = '';
+            opt0.textContent = 'Choisir une mesure…';
+            postCloseSelect.appendChild(opt0);
+            actions.forEach(function(a) {
+              var o = document.createElement('option');
+              o.value = a.value;
+              o.textContent = a.label || a.value;
+              if (a.requires_confirm) o.dataset.confirm = '1';
+              postCloseSelect.appendChild(o);
+            });
+            modalPostCloseForm.classList.remove('hidden');
+          } else {
+            modalPostCloseForm.classList.add('hidden');
+          }
+          if (banWrap) banWrap.classList.add('hidden');
+          if (banCb) banCb.checked = false;
         })
         .catch(function() {
           dossierBody.innerHTML = '<p class=\"text-sm text-rose-700\">Impossible de joindre le serveur. Réessayez dans un instant.</p>';
@@ -1062,6 +1118,32 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
         var rid = btn.getAttribute('data-report-id');
         if (rid) openDossierModal(rid);
       });
+    });
+    postCloseSelect.addEventListener('change', function() {
+      var v = postCloseSelect.value;
+      if (banWrap && banCb) {
+        if (v === 'sanction_ban') {
+          banWrap.classList.remove('hidden');
+        } else {
+          banWrap.classList.add('hidden');
+          banCb.checked = false;
+        }
+      }
+    });
+    modalPostCloseForm.addEventListener('submit', function(ev) {
+      var v = postCloseSelect.value;
+      if (!v) {
+        ev.preventDefault();
+        return;
+      }
+      if (v === 'delete_post' && !confirm('Supprimer définitivement ce message ? Cette opération est irréversible.')) {
+        ev.preventDefault();
+        return;
+      }
+      if (v === 'sanction_ban' && banCb && !banCb.checked) {
+        ev.preventDefault();
+        alert('Pour une exclusion définitive, cochez la case de confirmation.');
+      }
     });
   }
 })();

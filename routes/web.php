@@ -814,7 +814,8 @@ return function (Router $router) {
     $router->post('/forum/report/{id}/claim', [ForumModerationController::class, 'claimReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/report/{id}/unclaim', [ForumModerationController::class, 'unclaimReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/report/{id}/comment', [ForumModerationController::class, 'addReportComment'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/forum/report/{id}/sanction-after-close', [ForumModerationController::class, 'sanctionHandledReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
+    $router->post('/forum/report/{id}/reopen', [ForumModerationController::class, 'reopenReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
+    $router->post('/forum/report/{id}/post-close-follow-up', [ForumModerationController::class, 'postCloseFollowUp'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/topic/{id}/lock', [ForumModerationController::class, 'lockTopic'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/topic/{id}/unlock', [ForumModerationController::class, 'unlockTopic'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
     $router->post('/forum/topic/{id}/pin', [ForumModerationController::class, 'pinTopic'], [AuthMiddleware::class, ForumModerateMiddleware::class]);

@@ -924,6 +924,54 @@ final class EmailService
         );
     }
 
+    public function sendCommunityReportReopenedStaff(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $summaryLine,
+        int $reportId,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::COMMUNITY_REPORT_REOPENED_STAFF,
+            'community_report_reopened_staff',
+            $to,
+            'Signalement rouvert — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'summaryLine' => $summaryLine,
+                'moderationUrl' => \url('back-office/forum-moderation'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'community_report_reopened_staff', 'report_id' => $reportId]
+        );
+    }
+
+    public function sendCommunityReportReopenedReporter(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        int $reportId,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::COMMUNITY_REPORT_REOPENED_REPORTER,
+            'community_report_reopened_reporter',
+            $to,
+            'Votre signalement est à nouveau examiné — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'activityUrl' => \url('activite'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'community_report_reopened_reporter', 'report_id' => $reportId]
+        );
+    }
+
     public function sendAttendanceRsvpOrganizer(
         string $to,
         string $organizerName,

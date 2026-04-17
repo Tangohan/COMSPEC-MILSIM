@@ -181,6 +181,134 @@ final class CommunityReportNotificationService
         }
     }
 
+    /**
+     * Dossier rouvert : alerte modérateurs (e-mail + notification forum) et option signaleur.
+     *
+     * @param non-empty-string $summaryLine
+     */
+    public function notifyReportReopened(
+        int $tenantId,
+        int $reportId,
+        int $reopenedByUserId,
+        int $reporterId,
+        string $summaryLine,
+        bool $emailReporter,
+        ?string $internalNote = null
+    ): void {
+        $summary = $this->truncateOneLine($summaryLine, 220);
+        if ($summary === '') {
+            $summary = 'Dossier rouvert';
+        }
+        $tenant = $this->tenantRepository->findById($tenantId);
+        $tenantName = $tenant ? (string) ($tenant['name'] ?? 'Communauté') : 'Communauté';
+        if (function_exists('community_display_name') && $tenant) {
+            $tenantName = community_display_name($tenant);
+        }
+
+        $modIds = $this->userRepository->listForumAlertRecipientUserIds($tenantId);
+        foreach ($modIds as $modUserId) {
+            if ($modUserId < 1 || $modUserId === $reopenedByUserId) {
+                continue;
+            }
+            if ($this->forumNotificationRepository->tableExists()) {
+                try {
+                    $this->forumNotificationRepository->create($tenantId, $modUserId, 'report_reopened', [
+                        'report_id' => $reportId,
+                        'summary' => $summary,
+                    ]);
+                } catch (\Throwable) {
+                }
+            }
+            if (!$this->notificationPreferencesRepository->isEmailEventEnabled($modUserId, EmailEvents::COMMUNITY_REPORT_REOPENED_STAFF)) {
+                continue;
+            }
+            $mod = $this->userRepository->findById($modUserId, $tenantId);
+            $modEmail = $mod ? trim((string) ($mod['email'] ?? '')) : '';
+            if ($modEmail === '' || !filter_var($modEmail, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+            $modName = $mod ? (string) ($mod['display_name'] ?? 'Modérateur') : 'Modérateur';
+            try {
+                $this->emailService->sendCommunityReportReopenedStaff(
+                    $modEmail,
+                    $modName,
+                    $tenantName,
+                    $summary,
+                    $reportId,
+                    $tenantId
+                );
+            } catch (\Throwable) {
+            }
+        }
+
+        $siteRoleEmails = $this->siteRoleAssignmentRepository->listActiveEmailsByRoleSlugs([
+            'site_super_admin',
+            'site_senior_moderator',
+            'site_moderator',
+            'site_report_supervisor',
+            'site_report_operator',
+            'site_support',
+        ]);
+        foreach ($siteRoleEmails as $email) {
+            $display = $this->displayNameFromEmail($email);
+            try {
+                $this->emailService->sendCommunityReportReopenedStaff(
+                    $email,
+                    $display,
+                    $tenantName,
+                    $summary,
+                    $reportId,
+                    $tenantId
+                );
+            } catch (\Throwable) {
+            }
+        }
+
+        if ($emailReporter && $reporterId > 0 && $reporterId !== $reopenedByUserId) {
+            $reporter = $this->userRepository->findById($reporterId, $tenantId);
+            if ($reporter) {
+                $reporterEmail = trim((string) ($reporter['email'] ?? ''));
+                $reporterName = (string) ($reporter['display_name'] ?? 'Membre');
+                if ($reporterEmail !== '' && filter_var($reporterEmail, FILTER_VALIDATE_EMAIL)
+                    && $this->notificationPreferencesRepository->isEmailEventEnabled($reporterId, EmailEvents::COMMUNITY_REPORT_REOPENED_REPORTER)) {
+                    try {
+                        $this->emailService->sendCommunityReportReopenedReporter(
+                            $reporterEmail,
+                            $reporterName,
+                            $tenantName,
+                            $reportId,
+                            $tenantId
+                        );
+                    } catch (\Throwable) {
+                    }
+                }
+                if ($this->forumNotificationRepository->tableExists()) {
+                    try {
+                        $this->forumNotificationRepository->create($tenantId, $reporterId, 'report_reopened_reporter', [
+                            'report_id' => $reportId,
+                            'summary' => $summary,
+                        ]);
+                    } catch (\Throwable) {
+                    }
+                }
+            }
+        }
+
+        if ($internalNote !== null && $internalNote !== '') {
+            try {
+                $this->tenantCommunityFeedRepository->insert(
+                    $tenantId,
+                    'moderation_report',
+                    'Dossier de signalement rouvert',
+                    $this->truncateOneLine($internalNote, 400),
+                    \url('back-office/forum-moderation'),
+                    $reopenedByUserId > 0 ? $reopenedByUserId : null
+                );
+            } catch (\Throwable) {
+            }
+        }
+    }
+
     private function truncateOneLine(string $text, int $max): string
     {
         $text = trim(preg_replace('/\s+/u', ' ', $text) ?? '');

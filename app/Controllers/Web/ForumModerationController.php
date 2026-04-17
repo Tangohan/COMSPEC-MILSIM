@@ -125,9 +125,9 @@ class ForumModerationController
     }
 
     /**
-     * Avertissement formel sur un dossier déjà clos (sans rouvrir le signalement).
+     * Remet un dossier clos dans la file d’attente et alerte l’équipe (e-mails selon préférences).
      */
-    public function sanctionHandledReport(Request $request, array $params = []): Response
+    public function reopenReport(Request $request, array $params = []): Response
     {
         $ok = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
         if (!$ok) {
@@ -148,8 +148,78 @@ class ForumModerationController
             return Response::redirect(url('back-office/forum-moderation'));
         }
 
-        if (!$this->mayApplyFormalMemberWarning()) {
-            Session::flash('error', 'Vous n’avez pas les droits pour enregistrer un avertissement formel.');
+        $id = (int) ($params['id'] ?? 0);
+        $report = $this->reportRepository->findById($id, $tenantId);
+        if (!$report || (string) ($report['status'] ?? '') !== 'handled') {
+            Session::flash('error', 'Ce dossier n’est pas clos ou est introuvable.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+
+        $note = trim((string) $request->input('reopen_note', ''));
+        if (strlen($note) > 500) {
+            $note = mb_substr($note, 0, 500);
+        }
+        $notifyReporter = $request->input('notify_reporter') === '1';
+
+        if (!$this->reportRepository->reopenToPending($id, $tenantId)) {
+            Session::flash('error', 'La réouverture n’a pas pu être enregistrée.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+
+        $timelineDetail = $note !== '' ? $note : null;
+        try {
+            $this->reportRepository->addTimelineEvent(
+                $tenantId,
+                $id,
+                $userId,
+                'report_reopened',
+                'Dossier rouvert et remis en file d’attente',
+                $timelineDetail
+            );
+        } catch (\Throwable) {
+        }
+
+        $reasonLine = trim((string) ($report['reason'] ?? ''));
+        try {
+            $this->communityReportNotificationService->notifyReportReopened(
+                $tenantId,
+                $id,
+                $userId,
+                (int) ($report['reporter_id'] ?? 0),
+                $reasonLine !== '' ? $reasonLine : 'Dossier rouvert',
+                $notifyReporter,
+                $note !== '' ? $note : null
+            );
+        } catch (\Throwable) {
+        }
+
+        Session::flash('success', 'Le dossier a été rouvert. Les modérateurs habilités ont été alertés.');
+
+        return Response::redirect(url('back-office/forum-moderation'));
+    }
+
+    /**
+     * Mesures sur un dossier déjà clos (contenu, suivi, sanctions membre) sans changer le statut handled.
+     */
+    public function postCloseFollowUp(Request $request, array $params = []): Response
+    {
+        $ok = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
+        if (!$ok) {
+            Session::flash('error', 'Accès refusé.');
+
+            return Response::redirect(url('forum'));
+        }
+
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+
+        if ($request->method() !== 'POST' || !Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
 
             return Response::redirect(url('back-office/forum-moderation'));
         }
@@ -173,6 +243,27 @@ class ForumModerationController
             }
         }
 
+        $action = strtolower(trim((string) $request->input('post_close_action', '')));
+        $allowed = [
+            'hide_post', 'delete_post', 'lock_topic', 'hide_topic',
+            'request_correction', 'escalate_support', 'watch_report',
+            'sanction_warn',
+            'sanction_mute_24h', 'sanction_mute_7d', 'sanction_mute_30d',
+            'sanction_suspend_7d', 'sanction_suspend_30d',
+            'sanction_ban',
+        ];
+        if (!in_array($action, $allowed, true)) {
+            Session::flash('error', 'Cette mesure n’est pas disponible pour ce dossier.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+
+        if ($action === 'sanction_ban' && (string) $request->input('confirm_permanent_ban') !== '1') {
+            Session::flash('error', 'Pour une exclusion définitive, confirmez l’action dans le formulaire.');
+
+            return Response::redirect(url('back-office/forum-moderation'));
+        }
+
         $note = trim((string) $request->input('moderator_note', ''));
         if (strlen($note) > 500) {
             $note = mb_substr($note, 0, 500);
@@ -180,20 +271,63 @@ class ForumModerationController
 
         $outcomes = [];
         try {
-            $this->applyFollowUp('sanction_warn', $report, $tenantId, $userId, $id, $note, $outcomes);
+            if (str_starts_with($action, 'sanction_mute_') || str_starts_with($action, 'sanction_suspend_') || $action === 'sanction_ban') {
+                $expires = match ($action) {
+                    'sanction_mute_24h' => (new \DateTimeImmutable('+24 hours')),
+                    'sanction_mute_7d' => (new \DateTimeImmutable('+7 days')),
+                    'sanction_mute_30d' => (new \DateTimeImmutable('+30 days')),
+                    'sanction_suspend_7d' => (new \DateTimeImmutable('+7 days')),
+                    'sanction_suspend_30d' => (new \DateTimeImmutable('+30 days')),
+                    'sanction_ban' => null,
+                    default => throw new \InvalidArgumentException('sanction'),
+                };
+                $type = str_starts_with($action, 'sanction_mute_') ? 'mute' : (str_starts_with($action, 'sanction_suspend_') ? 'suspend' : 'ban');
+                $logModeration = function (string $a, ?string $d = null) use ($tenantId, $userId, $id): void {
+                    $payload = ['report_id' => $id, 'follow_up' => $a];
+                    if ($d !== null && $d !== '') {
+                        $payload['detail'] = $d;
+                    }
+                    $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    $this->auditService->log(
+                        AuditAction::FORUM_MODERATION,
+                        $tenantId,
+                        $userId,
+                        'forum_report_resolution',
+                        $id,
+                        null,
+                        $json !== false ? $json : $a
+                    );
+                };
+                $this->followUpSanctionMuteSuspendBan(
+                    $report,
+                    $tenantId,
+                    $userId,
+                    $id,
+                    $type,
+                    $expires,
+                    $note,
+                    $logModeration,
+                    $outcomes
+                );
+            } elseif ($action === 'sanction_warn') {
+                $this->applyFollowUp('sanction_warn', $report, $tenantId, $userId, $id, $note, $outcomes);
+            } else {
+                $this->applyFollowUp($action, $report, $tenantId, $userId, $id, $note, $outcomes);
+            }
         } catch (\Throwable) {
-            Session::flash('error', 'Impossible d’enregistrer l’avertissement (membre cible introuvable ou droits insuffisants).');
+            Session::flash('error', 'La mesure n’a pas pu être enregistrée. Vérifiez les droits, le contenu visé ou le membre concerné.');
 
             return Response::redirect(url('back-office/forum-moderation'));
         }
 
+        $timelineTitle = self::postCloseActionTimelineTitle($action);
         try {
             $this->reportRepository->addTimelineEvent(
                 $tenantId,
                 $id,
                 $userId,
-                'sanction_post_close',
-                'Avertissement formel ajouté après clôture du dossier',
+                'post_close_measure',
+                $timelineTitle,
                 $note !== '' ? $note : null
             );
         } catch (\Throwable) {
@@ -466,6 +600,65 @@ class ForumModerationController
      * @param callable(string, ?string): void $logModeration
      * @param list<string> $outcomes
      */
+    private function followUpSanctionMuteSuspendBan(
+        array $report,
+        int $tenantId,
+        int $actorUserId,
+        int $reportId,
+        string $sanctionType,
+        ?\DateTimeImmutable $expiresAt,
+        string $moderatorNote,
+        callable $logModeration,
+        array &$outcomes
+    ): void {
+        if (!$this->mayApplyFormalMemberWarning()) {
+            throw new \RuntimeException('sanction denied');
+        }
+        if (!in_array($sanctionType, ['mute', 'suspend', 'ban'], true)) {
+            throw new \InvalidArgumentException('bad type');
+        }
+        $targetId = function_exists('forum_report_resolve_target_user_id')
+            ? forum_report_resolve_target_user_id($report)
+            : null;
+        if ($targetId === null || $targetId < 1) {
+            throw new \RuntimeException('no target user');
+        }
+        if ($targetId === $actorUserId) {
+            throw new \RuntimeException('self target');
+        }
+        if ((int) ($report['reporter_id'] ?? 0) === $targetId) {
+            throw new \RuntimeException('reporter is target');
+        }
+        $user = $this->userRepository->findById($targetId, $tenantId);
+        if (!$user) {
+            throw new \RuntimeException('user missing');
+        }
+        $reason = 'Mesure après clôture du signalement n° ' . $reportId . '.';
+        if ($moderatorNote !== '') {
+            $reason .= "\n" . $moderatorNote;
+        }
+        $this->moderationService->applySanction(
+            $tenantId,
+            $actorUserId,
+            $targetId,
+            $sanctionType,
+            $reason,
+            $expiresAt,
+            []
+        );
+        $logModeration('sanction_' . $sanctionType, (string) $targetId);
+        $outcomes[] = match ($sanctionType) {
+            'mute' => 'Un silence temporaire a été appliqué sur le compte du membre concerné.',
+            'suspend' => 'Une suspension temporaire a été appliquée sur le compte du membre concerné.',
+            'ban' => 'Une exclusion définitive a été enregistrée sur le compte du membre concerné.',
+            default => 'Sanction enregistrée sur le compte du membre concerné.',
+        };
+    }
+
+    /**
+     * @param callable(string, ?string): void $logModeration
+     * @param list<string> $outcomes
+     */
     private function followUpRequestCorrection(string $moderatorNote, callable $logModeration, array &$outcomes): void
     {
         $logModeration('request_correction', $moderatorNote);
@@ -516,6 +709,27 @@ class ForumModerationController
             'sanction_warn' => 'avertissement formel au membre concerné',
             'close', '' => 'clôture sans autre mesure',
             default => 'mesure enregistrée',
+        };
+    }
+
+    private static function postCloseActionTimelineTitle(string $action): string
+    {
+        return match ($action) {
+            'hide_post' => 'Après clôture : message masqué',
+            'delete_post' => 'Après clôture : message supprimé',
+            'lock_topic' => 'Après clôture : sujet verrouillé',
+            'hide_topic' => 'Après clôture : sujet retiré de la liste',
+            'request_correction' => 'Après clôture : demande de correction enregistrée',
+            'escalate_support' => 'Après clôture : escalade assistance plateforme',
+            'watch_report' => 'Après clôture : surveillance sans retrait',
+            'sanction_warn' => 'Après clôture : avertissement formel',
+            'sanction_mute_24h' => 'Après clôture : silence 24 h sur le compte',
+            'sanction_mute_7d' => 'Après clôture : silence 7 jours sur le compte',
+            'sanction_mute_30d' => 'Après clôture : silence 30 jours sur le compte',
+            'sanction_suspend_7d' => 'Après clôture : suspension 7 jours sur le compte',
+            'sanction_suspend_30d' => 'Après clôture : suspension 30 jours sur le compte',
+            'sanction_ban' => 'Après clôture : exclusion définitive du compte',
+            default => 'Après clôture : mesure enregistrée',
         };
     }
 

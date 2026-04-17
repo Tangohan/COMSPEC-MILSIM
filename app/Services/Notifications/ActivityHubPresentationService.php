@@ -71,6 +71,20 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'report_reopened' => [
+                'title' => 'Signalement rouvert à traiter',
+                'detail' => trim((string) ($payload['summary'] ?? 'Un dossier clos a été remis dans la file d’attente.')),
+                'href' => url('back-office/forum-moderation'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
+            'report_reopened_reporter' => [
+                'title' => 'Votre signalement est à nouveau examiné',
+                'detail' => 'L’équipe poursuit l’examen de votre demande.',
+                'href' => url('activite'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'event_rsvp_change' => [
                 'title' => 'Participation mise à jour',
                 'detail' => trim((string) ($payload['participant'] ?? 'Un membre')) . ' — '

@@ -70,6 +70,8 @@ final class ForumModerationReportInsightApiController
             $targetName = trim((string) ($tu['display_name'] ?? '')) ?: ('Membre nº ' . $targetId);
         }
 
+        $status = (string) ($report['status'] ?? '');
+
         $base = rtrim((string) url(''), '/');
         $personnel = static fn (int $uid): string => $base . '/personnel/' . $uid;
         $gate = Gate::getInstance();
@@ -77,6 +79,37 @@ final class ForumModerationReportInsightApiController
             || $gate->allows('admin.access')
             || $gate->allows('site.support');
         $canFormalWarn = function_exists('can') && can('admin.members.moderate');
+        $canModContent = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
+        $canDeletePost = function_exists('can') && can('forum.post.delete_any');
+        $hasPost = (int) ($report['post_id'] ?? 0) > 0;
+        $topicIdResolved = (int) ($report['topic_id'] ?? 0) ?: (int) ($report['post_topic_id'] ?? 0);
+
+        $postCloseActions = [];
+        if ($status === 'handled' && $canModContent) {
+            if ($hasPost) {
+                $postCloseActions[] = ['value' => 'hide_post', 'label' => 'Masquer le message signalé', 'requires_confirm' => false];
+            }
+            if ($hasPost && $canDeletePost) {
+                $postCloseActions[] = ['value' => 'delete_post', 'label' => 'Supprimer définitivement le message signalé', 'requires_confirm' => true];
+            }
+            if ($topicIdResolved > 0) {
+                $postCloseActions[] = ['value' => 'lock_topic', 'label' => 'Verrouiller le sujet', 'requires_confirm' => false];
+                $postCloseActions[] = ['value' => 'hide_topic', 'label' => 'Retirer le sujet de la liste (masquer)', 'requires_confirm' => false];
+            }
+            $postCloseActions[] = ['value' => 'request_correction', 'label' => 'Enregistrer une demande de correction du contenu', 'requires_confirm' => false];
+            $postCloseActions[] = ['value' => 'escalate_support', 'label' => 'Escalader vers l’assistance plateforme', 'requires_confirm' => false];
+            $postCloseActions[] = ['value' => 'watch_report', 'label' => 'Conserver visible avec surveillance', 'requires_confirm' => false];
+        }
+        if ($status === 'handled' && $canFormalWarn && $targetId !== null && $targetId > 0
+            && $reporterId !== $targetId) {
+            $postCloseActions[] = ['value' => 'sanction_warn', 'label' => 'Avertissement formel sur le membre visé', 'requires_confirm' => false];
+            $postCloseActions[] = ['value' => 'sanction_mute_24h', 'label' => 'Silence 24 h sur le compte du membre visé', 'requires_confirm' => false];
+            $postCloseActions[] = ['value' => 'sanction_mute_7d', 'label' => 'Silence 7 jours sur le compte du membre visé', 'requires_confirm' => false];
+            $postCloseActions[] = ['value' => 'sanction_mute_30d', 'label' => 'Silence 30 jours sur le compte du membre visé', 'requires_confirm' => false];
+            $postCloseActions[] = ['value' => 'sanction_suspend_7d', 'label' => 'Suspension 7 jours sur le compte du membre visé', 'requires_confirm' => false];
+            $postCloseActions[] = ['value' => 'sanction_suspend_30d', 'label' => 'Suspension 30 jours sur le compte du membre visé', 'requires_confirm' => false];
+            $postCloseActions[] = ['value' => 'sanction_ban', 'label' => 'Exclusion définitive du compte du membre visé', 'requires_confirm' => true];
+        }
 
         $userCard = static function (int $uid, string $name) use ($personnel, $base, $canBackOfficeMember): array {
             $out = [
@@ -106,10 +139,9 @@ final class ForumModerationReportInsightApiController
         $followUpRaw = trim((string) ($report['last_follow_up_action'] ?? ''));
         $measureLabel = self::followUpFrenchLabel($followUpRaw);
 
-        $topicId = (int) ($report['topic_id'] ?? 0) ?: (int) ($report['post_topic_id'] ?? 0);
+        $topicId = $topicIdResolved;
         $topicUrl = $topicId > 0 ? $base . '/forum/topic/' . $topicId : null;
 
-        $status = (string) ($report['status'] ?? '');
         $statusLabel = $status === 'handled' ? 'Clôturé' : ($status === 'pending' ? 'En attente' : '—');
 
         return Response::json([
@@ -150,9 +182,9 @@ final class ForumModerationReportInsightApiController
                 ] : null,
             ],
             'capabilities' => [
-                'sanction_after_close' => $status === 'handled' && $canFormalWarn
-                    && $targetId !== null && $targetId > 0
-                    && (int) ($report['reporter_id'] ?? 0) !== $targetId,
+                'reopen' => $status === 'handled' && $canModContent,
+                'notify_reporter_on_reopen_default' => true,
+                'post_close_actions' => $postCloseActions,
             ],
         ]);
     }

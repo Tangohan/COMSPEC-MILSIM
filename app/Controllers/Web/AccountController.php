@@ -482,12 +482,24 @@ class AccountController
                 'hint' => 'Lorsque l’équipe marque votre demande comme traitée.',
                 'group' => 'Signalements et modération',
             ],
+            [
+                'key' => EmailEvents::COMMUNITY_REPORT_REOPENED_REPORTER,
+                'label' => 'Réouverture de l’examen de votre signalement',
+                'hint' => 'Lorsque l’équipe rouvre un dossier que vous aviez signalé.',
+                'group' => 'Signalements et modération',
+            ],
         ];
         if (function_exists('forum_user_can_moderate') && forum_user_can_moderate()) {
             $items[] = [
                 'key' => EmailEvents::COMMUNITY_REPORT_NEW_STAFF,
                 'label' => 'Nouveaux signalements pour l’équipe',
                 'hint' => 'Lorsqu’un membre envoie un signalement ou une demande à traiter.',
+                'group' => 'Signalements et modération',
+            ];
+            $items[] = [
+                'key' => EmailEvents::COMMUNITY_REPORT_REOPENED_STAFF,
+                'label' => 'Signalement rouvert (équipe de modération)',
+                'hint' => 'Lorsqu’un dossier clos est remis dans la file à traiter.',
                 'group' => 'Signalements et modération',
             ];
         }

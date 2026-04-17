@@ -52,6 +52,10 @@ final class EmailEvents
     public const COMMUNITY_REPORT_HANDLED = 'COMMUNITY_REPORT_HANDLED';
     /** Nouveau signalement — alerte équipe de modération. */
     public const COMMUNITY_REPORT_NEW_STAFF = 'COMMUNITY_REPORT_NEW_STAFF';
+    /** Dossier rouvert — alerte équipe de modération. */
+    public const COMMUNITY_REPORT_REOPENED_STAFF = 'COMMUNITY_REPORT_REOPENED_STAFF';
+    /** Dossier rouvert — information au signaleur. */
+    public const COMMUNITY_REPORT_REOPENED_REPORTER = 'COMMUNITY_REPORT_REOPENED_REPORTER';
     /** Changement de participation (RSVP) — activité créée par le destinataire. */
     public const ATTENDANCE_RSVP_ORGANIZER = 'ATTENDANCE_RSVP_ORGANIZER';
 
@@ -107,6 +111,8 @@ final class EmailEvents
         self::COMMUNITY_REPORT_RECEIPT,
         self::COMMUNITY_REPORT_HANDLED,
         self::COMMUNITY_REPORT_NEW_STAFF,
+        self::COMMUNITY_REPORT_REOPENED_STAFF,
+        self::COMMUNITY_REPORT_REOPENED_REPORTER,
         self::ATTENDANCE_RSVP_ORGANIZER,
         self::INTERTEAM_COOPERATION_OTP,
         self::TENANT_ACCESS_REQUEST,

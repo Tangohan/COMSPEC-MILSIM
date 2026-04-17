@@ -170,6 +170,30 @@ class ForumReportRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Remet un dossier clos dans la file d’attente (statut pending).
+     */
+    public function reopenToPending(int $id, int $tenantId): bool
+    {
+        if ($this->columnExists('forum_reports', 'assigned_to')) {
+            $stmt = $this->pdo->prepare(
+                "UPDATE forum_reports
+                 SET status = 'pending', handled_by = NULL, handled_at = NULL, assigned_to = NULL, assigned_at = NULL
+                 WHERE id = ? AND tenant_id = ? AND status = 'handled'"
+            );
+        } else {
+            $stmt = $this->pdo->prepare(
+                "UPDATE forum_reports
+                 SET status = 'pending', handled_by = NULL, handled_at = NULL
+                 WHERE id = ? AND tenant_id = ? AND status = 'handled'"
+            );
+        }
+
+        $stmt->execute([$id, $tenantId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
     public function markHandled(int $id, int $tenantId, int $handledBy): bool
     {
         if (!$this->columnExists('forum_reports', 'assigned_to') || !$this->columnExists('forum_reports', 'assigned_at')) {
