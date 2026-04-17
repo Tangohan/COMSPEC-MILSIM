@@ -5,6 +5,17 @@ declare(strict_types=1);
 $rule = $maintenanceRule ?? [];
 $rows = $auditRows ?? [];
 $id = (int) ($rule['id'] ?? 0);
+$auditActionLabel = static function (string $code): string {
+    return match ($code) {
+        'create' => 'Création',
+        'update' => 'Modification',
+        'enable' => 'Activation',
+        'disable' => 'Désactivation',
+        'delete' => 'Suppression',
+        'notify_email' => 'Diffusion e-mail aux membres',
+        default => $code,
+    };
+};
 ?>
 <div class="max-w-5xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">
@@ -30,7 +41,7 @@ $id = (int) ($rule['id'] ?? 0);
                     <?php foreach ($rows as $a): ?>
                         <tr>
                             <td class="px-4 py-3 whitespace-nowrap text-xs"><?= htmlspecialchars((string) ($a['created_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td class="px-4 py-3 font-mono text-xs"><?= htmlspecialchars((string) ($a['action_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="px-4 py-3 text-xs font-semibold text-slate-800"><?= htmlspecialchars($auditActionLabel((string) ($a['action_type'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
                             <td class="px-4 py-3"><?= $a['actor_user_id'] !== null ? (int) $a['actor_user_id'] : '—' ?></td>
                             <td class="px-4 py-3 font-mono text-xs"><?= htmlspecialchars((string) ($a['actor_ip'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                         </tr>

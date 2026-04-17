@@ -29,21 +29,10 @@ final class SystemNewsletterAdminController
         }
         $page = max(1, (int) $request->query('page', 1));
         $perPage = 35;
-        $offset = ($page - 1) * $perPage;
 
-        $list = ['rows' => [], 'total' => 0];
+        $list = ['rows' => [], 'total' => 0, 'page' => 1, 'total_pages' => 1];
         if ($schemaReady) {
-            $list = $this->newsletterRepository->adminListSubscribers($statusFilter, $q, $offset, $perPage);
-        }
-
-        $total = (int) ($list['total'] ?? 0);
-        $totalPages = $total > 0 ? (int) max(1, (int) ceil($total / $perPage)) : 1;
-        if ($page > $totalPages) {
-            $page = $totalPages;
-            $offset = ($page - 1) * $perPage;
-            if ($schemaReady) {
-                $list = $this->newsletterRepository->adminListSubscribers($statusFilter, $q, $offset, $perPage);
-            }
+            $list = $this->newsletterRepository->adminListSubscribers($statusFilter, $q, $page, $perPage);
         }
 
         return Response::view('layout.main', [
@@ -56,9 +45,9 @@ final class SystemNewsletterAdminController
             'newsletterTotal' => (int) ($list['total'] ?? 0),
             'newsletterStatut' => $statusFilter,
             'newsletterQuery' => $q,
-            'newsletterPage' => $page,
+            'newsletterPage' => (int) ($list['page'] ?? $page),
             'newsletterPerPage' => $perPage,
-            'newsletterTotalPages' => $totalPages,
+            'newsletterTotalPages' => (int) ($list['total_pages'] ?? 1),
         ]);
     }
 }

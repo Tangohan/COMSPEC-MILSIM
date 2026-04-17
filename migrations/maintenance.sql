@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `app_maintenance` (
 CREATE TABLE IF NOT EXISTS `app_maintenance_audit` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `maintenance_id` BIGINT UNSIGNED NOT NULL,
-    `action_type` ENUM('create','update','enable','disable','delete') NOT NULL,
+    `action_type` ENUM('create','update','enable','disable','delete','notify_email') NOT NULL,
     `old_values` JSON NULL,
     `new_values` JSON NULL,
     `actor_user_id` BIGINT UNSIGNED NULL,

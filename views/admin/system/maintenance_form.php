@@ -144,7 +144,7 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
                     <input type="text" name="allowed_user_ids" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars((string) ($row['allowed_user_ids'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="12, 45, 87">
                 </label>
                 <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
-                    <input type="checkbox" name="allow_admin_bypass" value="1" class="rounded border-slate-300 text-emerald-600" <?= ((int) ($row['allow_admin_bypass'] ?? 1)) === 1 ? 'checked' : '' ?>> Autoriser le bypass super-admin
+                    <input type="checkbox" name="allow_admin_bypass" value="1" class="rounded border-slate-300 text-emerald-600" <?= ((int) ($row['allow_admin_bypass'] ?? 0)) === 1 ? 'checked' : '' ?>> Laisser les administrateurs plateforme accéder au site pendant la maintenance
                 </label>
                 <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
                     <input type="checkbox" name="is_enabled" value="1" class="rounded border-slate-300 text-emerald-600" <?= ($r !== null && !empty($r['is_enabled'])) ? 'checked' : '' ?>> Règle active
@@ -170,6 +170,7 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-black text-slate-900">5) Fenêtre & HTTP</h2>
+            <p class="mt-2 text-sm text-slate-600">Tant qu’une <strong class="font-semibold text-slate-800">date de début</strong> est renseignée, le blocage public (y compris la page de connexion) ne commence qu’à partir de ce moment. Laissez début et fin vides pour appliquer la maintenance dès que la règle est activée, sans limite de fin.</p>
             <div class="mt-4 grid gap-4 md:grid-cols-2">
                 <label class="text-sm font-bold text-slate-700">Début
                     <input type="datetime-local" name="starts_at" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" value="<?= $dt($isEdit ? ($r['starts_at'] ?? null) : null) ?>">

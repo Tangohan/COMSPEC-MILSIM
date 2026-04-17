@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin\System;
 
+use App\Core\Container;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\MaintenanceRepository;
+use App\Repositories\UserRepository;
+use App\Services\Email\EmailEvents;
+use App\Services\EmailService;
 use App\Support\MaintenanceGuard;
 use RuntimeException;
 
@@ -172,11 +176,131 @@ final class SystemMaintenanceController
         try {
             $actorId = Session::get('user_id') ? (int) Session::get('user_id') : null;
             $this->repo->setEnabled($id, $on, $actorId, MaintenanceGuard::resolveClientIp());
-            Session::flash('success', $on ? 'Maintenance activée.' : 'Maintenance désactivée.');
+            Session::flash(
+                'success',
+                $on
+                    ? 'Règle activée. Le blocage public (y compris la page de connexion) ne s’applique que pendant le créneau début / fin, ou immédiatement si ces champs sont vides.'
+                    : 'Maintenance désactivée.'
+            );
         } catch (RuntimeException $e) {
             Session::flash('error', $e->getMessage());
         } catch (\Throwable) {
             Session::flash('error', 'Changement d\'état impossible.');
+        }
+
+        return Response::redirect(url('admin/maintenance'));
+    }
+
+    public function notifyMembers(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('admin/maintenance'));
+        }
+        if (!$this->repo->tableExists()) {
+            return Response::redirect(url('admin/maintenance'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $rule = $id > 0 ? $this->repo->findById($id) : null;
+        if (!$rule) {
+            Session::flash('error', 'Règle introuvable.');
+
+            return Response::redirect(url('admin/maintenance'));
+        }
+
+        $subject = trim((string) ($rule['notify_email_subject'] ?? ''));
+        $message = trim((string) ($rule['notify_email_message'] ?? ''));
+        if ($subject === '' || $message === '') {
+            Session::flash(
+                'error',
+                'Renseignez d’abord l’objet et le texte du message : ouvrez « Modifier », rubrique diffusion aux membres.'
+            );
+
+            return Response::redirect(url('admin/maintenance'));
+        }
+
+        @set_time_limit(600);
+
+        /** @var UserRepository $userRepo */
+        $userRepo = Container::get(UserRepository::class);
+        /** @var EmailService $emailService */
+        $emailService = Container::get(EmailService::class);
+
+        $totalRecipients = $userRepo->countDistinctActiveMemberEmailsPlatformWide();
+        if ($totalRecipients < 1) {
+            Session::flash('error', 'Aucun destinataire : aucun compte actif avec une adresse e-mail utilisable n’a été trouvé.');
+
+            return Response::redirect(url('admin/maintenance'));
+        }
+
+        $heading = trim((string) ($rule['title'] ?? ''));
+        if ($heading === '') {
+            $heading = 'Information plateforme';
+        }
+        $pre = $message;
+        if (mb_strlen($pre) > 100) {
+            $pre = mb_substr($pre, 0, 97) . '…';
+        }
+        $bodyHtml = '<p class="text-slate-700">' . nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8')) . '</p>';
+        $html = email_html_layout(
+            $pre,
+            $heading,
+            $bodyHtml,
+            [
+                'accent' => 'amber',
+                'footer_note' => 'Vous recevez ce message car vous avez un compte actif sur le portail. Pour toute question, connectez-vous comme d’habitude ou contactez votre communauté.',
+            ]
+        );
+        $textBody = $message . "\n\n— " . email_brand_name();
+
+        $batch = 200;
+        $sent = 0;
+        $failed = 0;
+        for ($offset = 0; $offset < $totalRecipients; $offset += $batch) {
+            $emails = $userRepo->listDistinctActiveMemberEmailsPlatformWide($batch, $offset);
+            foreach ($emails as $to) {
+                $ok = $emailService->send(
+                    EmailEvents::MAINTENANCE_MEMBER_BROADCAST,
+                    $to,
+                    $subject,
+                    $html,
+                    $textBody,
+                    null,
+                    null,
+                    ['purpose' => 'maintenance_member_broadcast', 'maintenance_rule_id' => $id]
+                );
+                if ($ok) {
+                    $sent++;
+                } else {
+                    $failed++;
+                }
+            }
+        }
+
+        try {
+            $actorId = Session::get('user_id') ? (int) Session::get('user_id') : null;
+            $this->repo->auditNotifyEmailBroadcast($id, [
+                'recipients_estimate' => $totalRecipients,
+                'sent' => $sent,
+                'failed' => $failed,
+            ], $actorId, MaintenanceGuard::resolveClientIp());
+        } catch (\Throwable) {
+        }
+
+        $queued = filter_var((string) \env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN);
+        if ($queued) {
+            Session::flash(
+                'success',
+                "La diffusion a été enregistrée pour {$totalRecipients} adresse(s) distincte(s). Les envois seront traités selon la configuration du serveur de courrier."
+            );
+        } elseif ($failed === 0) {
+            Session::flash('success', "Diffusion terminée : {$sent} message(s) envoyé(s) pour {$totalRecipients} adresse(s) distincte(s).");
+        } else {
+            Session::flash(
+                'success',
+                "Diffusion terminée avec des erreurs : {$sent} message(s) envoyé(s), {$failed} échec(s), sur {$totalRecipients} adresse(s) distincte(s)."
+            );
         }
 
         return Response::redirect(url('admin/maintenance'));

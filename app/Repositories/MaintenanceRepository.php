@@ -93,7 +93,7 @@ final class MaintenanceRepository
                 'maintenance_code' => $data['maintenance_code'] ?? null,
                 'starts_at' => $data['starts_at'] ?? null,
                 'ends_at' => $data['ends_at'] ?? null,
-                'allow_admin_bypass' => (int) ($data['allow_admin_bypass'] ?? 1),
+                'allow_admin_bypass' => (int) ($data['allow_admin_bypass'] ?? 0),
                 'allowed_ips' => $data['allowed_ips'] ?? null,
                 'allowed_roles' => $data['allowed_roles'] ?? null,
                 'allowed_user_ids' => $data['allowed_user_ids'] ?? null,
@@ -170,7 +170,7 @@ final class MaintenanceRepository
                 'maintenance_code' => $data['maintenance_code'] ?? null,
                 'starts_at' => $data['starts_at'] ?? null,
                 'ends_at' => $data['ends_at'] ?? null,
-                'allow_admin_bypass' => (int) ($data['allow_admin_bypass'] ?? 1),
+                'allow_admin_bypass' => (int) ($data['allow_admin_bypass'] ?? 0),
                 'allowed_ips' => $data['allowed_ips'] ?? null,
                 'allowed_roles' => $data['allowed_roles'] ?? null,
                 'allowed_user_ids' => $data['allowed_user_ids'] ?? null,
@@ -244,6 +244,25 @@ final class MaintenanceRepository
             $this->pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * @param array{recipients_estimate: int, sent: int, failed: int} $summary
+     */
+    public function auditNotifyEmailBroadcast(int $maintenanceId, array $summary, ?int $actorUserId, ?string $actorIp): void
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO app_maintenance_audit
+            (maintenance_id, action_type, old_values, new_values, actor_user_id, actor_ip)
+            VALUES (?, ?, NULL, ?, ?, ?)'
+        );
+        $stmt->execute([
+            $maintenanceId,
+            'notify_email',
+            json_encode($summary, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            $actorUserId,
+            $actorIp,
+        ]);
     }
 
     /**

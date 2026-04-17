@@ -143,17 +143,19 @@ final class NewsletterSubscriberRepository
 
     /**
      * @param 'all'|'pending'|'subscribed'|'unsubscribed' $statusFilter
-     * @return array{rows: list<array<string, mixed>>, total: int}
+     * @return array{rows: list<array<string, mixed>>, total: int, page: int, total_pages: int}
      */
-    public function adminListSubscribers(string $statusFilter, string $emailNeedle, int $offset, int $limit): array
+    public function adminListSubscribers(string $statusFilter, string $emailNeedle, int $page, int $perPage): array
     {
         if (!$this->schemaReady()) {
-            return ['rows' => [], 'total' => 0];
+            return ['rows' => [], 'total' => 0, 'page' => 1, 'total_pages' => 1];
         }
         $allowed = ['all', 'pending', 'subscribed', 'unsubscribed'];
         if (!in_array($statusFilter, $allowed, true)) {
             $statusFilter = 'all';
         }
+        $perPage = max(1, min(100, $perPage));
+        $page = max(1, $page);
 
         $where = [];
         $params = [];
@@ -173,16 +175,25 @@ final class NewsletterSubscriberRepository
         $countSt->execute($params);
         $total = (int) $countSt->fetchColumn();
 
+        $totalPages = $total > 0 ? (int) max(1, (int) ceil($total / $perPage)) : 1;
+        $page = min($page, $totalPages);
+        $offset = ($page - 1) * $perPage;
+
         $cols = 'id, email, status, subscribed_at, unsubscribed_at, last_event_at, created_at, source, locale, ip_address, user_agent';
         $listSt = $this->pdo->prepare(
             "SELECT {$cols} FROM newsletter_subscribers WHERE {$sqlWhere} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
         );
         $listParams = $params;
-        $listParams[] = max(1, min(100, $limit));
-        $listParams[] = max(0, $offset);
+        $listParams[] = $perPage;
+        $listParams[] = $offset;
         $listSt->execute($listParams);
         $rows = $listSt->fetchAll(PDO::FETCH_ASSOC);
 
-        return ['rows' => is_array($rows) ? $rows : [], 'total' => $total];
+        return [
+            'rows' => is_array($rows) ? $rows : [],
+            'total' => $total,
+            'page' => $page,
+            'total_pages' => $totalPages,
+        ];
     }
 }
