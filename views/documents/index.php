@@ -7,6 +7,8 @@ $documentType = $documentType ?? '';
 $sort = $sort ?? 'title_asc';
 $entity_type = $entity_type ?? null;
 $entity_id = $entity_id ?? null;
+$collections = $collections ?? [];
+$viewerAccreditationLevel = $viewerAccreditationLevel ?? 'interne';
 /** @var array<int, list<array{label: string, href: string}>> $documentTrainingRefs */
 $documentTrainingRefs = $documentTrainingRefs ?? [];
 $totalDocs = count($documents);
@@ -20,6 +22,7 @@ $documentTypes = [
     'fiche_equipement' => 'Fiche équipement',
     'document_operationnel' => 'Document opérationnel',
     'piece_jointe' => 'Pièce jointe',
+    'collection' => 'Collection documentaire',
 ];
 $sortLabels = [
     'title_asc' => 'Titre (A → Z)',
@@ -169,6 +172,37 @@ $baseUrlList = url('documents');
             </form>
         </section>
 
+        <section class="mt-8 grid gap-5 lg:grid-cols-3">
+            <article class="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5 shadow-sm lg:col-span-1">
+                <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800">Accréditation profil</p>
+                <p class="mt-2 text-2xl font-black text-emerald-950"><?= htmlspecialchars(strtoupper((string) $viewerAccreditationLevel)) ?></p>
+                <p class="mt-2 text-xs leading-relaxed text-emerald-900/85">Votre niveau d’accréditation de dossier opérateur est désormais pris en compte pour les contenus sensibles.</p>
+                <a class="mt-4 inline-flex rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-900 hover:bg-emerald-100" href="<?= url('dossier-operateur/accreditation') ?>">Gérer mon accréditation</a>
+            </article>
+            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Collections</p>
+                        <h2 class="mt-1 text-lg font-black text-slate-950">Collections & dossiers personnalisés</h2>
+                    </div>
+                    <a href="<?= url('documents/gestion/ajout') ?>" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100">Créer une collection</a>
+                </div>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    <?php if ($collections === []): ?>
+                    <p class="text-sm text-slate-500 sm:col-span-2">Aucune collection dynamique détectée pour vos filtres actuels.</p>
+                    <?php else: ?>
+                    <?php foreach ($collections as $col): ?>
+                    <a href="<?= htmlspecialchars((string) ($col['href'] ?? '#')) ?>" class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 transition hover:border-emerald-300 hover:bg-emerald-50/70">
+                        <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500"><?= (int) ($col['count'] ?? 0) ?> document(s)</p>
+                        <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($col['title'] ?? 'Collection')) ?></p>
+                        <p class="mt-1 text-xs text-slate-600"><?= htmlspecialchars((string) ($col['description'] ?? '')) ?></p>
+                    </a>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </article>
+        </section>
+
         <!-- Liste -->
         <section class="mt-8 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_70px_-30px_rgba(15,23,42,0.1)]">
             <div class="flex flex-col gap-3 border-b border-slate-200 px-6 py-4 md:flex-row md:items-center md:justify-between md:px-8">
@@ -216,6 +250,7 @@ $baseUrlList = url('documents');
                 <?php foreach ($documents as $doc):
                     $catName = (string) ($doc['category_name'] ?? '');
                     $initial = $catName !== '' ? mb_strtoupper(mb_substr($catName, 0, 1)) : 'D';
+                    $categoryColor = (string) ($doc['category_color'] ?? '#10b981');
                     $snippet = trim((string) ($doc['short_description'] ?? ''));
                     if ($snippet === '' && !empty($doc['description'])) {
                         $snippet = trim(strip_tags((string) $doc['description']));
@@ -231,7 +266,7 @@ $baseUrlList = url('documents');
                     ?>
                 <article class="group flex flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/80 p-5 shadow-sm transition hover:border-emerald-300/60 hover:shadow-md">
                     <div class="flex items-start justify-between gap-3">
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10 text-sm font-black text-emerald-800">
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border text-sm font-black" style="border-color: <?= htmlspecialchars($categoryColor) ?>66; background-color: <?= htmlspecialchars($categoryColor) ?>1A; color: <?= htmlspecialchars($categoryColor) ?>;">
                             <?= htmlspecialchars($initial) ?>
                         </div>
                         <?php if ($catName !== ''): ?>

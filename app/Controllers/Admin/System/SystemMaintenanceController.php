@@ -228,10 +228,57 @@ final class SystemMaintenanceController
             'allow_admin_bypass' => $request->input('allow_admin_bypass') === '1' || $request->input('allow_admin_bypass') === 1,
             'allowed_ips' => $this->optionalString($request->input('allowed_ips')),
             'allowed_roles' => $this->optionalString($request->input('allowed_roles')),
+            'allowed_user_ids' => $this->normalizeAllowedUserIds($request->input('allowed_user_ids')),
+            'message_preset' => $this->optionalString($request->input('message_preset')),
+            'ui_variant' => $this->normalizeUiVariant($request->input('ui_variant')),
+            'ui_animation' => $request->input('ui_animation') === '1' || $request->input('ui_animation') === 1,
+            'notify_members_by_email' => $request->input('notify_members_by_email') === '1' || $request->input('notify_members_by_email') === 1,
+            'notify_email_subject' => $this->optionalString($request->input('notify_email_subject')),
+            'notify_email_message' => $this->optionalString($request->input('notify_email_message')),
             'redirect_url' => $this->optionalString($request->input('redirect_url')),
             'http_status' => $httpStatus,
             'priority' => (int) $request->input('priority', 100),
         ];
+    }
+
+    private function normalizeAllowedUserIds(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return null;
+        }
+
+        $ids = [];
+        foreach (explode(',', $raw) as $piece) {
+            $id = (int) trim($piece);
+            if ($id > 0) {
+                $ids[$id] = true;
+            }
+        }
+
+        if ($ids === []) {
+            return null;
+        }
+
+        $sorted = array_keys($ids);
+        sort($sorted, SORT_NUMERIC);
+
+        return implode(',', $sorted);
+    }
+
+    private function normalizeUiVariant(mixed $value): string
+    {
+        $variant = strtolower(trim((string) $value));
+        $allowed = ['military', 'minimal', 'neon', 'status'];
+        if (!in_array($variant, $allowed, true)) {
+            return 'military';
+        }
+
+        return $variant;
     }
 
     private function optionalString(mixed $v): ?string
