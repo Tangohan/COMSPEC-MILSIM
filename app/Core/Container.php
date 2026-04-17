@@ -421,6 +421,7 @@ class Container
                 self::get(\App\Services\Personnel\PersonnelCompletenessService::class),
                 self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
+                self::get(\App\Repositories\UserLegalIdentityRepository::class),
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Repositories\PlanningEntryRepository::class),
@@ -429,7 +430,8 @@ class Container
                 self::get(\App\Services\Personnel\SenioritySummaryService::class),
                 self::get(\App\Repositories\ArmaPlaytimeRepository::class),
                 self::get(\App\Services\Steam\SteamWebApiService::class),
-                self::get(\App\Repositories\PersonnelOrgHistoryRepository::class)
+                self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
+                self::get(\App\Repositories\PersonnelRoleplayTimelineRepository::class)
             ),
             \App\Repositories\PersonnelExtrasRepository::class => new \App\Repositories\PersonnelExtrasRepository(),
             \App\Repositories\PersonnelProfileRepository::class => new \App\Repositories\PersonnelProfileRepository(),
@@ -592,6 +594,8 @@ class Container
                 self::get(\App\Services\Audit\AuditService::class)
             ),
             \App\Repositories\PersonnelOrgHistoryRepository::class => new \App\Repositories\PersonnelOrgHistoryRepository(),
+            \App\Repositories\UserLegalIdentityRepository::class => new \App\Repositories\UserLegalIdentityRepository(),
+            \App\Repositories\PersonnelRoleplayTimelineRepository::class => new \App\Repositories\PersonnelRoleplayTimelineRepository(),
             \App\Services\Personnel\PersonnelOrgHistoryRecorder::class => new \App\Services\Personnel\PersonnelOrgHistoryRecorder(
                 self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
