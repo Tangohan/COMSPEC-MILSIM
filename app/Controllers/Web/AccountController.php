@@ -12,6 +12,7 @@ use App\Core\Validator;
 use App\Core\Database;
 use App\Services\Auth\AuthService;
 use App\Repositories\UserRepository;
+use App\Repositories\UserLegalIdentityRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RecruitmentPresetRepository;
@@ -30,6 +31,7 @@ class AccountController
     public function __construct(
         private AuthService $authService,
         private UserRepository $userRepository,
+        private UserLegalIdentityRepository $userLegalIdentityRepository,
         private UserProfileRepository $userProfileRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
         private RecruitmentPresetRepository $recruitmentPresetRepository,
@@ -51,6 +53,14 @@ class AccountController
         $freshUser = $tenantId > 0 ? $this->userRepository->findById($uid, $tenantId) : null;
         $accountUser = $freshUser ?? $user;
         $accountProfile = $this->userProfileRepository->getByUserId($uid) ?? [];
+        $legalIdentity = $this->userLegalIdentityRepository->getByUserId($uid) ?? [];
+        if ($legalIdentity !== []) {
+            $accountProfile['first_name'] = $legalIdentity['first_name'] ?? ($accountProfile['first_name'] ?? '');
+            $accountProfile['last_name'] = $legalIdentity['last_name'] ?? ($accountProfile['last_name'] ?? '');
+            $accountProfile['phone'] = $legalIdentity['phone'] ?? ($accountProfile['phone'] ?? '');
+            $accountProfile['birth_date'] = $legalIdentity['birth_date'] ?? ($accountProfile['birth_date'] ?? '');
+            $accountProfile['nationality'] = $legalIdentity['nationality'] ?? ($accountProfile['nationality'] ?? '');
+        }
         $accountSnapshot = $this->buildAccountSnapshot($accountUser, $accountProfile);
 
         return Response::view('layout.main', [
@@ -120,7 +130,15 @@ class AccountController
         }
         $uid = (int) $user['id'];
         $tenantId = (int) $user['tenant_id'];
-        $profile = $this->userProfileRepository->getByUserId($uid);
+        $profile = $this->userProfileRepository->getByUserId($uid) ?? [];
+        $legalIdentity = $this->userLegalIdentityRepository->getByUserId($uid) ?? [];
+        if ($legalIdentity !== []) {
+            $profile['first_name'] = $legalIdentity['first_name'] ?? ($profile['first_name'] ?? '');
+            $profile['last_name'] = $legalIdentity['last_name'] ?? ($profile['last_name'] ?? '');
+            $profile['phone'] = $legalIdentity['phone'] ?? ($profile['phone'] ?? '');
+            $profile['birth_date'] = $legalIdentity['birth_date'] ?? ($profile['birth_date'] ?? '');
+            $profile['nationality'] = $legalIdentity['nationality'] ?? ($profile['nationality'] ?? '');
+        }
         $errors = [];
         $success = Session::getFlash('success');
         $error = Session::getFlash('error');
@@ -202,9 +220,13 @@ class AccountController
                 $this->userProfileRepository->upsert($uid, [
                     'timezone' => trim((string) $request->input('timezone')),
                     'language' => trim((string) $request->input('language')),
+                ]);
+                $this->userLegalIdentityRepository->upsert($uid, $tenantId, [
                     'first_name' => trim((string) $request->input('first_name')),
                     'last_name' => trim((string) $request->input('last_name')),
                     'phone' => trim((string) $request->input('phone')),
+                    'birth_date' => trim((string) ($profile['birth_date'] ?? '')),
+                    'nationality' => trim((string) ($profile['nationality'] ?? '')),
                 ]);
                 if (!empty($vUi['normalized'])) {
                     $this->userUiPreferencesRepository->upsert($uid, $tenantId, $vUi['normalized']);

@@ -61,6 +61,8 @@ final class EmailEvents
 
     /** Code de confirmation — partage de données en coopération inter-unités. */
     public const INTERTEAM_COOPERATION_OTP = 'INTERTEAM_COOPERATION_OTP';
+    /** Code OTP — seconde étape de connexion pour comptes sécurité. */
+    public const LOGIN_SECURITY_OTP = 'LOGIN_SECURITY_OTP';
 
     /** Demande d’accès transmise aux gestionnaires de la communauté (rôles / habilitations). */
     public const TENANT_ACCESS_REQUEST = 'TENANT_ACCESS_REQUEST';
@@ -115,6 +117,7 @@ final class EmailEvents
         self::COMMUNITY_REPORT_REOPENED_REPORTER,
         self::ATTENDANCE_RSVP_ORGANIZER,
         self::INTERTEAM_COOPERATION_OTP,
+        self::LOGIN_SECURITY_OTP,
         self::TENANT_ACCESS_REQUEST,
         self::TENANT_INTERNAL_MESSAGE_THREAD,
         self::COOPERATION_ANNOUNCEMENT,
