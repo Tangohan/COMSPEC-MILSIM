@@ -154,6 +154,8 @@ use App\Controllers\Admin\Organization\ComplianceBundleExportController;
 use App\Controllers\Web\VerifyEmailController;
 use App\Controllers\Web\SecurityDeviceController;
 use App\Controllers\Web\OperationalBoardController;
+use App\Controllers\Web\NewsletterController;
+use App\Controllers\Web\SeoController;
 
 return function (Router $router) {
     $mwForum = [AuthMiddleware::class, ForumSanctionMiddleware::class];
@@ -165,6 +167,11 @@ return function (Router $router) {
     $mwCourrier = [AuthMiddleware::class, CourrierModuleSanctionMiddleware::class];
 
     $router->get('/', [HomeController::class, 'index']);
+    $router->get('/robots.txt', [SeoController::class, 'robots']);
+    $router->get('/sitemap.xml', [SeoController::class, 'sitemap']);
+    $router->post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
+    $router->get('/newsletter/confirm', [NewsletterController::class, 'confirm']);
+    $router->get('/newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe']);
     $router->get('/donnees-personnelles', [LegalController::class, 'privacy']);
     $router->get('/cookies', [LegalController::class, 'cookies']);
     $router->get('/mentions-legales', [LegalController::class, 'legalNotice']);

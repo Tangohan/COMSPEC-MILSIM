@@ -25,13 +25,28 @@ $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' :
 $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
 $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
 $canonicalUrl = $host !== '' ? $scheme . '://' . $host . $requestUri : '';
+$canonicalUrl = preg_replace('/([?&])(utm_[^&]+|fbclid|gclid)=[^&]*/i', '$1', (string) $canonicalUrl) ?: $canonicalUrl;
+$canonicalUrl = rtrim((string) preg_replace('/[?&]+$/', '', (string) $canonicalUrl), '?');
 
 ?>
     <meta name="description" content="<?= htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+    <meta name="author" content="Athena Compsec">
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Athena Compsec">
     <meta property="og:title" content="<?= htmlspecialchars($ogTitle, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:description" content="<?= htmlspecialchars($ogDesc, ENT_QUOTES, 'UTF-8') ?>">
 <?php if ($canonicalUrl !== ''): ?>
+    <link rel="canonical" href="<?= htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8') ?>">
 <?php endif; ?>
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= htmlspecialchars($ogTitle, ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="twitter:description" content="<?= htmlspecialchars($ogDesc, ENT_QUOTES, 'UTF-8') ?>">
+    <script type="application/ld+json"><?= json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'WebSite',
+        'name' => 'Athena Compsec',
+        'url' => $canonicalUrl !== '' ? $canonicalUrl : url('/'),
+        'inLanguage' => 'fr-FR',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>

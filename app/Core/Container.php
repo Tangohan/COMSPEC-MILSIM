@@ -162,6 +162,7 @@ class Container
             \App\Repositories\UserProfileRepository::class => new \App\Repositories\UserProfileRepository(),
             \App\Repositories\PasswordResetRepository::class => new \App\Repositories\PasswordResetRepository(),
             \App\Repositories\EmailDeliveryRepository::class => new \App\Repositories\EmailDeliveryRepository(),
+            \App\Repositories\NewsletterSubscriberRepository::class => new \App\Repositories\NewsletterSubscriberRepository(),
             \App\Repositories\EmailTokenRepository::class => new \App\Repositories\EmailTokenRepository(),
             \App\Repositories\LoginAttemptRepository::class => new \App\Repositories\LoginAttemptRepository(),
             \App\Repositories\UserLoginDeviceRepository::class => new \App\Repositories\UserLoginDeviceRepository(),
