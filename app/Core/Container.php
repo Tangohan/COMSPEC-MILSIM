@@ -1057,6 +1057,9 @@ class Container
             \App\Controllers\Admin\System\SystemAnalyticsController::class => new \App\Controllers\Admin\System\SystemAnalyticsController(
                 self::get(\App\Repositories\TenantAnalyticsRepository::class),
             ),
+            \App\Controllers\Admin\System\SystemNewsletterAdminController::class => new \App\Controllers\Admin\System\SystemNewsletterAdminController(
+                self::get(\App\Repositories\NewsletterSubscriberRepository::class),
+            ),
             \App\Controllers\Admin\Organization\TenantAlertsController::class => new \App\Controllers\Admin\Organization\TenantAlertsController(
                 self::get(\App\Repositories\TenantAlertRepository::class),
             ),
