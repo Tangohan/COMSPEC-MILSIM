@@ -13,7 +13,7 @@ final class NewsletterSubscriberRepository
 
     public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = $pdo ?: Database::connection();
+        $this->pdo = $pdo ?: Database::getPdo();
     }
 
     public function schemaReady(): bool
