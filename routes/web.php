@@ -34,6 +34,7 @@ use App\Controllers\Api\ForumModerationReportInsightApiController;
 use App\Controllers\Api\ForumUploadController;
 use App\Controllers\Api\ForumRestController;
 use App\Controllers\Api\CommunityReportController;
+use App\Controllers\Api\DossierOperateurAccreditationApiController;
 use App\Controllers\Api\OrbatApiController;
 use App\Controllers\Api\AtakIntelController;
 use App\Controllers\Api\AtakApiController;
@@ -69,6 +70,7 @@ use App\Controllers\Courrier\CourrierNotificationController;
 use App\Controllers\Admin\System\SystemDashboardController;
 use App\Controllers\Admin\System\SystemTenantsController;
 use App\Controllers\Admin\System\SystemAnalyticsController;
+use App\Controllers\Admin\System\SystemNewsletterAdminController;
 use App\Controllers\Admin\System\SystemOpsCenterController;
 use App\Controllers\Admin\System\SystemRoleController;
 use App\Controllers\Admin\System\SystemSettingsController;
@@ -154,6 +156,8 @@ use App\Controllers\Admin\Organization\ComplianceBundleExportController;
 use App\Controllers\Web\VerifyEmailController;
 use App\Controllers\Web\SecurityDeviceController;
 use App\Controllers\Web\OperationalBoardController;
+use App\Controllers\Web\NewsletterController;
+use App\Controllers\Web\SeoController;
 
 return function (Router $router) {
     $mwForum = [AuthMiddleware::class, ForumSanctionMiddleware::class];
@@ -165,6 +169,11 @@ return function (Router $router) {
     $mwCourrier = [AuthMiddleware::class, CourrierModuleSanctionMiddleware::class];
 
     $router->get('/', [HomeController::class, 'index']);
+    $router->get('/robots.txt', [SeoController::class, 'robots']);
+    $router->get('/sitemap.xml', [SeoController::class, 'sitemap']);
+    $router->post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
+    $router->get('/newsletter/confirm', [NewsletterController::class, 'confirm']);
+    $router->get('/newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe']);
     $router->get('/donnees-personnelles', [LegalController::class, 'privacy']);
     $router->get('/cookies', [LegalController::class, 'cookies']);
     $router->get('/mentions-legales', [LegalController::class, 'legalNotice']);
@@ -204,6 +213,9 @@ return function (Router $router) {
     $router->post('/invitations/accept', [InvitationAcceptController::class, 'accept']);
     $router->get('/login', [AuthController::class, 'showLogin'], [GuestMiddleware::class]);
     $router->post('/login', [AuthController::class, 'login'], [GuestMiddleware::class]);
+    $router->get('/login/otp', [AuthController::class, 'showLoginOtp'], [GuestMiddleware::class]);
+    $router->post('/login/otp', [AuthController::class, 'verifyLoginOtp'], [GuestMiddleware::class]);
+    $router->post('/login/otp/resend', [AuthController::class, 'resendLoginOtp'], [GuestMiddleware::class]);
     $router->get('/login/select-community', [AuthController::class, 'showSelectCommunity'], [GuestMiddleware::class]);
     $router->post('/login/select-community', [AuthController::class, 'selectCommunity'], [GuestMiddleware::class]);
     $router->post('/logout', [AuthController::class, 'logout']);
@@ -251,6 +263,10 @@ return function (Router $router) {
     $router->get('/documentation/references', [DocumentationController::class, 'references'], [AuthMiddleware::class]);
     $router->get('/documentation/fichier/{key}', [DocumentationController::class, 'file'], [AuthMiddleware::class]);
     $router->get('/dossier-operateur/accreditation', [DossierOperateurController::class, 'accreditation'], [AuthMiddleware::class]);
+    $router->get('/api/dossier-operateur/accreditation-management', [DossierOperateurAccreditationApiController::class, 'state'], [AuthMiddleware::class]);
+    $router->post('/api/dossier-operateur/accreditation-management/note', [DossierOperateurAccreditationApiController::class, 'addNote'], [AuthMiddleware::class]);
+    $router->post('/api/dossier-operateur/accreditation-management/review', [DossierOperateurAccreditationApiController::class, 'addReview'], [AuthMiddleware::class]);
+    $router->post('/api/dossier-operateur/accreditation-management/policy', [DossierOperateurAccreditationApiController::class, 'policy'], [AuthMiddleware::class]);
     $router->get('/api/portal/search', [PortalSearchController::class, 'apiSearch'], [AuthMiddleware::class]);
     $router->get('/hub', [HubController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/centre-actions', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);
@@ -318,6 +334,7 @@ return function (Router $router) {
     $router->get('/documents/gestion/{id}/modifier', [AdminDocumentsController::class, 'edit'], $mwDocuments);
     $router->post('/documents/gestion/{id}/modifier', [AdminDocumentsController::class, 'update'], $mwDocuments);
     $router->post('/documents/gestion/{id}/nouvelle-version', [AdminDocumentsController::class, 'newVersion'], $mwDocuments);
+    $router->post('/documents/gestion/{id}/cycle', [AdminDocumentsController::class, 'lifecycleAction'], $mwDocuments);
     $router->post('/documents/gestion/{id}/archiver', [AdminDocumentsController::class, 'archive'], $mwDocuments);
     $router->get('/documents/gestion/{id}/historique', [AdminDocumentsController::class, 'history'], $mwDocuments);
     $router->get('/documents/gestion/{id}/acces', [AdminDocumentsController::class, 'access'], $mwDocuments);
@@ -414,6 +431,7 @@ return function (Router $router) {
     $router->post('/admin/maintenance/{id}/update', [SystemMaintenanceController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance/{id}/delete', [SystemMaintenanceController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance/{id}/toggle', [SystemMaintenanceController::class, 'toggle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/maintenance/{id}/notify', [SystemMaintenanceController::class, 'notifyMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     $router->get('/api/admin/user-search', [SystemUserLookupApiController::class, 'search'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/site-roles', [SystemSiteRoleAssignmentController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -421,6 +439,7 @@ return function (Router $router) {
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin', [SystemDashboardController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     $router->get('/admin/analytics', [SystemAnalyticsController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
+    $router->get('/admin/newsletter', [SystemNewsletterAdminController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/ops-center', [SystemOpsCenterController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     // Back-office communauté (tenant) — préfixe /back-office
     $router->get('/back-office', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -550,6 +569,7 @@ return function (Router $router) {
     $router->post('/back-office/teams/{id}/delete', [TeamAdminController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/configuration', [AdminConfigurationController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/member-role-display', [AdminConfigurationController::class, 'saveMemberRoleDisplay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/configuration/roleplay-followup', [AdminConfigurationController::class, 'saveRoleplayFollowupConfig'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/debug-recruit-sync', [AdminConfigurationController::class, 'debugRecruitSync'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/alerts/create', [TenantAlertsController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/alerts', [TenantAlertsController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

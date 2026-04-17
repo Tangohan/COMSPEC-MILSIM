@@ -162,6 +162,7 @@ class Container
             \App\Repositories\UserProfileRepository::class => new \App\Repositories\UserProfileRepository(),
             \App\Repositories\PasswordResetRepository::class => new \App\Repositories\PasswordResetRepository(),
             \App\Repositories\EmailDeliveryRepository::class => new \App\Repositories\EmailDeliveryRepository(),
+            \App\Repositories\NewsletterSubscriberRepository::class => new \App\Repositories\NewsletterSubscriberRepository(),
             \App\Repositories\EmailTokenRepository::class => new \App\Repositories\EmailTokenRepository(),
             \App\Repositories\LoginAttemptRepository::class => new \App\Repositories\LoginAttemptRepository(),
             \App\Repositories\UserLoginDeviceRepository::class => new \App\Repositories\UserLoginDeviceRepository(),
@@ -191,6 +192,7 @@ class Container
                 self::get(RbacService::class),
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
+                self::get(\App\Repositories\EmailTokenRepository::class),
                 self::get(\App\Repositories\PasswordResetRepository::class),
                 self::get(\App\Services\Audit\AuditService::class),
                 self::get(\App\Services\EmailService::class),
@@ -654,7 +656,14 @@ class Container
                 self::get(\App\Repositories\UserProfileRepository::class),
                 self::get(\App\Repositories\PersonnelQualificationRepository::class),
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
-                self::get(\App\Services\Personnel\PersonnelCompletenessService::class)
+                self::get(\App\Services\Personnel\PersonnelCompletenessService::class),
+                self::get(\App\Repositories\Courrier\UserSignatureRepository::class),
+                self::get(\App\Repositories\PersonnelAdminDataRepository::class)
+            ),
+            \App\Controllers\Api\DossierOperateurAccreditationApiController::class => new \App\Controllers\Api\DossierOperateurAccreditationApiController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\PersonnelAdminDataRepository::class),
+                self::get(\App\Repositories\Courrier\UserSignatureRepository::class)
             ),
             \App\Repositories\ModpackRepository::class => new \App\Repositories\ModpackRepository(),
             \App\Controllers\Web\ModpackController::class => new \App\Controllers\Web\ModpackController(
@@ -1055,6 +1064,9 @@ class Container
             ),
             \App\Controllers\Admin\System\SystemAnalyticsController::class => new \App\Controllers\Admin\System\SystemAnalyticsController(
                 self::get(\App\Repositories\TenantAnalyticsRepository::class),
+            ),
+            \App\Controllers\Admin\System\SystemNewsletterAdminController::class => new \App\Controllers\Admin\System\SystemNewsletterAdminController(
+                self::get(\App\Repositories\NewsletterSubscriberRepository::class),
             ),
             \App\Controllers\Admin\Organization\TenantAlertsController::class => new \App\Controllers\Admin\Organization\TenantAlertsController(
                 self::get(\App\Repositories\TenantAlertRepository::class),

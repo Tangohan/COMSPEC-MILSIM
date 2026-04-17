@@ -74,10 +74,14 @@ final class MaintenanceRepository
                 'INSERT INTO app_maintenance (
                     scope, is_enabled, title, message, maintenance_code,
                     starts_at, ends_at, allow_admin_bypass, allowed_ips, allowed_roles,
+                    allowed_user_ids, message_preset, ui_variant, ui_animation,
+                    notify_members_by_email, notify_email_subject, notify_email_message,
                     redirect_url, http_status, priority, created_by, updated_by
                 ) VALUES (
                     :scope, :is_enabled, :title, :message, :maintenance_code,
                     :starts_at, :ends_at, :allow_admin_bypass, :allowed_ips, :allowed_roles,
+                    :allowed_user_ids, :message_preset, :ui_variant, :ui_animation,
+                    :notify_members_by_email, :notify_email_subject, :notify_email_message,
                     :redirect_url, :http_status, :priority, :created_by, :updated_by
                 )'
             );
@@ -89,9 +93,16 @@ final class MaintenanceRepository
                 'maintenance_code' => $data['maintenance_code'] ?? null,
                 'starts_at' => $data['starts_at'] ?? null,
                 'ends_at' => $data['ends_at'] ?? null,
-                'allow_admin_bypass' => (int) ($data['allow_admin_bypass'] ?? 1),
+                'allow_admin_bypass' => (int) ($data['allow_admin_bypass'] ?? 0),
                 'allowed_ips' => $data['allowed_ips'] ?? null,
                 'allowed_roles' => $data['allowed_roles'] ?? null,
+                'allowed_user_ids' => $data['allowed_user_ids'] ?? null,
+                'message_preset' => $data['message_preset'] ?? null,
+                'ui_variant' => $data['ui_variant'] ?? 'military',
+                'ui_animation' => (int) ($data['ui_animation'] ?? 1),
+                'notify_members_by_email' => (int) ($data['notify_members_by_email'] ?? 0),
+                'notify_email_subject' => $data['notify_email_subject'] ?? null,
+                'notify_email_message' => $data['notify_email_message'] ?? null,
                 'redirect_url' => $data['redirect_url'] ?? null,
                 'http_status' => (int) ($data['http_status'] ?? 503),
                 'priority' => (int) ($data['priority'] ?? 100),
@@ -136,6 +147,13 @@ final class MaintenanceRepository
                     allow_admin_bypass = :allow_admin_bypass,
                     allowed_ips = :allowed_ips,
                     allowed_roles = :allowed_roles,
+                    allowed_user_ids = :allowed_user_ids,
+                    message_preset = :message_preset,
+                    ui_variant = :ui_variant,
+                    ui_animation = :ui_animation,
+                    notify_members_by_email = :notify_members_by_email,
+                    notify_email_subject = :notify_email_subject,
+                    notify_email_message = :notify_email_message,
                     redirect_url = :redirect_url,
                     http_status = :http_status,
                     priority = :priority,
@@ -152,9 +170,16 @@ final class MaintenanceRepository
                 'maintenance_code' => $data['maintenance_code'] ?? null,
                 'starts_at' => $data['starts_at'] ?? null,
                 'ends_at' => $data['ends_at'] ?? null,
-                'allow_admin_bypass' => (int) ($data['allow_admin_bypass'] ?? 1),
+                'allow_admin_bypass' => (int) ($data['allow_admin_bypass'] ?? 0),
                 'allowed_ips' => $data['allowed_ips'] ?? null,
                 'allowed_roles' => $data['allowed_roles'] ?? null,
+                'allowed_user_ids' => $data['allowed_user_ids'] ?? null,
+                'message_preset' => $data['message_preset'] ?? null,
+                'ui_variant' => $data['ui_variant'] ?? 'military',
+                'ui_animation' => (int) ($data['ui_animation'] ?? 1),
+                'notify_members_by_email' => (int) ($data['notify_members_by_email'] ?? 0),
+                'notify_email_subject' => $data['notify_email_subject'] ?? null,
+                'notify_email_message' => $data['notify_email_message'] ?? null,
                 'redirect_url' => $data['redirect_url'] ?? null,
                 'http_status' => (int) ($data['http_status'] ?? 503),
                 'priority' => (int) ($data['priority'] ?? 100),
@@ -219,6 +244,25 @@ final class MaintenanceRepository
             $this->pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * @param array{recipients_estimate: int, sent: int, failed: int} $summary
+     */
+    public function auditNotifyEmailBroadcast(int $maintenanceId, array $summary, ?int $actorUserId, ?string $actorIp): void
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO app_maintenance_audit
+            (maintenance_id, action_type, old_values, new_values, actor_user_id, actor_ip)
+            VALUES (?, ?, NULL, ?, ?, ?)'
+        );
+        $stmt->execute([
+            $maintenanceId,
+            'notify_email',
+            json_encode($summary, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            $actorUserId,
+            $actorIp,
+        ]);
     }
 
     /**

@@ -239,6 +239,56 @@ $card = static function (string $href, string $title, string $desc, string $acce
         </section>
         <?php endif; ?>
 
+        <?php if ($gate->allows('admin.organization') || $gate->allows('admin.access')): ?>
+        <?php
+        $rpCfg = is_array($community['roleplay_followup'] ?? null) ? $community['roleplay_followup'] : [];
+        $rpStages = is_array($rpCfg['stages'] ?? null) ? $rpCfg['stages'] : ['Pré-qualification', 'Tutorat', 'Validation', 'Intégration active'];
+        $rpTracks = is_array($rpCfg['recruitment_tracks'] ?? null) ? $rpCfg['recruitment_tracks'] : ['Infanterie', 'Support', 'Commandement'];
+        $rpEligibility = is_array($rpCfg['eligibility'] ?? null) ? $rpCfg['eligibility'] : [];
+        ?>
+        <section class="rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
+            <h2 class="text-sm font-bold text-slate-900">Back-office roleplay — suivi individuel</h2>
+            <p class="mt-1 text-xs text-slate-600 max-w-3xl">Active une section optionnelle dans les dossiers personnel : tuteur, timeline opérationnelle (entretien, visite médicale, rotation), avancement et filière de recrutement. Tous les paramètres sont isolés par tenant.</p>
+            <form method="post" action="<?= htmlspecialchars(url('back-office/configuration/roleplay-followup'), ENT_QUOTES, 'UTF-8') ?>" class="mt-5 space-y-4 max-w-3xl">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                <label class="flex items-start gap-3 text-sm text-slate-800 cursor-pointer">
+                    <input type="checkbox" name="rp_followup_enabled" value="1" class="mt-1 rounded border-slate-300" <?= !empty($rpCfg['enabled']) ? 'checked' : '' ?>>
+                    <span>Activer la section roleplay back-office (affichée sur les fiches et formulaires dossier).</span>
+                </label>
+                <label class="flex items-start gap-3 text-sm text-slate-800 cursor-pointer">
+                    <input type="checkbox" name="rp_followup_optional" value="1" class="mt-1 rounded border-slate-300" <?= !empty($rpCfg['optional']) ? 'checked' : '' ?>>
+                    <span>Section facultative (ne bloque pas la complétude globale si les champs roleplay ne sont pas renseignés).</span>
+                </label>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label for="rp_followup_stages" class="block text-xs font-semibold text-slate-700 mb-1">Étapes d’avancement (une ligne = une étape)</label>
+                        <textarea id="rp_followup_stages" name="rp_followup_stages" rows="5" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"><?= htmlspecialchars(implode("\n", array_map(static fn ($v) => trim((string) $v), $rpStages))) ?></textarea>
+                    </div>
+                    <div>
+                        <label for="rp_followup_tracks" class="block text-xs font-semibold text-slate-700 mb-1">Filières recrutement (une ligne = une filière)</label>
+                        <textarea id="rp_followup_tracks" name="rp_followup_tracks" rows="5" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"><?= htmlspecialchars(implode("\n", array_map(static fn ($v) => trim((string) $v), $rpTracks))) ?></textarea>
+                    </div>
+                </div>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label for="rp_eligibility_min_completeness" class="block text-xs font-semibold text-slate-700 mb-1">Éligibilité — complétude minimum (%)</label>
+                        <input type="number" min="0" max="100" id="rp_eligibility_min_completeness" name="rp_eligibility_min_completeness" value="<?= (int) ($rpEligibility['min_completeness'] ?? 50) ?>" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label for="rp_eligibility_min_readiness" class="block text-xs font-semibold text-slate-700 mb-1">Éligibilité — disponibilité minimum (%)</label>
+                        <input type="number" min="0" max="100" id="rp_eligibility_min_readiness" name="rp_eligibility_min_readiness" value="<?= (int) ($rpEligibility['min_readiness'] ?? 30) ?>" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-4 text-sm text-slate-800">
+                    <label class="inline-flex items-center gap-2"><input type="checkbox" name="rp_eligibility_require_unit" value="1" class="rounded border-slate-300" <?= !empty($rpEligibility['require_unit']) ? 'checked' : '' ?>> Unité obligatoire</label>
+                    <label class="inline-flex items-center gap-2"><input type="checkbox" name="rp_eligibility_require_callsign" value="1" class="rounded border-slate-300" <?= !empty($rpEligibility['require_callsign']) ? 'checked' : '' ?>> Callsign obligatoire</label>
+                    <label class="inline-flex items-center gap-2"><input type="checkbox" name="rp_eligibility_require_tutor" value="1" class="rounded border-slate-300" <?= !empty($rpEligibility['require_tutor']) ? 'checked' : '' ?>> Tuteur obligatoire</label>
+                </div>
+                <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800">Enregistrer la configuration roleplay</button>
+            </form>
+        </section>
+        <?php endif; ?>
+
         <section>
             <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Contenu, événements &amp; mesure</h2>
             <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">

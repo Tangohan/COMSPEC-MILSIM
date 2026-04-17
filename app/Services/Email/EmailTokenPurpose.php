@@ -10,4 +10,6 @@ final class EmailTokenPurpose
     public const DEVICE_DENY = 'device_deny';
     /** Code à usage unique pour valider le consentement coopération inter-unités. */
     public const INTERTEAM_CONSENT_OTP = 'interteam_consent_otp';
+    /** Code OTP de connexion pour les comptes sécurité. */
+    public const LOGIN_SECURITY_OTP = 'login_security_otp';
 }

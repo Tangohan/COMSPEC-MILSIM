@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    email VARCHAR(255) NOT NULL,
+    status ENUM('pending','subscribed','unsubscribed') NOT NULL DEFAULT 'pending',
+    confirm_token_hash CHAR(64) DEFAULT NULL,
+    confirm_expires_at DATETIME DEFAULT NULL,
+    unsubscribe_token_hash CHAR(64) DEFAULT NULL,
+    source VARCHAR(64) NOT NULL DEFAULT 'website_home',
+    locale VARCHAR(10) NOT NULL DEFAULT 'fr',
+    subscribed_at DATETIME DEFAULT NULL,
+    unsubscribed_at DATETIME DEFAULT NULL,
+    last_event_at DATETIME DEFAULT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
+    user_agent VARCHAR(500) DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_newsletter_email (email),
+    UNIQUE KEY uk_newsletter_unsub_token (unsubscribe_token_hash),
+    KEY idx_newsletter_status (status),
+    KEY idx_newsletter_confirm (confirm_token_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

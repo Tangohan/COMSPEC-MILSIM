@@ -37,6 +37,7 @@ $paSubLink = static function (string $path, string $label, bool $active): void {
 $navDash = $p === 'admin';
 $navTenants = $p === 'admin/tenants';
 $navAnalytics = $p === 'admin/analytics';
+$navNewsletter = $p === 'admin/newsletter';
 $navOps = $p === 'admin/ops-center';
 $navAudit = $p === 'admin/audit' || str_starts_with($p, 'admin/audit/');
 $navMaint = $p === 'admin/maintenance' || str_starts_with($p, 'admin/maintenance/');
@@ -68,6 +69,7 @@ $alertsOpen = $navAlerts;
         <?php $paLink('admin', 'Tableau de bord', $navDash); ?>
         <?php if ($isPlatformAdmin): ?>
             <?php $paLink('admin/tenants', 'Annuaire des communautés', $navTenants); ?>
+            <?php $paLink('admin/newsletter', 'Lettre d’information du site', $navNewsletter); ?>
         <?php endif; ?>
         <?php $paLink('admin/analytics', 'Indicateurs transverses', $navAnalytics); ?>
         <?php $paLink('admin/ops-center', 'Synthèse opérationnelle', $navOps); ?>

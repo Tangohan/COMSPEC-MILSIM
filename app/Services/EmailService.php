@@ -264,6 +264,31 @@ final class EmailService
         );
     }
 
+    public function sendLoginSecurityOtp(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $code,
+        int $ttlMinutes,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::LOGIN_SECURITY_OTP,
+            'login_security_otp',
+            $to,
+            'Code OTP de connexion — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'code' => $code,
+                'ttlMinutes' => $ttlMinutes,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'login_security_otp']
+        );
+    }
+
     public function sendCommunityInvitation(
         string $to,
         string $tenantName,

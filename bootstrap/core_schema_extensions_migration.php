@@ -43,6 +43,63 @@ function run_core_schema_extensions_migration(PDO $pdo, string $root, callable $
         }
     };
 
+    // --- Utilisateurs : identifiant Athena (9 caractères, unique) ---
+    if ($tableExists($pdo, 'users')) {
+        if (!$columnExists($pdo, 'users', 'athena_identifier')) {
+            $execTry(
+                $pdo,
+                "ALTER TABLE users ADD COLUMN athena_identifier CHAR(9) NULL AFTER profile_slug",
+                'users.athena_identifier'
+            );
+        }
+        try {
+            $idxStmt = $pdo->query("SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND INDEX_NAME = 'users_athena_identifier_unique' LIMIT 1");
+            $hasIdx = $idxStmt && (bool) $idxStmt->fetchColumn();
+            if (!$hasIdx && $columnExists($pdo, 'users', 'athena_identifier')) {
+                $execTry(
+                    $pdo,
+                    "ALTER TABLE users ADD UNIQUE KEY users_athena_identifier_unique (athena_identifier)",
+                    'users_athena_identifier_unique'
+                );
+            }
+        } catch (PDOException $e) {
+            echo '  [ATTENTION] users_athena_identifier_unique : ' . $e->getMessage() . "\n";
+            $flush();
+        }
+
+        if ($columnExists($pdo, 'users', 'athena_identifier')) {
+            $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            $max = strlen($alphabet) - 1;
+            $sel = $pdo->query("SELECT id FROM users WHERE athena_identifier IS NULL OR TRIM(athena_identifier) = ''");
+            $rows = $sel ? ($sel->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+            if ($rows !== []) {
+                $checkStmt = $pdo->prepare('SELECT 1 FROM users WHERE athena_identifier = ? AND id <> ? LIMIT 1');
+                $updStmt = $pdo->prepare('UPDATE users SET athena_identifier = ? WHERE id = ?');
+                foreach ($rows as $r) {
+                    $uid = (int) ($r['id'] ?? 0);
+                    if ($uid < 1) {
+                        continue;
+                    }
+                    $tries = 0;
+                    $candidate = '';
+                    do {
+                        $tries++;
+                        $raw = random_bytes(9);
+                        $candidate = '';
+                        for ($i = 0; $i < 9; $i++) {
+                            $candidate .= $alphabet[ord($raw[$i]) % ($max + 1)];
+                        }
+                        $checkStmt->execute([$candidate, $uid]);
+                        $exists = (bool) $checkStmt->fetchColumn();
+                    } while ($exists && $tries < 30);
+                    if ($candidate !== '') {
+                        $updStmt->execute([$candidate, $uid]);
+                    }
+                }
+            }
+        }
+    }
+
     // --- app_maintenance (20260404000001) ---
     $execTry($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS `app_maintenance` (
@@ -57,6 +114,13 @@ CREATE TABLE IF NOT EXISTS `app_maintenance` (
     `allow_admin_bypass` TINYINT(1) NOT NULL DEFAULT 1,
     `allowed_ips` TEXT NULL,
     `allowed_roles` TEXT NULL,
+    `allowed_user_ids` TEXT NULL,
+    `message_preset` VARCHAR(80) NULL,
+    `ui_variant` VARCHAR(40) NOT NULL DEFAULT 'military',
+    `ui_animation` TINYINT(1) NOT NULL DEFAULT 1,
+    `notify_members_by_email` TINYINT(1) NOT NULL DEFAULT 0,
+    `notify_email_subject` VARCHAR(255) NULL,
+    `notify_email_message` TEXT NULL,
     `redirect_url` VARCHAR(255) NULL,
     `http_status` SMALLINT NOT NULL DEFAULT 503,
     `priority` INT NOT NULL DEFAULT 100,
@@ -72,11 +136,35 @@ CREATE TABLE IF NOT EXISTS `app_maintenance` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'app_maintenance');
 
+    if ($tableExists($pdo, 'app_maintenance')) {
+        if (!$columnExists($pdo, 'app_maintenance', 'allowed_user_ids')) {
+            $execTry($pdo, 'ALTER TABLE `app_maintenance` ADD COLUMN `allowed_user_ids` TEXT NULL AFTER `allowed_roles`', 'app_maintenance.allowed_user_ids');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'message_preset')) {
+            $execTry($pdo, "ALTER TABLE `app_maintenance` ADD COLUMN `message_preset` VARCHAR(80) NULL AFTER `allowed_user_ids`", 'app_maintenance.message_preset');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'ui_variant')) {
+            $execTry($pdo, "ALTER TABLE `app_maintenance` ADD COLUMN `ui_variant` VARCHAR(40) NOT NULL DEFAULT 'military' AFTER `message_preset`", 'app_maintenance.ui_variant');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'ui_animation')) {
+            $execTry($pdo, 'ALTER TABLE `app_maintenance` ADD COLUMN `ui_animation` TINYINT(1) NOT NULL DEFAULT 1 AFTER `ui_variant`', 'app_maintenance.ui_animation');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'notify_members_by_email')) {
+            $execTry($pdo, 'ALTER TABLE `app_maintenance` ADD COLUMN `notify_members_by_email` TINYINT(1) NOT NULL DEFAULT 0 AFTER `ui_animation`', 'app_maintenance.notify_members_by_email');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'notify_email_subject')) {
+            $execTry($pdo, 'ALTER TABLE `app_maintenance` ADD COLUMN `notify_email_subject` VARCHAR(255) NULL AFTER `notify_members_by_email`', 'app_maintenance.notify_email_subject');
+        }
+        if (!$columnExists($pdo, 'app_maintenance', 'notify_email_message')) {
+            $execTry($pdo, 'ALTER TABLE `app_maintenance` ADD COLUMN `notify_email_message` TEXT NULL AFTER `notify_email_subject`', 'app_maintenance.notify_email_message');
+        }
+    }
+
     $execTry($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS `app_maintenance_audit` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `maintenance_id` BIGINT UNSIGNED NOT NULL,
-    `action_type` ENUM('create','update','enable','disable','delete') NOT NULL,
+    `action_type` ENUM('create','update','enable','disable','delete','notify_email') NOT NULL,
     `old_values` JSON NULL,
     `new_values` JSON NULL,
     `actor_user_id` BIGINT UNSIGNED NULL,
@@ -87,6 +175,14 @@ CREATE TABLE IF NOT EXISTS `app_maintenance_audit` (
     KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'app_maintenance_audit');
+
+    if ($tableExists($pdo, 'app_maintenance_audit')) {
+        $execTry(
+            $pdo,
+            "ALTER TABLE `app_maintenance_audit` MODIFY COLUMN `action_type` ENUM('create','update','enable','disable','delete','notify_email') NOT NULL",
+            'app_maintenance_audit.action_type_notify_email'
+        );
+    }
 
     // --- Tableau opérationnel : tables de base (20260412000001) ---
     $execTry($pdo, <<<'SQL'

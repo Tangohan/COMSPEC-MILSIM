@@ -81,6 +81,7 @@ $requestPath = \App\Core\Request::normalizePathFromServer();
 $maintenanceSafelist = [
     '/api/stripe/webhook',
     '/api/health',
+    '/maintenance-toggle.php',
 ];
 $maintenancePrefixSafelist = [
     '/calendrier/abonnement/',
@@ -95,6 +96,32 @@ if (!$maintenanceSkipped) {
     }
 }
 if (!$maintenanceSkipped) {
+    $legacyMaintenanceFile = $root . '/storage/maintenance.json';
+    if (is_file($legacyMaintenanceFile)) {
+        $legacyData = json_decode((string) file_get_contents($legacyMaintenanceFile), true);
+        if (is_array($legacyData) && (bool) ($legacyData['enabled'] ?? false)) {
+            $clientIp = \App\Support\MaintenanceGuard::resolveClientIp();
+            $allowedIps = is_array($legacyData['allowed_ips'] ?? null) ? $legacyData['allowed_ips'] : [];
+            $isAllowedIp = in_array($clientIp, $allowedIps, true);
+
+            if (!$isAllowedIp) {
+                http_response_code(503);
+                header('Retry-After: 300');
+                $message = (string) ($legacyData['message'] ?? 'Maintenance en cours. Merci de réessayer dans quelques minutes.');
+                $view503 = $root . '/views/errors/503.php';
+                if (is_file($view503)) {
+                    require $view503;
+                } else {
+                    header('Content-Type: text/html; charset=utf-8');
+                    echo '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Maintenance</title></head><body><h1>Maintenance</h1><p>'
+                        . nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8'))
+                        . '</p></body></html>';
+                }
+                exit;
+            }
+        }
+    }
+
     try {
         $pdo = \App\Core\Database::getPdo();
         $maintenanceRepo = new \App\Repositories\MaintenanceRepository($pdo);
@@ -109,7 +136,10 @@ if (!$maintenanceSkipped) {
                 if ($u) {
                     $rbac->setPermissionsForGateFromUserRow($u, $userRepo);
                     $slug = $userRepo->getRoleSlugForUser($uid);
-                    $userContext = ['role_slug' => $slug];
+                    $userContext = [
+                        'user_id' => $uid,
+                        'role_slug' => $slug,
+                    ];
                 }
             }
             $module = detect_current_module($requestPath);

@@ -1,0 +1,77 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit;
+
+use App\Repositories\ForumReportRepository;
+use App\Repositories\TrainingCourseRepository;
+use App\Repositories\UserRepository;
+use App\Services\Community\CommunityReportService;
+use PHPUnit\Framework\TestCase;
+
+final class CommunityReportServiceTest extends TestCase
+{
+    public function testPortalHelpAcceptsSelectedTargetAndMember(): void
+    {
+        $reports = $this->createMock(ForumReportRepository::class);
+        $courses = $this->createMock(TrainingCourseRepository::class);
+        $users = $this->createMock(UserRepository::class);
+
+        $users->expects(self::once())
+            ->method('findById')
+            ->with(77, 10)
+            ->willReturn(['id' => 77, 'display_name' => 'Orion']);
+
+        $reports->expects(self::once())
+            ->method('create')
+            ->with(
+                10,
+                22,
+                null,
+                null,
+                self::stringContains('Membre ciblé : Orion (n° 77)'),
+                self::anything(),
+                self::anything(),
+                'https://milsim.test/personnel/orion',
+                'portal_help'
+            )
+            ->willReturn(501);
+
+        $service = new CommunityReportService($reports, $courses, $users);
+        $result = $service->submit(10, 22, 'portal_help', [
+            'help_subject' => 'profile',
+            'reference_note' => 'caserne Alpha',
+            'selected_member_id' => 77,
+            'selected_target_url' => 'https://milsim.test/personnel/orion',
+            'selected_target_kind' => 'member_profile',
+            'reason' => 'other',
+            'details' => 'Le profil cible contient une erreur importante.',
+            'page_url' => 'https://milsim.test/hub',
+        ], 'milsim.test');
+
+        self::assertTrue($result['ok']);
+        self::assertSame(501, $result['report_id']);
+    }
+
+    public function testPortalHelpRejectsExternalSelectedUrl(): void
+    {
+        $reports = $this->createMock(ForumReportRepository::class);
+        $courses = $this->createMock(TrainingCourseRepository::class);
+        $users = $this->createMock(UserRepository::class);
+
+        $reports->expects(self::never())->method('create');
+
+        $service = new CommunityReportService($reports, $courses, $users);
+        $result = $service->submit(10, 22, 'portal_help', [
+            'help_subject' => 'page_content',
+            'selected_target_url' => 'https://external.example/phishing',
+            'reason' => 'suspicious_link',
+            'details' => 'Lien suspect publié sur le portail.',
+            'page_url' => 'https://milsim.test/forum',
+        ], 'milsim.test');
+
+        self::assertFalse($result['ok']);
+        self::assertSame('Le lien ciblé doit appartenir à ce site.', $result['error']);
+    }
+}

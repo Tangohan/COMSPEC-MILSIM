@@ -363,6 +363,7 @@ return [
                     'links' => [
                         ['label' => 'Tableau de bord plateforme', 'path' => 'admin', 'permission' => 'admin.system'],
                         ['label' => 'Synthèse opérationnelle', 'path' => 'admin/ops-center', 'permission' => 'admin.system', 'description' => 'Signaux critiques et vue transversale'],
+                        ['label' => 'Lettre d’information du site', 'path' => 'admin/newsletter', 'permission' => 'admin.system', 'description' => 'Inscriptions publiques et états des contacts'],
                         ['label' => 'Rôles système', 'path' => 'admin/roles', 'permission' => 'admin.system'],
                         ['label' => 'Rôles site (affectations)', 'path' => 'admin/site-roles', 'permission' => 'admin.system'],
                         ['label' => 'Paramètres système', 'path' => 'admin/settings', 'permission' => 'admin.system'],

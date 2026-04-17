@@ -18,6 +18,7 @@ class UserRepository
     private static ?bool $hasProfileSlugColumn = null;
 
     private static ?bool $hasServiceAccountColumn = null;
+    private static ?bool $hasAthenaIdentifierColumn = null;
 
     private static ?bool $hasUserUnitsTable = null;
 
@@ -52,6 +53,40 @@ class UserRepository
         }
 
         return self::$hasServiceAccountColumn;
+    }
+
+    private function hasAthenaIdentifierColumn(): bool
+    {
+        if (self::$hasAthenaIdentifierColumn === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'athena_identifier' LIMIT 1");
+            self::$hasAthenaIdentifierColumn = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasAthenaIdentifierColumn;
+    }
+
+    private function generateAthenaIdentifier(): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $max = strlen($alphabet) - 1;
+        $attempts = 0;
+
+        do {
+            $attempts++;
+            $buf = random_bytes(9);
+            $candidate = '';
+            for ($i = 0; $i < 9; $i++) {
+                $candidate .= $alphabet[ord($buf[$i]) % ($max + 1)];
+            }
+            $st = $this->pdo->prepare('SELECT 1 FROM users WHERE athena_identifier = ? LIMIT 1');
+            $st->execute([$candidate]);
+            $exists = (bool) $st->fetchColumn();
+            if (!$exists) {
+                return $candidate;
+            }
+        } while ($attempts < 30);
+
+        throw new \RuntimeException('Impossible de générer un identifiant Athena unique.');
     }
 
     /**
@@ -566,6 +601,13 @@ class UserRepository
     {
         $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'preferred_grade_format' LIMIT 1");
         $hasGradeColumns = $stmt && $stmt->fetch();
+        $hasAthenaIdentifier = $this->hasAthenaIdentifierColumn();
+        $athenaIdentifier = $hasAthenaIdentifier
+            ? trim((string) ($data['athena_identifier'] ?? ''))
+            : '';
+        if ($hasAthenaIdentifier && $athenaIdentifier === '') {
+            $athenaIdentifier = $this->generateAthenaIdentifier();
+        }
 
         $profileSlug = null;
         if ($this->hasProfileSlugColumn()) {
@@ -583,16 +625,24 @@ class UserRepository
         if ($hasGradeColumns) {
             if ($this->hasProfileSlugColumn()) {
                 $stmt = $this->pdo->prepare(
-                    'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
+                    $hasAthenaIdentifier
+                        ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, athena_identifier, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                        : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
                 );
-                $stmt->execute([
+                $params = [
                     $tenantId,
                     $data['email'],
                     $data['password_hash'],
                     $data['display_name'] ?? null,
                     $data['callsign'] ?? null,
                     $profileSlug,
+                ];
+                if ($hasAthenaIdentifier) {
+                    $params[] = $athenaIdentifier;
+                }
+                $params = array_merge($params, [
                     $data['role_id'] ?? null,
                     $data['grade_id'] ?? null,
                     $data['status'] ?? 'pending',
@@ -600,17 +650,26 @@ class UserRepository
                     $data['preferred_grade_format'] ?? 'classic',
                     $data['professional_category_code'] ?? null,
                 ]);
+                $stmt->execute($params);
             } else {
                 $stmt = $this->pdo->prepare(
-                    'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
+                    $hasAthenaIdentifier
+                        ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, athena_identifier, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                        : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
                 );
-                $stmt->execute([
+                $params = [
                     $tenantId,
                     $data['email'],
                     $data['password_hash'],
                     $data['display_name'] ?? null,
                     $data['callsign'] ?? null,
+                ];
+                if ($hasAthenaIdentifier) {
+                    $params[] = $athenaIdentifier;
+                }
+                $params = array_merge($params, [
                     $data['role_id'] ?? null,
                     $data['grade_id'] ?? null,
                     $data['status'] ?? 'pending',
@@ -618,42 +677,84 @@ class UserRepository
                     $data['preferred_grade_format'] ?? 'classic',
                     $data['professional_category_code'] ?? null,
                 ]);
+                $stmt->execute($params);
             }
         } else {
             if ($this->hasProfileSlugColumn()) {
                 $stmt = $this->pdo->prepare(
-                    'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, role_id, grade_id, status, created_at, updated_at)
+                    $hasAthenaIdentifier
+                        ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, athena_identifier, role_id, grade_id, status, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                        : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, role_id, grade_id, status, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
                 );
-                $stmt->execute([
+                $params = [
                     $tenantId,
                     $data['email'],
                     $data['password_hash'],
                     $data['display_name'] ?? null,
                     $data['callsign'] ?? null,
                     $profileSlug,
+                ];
+                if ($hasAthenaIdentifier) {
+                    $params[] = $athenaIdentifier;
+                }
+                $params = array_merge($params, [
                     $data['role_id'] ?? null,
                     $data['grade_id'] ?? null,
                     $data['status'] ?? 'pending',
                 ]);
+                $stmt->execute($params);
             } else {
                 $stmt = $this->pdo->prepare(
-                    'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at)
+                    $hasAthenaIdentifier
+                        ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, athena_identifier, role_id, grade_id, status, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                        : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
                 );
-                $stmt->execute([
+                $params = [
                     $tenantId,
                     $data['email'],
                     $data['password_hash'],
                     $data['display_name'] ?? null,
                     $data['callsign'] ?? null,
+                ];
+                if ($hasAthenaIdentifier) {
+                    $params[] = $athenaIdentifier;
+                }
+                $params = array_merge($params, [
                     $data['role_id'] ?? null,
                     $data['grade_id'] ?? null,
                     $data['status'] ?? 'pending',
                 ]);
+                $stmt->execute($params);
             }
         }
         return (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listForPersonnelDirectory(int $tenantId, int $limit = 120): array
+    {
+        $limit = max(10, min(300, $limit));
+        $hasAthenaIdentifier = $this->hasAthenaIdentifierColumn();
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $athenaSelect = $hasAthenaIdentifier ? 'u.athena_identifier' : "'' AS athena_identifier";
+        $stmt = $this->pdo->prepare(
+            'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', u.avatar_url,
+                    p.character_name
+             FROM users u
+             LEFT JOIN personnel_profiles p ON p.user_id = u.id
+             WHERE u.tenant_id = ? AND ' . $pack['sql'] . '
+             ORDER BY u.display_name ASC
+             LIMIT ?'
+        );
+        $stmt->execute(array_merge([$tenantId], $pack['params'], [$limit]));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function updateLastLogin(int $userId): void
@@ -901,21 +1002,32 @@ class UserRepository
         if ($q === '') {
             return [];
         }
+        $hasAthenaIdentifier = $this->hasAthenaIdentifierColumn();
         $term = '%' . $q . '%';
         $pack = $this->technicalAccountExclusionPredicate('u');
+        $athenaSelect = $hasAthenaIdentifier ? 'u.athena_identifier' : "'' AS athena_identifier";
+        $athenaFilter = $hasAthenaIdentifier
+            ? "OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)"
+            : '';
         $stmt = $this->pdo->prepare(
-            'SELECT u.id, u.display_name, u.callsign, u.profile_slug FROM users u
+            'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', u.avatar_url FROM users u
              WHERE u.tenant_id = ?
              AND ' . $pack['sql'] . '
              AND (
                  u.display_name LIKE ?
                  OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
                  OR (u.profile_slug IS NOT NULL AND TRIM(u.profile_slug) <> \'\' AND u.profile_slug LIKE ?)
+                 ' . $athenaFilter . '
              )
              ORDER BY u.display_name ASC
              LIMIT ?'
         );
-        $stmt->execute(array_merge([$tenantId], $pack['params'], [$term, $term, $term, $limit]));
+        $params = array_merge([$tenantId], $pack['params'], [$term, $term, $term]);
+        if ($hasAthenaIdentifier) {
+            $params[] = $term;
+        }
+        $params[] = $limit;
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -1538,6 +1650,67 @@ class UserRepository
             }
 
             return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Nombre d’adresses e-mail distinctes (comptes actifs, hors comptes techniques), toutes communautés.
+     */
+    public function countDistinctActiveMemberEmailsPlatformWide(): int
+    {
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $sql = "SELECT COUNT(*) FROM (
+            SELECT LOWER(TRIM(u.email)) AS e
+            FROM users u
+            WHERE u.status = 'active'
+            AND u.email IS NOT NULL AND TRIM(u.email) <> ''
+            AND u.email LIKE '%@%'
+            AND {$pack['sql']}
+            GROUP BY LOWER(TRIM(u.email))
+        ) t";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($pack['params']);
+
+            return (int) $stmt->fetchColumn();
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
+     * Adresses e-mail distinctes (comptes actifs, hors comptes techniques), toutes communautés — pagination.
+     *
+     * @return list<string>
+     */
+    public function listDistinctActiveMemberEmailsPlatformWide(int $limit, int $offset): array
+    {
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $limit = max(1, min(500, $limit));
+        $offset = max(0, $offset);
+        $sql = "SELECT LOWER(TRIM(u.email)) AS email
+            FROM users u
+            WHERE u.status = 'active'
+            AND u.email IS NOT NULL AND TRIM(u.email) <> ''
+            AND u.email LIKE '%@%'
+            AND {$pack['sql']}
+            GROUP BY LOWER(TRIM(u.email))
+            ORDER BY email ASC
+            LIMIT {$limit} OFFSET {$offset}";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($pack['params']);
+            $out = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $e = strtolower(trim((string) ($row['email'] ?? '')));
+                if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                    $out[] = $e;
+                }
+            }
+
+            return $out;
         } catch (\Throwable) {
             return [];
         }

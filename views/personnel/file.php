@@ -49,6 +49,10 @@ $communityRoleLabel = $communityRoleLabelRaw !== '' ? $communityRoleLabelRaw : n
 $qualificationIssuerLabels = is_array($qualificationIssuerLabels ?? null) ? $qualificationIssuerLabels : [];
 $personnelOrgHistory = is_array($personnelOrgHistory ?? null) ? $personnelOrgHistory : [];
 $personnelOrgHistorySection = !empty($personnelOrgHistorySection ?? null);
+$roleplayFollowupConfig = is_array($roleplayFollowupConfig ?? null) ? $roleplayFollowupConfig : ['enabled' => false, 'optional' => false];
+$roleplayEligibility = is_array($roleplayEligibility ?? null) ? $roleplayEligibility : ['eligible' => false, 'checks' => []];
+$rpTutorLabel = isset($rpTutorLabel) && is_string($rpTutorLabel) ? trim($rpTutorLabel) : null;
+$roleplayTimelineEvents = is_array($roleplayTimelineEvents ?? null) ? $roleplayTimelineEvents : [];
 
 $lmsEnrollmentStatusFr = static function (string $s): string {
     return match ($s) {
@@ -181,6 +185,7 @@ $personnelExtras = is_array($personnelExtras ?? null) ? $personnelExtras : [];
 
 $matricule = $personnelProfile['matricule_internal'] ?? $personnelExtras['service_number'] ?? null;
 $callsign = $personnelProfile['callsign'] ?? $targetUser['callsign'] ?? null;
+$athenaIdentifier = trim((string) ($targetUser['athena_identifier'] ?? ''));
 $rpCharacterName = trim((string) ($personnelProfile['character_name'] ?? ''));
 if ($rpCharacterName !== '') {
     $displayName = $rpCharacterName;
@@ -218,6 +223,54 @@ if (!empty($personnelProfile['character_portrait_path'])) {
 
 $unitName = $primaryAssignment['unit_name'] ?? $primaryUnitFallbackName ?? ($personnelExtras['squadron'] ?? null);
 $enlistmentDate = $personnelProfile['enlistment_date'] ?? $personnelExtras['date_of_enlistment'] ?? null;
+$rpProgress = isset($personnelProfile['rp_followup_progress']) && $personnelProfile['rp_followup_progress'] !== null
+    ? max(0, min(100, (int) $personnelProfile['rp_followup_progress']))
+    : null;
+$rpStage = trim((string) ($personnelProfile['rp_followup_stage'] ?? ''));
+$rpStatus = trim((string) ($personnelProfile['rp_followup_status'] ?? ''));
+$rpTrack = trim((string) ($personnelProfile['rp_recruitment_stream'] ?? ''));
+$rpNotes = trim((string) ($personnelProfile['rp_followup_notes'] ?? ''));
+$rpDateFr = static function (?string $date): ?string {
+    $raw = trim((string) $date);
+    if ($raw === '') {
+        return null;
+    }
+    $ts = strtotime($raw);
+    if (!$ts) {
+        return null;
+    }
+
+    return date('d/m/Y', $ts);
+};
+$rpTimelineCards = [
+    [
+        'title' => 'Prochain entretien individuel',
+        'date' => $rpDateFr((string) ($personnelProfile['rp_next_interview_date'] ?? '')),
+        'fallback' => 'À planifier',
+        'accent' => 'border-emerald-300 bg-emerald-50/60',
+    ],
+    [
+        'title' => 'Visite médicale',
+        'date' => $rpDateFr((string) ($personnelProfile['rp_medical_due_date'] ?? '')),
+        'fallback' => 'Échéance non renseignée',
+        'accent' => 'border-slate-200 bg-slate-50/70',
+    ],
+    [
+        'title' => 'Rotation de service',
+        'date' => $rpDateFr((string) ($personnelProfile['rp_service_rotation_date'] ?? '')),
+        'fallback' => 'Non planifiée',
+        'accent' => 'border-slate-200 bg-slate-50/70',
+    ],
+];
+$rpTimelineStatusFr = static function (?string $s): string {
+    return match (trim((string) $s)) {
+        'planned' => 'Prévu',
+        'completed' => 'Terminé',
+        'blocked' => 'Bloqué',
+        'cancelled' => 'Annulé',
+        default => '—',
+    };
+};
 $enlistmentFormatted = null;
 if ($enlistmentDate) {
     $d = date_create($enlistmentDate);
@@ -561,6 +614,10 @@ if (!function_exists('personnel_file_render_admin_value')) {
                             <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($callsign) ?></p>
                         </div>
                         <?php endif; ?>
+                        <div>
+                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Athena ID</p>
+                            <p class="text-sm font-black text-slate-900"><?= $athenaIdentifier !== '' ? htmlspecialchars($athenaIdentifier) : '—' ?></p>
+                        </div>
                         <?php if ($unitName): ?>
                         <div>
                             <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Unité</p>
@@ -634,6 +691,83 @@ if (!function_exists('personnel_file_render_admin_value')) {
                     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
                         <img src="<?= htmlspecialchars($bannerUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-36 w-full object-cover sm:h-44 md:h-52" loading="lazy" decoding="async" />
                     </div>
+                    <?php endif; ?>
+                    <?php if (!empty($roleplayFollowupConfig['enabled'])): ?>
+                    <section class="rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm md:p-8">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <h2 class="text-xs font-black uppercase tracking-[0.35em] text-emerald-900">Back-office roleplay</h2>
+                                <p class="mt-2 text-sm text-slate-600 max-w-2xl">Suivi individuel, tutorat, timeline dossier et pilotage d’avancement recrutement.</p>
+                            </div>
+                            <?php if ($rpProgress !== null): ?>
+                            <div class="min-w-[10rem] rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3">
+                                <p class="text-[10px] font-black uppercase tracking-widest text-emerald-900">Progression</p>
+                                <p class="mt-1 text-xl font-black text-slate-900"><?= $rpProgress ?>%</p>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="mt-5 grid gap-3 md:grid-cols-3">
+                            <?php foreach ($rpTimelineCards as $card): ?>
+                            <article class="rounded-2xl border p-4 <?= htmlspecialchars($card['accent']) ?>">
+                                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-600"><?= htmlspecialchars($card['title']) ?></p>
+                                <p class="mt-2 text-lg font-black text-slate-900"><?= htmlspecialchars($card['date'] ?? $card['fallback']) ?></p>
+                            </article>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Étape</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpStage !== '' ? htmlspecialchars($rpStage) : '—' ?></p></div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Statut</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpStatus !== '' ? htmlspecialchars($rpStatus) : '—' ?></p></div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Filière</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpTrack !== '' ? htmlspecialchars($rpTrack) : '—' ?></p></div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Tuteur</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpTutorLabel !== null && $rpTutorLabel !== '' ? htmlspecialchars($rpTutorLabel) : '—' ?></p></div>
+                        </div>
+                        <?php if ($roleplayEligibility['checks'] !== []): ?>
+                        <div class="mt-5 rounded-2xl border <?= !empty($roleplayEligibility['eligible']) ? 'border-emerald-200 bg-emerald-50/50' : 'border-amber-200 bg-amber-50/60' ?> p-4">
+                            <p class="text-[10px] font-black uppercase tracking-wider <?= !empty($roleplayEligibility['eligible']) ? 'text-emerald-900' : 'text-amber-900' ?>">Éligibilité roleplay (tenant)</p>
+                            <ul class="mt-2 space-y-1.5 text-xs text-slate-700">
+                                <?php foreach ($roleplayEligibility['checks'] as $check): ?>
+                                <li class="flex items-start gap-2"><span class="font-black <?= !empty($check['ok']) ? 'text-emerald-700' : 'text-amber-700' ?>"><?= !empty($check['ok']) ? '✓' : '!' ?></span><span><?= htmlspecialchars((string) ($check['label'] ?? 'Critère')) ?></span></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($rpNotes !== ''): ?>
+                        <div class="mt-5 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                            <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Notes de suivi</p>
+                            <p class="mt-2 text-sm leading-relaxed text-slate-800"><?= nl2br(htmlspecialchars($rpNotes)) ?></p>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($roleplayTimelineEvents !== []): ?>
+                        <div class="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+                            <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Timeline dossier roleplay</p>
+                            <ol class="mt-3 space-y-3">
+                                <?php foreach ($roleplayTimelineEvents as $ev):
+                                    $evDate = !empty($ev['event_date']) ? date('d/m/Y', strtotime((string) $ev['event_date'])) : (!empty($ev['created_at']) ? date('d/m/Y', strtotime((string) $ev['created_at'])) : '—');
+                                    $dueDate = !empty($ev['due_date']) ? date('d/m/Y', strtotime((string) $ev['due_date'])) : null;
+                                    $statusRaw = (string) ($ev['status'] ?? 'planned');
+                                    $isOverdue = $dueDate !== null && !in_array($statusRaw, ['completed', 'cancelled'], true) && strtotime((string) $ev['due_date']) < strtotime(date('Y-m-d'));
+                                    $statusClass = match ($statusRaw) {
+                                        'completed' => 'bg-emerald-100 text-emerald-800',
+                                        'blocked' => 'bg-rose-100 text-rose-800',
+                                        'cancelled' => 'bg-slate-200 text-slate-700',
+                                        default => 'bg-amber-100 text-amber-800',
+                                    };
+                                    $actor = trim((string) ($ev['actor_display_name'] ?? '')) ?: trim((string) ($ev['actor_callsign'] ?? ''));
+                                ?>
+                                <li class="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="text-[10px] font-black uppercase tracking-wider text-slate-500"><?= htmlspecialchars((string) ($ev['event_type'] ?? 'événement')) ?></span>
+                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-bold <?= $statusClass ?>"><?= htmlspecialchars($rpTimelineStatusFr($statusRaw)) ?></span>
+                                        <?php if ($isOverdue): ?><span class="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800">En retard</span><?php endif; ?>
+                                    </div>
+                                    <p class="mt-1 text-sm font-semibold text-slate-900"><?= htmlspecialchars((string) ($ev['title'] ?? 'Événement')) ?></p>
+                                    <?php if (!empty($ev['detail'])): ?><p class="mt-1 text-sm text-slate-700 leading-relaxed"><?= nl2br(htmlspecialchars((string) $ev['detail'])) ?></p><?php endif; ?>
+                                    <p class="mt-2 text-[11px] text-slate-500">Date: <span class="font-semibold text-slate-700"><?= htmlspecialchars($evDate) ?></span><?php if ($dueDate !== null): ?> · Échéance: <span class="font-semibold <?= $isOverdue ? 'text-rose-700' : 'text-slate-700' ?>"><?= htmlspecialchars($dueDate) ?></span><?php endif; ?><?php if (!empty($ev['progress_delta']) || (string) ($ev['progress_delta'] ?? '') === '0'): ?> · Impact progression: <span class="font-semibold text-slate-700"><?= (int) $ev['progress_delta'] >= 0 ? '+' : '' ?><?= (int) $ev['progress_delta'] ?></span><?php endif; ?><?php if ($actor !== ''): ?> · Par: <span class="font-semibold text-slate-700"><?= htmlspecialchars($actor) ?></span><?php endif; ?></p>
+                                </li>
+                                <?php endforeach; ?>
+                            </ol>
+                        </div>
+                        <?php endif; ?>
+                    </section>
                     <?php endif; ?>
                     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                         <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-5">Synthèse</h2>
