@@ -595,6 +595,44 @@ $loggedIn = (bool) \App\Core\Session::get('user_id');
         </section>
     </main>
 
+    <?php $newsletterStatus = (string) ($_GET['newsletter'] ?? ''); ?>
+    <section id="newsletter" class="border-t border-slate-200 bg-white">
+        <div class="mx-auto max-w-4xl px-6 py-14">
+            <p class="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700">Newsletter Athena</p>
+            <h2 class="mt-2 text-3xl font-black tracking-tight text-slate-900">Recevoir les nouveautés produit et guides MILSIM</h2>
+            <p class="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600">Inscription avec confirmation e-mail (double opt-in). Chaque envoi inclut un lien de désabonnement immédiat.</p>
+
+            <?php if ($newsletterStatus !== ''): ?>
+                <?php
+                $newsletterMessages = [
+                    'confirm_sent' => ['ok' => true, 'text' => 'Vérifiez votre boîte e-mail pour confirmer votre inscription.'],
+                    'confirmed' => ['ok' => true, 'text' => 'Inscription confirmée. Bienvenue dans la newsletter Athena.'],
+                    'unsubscribed' => ['ok' => true, 'text' => 'Vous êtes désinscrit·e de la newsletter.'],
+                    'invalid_email' => ['ok' => false, 'text' => 'Adresse e-mail invalide.'],
+                    'csrf' => ['ok' => false, 'text' => 'Session expirée, veuillez réessayer.'],
+                    'confirm_invalid' => ['ok' => false, 'text' => 'Lien de confirmation invalide ou expiré.'],
+                    'unsubscribe_invalid' => ['ok' => false, 'text' => 'Lien de désabonnement invalide.'],
+                    'schema_missing' => ['ok' => false, 'text' => 'Module newsletter indisponible (migration manquante).'],
+                ];
+                $current = $newsletterMessages[$newsletterStatus] ?? null;
+                ?>
+                <?php if ($current): ?>
+                    <p class="mt-5 rounded-xl border px-4 py-3 text-sm <?= $current['ok'] ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-rose-200 bg-rose-50 text-rose-900' ?>">
+                        <?= htmlspecialchars($current['text']) ?>
+                    </p>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <form method="post" action="<?= url('newsletter/subscribe') ?>" class="mt-6 flex flex-col gap-3 sm:flex-row">
+                <?= \App\Core\Csrf::field() ?>
+                <label for="newsletter-email" class="sr-only">Adresse e-mail</label>
+                <input id="newsletter-email" name="email" type="email" required maxlength="255" placeholder="votre@email.com"
+                       class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3 text-[11px] font-black uppercase tracking-wider text-white transition hover:bg-slate-800">S’abonner</button>
+            </form>
+        </div>
+    </section>
+
     <footer class="relative mt-0">
         <div class="relative overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950/95 to-slate-900 text-white">
             <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(52,211,153,0.22),transparent_50%)]"></div>
