@@ -1656,6 +1656,67 @@ class UserRepository
     }
 
     /**
+     * Nombre d’adresses e-mail distinctes (comptes actifs, hors comptes techniques), toutes communautés.
+     */
+    public function countDistinctActiveMemberEmailsPlatformWide(): int
+    {
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $sql = "SELECT COUNT(*) FROM (
+            SELECT LOWER(TRIM(u.email)) AS e
+            FROM users u
+            WHERE u.status = 'active'
+            AND u.email IS NOT NULL AND TRIM(u.email) <> ''
+            AND u.email LIKE '%@%'
+            AND {$pack['sql']}
+            GROUP BY LOWER(TRIM(u.email))
+        ) t";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($pack['params']);
+
+            return (int) $stmt->fetchColumn();
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
+     * Adresses e-mail distinctes (comptes actifs, hors comptes techniques), toutes communautés — pagination.
+     *
+     * @return list<string>
+     */
+    public function listDistinctActiveMemberEmailsPlatformWide(int $limit, int $offset): array
+    {
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $limit = max(1, min(500, $limit));
+        $offset = max(0, $offset);
+        $sql = "SELECT LOWER(TRIM(u.email)) AS email
+            FROM users u
+            WHERE u.status = 'active'
+            AND u.email IS NOT NULL AND TRIM(u.email) <> ''
+            AND u.email LIKE '%@%'
+            AND {$pack['sql']}
+            GROUP BY LOWER(TRIM(u.email))
+            ORDER BY email ASC
+            LIMIT {$limit} OFFSET {$offset}";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($pack['params']);
+            $out = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $e = strtolower(trim((string) ($row['email'] ?? '')));
+                if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                    $out[] = $e;
+                }
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * Membres actifs dont le rôle communauté (principal ou additionnel) est parmi les slugs donnés.
      *
      * @param list<string> $roleSlugs

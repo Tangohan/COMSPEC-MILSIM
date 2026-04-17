@@ -82,6 +82,9 @@ final class EmailEvents
     /** Diffusion membre — message libre. */
     public const TENANT_EMAIL_CUSTOM = 'TENANT_EMAIL_CUSTOM';
 
+    /** Annonce maintenance plateforme — diffusion aux comptes actifs (message libre depuis la règle). */
+    public const MAINTENANCE_MEMBER_BROADCAST = 'MAINTENANCE_MEMBER_BROADCAST';
+
     /** @var list<string> */
     public const EMAIL_EVENTS = [
         self::USER_REGISTER_CONFIRMATION,
@@ -125,5 +128,6 @@ final class EmailEvents
         self::TENANT_EMAIL_MISSION,
         self::TENANT_EMAIL_ACTIVITY,
         self::TENANT_EMAIL_CUSTOM,
+        self::MAINTENANCE_MEMBER_BROADCAST,
     ];
 }

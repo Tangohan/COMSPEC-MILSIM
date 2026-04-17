@@ -19,6 +19,31 @@ final class MaintenanceService
      *
      * @param array<string, mixed>|null $userContext
      */
+    /**
+     * Indique si la règle est activée et si l’horloge serveur se trouve dans la fenêtre
+     * starts_at / ends_at (mêmes critères que la requête d’application réelle, hors périmètre URL).
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function isWithinEnabledSchedule(array $row): bool
+    {
+        if ((int) ($row['is_enabled'] ?? 0) !== 1) {
+            return false;
+        }
+
+        $nowStr = (new DateTimeImmutable())->format('Y-m-d H:i:s');
+        $starts = isset($row['starts_at']) ? trim((string) $row['starts_at']) : '';
+        if ($starts !== '' && $starts > $nowStr) {
+            return false;
+        }
+        $ends = isset($row['ends_at']) ? trim((string) $row['ends_at']) : '';
+        if ($ends !== '' && $ends < $nowStr) {
+            return false;
+        }
+
+        return true;
+    }
+
     public function getActiveMaintenance(string $requestPath, ?string $module = null): ?array
     {
         $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');

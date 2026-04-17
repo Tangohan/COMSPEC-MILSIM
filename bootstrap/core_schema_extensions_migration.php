@@ -164,7 +164,7 @@ SQL, 'app_maintenance');
 CREATE TABLE IF NOT EXISTS `app_maintenance_audit` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `maintenance_id` BIGINT UNSIGNED NOT NULL,
-    `action_type` ENUM('create','update','enable','disable','delete') NOT NULL,
+    `action_type` ENUM('create','update','enable','disable','delete','notify_email') NOT NULL,
     `old_values` JSON NULL,
     `new_values` JSON NULL,
     `actor_user_id` BIGINT UNSIGNED NULL,
@@ -175,6 +175,14 @@ CREATE TABLE IF NOT EXISTS `app_maintenance_audit` (
     KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'app_maintenance_audit');
+
+    if ($tableExists($pdo, 'app_maintenance_audit')) {
+        $execTry(
+            $pdo,
+            "ALTER TABLE `app_maintenance_audit` MODIFY COLUMN `action_type` ENUM('create','update','enable','disable','delete','notify_email') NOT NULL",
+            'app_maintenance_audit.action_type_notify_email'
+        );
+    }
 
     // --- Tableau opérationnel : tables de base (20260412000001) ---
     $execTry($pdo, <<<'SQL'
