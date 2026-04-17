@@ -130,11 +130,47 @@ final class CommunityReportService
             if (strlen($ref) > 500) {
                 return ['ok' => false, 'error' => 'Le repère indiqué est trop long (500 caractères maximum).'];
             }
+            $selectedTargetUrl = trim((string) ($input['selected_target_url'] ?? ''));
+            if ($selectedTargetUrl !== '') {
+                if (strlen($selectedTargetUrl) > 2048) {
+                    return ['ok' => false, 'error' => 'Le lien ciblé est trop long.'];
+                }
+                if (!$this->isTrustedSiteUrl($selectedTargetUrl, $httpHost)) {
+                    return ['ok' => false, 'error' => 'Le lien ciblé doit appartenir à ce site.'];
+                }
+            }
+            $selectedTargetKind = trim((string) ($input['selected_target_kind'] ?? ''));
+            if (strlen($selectedTargetKind) > 80) {
+                $selectedTargetKind = substr($selectedTargetKind, 0, 80);
+            }
+            $selectedMemberId = (int) ($input['selected_member_id'] ?? 0);
+            $selectedMemberLabel = trim((string) ($input['selected_member_label'] ?? ''));
+            if (strlen($selectedMemberLabel) > 160) {
+                $selectedMemberLabel = substr($selectedMemberLabel, 0, 160);
+            }
             $reasonPrefix = 'Demande depuis le bouton Aide — thème : ' . ($subjectLabels[$subject] ?? $subject);
             if ($ref !== '') {
                 $reasonPrefix .= "\nRepère : " . $ref;
             }
-            $urlForDb = $pageUrl !== '' ? $pageUrl : null;
+            if ($selectedMemberId > 0) {
+                $targetMember = $this->userRepository->findById($selectedMemberId, $tenantId);
+                if ($targetMember !== null) {
+                    $displayName = trim((string) ($targetMember['display_name'] ?? $targetMember['email'] ?? ''));
+                    if ($displayName === '') {
+                        $displayName = 'Membre #' . $selectedMemberId;
+                    }
+                    $reasonPrefix .= "\nMembre ciblé : " . $displayName . ' (n° ' . $selectedMemberId . ')';
+                }
+            } elseif ($selectedMemberLabel !== '') {
+                $reasonPrefix .= "\nMembre ciblé (recherche) : " . $selectedMemberLabel;
+            }
+            if ($selectedTargetUrl !== '') {
+                $reasonPrefix .= "\nLien ciblé : " . $selectedTargetUrl;
+                if ($selectedTargetKind !== '') {
+                    $reasonPrefix .= ' [' . $selectedTargetKind . ']';
+                }
+            }
+            $urlForDb = $selectedTargetUrl !== '' ? $selectedTargetUrl : ($pageUrl !== '' ? $pageUrl : null);
         } else {
             return ['ok' => false, 'error' => 'Type de signalement non pris en charge.'];
         }
