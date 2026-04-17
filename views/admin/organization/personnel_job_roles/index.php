@@ -14,14 +14,22 @@ $personnelProfilesJobRoleReady = $personnelProfilesJobRoleReady ?? true;
         Les colonnes dossier (<code class="rounded bg-amber-100 px-1">personnel_job_role_id</code>) ne sont pas encore en base : le référentiel est éditable, mais les <strong>attributions effectifs</strong> et le dossier personnel nécessitent la migration complète.
     </div>
     <?php endif; ?>
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div class="mb-6 grid gap-4 lg:grid-cols-[1.4fr_1fr] lg:items-start">
         <div>
             <h1 class="text-2xl font-black text-slate-900">Référentiel — rôles métier</h1>
             <p class="mt-1 max-w-2xl text-sm text-slate-600">Arborescence par catégories, rôles nommés et presets de permissions (référentiel distinct des rôles communauté / accès).</p>
         </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="<?= url('back-office/personnel-job-roles/assignments') ?>" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Attributions effectifs</a>
-            <a href="<?= url('back-office/personnel-job-roles/roles/create') ?>" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Nouveau rôle</a>
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Bibliothèque visible</p>
+            <div class="mt-2 grid grid-cols-3 gap-2 text-center">
+                <div class="rounded-lg bg-slate-50 px-2 py-2"><p class="text-lg font-black text-slate-900"><?= count($categories) ?></p><p class="text-[10px] uppercase text-slate-500">Catégories</p></div>
+                <div class="rounded-lg bg-slate-50 px-2 py-2"><p class="text-lg font-black text-slate-900"><?= count($roles) ?></p><p class="text-[10px] uppercase text-slate-500">Emplois</p></div>
+                <div class="rounded-lg bg-slate-50 px-2 py-2"><p class="text-lg font-black text-slate-900"><?= array_sum(array_map(static fn ($v): int => (int) $v, $permCounts)) ?></p><p class="text-[10px] uppercase text-slate-500">Droits liés</p></div>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+                <a href="<?= url('back-office/personnel-job-roles/assignments') ?>" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Attributions effectifs</a>
+                <a href="<?= url('back-office/personnel-job-roles/roles/create') ?>" class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">Nouveau rôle</a>
+            </div>
         </div>
     </div>
     <?php if ($flashSuccess): ?>
@@ -63,6 +71,19 @@ $personnelProfilesJobRoleReady = $personnelProfilesJobRoleReady ?? true;
         </form>
     </section>
 
+    <div class="mb-4 grid gap-3 sm:grid-cols-2">
+        <label class="text-xs font-semibold text-slate-600">Recherche dans le référentiel
+            <input id="pjr-library-search" type="search" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Nom, slug, catégorie, MOS…">
+        </label>
+        <label class="text-xs font-semibold text-slate-600">Filtrer catégorie
+            <select id="pjr-library-category" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                <option value="">Toutes les catégories</option>
+                <?php foreach ($categories as $c): ?>
+                    <option value="<?= htmlspecialchars((string) ($c['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($c['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+    </div>
     <div class="overflow-hidden rounded-xl border border-slate-200">
         <table class="w-full border-collapse text-left text-sm">
             <thead class="border-b border-slate-200 bg-slate-50">
@@ -77,7 +98,7 @@ $personnelProfilesJobRoleReady = $personnelProfilesJobRoleReady ?? true;
             </thead>
             <tbody>
                 <?php foreach ($roles as $r): ?>
-                <tr class="border-b border-slate-100 hover:bg-slate-50/80">
+                <tr class="border-b border-slate-100 hover:bg-slate-50/80" data-pjr-row data-category="<?= htmlspecialchars((string) ($r['category_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(mb_strtolower(trim((string) (($r['category_name'] ?? '') . ' ' . ($r['name'] ?? '') . ' ' . ($r['slug'] ?? '') . ' ' . ($r['mos_code'] ?? '') . ' ' . ($r['mos_specialty_title'] ?? ''))), 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>">
                     <td class="p-3 text-slate-700"><?= htmlspecialchars((string) ($r['category_name'] ?? '—')) ?></td>
                     <td class="p-3 font-medium text-slate-900"><?= htmlspecialchars((string) ($r['name'] ?? '')) ?></td>
                     <td class="p-3 font-mono text-xs text-slate-600"><?= htmlspecialchars((string) ($r['slug'] ?? '')) ?></td>
@@ -113,6 +134,7 @@ $personnelProfilesJobRoleReady = $personnelProfilesJobRoleReady ?? true;
         <p class="p-6 text-slate-500">Aucun rôle métier — créez une catégorie puis un rôle.</p>
         <?php endif; ?>
     </div>
+    <p id="pjr-library-empty" class="hidden mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">Aucun rôle ne correspond à ce filtre.</p>
 
     <?php if (!empty($categories)): ?>
     <section class="mt-10 rounded-xl border border-amber-200 bg-amber-50/50 p-6">
@@ -131,3 +153,27 @@ $personnelProfilesJobRoleReady = $personnelProfilesJobRoleReady ?? true;
     </section>
     <?php endif; ?>
 </div>
+<script>
+(function () {
+  var search = document.getElementById('pjr-library-search');
+  var cat = document.getElementById('pjr-library-category');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('[data-pjr-row]'));
+  var empty = document.getElementById('pjr-library-empty');
+  if (!search || !cat || !rows.length) return;
+  function apply() {
+    var q = (search.value || '').trim().toLowerCase();
+    var c = cat.value || '';
+    var visible = 0;
+    rows.forEach(function (row) {
+      var okQ = !q || (row.getAttribute('data-search') || '').indexOf(q) !== -1;
+      var okC = !c || (row.getAttribute('data-category') || '') === c;
+      var show = okQ && okC;
+      row.classList.toggle('hidden', !show);
+      if (show) visible++;
+    });
+    if (empty) empty.classList.toggle('hidden', visible !== 0);
+  }
+  search.addEventListener('input', apply);
+  cat.addEventListener('change', apply);
+})();
+</script>

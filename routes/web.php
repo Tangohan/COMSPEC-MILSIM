@@ -505,6 +505,8 @@ return function (Router $router) {
     $router->get('/back-office/roles/presets', [RoleAdminController::class, 'presets'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets/preview', [RoleAdminController::class, 'presetsPreview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles/presets/apply', [RoleAdminController::class, 'presetsApply'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roles/presets/kits/save', [RoleAdminController::class, 'saveCustomPresetKit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roles/presets/kits/delete', [RoleAdminController::class, 'deleteCustomPresetKit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/{id}/edit-presentation', [RoleAdminController::class, 'editPresentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles/{id}/edit-presentation', [RoleAdminController::class, 'updatePresentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/{id}/permissions', [RoleAdminController::class, 'editPermissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

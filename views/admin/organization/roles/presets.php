@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 $presetMeta = $presetMeta ?? [];
+$customPresetKits = $customPresetKits ?? [];
+$allPermissions = $allPermissions ?? [];
 $roles = $roles ?? [];
 $presetsPreviewUrl = isset($presetsPreviewUrl) ? (string) $presetsPreviewUrl : url('back-office/roles/presets/preview');
 
@@ -79,6 +81,62 @@ $ok = \App\Core\Session::getFlash('success');
                                 </span>
                             </label>
                         <?php endforeach; ?>
+                        <?php foreach ($customPresetKits as $kit):
+                            $kid = (string) ($kit['id'] ?? '');
+                            if ($kid === '') {
+                                continue;
+                            }
+                            $kLabel = (string) ($kit['label'] ?? $kid);
+                            $kDesc = (string) ($kit['description'] ?? '');
+                            $kCount = is_array($kit['permission_ids'] ?? null) ? count($kit['permission_ids']) : 0;
+                            ?>
+                            <label class="flex cursor-pointer gap-3 rounded-xl border border-purple-200 bg-purple-50/40 p-4 transition hover:border-purple-400 hover:bg-purple-50/60 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-50/70 has-[:checked]:ring-2 has-[:checked]:ring-purple-200">
+                                <input type="radio" name="preset_id" value="<?= htmlspecialchars('custom:' . $kid, ENT_QUOTES, 'UTF-8') ?>" required class="mt-1 h-4 w-4 shrink-0 text-purple-600 border-slate-300 focus:ring-purple-500">
+                                <span class="min-w-0 flex-1">
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-purple-800">Kit perso</span>
+                                    <span class="mt-1 block font-bold text-slate-900 text-sm"><?= htmlspecialchars($kLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="mt-1 block text-xs text-slate-600 leading-snug"><?= htmlspecialchars($kDesc !== '' ? $kDesc : 'Kit personnalisé de permissions.', ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="mt-1 block text-[11px] font-semibold text-purple-800"><?= (int) $kCount ?> droits inclus</span>
+                                </span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="mt-4 rounded-xl border border-purple-200 bg-purple-50/30 p-4">
+                        <div class="mb-2 flex items-center justify-between gap-2">
+                            <p class="text-xs font-bold uppercase tracking-wide text-purple-900">Créer un kit perso</p>
+                            <span class="text-[11px] text-purple-900/70"><?= count($customPresetKits) ?>/24</span>
+                        </div>
+                        <form method="post" action="<?= url('back-office/roles/presets/kits/save') ?>" class="space-y-3">
+                            <?= \App\Core\Csrf::field() ?>
+                            <div class="grid gap-2 sm:grid-cols-2">
+                                <input type="text" name="kit_label" maxlength="90" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs" placeholder="Nom du kit (ex: Cellule OPS)">
+                                <input type="text" name="kit_description" maxlength="180" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs" placeholder="Description courte">
+                            </div>
+                            <details class="rounded-lg border border-slate-200 bg-white p-3">
+                                <summary class="cursor-pointer text-xs font-semibold text-slate-700">Sélectionner les droits (<?= count($allPermissions) ?> disponibles)</summary>
+                                <div class="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
+                                    <?php foreach ($allPermissions as $perm): ?>
+                                        <label class="flex items-start gap-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700">
+                                            <input type="checkbox" name="kit_permission_ids[]" value="<?= (int) ($perm['id'] ?? 0) ?>" class="mt-0.5 rounded border-slate-300 text-purple-600">
+                                            <span><span class="font-semibold text-slate-900"><?= htmlspecialchars((string) ($perm['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span><span class="block text-[11px] text-slate-500"><?= htmlspecialchars((string) ($perm['module'] ?? ''), ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars((string) ($perm['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </details>
+                            <button type="submit" class="rounded-lg bg-purple-700 px-3 py-2 text-xs font-bold text-white hover:bg-purple-800">Enregistrer le kit</button>
+                        </form>
+                        <?php if (!empty($customPresetKits)): ?>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <?php foreach ($customPresetKits as $kit): ?>
+                                    <?php $kid = (string) ($kit['id'] ?? ''); if ($kid === '') { continue; } ?>
+                                    <form method="post" action="<?= url('back-office/roles/presets/kits/delete') ?>" onsubmit="return confirm('Supprimer ce kit personnalisé ?');">
+                                        <?= \App\Core\Csrf::field() ?>
+                                        <input type="hidden" name="kit_id" value="<?= htmlspecialchars($kid, ENT_QUOTES, 'UTF-8') ?>">
+                                        <button type="submit" class="rounded-md border border-rose-200 bg-white px-2 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">Supprimer « <?= htmlspecialchars((string) ($kit['label'] ?? $kid), ENT_QUOTES, 'UTF-8') ?> »</button>
+                                    </form>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </li>
             </ol>
