@@ -43,6 +43,72 @@ use App\Support\OrbatRosterPayload;
 
 class PersonnelController
 {
+    /** @return array{enabled: bool, optional: bool, stages: list<string>, recruitment_tracks: list<string>, eligibility: array<string,mixed>} */
+    private function roleplayFollowupConfig(int $tenantId): array
+    {
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $cfg = is_array($community['roleplay_followup'] ?? null) ? $community['roleplay_followup'] : [];
+        $stages = [];
+        foreach (($cfg['stages'] ?? []) as $s) {
+            $v = trim((string) $s);
+            if ($v !== '') {
+                $stages[] = $v;
+            }
+        }
+        if ($stages === []) {
+            $stages = ['Pré-qualification', 'Tutorat', 'Validation', 'Intégration active'];
+        }
+        $tracks = [];
+        foreach (($cfg['recruitment_tracks'] ?? []) as $s) {
+            $v = trim((string) $s);
+            if ($v !== '') {
+                $tracks[] = $v;
+            }
+        }
+
+        return [
+            'enabled' => !empty($cfg['enabled']),
+            'optional' => !empty($cfg['optional']),
+            'stages' => array_values(array_unique($stages)),
+            'recruitment_tracks' => array_values(array_unique($tracks)),
+            'eligibility' => is_array($cfg['eligibility'] ?? null) ? $cfg['eligibility'] : [],
+        ];
+    }
+
+    /** @return array{eligible: bool, checks: list<array{label: string, ok: bool}>} */
+    private function roleplayFollowupEligibility(array $cfg, int $completenessScore, ?int $readinessScore, array $personnelProfile): array
+    {
+        $rules = is_array($cfg['eligibility'] ?? null) ? $cfg['eligibility'] : [];
+        $checks = [];
+        $checks[] = [
+            'label' => 'Complétude dossier ≥ ' . max(0, min(100, (int) ($rules['min_completeness'] ?? 50))) . '%',
+            'ok' => $completenessScore >= max(0, min(100, (int) ($rules['min_completeness'] ?? 50))),
+        ];
+        $checks[] = [
+            'label' => 'Disponibilité ≥ ' . max(0, min(100, (int) ($rules['min_readiness'] ?? 30))) . '%',
+            'ok' => ($readinessScore ?? 0) >= max(0, min(100, (int) ($rules['min_readiness'] ?? 30))),
+        ];
+        if (!empty($rules['require_unit'])) {
+            $checks[] = ['label' => 'Affectation unité renseignée', 'ok' => !empty($personnelProfile['primary_unit_id'])];
+        }
+        if (!empty($rules['require_callsign'])) {
+            $checks[] = ['label' => 'Callsign renseigné', 'ok' => trim((string) ($personnelProfile['callsign'] ?? '')) !== ''];
+        }
+        if (!empty($rules['require_tutor'])) {
+            $checks[] = ['label' => 'Tuteur affecté', 'ok' => (int) ($personnelProfile['rp_tutor_user_id'] ?? 0) > 0];
+        }
+        $eligible = true;
+        foreach ($checks as $c) {
+            if (empty($c['ok'])) {
+                $eligible = false;
+                break;
+            }
+        }
+
+        return ['eligible' => $eligible, 'checks' => $checks];
+    }
+
     /** Résout /personnel/{id} (numérique) ou /personnel/{slug} (profile_slug). */
     private function resolvePersonnelTarget(string $raw, int $tenantId, ?int $fallbackUserId = null): ?array
     {
@@ -317,6 +383,21 @@ class PersonnelController
             return strcmp((string) ($b['assigned_at'] ?? ''), (string) ($a['assigned_at'] ?? ''));
         });
         $completeness = $this->completenessService->getScore($uid, $target, $mergedProfileForScore, $extras, (int) $tenantId);
+        $roleplayFollowupConfig = $this->roleplayFollowupConfig((int) $tenantId);
+        $roleplayEligibility = $this->roleplayFollowupEligibility(
+            $roleplayFollowupConfig,
+            (int) ($completeness['score'] ?? 0),
+            isset($personnelProfile['readiness_score']) ? (int) $personnelProfile['readiness_score'] : null,
+            is_array($personnelProfile) ? $personnelProfile : []
+        );
+        $rpTutorLabel = null;
+        $rpTutorId = (int) ($personnelProfile['rp_tutor_user_id'] ?? 0);
+        if ($rpTutorId > 0) {
+            $rpTutor = $this->userRepository->findById($rpTutorId, (int) $tenantId);
+            if ($rpTutor) {
+                $rpTutorLabel = trim((string) ($rpTutor['display_name'] ?? '')) ?: (trim((string) ($rpTutor['callsign'] ?? '')) ?: trim((string) ($rpTutor['email'] ?? '')));
+            }
+        }
 
         $grades = $this->gradeRepository->listForTenant((int) $tenantId);
         $grade = null;
@@ -508,6 +589,9 @@ class PersonnelController
             'personnelIsSelf' => $isSelf,
             'communityRoleLabel' => $communityRoleLabel,
             'qualificationIssuerLabels' => $qualificationIssuerLabels,
+            'roleplayFollowupConfig' => $roleplayFollowupConfig,
+            'roleplayEligibility' => $roleplayEligibility,
+            'rpTutorLabel' => $rpTutorLabel,
         ]);
     }
 
@@ -690,6 +774,24 @@ class PersonnelController
         $settings = $this->tenantRepository->getSettings($tenantId);
         $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
         $memberCanChooseDisplayRole = !empty($community['member_can_choose_display_role']);
+        $roleplayFollowupConfig = $this->roleplayFollowupConfig($tenantId);
+        $rpTutorChoices = [];
+        if ($roleplayFollowupConfig['enabled'] && ($isSelf || $this->canStaffEditPersonnel())) {
+            foreach ($this->userRepository->allForTenant($tenantId) as $u) {
+                if (($u['status'] ?? 'active') !== 'active') {
+                    continue;
+                }
+                $id = (int) ($u['id'] ?? 0);
+                if ($id < 1) {
+                    continue;
+                }
+                $label = trim((string) ($u['display_name'] ?? '')) ?: (trim((string) ($u['callsign'] ?? '')) ?: trim((string) ($u['email'] ?? '')));
+                if ($label === '') {
+                    $label = 'Compte #' . $id;
+                }
+                $rpTutorChoices[] = ['id' => $id, 'label' => $label];
+            }
+        }
 
         return Response::view('layout.main', [
             'content' => 'personnel.edit',
@@ -713,6 +815,8 @@ class PersonnelController
             'jobRoleSlugToId' => $jobRoleSlugToId,
             'forumOrgRoleChoices' => $forumOrgRoleChoices,
             'memberCanChooseDisplayRole' => $memberCanChooseDisplayRole,
+            'roleplayFollowupConfig' => $roleplayFollowupConfig,
+            'rpTutorChoices' => $rpTutorChoices,
         ]);
     }
 
@@ -741,6 +845,7 @@ class PersonnelController
         $clearanceReview = trim((string) $request->input('clearance_reviewed_at'));
         $readinessRaw = $request->input('readiness_score');
         $readinessScore = ($readinessRaw === null || $readinessRaw === '') ? null : max(0, min(100, (int) $readinessRaw));
+        $roleplayFollowupConfig = $this->roleplayFollowupConfig($tenantId);
 
         $primaryUnitIdRaw = $request->input('primary_unit_id');
         $primaryUnitId = $primaryUnitIdRaw ? (int) $primaryUnitIdRaw : null;
@@ -811,6 +916,49 @@ class PersonnelController
             'nationality' => trim((string) $request->input('nationality_rp')) ?: null,
             'blood_type' => trim((string) $request->input('blood_type')) ?: null,
         ];
+        if ($roleplayFollowupConfig['enabled']) {
+            $stage = trim((string) $request->input('rp_followup_stage'));
+            if ($stage !== '' && !in_array($stage, $roleplayFollowupConfig['stages'], true)) {
+                $stage = '';
+            }
+            $stream = trim((string) $request->input('rp_recruitment_stream'));
+            if ($stream !== '' && !in_array($stream, $roleplayFollowupConfig['recruitment_tracks'], true)) {
+                $stream = '';
+            }
+            $progressRaw = $request->input('rp_followup_progress');
+            $progress = ($progressRaw === null || $progressRaw === '') ? null : max(0, min(100, (int) $progressRaw));
+            $tutorRaw = $request->input('rp_tutor_user_id');
+            $tutorId = ($tutorRaw === null || $tutorRaw === '') ? null : (int) $tutorRaw;
+            if ($tutorId !== null && $tutorId > 0) {
+                $tu = $this->userRepository->findById($tutorId, $tenantId);
+                if (!$tu) {
+                    $tutorId = null;
+                }
+            } else {
+                $tutorId = null;
+            }
+            $elig = $this->roleplayFollowupEligibility(
+                $roleplayFollowupConfig,
+                (int) ($this->completenessService->getScore((int) $target['id'], $target, $this->userProfileRepository->getByUserId((int) $target['id']) ?? [], $this->personnelExtrasRepository->getByUserId((int) $target['id']) ?? [], $tenantId)['score'] ?? 0),
+                $readinessScore,
+                ['primary_unit_id' => $primaryUnitId, 'callsign' => trim((string) $request->input('callsign')), 'rp_tutor_user_id' => $tutorId]
+            );
+            $snap = [
+                'at' => date('c'),
+                'eligible' => $elig['eligible'],
+                'checks' => $elig['checks'],
+            ];
+            $data['rp_followup_stage'] = $stage !== '' ? $stage : null;
+            $data['rp_followup_status'] = trim((string) $request->input('rp_followup_status')) ?: null;
+            $data['rp_followup_progress'] = $progress;
+            $data['rp_tutor_user_id'] = $tutorId;
+            $data['rp_recruitment_stream'] = $stream !== '' ? $stream : null;
+            $data['rp_next_interview_date'] = trim((string) $request->input('rp_next_interview_date')) ?: null;
+            $data['rp_medical_due_date'] = trim((string) $request->input('rp_medical_due_date')) ?: null;
+            $data['rp_service_rotation_date'] = trim((string) $request->input('rp_service_rotation_date')) ?: null;
+            $data['rp_followup_notes'] = trim((string) $request->input('rp_followup_notes')) ?: null;
+            $data['rp_eligibility_snapshot_json'] = json_encode($snap, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
         if ($jobRolesEnabled) {
             $data['personnel_job_role_id'] = $jobRoleId;
             $data['role_sub_label'] = $roleSubLabel !== '' ? $roleSubLabel : null;

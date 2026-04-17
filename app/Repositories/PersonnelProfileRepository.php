@@ -48,6 +48,9 @@ class PersonnelProfileRepository
             'readiness_score', 'command_notes', 'matricule_internal', 'clearance_reviewed_at',
             'equipment_class', 'kit_assigned', 'radio_assigned', 'vehicle_authorized', 'weapon_specialty',
             'deployable',
+            'rp_followup_stage', 'rp_followup_status', 'rp_followup_progress', 'rp_tutor_user_id',
+            'rp_recruitment_stream', 'rp_next_interview_date', 'rp_medical_due_date', 'rp_service_rotation_date',
+            'rp_followup_notes', 'rp_eligibility_snapshot_json',
         ];
         $set = [];
         $params = [];
