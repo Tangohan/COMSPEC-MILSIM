@@ -34,6 +34,7 @@ use App\Controllers\Api\ForumModerationReportInsightApiController;
 use App\Controllers\Api\ForumUploadController;
 use App\Controllers\Api\ForumRestController;
 use App\Controllers\Api\CommunityReportController;
+use App\Controllers\Api\DossierOperateurAccreditationApiController;
 use App\Controllers\Api\OrbatApiController;
 use App\Controllers\Api\AtakIntelController;
 use App\Controllers\Api\AtakApiController;
@@ -258,6 +259,10 @@ return function (Router $router) {
     $router->get('/documentation/references', [DocumentationController::class, 'references'], [AuthMiddleware::class]);
     $router->get('/documentation/fichier/{key}', [DocumentationController::class, 'file'], [AuthMiddleware::class]);
     $router->get('/dossier-operateur/accreditation', [DossierOperateurController::class, 'accreditation'], [AuthMiddleware::class]);
+    $router->get('/api/dossier-operateur/accreditation-management', [DossierOperateurAccreditationApiController::class, 'state'], [AuthMiddleware::class]);
+    $router->post('/api/dossier-operateur/accreditation-management/note', [DossierOperateurAccreditationApiController::class, 'addNote'], [AuthMiddleware::class]);
+    $router->post('/api/dossier-operateur/accreditation-management/review', [DossierOperateurAccreditationApiController::class, 'addReview'], [AuthMiddleware::class]);
+    $router->post('/api/dossier-operateur/accreditation-management/policy', [DossierOperateurAccreditationApiController::class, 'policy'], [AuthMiddleware::class]);
     $router->get('/api/portal/search', [PortalSearchController::class, 'apiSearch'], [AuthMiddleware::class]);
     $router->get('/hub', [HubController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/centre-actions', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);

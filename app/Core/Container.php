@@ -655,7 +655,14 @@ class Container
                 self::get(\App\Repositories\UserProfileRepository::class),
                 self::get(\App\Repositories\PersonnelQualificationRepository::class),
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
-                self::get(\App\Services\Personnel\PersonnelCompletenessService::class)
+                self::get(\App\Services\Personnel\PersonnelCompletenessService::class),
+                self::get(\App\Repositories\Courrier\UserSignatureRepository::class),
+                self::get(\App\Repositories\PersonnelAdminDataRepository::class)
+            ),
+            \App\Controllers\Api\DossierOperateurAccreditationApiController::class => new \App\Controllers\Api\DossierOperateurAccreditationApiController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\PersonnelAdminDataRepository::class),
+                self::get(\App\Repositories\Courrier\UserSignatureRepository::class)
             ),
             \App\Repositories\ModpackRepository::class => new \App\Repositories\ModpackRepository(),
             \App\Controllers\Web\ModpackController::class => new \App\Controllers\Web\ModpackController(
