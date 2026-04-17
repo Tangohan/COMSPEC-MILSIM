@@ -420,18 +420,6 @@ require base_path('views/partials/header_portal.php');
         <?php endif; ?>
 
         <?php
-        $next_steps = $dashboard_next_steps ?? [];
-        if ($next_steps !== []): ?>
-        <div class="mx-auto max-w-5xl px-4 sm:px-8 md:px-10">
-            <?php
-            $next_steps_title = 'Prochaines étapes sur le portail';
-            $next_steps_intro = 'Pistes basées sur votre situation actuelle dans cette communauté.';
-            require base_path('views/partials/ui/next_steps_block.php');
-            ?>
-        </div>
-        <?php endif; ?>
-
-        <?php
         $my_enlistments_pending = $my_enlistments_pending ?? [];
         $staff_enlistments_pending = $staff_enlistments_pending ?? [];
         $show_staff_enlistments = $show_staff_enlistments ?? false;
@@ -448,9 +436,12 @@ require base_path('views/partials/header_portal.php');
                     <div>
                         <p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-1">Communauté</p>
                         <h2 class="text-lg font-black uppercase italic tracking-tight text-[#001529]">Raccourcis</h2>
+                        <p class="mt-1 text-xs text-slate-500">Liens publiés par votre tenant pour accélérer les actions d'équipe.</p>
                     </div>
                     <?php if (\App\Core\Gate::getInstance()->allows('dashboard.pins.manage')): ?>
                         <a href="<?= url('back-office/dashboard-pins') ?>" class="text-[10px] font-black uppercase tracking-wider text-emerald-700 hover:text-slate-900">Gérer</a>
+                    <?php else: ?>
+                        <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Configuré par les responsables de tenant</span>
                     <?php endif; ?>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -926,24 +917,24 @@ require base_path('views/partials/header_portal.php');
                         <div class="divide-y divide-slate-100">
                             <div class="px-6 py-5 flex items-start justify-between gap-4">
                                 <div>
-                                    <p class="text-sm font-black uppercase text-[#001529]">Connexion validée sur le nœud principal</p>
-                                    <p class="mt-1 text-sm text-slate-500">Session ouverte depuis un terminal reconnu avec journalisation active.</p>
+                                    <p class="text-sm font-black uppercase text-[#001529]">Feuille de présence validée — section Alpha</p>
+                                    <p class="mt-1 text-sm text-slate-500">Pointage opérationnel confirmé avec présence en briefing et signature du registre RH.</p>
                                 </div>
                                 <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">20:15</span>
                             </div>
     
                             <div class="px-6 py-5 flex items-start justify-between gap-4">
                                 <div>
-                                    <p class="text-sm font-black uppercase text-[#001529]">Progression mise à jour sur le module fondamental</p>
-                                    <p class="mt-1 text-sm text-slate-500">Dernière séquence validée : procédures d’entrée, organisation et doctrine.</p>
+                                    <p class="text-sm font-black uppercase text-[#001529]">Entretien hebdomadaire encadrement enregistré</p>
+                                    <p class="mt-1 text-sm text-slate-500">Compte-rendu de suivi RH joint au dossier: disponibilité confirmée pour le prochain cycle.</p>
                                 </div>
                                 <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">18:42</span>
                             </div>
     
                             <div class="px-6 py-5 flex items-start justify-between gap-4">
                                 <div>
-                                    <p class="text-sm font-black uppercase text-[#001529]">Révision du dossier opérateur effectuée</p>
-                                    <p class="mt-1 text-sm text-slate-500">Statut documentaire inchangé. Aucune anomalie bloquante détectée.</p>
+                                    <p class="text-sm font-black uppercase text-[#001529]">Mise à jour administrative effectuée</p>
+                                    <p class="mt-1 text-sm text-slate-500">Coordonnées de contact d'urgence et habilitation documentaire synchronisées.</p>
                                 </div>
                                 <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">17:10</span>
                             </div>
@@ -967,6 +958,10 @@ require base_path('views/partials/header_portal.php');
                     $gradeName = $gr ? ($gr['label_short'] ?? $gr['short_name'] ?? $gr['label_long'] ?? $gr['name'] ?? '—') : '—';
                     $clearance = $pe ? ($pe['clearance_level'] ?? '—') : '—';
                     $squadron = $pe ? ($pe['squadron'] ?? '—') : '—';
+                    $dashNow = new \DateTimeImmutable('now');
+                    $hrReviewDate = $dashNow->modify('+12 days')->format('d/m/Y');
+                    $hrMedicalDate = $dashNow->modify('+41 days')->format('d/m/Y');
+                    $hrRotationDate = $dashNow->modify('+7 days')->format('d/m/Y');
                     ?>
                     <section class="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-sm shadow-slate-200/50 transition-all hover:shadow-xl hover:shadow-slate-200/60">
                         <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
@@ -1024,6 +1019,31 @@ require base_path('views/partials/header_portal.php');
                             </div>
                         </div>
                     </section>
+
+                    <section class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm shadow-slate-200/50">
+                        <div class="px-6 py-5 border-b border-slate-100">
+                            <p class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Cellule RH</p>
+                            <h2 class="mt-2 text-xl font-black uppercase tracking-tight text-[#001529]">Disponibilité & suivi personnel</h2>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Prochain entretien individuel</p>
+                                <p class="mt-1 text-sm font-black uppercase text-slate-900"><?= htmlspecialchars($hrReviewDate) ?></p>
+                                <p class="mt-1 text-sm text-slate-600">Objectif: ajustement des objectifs, charge de formation et disponibilité mission.</p>
+                            </div>
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Visite médicale</p>
+                                    <p class="mt-1 text-xs font-black uppercase text-slate-900">Échéance <?= htmlspecialchars($hrMedicalDate) ?></p>
+                                </div>
+                                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Rotation de service</p>
+                                    <p class="mt-1 text-xs font-black uppercase text-slate-900">Prévue le <?= htmlspecialchars($hrRotationDate) ?></p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-500">Les échéances RH sont consolidées avec les obligations d'habilitation pour éviter les indisponibilités opérationnelles.</p>
+                        </div>
+                    </section>
                                       
                         <!-- Alertes -->
                     <section class="bg-white border border-slate-200">
@@ -1035,64 +1055,114 @@ require base_path('views/partials/header_portal.php');
                         <div class="divide-y divide-slate-100">
                             <div class="p-6">
                                 <div class="flex items-center justify-between gap-4">
-                                    <p class="text-sm font-black uppercase text-[#001529]">Validation documentaire à confirmer</p>
+                                    <p class="text-sm font-black uppercase text-[#001529]">Contrat de réserve à revalider</p>
                                     <span class="text-[10px] px-2 py-1 bg-amber-50 border border-amber-200 text-amber-700 font-black uppercase tracking-[0.2em]">Majeur</span>
                                 </div>
-                                <p class="mt-2 text-sm text-slate-500">Une pièce justificative requiert une vérification avant clôture du cycle.</p>
+                                <p class="mt-2 text-sm text-slate-500">Une annexe administrative est en attente de signature pour maintenir l'éligibilité opérationnelle.</p>
                             </div>
     
                             <div class="p-6">
                                 <div class="flex items-center justify-between gap-4">
-                                    <p class="text-sm font-black uppercase text-[#001529]">Module avancé non terminé</p>
+                                    <p class="text-sm font-black uppercase text-[#001529]">Recyclage sécurité non finalisé</p>
                                     <span class="text-[10px] px-2 py-1 bg-slate-100 border border-slate-200 text-slate-600 font-black uppercase tracking-[0.2em]">Suivi</span>
                                 </div>
-                                <p class="mt-2 text-sm text-slate-500">La progression est suspendue à 68 %. Reprise recommandée avant affectation.</p>
+                                <p class="mt-2 text-sm text-slate-500">La qualification annuelle est à 68 %. Clôture recommandée avant prochaine affectation en poste sensible.</p>
                             </div>
     
                             <div class="p-6">
                                 <div class="flex items-center justify-between gap-4">
-                                    <p class="text-sm font-black uppercase text-[#001529]">Synchronisation matériel prévue</p>
+                                    <p class="text-sm font-black uppercase text-[#001529]">Point administratif de section planifié</p>
                                     <span class="text-[10px] px-2 py-1 bg-blue-50 border border-blue-200 text-blue-700 font-black uppercase tracking-[0.2em]">Info</span>
                                 </div>
-                                <p class="mt-2 text-sm text-slate-500">Maintenance logicielle programmée sur l’équipement personnel enregistré.</p>
+                                <p class="mt-2 text-sm text-slate-500">Vérification coordonnée des dossiers de disponibilité, permissions et coordonnées d'urgence.</p>
                             </div>
                         </div>
                     </section>
     
                     <!-- Raccourcis -->
-                    <section class="bg-[#001529] text-white border border-slate-800">
+                    <section class="bg-[#001529] text-white border border-slate-800" id="dashboard-service-shortcuts" data-tenant-id="<?= (int) $currentTid ?>">
                         <div class="px-6 py-5 border-b border-white/10">
                             <p class="text-[10px] font-black uppercase tracking-[0.25em] text-white/40">Accès rapide</p>
-                            <h2 class="mt-2 text-xl font-black uppercase tracking-tight">Raccourcis de service</h2>
+                            <div class="mt-2 flex items-center justify-between gap-4">
+                                <h2 class="text-xl font-black uppercase tracking-tight">Raccourcis de service</h2>
+                                <?php if (\App\Core\Gate::getInstance()->allows('dashboard.pins.manage')): ?>
+                                    <a href="<?= url('back-office/dashboard-pins') ?>" class="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300 hover:text-white">Configurer le tenant</a>
+                                <?php endif; ?>
+                            </div>
+                            <p class="mt-2 text-xs text-white/55">Personnalisation locale: choisissez les raccourcis affichés pour cette communauté sur cet appareil.</p>
                         </div>
-    
-                        <div class="grid grid-cols-2 gap-px bg-white/10">
-                            <a href="<?= url('atak') ?>" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
+
+                        <div class="px-6 py-4 border-b border-white/10 bg-white/[0.02]">
+                            <details>
+                                <summary class="cursor-pointer text-[10px] font-black uppercase tracking-[0.2em] text-white/70 hover:text-white">Personnaliser les raccourcis visibles</summary>
+                                <div class="mt-3 grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-white/80">
+                                    <label class="inline-flex items-center gap-2"><input type="checkbox" data-shortcut-toggle="shortcut-atak" checked class="h-3.5 w-3.5 rounded border-white/30 bg-transparent">ATAK</label>
+                                    <label class="inline-flex items-center gap-2"><input type="checkbox" data-shortcut-toggle="shortcut-orbat" checked class="h-3.5 w-3.5 rounded border-white/30 bg-transparent">ORBAT</label>
+                                    <label class="inline-flex items-center gap-2"><input type="checkbox" data-shortcut-toggle="shortcut-fiche" checked class="h-3.5 w-3.5 rounded border-white/30 bg-transparent">Ma fiche</label>
+                                    <label class="inline-flex items-center gap-2"><input type="checkbox" data-shortcut-toggle="shortcut-docs" checked class="h-3.5 w-3.5 rounded border-white/30 bg-transparent">Documents</label>
+                                    <label class="inline-flex items-center gap-2"><input type="checkbox" data-shortcut-toggle="shortcut-formations" checked class="h-3.5 w-3.5 rounded border-white/30 bg-transparent">Formations</label>
+                                    <label class="inline-flex items-center gap-2"><input type="checkbox" data-shortcut-toggle="shortcut-account" checked class="h-3.5 w-3.5 rounded border-white/30 bg-transparent">Paramètres</label>
+                                </div>
+                            </details>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-px bg-white/10" id="service-shortcuts-grid">
+                            <a href="<?= url('atak') ?>" id="shortcut-atak" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
                                 <p class="text-sm font-black uppercase">ATAK / Tacmap</p>
                                 <p class="mt-1 text-xs text-white/50 uppercase">Carte tactique temps réel</p>
                             </a>
-                            <a href="<?= url('orbat') ?>" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
+                            <a href="<?= url('orbat') ?>" id="shortcut-orbat" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
                                 <p class="text-sm font-black uppercase">ORBAT / Unité</p>
                                 <p class="mt-1 text-xs text-white/50 uppercase">Organisation et personnel</p>
                             </a>
-                            <a href="<?= url('personnel/me') ?>" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
+                            <a href="<?= url('personnel/me') ?>" id="shortcut-fiche" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
                                 <p class="text-sm font-black uppercase">Ma fiche</p>
                                 <p class="mt-1 text-xs text-white/50 uppercase">Dossier personnel</p>
                             </a>
-                            <a href="<?= url('documents') ?>" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
+                            <a href="<?= url('documents') ?>" id="shortcut-docs" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
                                 <p class="text-sm font-black uppercase">Documents</p>
                                 <p class="mt-1 text-xs text-white/50 uppercase">Ordres et notes</p>
                             </a>
-                            <a href="<?= url('formations') ?>" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
+                            <a href="<?= url('formations') ?>" id="shortcut-formations" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
                                 <p class="text-sm font-black uppercase">Formations</p>
                                 <p class="mt-1 text-xs text-white/50 uppercase">Séquences</p>
                             </a>
-                            <a href="<?= url('account') ?>" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
+                            <a href="<?= url('account') ?>" id="shortcut-account" class="bg-[#001529] p-5 hover:bg-white/[0.04] transition">
                                 <p class="text-sm font-black uppercase">Paramètres</p>
                                 <p class="mt-1 text-xs text-white/50 uppercase">Profil et paramètres</p>
                             </a>
                         </div>
                     </section>
+                    <script>
+                    (function () {
+                        var root = document.getElementById('dashboard-service-shortcuts');
+                        if (!root) return;
+                        var tid = root.getAttribute('data-tenant-id') || '0';
+                        var key = 'athena_dash_shortcuts_' + tid;
+                        var toggles = root.querySelectorAll('[data-shortcut-toggle]');
+                        function applyState(state) {
+                            toggles.forEach(function (toggle) {
+                                var targetId = toggle.getAttribute('data-shortcut-toggle');
+                                var card = document.getElementById(targetId);
+                                if (!card) return;
+                                var visible = state[targetId] !== false;
+                                toggle.checked = visible;
+                                card.classList.toggle('hidden', !visible);
+                            });
+                        }
+                        var state = {};
+                        try { state = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (_) { state = {}; }
+                        applyState(state);
+                        toggles.forEach(function (toggle) {
+                            toggle.addEventListener('change', function () {
+                                var targetId = toggle.getAttribute('data-shortcut-toggle');
+                                state[targetId] = !!toggle.checked;
+                                localStorage.setItem(key, JSON.stringify(state));
+                                applyState(state);
+                            });
+                        });
+                    })();
+                    </script>
     
                 </aside>
     
