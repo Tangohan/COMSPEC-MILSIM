@@ -192,6 +192,7 @@ class Container
                 self::get(RbacService::class),
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
+                self::get(\App\Repositories\EmailTokenRepository::class),
                 self::get(\App\Repositories\PasswordResetRepository::class),
                 self::get(\App\Services\Audit\AuditService::class),
                 self::get(\App\Services\EmailService::class),
