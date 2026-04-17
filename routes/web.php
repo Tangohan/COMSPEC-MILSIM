@@ -555,6 +555,7 @@ return function (Router $router) {
     $router->post('/back-office/teams/{id}/delete', [TeamAdminController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/configuration', [AdminConfigurationController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/member-role-display', [AdminConfigurationController::class, 'saveMemberRoleDisplay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/configuration/roleplay-followup', [AdminConfigurationController::class, 'saveRoleplayFollowupConfig'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/debug-recruit-sync', [AdminConfigurationController::class, 'debugRecruitSync'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/alerts/create', [TenantAlertsController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/alerts', [TenantAlertsController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
