@@ -194,6 +194,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
                 <?php $card(url('back-office/recruitments'), 'Candidatures', 'Dossiers, décisions, file d’attente.' . ($pendingEnlist > 0 ? ' (' . $pendingEnlist . ' en attente)' : '')); ?>
                 <?php $card(url('back-office/recruitments/messages-prefaits'), 'Messages préfaits (recrutement)', 'Modèles de commentaires internes pour traiter les candidatures.', 'border-emerald-200/80 hover:border-emerald-400 hover:bg-emerald-50/40'); ?>
                 <?php $card(url('back-office/positions'), 'Postes organisationnels', 'Intitulés de fonction et affectations, distincts des rôles et habilitations.'); ?>
+                <?php $card(url('back-office/roleplay-followup'), 'Suivi roleplay', 'Pilotage tutorat, timeline dossiers et avancement individuel.'); ?>
             </div>
         </section>
 
