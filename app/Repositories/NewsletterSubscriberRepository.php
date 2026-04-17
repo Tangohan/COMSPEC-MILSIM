@@ -115,4 +115,74 @@ final class NewsletterSubscriberRepository
 
         return $row ?: null;
     }
+
+    /**
+     * @return array{pending: int, subscribed: int, unsubscribed: int, total: int}
+     */
+    public function adminCountsByStatus(): array
+    {
+        $base = ['pending' => 0, 'subscribed' => 0, 'unsubscribed' => 0, 'total' => 0];
+        if (!$this->schemaReady()) {
+            return $base;
+        }
+        $st = $this->pdo->query('SELECT status, COUNT(*) AS c FROM newsletter_subscribers GROUP BY status');
+        if (!$st) {
+            return $base;
+        }
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $s = (string) ($row['status'] ?? '');
+            $c = (int) ($row['c'] ?? 0);
+            if (isset($base[$s])) {
+                $base[$s] = $c;
+            }
+            $base['total'] += $c;
+        }
+
+        return $base;
+    }
+
+    /**
+     * @param 'all'|'pending'|'subscribed'|'unsubscribed' $statusFilter
+     * @return array{rows: list<array<string, mixed>>, total: int}
+     */
+    public function adminListSubscribers(string $statusFilter, string $emailNeedle, int $offset, int $limit): array
+    {
+        if (!$this->schemaReady()) {
+            return ['rows' => [], 'total' => 0];
+        }
+        $allowed = ['all', 'pending', 'subscribed', 'unsubscribed'];
+        if (!in_array($statusFilter, $allowed, true)) {
+            $statusFilter = 'all';
+        }
+
+        $where = [];
+        $params = [];
+        if ($statusFilter !== 'all') {
+            $where[] = 'status = ?';
+            $params[] = $statusFilter;
+        }
+        $needle = trim($emailNeedle);
+        if ($needle !== '') {
+            $where[] = 'email LIKE ? ESCAPE \'\\\\\'';
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_strtolower($needle));
+            $params[] = '%' . $escaped . '%';
+        }
+        $sqlWhere = $where === [] ? '1=1' : implode(' AND ', $where);
+
+        $countSt = $this->pdo->prepare("SELECT COUNT(*) FROM newsletter_subscribers WHERE {$sqlWhere}");
+        $countSt->execute($params);
+        $total = (int) $countSt->fetchColumn();
+
+        $cols = 'id, email, status, subscribed_at, unsubscribed_at, last_event_at, created_at, source, locale, ip_address, user_agent';
+        $listSt = $this->pdo->prepare(
+            "SELECT {$cols} FROM newsletter_subscribers WHERE {$sqlWhere} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
+        );
+        $listParams = $params;
+        $listParams[] = max(1, min(100, $limit));
+        $listParams[] = max(0, $offset);
+        $listSt->execute($listParams);
+        $rows = $listSt->fetchAll(PDO::FETCH_ASSOC);
+
+        return ['rows' => is_array($rows) ? $rows : [], 'total' => $total];
+    }
 }

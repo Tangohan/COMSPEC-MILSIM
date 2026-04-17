@@ -330,7 +330,7 @@ if (!function_exists('is_platform_site_admin_shell_request')) {
             return false;
         }
         $rest = substr($p, strlen('admin/'));
-        $prefixes = ['ops-center', 'audit', 'analytics', 'content-moderation', 'maintenance', 'roles', 'settings', 'site-roles', 'tenants'];
+        $prefixes = ['ops-center', 'audit', 'analytics', 'newsletter', 'content-moderation', 'maintenance', 'roles', 'settings', 'site-roles', 'tenants'];
         foreach ($prefixes as $prefix) {
             if ($rest === $prefix || str_starts_with($rest, $prefix . '/')) {
                 return true;
