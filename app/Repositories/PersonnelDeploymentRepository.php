@@ -23,6 +23,8 @@ final class PersonnelDeploymentRepository
             tenant_id INT NOT NULL,
             user_id INT NOT NULL,
             status VARCHAR(32) NOT NULL DEFAULT "deployed",
+            campaign_tag VARCHAR(120) NULL,
+            event_id INT NULL,
             deployed_by_user_id INT NULL,
             deployed_at DATETIME NOT NULL,
             mods_up_to_date TINYINT(1) NOT NULL DEFAULT 0,
@@ -41,8 +43,20 @@ final class PersonnelDeploymentRepository
             updated_at DATETIME NOT NULL,
             UNIQUE KEY uq_personnel_deployments_tenant_user (tenant_id, user_id),
             KEY idx_personnel_deployments_tenant_status (tenant_id, status),
-            KEY idx_personnel_deployments_user (user_id)
+            KEY idx_personnel_deployments_user (user_id),
+            KEY idx_personnel_deployments_event (event_id),
+            KEY idx_personnel_deployments_campaign (campaign_tag)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+
+        // Compatibilité bases déjà existantes
+        try {
+            $this->pdo->exec('ALTER TABLE personnel_deployments ADD COLUMN campaign_tag VARCHAR(120) NULL AFTER status');
+        } catch (\Throwable) {
+        }
+        try {
+            $this->pdo->exec('ALTER TABLE personnel_deployments ADD COLUMN event_id INT NULL AFTER campaign_tag');
+        } catch (\Throwable) {
+        }
 
         $this->pdo->exec('CREATE TABLE IF NOT EXISTS personnel_deployment_anomalies (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -56,7 +70,7 @@ final class PersonnelDeploymentRepository
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
     }
 
-    public function listDeployablePersonnel(int $tenantId, string $search = ''): array
+    public function listDeployablePersonnel(int $tenantId, string $search = '', ?string $campaignTag = null, ?int $eventId = null): array
     {
         $params = [$tenantId];
         $where = 'u.tenant_id = ? AND u.status = "active"';
@@ -68,24 +82,50 @@ final class PersonnelDeploymentRepository
             $params[] = $like;
             $params[] = $like;
         }
+        $campaign = trim((string) ($campaignTag ?? ''));
+        if ($campaign !== '') {
+            $where .= ' AND d.campaign_tag = ?';
+            $params[] = $campaign;
+        }
+        if (($eventId ?? 0) > 0) {
+            $where .= ' AND d.event_id = ?';
+            $params[] = (int) $eventId;
+        }
 
         $sql = 'SELECT u.id AS user_id, u.display_name, u.callsign, u.email,
                     pp.primary_role, pp.blood_type AS profile_blood_type, pp.matricule_internal, pp.primary_unit_id,
                     un.name AS unit_name,
-                    d.id AS deployment_id, d.status AS deployment_status, d.deployed_at,
+                    d.id AS deployment_id, d.status AS deployment_status, d.campaign_tag, d.event_id, d.deployed_at,
                     d.mods_up_to_date, d.role_qualified_authorized, d.recycling_alpha_bravo_up_to_date, d.vmp_up_to_date,
                     d.last_interview_done, d.weight_kg, d.blood_type, d.matricule, d.assignment_label, d.checkup_notes,
-                    d.checkup_validated_at
+                    d.checkup_validated_at,
+                    ce.title AS event_title, ce.starts_at AS event_starts_at,
+                    r.status AS event_rsvp_status, r.checked_in_at AS event_checked_in_at
                 FROM users u
                 LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
                 LEFT JOIN units un ON un.id = pp.primary_unit_id
                 LEFT JOIN personnel_deployments d ON d.user_id = u.id AND d.tenant_id = u.tenant_id
+                LEFT JOIN community_events ce ON ce.id = d.event_id AND ce.tenant_id = u.tenant_id
+                LEFT JOIN community_event_rsvps r ON r.event_id = d.event_id AND r.user_id = u.id
                 WHERE ' . $where . '
                 ORDER BY COALESCE(d.updated_at, u.updated_at, u.created_at) DESC, u.display_name ASC
                 LIMIT 250';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function listCampaignTagsForTenant(int $tenantId, int $limit = 30): array
+    {
+        $stmt = $this->pdo->prepare('SELECT campaign_tag, COUNT(*) AS n
+            FROM personnel_deployments
+            WHERE tenant_id = ? AND campaign_tag IS NOT NULL AND campaign_tag <> ""
+            GROUP BY campaign_tag
+            ORDER BY MAX(updated_at) DESC
+            LIMIT ' . max(1, min(80, $limit)));
+        $stmt->execute([$tenantId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
@@ -105,6 +145,8 @@ final class PersonnelDeploymentRepository
 
         $base = [
             'status' => (string) ($data['status'] ?? ($existing['status'] ?? 'deployed')),
+            'campaign_tag' => $data['campaign_tag'] ?? null,
+            'event_id' => $data['event_id'] ?? null,
             'mods_up_to_date' => !empty($data['mods_up_to_date']) ? 1 : 0,
             'role_qualified_authorized' => !empty($data['role_qualified_authorized']) ? 1 : 0,
             'recycling_alpha_bravo_up_to_date' => !empty($data['recycling_alpha_bravo_up_to_date']) ? 1 : 0,
@@ -119,12 +161,14 @@ final class PersonnelDeploymentRepository
 
         if ($existing) {
             $stmt = $this->pdo->prepare('UPDATE personnel_deployments
-                SET status = ?, mods_up_to_date = ?, role_qualified_authorized = ?, recycling_alpha_bravo_up_to_date = ?,
+                SET status = ?, campaign_tag = ?, event_id = ?, mods_up_to_date = ?, role_qualified_authorized = ?, recycling_alpha_bravo_up_to_date = ?,
                     vmp_up_to_date = ?, last_interview_done = ?, weight_kg = ?, blood_type = ?, matricule = ?,
                     assignment_label = ?, checkup_notes = ?, updated_at = NOW()
                 WHERE tenant_id = ? AND user_id = ?');
             $stmt->execute([
                 $base['status'],
+                $base['campaign_tag'],
+                $base['event_id'],
                 $base['mods_up_to_date'],
                 $base['role_qualified_authorized'],
                 $base['recycling_alpha_bravo_up_to_date'],
@@ -143,14 +187,16 @@ final class PersonnelDeploymentRepository
         }
 
         $stmt = $this->pdo->prepare('INSERT INTO personnel_deployments
-            (tenant_id, user_id, status, deployed_by_user_id, deployed_at, mods_up_to_date, role_qualified_authorized,
+            (tenant_id, user_id, status, campaign_tag, event_id, deployed_by_user_id, deployed_at, mods_up_to_date, role_qualified_authorized,
              recycling_alpha_bravo_up_to_date, vmp_up_to_date, last_interview_done, weight_kg, blood_type, matricule,
              assignment_label, checkup_notes, created_at, updated_at)
-            VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())');
+            VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())');
         $stmt->execute([
             $tenantId,
             $userId,
             $base['status'],
+            $base['campaign_tag'],
+            $base['event_id'],
             $actorUserId,
             $base['mods_up_to_date'],
             $base['role_qualified_authorized'],

@@ -9,6 +9,7 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\CommunityEventRepository;
 use App\Repositories\PersonnelDeploymentRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\TenantRepository;
@@ -27,6 +28,7 @@ final class PersonnelDeploymentController
         private PersonnelProfileRepository $profileRepository,
         private TenantRepository $tenantRepository,
         private UnitRepository $unitRepository,
+        private CommunityEventRepository $eventRepository,
         private EmailService $emailService
     ) {}
 
@@ -49,7 +51,9 @@ final class PersonnelDeploymentController
 
         $isManager = $this->canManageDeployments();
         $search = trim((string) $request->query('q', ''));
-        $rows = $this->deploymentRepository->listDeployablePersonnel($tenantId, $isManager ? $search : '');
+        $campaignFilter = trim((string) $request->query('campagne', ''));
+        $eventFilter = max(0, (int) $request->query('event_id', 0));
+        $rows = $this->deploymentRepository->listDeployablePersonnel($tenantId, $isManager ? $search : '', $campaignFilter !== '' ? $campaignFilter : null, $eventFilter > 0 ? $eventFilter : null);
 
         if (!$isManager) {
             $rows = array_values(array_filter($rows, static fn (array $row): bool => (int) ($row['user_id'] ?? 0) === (int) ($user['id'] ?? 0)));
@@ -61,12 +65,18 @@ final class PersonnelDeploymentController
         }
         unset($row);
 
+        $events = $this->eventRepository->upcomingForTenant($tenantId, 80);
+
         return Response::view('layout.main', [
             'title' => 'Déploiement du personnel',
             'content' => 'personnel.deployment',
             'deploymentRows' => $rows,
             'deploymentCanManage' => $isManager,
             'deploymentSearch' => $search,
+            'deploymentCampaignFilter' => $campaignFilter,
+            'deploymentEventFilter' => $eventFilter,
+            'deploymentCampaignTags' => $this->deploymentRepository->listCampaignTagsForTenant($tenantId, 40),
+            'deploymentEvents' => $events,
             'deploymentCsrf' => Csrf::token(),
         ]);
     }
@@ -92,36 +102,61 @@ final class PersonnelDeploymentController
             return Response::redirect(url('deploiement'));
         }
 
+        $campaignTag = trim((string) $request->input('campaign_tag', ''));
+        $eventId = max(0, (int) $request->input('event_id', 0));
+        $event = $eventId > 0 ? $this->eventRepository->findByIdForTenant($eventId, $tenantId) : null;
+        if ($eventId > 0 && $event === null) {
+            Session::flash('error', 'Événement sélectionné introuvable.');
+
+            return Response::redirect(url('deploiement'));
+        }
+        if ($campaignTag === '' && $event !== null) {
+            $campaignTag = trim((string) ($event['campaign_tag'] ?? ''));
+        }
+
         $profile = $this->profileRepository->getByUserId($targetUserId) ?? [];
         $unit = (int) ($profile['primary_unit_id'] ?? 0) > 0 ? $this->unitRepository->findById((int) $profile['primary_unit_id'], $tenantId) : null;
 
         $this->deploymentRepository->upsertDeployment($tenantId, $targetUserId, (int) $user['id'], [
             'status' => 'deployed',
+            'campaign_tag' => $campaignTag !== '' ? mb_substr($campaignTag, 0, 120) : null,
+            'event_id' => $eventId > 0 ? $eventId : null,
             'blood_type' => trim((string) ($profile['blood_type'] ?? '')) ?: null,
             'matricule' => trim((string) ($profile['matricule_internal'] ?? '')) ?: null,
             'assignment_label' => trim((string) (($unit['name'] ?? '') ?: ($profile['primary_role'] ?? ''))) ?: null,
         ]);
 
+        if ($event !== null) {
+            $this->eventRepository->setRsvp((int) $event['id'], $targetUserId, 'yes');
+        }
+
         $tenant = $this->tenantRepository->findById($tenantId);
         $tenantName = trim((string) ($tenant['name'] ?? 'Votre communauté'));
         $link = url('deploiement');
+
+        $subject = 'Vous êtes déployé — check-up requis';
+        if ($campaignTag !== '') {
+            $subject .= ' [' . $campaignTag . ']';
+        }
 
         $this->emailService->sendTemplated(
             EmailEvents::PERSONNEL_DEPLOYMENT_ASSIGNED,
             'personnel_deployment_assigned',
             (string) ($target['email'] ?? ''),
-            'Vous êtes déployé — check-up requis',
+            $subject,
             [
                 'displayName' => (string) ($target['display_name'] ?? 'Opérateur'),
                 'tenantName' => $tenantName,
                 'deploymentUrl' => $link,
+                'campaignTag' => $campaignTag,
+                'eventTitle' => (string) ($event['title'] ?? ''),
             ],
             $tenantId,
             null,
-            ['purpose' => 'personnel_deployment_assigned', 'user_id' => $targetUserId]
+            ['purpose' => 'personnel_deployment_assigned', 'user_id' => $targetUserId, 'campaign_tag' => $campaignTag, 'event_id' => $eventId]
         );
 
-        Session::flash('success', 'Personnel déployé. Notification e-mail envoyée.');
+        Session::flash('success', 'Personnel déployé. Liaison campagne/événement enregistrée et e-mail envoyé.');
 
         return Response::redirect(url('deploiement'));
     }
@@ -156,9 +191,13 @@ final class PersonnelDeploymentController
         $assignment = trim((string) $request->input('assignment_label', ''));
         $bloodType = trim((string) $request->input('blood_type', ''));
         $matricule = trim((string) $request->input('matricule', ''));
+        $campaignTag = trim((string) $request->input('campaign_tag', ''));
+        $eventId = max(0, (int) $request->input('event_id', 0));
 
         $data = [
             'status' => 'deployed',
+            'campaign_tag' => $campaignTag !== '' ? mb_substr($campaignTag, 0, 120) : null,
+            'event_id' => $eventId > 0 ? $eventId : null,
             'mods_up_to_date' => (int) $request->input('mods_up_to_date', 0) === 1,
             'role_qualified_authorized' => (int) $request->input('role_qualified_authorized', 0) === 1,
             'recycling_alpha_bravo_up_to_date' => (int) $request->input('recycling_alpha_bravo_up_to_date', 0) === 1,
@@ -172,6 +211,13 @@ final class PersonnelDeploymentController
         ];
 
         $this->deploymentRepository->upsertDeployment($tenantId, $targetUserId, (int) $actor['id'], $data);
+
+        if ($eventId > 0) {
+            $event = $this->eventRepository->findByIdForTenant($eventId, $tenantId);
+            if ($event !== null) {
+                $this->eventRepository->setRsvp((int) $event['id'], $targetUserId, 'yes');
+            }
+        }
 
         // Mise à jour autonome de certaines données de dossier personnel.
         $this->profileRepository->update($targetUserId, [
@@ -209,10 +255,11 @@ final class PersonnelDeploymentController
                         'displayName' => (string) ($target['display_name'] ?? 'Opérateur'),
                         'tenantName' => $tenantName,
                         'deploymentUrl' => url('deploiement'),
+                        'campaignTag' => $campaignTag,
                     ],
                     $tenantId,
                     null,
-                    ['purpose' => 'personnel_deployment_checkup_validated', 'user_id' => $targetUserId]
+                    ['purpose' => 'personnel_deployment_checkup_validated', 'user_id' => $targetUserId, 'campaign_tag' => $campaignTag, 'event_id' => $eventId]
                 );
             }
 
