@@ -144,6 +144,32 @@ class ForumNewTopicController
         }
         $fc = forum_config_for_tenant((int) $tenantId);
         $maxLen = (int) ($fc['forum_max_post_length'] ?? 10000);
+        $canSetMissionPriority = function_exists('can') && (can('forum.moderate') || can('forum.moderate_organization'));
+        $missionPriorityLevelDefault = '';
+        $missionPriorityRoleDefault = '';
+        $mandatoryReadDefault = false;
+        $mandatoryReadDueAtDefault = '';
+        if ($canSetMissionPriority) {
+            $allowedLevels = ['critical', 'high', 'standard'];
+            $requestedLevel = strtolower(trim((string) $request->query('mission_priority_level', '')));
+            if (in_array($requestedLevel, $allowedLevels, true)) {
+                $missionPriorityLevelDefault = $requestedLevel;
+            }
+            $requestedRole = strtolower(trim((string) $request->query('mission_priority_role', '')));
+            $requestedRole = preg_replace('/[^a-z0-9_]/', '', $requestedRole ?? '');
+            if (is_string($requestedRole) && $requestedRole !== '') {
+                $missionPriorityRoleDefault = $requestedRole;
+            }
+            $mandatoryRaw = strtolower(trim((string) $request->query('mandatory_read', '')));
+            $mandatoryReadDefault = in_array($mandatoryRaw, ['1', 'true', 'yes', 'on'], true);
+            $dueRaw = trim((string) $request->query('mandatory_read_due_at', ''));
+            if ($dueRaw !== '') {
+                $dueTs = strtotime($dueRaw);
+                if ($dueTs !== false) {
+                    $mandatoryReadDueAtDefault = date('Y-m-d\TH:i', $dueTs);
+                }
+            }
+        }
 
         return Response::view('layout.forum', [
             'content' => 'forum.new-topic',
@@ -153,6 +179,11 @@ class ForumNewTopicController
             'preselectedCategoryId' => $preselectedCategoryId,
             'maxLen' => $maxLen,
             'forumNewTopicTenantContext' => $forumNewTopicTenantContext,
+            'canSetMissionPriority' => $canSetMissionPriority,
+            'missionPriorityLevelDefault' => $missionPriorityLevelDefault,
+            'missionPriorityRoleDefault' => $missionPriorityRoleDefault,
+            'mandatoryReadDefault' => $mandatoryReadDefault,
+            'mandatoryReadDueAtDefault' => $mandatoryReadDueAtDefault,
         ]);
     }
 

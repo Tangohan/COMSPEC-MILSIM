@@ -23,6 +23,10 @@ $interteamCoopReplyUrl = isset($interteamCoopReplyUrl) ? trim((string) $intertea
 $interteamCoopPaginationBase = isset($interteamCoopPaginationBase) ? trim((string) $interteamCoopPaginationBase) : '';
 $canReply = !empty($canReply);
 $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPaginationBase : ($baseUrl . '/forum/topic/' . $topicId);
+$mandatoryReadStatus = is_array($mandatoryReadStatus ?? null) ? $mandatoryReadStatus : null;
+$missionPriorityLevel = strtolower(trim((string) ($topic['mission_priority_level'] ?? '')));
+$missionPriorityRole = trim((string) ($topic['mission_priority_role'] ?? ''));
+$isMandatoryRead = (int) ($topic['mandatory_read'] ?? 0) === 1;
 ?>
 <main class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 bg-[#f8fafc] min-h-[60vh]">
   <?php if ($interteamMissionSlug !== '' && $interteamMissionTitle !== ''): ?>
@@ -78,6 +82,14 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
       <?php endif; ?>
       <?php if (!empty($topic['is_locked'])): ?>
         <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-900 border border-amber-300/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider">Clos</span>
+      <?php endif; ?>
+      <?php if ($missionPriorityLevel !== ''): ?>
+        <span class="inline-flex items-center rounded-full bg-rose-600 text-white px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider">
+          Priorité mission <?= htmlspecialchars($missionPriorityLevel, ENT_QUOTES, 'UTF-8') ?>
+        </span>
+      <?php endif; ?>
+      <?php if ($isMandatoryRead): ?>
+        <span class="inline-flex items-center rounded-full bg-violet-100 text-violet-900 border border-violet-200 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider">Lecture obligatoire</span>
       <?php endif; ?>
     </div>
 
@@ -152,6 +164,33 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
 
   <?php if (!empty($topic['is_locked'])): ?>
     <div class="border border-amber-300 bg-amber-50 p-4 mb-6 text-amber-900 text-sm rounded-xl">Ce sujet est verrouillé — les nouvelles réponses ne sont pas acceptées.</div>
+  <?php endif; ?>
+  <?php if ($isMandatoryRead): ?>
+    <?php
+      $status = (string) ($mandatoryReadStatus['status'] ?? 'unseen');
+      $dueAt = (string) ($mandatoryReadStatus['mandatory_read_due_at'] ?? '');
+      $isAck = $status === 'acknowledged';
+      $statusLabel = match ($status) {
+        'acknowledged' => 'Accusé de réception validé',
+        'overdue' => 'Lecture obligatoire en retard',
+        'seen' => 'Lecture vue — accusé attendu',
+        default => 'Lecture obligatoire à confirmer',
+      };
+    ?>
+    <div id="mandatory-read-box" class="border border-violet-200 bg-violet-50 p-4 mb-6 text-violet-950 text-sm rounded-xl">
+      <p class="font-bold"><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></p>
+      <p class="text-[12px] mt-1">
+        Ce contenu fait partie du flux mission<?= $missionPriorityRole !== '' ? ' ciblé pour le rôle <strong>' . htmlspecialchars($missionPriorityRole, ENT_QUOTES, 'UTF-8') . '</strong>' : '' ?>.
+        <?php if ($dueAt !== ''): ?>
+          Échéance : <strong><?= htmlspecialchars(date('d/m/Y H:i', strtotime($dueAt)), ENT_QUOTES, 'UTF-8') ?></strong>.
+        <?php endif; ?>
+      </p>
+      <?php if (!$isAck && $userId): ?>
+        <button type="button" id="mandatory-read-ack-btn" class="mt-3 inline-flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-wider bg-violet-700 text-white rounded-md hover:bg-violet-800 transition-colors">
+          Accuser réception
+        </button>
+      <?php endif; ?>
+    </div>
   <?php endif; ?>
 
   <?php $flashSuccess = \App\Core\Session::getFlash('success'); $flashError = \App\Core\Session::getFlash('error'); ?>
@@ -864,6 +903,34 @@ $paginationTopicBase = $interteamCoopPaginationBase !== '' ? $interteamCoopPagin
           subBtn.className = 'w-full text-left px-4 py-2.5 text-[11px] font-semibold border-t border-slate-100 flex items-center gap-2 ' + (subscribed ? 'text-slate-800 hover:bg-slate-50' : 'text-emerald-800 hover:bg-emerald-50/50');
           toast(subscribed ? 'Abonnement annulé' : 'Vous suivez ce sujet');
         }
+      });
+    });
+  }
+
+  var mandatoryAckBtn = document.getElementById('mandatory-read-ack-btn');
+  if (mandatoryAckBtn) {
+    mandatoryAckBtn.addEventListener('click', function() {
+      mandatoryAckBtn.disabled = true;
+      fetch(baseUrl + '/api/forum', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ack_mandatory_read', topic_id: topicId, csrf_token: csrf })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.success) {
+          mandatoryAckBtn.disabled = false;
+          toast(d.error || 'Accusé impossible');
+          return;
+        }
+        mandatoryAckBtn.remove();
+        var box = document.getElementById('mandatory-read-box');
+        if (box) {
+          var title = box.querySelector('p');
+          if (title) title.textContent = 'Accusé de réception validé';
+        }
+        toast('Lecture obligatoire confirmée');
+      }).catch(function() {
+        mandatoryAckBtn.disabled = false;
+        toast('Erreur réseau');
       });
     });
   }

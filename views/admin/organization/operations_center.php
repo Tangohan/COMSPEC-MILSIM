@@ -16,6 +16,11 @@ $anomalies = $operationsOnboardingAnomalies ?? [];
 $opsByType = is_array($operationsOpsBoardItemsByType ?? null) ? $operationsOpsBoardItemsByType : [];
 $opsFilters = is_array($operationsOpsBoardFilters ?? null) ? $operationsOpsBoardFilters : [];
 $opsError = $operationsOpsBoardError ?? null;
+$actionableAlerts = is_array($operationsActionableAlerts ?? null) ? $operationsActionableAlerts : [];
+$playbookCatalog = is_array($operationsPlaybookCatalog ?? null) ? $operationsPlaybookCatalog : [];
+$auditScenarios = is_array($operationsAuditScenarios ?? null) ? $operationsAuditScenarios : [];
+$weeklyGoals = is_array($operationsWeeklyGoals ?? null) ? $operationsWeeklyGoals : [];
+$kpiSnapshot = is_array($operationsKpiSnapshot ?? null) ? $operationsKpiSnapshot : [];
 
 $profileLabels = [
     'commandement' => 'Commandement',
@@ -90,6 +95,114 @@ $renderPriorityBadge = static function (array $item) use ($priorityClasses, $pri
             <?php endforeach; ?>
         </div>
     </header>
+
+    <section class="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-white p-5 shadow-sm space-y-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <p class="text-[11px] uppercase tracking-[0.2em] font-bold text-indigo-700">Ops Admin</p>
+                <h2 class="text-xl font-black text-slate-900 mt-1">Centre d’opérations admin — Priorisation quotidienne</h2>
+                <p class="text-sm text-slate-600 mt-1">File unique des alertes actionnables, playbooks incidents, audit orienté scénario et objectifs hebdomadaires.</p>
+            </div>
+            <a href="<?= url('back-office/audit') ?>" class="inline-flex items-center rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-100">Ouvrir le journal d’audit</a>
+        </div>
+
+        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <?php foreach ($kpiSnapshot as $kpi): ?>
+                <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500"><?= $escape((string) ($kpi['label'] ?? 'KPI')) ?></p>
+                    <p class="mt-2 text-2xl font-black text-slate-900"><?= $escape((string) ($kpi['value'] ?? 'N/D')) ?></p>
+                    <p class="mt-1 text-xs text-slate-500"><?= $escape((string) ($kpi['trend'] ?? '—')) ?></p>
+                </article>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="grid gap-5 xl:grid-cols-2">
+            <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h3 class="text-sm font-black uppercase tracking-[0.14em] text-slate-900">File unique des alertes actionnables</h3>
+                <p class="mt-1 text-xs text-slate-500">Tri décroissant par score d’impact.</p>
+                <ul class="mt-3 space-y-2">
+                    <?php foreach ($actionableAlerts as $alert): ?>
+                        <?php
+                        $impact = (int) ($alert['impact_score'] ?? 0);
+                        $impactClass = $impact >= 80
+                            ? 'text-rose-700 bg-rose-50 border-rose-200'
+                            : ($impact >= 60 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200');
+                        ?>
+                        <li class="rounded-lg border border-slate-200 p-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-sm font-semibold text-slate-900"><?= $escape((string) ($alert['title'] ?? 'Alerte')) ?></p>
+                                <span class="inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide <?= $impactClass ?>">
+                                    Impact <?= $impact ?>
+                                </span>
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500">
+                                <?= $escape((string) ($alert['type'] ?? 'Ops')) ?> • <?= $escape((string) ($alert['sla_label'] ?? 'SLA: —')) ?> • <?= (int) ($alert['count'] ?? 0) ?> éléments
+                            </p>
+                            <a href="<?= $escape((string) ($alert['link'] ?? '#')) ?>" class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:underline"><?= $escape((string) ($alert['cta'] ?? 'Ouvrir')) ?> →</a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h3 class="text-sm font-black uppercase tracking-[0.14em] text-slate-900">Playbooks guidés incidents</h3>
+                <p class="mt-1 text-xs text-slate-500">Activation rapide des procédures standards.</p>
+                <div class="mt-3 space-y-2">
+                    <?php foreach ($playbookCatalog as $playbook): ?>
+                        <details class="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+                            <summary class="cursor-pointer text-sm font-semibold text-slate-900"><?= $escape((string) ($playbook['title'] ?? 'Playbook')) ?> <span class="text-xs text-slate-500">(résolus: <?= (int) ($playbook['resolved_count'] ?? 0) ?>)</span></summary>
+                            <p class="mt-2 text-xs text-slate-600"><?= $escape((string) ($playbook['summary'] ?? '')) ?></p>
+                            <?php if (!empty($playbook['steps']) && is_array($playbook['steps'])): ?>
+                                <ol class="mt-2 list-decimal pl-5 text-xs text-slate-600 space-y-1">
+                                    <?php foreach ($playbook['steps'] as $step): ?>
+                                        <li><?= $escape((string) $step) ?></li>
+                                    <?php endforeach; ?>
+                                </ol>
+                            <?php endif; ?>
+                        </details>
+                    <?php endforeach; ?>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid gap-5 xl:grid-cols-2">
+            <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h3 class="text-sm font-black uppercase tracking-[0.14em] text-slate-900">Journal d’audit par scénario</h3>
+                <ul class="mt-3 space-y-2">
+                    <?php foreach ($auditScenarios as $scenario): ?>
+                        <li class="rounded-lg border border-slate-200 px-3 py-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-sm font-semibold text-slate-900"><?= $escape((string) ($scenario['label'] ?? 'Scénario')) ?></p>
+                                <span class="text-xs font-bold text-slate-700"><?= (int) ($scenario['count'] ?? 0) ?> événements</span>
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500"><?= $escape((string) ($scenario['description'] ?? '')) ?></p>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h3 class="text-sm font-black uppercase tracking-[0.14em] text-slate-900">Objectifs hebdomadaires (KPI)</h3>
+                <ul class="mt-3 space-y-2">
+                    <?php foreach ($weeklyGoals as $goal): ?>
+                        <?php
+                        $state = (string) ($goal['state'] ?? 'en cours');
+                        $stateClass = $state === 'atteint'
+                            ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                            : ($state === 'à risque' ? 'text-rose-700 bg-rose-50 border-rose-200' : 'text-amber-700 bg-amber-50 border-amber-200');
+                        ?>
+                        <li class="rounded-lg border border-slate-200 px-3 py-2">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-sm font-semibold text-slate-900"><?= $escape((string) ($goal['title'] ?? 'Objectif')) ?></p>
+                                <span class="inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide <?= $stateClass ?>"><?= $escape($state) ?></span>
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500"><?= $escape((string) ($goal['kpi'] ?? 'KPI')) ?>: <?= $escape((string) ($goal['value'] ?? '—')) ?> • Variation <?= $escape((string) ($goal['variation'] ?? '—')) ?></p>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </article>
+        </div>
+    </section>
 
     <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <article class="rounded-xl border border-rose-200 bg-white p-4 shadow-sm">

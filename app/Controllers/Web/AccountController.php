@@ -24,6 +24,7 @@ use App\Services\Profile\RecruitmentPresetPayloadService;
 use App\Services\Profile\UserUiPreferencesValidationService;
 use App\Services\User\UserProfileSlugService;
 use App\Services\Steam\SteamWebApiService;
+use App\Services\Community\MemberOnboardingService;
 use PDO;
 
 class AccountController
@@ -62,6 +63,11 @@ class AccountController
             $accountProfile['nationality'] = $legalIdentity['nationality'] ?? ($accountProfile['nationality'] ?? '');
         }
         $accountSnapshot = $this->buildAccountSnapshot($accountUser, $accountProfile);
+        $onboardingSnapshot = (new MemberOnboardingService())->buildMemberSnapshot(
+            $uid,
+            $tenantId,
+            (string) ($accountUser['created_at'] ?? '')
+        );
 
         return Response::view('layout.main', [
             'content' => 'account.index',
@@ -70,6 +76,7 @@ class AccountController
             'accountProfile' => $accountProfile,
             'accountSnapshot' => $accountSnapshot,
             'systemHealth' => $this->getSystemHealth($tenantId),
+            'onboardingSnapshot' => $onboardingSnapshot,
         ]);
     }
 

@@ -109,4 +109,32 @@ class CourrierDashboardController
             'courrier' => ['documents' => $documents],
         ]);
     }
+
+    public function traceability(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+
+        $recent = $this->documentRepository->listForTenant($tenantId, null, null, null, null, 80, 0);
+        $pendingCount = $this->documentRepository->countByStatus($tenantId, 'pending_validation');
+        $validatedCount = $this->documentRepository->countByStatus($tenantId, 'validated');
+        $signedCount = $this->documentRepository->countByStatus($tenantId, 'signed');
+        $sentCount = $this->documentRepository->countByStatus($tenantId, 'sent');
+        $rejectedCount = $this->documentRepository->countByStatus($tenantId, 'rejected');
+
+        return Response::view('layout.main', [
+            'title' => 'Traçabilité décisionnelle — Bureau Courrier',
+            'content' => 'courrier/traceability',
+            'courrier' => [
+                'recent_documents' => $recent,
+                'pending_count' => $pendingCount,
+                'validated_count' => $validatedCount,
+                'signed_count' => $signedCount,
+                'sent_count' => $sentCount,
+                'rejected_count' => $rejectedCount,
+            ],
+        ]);
+    }
 }

@@ -156,6 +156,113 @@ class TenantAnalyticsRepository
     }
 
     /**
+     * @return array{
+     *   visits: int,
+     *   cta_clicks: int,
+     *   applications: int,
+     *   accepted: int,
+     *   median_visit_to_first_contact_hours: ?float
+     * }
+     */
+    public function getTenantConversionFunnel(int $tenantId, string $sinceIso): array
+    {
+        $out = [
+            'visits' => 0,
+            'cta_clicks' => 0,
+            'applications' => 0,
+            'accepted' => 0,
+            'median_visit_to_first_contact_hours' => null,
+        ];
+        if ($tenantId < 1) {
+            return $out;
+        }
+
+        if ($this->hasUsageEvents()) {
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(*)
+                 FROM usage_analytics_events
+                 WHERE tenant_id = ?
+                   AND name = ?
+                   AND subject_type = 'tenant'
+                   AND subject_id = ?
+                   AND created_at >= ?"
+            );
+            $st->execute([$tenantId, AnalyticsEventName::TENANT_PUBLIC_VIEW, $tenantId, $sinceIso]);
+            $out['visits'] = (int) $st->fetchColumn();
+
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(*)
+                 FROM usage_analytics_events
+                 WHERE tenant_id = ?
+                   AND name = ?
+                   AND created_at >= ?"
+            );
+            $st->execute([$tenantId, AnalyticsEventName::TENANT_RECRUITMENT_CTA_CLICK, $sinceIso]);
+            $out['cta_clicks'] = (int) $st->fetchColumn();
+        }
+
+        if ($this->hasTable('enlistments')) {
+            $st = $this->pdo->prepare('SELECT COUNT(*) FROM enlistments WHERE tenant_id = ? AND created_at >= ?');
+            $st->execute([$tenantId, $sinceIso]);
+            $out['applications'] = (int) $st->fetchColumn();
+
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM enlistments
+                 WHERE tenant_id = ?
+                   AND created_at >= ?
+                   AND status IN ('reviewed', 'accepted')"
+            );
+            $st->execute([$tenantId, $sinceIso]);
+            $out['accepted'] = (int) $st->fetchColumn();
+
+            $supportsReviewedAt = (bool) $this->pdo->query(
+                "SELECT 1
+                 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = 'enlistments'
+                   AND COLUMN_NAME = 'reviewed_at'
+                 LIMIT 1"
+            )->fetchColumn();
+            if ($supportsReviewedAt) {
+                $st = $this->pdo->prepare(
+                    "SELECT TIMESTAMPDIFF(MINUTE, created_at, reviewed_at) AS delta_min
+                     FROM enlistments
+                     WHERE tenant_id = ?
+                       AND created_at >= ?
+                       AND reviewed_at IS NOT NULL
+                       AND reviewed_at >= created_at
+                     ORDER BY delta_min ASC"
+                );
+                $st->execute([$tenantId, $sinceIso]);
+                $deltas = $st->fetchAll(PDO::FETCH_COLUMN);
+                if (is_array($deltas) && $deltas !== []) {
+                    $vals = [];
+                    foreach ($deltas as $delta) {
+                        $v = (int) $delta;
+                        if ($v >= 0) {
+                            $vals[] = $v;
+                        }
+                    }
+                    if ($vals !== []) {
+                        sort($vals, SORT_NUMERIC);
+                        $n = count($vals);
+                        if ($n % 2 === 1) {
+                            $medianMin = (float) $vals[(int) floor($n / 2)];
+                        } else {
+                            $a = (float) $vals[(int) ($n / 2) - 1];
+                            $b = (float) $vals[(int) ($n / 2)];
+                            $medianMin = ($a + $b) / 2.0;
+                        }
+                        $out['median_visit_to_first_contact_hours'] = round($medianMin / 60.0, 1);
+                    }
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function listRecruitmentOpeningStats(int $tenantId, string $sinceIso): array
