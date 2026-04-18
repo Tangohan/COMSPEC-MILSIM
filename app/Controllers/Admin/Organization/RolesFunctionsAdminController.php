@@ -12,6 +12,7 @@ use App\Core\Session;
 use App\Repositories\RoleRepository;
 use App\Repositories\UnitRepository;
 use App\Services\Admin\TenantRolePermissionPresetService;
+use PDO;
 
 /**
  * Page « Gestion des rôles et fonctions » : catalogue, graphe, liens vers affectations et presets.
@@ -30,11 +31,9 @@ class RolesFunctionsAdminController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $gate = Gate::getInstance();
-        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
-            Session::flash('error', 'Accès refusé.');
-
-            return Response::redirect(url('dashboard'));
+        $forbidden = $this->guardBackOfficeAccess();
+        if ($forbidden instanceof Response) {
+            return $forbidden;
         }
 
         $pdo = Database::getPdo();
@@ -71,7 +70,7 @@ class RolesFunctionsAdminController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.roles_functions',
-            'title' => 'Gestion des rôles et fonctions',
+            'title' => 'Cellule S1 — Doctrine des fonctions',
             'roleDefinitions' => $roleDefinitions,
             'definitionRelations' => $defRel,
             'tenantRoles' => $tenantRoles,
@@ -79,6 +78,116 @@ class RolesFunctionsAdminController
             'units' => $units,
             'rolePresetMeta' => $presets,
         ]);
+    }
+
+    public function storeDefinition(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $forbidden = $this->guardBackOfficeAccess();
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        $slug = mb_strtolower(trim((string) $request->input('slug')));
+        $nameFr = trim((string) $request->input('name_fr'));
+        $nameUs = trim((string) $request->input('name_us'));
+        $family = trim((string) $request->input('family'));
+        $description = trim((string) $request->input('description'));
+        $sortOrder = (int) $request->input('sort_order', 0);
+        if ($slug === '') {
+            $slug = $this->slugify($nameFr !== '' ? $nameFr : $nameUs);
+        }
+        if ($slug === '' || $nameFr === '') {
+            Session::flash('error', 'Le slug et le nom FR sont requis pour créer une fonction.');
+
+            return Response::redirect(url('back-office/roles-functions'));
+        }
+
+        $pdo = Database::getPdo();
+        try {
+            $check = $pdo->prepare('SELECT id FROM role_definitions WHERE slug = ? LIMIT 1');
+            $check->execute([$slug]);
+            if ($check->fetchColumn()) {
+                Session::flash('error', 'Le slug de fonction existe déjà.');
+
+                return Response::redirect(url('back-office/roles-functions'));
+            }
+
+            $insert = $pdo->prepare(
+                'INSERT INTO role_definitions (slug, name_fr, name_us, family, description, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())'
+            );
+            $insert->execute([
+                $slug,
+                $nameFr,
+                $nameUs !== '' ? $nameUs : $nameFr,
+                $family !== '' ? $family : 'command',
+                $description !== '' ? $description : null,
+                $sortOrder,
+            ]);
+
+            Session::flash('success', 'Fonction ajoutée au référentiel S1.');
+        } catch (\Throwable) {
+            Session::flash('error', 'Impossible de créer cette fonction.');
+        }
+
+        return Response::redirect(url('back-office/roles-functions'));
+    }
+
+    public function storeRoleRelation(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $forbidden = $this->guardBackOfficeAccess();
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        $fromRoleId = (int) $request->input('from_role_id', 0);
+        $toRoleId = (int) $request->input('to_role_id', 0);
+        $relationType = trim((string) $request->input('relation_type', 'reports_to'));
+        if ($fromRoleId < 1 || $toRoleId < 1 || $fromRoleId === $toRoleId || $relationType === '') {
+            Session::flash('error', 'Relation invalide (source, destination ou type).');
+
+            return Response::redirect(url('back-office/roles-functions'));
+        }
+
+        $pdo = Database::getPdo();
+        try {
+            $checkRole = $pdo->prepare("SELECT id FROM roles WHERE id = ? AND tenant_id = ? AND role_layer IN ('community', 'intra') LIMIT 1");
+            $checkRole->execute([$fromRoleId, $tenantId]);
+            $fromExists = (bool) $checkRole->fetchColumn();
+            $checkRole->execute([$toRoleId, $tenantId]);
+            $toExists = (bool) $checkRole->fetchColumn();
+            if (!$fromExists || !$toExists) {
+                Session::flash('error', 'Un des rôles sélectionnés est introuvable.');
+
+                return Response::redirect(url('back-office/roles-functions'));
+            }
+
+            $exists = $pdo->prepare('SELECT id FROM role_relations WHERE tenant_id = ? AND from_role_id = ? AND to_role_id = ? LIMIT 1');
+            $exists->execute([$tenantId, $fromRoleId, $toRoleId]);
+            if ($exists->fetchColumn()) {
+                Session::flash('error', 'Cette relation existe déjà.');
+
+                return Response::redirect(url('back-office/roles-functions'));
+            }
+
+            $insert = $pdo->prepare(
+                'INSERT INTO role_relations (tenant_id, from_role_id, to_role_id, relation_type, created_at) VALUES (?, ?, ?, ?, NOW())'
+            );
+            $insert->execute([$tenantId, $fromRoleId, $toRoleId, $relationType]);
+
+            Session::flash('success', 'Relation tactique ajoutée.');
+        } catch (\Throwable) {
+            Session::flash('error', 'Impossible de créer la relation.');
+        }
+
+        return Response::redirect(url('back-office/roles-functions'));
     }
 
     /**
@@ -130,5 +239,24 @@ class RolesFunctionsAdminController
         }
 
         return Response::json(['nodes' => $nodes, 'edges' => $edges]);
+    }
+
+    private function guardBackOfficeAccess(): ?Response
+    {
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
+            Session::flash('error', 'Accès refusé.');
+
+            return Response::redirect(url('dashboard'));
+        }
+
+        return null;
+    }
+
+    private function slugify(string $value): string
+    {
+        $slug = preg_replace('/[^a-z0-9]+/i', '-', trim($value));
+
+        return mb_strtolower(trim((string) $slug, '-'));
     }
 }
