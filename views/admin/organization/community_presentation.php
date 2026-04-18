@@ -47,21 +47,40 @@ foreach ($military as $sec) {
     }
 }
 $profileChecklist = [
-    'Nom de communauté' => trim((string) ($tenant['name'] ?? '')) !== '',
-    'Sous-titre public (hero)' => trim((string) ($c['public_hero_subtitle'] ?? '')) !== '',
-    'Présentation (texte ou sections)' => trim((string) ($c['simple_body'] ?? '')) !== '' || $hasMilitaryContent,
-    'Attentes recrutement' => trim((string) ($c['expectations'] ?? '')) !== '',
-    'Code communauté' => trim((string) ($tenant['community_code'] ?? '')) !== '',
-    'Canal de contact (Discord ou e-mail)' => trim((string) ($c['contact_discord_url'] ?? '')) !== '' || trim((string) ($c['contact_email'] ?? '')) !== '',
-    'Tags registre / style de jeu' => $selectedBadges !== [] || $selectedRegistryTags !== [],
+    'Profil' => [
+        'Nom de communauté' => trim((string) ($tenant['name'] ?? '')) !== '',
+        'Sous-titre public (hero)' => trim((string) ($c['public_hero_subtitle'] ?? '')) !== '',
+        'Présentation (texte ou sections)' => trim((string) ($c['simple_body'] ?? '')) !== '' || $hasMilitaryContent,
+        'Attentes recrutement' => trim((string) ($c['expectations'] ?? '')) !== '',
+        'Code communauté' => trim((string) ($tenant['community_code'] ?? '')) !== '',
+    ],
+    'Visuel' => [
+        'Image registre' => $registryCoverUrl !== null && trim((string) $registryCoverUrl) !== '',
+        'Badges registre / style de jeu' => $selectedBadges !== [] || $selectedRegistryTags !== [],
+        'Doctrine / accès' => trim((string) ($c['public_doctrine'] ?? '')) !== '' || trim((string) ($c['public_access_label'] ?? '')) !== '',
+    ],
+    'Liens' => [
+        'Canal Discord' => trim((string) ($c['contact_discord_url'] ?? '')) !== '',
+        'E-mail de contact' => trim((string) ($c['contact_email'] ?? '')) !== '',
+        'Formulaire contact public' => !empty($c['contact_form_enabled']),
+    ],
+    'Événements' => [
+        'Module événements activé (vitrine)' => !empty($pm['events']),
+        'Mission publique renseignée' => trim((string) ($c['public_mission'] ?? '')) !== '',
+    ],
 ];
 $profileChecklistDone = 0;
-foreach ($profileChecklist as $isDone) {
-    if ($isDone) {
-        $profileChecklistDone++;
+foreach ($profileChecklist as $groupItems) {
+    foreach ($groupItems as $isDone) {
+        if ($isDone) {
+            $profileChecklistDone++;
+        }
     }
 }
-$profileChecklistTotal = count($profileChecklist);
+$profileChecklistTotal = 0;
+foreach ($profileChecklist as $groupItems) {
+    $profileChecklistTotal += count($groupItems);
+}
 $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChecklistDone / $profileChecklistTotal) * 100) : 0;
 ?>
 <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 lg:py-12">
@@ -80,14 +99,29 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
             </div>
             <span class="inline-flex items-center rounded-full border border-emerald-300 bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-800"><?= $profileChecklistPercent ?>%</span>
         </div>
-        <ul class="mt-4 grid gap-2 sm:grid-cols-2">
-            <?php foreach ($profileChecklist as $label => $isDone): ?>
-                <li class="flex items-center gap-2 rounded-xl border <?= $isDone ? 'border-emerald-200 bg-white text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-900' ?> px-3 py-2 text-sm">
-                    <span aria-hidden="true"><?= $isDone ? '✅' : '⚠️' ?></span>
-                    <span><?= htmlspecialchars($label) ?></span>
-                </li>
+        <div class="mt-4 grid gap-3 lg:grid-cols-2">
+            <?php foreach ($profileChecklist as $groupLabel => $items): ?>
+                <?php
+                $groupDone = 0;
+                foreach ($items as $itemOk) {
+                    if ($itemOk) {
+                        $groupDone++;
+                    }
+                }
+                ?>
+                <div class="rounded-xl border border-emerald-100 bg-white p-3">
+                    <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800"><?= htmlspecialchars($groupLabel) ?> · <?= $groupDone ?>/<?= count($items) ?></p>
+                    <ul class="mt-2 space-y-1.5">
+                        <?php foreach ($items as $label => $isDone): ?>
+                            <li class="flex items-center gap-2 rounded-lg border <?= $isDone ? 'border-emerald-200 bg-emerald-50/50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-900' ?> px-2.5 py-1.5 text-xs">
+                                <span aria-hidden="true"><?= $isDone ? '✅' : '⚠️' ?></span>
+                                <span><?= htmlspecialchars($label) ?></span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
             <?php endforeach; ?>
-        </ul>
+        </div>
     </section>
 
     <nav class="cp-presentation-tabs sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-8 border-y border-slate-200/90 bg-slate-50/95 backdrop-blur-md shadow-sm" aria-label="Parties de la fiche">
