@@ -14,6 +14,7 @@ use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingCertificateRepository;
 use App\Repositories\TrainingCertificateTemplateRepository;
+use App\Repositories\TrainingLessonFeedbackRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
 use App\Services\Email\EmailEvents;
@@ -50,6 +51,7 @@ class AdminTrainingController
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
         private TrainingCertificateService $certificateService,
         private TrainingCertificatePdfService $certificatePdfService,
+        private TrainingLessonFeedbackRepository $lessonFeedbackRepository,
     ) {}
 
     public function dashboard(Request $request, array $params = []): Response
@@ -359,6 +361,26 @@ class AdminTrainingController
             'title' => 'Rapports',
             'trainingAdminNav' => 'reports',
             'courses' => $courses,
+        ]);
+    }
+
+    public function lessonFeedback(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        $tenantId = (int) Session::get('tenant_id');
+        $courseId = (int) $request->query('course_id', 0);
+        $courses = $this->courseRepository->listForTenant($tenantId, null);
+        $feedbackRows = $this->lessonFeedbackRepository->listRecentForTenant($tenantId, $courseId > 0 ? $courseId : null, 200);
+        $stats = $this->lessonFeedbackRepository->aggregateForTenant($tenantId, $courseId > 0 ? $courseId : null);
+
+        return Response::view('layout.main', [
+            'content' => 'admin.training.lesson_feedback',
+            'title' => 'Feedback post-leçon',
+            'trainingAdminNav' => 'lesson_feedback',
+            'courses' => $courses,
+            'selectedCourseId' => $courseId,
+            'lessonFeedbackRows' => $feedbackRows,
+            'lessonFeedbackStats' => $stats,
         ]);
     }
 

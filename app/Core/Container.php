@@ -933,7 +933,8 @@ class Container
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Services\Training\TrainingCertificateService::class),
-                self::get(\App\Services\Training\TrainingCertificatePdfService::class)
+                self::get(\App\Services\Training\TrainingCertificatePdfService::class),
+                self::get(\App\Repositories\TrainingLessonFeedbackRepository::class),
             ),
             \App\Controllers\Admin\AdminTrainingStudioController::class => new \App\Controllers\Admin\AdminTrainingStudioController(
                 self::get(\App\Repositories\TrainingCourseRepository::class),

@@ -90,5 +90,64 @@ class TrainingLessonFeedbackRepository
             $comment,
         ]);
     }
-}
 
+    /** @return list<array<string, mixed>> */
+    public function listRecentForTenant(int $tenantId, ?int $courseId = null, int $limit = 150): array
+    {
+        if (!$this->hasTable()) {
+            return [];
+        }
+        $limit = max(1, min(400, $limit));
+        $sql = 'SELECT f.*,
+                       c.title AS course_title,
+                       m.title AS module_title,
+                       l.title AS lesson_title,
+                       u.display_name AS learner_name,
+                       u.email AS learner_email
+                FROM training_lesson_feedback f
+                INNER JOIN training_courses c ON c.id = f.course_id
+                INNER JOIN training_modules m ON m.id = f.module_id
+                INNER JOIN training_lessons l ON l.id = f.lesson_id
+                INNER JOIN users u ON u.id = f.user_id
+                WHERE f.tenant_id = ?';
+        $params = [$tenantId];
+        if ($courseId !== null && $courseId > 0) {
+            $sql .= ' AND f.course_id = ?';
+            $params[] = $courseId;
+        }
+        $sql .= ' ORDER BY COALESCE(f.updated_at, f.created_at) DESC LIMIT ' . $limit;
+        $st = $this->pdo->prepare($sql);
+        $st->execute($params);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** @return array{count:int,avg_difficulty:float,avg_clarity:float,avg_utility:float} */
+    public function aggregateForTenant(int $tenantId, ?int $courseId = null): array
+    {
+        if (!$this->hasTable()) {
+            return ['count' => 0, 'avg_difficulty' => 0.0, 'avg_clarity' => 0.0, 'avg_utility' => 0.0];
+        }
+        $sql = 'SELECT COUNT(*) AS c,
+                       AVG(difficulty_rating) AS avg_difficulty,
+                       AVG(clarity_rating) AS avg_clarity,
+                       AVG(utility_rating) AS avg_utility
+                FROM training_lesson_feedback
+                WHERE tenant_id = ?';
+        $params = [$tenantId];
+        if ($courseId !== null && $courseId > 0) {
+            $sql .= ' AND course_id = ?';
+            $params[] = $courseId;
+        }
+        $st = $this->pdo->prepare($sql);
+        $st->execute($params);
+        $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'count' => (int) ($row['c'] ?? 0),
+            'avg_difficulty' => round((float) ($row['avg_difficulty'] ?? 0), 2),
+            'avg_clarity' => round((float) ($row['avg_clarity'] ?? 0), 2),
+            'avg_utility' => round((float) ($row['avg_utility'] ?? 0), 2),
+        ];
+    }
+}

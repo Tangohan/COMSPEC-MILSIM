@@ -23,6 +23,7 @@ $trainingCmdCanEditContent = $gateNav->allows('admin.access') || $gateNav->allow
                 <a href="<?= htmlspecialchars(training_studio_url()) ?>" class="<?= trim($is('studio')) ?>">Studio LMS</a>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments')) ?>" class="<?= trim($is('enrollments')) ?>">Assignations</a>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('reports')) ?>" class="<?= trim($is('reports')) ?>">Rapports</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('feedback')) ?>" class="<?= trim($is('lesson_feedback')) ?>">Feedback leçons</a>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('certificates')) ?>" class="<?= trim($certNavActive) ?>">Certificats</a>
                 <?php if ($trainingCmdCanEditContent): ?>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('certificates/gabarit')) ?>" class="<?= trim($is('certificates_gabarit')) ?>">Gabarit PDF</a>

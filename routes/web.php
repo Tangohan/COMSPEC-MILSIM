@@ -670,6 +670,7 @@ return function (Router $router) {
     $router->get('/admin/training/courses/{id}/showcase', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'courses/' . ($p['id'] ?? '') . '/showcase'), $lmsAdminMw);
     $router->get('/admin/training/enrollments', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'enrollments'), $lmsAdminMw);
     $router->get('/admin/training/reports', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'reports'), $lmsAdminMw);
+    $router->get('/admin/training/feedback', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'feedback'), $lmsAdminMw);
     $router->get('/admin/training/certificates', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'certificates'), $lmsAdminMw);
     $router->get('/admin/training/certificates/gabarit', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'certificates/gabarit'), $lmsAdminMw);
     $router->get('/admin/training/audit', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'audit'), $lmsAdminMw);
@@ -797,6 +798,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/training/enrollments/{id}/decline', [AdminTrainingController::class, 'declineEnrollment'], $trainingResMw);
     $router->get('/back-office/ressources/training/enrollments', [AdminTrainingController::class, 'enrollments'], $trainingResMw);
     $router->get('/back-office/ressources/training/reports', [AdminTrainingController::class, 'reports'], $trainingResMw);
+    $router->get('/back-office/ressources/training/feedback', [AdminTrainingController::class, 'lessonFeedback'], $trainingResMw);
     $router->get('/back-office/ressources/training/certificates', [AdminTrainingController::class, 'certificates'], $trainingResMw);
     $router->post('/back-office/ressources/training/certificates/generer-documents', [AdminTrainingController::class, 'certificatesGeneratePendingPdfs'], $trainingResMw);
     $router->get('/back-office/ressources/training/certificates/gabarit/exemple-pdf', [AdminTrainingController::class, 'certificateGabaritExamplePdf'], $trainingResMw);

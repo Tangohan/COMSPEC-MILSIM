@@ -106,6 +106,7 @@ $boNavStudioActive = str_starts_with($p, $studioPath . '/') || $p === $studioPat
 $lmsResPath = function_exists('training_lms_admin_path') ? training_lms_admin_path() : 'back-office/ressources/training';
 $boNavLmsRes = $p === $lmsResPath || str_starts_with($p, $lmsResPath . '/');
 $boNavHrCharter = str_starts_with($p, 'back-office/ressources/training/charte-rh');
+$boNavLmsFeedback = str_starts_with($p, 'back-office/ressources/training/feedback');
 $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request();
 ?>
 <div class="flex h-full min-h-0 flex-col border-r border-slate-800/80 bg-slate-950">
@@ -190,6 +191,7 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
             <?php if ($canTraining): ?>
                 <?php $boLink($lmsResPath, 'Formations', $boNavLmsRes && !$boNavHrCharter); ?>
                 <?php $boLink('back-office/ressources/training/charte-rh', 'Charte RH (formations)', $boNavHrCharter); ?>
+                <?php $boLink('back-office/ressources/training/feedback', 'Feedback post-leçon', $boNavLmsFeedback); ?>
                 <?php $boLink(training_studio_path(), 'Studio des parcours', $boNavStudioActive); ?>
             <?php endif; ?>
             <?php if ($canTenantModules): ?>
