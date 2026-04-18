@@ -57,6 +57,8 @@ $boNavHome = $p === 'back-office';
 $boNavUsers = $p === 'back-office/users' || str_starts_with($p, 'back-office/users/');
 $boNavInv = str_starts_with($p, 'back-office/invitations');
 $boNavRec = str_starts_with($p, 'back-office/recruitments');
+$boNavRecSettings = str_starts_with($p, 'back-office/recruitments/settings');
+$boNavRecMessages = str_starts_with($p, 'back-office/recruitments/messages-prefaits');
 $boNavRecOfferNew = str_starts_with($p, 'back-office/recruitment/offers/create');
 $boNavRecOffers = (str_starts_with($p, 'back-office/recruitment/offers') && !$boNavRecOfferNew) || str_starts_with($p, 'back-office/recruitment/reference-format');
 $canRecOffers = $gate->allows('organization.recruitment.openings.manage') || $gate->allows('organization.recruitment.manage');
@@ -122,6 +124,8 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
             <?php $boLink('back-office/invitations', 'Invitations', $boNavInv); ?>
         <?php endif; ?>
         <?php $boLink('back-office/recruitments', 'Candidatures', $boNavRec); ?>
+        <?php $boLink('back-office/recruitments/settings', 'Paramètres SLA recrutement', $boNavRecSettings); ?>
+        <?php $boLink('back-office/recruitments/messages-prefaits', 'Messages préfaits recrutement', $boNavRecMessages); ?>
         <?php if ($canRecOffers): ?>
             <?php $boLink('back-office/recruitment/offers', 'Offres publiées', $boNavRecOffers); ?>
             <?php $boLink('back-office/recruitment/offers/create', 'Nouvelle offre', $boNavRecOfferNew); ?>
