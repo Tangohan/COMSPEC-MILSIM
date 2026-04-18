@@ -233,16 +233,24 @@ Le back-office est complet, mais la priorisation quotidienne reste difficile.
 
 ## 7) Backlog concret (10 tickets prioritaires)
 
-1. **COMM-001** — Funnel conversion communautés (tableau + exports).
-2. **REC-002** — SLA candidature + alertes inactivité.
-3. **ONB-003** — Checklist onboarding multi-modules.
-4. **ONB-004** — Nudges d’inactivité contextualisés.
-5. **LMS-005** — Parcours recommandés selon rôle métier.
-6. **EVT-006** — Score régularité présence + motifs d’absence.
-7. **FOR-007** — Digest hebdo des contenus prioritaires.
-8. **DOC-008** — Historique décisionnel unifié courrier/documents.
-9. **ADM-009** — Centre d’opérations admin (actions triées par impact).
-10. **PLAT-010** — Standard d’événements analytiques transverse.
+| Ticket | Priorité | Résultat attendu | Livrable clé |
+| --- | --- | --- | --- |
+| **COMM-001** | P0 | Mesurer la conversion visiteur -> membre actif pour chaque communauté. | Tableau de funnel par étape + export CSV/PDF. |
+| **REC-002** | P0 | Réduire les candidatures sans réponse et les abandons en file d’attente. | SLA paramétrable avec alertes d’inactivité par rôle. |
+| **ONB-003** | P0 | Structurer un parcours d’intégration unique entre communautés, docs et LMS. | Checklist onboarding multi-modules avec progression persistante. |
+| **ONB-004** | P1 | Réengager les utilisateurs inactifs sans sur-notifier. | Nudges contextualisés selon module, fréquence et profil. |
+| **LMS-005** | P1 | Augmenter le taux de complétion des formations métier. | Recommandations de parcours basées sur rôle + historique d’activité. |
+| **EVT-006** | P1 | Identifier les habitudes de présence et les causes d’absence récurrentes. | Score de régularité présence + taxonomie des motifs d’absence. |
+| **FOR-007** | P1 | Accélérer la visibilité des sujets critiques dans le forum. | Digest hebdo personnalisé des contenus prioritaires. |
+| **DOC-008** | P0 | Garantir la traçabilité complète des décisions sur courrier/documents. | Historique décisionnel unifié (timeline horodatée + acteurs). |
+| **ADM-009** | P0 | Donner aux admins une vue actionnable des tâches à plus fort impact. | Centre d’opérations avec file d’actions priorisées par impact/urgence. |
+| **PLAT-010** | P0 | Uniformiser les métriques inter-modules pour pilotage produit fiable. | Standard transverse d’événements analytiques + dictionnaire de schéma. |
+
+### Dépendances minimales
+
+- **PLAT-010** est un prérequis de mesure pour **COMM-001**, **ONB-003**, **ONB-004**, **LMS-005** et **EVT-006**.
+- **ONB-003** doit être livré avant **ONB-004** pour éviter des nudges sans parcours de référence.
+- **DOC-008** et **ADM-009** se renforcent mutuellement via une même couche d’audit et de priorisation.
 
 ## 8) Risques et mitigations
 
