@@ -263,6 +263,11 @@ class PersonnelJobRoleAdminController
 
             return Response::redirect(url('back-office/personnel-job-roles'));
         }
+        if (!$this->canManageJobRoles()) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0) {
             return Response::redirect(url('back-office/personnel-job-roles'));

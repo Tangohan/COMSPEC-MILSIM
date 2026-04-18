@@ -8,6 +8,7 @@
   var activePanel = null;
   var activeTrigger = null;
   var repositionHandler = null;
+  var swallowNextClick = false;
 
   function esc(s) {
     return String(s)
@@ -215,6 +216,10 @@
   }
 
   function handleTriggerEvent(e) {
+    if (e.type === 'click' && swallowNextClick) {
+      swallowNextClick = false;
+      return;
+    }
     if (e.target.closest('.pjr-role-combobox-float')) {
       return;
     }
@@ -235,6 +240,8 @@
   document.addEventListener('click', handleTriggerEvent);
   document.addEventListener('pointerdown', function (e) {
     if (!e.isPrimary || e.button !== 0) return;
+    var trigger = e.target && e.target.closest ? e.target.closest('.pjr-role-combobox-trigger') : null;
+    swallowNextClick = !!trigger;
     handleTriggerEvent(e);
   });
 
