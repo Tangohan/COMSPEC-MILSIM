@@ -11,6 +11,8 @@ use App\Repositories\Courrier\CourrierDocumentNotificationRepository;
 use App\Repositories\Courrier\CourrierDocumentRepository;
 use App\Repositories\UserRepository;
 use App\Services\Courrier\DocumentBuilderService;
+use App\Services\Courrier\DocumentValidationService;
+use App\Services\Courrier\DocumentWorkflowService;
 
 /**
  * Page dédiée à la lecture d'un courrier (sans édition).
@@ -21,7 +23,9 @@ class CourrierReadController
         private CourrierDocumentRepository $documentRepository,
         private DocumentBuilderService $builderService,
         private UserRepository $userRepository,
-        private CourrierDocumentNotificationRepository $notificationRepository
+        private CourrierDocumentNotificationRepository $notificationRepository,
+        private DocumentWorkflowService $workflowService,
+        private DocumentValidationService $validationService
     ) {
     }
 
@@ -45,6 +49,9 @@ class CourrierReadController
         $context = ['user_id' => $userId, 'tenant_id' => $tenantId, 'document' => $document];
         $previewHtml = $this->builderService->buildPreviewHtml($document, $context);
         $tenantUsers = $this->userRepository->listForTenant($tenantId, null, null, null, 300, 0);
+        $versions = array_slice($this->documentRepository->getVersions($id), 0, 10);
+        $workflowHistory = array_slice($this->workflowService->getHistory($id), 0, 10);
+        $alerts = $this->validationService->validate($document, $context, []);
 
         return Response::view('layout.main', [
             'title' => ($document['title'] ?: 'Sans titre') . ' — Lecture — Bureau Courrier',
@@ -53,6 +60,9 @@ class CourrierReadController
                 'document' => $document,
                 'preview_html' => $previewHtml,
                 'tenant_users' => $tenantUsers,
+                'versions' => $versions,
+                'workflow_history' => $workflowHistory,
+                'alerts' => $alerts,
             ],
         ]);
     }

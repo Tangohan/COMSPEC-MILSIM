@@ -177,6 +177,7 @@ return [
                         ['label' => 'Modèles', 'path' => 'courrier/templates', 'any_permissions' => ['courrier.create', 'courrier.validate'], 'description' => 'Gabarits réutilisables'],
                         ['label' => 'Historique', 'path' => 'courrier/history', 'permission' => 'courrier.view', 'description' => 'Activité récente'],
                         ['label' => 'Archives', 'path' => 'courrier/archives', 'any_permissions' => ['courrier.view', 'courrier.archive'], 'description' => 'Courriers classés'],
+                        ['label' => 'Traçabilité', 'path' => 'courrier/traceabilite', 'permission' => 'courrier.view', 'description' => 'Checklist et suivi décisionnel'],
                     ],
                 ],
                 [
