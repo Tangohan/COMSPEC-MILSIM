@@ -159,6 +159,7 @@ use App\Controllers\Web\SecurityDeviceController;
 use App\Controllers\Web\OperationalBoardController;
 use App\Controllers\Web\NewsletterController;
 use App\Controllers\Web\SeoController;
+use App\Controllers\Web\PersonnelDeploymentController;
 
 return function (Router $router) {
     $mwForum = [AuthMiddleware::class, ForumSanctionMiddleware::class];
@@ -227,6 +228,10 @@ return function (Router $router) {
     $router->get('/evenements', [CommunityEventsController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/evenements/rsvp', [CommunityEventsController::class, 'rsvp'], [AuthMiddleware::class]);
     $router->get('/dashboard', [HomeController::class, 'dashboard'], [AuthMiddleware::class]);
+    $router->get('/deploiement', [PersonnelDeploymentController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/deploiement/{id}/assigner', [PersonnelDeploymentController::class, 'deploy'], [AuthMiddleware::class]);
+    $router->post('/deploiement/{id}/checkup', [PersonnelDeploymentController::class, 'saveCheckup'], [AuthMiddleware::class]);
+    $router->post('/deploiement/{id}/anomalie', [PersonnelDeploymentController::class, 'reportAnomaly'], [AuthMiddleware::class]);
     $router->get('/activite', [ActivityHubController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/activite/forum/lu', [ActivityHubController::class, 'markForumRead'], $mwForum);
     $router->post('/activite/courrier/lu', [ActivityHubController::class, 'markCourrierRead'], $mwCourrier);
