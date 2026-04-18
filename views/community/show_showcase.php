@@ -30,6 +30,16 @@ $recruitmentListUpdatedAt = trim((string) ($recruitmentListUpdatedAt ?? ''));
 $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
 $isLocked = !empty($cp['isLocked']);
 $publicAudience = ($cp['publicAudience'] ?? 'unit') === 'platform' ? 'platform' : 'unit';
+$discordUrl = (string) ($cp['discordUrl'] ?? '');
+$contactEmail = (string) ($cp['contactEmail'] ?? '');
+$contactFormEnabled = !empty($cp['contactFormEnabled']);
+$hasContactCta = $discordUrl !== '' || $contactEmail !== '' || $contactFormEnabled;
+$primaryCta = null;
+if (!$isLocked) {
+    $primaryCta = $publicAudience === 'platform' ? 'candidater' : 'rejoindre';
+} elseif ($hasContactCta) {
+    $primaryCta = 'contacter';
+}
 $eyebrowSub = $publicAudience === 'platform'
     ? 'Portail plateforme'
     : 'Fiche publique de communauté';
@@ -156,16 +166,20 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
           <?php endif; ?>
 
           <div class="mt-8 flex flex-wrap gap-3">
-            <?php if (!$isLocked && $publicAudience !== 'platform'): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-slate-950 transition hover:bg-emerald-400" data-comspec-zone="vitrine_hero">Rejoindre (candidature)</a>
-            <?php elseif (!$isLocked && $publicAudience === 'platform'): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15" data-comspec-zone="vitrine_hero">Candidater</a>
+            <?php if ($primaryCta === 'rejoindre'): ?>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-slate-950 transition hover:bg-emerald-400" data-comspec-zone="vitrine_hero" data-comspec-cta="rejoindre">Rejoindre</a>
+            <?php elseif ($primaryCta === 'candidater'): ?>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15" data-comspec-zone="vitrine_hero" data-comspec-cta="candidater">Candidater</a>
+            <?php elseif ($primaryCta === 'contacter'): ?>
+            <a href="#actions-contact" class="comspec-analytics-cta inline-flex items-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15" data-comspec-zone="vitrine_hero" data-comspec-cta="contacter">Contacter</a>
             <?php endif; ?>
             <?php if (!empty($sv['publicRosterEnabled'])): ?>
             <a href="#roster" class="inline-flex items-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Consulter le roster</a>
             <?php endif; ?>
             <a href="#units" class="inline-flex items-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Explorer les unités</a>
-            <a href="#actions-contact" class="inline-flex items-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15">Contacter l'équipe</a>
+            <?php if ($hasContactCta): ?>
+            <a href="#actions-contact" class="comspec-analytics-cta inline-flex items-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white/15" data-comspec-zone="vitrine_hero" data-comspec-cta="contacter">Contacter</a>
+            <?php endif; ?>
           </div>
         </div>
 
@@ -594,17 +608,14 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
         <?php if ($showForumCta): ?>
         <a href="<?= htmlspecialchars(url('c/' . $slug . '/forum')) ?>" class="inline-flex items-center px-4 py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-emerald-700">Forum</a>
         <?php endif; ?>
-        <?php if (!$isLocked): ?>
-        <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50" data-comspec-zone="pied_page"><?= $publicAudience === 'platform' ? 'Candidater' : 'Rejoindre (candidature)' ?></a>
+        <?php if ($primaryCta === 'rejoindre' || $primaryCta === 'candidater'): ?>
+        <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50" data-comspec-zone="pied_page" data-comspec-cta="<?= $primaryCta ?>"><?= $primaryCta === 'rejoindre' ? 'Rejoindre' : 'Candidater' ?></a>
+        <?php elseif ($primaryCta === 'contacter'): ?>
+        <a href="#actions-contact" class="comspec-analytics-cta inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50" data-comspec-zone="pied_page" data-comspec-cta="contacter">Contacter</a>
         <?php endif; ?>
         <a href="<?= url('communities') ?>" class="inline-flex items-center px-4 py-2.5 text-xs font-bold uppercase text-slate-500">Registre</a>
       </div>
-      <?php
-        $discordUrl = (string) ($cp['discordUrl'] ?? '');
-        $contactEmail = (string) ($cp['contactEmail'] ?? '');
-        $contactIntro = (string) ($cp['contactIntro'] ?? '');
-        $contactFormEnabled = !empty($cp['contactFormEnabled']);
-        ?>
+      <?php $contactIntro = (string) ($cp['contactIntro'] ?? ''); ?>
       <?php if ($discordUrl !== '' || $contactEmail !== '' || ($userId && $hasMembershipInTenant)): ?>
       <div class="mt-6 border-t border-slate-100 pt-6">
         <?php if ($contactIntro !== ''): ?>
