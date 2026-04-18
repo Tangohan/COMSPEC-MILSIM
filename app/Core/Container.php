@@ -760,6 +760,7 @@ class Container
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
             ),
             \App\Repositories\TrainingCourseLmsSocialRepository::class => new \App\Repositories\TrainingCourseLmsSocialRepository(),
+            \App\Repositories\TrainingLessonFeedbackRepository::class => new \App\Repositories\TrainingLessonFeedbackRepository(),
             \App\Services\Training\TrainingAssignmentService::class => new \App\Services\Training\TrainingAssignmentService(
                 self::get(\App\Repositories\TrainingEnrollmentRepository::class),
                 self::get(\App\Repositories\TrainingCourseRepository::class),
@@ -832,6 +833,7 @@ class Container
                 self::get(\App\Repositories\TrainingQuizRepository::class),
                 self::get(\App\Services\Training\TrainingCertificateShareService::class),
                 self::get(\App\Services\Training\TrainingAuditService::class),
+                self::get(\App\Repositories\TrainingLessonFeedbackRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(UserRepository::class),
@@ -931,7 +933,8 @@ class Container
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Services\Training\TrainingCertificateService::class),
-                self::get(\App\Services\Training\TrainingCertificatePdfService::class)
+                self::get(\App\Services\Training\TrainingCertificatePdfService::class),
+                self::get(\App\Repositories\TrainingLessonFeedbackRepository::class),
             ),
             \App\Controllers\Admin\AdminTrainingStudioController::class => new \App\Controllers\Admin\AdminTrainingStudioController(
                 self::get(\App\Repositories\TrainingCourseRepository::class),
@@ -972,6 +975,8 @@ class Container
                 self::get(\App\Repositories\TrainingResourceRepository::class),
                 self::get(\App\Repositories\TrainingLessonRepository::class),
                 self::get(\App\Repositories\TrainingModuleRepository::class),
+                self::get(\App\Repositories\TrainingCourseLmsSocialRepository::class),
+                self::get(\App\Repositories\TrainingLessonFeedbackRepository::class),
                 self::get(\App\Services\Training\TrainingCertificateShareService::class),
                 self::get(\App\Repositories\DocumentRepository::class),
                 self::get(\App\Services\Documents\DocumentAccessService::class),

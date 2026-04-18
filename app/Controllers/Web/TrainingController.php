@@ -24,6 +24,7 @@ use App\Services\Training\TrainingAssignmentService;
 use App\Services\Training\TrainingEnrollmentPolicyService;
 use App\Services\Training\TrainingStaffAlertService;
 use App\Repositories\TrainingCourseLmsSocialRepository;
+use App\Repositories\TrainingLessonFeedbackRepository;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingCertificateShareService;
 use App\Services\Training\TrainingAuditService;
@@ -59,6 +60,7 @@ class TrainingController
         private TrainingQuizRepository $trainingQuizRepository,
         private TrainingCertificateShareService $certificateShareService,
         private TrainingAuditService $trainingAuditService,
+        private TrainingLessonFeedbackRepository $lessonFeedbackRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private UserRepository $userRepository,
@@ -985,6 +987,37 @@ class TrainingController
             }
         }
 
+        $lessonFeedback = $this->lessonFeedbackRepository->findForEnrollmentLessonUser($enrollmentId, $lessonId, $userId);
+        $eventRecommendation = null;
+        if ($currentModule !== null && (int) ($currentModule['is_required'] ?? 0) === 1) {
+            $lessonDone = [];
+            foreach (($progress['progress'] ?? []) as $row) {
+                if ((string) ($row['status'] ?? '') === 'completed') {
+                    $lessonDone[(int) ($row['lesson_id'] ?? 0)] = true;
+                }
+            }
+            $moduleComplete = true;
+            foreach (($currentModule['lessons'] ?? []) as $ml) {
+                $mlid = (int) ($ml['id'] ?? 0);
+                if ($mlid < 1 || !isset($lessonDone[$mlid])) {
+                    $moduleComplete = false;
+                    break;
+                }
+            }
+            if ($moduleComplete) {
+                $sessions = $this->lmsSocialRepository->listSessionsForCourse($courseId);
+                $now = time();
+                foreach ($sessions as $session) {
+                    $startsAt = strtotime((string) ($session['starts_at'] ?? ''));
+                    if ($startsAt === false || $startsAt < $now) {
+                        continue;
+                    }
+                    $eventRecommendation = $session;
+                    break;
+                }
+            }
+        }
+
         return Response::view('training.lesson', [
             'title' => $lesson['title'],
             'lesson' => $lesson,
@@ -999,6 +1032,8 @@ class TrainingController
             'footerNext' => $footerNext,
             'lessonStep' => $lessonStep,
             'moduleLessonStep' => $moduleLessonStep,
+            'lessonFeedback' => $lessonFeedback,
+            'eventRecommendation' => $eventRecommendation,
         ]);
     }
 

@@ -48,6 +48,39 @@
     }
   }
 
+  function renderEventRecommendation(reco) {
+    if (!reco || typeof reco !== 'object') {
+      return;
+    }
+    var root = document.getElementById('lms-event-recommendation');
+    if (!root) {
+      return;
+    }
+    var label = reco.label || 'Entraînement recommandé';
+    var startsAt = reco.starts_at || '';
+    var location = reco.location ? ' · Lieu : ' + reco.location : '';
+    var courseUrl = (cfg() && cfg().courseUrl) || '#';
+    root.classList.remove('hidden');
+    root.innerHTML =
+      '<p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Événement d’entraînement recommandé</p>' +
+      '<h3 class="mt-1 text-sm font-bold text-slate-900"></h3>' +
+      '<p class="mt-1 text-xs text-slate-600"></p>' +
+      '<a class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:underline" href="' +
+      courseUrl +
+      '">Voir le parcours et ses créneaux →</a>';
+    var title = root.querySelector('h3');
+    var details = root.querySelector('p.mt-1');
+    if (title) {
+      title.textContent = String(label);
+    }
+    if (details) {
+      details.textContent = 'Début : ' + String(startsAt) + String(location);
+    }
+    if (typeof window.lmsTrainingToastShow === 'function') {
+      window.lmsTrainingToastShow('Module clé validé : un événement d’entraînement recommandé vous est proposé.', 'info');
+    }
+  }
+
   var posted = false;
 
   function warnMediaSkip() {
@@ -114,6 +147,9 @@
         })
         .then(function (data) {
           markUiSuccess(typeof data.percent === 'number' ? data.percent : null);
+          if (data && data.event_recommendation) {
+            renderEventRecommendation(data.event_recommendation);
+          }
         })
         .catch(function (err) {
           posted = false;
@@ -135,6 +171,64 @@
   };
 
   document.addEventListener('DOMContentLoaded', function () {
+    var feedbackForm = document.querySelector('form[data-lesson-feedback]');
+    if (feedbackForm) {
+      feedbackForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var feedbackStatus = document.getElementById('lms-feedback-status');
+        var c0 = cfg();
+        var api = c0 && c0.feedbackApiUrl ? c0.feedbackApiUrl : '';
+        if (!api) {
+          if (feedbackStatus) {
+            feedbackStatus.textContent = 'API feedback indisponible.';
+            feedbackStatus.className = 'text-xs text-rose-600';
+          }
+          return;
+        }
+        var fd = new FormData(feedbackForm);
+        fd.set('_csrf_token', window.__LMS_CSRF__ || '');
+        if (feedbackStatus) {
+          feedbackStatus.textContent = 'Enregistrement…';
+          feedbackStatus.className = 'text-xs text-slate-600';
+        }
+        fetch(api, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'X-CSRF-Token': window.__LMS_CSRF__ || '',
+          },
+          credentials: 'same-origin',
+          body: fd,
+        })
+          .then(function (r) {
+            return r.json().then(function (j) {
+              if (!r.ok) {
+                throw new Error((j && j.error) || 'Erreur');
+              }
+              return j;
+            });
+          })
+          .then(function (payload) {
+            if (feedbackStatus) {
+              feedbackStatus.textContent = (payload && payload.message) || 'Feedback enregistré.';
+              feedbackStatus.className = 'text-xs text-emerald-700';
+            }
+            if (typeof window.lmsTrainingToastShow === 'function') {
+              window.lmsTrainingToastShow('Feedback post-leçon enregistré.', 'success');
+            }
+          })
+          .catch(function (err) {
+            if (feedbackStatus) {
+              feedbackStatus.textContent = (err && err.message) || 'Impossible d’enregistrer le feedback.';
+              feedbackStatus.className = 'text-xs text-rose-600';
+            }
+            if (typeof window.lmsTrainingToastShow === 'function') {
+              window.lmsTrainingToastShow('Impossible d’enregistrer le feedback.', 'error');
+            }
+          });
+      });
+    }
+
     var c = cfg();
     if (!c || !c.auto || c.alreadyCompleted) {
       return;
