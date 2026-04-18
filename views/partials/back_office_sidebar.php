@@ -57,6 +57,8 @@ $boNavHome = $p === 'back-office';
 $boNavUsers = $p === 'back-office/users' || str_starts_with($p, 'back-office/users/');
 $boNavInv = str_starts_with($p, 'back-office/invitations');
 $boNavRec = str_starts_with($p, 'back-office/recruitments');
+$boNavRecSettings = str_starts_with($p, 'back-office/recruitments/settings');
+$boNavRecMessages = str_starts_with($p, 'back-office/recruitments/messages-prefaits');
 $boNavRecOfferNew = str_starts_with($p, 'back-office/recruitment/offers/create');
 $boNavRecOffers = (str_starts_with($p, 'back-office/recruitment/offers') && !$boNavRecOfferNew) || str_starts_with($p, 'back-office/recruitment/reference-format');
 $canRecOffers = $gate->allows('organization.recruitment.openings.manage') || $gate->allows('organization.recruitment.manage');
@@ -88,13 +90,16 @@ $boNavConfig = str_starts_with($p, 'back-office/configuration');
 $boNavAnalytics = str_starts_with($p, 'back-office/analytics');
 $boNavPins = str_starts_with($p, 'back-office/dashboard-pins');
 $boNavCoop = str_starts_with($p, 'back-office/cooperation/');
+$boNavForumMissionPriority = str_starts_with($p, 'back-office/forum/priorite-mission/');
 $boNavOnb = str_starts_with($p, 'back-office/onboarding-recovery');
+$boNavOnbMembers = str_starts_with($p, 'back-office/onboarding-members');
 $boNavAudit = str_starts_with($p, 'back-office/audit');
 $boNavMod = str_starts_with($p, 'back-office/moderation');
 $canMemberModeration = $gate->allows('admin.members.moderate');
 $boNavEvents = str_starts_with($p, 'back-office/events');
 $boNavCourrierTrace = str_starts_with($p, 'back-office/courrier/traceabilite');
 $boNavOpsBoard = str_starts_with($p, 'back-office/tableau-operationnel');
+$boNavOpsAdmin = str_starts_with($p, 'back-office/centre-operations') || str_starts_with($p, 'back-office/operations-admin');
 $studioPath = function_exists('training_studio_path') ? training_studio_path() : 'back-office/ressources/training/studio';
 $boNavStudioActive = str_starts_with($p, $studioPath . '/') || $p === $studioPath;
 $lmsResPath = function_exists('training_lms_admin_path') ? training_lms_admin_path() : 'back-office/ressources/training';
@@ -123,6 +128,8 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
             <?php $boLink('back-office/invitations', 'Invitations', $boNavInv); ?>
         <?php endif; ?>
         <?php $boLink('back-office/recruitments', 'Candidatures', $boNavRec); ?>
+        <?php $boLink('back-office/recruitments/settings', 'Paramètres SLA recrutement', $boNavRecSettings); ?>
+        <?php $boLink('back-office/recruitments/messages-prefaits', 'Messages préfaits recrutement', $boNavRecMessages); ?>
         <?php if ($canRecOffers): ?>
             <?php $boLink('back-office/recruitment/offers', 'Offres publiées', $boNavRecOffers); ?>
             <?php $boLink('back-office/recruitment/offers/create', 'Nouvelle offre', $boNavRecOfferNew); ?>
@@ -159,9 +166,11 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
         <?php endif; ?>
         <?php $boLink('back-office/analytics', 'Indicateurs d’usage', $boNavAnalytics); ?>
         <?php $boLink('back-office/dashboard-pins', 'Raccourcis du portail', $boNavPins); ?>
+        <?php $boLink('back-office/onboarding-members', 'Onboarding membres', $boNavOnbMembers); ?>
         <?php $boLink('back-office/onboarding-recovery', 'Aide après inscription', $boNavOnb); ?>
 
         <?php $boSection('Pilotage'); ?>
+        <?php $boLink('back-office/centre-operations', 'Centre d’opérations admin', $boNavOpsAdmin); ?>
         <?php $boLink('back-office/tableau-operationnel', 'Tableau opérationnel', $boNavOpsBoard); ?>
         <?php $boLink('back-office/courrier/traceabilite', 'Traçabilité courrier', $boNavCourrierTrace); ?>
         <?php $boLink('back-office/audit', 'Journal d’activité', $boNavAudit); ?>
@@ -169,6 +178,7 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
             <?php $boLink('back-office/moderation', 'Restrictions membres', $boNavMod); ?>
         <?php endif; ?>
         <?php $boLink('back-office/events', 'RSVP & pointage', $boNavEvents); ?>
+        <?php $boLink('back-office/events/insights', 'Insights présence', $boNavEventInsights); ?>
 
         <?php if ($canDocs || $canTraining || $canTenantModules): ?>
             <?php $boSection('Ressources & outils'); ?>
@@ -183,6 +193,7 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
             <?php if ($canTenantModules): ?>
                 <?php $boLink('admin/modpacks', 'Modpacks', false); ?>
                 <?php $boLink('admin/forum-config', 'Briefing & forum', false); ?>
+                <?php $boLink('back-office/forum/priorite-mission/nouveau', 'Publication priorité mission', $boNavForumMissionPriority); ?>
                 <?php $boLink('back-office/cooperation/missions', 'Coopérations inter-unités', $boNavCoop); ?>
                 <?php if (function_exists('can') && (can('cooperation.catalog.manage') || can('cooperation.announcements.manage'))): ?>
                     <?php $boLink('back-office/cooperation/catalog', 'Types de coopération (catalogue)', str_starts_with($p, 'back-office/cooperation/catalog')); ?>

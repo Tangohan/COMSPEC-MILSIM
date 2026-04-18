@@ -73,6 +73,14 @@ $typeLabel = static function (string $t): string {
                                 <option value="<?= $val ?>" <?= $cur === $val ? ' selected' : '' ?>><?= htmlspecialchars($lab) ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <select name="absence_reason" class="bg-neutral-800 border border-white/10 text-xs rounded px-2 py-1">
+                            <option value="">Motif absence</option>
+                            <option value="service">Service</option>
+                            <option value="sante">Santé</option>
+                            <option value="indisponibilite_planifiee">Indispo planifiée</option>
+                            <option value="absence_non_justifiee">Absence non justifiée</option>
+                            <option value="autre">Autre</option>
+                        </select>
                         <button type="submit" class="text-xs font-bold text-emerald-400 hover:text-emerald-300">Enregistrer</button>
                     </form>
                     <?php if (!empty($eventsCheckInFlags[$eid])): ?>

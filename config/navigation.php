@@ -78,6 +78,7 @@ return [
                     'links' => [
                         ['label' => 'Accueil du forum', 'path' => 'forum', 'permission' => 'forum.view', 'description' => 'Rubriques, sujets et échanges'],
                         ['label' => 'Publier un sujet', 'path' => 'forum/new-topic', 'permission' => 'forum.create_topic', 'description' => 'Démarrer une discussion'],
+                        ['label' => 'Priorité mission (staff)', 'path' => 'back-office/forum/priorite-mission/nouveau', 'any_permissions' => ['forum.moderate', 'forum.moderate_organization', 'admin.organization', 'admin.access'], 'description' => 'Créer un fil critique avec accusé de lecture'],
                     ],
                 ],
                 [
@@ -85,6 +86,7 @@ return [
                     'slot' => 'center',
                     'links' => [
                         ['label' => 'Mur opérationnel', 'path' => 'tableau-operationnel', 'permission' => 'operational.board.view', 'description' => 'Permanences et consignes publiées'],
+                        ['label' => 'Centre d’opérations admin', 'path' => 'back-office/centre-operations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'File actionnable, playbooks, audit et objectifs KPI'],
                         ['label' => 'Pilotage du mur opérationnel', 'path' => 'back-office/tableau-operationnel', 'any_permissions' => ['operational.board.edit', 'admin.organization', 'admin.access', 'admin.system'], 'description' => 'Publication et mise à jour des entrées'],
                         ['label' => 'ORBAT', 'path' => 'orbat', 'permission' => 'organization.orbat.view', 'description' => 'Structure et effectifs'],
                         ['label' => 'Situation tactique (ATAK)', 'path' => 'atak', 'description' => 'Vue opérationnelle'],
@@ -258,6 +260,8 @@ return [
                         ['label' => 'Attributions rôles métier', 'path' => 'back-office/personnel-job-roles/assignments', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Unités et regroupements', 'path' => 'back-office/groups', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Équipes transverses', 'path' => 'back-office/teams', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Candidatures recrutement', 'path' => 'back-office/recruitments', 'any_permissions' => ['organization.recruitment.manage', 'admin.organization', 'admin.access'], 'description' => 'File de traitement des candidatures'],
+                        ['label' => 'Paramètres SLA recrutement', 'path' => 'back-office/recruitments/settings', 'any_permissions' => ['organization.recruitment.manage', 'admin.organization', 'admin.access'], 'description' => 'Seuil interne et alertes de blocage'],
                     ],
                 ],
             ],
@@ -392,14 +396,16 @@ return [
                     'slot' => 'center',
                     'links' => [
                         ['label' => 'Back-office communauté', 'path' => 'back-office', 'any_permissions' => ['admin.organization', 'admin.access']],
-                        ['label' => 'Centre opérationnel', 'path' => 'back-office/centre-operations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Synthèse des leviers d’administration'],
+                        ['label' => 'Centre d’opérations admin', 'path' => 'back-office/centre-operations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'File actionnable, playbooks, audit et objectifs KPI'],
                         ['label' => 'Mur opérationnel', 'path' => 'tableau-operationnel', 'permission' => 'operational.board.view', 'description' => 'Permanences et consignes publiées'],
                         ['label' => 'Pilotage du mur opérationnel', 'path' => 'back-office/tableau-operationnel', 'any_permissions' => ['operational.board.edit', 'admin.organization', 'admin.access', 'admin.system'], 'description' => 'Publication et mise à jour des entrées'],
                         ['label' => 'E-mails aux membres', 'path' => 'back-office/communications', 'any_permissions' => ['comms.email.send.orbat', 'comms.email.send.mission', 'comms.email.send.activity', 'comms.email.send.custom', 'comms.email.broadcast', 'comms.email_templates.manage', 'comms.notifications.history.view'], 'description' => 'Diffusions, modèles et groupes de destinataires'],
                         ['label' => 'Paramètres de la communauté', 'path' => 'back-office/community', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Identité, modules et options'],
                         ['label' => 'Vitrine publique', 'path' => 'back-office/community/presentation', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Page publique de présentation'],
                         ['label' => 'Événements (gestion)', 'path' => 'back-office/events', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Insights présence événements', 'path' => 'back-office/events/insights', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'KPIs présence, no-show et créneaux recommandés'],
                         ['label' => 'Dossiers de recrutement', 'path' => 'back-office/recruitments', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Onboarding membres', 'path' => 'back-office/onboarding-members', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Suivi J7/J14, activation cross-modules et relances'],
                         ['label' => 'Rubriques du forum', 'path' => 'back-office/categories', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Arborescence des catégories et sous-rubriques'],
                         ['label' => 'Invitations', 'path' => 'back-office/invitations', 'any_permissions' => ['admin.organization', 'admin.access', 'invitations.send']],
                         ['label' => 'Utilisateurs', 'path' => 'back-office/users', 'any_permissions' => ['admin.organization', 'admin.access']],

@@ -450,6 +450,7 @@ return function (Router $router) {
     // Back-office communauté (tenant) — préfixe /back-office
     $router->get('/back-office', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/centre-operations', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/operations-admin', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation-effectifs', [OrganizationDashboardController::class, 'effectifsHub'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/anciennete', [OrganizationSeniorityAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete', [OrganizationSeniorityAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -462,6 +463,7 @@ return function (Router $router) {
     $router->get('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentationUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/onboarding-recovery', [OrganizationCommunityController::class, 'onboardingRecovery'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/onboarding-members', [OrganizationCommunityController::class, 'onboardingMembers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/onboarding-recovery/apply', [OrganizationCommunityController::class, 'onboardingRecoveryApply'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/users', [UserAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/users/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/organisation/structure?ouvrir=membre')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -497,6 +499,7 @@ return function (Router $router) {
     $router->get('/back-office/conformite/export-dossier', [ComplianceBundleExportController::class, 'form'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/conformite/export-dossier/telecharger', [ComplianceBundleExportController::class, 'download'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events', [CommunityEventsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/events/insights', [CommunityEventsAdminController::class, 'insights'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events', [CommunityEventsAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events/{id}/export-presences', [CommunityEventsAdminController::class, 'exportPresences'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events/{id}', [CommunityEventsAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -508,6 +511,8 @@ return function (Router $router) {
     $router->get('/back-office/courrier/traceabilite', [CourrierDashboardController::class, 'traceability'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/graph.json', [RolesFunctionsAdminController::class, 'graphJson'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roles-functions/definitions/store', [RolesFunctionsAdminController::class, 'storeDefinition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roles-functions/relations/store', [RolesFunctionsAdminController::class, 'storeRoleRelation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles', [RoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets', [RoleAdminController::class, 'presets'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets/preview', [RoleAdminController::class, 'presetsPreview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -588,6 +593,8 @@ return function (Router $router) {
     $router->post('/back-office/alerts/{id}/delete', [TenantAlertsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/alerts', [TenantAlertsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments', [AdminRecruitmentsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/settings', [AdminRecruitmentsController::class, 'settings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/settings', [AdminRecruitmentsController::class, 'settingsSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/messages-prefaits', [AdminRecruitmentsController::class, 'cannedMessagesIndex'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/messages-prefaits', [AdminRecruitmentsController::class, 'cannedMessageStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/messages-prefaits/{id}/update', [AdminRecruitmentsController::class, 'cannedMessageUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -895,6 +902,7 @@ return function (Router $router) {
     /** Évite l’affichage brut de JSON si l’URL est ouverte dans le navigateur (GET). */
     $router->get('/api/training/progress/lesson', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('formations')), $mwTraining);
     $router->post('/api/training/progress/lesson', [TrainingApiController::class, 'progressLesson'], $mwTraining);
+    $router->post('/api/training/lesson-feedback', [TrainingApiController::class, 'lessonFeedback'], $mwTraining);
     $router->get('/api/training/resource/{id}/download', [TrainingApiController::class, 'lessonResourceDownload'], $mwTraining);
     $router->get('/api/training/resource/{id}/document', [TrainingApiController::class, 'lessonResourceLinkedDocument'], $mwTraining);
     $router->post('/api/training/quiz/start', [TrainingApiController::class, 'quizStart'], $mwTraining);
@@ -983,6 +991,8 @@ return function (Router $router) {
     // API C2 — Replay
     $router->get('/api/replay/mission/{missionId}', [ReplayController::class, 'mission']);
     $router->get('/api/replay/events/{missionId}', [ReplayController::class, 'events']);
+    $router->get('/api/replay/aar/{missionId}', [ReplayController::class, 'aar']);
+    $router->get('/api/replay/aar/{missionId}/export.pdf', [ReplayController::class, 'aarExportPdf']);
 
     // API C2 — IFF
     $router->post('/api/iff/respond', [IffController::class, 'respond']);

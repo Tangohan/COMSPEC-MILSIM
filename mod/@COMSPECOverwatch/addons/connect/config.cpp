@@ -48,6 +48,13 @@ class CfgFunctions {
         class receiveIFFChallenge { file = "functions\fn_receiveIFFChallenge.sqf"; };
         class submitIFFResponse { file = "functions\fn_submitIFFResponse.sqf"; };
         class updateIFFMarkerState { file = "functions\fn_updateIFFMarkerState.sqf"; };
+
+        // C2 + Event Bus + Comms structurées
+        class registerEventHandler { file = "functions\fn_registerEventHandler.sqf"; };
+        class publishEvent { file = "functions\fn_publishEvent.sqf"; };
+        class issueOrder { file = "functions\fn_issueOrder.sqf"; };
+        class updateOrderStatus { file = "functions\fn_updateOrderStatus.sqf"; };
+        class formatCommsMessage { file = "functions\fn_formatCommsMessage.sqf"; };
     };
 };
 

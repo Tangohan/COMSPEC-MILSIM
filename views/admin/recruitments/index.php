@@ -8,6 +8,8 @@ $nReviewed = (int) ($counts['reviewed'] ?? 0);
 $nRejected = (int) ($counts['rejected'] ?? 0);
 $nBlocked = (int) ($counts['blocked'] ?? 0);
 $nTotal = array_sum($counts);
+$enlistmentSlaHours = max(1, (int) ($enlistmentSlaHours ?? 72));
+$submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
 
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
@@ -119,6 +121,9 @@ $baseList = url('back-office/recruitments');
                         <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits')) ?>" class="inline-flex items-center rounded-xl border border-white/15 bg-black/20 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:bg-black/30">
                             Modèles de texte
                         </a>
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="inline-flex items-center rounded-xl border border-sky-300/30 bg-sky-300/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-sky-100 transition hover:bg-sky-300/20">
+                            Paramètres SLA
+                        </a>
                         <a href="<?= htmlspecialchars(url('back-office')) ?>" class="inline-flex items-center rounded-xl border border-white/10 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-400 transition hover:text-white">
                             ← Back-office
                         </a>
@@ -135,6 +140,10 @@ $baseList = url('back-office/recruitments');
                     <div class="rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 shadow-sm">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-amber-900/70">À traiter</p>
                         <p class="mt-1 font-serif text-2xl font-bold text-amber-950 tabular-nums"><?= $nSubmitted ?></p>
+                    </div>
+                    <div class="rounded-xl border <?= $submittedOlderThanSla > 0 ? 'border-rose-300 bg-rose-50/60' : 'border-sky-200/80 bg-sky-50/40' ?> p-4 shadow-sm">
+                        <p class="text-[10px] font-bold uppercase tracking-wider <?= $submittedOlderThanSla > 0 ? 'text-rose-900/75' : 'text-sky-900/75' ?>">Bloqués > SLA</p>
+                        <p class="mt-1 font-serif text-2xl font-bold <?= $submittedOlderThanSla > 0 ? 'text-rose-950' : 'text-sky-950' ?> tabular-nums"><?= $submittedOlderThanSla ?></p>
                     </div>
                     <div class="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4 shadow-sm">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-900/70">Acceptées</p>
@@ -157,6 +166,25 @@ $baseList = url('back-office/recruitments');
                     <?= $filterLink('rejected', $statusFilter, 'Refusées', $nRejected, $baseList) ?>
                     <?= $filterLink('blocked', $statusFilter, 'Non admis', $nBlocked, $baseList) ?>
                 </div>
+
+                <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3">
+                    <?= \App\Core\Csrf::field() ?>
+                    <div class="min-w-[12rem]">
+                        <label for="enlistment-sla-hours" class="block text-[10px] font-bold uppercase tracking-wide text-stone-500">SLA interne (heures sans action)</label>
+                        <input
+                            type="number"
+                            id="enlistment-sla-hours"
+                            name="enlistment_sla_hours"
+                            min="1"
+                            max="720"
+                            value="<?= $enlistmentSlaHours ?>"
+                            class="mt-1 w-28 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-stone-900"
+                        >
+                    </div>
+                    <button type="submit" class="inline-flex items-center rounded-lg border border-[#1c2d41] bg-[#1c2d41] px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#152333]">Enregistrer SLA</button>
+                    <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="inline-flex items-center rounded-lg border border-stone-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-stone-700 transition hover:bg-stone-50">Ouvrir la page paramètres</a>
+                    <p class="text-xs text-stone-500">Alerte affichée si un dossier <strong>à traiter</strong> dépasse ce seuil.</p>
+                </form>
             </div>
 
             <div class="px-4 py-6 sm:px-8 sm:py-8">
@@ -203,11 +231,16 @@ $baseList = url('back-office/recruitments');
                                     $fn = (string) ($e['first_name'] ?? '');
                                     $ln = (string) ($e['last_name'] ?? '');
                                     $full = trim($fn . ' ' . $ln) ?: '—';
+                                    $slaBreached = !empty($e['submitted_sla_breached']);
+                                    $ageHours = isset($e['submitted_age_hours']) ? (int) $e['submitted_age_hours'] : null;
                                     ?>
                                     <tr class="transition hover:bg-[#faf8f3]/80">
                                         <td class="whitespace-nowrap px-4 py-4 pl-5 text-stone-600 tabular-nums">
                                             <?= !empty($e['created_at']) ? htmlspecialchars(date('d/m/Y', strtotime((string) $e['created_at']))) : '—' ?>
                                             <span class="block text-xs text-stone-400"><?= !empty($e['created_at']) ? htmlspecialchars(date('H:i', strtotime((string) $e['created_at']))) : '' ?></span>
+                                            <?php if ($slaBreached && $ageHours !== null): ?>
+                                            <span class="mt-1 inline-flex items-center rounded-md bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-900">SLA +<?= $ageHours - $enlistmentSlaHours ?>h</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td class="px-4 py-4">
                                             <div class="flex items-center gap-3">
@@ -249,6 +282,8 @@ $baseList = url('back-office/recruitments');
                             $fn = (string) ($e['first_name'] ?? '');
                             $ln = (string) ($e['last_name'] ?? '');
                             $full = trim($fn . ' ' . $ln) ?: '—';
+                            $slaBreached = !empty($e['submitted_sla_breached']);
+                            $ageHours = isset($e['submitted_age_hours']) ? (int) $e['submitted_age_hours'] : null;
                             ?>
                             <li class="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                                 <div class="h-1 <?= htmlspecialchars($meta['bar']) ?>" aria-hidden="true"></div>
@@ -262,6 +297,9 @@ $baseList = url('back-office/recruitments');
                                             </div>
                                             <span class="shrink-0 rounded-lg border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 <?= htmlspecialchars($meta['class']) ?>"><?= htmlspecialchars($meta['label']) ?></span>
                                         </div>
+                                        <?php if ($slaBreached && $ageHours !== null): ?>
+                                            <p class="mt-1 inline-flex items-center rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-900">SLA dépassé (<?= $ageHours ?> h)</p>
+                                        <?php endif; ?>
                                         <p class="mt-2 truncate text-sm text-stone-600"><?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></p>
                                         <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid)) ?>" class="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-[#1c2d41] py-2.5 text-xs font-bold uppercase tracking-wider text-white">Consulter le dossier</a>
                                     </div>

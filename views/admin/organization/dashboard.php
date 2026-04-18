@@ -341,8 +341,8 @@ $modActionLabelFr = static function (string $t): string {
                             <div class="flex h-12 w-12 items-center justify-center bg-emerald-600 text-lg font-black italic text-white">⌁</div>
                             <span class="text-[9px] font-black uppercase tracking-widest text-emerald-700">Opérations</span>
                         </div>
-                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Centre des opérations</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Vue transverse pour le commandement et le suivi.</p>
+                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Ops admin</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-500">File actionnable, playbooks incidents, audit et objectifs KPI.</p>
                         <p class="mt-3 text-xs text-slate-500"><a href="<?= url('back-office/tableau-operationnel') ?>" class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-900">Ouvrir le tableau opérationnel</a> (permanences, missions, consignes)</p>
                     </div>
                     <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-emerald-700">

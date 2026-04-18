@@ -55,10 +55,22 @@
     [0x25, [false, false, false]]
 ] call CBA_fnc_addKeybind;
 
-// Cache pour TASK 3 (position tracking) — initialisation globale
+// Cache position / tracking tactique
 missionNamespace setVariable ["COMSPEC_lastPos", [0,0,0], true];
 missionNamespace setVariable ["COMSPEC_lastName", "", true];
 missionNamespace setVariable ["COMSPEC_lastRole", "", true];
 missionNamespace setVariable ["COMSPEC_lastRadio", "", true];
 missionNamespace setVariable ["COMSPEC_lastMedical", "", true];
 missionNamespace setVariable ["COMSPEC_lastSendTime", 0, true];
+missionNamespace setVariable ["COMSPEC_PositionTrail", [], true];
+missionNamespace setVariable ["COMSPEC_ImmobileSince", 0, true];
+
+// Bus d'évènements + C2 + Intel Engine
+missionNamespace setVariable ["COMSPEC_EventBus", createHashMap, true];
+missionNamespace setVariable ["COMSPEC_Orders", [], true];
+missionNamespace setVariable ["COMSPEC_OrderLog", [], true];
+missionNamespace setVariable ["COMSPEC_IntelStore", [], true];
+missionNamespace setVariable ["COMSPEC_IntelHeatmap", createHashMap, true];
+missionNamespace setVariable ["COMSPEC_RadioReplay", [], true];
+missionNamespace setVariable ["COMSPEC_Comms_Channel", "SQUAD", true];
+missionNamespace setVariable ["COMSPEC_Comms_Priority", "ROUTINE", true];

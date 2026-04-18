@@ -85,6 +85,12 @@ class ForumTopicController
         );
         $topic = $topicEnriched[0];
 
+        $mandatoryReadStatus = null;
+        if ((int) ($topic['mandatory_read'] ?? 0) === 1) {
+            $this->topicRepository->touchMandatoryReadSeen((int) $tenantId, $id, (int) $userId);
+            $mandatoryReadStatus = $this->topicRepository->getMandatoryReadStatus((int) $tenantId, $id, (int) $userId);
+        }
+
         $isModo = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
         if (!empty($topic['is_hidden']) && !$isModo) {
             return (new Response())->setStatusCode(404)->setBody('Sujet non trouvé.');
@@ -213,6 +219,7 @@ class ForumTopicController
             'topicAutoLockedNotice' => $topicAutoLockedNotice,
             'forumOrgRoleChoices' => $forumOrgRoleChoices,
             'forumVisibleRoleCurrent' => $forumVisibleRoleCurrent,
+            'mandatoryReadStatus' => $mandatoryReadStatus,
         ]);
     }
 
