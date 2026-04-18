@@ -129,3 +129,114 @@ Pistes d’évolution pour transformer le mod Arma et l’interface ATAK en outi
 - **DLL actuelle :** `mod/COMSPECExtension/Extension.cs` (Connect, UpdatePosition, SendIntel).
 - **API PHP :** `app/Controllers/Api/AtakApiController.php` (`/api/atak/position`, `/api/atak/intel`, `/api/atak/markers`, etc.). Ancien serveur Node archivé dans `server/`.
 - **Connect SQF :** `addons/connect/functions/` (fnc_connect, fnc_updatePosition, fnc_sendIntel).
+
+---
+
+## 7. Système « After Action Review » (AAR) automatique
+
+**Constat actuel :** le dispositif de relecture post-mission est partiel et ne couvre pas toute la chaîne décisionnelle.
+
+**Feature :**
+- **Replay mission** consolidé (trajectoires unités, chronologie intel, événements clés).
+- **Extraction automatique** des erreurs tactiques, délais de réaction, points de rupture C2.
+- **Export PDF / formation** : génération d’un dossier AAR standardisé exploitable en instruction.
+
+**Impact :** boucle complète **opération → analyse → formation**, avec capitalisation progressive de la doctrine.
+
+---
+
+## 8. Système d’autorité dynamique (chaîne de commandement)
+
+**Constat actuel :** la chaîne de commandement est majoritairement statique.
+
+**Feature :**
+- **Commandement temps réel** : transfert d’autorité en mission (délégation explicite).
+- **Fallback automatique** : en cas de perte leader, bascule vers successeur doctrinal.
+- **Hiérarchie visible sur carte** : visualisation claire des niveaux de commandement.
+
+**Impact :** réalisme tactique renforcé et meilleure cohérence avec les schémas de commandement militaires.
+
+---
+
+## 9. Système « Fog of War »
+
+**Constat actuel :** visibilité globale trop proche d’un mode omniscient.
+
+**Feature :**
+- Masquage de l’information selon **distance**, **rôle**, **capteurs disponibles**.
+- **Intel dégradé** : précision variable (ellipse/zone), latence de transmission, fraîcheur des données.
+
+**Impact :** passage d’un outil de supervision totale à un simulateur C2 crédible sous incertitude.
+
+---
+
+## 10. Intelligence artificielle décisionnelle (serveur)
+
+**Constat actuel :** absence d’assistant d’aide à la décision en temps réel.
+
+**Feature :**
+- Détection continue des **zones dangereuses**, unités isolées, ruptures de dispositif.
+- Suggestions automatiques : **repositionnement**, **évacuation**, **CAS recommandé**.
+
+**Impact :** ajout d’un assistant état-major orienté réduction du temps de décision.
+
+---
+
+## 11. Système logistique opérationnel
+
+**Constat actuel :** module logistique tactique absent du cycle mission.
+
+**Feature :**
+- Gestion des stocks et consommables : **carburant**, **munitions**, **médical**.
+- Routage ravitaillement et priorisation des convois.
+- Intégration directe au BFT enrichi (icônes/indicateurs fuel/ammo).
+
+**Impact :** profondeur stratégique accrue et meilleure préparation du tempo opérationnel.
+
+---
+
+## 12. Workflow judiciaire / traçabilité
+
+**Constat actuel :** la traçabilité opérationnelle n’est pas encore structurée comme un dossier probatoire.
+
+**Feature :**
+- Journal inviolable des **ordres**, **décisions**, **actions**.
+- Export dossier complet (chaîne de responsabilité, horodatage, preuves associées).
+
+**Impact :** alignement direct avec les usages réels d’enquête, de conformité et de responsabilité.
+
+---
+
+## 13. Simulation multi-théâtres interconnectés
+
+**Constat actuel :** les contextes tactiques sont traités de manière isolée.
+
+**Feature :**
+- Plusieurs cartes simultanées.
+- Commandement centralisé avec unités réparties sur différents théâtres.
+
+**Impact :** montée d’échelle vers un niveau brigade / théâtre complet.
+
+---
+
+## 14. Système de stress / fatigue opérateur
+
+**Constat actuel :** facteur humain peu représenté dans les boucles de décision.
+
+**Feature :**
+- Modélisation de la fatigue et du stress avec effets sur la **précision** et le **temps de réaction**.
+- Remontée des états humains dans le BFT (indicateurs exploitables par le commandement).
+
+**Impact :** ajout d’un facteur humain réaliste dans la conduite des opérations.
+
+---
+
+## Priorisation complémentaire (modules 7 → 14)
+
+1. **Fog of War** + autorité dynamique — socle de réalisme C2 et discipline de l’information.
+2. **AAR automatique** — ferme la boucle RETEX et alimente la formation.
+3. **Logistique opérationnelle** — impact direct sur tempo, autonomie et décisions tactiques.
+4. **IA décisionnelle** — assistance progressive, d’abord en recommandation non prescriptive.
+5. **Workflow judiciaire / traçabilité** — conformité et responsabilité (usage sensible).
+6. **Stress / fatigue opérateur** — enrichissement humain de la simulation.
+7. **Multi-théâtres interconnectés** — montée en échelle finale (brigade / théâtre).
