@@ -303,6 +303,37 @@ class EnlistmentRepository
     }
 
     /**
+     * Ajoute un suivi interne sur un dossier encore en instruction (statut submitted), sans le clôturer.
+     */
+    public function appendInstructionFollowup(int $tenantId, int $id, int $reviewerUserId, ?string $note): bool
+    {
+        $note = $note !== null ? trim($note) : null;
+        if ($note !== null && $note !== '') {
+            $stmt = $this->pdo->prepare(
+                "UPDATE enlistments
+                 SET reviewer_comment = CASE
+                        WHEN reviewer_comment IS NULL OR reviewer_comment = '' THEN ?
+                        ELSE CONCAT(reviewer_comment, '\n\n', ?)
+                     END,
+                     reviewed_by = ?,
+                     updated_at = NOW()
+                 WHERE tenant_id = ? AND id = ? AND status = 'submitted'"
+            );
+            $stmt->execute([$note, $note, $reviewerUserId, $tenantId, $id]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                "UPDATE enlistments
+                 SET reviewed_by = ?,
+                     updated_at = NOW()
+                 WHERE tenant_id = ? AND id = ? AND status = 'submitted'"
+            );
+            $stmt->execute([$reviewerUserId, $tenantId, $id]);
+        }
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
      * Rattache une candidature acceptée à un utilisateur du tenant (colonne submitter_user_id).
      */
     public function linkSubmitterUserId(int $tenantId, int $enlistmentId, int $userId): bool
