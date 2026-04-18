@@ -192,6 +192,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
                 <?php $card(url('back-office/roles-functions'), 'Rôles & fonctions (toile)', 'Catalogue FR/US, graphe, unités, templates.'); ?>
                 <?php $card(url('back-office/roles/presets'), 'Profils de permissions', 'Appliquer un jeu complet de droits à un rôle en une fois (hors droits plateforme).'); ?>
                 <?php $card(url('back-office/recruitments'), 'Candidatures', 'Dossiers, décisions, file d’attente.' . ($pendingEnlist > 0 ? ' (' . $pendingEnlist . ' en attente)' : '')); ?>
+                <?php $card(url('back-office/recruitments/settings'), 'Paramètres SLA (recrutement)', 'Configuration du délai interne sans action et suivi des dossiers bloqués.', 'border-sky-200/80 hover:border-sky-400 hover:bg-sky-50/40'); ?>
                 <?php $card(url('back-office/recruitments/messages-prefaits'), 'Messages préfaits (recrutement)', 'Modèles de commentaires internes pour traiter les candidatures.', 'border-emerald-200/80 hover:border-emerald-400 hover:bg-emerald-50/40'); ?>
                 <?php $card(url('back-office/positions'), 'Postes organisationnels', 'Intitulés de fonction et affectations, distincts des rôles et habilitations.'); ?>
                 <?php $card(url('back-office/roleplay-followup'), 'Suivi roleplay', 'Pilotage tutorat, timeline dossiers et avancement individuel.'); ?>

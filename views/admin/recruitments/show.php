@@ -17,6 +17,9 @@ $statusLabel = $statusLabels[$statusRaw] ?? $statusRaw;
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
 $membershipRepairHint = $membershipRepairHint ?? null;
+$enlistmentSlaHours = max(1, (int) ($enlistmentSlaHours ?? 72));
+$submittedAgeHours = isset($e['submitted_age_hours']) ? (int) $e['submitted_age_hours'] : null;
+$submittedSlaBreached = !empty($e['submitted_sla_breached']);
 
 $linkedRo = is_array($linkedRecruitmentOpening ?? null) ? $linkedRecruitmentOpening : null;
 $submitterId = (int) ($e['submitter_user_id'] ?? 0);
@@ -85,6 +88,7 @@ $statusBand = match ($statusRaw) {
             <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="rounded-lg px-2 py-1 transition hover:bg-white/60 hover:text-[#1c2d41]">Dossiers de candidature</a>
             <span class="text-stone-400" aria-hidden="true">/</span>
             <span class="rounded-lg bg-white/80 px-2 py-1 text-[#1c2d41] ring-1 ring-stone-200/80">Dossier n°<?= $id ?></span>
+            <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="ml-auto rounded-lg border border-stone-300 bg-white px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-stone-700 transition hover:bg-stone-50">Paramètres SLA</a>
         </nav>
 
         <?php if ($flashOk): ?>
@@ -113,6 +117,11 @@ $statusBand = match ($statusRaw) {
                     <span class="inline-flex items-center rounded-xl border-2 border-white/25 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur-sm">
                         <?= htmlspecialchars($statusLabel ?: '—') ?>
                     </span>
+                    <?php if ($statusRaw === 'submitted' && $submittedAgeHours !== null): ?>
+                        <span class="inline-flex items-center rounded-lg border px-2 py-1 text-[10px] font-bold uppercase tracking-wide <?= $submittedSlaBreached ? 'border-rose-300 bg-rose-100 text-rose-950' : 'border-sky-300 bg-sky-100 text-sky-900' ?>">
+                            <?= $submittedSlaBreached ? 'SLA dépassé' : 'SLA en cours' ?> · <?= $submittedAgeHours ?> h / <?= $enlistmentSlaHours ?> h
+                        </span>
+                    <?php endif; ?>
                     <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="text-xs font-bold uppercase tracking-wider text-slate-400 transition hover:text-white">← Retour à la liste</a>
                 </div>
             </div>
@@ -255,7 +264,10 @@ $statusBand = match ($statusRaw) {
                                     <select id="canned-msg-select" class="<?= htmlspecialchars(bo_select_class('max-w-[min(100%,18rem)] border-amber-300 text-xs font-semibold text-amber-950 focus:border-amber-500 focus:ring-amber-500/25'), ENT_QUOTES, 'UTF-8') ?>">
                                         <option value="">— Insérer un modèle —</option>
                                         <?php foreach ($enlistmentCannedMessages as $cm): ?>
-                                        <option value="<?= (int) ($cm['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($cm['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                                        <?php $ctx = (string) ($cm['context'] ?? 'generic'); ?>
+                                        <option value="<?= (int) ($cm['id'] ?? 0) ?>" data-context="<?= htmlspecialchars($ctx, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars((string) ($cm['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                        </option>
                                         <?php endforeach; ?>
                                     </select>
                                     <?php endif; ?>
@@ -270,15 +282,46 @@ $statusBand = match ($statusRaw) {
                               var sel = document.getElementById('canned-msg-select');
                               var raw = document.getElementById('enlistment-canned-json');
                               var ta = document.getElementById('reviewer_comment');
+                              var actionButtons = document.querySelectorAll('.enlist-decision-actions [name=\"decision\"]');
                               if (!sel || !raw || !ta) return;
                               var list = [];
                               try { list = JSON.parse(raw.textContent || '[]'); } catch (e) { return; }
                               var byId = {};
-                              list.forEach(function (row) { if (row && row.id) byId[String(row.id)] = row.body || ''; });
+                              list.forEach(function (row) {
+                                if (!row || !row.id) return;
+                                byId[String(row.id)] = { body: row.body || '', context: row.context || 'generic' };
+                              });
+                              var currentDecision = 'accept';
+                              var toContext = function (decision) {
+                                if (decision === 'accept') return 'accept';
+                                if (decision === 'reject') return 'reject';
+                                if (decision === 'block') return 'reject';
+                                return 'generic';
+                              };
+                              var updateOptions = function () {
+                                var wanted = toContext(currentDecision);
+                                Array.prototype.forEach.call(sel.options, function (opt, idx) {
+                                  if (idx === 0) { opt.hidden = false; return; }
+                                  var c = opt.getAttribute('data-context') || 'generic';
+                                  opt.hidden = !(c === 'generic' || c === wanted);
+                                });
+                                sel.selectedIndex = 0;
+                              };
+                              Array.prototype.forEach.call(actionButtons, function (btn) {
+                                btn.addEventListener('focus', function () {
+                                  currentDecision = btn.value || 'accept';
+                                  updateOptions();
+                                });
+                                btn.addEventListener('mouseenter', function () {
+                                  currentDecision = btn.value || 'accept';
+                                  updateOptions();
+                                });
+                              });
+                              updateOptions();
                               sel.addEventListener('change', function () {
                                 var id = sel.value;
                                 if (!id || !byId[id]) { sel.selectedIndex = 0; return; }
-                                var chunk = byId[id];
+                                var chunk = byId[id].body;
                                 if (ta.value.trim() !== '') ta.value += '\n\n';
                                 ta.value += chunk;
                                 sel.selectedIndex = 0;

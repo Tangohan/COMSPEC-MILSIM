@@ -591,6 +591,8 @@ return function (Router $router) {
     $router->post('/back-office/alerts/{id}/delete', [TenantAlertsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/alerts', [TenantAlertsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments', [AdminRecruitmentsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/settings', [AdminRecruitmentsController::class, 'settings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/settings', [AdminRecruitmentsController::class, 'settingsSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/messages-prefaits', [AdminRecruitmentsController::class, 'cannedMessagesIndex'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/messages-prefaits', [AdminRecruitmentsController::class, 'cannedMessageStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/messages-prefaits/{id}/update', [AdminRecruitmentsController::class, 'cannedMessageUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

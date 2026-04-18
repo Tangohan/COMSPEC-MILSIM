@@ -63,10 +63,39 @@ Le traitement candidature est souvent linéaire et peu assisté.
 - SLA interne configurable (alerte si dossier sans action > X heures).
 - Passerelle directe vers onboarding membre (création de tâches post-acceptation).
 
+### Détail de mise en œuvre recommandé
+1. **Préqualification dynamique (avant dépôt final)**
+   - Déclencher un bloc de questions conditionnelles selon le type de communauté, le rôle visé et la disponibilité déclarée.
+   - Calculer un score de complétude + drapeaux de vigilance (ex. disponibilité incompatible, prérequis manquants).
+   - Rendre visible au staff une synthèse courte de préqualification en tête de dossier.
+
+2. **Aide à la décision staff (pendant instruction)**
+   - Proposer des modèles de réponse contextualisés par statut (`accepté`, `en attente`, `refus argumenté`, `redirection`) avec variables automatiques (nom, unité, prochaine étape).
+   - Imposer un motif structuré en cas de refus pour alimenter l’analyse qualité du funnel.
+   - Journaliser les changements d’état (qui, quand, commentaire) pour audit interne.
+
+3. **SLA candidature et escalade**
+   - Introduire un SLA configurable par communauté (ex. première prise en charge < 24 h, décision < 72 h).
+   - Définir des seuils d’alerte progressifs (warning 70 %, critique 100 %, escalade 130 % du SLA).
+   - Afficher un indicateur de vieillissement de dossier dans la liste de recrutement (couleur + compteur heures).
+
+4. **Passerelle recrutement -> onboarding**
+   - À l’acceptation, générer automatiquement une checklist onboarding initiale (profil, documents clés, formation d’entrée, prochain événement).
+   - Affecter les tâches au binôme recruteur/référent d’unité avec dates cibles.
+   - Émettre un événement analytique unique permettant de mesurer la conversion J7/J30.
+
+### Flux cible (résumé)
+`Soumission candidature -> préqualification -> file d’instruction staff -> décision outillée -> onboarding auto -> suivi conversion J30`
+
 ### KPI
 - Temps médian de traitement candidature.
 - Taux de dossiers “bloqués” > SLA.
 - Taux de conversion candidature → membre actif à J30.
+
+### Définition opérationnelle des KPI
+- **Temps médian de traitement candidature** : médiane entre `submitted_at` et `decision_at`, segmentée par communauté.
+- **Taux de dossiers bloqués > SLA** : `% dossiers ouverts dont âge de l’état courant > seuil SLA`.
+- **Taux de conversion candidature -> membre actif à J30** : `% candidatures acceptées avec au moins 1 action qualifiante entre J0 et J30` (connexion, complétion onboarding, participation événement, module LMS validé).
 
 ## 4.3 Onboarding membre (cross-modules)
 
