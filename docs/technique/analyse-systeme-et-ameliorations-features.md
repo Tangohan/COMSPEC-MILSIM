@@ -63,10 +63,39 @@ Le traitement candidature est souvent linéaire et peu assisté.
 - SLA interne configurable (alerte si dossier sans action > X heures).
 - Passerelle directe vers onboarding membre (création de tâches post-acceptation).
 
+### Détail de mise en œuvre recommandé
+1. **Préqualification dynamique (avant dépôt final)**
+   - Déclencher un bloc de questions conditionnelles selon le type de communauté, le rôle visé et la disponibilité déclarée.
+   - Calculer un score de complétude + drapeaux de vigilance (ex. disponibilité incompatible, prérequis manquants).
+   - Rendre visible au staff une synthèse courte de préqualification en tête de dossier.
+
+2. **Aide à la décision staff (pendant instruction)**
+   - Proposer des modèles de réponse contextualisés par statut (`accepté`, `en attente`, `refus argumenté`, `redirection`) avec variables automatiques (nom, unité, prochaine étape).
+   - Imposer un motif structuré en cas de refus pour alimenter l’analyse qualité du funnel.
+   - Journaliser les changements d’état (qui, quand, commentaire) pour audit interne.
+
+3. **SLA candidature et escalade**
+   - Introduire un SLA configurable par communauté (ex. première prise en charge < 24 h, décision < 72 h).
+   - Définir des seuils d’alerte progressifs (warning 70 %, critique 100 %, escalade 130 % du SLA).
+   - Afficher un indicateur de vieillissement de dossier dans la liste de recrutement (couleur + compteur heures).
+
+4. **Passerelle recrutement -> onboarding**
+   - À l’acceptation, générer automatiquement une checklist onboarding initiale (profil, documents clés, formation d’entrée, prochain événement).
+   - Affecter les tâches au binôme recruteur/référent d’unité avec dates cibles.
+   - Émettre un événement analytique unique permettant de mesurer la conversion J7/J30.
+
+### Flux cible (résumé)
+`Soumission candidature -> préqualification -> file d’instruction staff -> décision outillée -> onboarding auto -> suivi conversion J30`
+
 ### KPI
 - Temps médian de traitement candidature.
 - Taux de dossiers “bloqués” > SLA.
 - Taux de conversion candidature → membre actif à J30.
+
+### Définition opérationnelle des KPI
+- **Temps médian de traitement candidature** : médiane entre `submitted_at` et `decision_at`, segmentée par communauté.
+- **Taux de dossiers bloqués > SLA** : `% dossiers ouverts dont âge de l’état courant > seuil SLA`.
+- **Taux de conversion candidature -> membre actif à J30** : `% candidatures acceptées avec au moins 1 action qualifiante entre J0 et J30` (connexion, complétion onboarding, participation événement, module LMS validé).
 
 ## 4.3 Onboarding membre (cross-modules)
 
@@ -83,6 +112,45 @@ Après inscription, la marche à suivre dépend trop de la connaissance implicit
 - Taux de complétion onboarding à J7/J14.
 - % de nouveaux membres ayant réalisé au moins 1 action dans 3 modules distincts.
 
+### Cadrage d'implémentation recommandé
+- **Checklist onboarding multi-modules (source unique)**
+  - Étapes standard : `profil_complet`, `presentation_forum`, `document_essentiel_lu`, `formation_entree_completee`, `evenement_rejoint`.
+  - Chaque étape expose : module source, action attendue, statut (`todo`, `done`, `skipped`), date d’échéance, criticité.
+  - Les actions sont alimentées par des événements applicatifs déjà existants (forum, docs, formation, événements) plutôt que par des doubles saisies staff.
+- **Plans par rôle (templates activables)**
+  - `membre` : parcours de base orienté activation rapide.
+  - `cadre` : ajoute obligations organisationnelles (lecture doctrine + prise de poste).
+  - `instructeur` : ajoute validation d’outils pédagogiques et publication d’une première ressource.
+  - `recruteur` : ajoute traitements candidats + conformité process.
+  - Les templates restent surchargeables par tenant (ordre, obligatoire/facultatif, délais).
+- **Nudges intelligents**
+  - Nudge J+2 si aucune action validée.
+  - Nudge contextuel si une tâche critique est manquante à J+5.
+  - Nudge staff si risque d’échec onboarding à J+7 (ex: 0 action cross-modules ou < 40% complétion).
+  - Canaux recommandés : in-app prioritaire, puis e-mail de relance si inactivité persistante.
+- **Visibilité progression**
+  - Côté membre : badge de progression global (ex: `3/5`) + prochaine action suggérée.
+  - Côté staff : vue liste avec filtres par rôle, ancienneté, score de risque, module bloquant.
+  - Exposer un état “bloqué par dépendance” quand une étape nécessite une validation préalable.
+
+### Instrumentation KPI minimale (version 1)
+- **KPI 1 — Taux de complétion J7/J14**
+  - Numérateur : membres inscrits ayant un onboarding à 100% à J7/J14.
+  - Dénominateur : membres inscrits sur la même cohorte avec au moins 7/14 jours d’ancienneté.
+- **KPI 2 — Activation cross-modules**
+  - `% nouveaux membres avec >= 1 action dans >= 3 modules distincts` sur fenêtre J0-J14.
+  - Modules suivis recommandés : profil/RH, forum, documents, formations, événements.
+- **KPI de pilotage complémentaire**
+  - Délai médian inscription -> première action utile.
+  - Répartition des étapes les plus bloquantes (top 5 causes d’inachèvement).
+  - Taux d’efficacité des nudges (ouverture/clic/action réalisée sous 72 h).
+
+### Lotissement exécutable
+1. **Lot A (fondation, 1-2 sprints)** : modèle checklist + événements de complétion + affichage badge membre.
+2. **Lot B (activation, 1 sprint)** : templates onboarding par rôle + personnalisation tenant.
+3. **Lot C (rétention, 1 sprint)** : moteur de nudges + file de suivi staff.
+4. **Lot D (pilotage, continu)** : dashboard cohortes J7/J14 + analyse des points de friction.
+
 ## 4.4 LMS / Training Studio
 
 ### Problème
@@ -94,15 +162,53 @@ Le LMS est riche, mais le lien avec progression opérationnelle et événements 
 - Introduire un feedback post-leçon standardisé (difficulté, clarté, utilité).
 - Pousser automatiquement un événement d’entraînement recommandé après complétion d’un module clé.
 
+### Détail d’implémentation recommandé
+
+1. **Alignement formation ↔ rôle/grade/ORBAT**
+   - Ajouter une matrice de compétences minimales par `rôle métier`, `grade` et `poste ORBAT`.
+   - Tagger chaque module/lesson avec des objectifs opérationnels explicites (`commandement`, `transmissions`, `appui feu`, etc.).
+   - Exposer une vue “écarts de compétences” côté staff pour identifier ce qui manque avant affectation opérationnelle.
+
+2. **Parcours recommandés dynamiques**
+   - Construire un score de recommandation combinant : rôle actuel, ancienneté, modules déjà validés, récurrence aux événements, et objectifs de l’unité.
+   - Définir 3 états de parcours : `Essentiel`, `Renforcement`, `Spécialisation`.
+   - Rafraîchir automatiquement les recommandations après chaque complétion de module et après chaque participation à un événement.
+
+3. **Feedback post-leçon standardisé**
+   - Afficher un mini-formulaire en fin de leçon (3 questions fixes : difficulté perçue, clarté pédagogique, utilité terrain).
+   - Ajouter un champ commentaire libre optionnel pour signaux faibles.
+   - Produire une note agrégée par leçon pour prioriser les révisions pédagogiques.
+
+4. **Pont automatique vers les événements**
+   - Lorsqu’un module “clé” est complété, déclencher une recommandation d’événement contextualisée (type d’entraînement, niveau requis, créneau conseillé).
+   - Envoyer cette recommandation via notification in-app + rappel différé si aucune inscription sous 72h.
+   - Permettre au staff de surcharger manuellement la recommandation si contrainte opérationnelle locale.
+
+### Instrumentation (événements analytics minimaux)
+
+- `training_recommendation_shown`
+- `training_recommendation_opened`
+- `training_path_enrolled`
+- `training_lesson_feedback_submitted`
+- `training_key_module_completed`
+- `training_event_recommendation_pushed`
+- `training_event_recommendation_accepted`
+
 ### KPI
 - Taux de complétion des parcours recommandés.
 - Délai entre inscription et première formation complétée.
 - Corrélation formation complétée ↔ présence événementielle.
 
+### Définition opérationnelle des KPI
+
+- **Taux de complétion des parcours recommandés** = `# parcours recommandés complétés / # parcours recommandés démarrés` (fenêtre glissante 30 jours).
+- **Délai inscription → 1ère formation complétée** = médiane en heures entre `date_inscription` et `date_première_completion`.
+- **Corrélation formation ↔ présence événementielle** = comparaison, par cohorte mensuelle, du taux de présence entre membres ayant complété au moins 1 module clé et membres sans module clé complété.
+
 ## 4.5 Forum et communication communautaire
 
 ### Problème
-Le forum existe, mais n’est pas toujours intégré aux flux de mission quotidiens.
+Le forum existe, mais n’est pas toujours intégré aux flux de mission quotidiens : les informations critiques se noient dans le volume général, le suivi de lecture est partiel et les échanges staff arrivent parfois trop tard.
 
 ### Améliorations
 - Fil “priorité mission” (annonces critiques, doctrine, AAR) épinglé par rôle.
@@ -110,10 +216,34 @@ Le forum existe, mais n’est pas toujours intégré aux flux de mission quotidi
 - Relances de lecture ciblées pour contenus obligatoires (avec ack).
 - Pont avec messagerie interne pour notifications à fort impact.
 
+### Détail d’implémentation proposé
+- **Canal “Priorité mission” par tenant + audience RBAC** :
+  - Nouvelle taxonomie `mission_priority` avec niveaux (`critical`, `high`, `standard`) et cibles (`all`, `command`, `instructors`, `recruiters`, etc.).
+  - Épinglage contextuel selon rôle au chargement du tableau de bord forum.
+  - Règle de visibilité stricte (tenant + rôle + statut actif) pour éviter la surcharge hors périmètre.
+- **Digest hebdomadaire intelligent** :
+  - Job planifié hebdo qui agrège : threads prioritaires, top réponses staff, AAR récents, sujets sans réponse > X heures.
+  - Génération d’un digest court (3-7 items) et d’un digest long (avec liens directs et actions suggérées).
+  - Publication dans le forum + envoi optionnel par notification interne.
+- **Lecture obligatoire avec accusé de réception (ack)** :
+  - Drapeau `mandatory_read` au niveau sujet/post + date limite de lecture.
+  - Tracking des statuts (`unseen`, `seen`, `acknowledged`, `overdue`) pour chaque membre ciblé.
+  - Relances automatiques ciblées (J+1, J+3, J+7) avec escalade vers staff si `overdue`.
+- **Pont forum ↔ messagerie interne** :
+  - Événements forum critiques transformés en notifications “impact fort” dans la messagerie interne.
+  - Idempotence sur les envois (clé d’événement unique) pour éviter les doublons.
+  - Deep-links vers le post exact + CTA “Accuser réception” si contenu obligatoire.
+
 ### KPI
 - Taux de lecture des publications prioritaires.
 - Temps médian publication → première réponse staff.
 - Ratio sujets actifs / sujets créés à 7 jours.
+
+### Instrumentation KPI (définition opérationnelle)
+- **Taux de lecture prioritaire** = `membres ciblés ayant vu le post / membres ciblés total` (fenêtre 72h).
+- **Temps médian de première réponse staff** = médiane `(timestamp première réponse staff - timestamp publication)` sur les posts prioritaires.
+- **Ratio sujets actifs à J+7** = `sujets avec au moins 1 réponse entre J0 et J7 / sujets créés`.
+- Segmenter tous les KPI par tenant, rôle cible et niveau de priorité pour piloter la qualité de diffusion.
 
 ## 4.6 Événements / Pointage
 
@@ -121,31 +251,42 @@ Le forum existe, mais n’est pas toujours intégré aux flux de mission quotidi
 La présence est suivie, mais l’exploitation de la donnée pour l’amélioration continue est limitée.
 
 ### Améliorations
-- Score de régularité présence par membre/équipe (avec fenêtre glissante).
-- Motifs d’absence normalisés + statistiques exploitables.
-- Recommandations automatiques de créneaux à forte probabilité de participation.
-- Lien avec onboarding/LMS : proposer l’événement “utile suivant”.
+- **Score de régularité présence** par membre et par équipe avec fenêtre glissante (30/60/90 jours), pondéré par type d’événement (opération, entraînement, briefing) et rôle (participant vs encadrant).
+- **Motifs d’absence normalisés** (`service`, `santé`, `indisponibilité planifiée`, `absence non justifiée`, `autre`) avec champ commentaire facultatif et gouvernance de qualité des données.
+- **Recommandations automatiques de créneaux** (jour/heure) à forte probabilité de participation à partir de l’historique RSVP + présences effectives + saisonnalité.
+- **Lien avec onboarding/LMS** : après chaque événement, suggestion de « prochain événement utile » aligné sur le niveau de progression du membre.
+- **Alertes staff** : détection précoce des risques (`no-show` récurrent, baisse de régularité, nouvel arrivant sans participation à J+14/J+30).
+
+### Détails d’implémentation recommandés
+- Calcul quotidien batch + recalcul à la demande pour les tableaux de bord.
+- Table de dimensions pour les motifs d’absence afin d’éviter les libellés libres.
+- Export analytique mensuel (CSV/API) : présence, no-show, motifs, régularité par escouade.
+- Segmentation minimale : ancienneté (0-30, 31-90, 90+ jours), unité, fuseau horaire, type d’événement.
 
 ### KPI
-- Taux de présence confirmée vs effective.
-- Taux de no-show.
-- Progression de participation des nouveaux membres.
+- **Taux de présence confirmée vs effective** = présents effectifs / RSVP “présent”.
+- **Taux de no-show** = RSVP “présent” non pointés / RSVP “présent”.
+- **Progression de participation des nouveaux membres** = variation du nombre moyen d’événements pointés entre J+30 et J+90.
+- **Délai de première participation** (nouveaux membres).
+- **Taux de couverture des motifs d’absence** (absences avec motif normalisé / absences totales).
 
 ## 4.7 Courrier officiel / Documents
 
 ### Problème
-Les modules sont puissants, mais la traçabilité décisionnelle peut encore gagner en lisibilité.
+Les modules sont puissants, mais la chaîne de décision reste fragmentée entre versions, validations et impacts RH, ce qui nuit à la lisibilité opérationnelle.
 
 ### Améliorations
-- Historique unifié des versions + décisions (qui a validé quoi, quand, pourquoi).
-- Moteur de modèles “smart defaults” basé sur contexte (type, unité, destinataires).
-- Checklists conformité pré-envoi (signature, métadonnées, permissions).
-- Lien bidirectionnel courrier <-> dossier personnel lorsqu’un document impacte un membre.
+- Historique unifié **version + décision** sur une même frise (qui a validé, quand, pourquoi, et sous quelle délégation).
+- Moteur de modèles avec **smart defaults contextuels** (type de courrier, unité émettrice, destinataires, niveau de confidentialité).
+- Checklists de conformité pré-envoi (signature requise, métadonnées minimales, permissions de diffusion, statut des pièces jointes).
+- Lien bidirectionnel **courrier ↔ dossier personnel** lorsqu’un document impacte un membre (consultable depuis les deux écrans).
+- Journal des écarts et exceptions (dérogation de validation, diffusion urgente, correction post-publication) pour auditabilité.
 
 ### KPI
-- Taux d’erreur documentaire détectée avant diffusion.
-- Temps moyen de cycle brouillon -> validé.
+- Taux d’erreur documentaire détectée **avant diffusion**.
+- Temps moyen de cycle **brouillon → validé**.
 - Taux d’usage des modèles recommandés.
+- Délai moyen d’alignement courrier ↔ dossier personnel après publication.
 
 ## 4.8 Administration org/système
 
@@ -168,22 +309,46 @@ Le back-office est complet, mais la priorisation quotidienne reste difficile.
 1. **Observabilité produit + technique**
    - Événements d’usage standardisés (nomenclature commune).
    - Tableaux de bord de santé (erreurs, latence, file jobs, emails, cron).
+   - Contrat d’événements versionné (`domain.object.action.v1`) avec propriétaires métier/techniques.
+   - Revue mensuelle “signal vs bruit” pour supprimer les métriques non actionnables.
 
 2. **Gouvernance des permissions**
    - Audit automatique des droits sensibles.
    - Recertification périodique des rôles.
+   - Inventaire centralisé des permissions critiques (RBAC + exemptions “break glass”).
+   - Rapport d’écarts horodaté (création, extension, révocation) avec validation nominative.
 
 3. **Fiabilité des workflows asynchrones**
    - File de tâches avec retries, idempotence et dead-letter queue.
    - Alerting en cas d’échecs répétés de relances/notifications.
+   - Politique de retries par type de job (backoff exponentiel + jitter).
+   - Clés d’idempotence obligatoires pour toutes les relances utilisateurs (email, webhook, notification).
 
 4. **Qualité UX et design system léger**
    - Standardiser composants feedback (succès/erreur/vide/chargement).
    - Harmoniser la terminologie produit entre modules.
+   - Bibliothèque minimale de patterns (formulaires, tables, filtres, états) partagée avec snippets prêts à l’emploi.
+   - Glossaire produit unique FR/EN aligné avec les libellés back-office et portail.
 
 5. **Stratégie anti-abus et confiance**
    - Scores de risque (contact, forum, enrôlement) + throttling progressif.
    - Mode dégradé sécurisé quand un service externe est indisponible.
+   - Matrice de réponses graduées (silent flag, challenge, blocage temporaire, revue manuelle).
+   - Journal de décisions anti-abus explorable (raison, score, règle déclenchée, durée de mitigation).
+
+### Cadence de livraison recommandée (transverse)
+
+- **S1–S3** : cadrage des schémas d’événements, inventaire permissions sensibles, définition des SLO workflows.
+- **S4–S8** : instrumentation dashboards santé + alerting, déploiement retries/idempotence/DLQ, kit UX feedback V1.
+- **S9–S12** : recertification rôles automatisée, score de risque V1 sur contact/forum, premiers modes dégradés testés.
+
+### Critères d’acceptation minimaux
+
+- Observabilité : >90% des parcours critiques couverts par événements standardisés.
+- Permissions : 100% des rôles sensibles recertifiés sur la période cible.
+- Asynchrone : baisse mesurable des échecs finaux (DLQ) et du temps de reprise.
+- UX : états success/error/loading/empty homogènes sur les 3 modules à plus fort trafic.
+- Anti-abus : réduction des incidents répétés sans hausse significative des faux positifs.
 
 ## 6) Priorisation recommandée (impact / effort)
 
@@ -207,16 +372,24 @@ Le back-office est complet, mais la priorisation quotidienne reste difficile.
 
 ## 7) Backlog concret (10 tickets prioritaires)
 
-1. **COMM-001** — Funnel conversion communautés (tableau + exports).
-2. **REC-002** — SLA candidature + alertes inactivité.
-3. **ONB-003** — Checklist onboarding multi-modules.
-4. **ONB-004** — Nudges d’inactivité contextualisés.
-5. **LMS-005** — Parcours recommandés selon rôle métier.
-6. **EVT-006** — Score régularité présence + motifs d’absence.
-7. **FOR-007** — Digest hebdo des contenus prioritaires.
-8. **DOC-008** — Historique décisionnel unifié courrier/documents.
-9. **ADM-009** — Centre d’opérations admin (actions triées par impact).
-10. **PLAT-010** — Standard d’événements analytiques transverse.
+| Ticket | Priorité | Résultat attendu | Livrable clé |
+| --- | --- | --- | --- |
+| **COMM-001** | P0 | Mesurer la conversion visiteur -> membre actif pour chaque communauté. | Tableau de funnel par étape + export CSV/PDF. |
+| **REC-002** | P0 | Réduire les candidatures sans réponse et les abandons en file d’attente. | SLA paramétrable avec alertes d’inactivité par rôle. |
+| **ONB-003** | P0 | Structurer un parcours d’intégration unique entre communautés, docs et LMS. | Checklist onboarding multi-modules avec progression persistante. |
+| **ONB-004** | P1 | Réengager les utilisateurs inactifs sans sur-notifier. | Nudges contextualisés selon module, fréquence et profil. |
+| **LMS-005** | P1 | Augmenter le taux de complétion des formations métier. | Recommandations de parcours basées sur rôle + historique d’activité. |
+| **EVT-006** | P1 | Identifier les habitudes de présence et les causes d’absence récurrentes. | Score de régularité présence + taxonomie des motifs d’absence. |
+| **FOR-007** | P1 | Accélérer la visibilité des sujets critiques dans le forum. | Digest hebdo personnalisé des contenus prioritaires. |
+| **DOC-008** | P0 | Garantir la traçabilité complète des décisions sur courrier/documents. | Historique décisionnel unifié (timeline horodatée + acteurs). |
+| **ADM-009** | P0 | Donner aux admins une vue actionnable des tâches à plus fort impact. | Centre d’opérations avec file d’actions priorisées par impact/urgence. |
+| **PLAT-010** | P0 | Uniformiser les métriques inter-modules pour pilotage produit fiable. | Standard transverse d’événements analytiques + dictionnaire de schéma. |
+
+### Dépendances minimales
+
+- **PLAT-010** est un prérequis de mesure pour **COMM-001**, **ONB-003**, **ONB-004**, **LMS-005** et **EVT-006**.
+- **ONB-003** doit être livré avant **ONB-004** pour éviter des nudges sans parcours de référence.
+- **DOC-008** et **ADM-009** se renforcent mutuellement via une même couche d’audit et de priorisation.
 
 ## 8) Risques et mitigations
 

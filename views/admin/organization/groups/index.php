@@ -1,41 +1,66 @@
 <?php
-$groups = $groups ?? [];
-if (!is_array($groups)) {
-    $groups = [];
-}
+$groups = is_array($groups ?? null) ? $groups : [];
+$success = \App\Core\Session::get('success');
+$error = \App\Core\Session::get('error');
+\App\Core\Session::forget('success');
+\App\Core\Session::forget('error');
 ?>
-<div class="max-w-4xl mx-auto px-6 py-12">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-black text-slate-900">Groupes</h1>
-        <a href="<?= url('back-office/groups/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouveau groupe</a>
-    </div>
-    <?php if (\App\Core\Session::get('success')): ?><p class="mb-4 text-sm text-emerald-600"><?= htmlspecialchars(\App\Core\Session::get('success')) ?></p><?php \App\Core\Session::forget('success'); endif; ?>
-    <?php if (\App\Core\Session::get('error')): ?><p class="mb-4 text-sm text-rose-600"><?= htmlspecialchars(\App\Core\Session::get('error')) ?></p><?php \App\Core\Session::forget('error'); endif; ?>
-    <?php if (empty($groups)): ?>
-    <p class="text-slate-500">Aucun groupe.</p>
-    <?php else: ?>
-    <table class="w-full border border-slate-200 rounded-lg overflow-hidden">
-        <thead class="bg-slate-50 border-b border-slate-200">
-            <tr>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Nom</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Code</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($groups as $g): ?>
-            <tr class="border-b border-slate-100 hover:bg-slate-50">
-                <td class="p-3 font-medium"><?= htmlspecialchars($g['name']) ?></td>
-                <td class="p-3"><?= htmlspecialchars($g['code'] ?? '—') ?></td>
-                <td class="p-3">
-                    <a href="<?= url('back-office/groups/' . $g['id']) ?>" class="text-slate-600 hover:underline text-sm">Voir</a>
-                    <span class="mx-1">|</span>
-                    <a href="<?= url('back-office/groups/' . $g['id'] . '/edit') ?>" class="text-slate-600 hover:underline text-sm">Modifier</a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <?php endif; ?>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour administration organisationnelle</a></p>
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+    <header class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Organigramme</p>
+                <h1 class="mt-2 text-2xl font-black text-slate-900">Groupes opérationnels</h1>
+                <p class="mt-2 text-sm text-slate-600">Vue consolidée des groupes (unités type ORBAT), avec accès rapide aux fiches détaillées.</p>
+            </div>
+            <a href="<?= url('back-office/groups/create') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Créer un groupe</a>
+        </div>
+        <div class="mt-5 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-xl bg-slate-50 p-3">
+                <p class="text-xs uppercase text-slate-500">Total groupes</p>
+                <p class="text-2xl font-black text-slate-900"><?= count($groups) ?></p>
+            </div>
+            <div class="rounded-xl bg-slate-50 p-3">
+                <p class="text-xs uppercase text-slate-500">Navigation</p>
+                <a class="text-sm font-semibold text-blue-700 underline" href="<?= url('back-office/organisation/structure') ?>">Ouvrir le hub structure</a>
+            </div>
+        </div>
+    </header>
+
+    <?php if ($success): ?><p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"><?= htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+    <?php if ($error): ?><p class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <?php if ($groups === []): ?>
+            <div class="p-6 text-sm text-slate-500">Aucun groupe enregistré.</div>
+        <?php else: ?>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Groupe</th>
+                            <th class="px-4 py-3 text-left">Code</th>
+                            <th class="px-4 py-3 text-left">Slug</th>
+                            <th class="px-4 py-3 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <?php foreach ($groups as $g): ?>
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-4 py-3 font-semibold text-slate-900"><?= htmlspecialchars((string) ($g['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string) ($g['code'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="px-4 py-3 font-mono text-xs text-slate-600"><?= htmlspecialchars((string) ($g['slug'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="px-4 py-3">
+                                    <div class="flex flex-wrap gap-2">
+                                        <a class="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100" href="<?= url('back-office/groups/' . (int) ($g['id'] ?? 0)) ?>">Voir</a>
+                                        <a class="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100" href="<?= url('back-office/groups/' . (int) ($g['id'] ?? 0) . '/edit') ?>">Modifier</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </section>
 </div>

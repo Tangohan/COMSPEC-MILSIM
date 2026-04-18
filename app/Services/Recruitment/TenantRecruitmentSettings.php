@@ -52,6 +52,22 @@ final class TenantRecruitmentSettings
         return trim((string) ($b['prospection_document_ref'] ?? ''));
     }
 
+    public static function defaultEnlistmentSlaHours(): int
+    {
+        return 72;
+    }
+
+    /**
+     * SLA interne recrutement (heures max sans action sur un dossier soumis).
+     */
+    public static function enlistmentSlaHoursFromSettings(array $tenantSettings): int
+    {
+        $b = self::getRecruitmentBlock($tenantSettings);
+        $raw = (int) ($b['enlistment_sla_hours'] ?? self::defaultEnlistmentSlaHours());
+
+        return max(1, min(720, $raw));
+    }
+
     /**
      * @param array<string, mixed> $tenantSettings
      * @return array<string, mixed>

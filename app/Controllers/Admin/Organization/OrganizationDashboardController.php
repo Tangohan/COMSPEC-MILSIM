@@ -259,6 +259,129 @@ class OrganizationDashboardController
             'invitations_expirees' => count($workQueue['expired_invitations'] ?? []),
         ];
 
+        $actionableAlerts = [
+            [
+                'id' => 'moderation_open',
+                'type' => 'Contenu',
+                'title' => 'Signalements modération à traiter',
+                'impact_score' => min(100, 30 + ($moderationOpen * 6)),
+                'sla_label' => 'SLA: 4h',
+                'count' => $moderationOpen,
+                'link' => url('back-office/forum-moderation'),
+                'cta' => 'Traiter maintenant',
+            ],
+            [
+                'id' => 'alerts_active',
+                'type' => 'Sécurité',
+                'title' => 'Alertes locales actives',
+                'impact_score' => min(100, 25 + (count($alerts) * 8)),
+                'sla_label' => 'SLA: 1h',
+                'count' => count($alerts),
+                'link' => url('back-office/alerts'),
+                'cta' => 'Examiner les alertes',
+            ],
+            [
+                'id' => 'recruitments_pending',
+                'type' => 'RH',
+                'title' => 'Candidatures en attente',
+                'impact_score' => min(100, 20 + (count($pendingRecruitments) * 5)),
+                'sla_label' => 'SLA: 24h',
+                'count' => count($pendingRecruitments),
+                'link' => url('back-office/recruitments'),
+                'cta' => 'Ouvrir les dossiers',
+            ],
+            [
+                'id' => 'events_j1',
+                'type' => 'Formation',
+                'title' => 'Événements J+1 à sécuriser',
+                'impact_score' => min(100, 20 + (count($eventsJ1) * 7)),
+                'sla_label' => 'SLA: 8h',
+                'count' => count($eventsJ1),
+                'link' => url('back-office/events'),
+                'cta' => 'Préparer les événements',
+            ],
+            [
+                'id' => 'onboarding_anomalies',
+                'type' => 'Administration',
+                'title' => 'Anomalies onboarding / droits',
+                'impact_score' => min(100, 15 + (array_sum($onboardingAnomalies) * 3)),
+                'sla_label' => 'SLA: 48h',
+                'count' => array_sum($onboardingAnomalies),
+                'link' => url('back-office/users'),
+                'cta' => 'Corriger les anomalies',
+            ],
+        ];
+        usort($actionableAlerts, static fn (array $a, array $b): int => (int) ($b['impact_score'] ?? 0) <=> (int) ($a['impact_score'] ?? 0));
+
+        $playbookCatalog = [
+            [
+                'slug' => 'spam',
+                'title' => 'Playbook Spam',
+                'summary' => 'Qualifier la source, limiter la diffusion, notifier et vérifier la récidive sous 24h.',
+                'steps' => ['Qualifier', 'Endiguer', 'Notifier', 'Contrôler'],
+                'resolved_count' => 0,
+            ],
+            [
+                'slug' => 'permissions',
+                'title' => 'Playbook Permissions',
+                'summary' => 'Diagnostiquer les rôles, corriger les droits, puis journaliser automatiquement.',
+                'steps' => ['Diagnostiquer', 'Corriger', 'Valider sécurité', 'Tracer'],
+                'resolved_count' => 0,
+            ],
+            [
+                'slug' => 'module_outage',
+                'title' => 'Playbook Panne module',
+                'summary' => 'Triage technique, mitigation temporaire, escalade normalisée et suivi.',
+                'steps' => ['Trier', 'Mitiger', 'Escalader', 'Clôturer'],
+                'resolved_count' => 0,
+            ],
+            [
+                'slug' => 'dispute',
+                'title' => 'Playbook Litige',
+                'summary' => 'Qualifier le dossier, arbitrer, documenter la décision et notifier les parties.',
+                'steps' => ['Instruire', 'Arbitrer', 'Documenter', 'Notifier'],
+                'resolved_count' => 0,
+            ],
+        ];
+
+        $auditScenarios = [
+            ['key' => 'security', 'label' => 'Sécurité', 'description' => 'Accès sensibles, élévations, révocations.', 'count' => count($alerts)],
+            ['key' => 'rh', 'label' => 'RH', 'description' => 'Affectations, anomalies de profil, rôles manquants.', 'count' => ($onboardingAnomalies['membres_sans_unite'] ?? 0) + ($onboardingAnomalies['membres_sans_role'] ?? 0)],
+            ['key' => 'formation', 'label' => 'Formation', 'description' => 'Sessions proches et blocages de parcours.', 'count' => count($eventsJ7)],
+            ['key' => 'content', 'label' => 'Contenu', 'description' => 'Signalements, modération et décisions.', 'count' => $moderationOpen],
+        ];
+
+        $weeklyGoals = [
+            [
+                'title' => 'Réduire le backlog critique modération',
+                'state' => $moderationOpen > 10 ? 'à risque' : ($moderationOpen > 3 ? 'en cours' : 'atteint'),
+                'variation' => sprintf('%+d vs cible', 5 - $moderationOpen),
+                'kpi' => 'Signalements ouverts',
+                'value' => (string) $moderationOpen,
+            ],
+            [
+                'title' => 'Réduire les anomalies de droits',
+                'state' => array_sum($onboardingAnomalies) > 8 ? 'à risque' : (array_sum($onboardingAnomalies) > 0 ? 'en cours' : 'atteint'),
+                'variation' => sprintf('%+d vs cible', 3 - array_sum($onboardingAnomalies)),
+                'kpi' => 'Anomalies onboarding',
+                'value' => (string) array_sum($onboardingAnomalies),
+            ],
+            [
+                'title' => 'Sécuriser les alertes locales actives',
+                'state' => count($alerts) > 4 ? 'à risque' : (count($alerts) > 0 ? 'en cours' : 'atteint'),
+                'variation' => sprintf('%+d vs cible', 2 - count($alerts)),
+                'kpi' => 'Alertes actives',
+                'value' => (string) count($alerts),
+            ],
+        ];
+
+        $operationsKpiSnapshot = [
+            ['id' => 'mtta', 'label' => 'MTTA alertes admin', 'value' => 'N/D', 'trend' => 'Instrumentation requise'],
+            ['id' => 'mttr', 'label' => 'MTTR alertes admin', 'value' => 'N/D', 'trend' => 'Instrumentation requise'],
+            ['id' => 'playbook_resolved', 'label' => 'Incidents résolus via playbook', 'value' => '0', 'trend' => 'Initialisation'],
+            ['id' => 'sla_completion', 'label' => 'Actions admin terminées dans le SLA', 'value' => 'N/D', 'trend' => 'Instrumentation requise'],
+        ];
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.operations_center',
             'title' => 'Centre des opérations',
@@ -277,6 +400,11 @@ class OrganizationDashboardController
             'operationsOpsBoardItemsByType' => $opsByType,
             'operationsOpsBoardFilters' => $opsBoardFilters,
             'operationsOpsBoardError' => $opsBoardError,
+            'operationsActionableAlerts' => $actionableAlerts,
+            'operationsPlaybookCatalog' => $playbookCatalog,
+            'operationsAuditScenarios' => $auditScenarios,
+            'operationsWeeklyGoals' => $weeklyGoals,
+            'operationsKpiSnapshot' => $operationsKpiSnapshot,
         ]);
     }
 

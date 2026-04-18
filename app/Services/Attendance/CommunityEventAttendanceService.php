@@ -17,6 +17,9 @@ use App\Services\EmailService;
  */
 final class CommunityEventAttendanceService
 {
+    /** @var list<string> */
+    public const ABSENCE_REASONS = ['service', 'sante', 'indisponibilite_planifiee', 'absence_non_justifiee', 'autre'];
+
     public const CHECK_IN_OPEN_BEFORE_MIN = 30;
 
     public const CHECK_IN_AFTER_END_GRACE_HOURS = 2;
@@ -153,10 +156,17 @@ final class CommunityEventAttendanceService
         int $eventId,
         int $userId,
         int $tenantId,
-        string $status
+        string $status,
+        ?string $absenceReason = null,
+        ?string $absenceNote = null
     ): array {
         if (!in_array($status, ['yes', 'no', 'maybe'], true)) {
             $status = 'yes';
+        }
+        $normalizedReason = $this->normalizeAbsenceReason($absenceReason);
+        $normalizedNote = trim((string) ($absenceNote ?? ''));
+        if ($status === 'no' && $normalizedReason === null) {
+            $normalizedReason = 'autre';
         }
         $event = $this->events->findByIdForTenant($eventId, $tenantId);
         if (!$event || !empty($event['cancelled_at'])) {
@@ -165,7 +175,7 @@ final class CommunityEventAttendanceService
         $prev = $this->events->getRsvp($eventId, $userId);
         $previousStatus = $prev ? (string) ($prev['status'] ?? '') : null;
 
-        $this->events->setRsvp($eventId, $userId, $status);
+        $this->events->setRsvp($eventId, $userId, $status, $normalizedReason, $normalizedNote);
 
         if ($previousStatus === $status) {
             return ['ok' => true, 'previous' => $previousStatus];
@@ -304,6 +314,49 @@ final class CommunityEventAttendanceService
     }
 
     /**
+     * @param 'yes'|'no'|'maybe'|'remove' $status
+     *
+     * @return array{ok: bool, error?: string}
+     */
+    public function adminSetParticipantRsvpWithReason(
+        int $eventId,
+        int $tenantId,
+        int $targetUserId,
+        string $status,
+        ?string $absenceReason,
+        ?string $absenceNote
+    ): array {
+        if ($targetUserId < 1) {
+            return ['ok' => false, 'error' => 'Membre invalide.'];
+        }
+        if (!in_array($status, ['yes', 'no', 'maybe', 'remove'], true)) {
+            return ['ok' => false, 'error' => 'Choix de participation invalide.'];
+        }
+        $event = $this->events->findByIdForTenant($eventId, $tenantId);
+        if (!$event || !empty($event['cancelled_at'])) {
+            return ['ok' => false, 'error' => 'Ce créneau est introuvable ou annulé.'];
+        }
+        $member = $this->users->findById($targetUserId, $tenantId);
+        if (!$member) {
+            return ['ok' => false, 'error' => 'Membre introuvable dans cette communauté.'];
+        }
+        if ($status === 'remove') {
+            $this->events->deleteRsvp($eventId, $targetUserId);
+
+            return ['ok' => true];
+        }
+
+        $normalizedReason = $this->normalizeAbsenceReason($absenceReason);
+        if ($status === 'no' && $normalizedReason === null) {
+            $normalizedReason = 'autre';
+        }
+        $normalizedNote = trim((string) ($absenceNote ?? ''));
+        $this->events->setRsvp($eventId, $targetUserId, $status, $normalizedReason, $normalizedNote);
+
+        return ['ok' => true];
+    }
+
+    /**
      * Pointage manuel par le staff (hors fenêtre horaire).
      *
      * @return array{ok: bool, error?: string}
@@ -358,5 +411,18 @@ final class CommunityEventAttendanceService
         $this->events->clearCheckIn($eventId, $targetUserId);
 
         return ['ok' => true];
+    }
+
+    private function normalizeAbsenceReason(?string $absenceReason): ?string
+    {
+        $reason = strtolower(trim((string) ($absenceReason ?? '')));
+        if ($reason === '') {
+            return null;
+        }
+        if (!in_array($reason, self::ABSENCE_REASONS, true)) {
+            return null;
+        }
+
+        return $reason;
     }
 }

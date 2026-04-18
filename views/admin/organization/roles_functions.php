@@ -1,95 +1,139 @@
 <?php
-$roleDefinitions = $roleDefinitions ?? [];
-$definitionRelations = $definitionRelations ?? [];
-$tenantRoles = $tenantRoles ?? [];
-$roleRelations = $roleRelations ?? [];
-$units = $units ?? [];
-$rolePresetMeta = $rolePresetMeta ?? [];
+$roleDefinitions = is_array($roleDefinitions ?? null) ? $roleDefinitions : [];
+$definitionRelations = is_array($definitionRelations ?? null) ? $definitionRelations : [];
+$tenantRoles = is_array($tenantRoles ?? null) ? $tenantRoles : [];
+$roleRelations = is_array($roleRelations ?? null) ? $roleRelations : [];
+$units = is_array($units ?? null) ? $units : [];
+$rolePresetMeta = is_array($rolePresetMeta ?? null) ? $rolePresetMeta : [];
 $graphJsonUrl = url('back-office/roles-functions/graph.json');
+$success = \App\Core\Session::get('success');
+$error = \App\Core\Session::get('error');
+\App\Core\Session::forget('success');
+\App\Core\Session::forget('error');
 ?>
-<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
-    <div class="rounded-lg border border-blue-100 bg-blue-50/90 px-4 py-3 text-sm text-slate-800">
-        Cette page décrit les liens entre les rôles de <strong class="font-semibold">votre communauté</strong> et le référentiel des fonctions.
-        Seuls les rôles internes à la communauté apparaissent dans le graphe ; les habilitations plateforme sont gérées ailleurs.
-    </div>
-    <div class="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div>
-            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Gestion des rôles et fonctions</h1>
-            <p class="text-sm text-slate-600 mt-2 max-w-2xl">
-                Catalogue des fonctions de référence, graphe des relations entre rôles, unités de l’organigramme et raccourcis vers l’attribution de plusieurs rôles par membre.
-                Les droits effectifs combinent les rôles attribués, les permissions et les spécificités par unité.
-            </p>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-6">
+    <header class="rounded-2xl border border-blue-100 bg-blue-50/80 p-6 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">Cellule S1</p>
+        <h1 class="mt-2 text-3xl font-black text-slate-900">Doctrine des fonctions et des droits</h1>
+        <p class="mt-2 max-w-4xl text-sm text-slate-700">Module complet de commandement RH/RBAC : création des fonctions de référence, construction des relations hiérarchiques entre rôles du tenant, et liaison avec l’organigramme (groupes / équipes / catégories).</p>
+        <div class="mt-5 grid gap-3 sm:grid-cols-3">
+            <div class="rounded-xl bg-white/70 p-3 text-center"><p class="text-2xl font-black text-slate-900"><?= count($roleDefinitions) ?></p><p class="text-xs uppercase text-slate-500">Fonctions</p></div>
+            <div class="rounded-xl bg-white/70 p-3 text-center"><p class="text-2xl font-black text-slate-900"><?= count($tenantRoles) ?></p><p class="text-xs uppercase text-slate-500">Rôles tenant</p></div>
+            <div class="rounded-xl bg-white/70 p-3 text-center"><p class="text-2xl font-black text-slate-900"><?= count($roleRelations) ?></p><p class="text-xs uppercase text-slate-500">Relations actives</p></div>
         </div>
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-black uppercase tracking-wider text-slate-500">Bibliothèque de données</p>
-            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
-                <div class="rounded-xl bg-slate-50 p-2"><p class="text-xl font-black text-slate-900"><?= count($roleDefinitions) ?></p><p class="text-[10px] uppercase text-slate-500">Fonctions</p></div>
-                <div class="rounded-xl bg-slate-50 p-2"><p class="text-xl font-black text-slate-900"><?= count($tenantRoles) ?></p><p class="text-[10px] uppercase text-slate-500">Rôles</p></div>
-                <div class="rounded-xl bg-slate-50 p-2"><p class="text-xl font-black text-slate-900"><?= count($roleRelations) ?></p><p class="text-[10px] uppercase text-slate-500">Relations</p></div>
-            </div>
-            <div class="mt-3 flex flex-wrap gap-2">
-                <a href="<?= url('back-office/personnel-job-roles') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50">Référentiel emplois</a>
-                <a href="<?= url('back-office/personnel-job-roles/assignments') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50">Attributions</a>
-            </div>
-        </div>
-    </div>
-    <div class="flex flex-wrap gap-2">
-            <a href="<?= url('back-office/users') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Utilisateurs</a>
-            <a href="<?= url('back-office/roles') ?>" class="inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800">Rôles &amp; permissions</a>
-            <a href="<?= url('back-office/roles/presets') ?>" class="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-100">Profils prédéfinis</a>
-    </div>
+    </header>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-900 mb-3">A. Attribution multi-rôles</h2>
-        <p class="text-sm text-slate-600 mb-4">Sélectionnez un compte pour attribuer ou retirer des rôles (tags multiples, union des permissions).</p>
-        <a href="<?= url('back-office/users') ?>" class="text-blue-700 font-semibold underline text-sm">Ouvrir la liste des utilisateurs →</a>
+    <?php if ($success): ?><p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"><?= htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+    <?php if ($error): ?><p class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+
+    <section class="grid gap-4 lg:grid-cols-2">
+        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900">Créer une fonction (référentiel)</h2>
+            <p class="mt-1 text-sm text-slate-600">Ajoute une nouvelle fonction doctrinale dans le catalogue global.</p>
+            <form method="post" action="<?= url('back-office/roles-functions/definitions/store') ?>" class="mt-4 grid gap-3 sm:grid-cols-2">
+                <?= \App\Core\Csrf::field() ?>
+                <label class="text-xs font-semibold text-slate-600 sm:col-span-1">Slug
+                    <input name="slug" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="officier-s1">
+                </label>
+                <label class="text-xs font-semibold text-slate-600 sm:col-span-1">Famille
+                    <input name="family" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="command">
+                </label>
+                <label class="text-xs font-semibold text-slate-600 sm:col-span-1">Nom FR *
+                    <input name="name_fr" type="text" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Officier S1">
+                </label>
+                <label class="text-xs font-semibold text-slate-600 sm:col-span-1">Nom US
+                    <input name="name_us" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="S1 Officer">
+                </label>
+                <label class="text-xs font-semibold text-slate-600 sm:col-span-2">Description
+                    <input name="description" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Responsable RH et gestion administrative de l’unité.">
+                </label>
+                <label class="text-xs font-semibold text-slate-600 sm:col-span-1">Ordre
+                    <input name="sort_order" type="number" value="0" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </label>
+                <div class="sm:col-span-2">
+                    <button class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800" type="submit">Créer la fonction</button>
+                </div>
+            </form>
+        </article>
+
+        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900">Créer une relation de commandement</h2>
+            <p class="mt-1 text-sm text-slate-600">Définit un lien orienté entre deux rôles de votre tenant.</p>
+            <form method="post" action="<?= url('back-office/roles-functions/relations/store') ?>" class="mt-4 grid gap-3">
+                <?= \App\Core\Csrf::field() ?>
+                <label class="text-xs font-semibold text-slate-600">Rôle source
+                    <select name="from_role_id" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                        <option value="">Sélectionner</option>
+                        <?php foreach ($tenantRoles as $role): ?>
+                            <option value="<?= (int) ($role['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($role['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars((string) ($role['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label class="text-xs font-semibold text-slate-600">Type de relation
+                    <select name="relation_type" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                        <option value="reports_to">reports_to (subordination)</option>
+                        <option value="cross_cutting">cross_cutting (transversal)</option>
+                        <option value="mentored_by">mentored_by (accompagnement)</option>
+                        <option value="independent">independent (indépendant)</option>
+                    </select>
+                </label>
+                <label class="text-xs font-semibold text-slate-600">Rôle destination
+                    <select name="to_role_id" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                        <option value="">Sélectionner</option>
+                        <?php foreach ($tenantRoles as $role): ?>
+                            <option value="<?= (int) ($role['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($role['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars((string) ($role['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <div>
+                    <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800" type="submit">Créer la relation</button>
+                </div>
+            </form>
+        </article>
     </section>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-900 mb-3">B. Contexte communauté et unité</h2>
-        <p class="text-sm text-slate-600 mb-4">Unités de l’organigramme : les rôles peuvent être précisés selon l’affectation d’un membre à une unité donnée.</p>
-        <?php if ($units === []): ?>
-            <p class="text-sm text-amber-800 bg-amber-50 rounded-lg px-3 py-2">Aucune unité définie. Créez des groupes dans l’ORBAT.</p>
-        <?php else: ?>
-            <ul class="flex flex-wrap gap-2">
-                <?php foreach ($units as $u): ?>
-                    <li class="text-xs font-semibold uppercase tracking-wide bg-slate-100 text-slate-800 px-2 py-1 rounded-md"><?= htmlspecialchars((string) ($u['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-    </section>
-
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-900 mb-3">C. Hiérarchie &amp; graphe des rôles (tenant)</h2>
-        <p class="text-sm text-slate-600 mb-4">Arêtes issues des relations configurées pour ce tenant (rapports, transversal, etc.).</p>
-        <?php if ($roleRelations === []): ?>
-            <p class="text-sm text-slate-500">Aucune relation pour ce tenant (les correspondances de slug avec le catalogue permettent de remplir le graphe après migration).</p>
-        <?php else: ?>
-            <ul class="space-y-2 text-sm">
-                <?php foreach ($roleRelations as $rr): ?>
-                    <li class="flex flex-wrap items-center gap-2">
-                        <span class="font-medium text-slate-900"><?= htmlspecialchars((string) ($rr['from_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                        <span class="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded"><?= htmlspecialchars((string) ($rr['relation_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                        <span class="font-medium text-slate-900"><?= htmlspecialchars((string) ($rr['to_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-
-        <div class="mt-6 rounded-xl border border-slate-100 bg-slate-50/80 p-4 min-h-[220px]" id="roles-graph-host" data-graph-url="<?= htmlspecialchars($graphJsonUrl, ENT_QUOTES, 'UTF-8') ?>">
-            <p class="text-xs text-slate-500 mb-2">Visualisation (aperçu)</p>
-            <canvas id="roles-graph-canvas" class="w-full max-h-64 border border-slate-200 rounded-lg bg-white" width="800" height="240"></canvas>
-        </div>
+    <section class="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900">Graphe des rôles du tenant</h2>
+            <p class="mt-1 text-sm text-slate-600">Visualisation du maillage de commandement actif.</p>
+            <div class="mt-4 rounded-xl border border-slate-100 bg-slate-50/80 p-4 min-h-[220px]" id="roles-graph-host" data-graph-url="<?= htmlspecialchars($graphJsonUrl, ENT_QUOTES, 'UTF-8') ?>">
+                <canvas id="roles-graph-canvas" class="w-full max-h-64 border border-slate-200 rounded-lg bg-white" width="800" height="240"></canvas>
+            </div>
+            <?php if ($roleRelations !== []): ?>
+                <ul class="mt-4 space-y-1 text-xs text-slate-600">
+                    <?php foreach ($roleRelations as $rr): ?>
+                        <li><?= htmlspecialchars((string) ($rr['from_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?> → <?= htmlspecialchars((string) ($rr['to_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?> <span class="text-slate-400">(<?= htmlspecialchars((string) ($rr['relation_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)</span></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </article>
+        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900">Passerelles ORBAT</h2>
+            <div class="mt-3 space-y-2">
+                <a href="<?= url('back-office/groups') ?>" class="block rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Groupes</a>
+                <a href="<?= url('back-office/teams') ?>" class="block rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Équipes</a>
+                <a href="<?= url('back-office/categories') ?>" class="block rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Catégories</a>
+                <a href="<?= url('back-office/personnel-job-roles/assignments') ?>" class="block rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100">Attributions membres</a>
+            </div>
+            <?php if ($units !== []): ?>
+                <p class="mt-4 text-xs uppercase text-slate-500">Unités connues</p>
+                <ul class="mt-2 flex flex-wrap gap-2">
+                    <?php foreach ($units as $u): ?>
+                        <li class="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700"><?= htmlspecialchars((string) ($u['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </article>
     </section>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-        <h2 class="text-lg font-bold text-slate-900 mb-3">D. Catalogue global (définitions)</h2>
+        <h2 class="text-lg font-bold text-slate-900">Catalogue des fonctions</h2>
         <div class="grid gap-3 sm:grid-cols-2">
             <label class="text-xs font-semibold text-slate-600">Recherche rapide
-                <input id="rf-library-search" type="search" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Slug, nom FR/US, famille…">
+                <input id="rf-library-search" type="search" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Slug, nom FR/US, famille…">
             </label>
             <label class="text-xs font-semibold text-slate-600">Filtrer par famille
-                <select id="rf-library-family" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                <select id="rf-library-family" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="">Toutes les familles</option>
                     <?php foreach (array_values(array_unique(array_filter(array_map(static fn(array $d): string => trim((string) ($d['family'] ?? '')), $roleDefinitions)))) as $fam): ?>
                         <option value="<?= htmlspecialchars($fam, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($fam, ENT_QUOTES, 'UTF-8') ?></option>
@@ -101,9 +145,9 @@ $graphJsonUrl = url('back-office/roles-functions/graph.json');
             <table class="min-w-full text-sm" id="rf-library-table">
                 <thead>
                     <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-200">
-                        <th class="py-2 pr-4">Référence courte</th>
-                        <th class="py-2 pr-4">FR</th>
-                        <th class="py-2 pr-4">US</th>
+                        <th class="py-2 pr-4">Slug</th>
+                        <th class="py-2 pr-4">Nom FR</th>
+                        <th class="py-2 pr-4">Nom US</th>
                         <th class="py-2">Famille</th>
                     </tr>
                 </thead>
@@ -120,43 +164,21 @@ $graphJsonUrl = url('back-office/roles-functions/graph.json');
             </table>
         </div>
         <p id="rf-library-empty" class="hidden rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">Aucune entrée ne correspond au filtre courant.</p>
-        <?php if ($definitionRelations !== []): ?>
-            <h3 class="text-sm font-bold text-slate-800 mt-6 mb-2">Graphe catalogue (définitions)</h3>
-            <ul class="text-xs text-slate-600 space-y-1">
-                <?php foreach ($definitionRelations as $dr): ?>
-                    <li><?= htmlspecialchars((string) ($dr['from_slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                        <span class="text-slate-400">→</span> <?= htmlspecialchars((string) ($dr['to_slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                        <span class="text-slate-400">(<?= htmlspecialchars((string) ($dr['relation_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)</span>
+    </section>
+
+    <?php if ($rolePresetMeta !== []): ?>
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900">Profils prêts à l’emploi</h2>
+            <ul class="mt-4 grid gap-3 sm:grid-cols-2">
+                <?php foreach ($rolePresetMeta as $pm): ?>
+                    <li class="rounded-lg border border-slate-200 p-3">
+                        <p class="font-semibold text-slate-900"><?= htmlspecialchars((string) ($pm['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                        <p class="text-xs text-slate-600 mt-1"><?= htmlspecialchars((string) ($pm['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                     </li>
                 <?php endforeach; ?>
             </ul>
-        <?php endif; ?>
-    </section>
-
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-900 mb-3">E. Templates (packs)</h2>
-        <p class="text-sm text-slate-600 mb-4">Appliquer un jeu de permissions à un rôle depuis la page des profils.</p>
-        <ul class="grid sm:grid-cols-2 gap-3">
-            <?php foreach ($rolePresetMeta as $pm): ?>
-                <li class="rounded-lg border border-slate-200 p-3">
-                    <p class="font-semibold text-slate-900"><?= htmlspecialchars((string) ($pm['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                    <p class="text-xs text-slate-600 mt-1"><?= htmlspecialchars((string) ($pm['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                    <p class="text-[10px] text-slate-400 mt-2 font-mono"><?= htmlspecialchars((string) ($pm['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                </li>
-            <?php endforeach; ?>
-        </ul>
-        <a href="<?= url('back-office/roles/presets') ?>" class="inline-flex mt-4 text-sm font-semibold text-blue-700 underline">Appliquer un profil →</a>
-    </section>
-
-    <section class="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-        <h2 class="text-sm font-bold text-slate-800 mb-2">Rôles tenant (aperçu)</h2>
-        <ul class="text-sm text-slate-700 space-y-1">
-            <?php foreach ($tenantRoles as $tr): ?>
-                <li><span class="font-medium"><?= htmlspecialchars((string) ($tr['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                    <span class="text-slate-400 text-xs">(<?= htmlspecialchars((string) ($tr['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)</span></li>
-            <?php endforeach; ?>
-        </ul>
-    </section>
+        </section>
+    <?php endif; ?>
 </div>
 <script>
 (function () {
