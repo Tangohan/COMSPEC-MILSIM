@@ -677,6 +677,14 @@ class Container
                 self::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class),
                 self::get(\App\Repositories\EnlistmentRepository::class),
             ),
+            \App\Services\Portal\BackOfficeSidebarBadgeService::class => new \App\Services\Portal\BackOfficeSidebarBadgeService(
+                self::get(\App\Repositories\EnlistmentRepository::class),
+                self::get(\App\Repositories\ForumReportRepository::class),
+                self::get(\App\Repositories\ForumNotificationRepository::class),
+                self::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class),
+                self::get(\App\Repositories\ModerationArtifactRepository::class),
+                self::get(UserRepository::class),
+            ),
             \App\Controllers\Web\ActionCenterController::class => new \App\Controllers\Web\ActionCenterController(
                 self::get(\App\Services\Portal\UnifiedActionDigestService::class),
                 self::get(UserRepository::class),
@@ -1113,6 +1121,10 @@ class Container
             ),
             \App\Controllers\Admin\System\SystemNewsletterAdminController::class => new \App\Controllers\Admin\System\SystemNewsletterAdminController(
                 self::get(\App\Repositories\NewsletterSubscriberRepository::class),
+            ),
+            \App\Controllers\Admin\System\SystemSubscriptionPlansController::class => new \App\Controllers\Admin\System\SystemSubscriptionPlansController(
+                self::get(\App\Repositories\SubscriptionPlanRepository::class),
+                new \App\Services\Audit\AuditService(),
             ),
             \App\Controllers\Admin\Organization\TenantAlertsController::class => new \App\Controllers\Admin\Organization\TenantAlertsController(
                 self::get(\App\Repositories\TenantAlertRepository::class),

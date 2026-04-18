@@ -371,6 +371,11 @@ return [
                     'links' => [
                         ['label' => 'Tableau de bord plateforme', 'path' => 'admin', 'permission' => 'admin.system'],
                         ['label' => 'Synthèse opérationnelle', 'path' => 'admin/ops-center', 'permission' => 'admin.system', 'description' => 'Signaux critiques et vue transversale'],
+                        ['label' => 'Annuaire des communautés', 'path' => 'admin/tenants', 'permission' => 'admin.system', 'description' => 'Liste des organisations et effectifs comptes'],
+                        ['label' => 'Indicateurs transverses', 'path' => 'admin/analytics', 'permission' => 'admin.system', 'description' => 'Usage, volumes et répartition sur plusieurs fenêtres de temps'],
+                        ['label' => 'Formules d’accès (paliers)', 'path' => 'admin/system/subscription-plans', 'permission' => 'admin.system', 'description' => 'Noms, ordre, fonctionnalités et quotas par offre'],
+                        ['label' => 'Restrictions réseau (site)', 'path' => 'admin/system/blocklist', 'permission' => 'admin.system', 'description' => 'Indicateurs bloqués au niveau plateforme'],
+                        ['label' => 'Sanctions au niveau site', 'path' => 'admin/system/member-sanctions', 'permission' => 'admin.system', 'description' => 'Mesures sur un compte après sélection communauté et membre'],
                         ['label' => 'Lettre d’information du site', 'path' => 'admin/newsletter', 'permission' => 'admin.system', 'description' => 'Inscriptions publiques et états des contacts'],
                         ['label' => 'Rôles système', 'path' => 'admin/roles', 'permission' => 'admin.system'],
                         ['label' => 'Rôles site (affectations)', 'path' => 'admin/site-roles', 'permission' => 'admin.system'],

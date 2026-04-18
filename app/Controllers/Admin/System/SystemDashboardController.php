@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\ForumReportRepository;
 use App\Repositories\ModerationArtifactRepository;
+use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
 use App\Services\Audit\AuditAction;
 
@@ -19,11 +20,13 @@ class SystemDashboardController
         private ?AuditLogRepository $auditLogs = null,
         private ?ForumReportRepository $forumReports = null,
         private ?ModerationArtifactRepository $moderationArtifacts = null,
+        private ?TenantAnalyticsRepository $tenantAnalytics = null,
     ) {
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
         $this->forumReports ??= new ForumReportRepository();
         $this->moderationArtifacts ??= new ModerationArtifactRepository();
+        $this->tenantAnalytics ??= new TenantAnalyticsRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -81,6 +84,20 @@ class SystemDashboardController
         $appEnv = function_exists('env') ? (string) env('APP_ENV', 'local') : 'local';
         $adminPlatformEnvLabel = app_environment_label_fr($appEnv);
 
+        $adminPlatformUsagePreview = [
+            'error' => null,
+            'snapshot' => ['tenants_with_events' => 0, 'events_24h' => 0, 'top_tenants' => []],
+            'categories' => [],
+            'kpis' => [],
+        ];
+        try {
+            $adminPlatformUsagePreview['snapshot'] = $this->tenantAnalytics->getPlatformUsageSnapshot(7);
+            $adminPlatformUsagePreview['categories'] = array_slice($this->tenantAnalytics->getPlatformCategoryBreakdown(7), 0, 3);
+            $adminPlatformUsagePreview['kpis'] = $this->tenantAnalytics->getPlatformOperationalKpis(7);
+        } catch (\Throwable) {
+            $adminPlatformUsagePreview['error'] = 'L’aperçu d’usage sur 7 jours est momentanément indisponible.';
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.system.dashboard',
             'title' => 'Administration plateforme',
@@ -101,6 +118,7 @@ class SystemDashboardController
             'adminAuditRecentContent' => $adminAuditRecentContent,
             'adminAuditRecentTenant' => $adminAuditRecentTenant,
             'adminAuditModerationError' => $adminAuditModerationError,
+            'adminPlatformUsagePreview' => $adminPlatformUsagePreview,
         ]);
     }
 }

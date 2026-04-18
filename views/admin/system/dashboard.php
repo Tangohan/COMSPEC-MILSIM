@@ -114,6 +114,66 @@ $subnavLink = 'rounded-lg px-3 py-2 transition hover:bg-slate-100 hover:text-sla
                 <?php require base_path('views/admin/partials/kpi_row.php'); ?>
             </section>
 
+            <?php
+            $usagePrev = is_array($adminPlatformUsagePreview ?? null) ? $adminPlatformUsagePreview : [];
+            $usageErr = isset($usagePrev['error']) ? (string) $usagePrev['error'] : '';
+            $snap = is_array($usagePrev['snapshot'] ?? null) ? $usagePrev['snapshot'] : ['tenants_with_events' => 0, 'events_24h' => 0, 'top_tenants' => []];
+            $cats = is_array($usagePrev['categories'] ?? null) ? $usagePrev['categories'] : [];
+            $uk = is_array($usagePrev['kpis'] ?? null) ? $usagePrev['kpis'] : [];
+            $ev7 = (int) ($uk['usage_events_in_period'] ?? 0);
+            $actors7 = (int) ($uk['usage_distinct_actors_in_period'] ?? 0);
+            $newUsers7 = (int) ($uk['users_registered_in_period'] ?? 0);
+            ?>
+            <section aria-labelledby="usage-preview-heading" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 id="usage-preview-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Aperçu des 7 derniers jours</h2>
+                        <p class="mt-1 text-sm text-slate-600">Signaux issus de l’usage mesuré et des bases métier — même source que la page indicateurs détaillés.</p>
+                    </div>
+                    <a href="<?= htmlspecialchars(url('admin/analytics?days=7'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800">Voir le détail</a>
+                </div>
+                <?php if ($usageErr !== ''): ?>
+                    <p class="mt-4 text-sm text-amber-800"><?= htmlspecialchars($usageErr, ENT_QUOTES, 'UTF-8') ?></p>
+                <?php else: ?>
+                    <dl class="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                        <div class="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-3">
+                            <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Événements d’usage</dt>
+                            <dd class="mt-1 text-xl font-black text-slate-900"><?= number_format($ev7, 0, ',', ' ') ?></dd>
+                        </div>
+                        <div class="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-3">
+                            <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Acteurs distincts</dt>
+                            <dd class="mt-1 text-xl font-black text-slate-900"><?= number_format($actors7, 0, ',', ' ') ?></dd>
+                        </div>
+                        <div class="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-3">
+                            <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Communautés actives (usage)</dt>
+                            <dd class="mt-1 text-xl font-black text-slate-900"><?= number_format((int) ($snap['tenants_with_events'] ?? 0), 0, ',', ' ') ?></dd>
+                        </div>
+                        <div class="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-3">
+                            <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Nouveaux comptes</dt>
+                            <dd class="mt-1 text-xl font-black text-slate-900"><?= number_format($newUsers7, 0, ',', ' ') ?></dd>
+                        </div>
+                    </dl>
+                    <?php if ($cats !== []): ?>
+                        <div class="mt-5">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Principales catégories d’événements</p>
+                            <ul class="mt-2 flex flex-wrap gap-2 text-xs">
+                                <?php foreach ($cats as $c): ?>
+                                    <?php
+                                    $cl = (string) ($c['category'] ?? '');
+                                    $cn = (int) ($c['events'] ?? 0);
+                                    ?>
+                                    <li class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-medium text-slate-800">
+                                        <span class="text-slate-500"><?= $cl === '' ? '—' : htmlspecialchars($cl, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="ml-1 font-black text-emerald-800"><?= number_format($cn, 0, ',', ' ') ?></span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                    <p class="mt-3 text-xs text-slate-500">Événements sur 24 h (tous tenants) : <strong class="font-semibold text-slate-700"><?= number_format((int) ($snap['events_24h'] ?? 0), 0, ',', ' ') ?></strong></p>
+                <?php endif; ?>
+            </section>
+
             <?php if ($isSupportHub): ?>
                 <?php require base_path('views/admin/partials/quick_actions_support_hub.php'); ?>
             <?php endif; ?>

@@ -1585,6 +1585,49 @@ class UserRepository
     }
 
     /**
+     * E-mails des comptes au rôle « administrateur » communauté (filet de sécurité notifications recrutement).
+     *
+     * @return list<string>
+     */
+    public function listAdministratorEmailsForTenant(int $tenantId): array
+    {
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $sql = "SELECT DISTINCT u.email FROM users u
+            INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
+            WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
+            AND r.slug IN ('administrator')";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId], $pack['params']));
+        $emails = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $e = strtolower(trim((string) ($row['email'] ?? '')));
+            if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                $emails[] = $e;
+            }
+        }
+        if ($this->hasTenantUserRolesTable()) {
+            $sql2 = "SELECT DISTINCT u.email FROM users u
+                INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
+                INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
+                WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
+                AND r.slug IN ('administrator')";
+            try {
+                $st = $this->pdo->prepare($sql2);
+                $st->execute(array_merge([$tenantId], $pack['params']));
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $e = strtolower(trim((string) ($row['email'] ?? '')));
+                    if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                        $emails[] = $e;
+                    }
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return array_values(array_unique($emails));
+    }
+
+    /**
      * Membres actifs susceptibles de modérer le forum (alertes internes).
      *
      * @return list<int>

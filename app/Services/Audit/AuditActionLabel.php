@@ -59,6 +59,7 @@ final class AuditActionLabel
         'certificate_revoked' => 'Certificat révoqué',
         // Plateforme — réglages et déploiement
         'platform.settings_updated' => 'Réglage plateforme (brief) mis à jour',
+        'platform.subscription_plan_updated' => 'Formule d’accès (palier) modifiée',
         'deployment.module_created' => 'Déploiement — fonctionnalité créée',
         'deployment.module_updated' => 'Déploiement — fonctionnalité modifiée',
         'deployment.version_created' => 'Déploiement — version créée',

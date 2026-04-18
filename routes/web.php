@@ -78,6 +78,7 @@ use App\Controllers\Admin\System\SystemSettingsController;
 use App\Controllers\Admin\System\SystemPlatformAlertsController;
 use App\Controllers\Admin\System\SystemCooperationCatalogController;
 use App\Controllers\Admin\System\SystemCooperationAnnouncementsController;
+use App\Controllers\Admin\System\SystemSubscriptionPlansController;
 use App\Controllers\Admin\Organization\TenantAlertsController;
 use App\Controllers\Api\AlertDismissController;
 use App\Controllers\Api\MePreferencesApiController;
@@ -413,6 +414,9 @@ return function (Router $router) {
     $router->get('/admin/system/cooperation/announcements', [SystemCooperationAnnouncementsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cooperation/announcements/edit', [SystemCooperationAnnouncementsController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cooperation/announcements/save', [SystemCooperationAnnouncementsController::class, 'save'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/subscription-plans', [SystemSubscriptionPlansController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/subscription-plans/{id}/edit', [SystemSubscriptionPlansController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/subscription-plans/{id}/update', [SystemSubscriptionPlansController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/deployment/campaigns/nouveau', [PlatformDeploymentAdminController::class, 'campaignsNew'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/deployment/campaigns', [PlatformDeploymentAdminController::class, 'campaignsStore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/deployment/campaigns/{id}/executer', [PlatformDeploymentAdminController::class, 'campaignsProcess'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

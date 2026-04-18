@@ -41,11 +41,43 @@ try {
 } catch (\Throwable) {
 }
 
-$boLink = static function (string $path, string $label, bool $active): void {
+$boBadges = [
+    'recruitments_submitted' => 0,
+    'forum_moderation_total' => 0,
+    'personal_inbox' => 0,
+    'show_staff_recruitment' => false,
+];
+try {
+    $boTid = (int) \App\Core\Session::get('tenant_id');
+    $boUid = (int) \App\Core\Session::get('user_id');
+    if ($boTid > 0 && $boUid > 0) {
+        $uBo = \App\Core\Container::get(\App\Repositories\UserRepository::class)->findById($boUid, $boTid);
+        $boEmail = trim((string) ($uBo['email'] ?? (string) (\App\Core\Session::get('email') ?? '')));
+        $boBadges = \App\Core\Container::get(\App\Services\Portal\BackOfficeSidebarBadgeService::class)->build($boTid, $boUid, $boEmail, $gate);
+    }
+} catch (\Throwable) {
+}
+
+$boLink = static function (string $path, string $label, bool $active, ?int $badge = null, ?string $badgeTone = null): void {
     $cls = $active
-        ? 'flex items-center gap-3 rounded-lg bg-slate-800 px-3 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-white/10'
-        : 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white';
-    echo '<a href="' . htmlspecialchars(url($path), ENT_QUOTES, 'UTF-8') . '" class="' . $cls . '"><span class="truncate">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span></a>';
+        ? 'flex w-full min-w-0 items-center justify-between gap-2 rounded-lg bg-slate-800 px-3 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-white/10'
+        : 'flex w-full min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white';
+    $tone = $badgeTone ?? 'rose';
+    $bg = match ($tone) {
+        'emerald' => 'bg-emerald-600',
+        'sky' => 'bg-sky-600',
+        default => 'bg-rose-500',
+    };
+    $pill = '';
+    $ariaExtra = '';
+    if ($badge !== null && $badge > 0) {
+        $t = $badge > 99 ? '99+' : (string) $badge;
+        $pill = '<span class="inline-flex min-w-[1.35rem] shrink-0 justify-center rounded-full ' . $bg . ' px-1.5 py-0.5 text-[10px] font-black leading-none text-white" aria-hidden="true">' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</span>';
+        $ariaN = $badge > 99 ? '99+' : (string) $badge;
+        $ariaExtra = ' aria-label="' . htmlspecialchars($label . ' — ' . $ariaN . ' notification(s)', ENT_QUOTES, 'UTF-8') . '"';
+    }
+    echo '<a href="' . htmlspecialchars(url($path), ENT_QUOTES, 'UTF-8') . '" class="' . $cls . '"' . $ariaExtra
+        . '><span class="min-w-0 flex-1 truncate">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>' . $pill . '</a>';
 };
 
 $boSection = static function (string $title): void {
@@ -156,7 +188,11 @@ $canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.a
         <?php endif; ?>
         <?php $boSection('Recrutement'); ?>
         <?php $boLink($rwPath, 'Bureau recrutement', $boNavRecWorkspaceDash); ?>
-        <?php $boLink('back-office/recruitments', 'File des dossiers', $boNavRec && !$boNavRecSettings && !$boNavRecMessages); ?>
+        <?php
+        $boRecN = (int) ($boBadges['recruitments_submitted'] ?? 0);
+        $boRecBadge = !empty($boBadges['show_staff_recruitment']) && $boRecN > 0 ? $boRecN : null;
+        $boLink('back-office/recruitments', 'File des dossiers', $boNavRec && !$boNavRecSettings && !$boNavRecMessages, $boRecBadge, 'emerald');
+        ?>
         <?php $boLink($rwPath . '/analyses', 'Analyses candidatures', $boNavRecWorkspaceAnalytics); ?>
         <?php $boLink('back-office/recruitments/settings', 'SLA recrutement', $boNavRecSettings); ?>
         <?php $boLink('back-office/recruitments/messages-prefaits', 'Messages préfaits', $boNavRecMessages); ?>
@@ -264,12 +300,33 @@ $canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.a
         <?php endif; ?>
         <?php if ($canForumModConsole): ?>
             <?php $boSection('Modération'); ?>
-            <?php $boLink('back-office/forum-moderation', 'Console modération forum', str_starts_with($p, 'back-office/forum-moderation')); ?>
+            <?php
+            $boModN = (int) ($boBadges['forum_moderation_total'] ?? 0);
+            $boModBadge = $boModN > 0 ? $boModN : null;
+            $boLink('back-office/forum-moderation', 'Console modération forum', str_starts_with($p, 'back-office/forum-moderation'), $boModBadge, 'rose');
+            ?>
             <?php $boLink('admin/content-moderation', 'Fichiers et pièces jointes', str_starts_with($p, 'admin/content-moderation')); ?>
         <?php endif; ?>
     </nav>
 
-    <div class="border-t border-slate-800/80 p-3">
+    <div class="border-t border-slate-800/80 space-y-2 p-3">
+        <?php
+        $boPersN = (int) ($boBadges['personal_inbox'] ?? 0);
+        $boPersBadge = $boPersN > 0 ? $boPersN : null;
+        $boPersAria = $boPersBadge !== null
+            ? ' aria-label="Mon activité — ' . ($boPersN > 99 ? '99+' : (string) $boPersN) . ' notification(s)"'
+            : '';
+        $boPersPill = $boPersBadge !== null
+            ? '<span class="inline-flex min-w-[1.35rem] shrink-0 justify-center rounded-full bg-sky-600 px-1.5 py-0.5 text-[10px] font-black leading-none text-white" aria-hidden="true">' . htmlspecialchars($boPersN > 99 ? '99+' : (string) $boPersN, ENT_QUOTES, 'UTF-8') . '</span>'
+            : '';
+        ?>
+        <a href="<?= htmlspecialchars(url('activite'), ENT_QUOTES, 'UTF-8') ?>" class="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white"<?= $boPersAria ?>>
+            <span class="flex min-w-0 items-center gap-2">
+                <svg class="h-4 w-4 shrink-0 opacity-80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+                <span class="truncate">Mon activité</span>
+            </span>
+            <?= $boPersPill ?>
+        </a>
         <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white">
             <svg class="h-4 w-4 shrink-0 opacity-80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
             Retour au portail

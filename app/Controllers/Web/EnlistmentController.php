@@ -480,7 +480,8 @@ class EnlistmentController
     }
 
     /**
-     * E-mails : rôles recruteur, fondateur (community_owner), RH ; sinon gouvernance (tenant_admin + community_owner).
+     * E-mails : rôles recruteur, fondateur (community_owner), RH ; sinon gouvernance (tenant_admin + community_owner) ;
+     * sinon administrateur communauté ; en dernier recours, e-mail de contact de la fiche présentation (si renseigné).
      *
      * @param array<string, mixed> $tenant
      * @param array<string, mixed> $payload
@@ -490,6 +491,15 @@ class EnlistmentController
         $recipients = $this->userRepository->listRecruitmentNotificationEmailsForTenant($tenantId);
         if ($recipients === []) {
             $recipients = $this->userRepository->listGovernanceEmailsForTenant($tenantId);
+        }
+        if ($recipients === []) {
+            $recipients = $this->userRepository->listAdministratorEmailsForTenant($tenantId);
+        }
+        if ($recipients === []) {
+            $contact = trim((string) ($this->communityConfig($tenant)['contact_email'] ?? ''));
+            if ($contact !== '' && filter_var($contact, FILTER_VALIDATE_EMAIL)) {
+                $recipients = [strtolower($contact)];
+            }
         }
         if ($recipients === []) {
             return;

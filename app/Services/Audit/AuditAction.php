@@ -39,6 +39,8 @@ final class AuditAction
 
     public const PLATFORM_SETTINGS_UPDATED = 'platform.settings_updated';
 
+    public const SUBSCRIPTION_PLAN_UPDATED = 'platform.subscription_plan_updated';
+
     public const DEPLOYMENT_MODULE_CREATED = 'deployment.module_created';
     public const DEPLOYMENT_MODULE_UPDATED = 'deployment.module_updated';
     public const DEPLOYMENT_VERSION_CREATED = 'deployment.version_created';
