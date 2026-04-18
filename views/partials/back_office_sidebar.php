@@ -184,8 +184,8 @@ $canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.a
             <?php $boLink('back-office/organisation/anciennete', 'Ancienneté (fiches & RH)', $boNavSeniority); ?>
         <?php endif; ?>
 
-        <?php $boSection('Communications'); ?>
         <?php if ($canCommsSection): ?>
+            <?php $boSection('Communications'); ?>
             <?php $boLink('back-office/communications', 'Nouveau message', $boNavCommunications && !$boNavCommsHistory && !$boNavCommsTemplates && !$boNavCommsGroups); ?>
             <?php $boLink('back-office/communications/history', 'Historique des envois', $boNavCommsHistory); ?>
             <?php $boLink('back-office/communications/templates', 'Modèles d’e-mail', $boNavCommsTemplates); ?>
@@ -234,7 +234,7 @@ $canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.a
                 <?php $boLink('back-office/ressources/training/reports', 'Rapports & suivis', $boNavLmsReports); ?>
                 <?php $boLink('back-office/ressources/training/certificates', 'Certificats & attestations', $boNavLmsCertificates); ?>
                 <?php $boLink('back-office/ressources/training/audit', 'Journal pédagogique (audit)', $boNavLmsAuditTrail); ?>
-                <?php $boLink('back-office/ressources/training/competences/bureau-personnel', 'Compétences personnel', $boNavLmsCompetences); ?>
+                <?php $boLink('back-office/ressources/training/competences/bureau-personnel', 'Compétences (LMS)', $boNavLmsCompetences); ?>
                 <?php $boLink('back-office/ressources/training/charte-rh', 'Charte RH (formations)', $boNavHrCharter); ?>
                 <?php $boLink('back-office/ressources/training/feedback', 'Feedback post-leçon', $boNavLmsFeedback); ?>
                 <?php $boLink(training_studio_path(), 'Studio des parcours', $boNavStudioActive); ?>
