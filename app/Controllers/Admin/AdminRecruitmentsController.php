@@ -13,6 +13,7 @@ use App\Repositories\EnlistmentRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Recruitment\EnlistmentAcceptanceProvisioningService;
+use App\Services\Recruitment\TenantRecruitmentSettings;
 
 class AdminRecruitmentsController
 {
@@ -33,6 +34,19 @@ class AdminRecruitmentsController
         $statusFilter = $request->query('status');
         $enlistments = $this->enlistmentRepository->allForTenant((int) $tenantId, $statusFilter ?: null);
         $enlistmentCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
+        $tenantSettings = $this->tenantRepository->getSettings((int) $tenantId);
+        $slaHours = TenantRecruitmentSettings::enlistmentSlaHoursFromSettings($tenantSettings);
+        $submittedOlderThanSla = 0;
+        foreach ($enlistments as &$row) {
+            $isSubmitted = ((string) ($row['status'] ?? '')) === 'submitted';
+            $ageHours = $this->submittedAgeHours($row);
+            $row['submitted_age_hours'] = $ageHours;
+            $row['submitted_sla_breached'] = $isSubmitted && $ageHours !== null && $ageHours > $slaHours;
+            if (!empty($row['submitted_sla_breached'])) {
+                $submittedOlderThanSla++;
+            }
+        }
+        unset($row);
 
         return Response::view('layout.main', [
             'content' => 'admin.recruitments.index',
@@ -40,6 +54,8 @@ class AdminRecruitmentsController
             'enlistments' => $enlistments,
             'statusFilter' => $statusFilter,
             'enlistmentCounts' => $enlistmentCounts,
+            'enlistmentSlaHours' => $slaHours,
+            'submittedOlderThanSla' => $submittedOlderThanSla,
             'showPortalFooter' => false,
         ]);
     }
@@ -60,6 +76,12 @@ class AdminRecruitmentsController
         }
 
         $canned = $this->cannedMessageRepository->listForTenant((int) $tenantId);
+        $tenantSettings = $this->tenantRepository->getSettings((int) $tenantId);
+        $slaHours = TenantRecruitmentSettings::enlistmentSlaHoursFromSettings($tenantSettings);
+        $row['submitted_age_hours'] = $this->submittedAgeHours($row);
+        $row['submitted_sla_breached'] = ((string) ($row['status'] ?? '')) === 'submitted'
+            && $row['submitted_age_hours'] !== null
+            && $row['submitted_age_hours'] > $slaHours;
 
         $linkedOpening = null;
         $communitySlug = '';
@@ -83,6 +105,57 @@ class AdminRecruitmentsController
             'membershipRepairHint' => $this->enlistmentAcceptanceProvisioningService->membershipRepairHint((int) $tenantId, $row),
             'linkedRecruitmentOpening' => $linkedOpening,
             'communitySlug' => $communitySlug,
+            'enlistmentSlaHours' => $slaHours,
+            'showPortalFooter' => false,
+        ]);
+    }
+
+    public function settingsSave(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost()) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $slaHours = (int) $request->input('enlistment_sla_hours', TenantRecruitmentSettings::defaultEnlistmentSlaHours());
+        $slaHours = max(1, min(720, $slaHours));
+        $this->tenantRepository->updateSettings((int) $tenantId, [
+            'recruitment' => [
+                'enlistment_sla_hours' => $slaHours,
+            ],
+        ]);
+        Session::flash('success', 'SLA candidature mis à jour à ' . $slaHours . ' h.');
+
+        return Response::redirect(url('back-office/recruitments'));
+    }
+
+    public function settings(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantSettings = $this->tenantRepository->getSettings((int) $tenantId);
+        $slaHours = TenantRecruitmentSettings::enlistmentSlaHoursFromSettings($tenantSettings);
+        $submitted = $this->enlistmentRepository->allForTenant((int) $tenantId, 'submitted');
+        $breached = 0;
+        foreach ($submitted as $row) {
+            $age = $this->submittedAgeHours($row);
+            if ($age !== null && $age > $slaHours) {
+                $breached++;
+            }
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'admin.recruitments.settings',
+            'title' => 'Paramètres recrutement',
+            'enlistmentSlaHours' => $slaHours,
+            'submittedCount' => count($submitted),
+            'submittedOlderThanSla' => $breached,
             'showPortalFooter' => false,
         ]);
     }
@@ -207,8 +280,14 @@ class AdminRecruitmentsController
             return Response::redirect(url('back-office/recruitments/messages-prefaits'));
         }
 
+        $context = trim((string) $request->input('context', 'generic'));
+        $allowedContexts = ['generic', 'accept', 'pending', 'reject', 'redirect'];
+        if (!in_array($context, $allowedContexts, true)) {
+            $context = 'generic';
+        }
+
         if ($id === null) {
-            $this->cannedMessageRepository->create((int) $tenantId, $label, $body, $sortOrder);
+            $this->cannedMessageRepository->create((int) $tenantId, $label, $body, $sortOrder, $context);
             Session::flash('success', 'Message préfait ajouté.');
         } else {
             $row = $this->cannedMessageRepository->findForTenant($id, (int) $tenantId);
@@ -217,11 +296,35 @@ class AdminRecruitmentsController
 
                 return Response::redirect(url('back-office/recruitments/messages-prefaits'));
             }
-            $this->cannedMessageRepository->update($id, (int) $tenantId, $label, $body, $sortOrder);
+            $this->cannedMessageRepository->update($id, (int) $tenantId, $label, $body, $sortOrder, $context);
             Session::flash('success', 'Message préfait enregistré.');
         }
 
         return Response::redirect(url('back-office/recruitments/messages-prefaits'));
+    }
+
+    /**
+     * @param array<string,mixed> $enlistment
+     */
+    private function submittedAgeHours(array $enlistment): ?int
+    {
+        $base = trim((string) ($enlistment['updated_at'] ?? ''));
+        if ($base === '') {
+            $base = trim((string) ($enlistment['created_at'] ?? ''));
+        }
+        if ($base === '') {
+            return null;
+        }
+        $ts = strtotime($base);
+        if ($ts === false || $ts <= 0) {
+            return null;
+        }
+        $delta = time() - $ts;
+        if ($delta < 0) {
+            return 0;
+        }
+
+        return (int) floor($delta / 3600);
     }
 
     public function decision(Request $request, array $params = []): Response

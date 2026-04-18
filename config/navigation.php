@@ -257,6 +257,8 @@ return [
                         ['label' => 'Attributions rôles métier', 'path' => 'back-office/personnel-job-roles/assignments', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Unités et regroupements', 'path' => 'back-office/groups', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Équipes transverses', 'path' => 'back-office/teams', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Candidatures recrutement', 'path' => 'back-office/recruitments', 'any_permissions' => ['organization.recruitment.manage', 'admin.organization', 'admin.access'], 'description' => 'File de traitement des candidatures'],
+                        ['label' => 'Paramètres SLA recrutement', 'path' => 'back-office/recruitments/settings', 'any_permissions' => ['organization.recruitment.manage', 'admin.organization', 'admin.access'], 'description' => 'Seuil interne et alertes de blocage'],
                     ],
                 ],
             ],
