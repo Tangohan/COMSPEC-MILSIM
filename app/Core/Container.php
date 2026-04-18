@@ -433,6 +433,22 @@ class Container
                 self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
                 self::get(\App\Repositories\PersonnelRoleplayTimelineRepository::class)
             ),
+            \App\Controllers\Admin\Organization\RoleplayFollowupAdminController::class => new \App\Controllers\Admin\Organization\RoleplayFollowupAdminController(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PersonnelRoleplayTimelineRepository::class),
+                self::get(TenantRepository::class),
+            ),
+            \App\Controllers\Web\PersonnelDeploymentController::class => new \App\Controllers\Web\PersonnelDeploymentController(
+                self::get(AuthService::class),
+                self::get(UserRepository::class),
+                new \App\Repositories\PersonnelDeploymentRepository(),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Services\EmailService::class),
+            ),
             \App\Repositories\PersonnelExtrasRepository::class => new \App\Repositories\PersonnelExtrasRepository(),
             \App\Repositories\PersonnelProfileRepository::class => new \App\Repositories\PersonnelProfileRepository(),
             \App\Repositories\PersonnelQualificationRepository::class => new \App\Repositories\PersonnelQualificationRepository(),

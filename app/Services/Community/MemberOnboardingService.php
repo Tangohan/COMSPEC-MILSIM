@@ -292,6 +292,21 @@ final class MemberOnboardingService
         if ($userId < 1 || $tenantId < 1 || !$this->hasTable('training_progress')) {
             return false;
         }
+
+        // Schéma LMS moderne : progression par leçon (enrollment_id) — pas de tenant_id sur training_progress.
+        if ($this->hasTable('training_enrollments')) {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM training_progress tp
+                 INNER JOIN training_enrollments te ON te.id = tp.enrollment_id
+                 WHERE te.tenant_id = ? AND te.user_id = ?
+                   AND (tp.completed_at IS NOT NULL OR tp.status IN ('completed','validated'))
+                 LIMIT 1"
+            );
+            $st->execute([$tenantId, $userId]);
+
+            return (bool) $st->fetchColumn();
+        }
+
         $st = $this->pdo->prepare(
             "SELECT 1 FROM training_progress
              WHERE tenant_id = ? AND user_id = ?
