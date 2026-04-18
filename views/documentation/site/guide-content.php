@@ -161,6 +161,46 @@ declare(strict_types=1);
     </p>
 </section>
 
+<section id="mur-operationnel" class="site-docs__section">
+    <h2>Mur opérationnel</h2>
+    <p>
+        Le <strong>mur opérationnel</strong> centralise les fiches d’action à exécuter, en cours ou terminées (missions, activités d’entraînement, points de coordination).
+        Le module se compose en général de deux vues complémentaires :
+    </p>
+    <ul>
+        <li><strong>Portail de consultation</strong> — vue orientée lecture pour les membres autorisés à suivre l’activité et la posture en temps réel.</li>
+        <li><strong>Pilotage back-office</strong> — vue de gestion pour créer, modifier, valider, publier, dupliquer et clôturer les fiches.</li>
+    </ul>
+    <h3>Cycle de vie d’une fiche</h3>
+    <ol>
+        <li><strong>Création</strong> de la fiche (titre, contexte, unité impliquée, créneau, priorité, catégorie, tags).</li>
+        <li><strong>Préparation</strong> du contenu opérationnel : objectifs, contraintes, points de synchronisation, ressources requises.</li>
+        <li><strong>Validation</strong> interne selon le workflow de l’unité (brouillon, validation, publication).</li>
+        <li><strong>Exécution</strong> avec suivi de statut (planifié, en cours, suspendu, terminé, annulé).</li>
+        <li><strong>Retrait / archivage</strong> pour conserver la traçabilité sans garder l’élément actif sur le tableau.</li>
+    </ol>
+    <h3>Fonctions clés à connaître</h3>
+    <ul>
+        <li><strong>FRAGO</strong> — création rapide d’un ordre fragmentaire dérivé d’une fiche existante.</li>
+        <li><strong>Modèles</strong> — réutilisation de structures types (checklists, blocs d’informations, dotations usuelles).</li>
+        <li><strong>Duplication</strong> — clonage d’une fiche passée pour gagner du temps lors d’un scénario récurrent.</li>
+        <li><strong>Publication liée</strong> — liaison contrôlée avec un événement, une formation ou une mission inter-unités pour éviter les doublons ouverts simultanément.</li>
+        <li><strong>Flux temps réel</strong> — rafraîchissement des éléments de situation sans rechargement complet de page.</li>
+    </ul>
+    <h3>Bonnes pratiques de pilotage</h3>
+    <ul>
+        <li>Utilisez des titres <strong>actionnables</strong> (verbe + zone + échéance) plutôt que des libellés vagues.</li>
+        <li>Renseignez les <strong>catégories et tags</strong> dès la création pour faciliter le filtrage du mur.</li>
+        <li>Maintenez à jour le <strong>statut opérationnel</strong> pendant l’exécution, sinon la situation affichée devient trompeuse.</li>
+        <li>Évitez d’ouvrir plusieurs fiches concurrentes pour la même action ; utilisez la liaison ou la duplication.</li>
+        <li>Ajoutez un court <strong>retour de clôture</strong> avant archivage pour faciliter les futures préparations.</li>
+    </ul>
+    <div class="site-docs__callout">
+        <strong>À noter.</strong> L’accès au mur est généralement découpé en deux permissions : <strong>consulter</strong> et <strong>éditer/piloter</strong>.
+        Si vous voyez le portail mais pas les boutons de gestion, votre rôle est probablement en lecture seule.
+    </div>
+</section>
+
 <section id="personnel-et-orbat" class="site-docs__section">
     <h2>Personnel, ORBAT &amp; profils métier</h2>
     <h3>Fiches et affectations</h3>
@@ -492,6 +532,23 @@ declare(strict_types=1);
         La plupart des membres <strong>consultent</strong> et téléchargent les documents autorisés. Le <strong>dépôt</strong>, les versions, les métadonnées et les droits d’accès
         sont en général réservés aux rôles « gestion documentaire » ou équivalent.
     </p>
+    <h3>Gestion avancée (staff documentaire)</h3>
+    <p>
+        Les équipes habilitées disposent d’un espace de gestion dédié pour organiser la base documentaire proprement :
+    </p>
+    <ul>
+        <li><strong>Arborescence de dossiers</strong> avec structure claire par thème, niveau d’accès ou type de document.</li>
+        <li><strong>Versions</strong> pour publier des mises à jour sans perdre l’historique des anciennes révisions.</li>
+        <li><strong>Droits d’accès fins</strong> (lecture, dépôt, administration) selon rôle, service ou périmètre.</li>
+        <li><strong>Historique et audit</strong> des actions (dépôt, mise à jour, archivage, ajustements d’accès).</li>
+        <li><strong>Liens et collaborations</strong> pour relier un document à d’autres objets (processus, parcours, dossiers).</li>
+    </ul>
+    <h3>Conseils qualité</h3>
+    <ul>
+        <li>Nommez les fichiers avec une convention stable : <em>thème-version-date</em>.</li>
+        <li>Privilégiez des métadonnées explicites (propriétaire, validité, niveau de diffusion).</li>
+        <li>Archivez les versions obsolètes plutôt que de les supprimer sans trace.</li>
+    </ul>
 </section>
 
 <section id="courrier-officiel" class="site-docs__section">
@@ -503,6 +560,18 @@ declare(strict_types=1);
     <p>
         Utilisez les filtres et les étiquettes proposées pour prioriser les dossiers urgents ou en attente de réponse.
     </p>
+    <h3>Fonctions courantes du bureau courrier</h3>
+    <ul>
+        <li><strong>Éditeur de courrier</strong> avec modèles et variables de fusion (expéditeur, objet, références, destinataire).</li>
+        <li><strong>Numérotation et classification</strong> selon les règles administratives de votre organisation.</li>
+        <li><strong>Workflow de traitement</strong> (brouillon, en relecture, à signer, envoyé, archivé).</li>
+        <li><strong>Signature</strong> et vérification de signature selon les options activées par votre instance.</li>
+        <li><strong>Export / impression PDF</strong> pour diffusion externe ou archivage réglementaire interne.</li>
+    </ul>
+    <p>
+        Dans un contexte de forte charge, utilisez les <strong>presets</strong> et les <strong>snippets</strong> de texte pour uniformiser les réponses officielles et
+        limiter les erreurs de forme.
+    </p>
 </section>
 
 <section id="evenements-messages-pointage" class="site-docs__section">
@@ -512,6 +581,10 @@ declare(strict_types=1);
         Le calendrier ou la liste d’<strong>événements</strong> annonce les activités collectives : entraînements, briefings, opérations simulées, etc.
         Vous pouvez souvent confirmer votre présence ; des rappels par courriel peuvent être envoyés automatiquement.
     </p>
+    <p>
+        Pour les organisations qui l’activent, un <strong>lien d’abonnement calendrier</strong> peut être fourni pour synchroniser les événements sur un agenda externe
+        (application mobile, bureau, client mail).
+    </p>
     <h3>Messages internes</h3>
     <p>
         Les <strong>messages</strong> liés à la communauté permettent d’échanger des informations courtes sans passer par le forum public.
@@ -519,6 +592,11 @@ declare(strict_types=1);
     <h3>Pointage</h3>
     <p>
         Le <strong>pointage</strong> enregistre les présences ou les passages selon les règles définies par votre organisation.
+    </p>
+    <h3>Gestion côté back-office</h3>
+    <p>
+        Les responsables peuvent planifier les événements, publier les convocations, suivre les confirmations, puis exploiter les présences pour le suivi RH et les retours d’activité.
+        Selon votre plan, des quotas de création mensuelle peuvent s’appliquer.
     </p>
 </section>
 
@@ -542,6 +620,19 @@ declare(strict_types=1);
     <h3>Coordination</h3>
     <p>
         Utilisez ces outils pour préparer les déplacements et suivre une vue d’ensemble. Les droits d’accès peuvent limiter certaines informations.
+    </p>
+    <h3>ATAK, TACMAP &amp; Overwatch</h3>
+    <p>
+        Le portail peut exposer plusieurs entrées tactiques complémentaires :
+    </p>
+    <ul>
+        <li><strong>ATAK web</strong> — carte et couches dédiées au suivi terrain, avec pages de setup et tutoriels.</li>
+        <li><strong>TACMAP</strong> — visualisation opérationnelle adaptée aux besoins de commandement.</li>
+        <li><strong>Overwatch</strong> — vue de supervision avec filtres (ex. commandement, santé, couches spécialisées).</li>
+    </ul>
+    <p>
+        Les fonctions avancées (marqueurs, pings, chat tactique, formes cartographiques, modules air/sol, IFF, flux intel) dépendent de la configuration de votre instance
+        et de vos permissions.
     </p>
 </section>
 
@@ -582,6 +673,51 @@ declare(strict_types=1);
     <p>
         Le site peut afficher des <strong>bandeaux</strong> ou des messages temporaires (maintenance, consigne urgente).
         Les <strong>messages flash</strong> confirment une action réussie ou signalent une erreur juste après une opération.
+    </p>
+    <p>
+        Les annonces peuvent être relayées selon plusieurs canaux : interface web, notifications internes, et selon la configuration locale, courriel ou publication dédiée.
+        Réglez vos préférences de notifications pour éviter de manquer les messages critiques.
+    </p>
+</section>
+
+<section id="analytics-et-integrations" class="site-docs__section">
+    <h2>Analytics &amp; intégrations</h2>
+    <h3>Analytics d’organisation</h3>
+    <p>
+        Les vues analytics donnent une lecture consolidée de l’activité de la communauté (participation, flux opérationnels, tendances d’usage selon les modules disponibles).
+        Ces écrans sont en général réservés aux rôles de pilotage d’organisation.
+    </p>
+    <h3>Intégrations avancées</h3>
+    <p>
+        Le portail prévoit un espace d’intégrations pour connecter certains outils externes (selon votre politique interne et les fonctionnalités activées).
+        L’accès peut être conditionné à un plan avancé et à des permissions d’administration.
+    </p>
+    <div class="site-docs__callout site-docs__callout--tip">
+        <strong>Bonne pratique.</strong> Activez d’abord une intégration sur un périmètre test, validez les permissions minimales, puis généralisez après revue sécurité.
+    </div>
+</section>
+
+<section id="abonnements-et-limites-plan" class="site-docs__section">
+    <h2>Abonnements, quotas &amp; limites</h2>
+    <p>
+        Certaines fonctions sont liées au <strong>plan d’abonnement</strong> de votre communauté (ex. Standard, Pro, Pro+ selon le catalogue actif).
+        En pratique, le plan peut influencer : nombre maximal de membres, accès aux analytics avancés, intégrations, ou quotas d’actions mensuelles.
+    </p>
+    <h3>Signaux typiques de limite atteinte</h3>
+    <ul>
+        <li>Message indiquant que la <strong>limite de membres</strong> est atteinte lors d’une invitation ou d’une intégration.</li>
+        <li>Blocage de création sur certains modules avec invitation à passer au plan supérieur.</li>
+        <li>Fonction visible en lecture mais indisponible en écriture.</li>
+    </ul>
+    <h3>Que faire en cas de blocage</h3>
+    <ol>
+        <li>Vérifier d’abord les permissions du rôle (ce n’est pas toujours une limite de plan).</li>
+        <li>Contrôler ensuite l’état du plan et les quotas dans l’espace d’administration.</li>
+        <li>Décider entre optimisation (nettoyage, archivage, réallocation) et évolution de plan.</li>
+    </ol>
+    <p>
+        Si votre communauté passe par un processus de souscription en ligne, conservez une validation interne (responsable administratif + responsable opérationnel)
+        avant de modifier un abonnement.
     </p>
 </section>
 

@@ -93,7 +93,7 @@ final class PersonnelDeploymentRepository
         }
 
         $sql = 'SELECT u.id AS user_id, u.display_name, u.callsign, u.email,
-                    pp.primary_role, pp.blood_type AS profile_blood_type, pp.matricule_internal, pp.primary_unit_id,
+                    pp.primary_role, pp.blood_type AS profile_blood_type, pp.matricule_internal, pp.primary_unit_id, pp.deployable,
                     un.name AS unit_name,
                     d.id AS deployment_id, d.status AS deployment_status, d.campaign_tag, d.event_id, d.deployed_at,
                     d.mods_up_to_date, d.role_qualified_authorized, d.recycling_alpha_bravo_up_to_date, d.vmp_up_to_date,

@@ -54,6 +54,24 @@ $contextLabels = [
             </div>
 
             <div class="px-4 py-8 sm:px-8 sm:py-10">
+                <section class="mb-6 rounded-2xl border border-stone-200 bg-[#faf8f3] p-4 sm:p-5">
+                    <div class="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+                        <label class="block">
+                            <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-600">Recherche rapide</span>
+                            <input id="canned-search" type="search" class="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20" placeholder="Intitulé, contenu, contexte…">
+                        </label>
+                        <label class="block">
+                            <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-600">Contexte</span>
+                            <select id="canned-context-filter" class="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20">
+                                <option value="">Tous</option>
+                                <?php foreach ($contextLabels as $key => $label): ?>
+                                    <option value="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <p class="text-xs text-stone-600"><span id="canned-visible-count" class="font-black text-stone-900"><?= count($rows) ?></span> / <?= count($rows) ?> affiché(s)</p>
+                    </div>
+                </section>
 
                 <section class="mb-10 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm <?= $tableMissing ? 'pointer-events-none opacity-50' : '' ?>">
                     <div class="border-b border-stone-200 bg-[#f4f1ea] px-6 py-3">
@@ -100,7 +118,7 @@ $contextLabels = [
                         <h2 class="border-b border-stone-200 pb-2 font-serif text-lg font-bold text-[#1c2d41]">Modèles enregistrés</h2>
                         <?php foreach ($rows as $r): ?>
                             <?php $rid = (int) ($r['id'] ?? 0); ?>
-                            <article class="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm ring-1 ring-black/[0.02]">
+                            <article class="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm ring-1 ring-black/[0.02]" data-canned-row data-context="<?= htmlspecialchars((string) ($r['context'] ?? 'generic'), ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(mb_strtolower(trim((string) (($r['label'] ?? '') . ' ' . ($r['body'] ?? '') . ' ' . ($r['context'] ?? ''))), 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>">
                                 <div class="flex items-center justify-between gap-3 border-b border-stone-100 bg-[#f4f1ea] px-5 py-2.5">
                                     <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Réf. <?= $rid ?></span>
                                     <?php $ctx = (string) ($r['context'] ?? 'generic'); ?>
@@ -147,3 +165,33 @@ $contextLabels = [
         </div>
     </div>
 </div>
+<script>
+(function () {
+    var searchInput = document.getElementById('canned-search');
+    var contextInput = document.getElementById('canned-context-filter');
+    var rows = Array.prototype.slice.call(document.querySelectorAll('[data-canned-row]'));
+    var count = document.getElementById('canned-visible-count');
+    if (!searchInput || !contextInput || rows.length === 0) {
+        return;
+    }
+    function applyFilter() {
+        var q = (searchInput.value || '').trim().toLowerCase();
+        var context = contextInput.value || '';
+        var visible = 0;
+        rows.forEach(function (row) {
+            var matchQ = !q || (row.getAttribute('data-search') || '').indexOf(q) !== -1;
+            var matchCtx = !context || (row.getAttribute('data-context') || '') === context;
+            var show = matchQ && matchCtx;
+            row.classList.toggle('hidden', !show);
+            if (show) {
+                visible++;
+            }
+        });
+        if (count) {
+            count.textContent = String(visible);
+        }
+    }
+    searchInput.addEventListener('input', applyFilter);
+    contextInput.addEventListener('change', applyFilter);
+})();
+</script>

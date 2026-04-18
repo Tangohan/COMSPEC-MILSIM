@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-$siteDocsRevisionNumber = (int) ($siteDocsRevisionNumber ?? 4);
+$siteDocsRevisionNumber = (int) ($siteDocsRevisionNumber ?? 5);
 $siteDocsRevisionDateLabel = (string) ($siteDocsRevisionDateLabel ?? '');
 $toc = [
     ['id' => 'introduction', 'title' => 'Introduction'],
@@ -11,6 +11,7 @@ $toc = [
     ['id' => 'roles-communaute-et-metiers', 'title' => 'Rôles communauté & métiers'],
     ['id' => 'navigation-et-recherche', 'title' => 'Navigation & recherche'],
     ['id' => 'tableau-de-bord', 'title' => 'Tableau de bord'],
+    ['id' => 'mur-operationnel', 'title' => 'Mur opérationnel'],
     ['id' => 'personnel-et-orbat', 'title' => 'Personnel, ORBAT & profils métier'],
     ['id' => 'dossier-operateur', 'title' => 'Dossier opérateur'],
     ['id' => 'forum-et-briefings', 'title' => 'Forum & briefings'],
@@ -24,6 +25,8 @@ $toc = [
     ['id' => 'outils-cartes-et-tactique', 'title' => 'Outils, cartes & tactique'],
     ['id' => 'recrutement-et-enrolement', 'title' => 'Recrutement & enrôlement'],
     ['id' => 'alertes-et-annonces', 'title' => 'Alertes & annonces'],
+    ['id' => 'analytics-et-integrations', 'title' => 'Analytics & intégrations'],
+    ['id' => 'abonnements-et-limites-plan', 'title' => 'Abonnements, quotas & limites'],
     ['id' => 'pilotage-organisation', 'title' => 'Pilotage d’organisation'],
     ['id' => 'bonnes-pratiques', 'title' => 'Bonnes pratiques'],
 ];
@@ -40,7 +43,8 @@ $toc = [
             <?php endif; ?>
             <p>
                 Ce guide décrit le fonctionnement du portail <strong>Athena</strong> : parcours de création, droits et rôles, formations (brouillon, publication, catalogue),
-                modération, fiches personnel et profils métier, ainsi que les <strong>coopérations entre communautés</strong> (dossiers partagés, espace commun, autorisations de partage).
+                modération, fiches personnel et profils métier, <strong>mur opérationnel</strong>, <strong>ATAK / C2</strong>, analytics d’organisation,
+                et <strong>coopérations entre communautés</strong> (dossiers partagés, espace commun, autorisations de partage).
                 Il est destiné aux membres connectés ; les écrans exacts dépendent de vos habilitations.
             </p>
             <div class="site-docs__toolbar">

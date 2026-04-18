@@ -12,6 +12,12 @@ $error = \App\Core\Session::get('error');
 \App\Core\Session::forget('error');
 ?>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-6">
+    <nav class="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600" aria-label="Fil d’Ariane">
+        <a href="<?= htmlspecialchars(url('back-office/configuration'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg px-2 py-1 transition hover:bg-slate-100 hover:text-slate-900">Configuration</a>
+        <span class="text-slate-400" aria-hidden="true">/</span>
+        <span class="rounded-lg bg-white px-2 py-1 text-slate-900 ring-1 ring-slate-200">Rôles & fonctions</span>
+    </nav>
+
     <header class="rounded-2xl border border-blue-100 bg-blue-50/80 p-6 shadow-sm">
         <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">Cellule S1</p>
         <h1 class="mt-2 text-3xl font-black text-slate-900">Doctrine des fonctions et des droits</h1>
@@ -20,6 +26,10 @@ $error = \App\Core\Session::get('error');
             <div class="rounded-xl bg-white/70 p-3 text-center"><p class="text-2xl font-black text-slate-900"><?= count($roleDefinitions) ?></p><p class="text-xs uppercase text-slate-500">Fonctions</p></div>
             <div class="rounded-xl bg-white/70 p-3 text-center"><p class="text-2xl font-black text-slate-900"><?= count($tenantRoles) ?></p><p class="text-xs uppercase text-slate-500">Rôles tenant</p></div>
             <div class="rounded-xl bg-white/70 p-3 text-center"><p class="text-2xl font-black text-slate-900"><?= count($roleRelations) ?></p><p class="text-xs uppercase text-slate-500">Relations actives</p></div>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+            <a href="<?= htmlspecialchars(url('back-office/personnel-job-roles/assignments'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-blue-300/70 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-blue-800 transition hover:bg-blue-100">Attributions membres</a>
+            <a href="<?= htmlspecialchars(url('back-office/roles-functions/graph.json'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-700 transition hover:bg-slate-100">JSON du graphe</a>
         </div>
     </header>
 
