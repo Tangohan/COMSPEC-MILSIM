@@ -20,6 +20,8 @@ use App\Repositories\TrainingModuleRepository;
 use App\Repositories\TrainingQuizRepository;
 use App\Repositories\TrainingResourceRepository;
 use App\Repositories\TrainingCourseRepository;
+use App\Repositories\TrainingCourseLmsSocialRepository;
+use App\Repositories\TrainingLessonFeedbackRepository;
 use App\Repositories\DocumentRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Services\Documents\DocumentAccessService;
@@ -46,6 +48,8 @@ class TrainingApiController
         private TrainingResourceRepository $resourceRepository,
         private TrainingLessonRepository $lessonRepository,
         private TrainingModuleRepository $moduleRepository,
+        private TrainingCourseLmsSocialRepository $lmsSocialRepository,
+        private TrainingLessonFeedbackRepository $lessonFeedbackRepository,
         private TrainingCertificateShareService $certificateShareService,
         private DocumentRepository $documentRepository,
         private DocumentAccessService $documentAccessService,
@@ -321,10 +325,21 @@ class TrainingApiController
                 $this->progressService->markLessonCompleted($enrollmentId, $lessonId, $tenantId, $userId, $timeSpent);
             }
             $progress = $this->progressService->getProgressForEnrollment($enrollmentId);
+            $eventRecommendation = null;
+            if ($status !== 'in_progress') {
+                $eventRecommendation = $this->buildRecommendedSessionPayload($tenantId, $userId, $enrollmentId, $lessonId, $progress);
+            }
             if (!$wantsJson) {
                 Session::flash('success', 'Votre progression a été enregistrée.');
+                if ($eventRecommendation !== null) {
+                    Session::flash('info', 'Leçon-clé validée : un créneau d’entraînement recommandé est désormais visible.');
+                }
 
                 return $redirectToCourse();
+            }
+
+            if ($eventRecommendation !== null) {
+                $progress['event_recommendation'] = $eventRecommendation;
             }
 
             return Response::json($progress);
@@ -337,6 +352,153 @@ class TrainingApiController
 
             return Response::json(['error' => $e->getMessage()], 400);
         }
+    }
+
+    public function lessonFeedback(Request $request, array $params = []): Response
+    {
+        $blocked = $this->assertTrainingAllowed();
+        if ($blocked !== null) {
+            return $blocked;
+        }
+        try {
+            $this->validateCsrf($request);
+        } catch (\RuntimeException) {
+            return Response::json(['error' => 'Session expirée ou sécurité : rechargez la page puis réessayez.'], 403);
+        }
+        $tenantId = $this->tenantId();
+        $userId = $this->userId();
+        $body = $this->body($request);
+        $enrollmentId = (int) ($request->input('enrollment_id') ?? $body['enrollment_id'] ?? 0);
+        $lessonId = (int) ($request->input('lesson_id') ?? $body['lesson_id'] ?? 0);
+        $difficulty = (int) ($request->input('difficulty_rating') ?? $body['difficulty_rating'] ?? 0);
+        $clarity = (int) ($request->input('clarity_rating') ?? $body['clarity_rating'] ?? 0);
+        $utility = (int) ($request->input('utility_rating') ?? $body['utility_rating'] ?? 0);
+        $comment = (string) ($request->input('comment') ?? $body['comment'] ?? '');
+
+        if ($enrollmentId < 1 || $lessonId < 1) {
+            return Response::json(['error' => 'enrollment_id et lesson_id requis.'], 400);
+        }
+        if ($difficulty < 1 || $difficulty > 5 || $clarity < 1 || $clarity > 5 || $utility < 1 || $utility > 5) {
+            return Response::json(['error' => 'Les notes doivent être comprises entre 1 et 5.'], 422);
+        }
+
+        $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
+        if (!$enrollment || (int) ($enrollment['user_id'] ?? 0) !== $userId) {
+            return Response::json(['error' => 'Inscription introuvable ou non autorisée.'], 403);
+        }
+        $courseId = (int) ($enrollment['course_id'] ?? 0);
+        $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId);
+        if (!$course) {
+            return Response::json(['error' => 'Parcours introuvable.'], 404);
+        }
+
+        $moduleId = 0;
+        $lessonFound = false;
+        foreach ($course['modules'] ?? [] as $mod) {
+            foreach ($mod['lessons'] ?? [] as $lsn) {
+                if ((int) ($lsn['id'] ?? 0) === $lessonId) {
+                    $lessonFound = true;
+                    $moduleId = (int) ($mod['id'] ?? 0);
+                    break 2;
+                }
+            }
+        }
+        if (!$lessonFound || $moduleId < 1) {
+            return Response::json(['error' => 'Leçon introuvable dans ce parcours.'], 404);
+        }
+
+        $saved = $this->lessonFeedbackRepository->upsert(
+            $tenantId,
+            $courseId,
+            $moduleId,
+            $lessonId,
+            $enrollmentId,
+            $userId,
+            $difficulty,
+            $clarity,
+            $utility,
+            $comment
+        );
+        if (!$saved) {
+            return Response::json(['error' => 'Le feedback ne peut pas être enregistré sur cet environnement (table manquante).'], 503);
+        }
+
+        return Response::json([
+            'ok' => true,
+            'message' => 'Merci, votre feedback post-leçon a été enregistré.',
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $progress
+     * @return array<string, mixed>|null
+     */
+    private function buildRecommendedSessionPayload(int $tenantId, int $userId, int $enrollmentId, int $lessonId, array $progress): ?array
+    {
+        $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
+        if (!$enrollment || (int) ($enrollment['user_id'] ?? 0) !== $userId) {
+            return null;
+        }
+        $courseId = (int) ($enrollment['course_id'] ?? 0);
+        if ($courseId < 1) {
+            return null;
+        }
+        $course = $this->trainingService->getCourseWithStructure($courseId, $tenantId);
+        if (!$course) {
+            return null;
+        }
+
+        $targetModule = null;
+        foreach ($course['modules'] ?? [] as $mod) {
+            foreach ($mod['lessons'] ?? [] as $lsn) {
+                if ((int) ($lsn['id'] ?? 0) === $lessonId) {
+                    $targetModule = $mod;
+                    break 2;
+                }
+            }
+        }
+        if (!$targetModule || (int) ($targetModule['is_required'] ?? 0) !== 1) {
+            return null;
+        }
+
+        $done = [];
+        foreach (($progress['progress'] ?? []) as $row) {
+            if ((string) ($row['status'] ?? '') === 'completed') {
+                $done[(int) ($row['lesson_id'] ?? 0)] = true;
+            }
+        }
+        foreach ($targetModule['lessons'] ?? [] as $ml) {
+            $mid = (int) ($ml['id'] ?? 0);
+            if ($mid < 1 || !isset($done[$mid])) {
+                return null;
+            }
+        }
+
+        $now = time();
+        $sessions = $this->lmsSocialRepository->listSessionsForCourse($courseId);
+        $pick = null;
+        foreach ($sessions as $session) {
+            $startsAt = strtotime((string) ($session['starts_at'] ?? ''));
+            if ($startsAt === false || $startsAt < $now) {
+                continue;
+            }
+            $pick = $session;
+            break;
+        }
+        if (!$pick) {
+            return null;
+        }
+
+        return [
+            'session_id' => (int) ($pick['id'] ?? 0),
+            'module_id' => (int) ($targetModule['id'] ?? 0),
+            'module_title' => (string) ($targetModule['title'] ?? 'Module clé'),
+            'label' => (string) ($pick['label'] ?? 'Entraînement recommandé'),
+            'location' => (string) ($pick['location'] ?? ''),
+            'starts_at' => (string) ($pick['starts_at'] ?? ''),
+            'ends_at' => (string) ($pick['ends_at'] ?? ''),
+            'course_url' => url('formations/' . rawurlencode((string) ($enrollment['course_slug'] ?? ''))),
+        ];
     }
 
     public function quizStart(Request $request, array $params = []): Response

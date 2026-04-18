@@ -893,6 +893,7 @@ return function (Router $router) {
     /** Évite l’affichage brut de JSON si l’URL est ouverte dans le navigateur (GET). */
     $router->get('/api/training/progress/lesson', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('formations')), $mwTraining);
     $router->post('/api/training/progress/lesson', [TrainingApiController::class, 'progressLesson'], $mwTraining);
+    $router->post('/api/training/lesson-feedback', [TrainingApiController::class, 'lessonFeedback'], $mwTraining);
     $router->get('/api/training/resource/{id}/download', [TrainingApiController::class, 'lessonResourceDownload'], $mwTraining);
     $router->get('/api/training/resource/{id}/document', [TrainingApiController::class, 'lessonResourceLinkedDocument'], $mwTraining);
     $router->post('/api/training/quiz/start', [TrainingApiController::class, 'quizStart'], $mwTraining);

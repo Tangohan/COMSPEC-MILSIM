@@ -94,10 +94,48 @@ Le LMS est riche, mais le lien avec progression opérationnelle et événements 
 - Introduire un feedback post-leçon standardisé (difficulté, clarté, utilité).
 - Pousser automatiquement un événement d’entraînement recommandé après complétion d’un module clé.
 
+### Détail d’implémentation recommandé
+
+1. **Alignement formation ↔ rôle/grade/ORBAT**
+   - Ajouter une matrice de compétences minimales par `rôle métier`, `grade` et `poste ORBAT`.
+   - Tagger chaque module/lesson avec des objectifs opérationnels explicites (`commandement`, `transmissions`, `appui feu`, etc.).
+   - Exposer une vue “écarts de compétences” côté staff pour identifier ce qui manque avant affectation opérationnelle.
+
+2. **Parcours recommandés dynamiques**
+   - Construire un score de recommandation combinant : rôle actuel, ancienneté, modules déjà validés, récurrence aux événements, et objectifs de l’unité.
+   - Définir 3 états de parcours : `Essentiel`, `Renforcement`, `Spécialisation`.
+   - Rafraîchir automatiquement les recommandations après chaque complétion de module et après chaque participation à un événement.
+
+3. **Feedback post-leçon standardisé**
+   - Afficher un mini-formulaire en fin de leçon (3 questions fixes : difficulté perçue, clarté pédagogique, utilité terrain).
+   - Ajouter un champ commentaire libre optionnel pour signaux faibles.
+   - Produire une note agrégée par leçon pour prioriser les révisions pédagogiques.
+
+4. **Pont automatique vers les événements**
+   - Lorsqu’un module “clé” est complété, déclencher une recommandation d’événement contextualisée (type d’entraînement, niveau requis, créneau conseillé).
+   - Envoyer cette recommandation via notification in-app + rappel différé si aucune inscription sous 72h.
+   - Permettre au staff de surcharger manuellement la recommandation si contrainte opérationnelle locale.
+
+### Instrumentation (événements analytics minimaux)
+
+- `training_recommendation_shown`
+- `training_recommendation_opened`
+- `training_path_enrolled`
+- `training_lesson_feedback_submitted`
+- `training_key_module_completed`
+- `training_event_recommendation_pushed`
+- `training_event_recommendation_accepted`
+
 ### KPI
 - Taux de complétion des parcours recommandés.
 - Délai entre inscription et première formation complétée.
 - Corrélation formation complétée ↔ présence événementielle.
+
+### Définition opérationnelle des KPI
+
+- **Taux de complétion des parcours recommandés** = `# parcours recommandés complétés / # parcours recommandés démarrés` (fenêtre glissante 30 jours).
+- **Délai inscription → 1ère formation complétée** = médiane en heures entre `date_inscription` et `date_première_completion`.
+- **Corrélation formation ↔ présence événementielle** = comparaison, par cohorte mensuelle, du taux de présence entre membres ayant complété au moins 1 module clé et membres sans module clé complété.
 
 ## 4.5 Forum et communication communautaire
 
