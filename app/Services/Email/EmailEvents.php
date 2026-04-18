@@ -85,6 +85,12 @@ final class EmailEvents
     /** Annonce maintenance plateforme — diffusion aux comptes actifs (message libre depuis la règle). */
     public const MAINTENANCE_MEMBER_BROADCAST = 'MAINTENANCE_MEMBER_BROADCAST';
 
+
+    /** Notification envoyée quand un membre est marqué comme déployé. */
+    public const PERSONNEL_DEPLOYMENT_ASSIGNED = 'PERSONNEL_DEPLOYMENT_ASSIGNED';
+    /** Notification envoyée à la validation complète du check-up de déploiement. */
+    public const PERSONNEL_DEPLOYMENT_CHECKUP_VALIDATED = 'PERSONNEL_DEPLOYMENT_CHECKUP_VALIDATED';
+
     /** @var list<string> */
     public const EMAIL_EVENTS = [
         self::USER_REGISTER_CONFIRMATION,
@@ -129,5 +135,7 @@ final class EmailEvents
         self::TENANT_EMAIL_ACTIVITY,
         self::TENANT_EMAIL_CUSTOM,
         self::MAINTENANCE_MEMBER_BROADCAST,
+        self::PERSONNEL_DEPLOYMENT_ASSIGNED,
+        self::PERSONNEL_DEPLOYMENT_CHECKUP_VALIDATED,
     ];
 }
