@@ -19,6 +19,7 @@ use App\Services\Analytics\TenantAnalyticsLabels;
 /** @var array{visits:int,cta_clicks:int,applications:int,accepted:int,median_visit_to_first_contact_hours:?float} $conversionFunnel */
 /** @var array{visits:int,cta_clicks:int,applications:int,accepted:int,median_visit_to_first_contact_hours:?float} $funnelLast7 */
 /** @var array{visits:int,cta_clicks:int,applications:int,accepted:int} $funnelPrev7Only */
+/** @var string $analyticsFocus */
 $trainingCourseStats = $trainingCourseStats ?? [];
 $recruitmentOpeningStats = $recruitmentOpeningStats ?? [];
 $tenantCategoryBreakdown = $tenantCategoryBreakdown ?? [];
@@ -74,6 +75,7 @@ $funnelPrev7Only = is_array($funnelPrev7Only ?? null) ? $funnelPrev7Only : [
     'applications' => 0,
     'accepted' => 0,
 ];
+$analyticsFocus = (string) ($analyticsFocus ?? 'overview');
 
 $enlistmentStatusLabelAnalytics = static function (string $status): string {
     return match ($status) {
@@ -135,6 +137,7 @@ if ($suggestions === []) {
         </div>
         <div class="flex flex-wrap items-center gap-2">
             <?= $periodLinks($analyticsDays) ?>
+            <a href="<?= htmlspecialchars(url('back-office/analytics/conversion') . '?days=' . (int) $analyticsDays, ENT_QUOTES, 'UTF-8') ?>" class="text-sm <?= $analyticsFocus === 'conversion' ? 'font-black text-emerald-700' : 'text-slate-600 hover:text-slate-900' ?>">Conversion</a>
             <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm text-slate-500 hover:text-slate-800 ml-2">Retour</a>
         </div>
     </div>
@@ -374,6 +377,41 @@ if ($suggestions === []) {
             </div>
         </dl>
         <p class="text-xs text-slate-500 leading-relaxed max-w-3xl">Les durées et certains clics ne sont comptés que si le visiteur a accepté les cookies « mesure d’audience » sur le portail.</p>
+    </section>
+
+    <section id="conversion-funnel" class="mb-10 <?= $analyticsFocus === 'conversion' ? 'ring-2 ring-emerald-300 rounded-2xl p-4 bg-emerald-50/30' : '' ?>">
+        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Entonnoir conversion communauté</h2>
+        <div class="grid gap-4 lg:grid-cols-4 mb-4">
+            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-[10px] uppercase tracking-wider text-slate-500">Visites publiques</p>
+                <p class="mt-1 text-3xl font-black text-slate-900 tabular-nums"><?= (int) ($conversionFunnel['visits'] ?? 0) ?></p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-[10px] uppercase tracking-wider text-slate-500">Clics CTA</p>
+                <p class="mt-1 text-3xl font-black text-slate-900 tabular-nums"><?= (int) ($conversionFunnel['cta_clicks'] ?? 0) ?></p>
+                <p class="text-xs text-slate-500 mt-1">Taux visite → action CTA: <strong><?= $ratioPct((int) ($conversionFunnel['cta_clicks'] ?? 0), (int) ($conversionFunnel['visits'] ?? 0)) ?></strong></p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-[10px] uppercase tracking-wider text-slate-500">Candidatures</p>
+                <p class="mt-1 text-3xl font-black text-slate-900 tabular-nums"><?= (int) ($conversionFunnel['applications'] ?? 0) ?></p>
+            </div>
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 shadow-sm">
+                <p class="text-[10px] uppercase tracking-wider text-emerald-800">Acceptations</p>
+                <p class="mt-1 text-3xl font-black text-emerald-900 tabular-nums"><?= (int) ($conversionFunnel['accepted'] ?? 0) ?></p>
+                <p class="text-xs text-emerald-800 mt-1">Taux candidature → acceptation: <strong><?= $ratioPct((int) ($conversionFunnel['accepted'] ?? 0), (int) ($conversionFunnel['applications'] ?? 0)) ?></strong></p>
+            </div>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm mb-4">
+            <p class="text-xs text-slate-600">Délai médian visite → premier contact (approximation via date de revue candidature): <strong><?= ($conversionFunnel['median_visit_to_first_contact_hours'] ?? null) !== null ? number_format((float) $conversionFunnel['median_visit_to_first_contact_hours'], 1, ',', ' ') . ' h' : '—' ?></strong></p>
+        </div>
+        <div class="rounded-xl border <?= $ctaRateDrop ? 'border-amber-200 bg-amber-50/70' : 'border-emerald-200 bg-emerald-50/60' ?> p-4 shadow-sm">
+            <p class="text-[10px] uppercase tracking-wider <?= $ctaRateDrop ? 'text-amber-800' : 'text-emerald-800' ?>">Prochaine action admin (pilotage 7 jours)</p>
+            <ul class="mt-2 space-y-1.5 text-sm <?= $ctaRateDrop ? 'text-amber-900' : 'text-emerald-900' ?>">
+                <?php foreach ($suggestions as $suggestion): ?>
+                    <li>• <?= htmlspecialchars($suggestion, ENT_QUOTES, 'UTF-8') ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
     </section>
 
     <section class="mb-10">

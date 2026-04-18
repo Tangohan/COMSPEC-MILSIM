@@ -420,6 +420,7 @@ return [
                         ['label' => 'Export conformité', 'path' => 'back-office/conformite/export-dossier', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Dossier réglementaire pour audit'],
                         ['label' => 'Intégrations externes', 'path' => 'back-office/integrations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Clés d’accès (selon formule d’hébergement ; sinon page d’information pour passer à une offre adaptée)'],
                         ['label' => 'Indicateurs d’activité', 'path' => 'back-office/analytics', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Conversion communautés', 'path' => 'back-office/analytics/conversion', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Entonnoir visites → CTA → candidatures → acceptations'],
                         ['label' => 'Configuration générale', 'path' => 'back-office/configuration', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Audit organisation', 'path' => 'back-office/audit', 'any_permissions' => ['admin.organization', 'admin.access']],
                     ],

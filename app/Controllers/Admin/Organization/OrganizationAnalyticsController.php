@@ -65,6 +65,7 @@ final class OrganizationAnalyticsController
             'applications' => max(0, (int) ($funnelPrev7['applications'] ?? 0) - (int) ($funnelLast7['applications'] ?? 0)),
             'accepted' => max(0, (int) ($funnelPrev7['accepted'] ?? 0) - (int) ($funnelLast7['accepted'] ?? 0)),
         ];
+        $analyticsFocus = $request->path() === '/back-office/analytics/conversion' ? 'conversion' : 'overview';
 
         return Response::view('layout.main', [
             'title' => 'Indicateurs d’usage',
@@ -89,6 +90,7 @@ final class OrganizationAnalyticsController
             'conversionFunnel' => $conversionFunnel,
             'funnelLast7' => $funnelLast7,
             'funnelPrev7Only' => $funnelPrev7Only,
+            'analyticsFocus' => $analyticsFocus,
         ]);
     }
 }
