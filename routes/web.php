@@ -462,6 +462,7 @@ return function (Router $router) {
     $router->get('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentationUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/onboarding-recovery', [OrganizationCommunityController::class, 'onboardingRecovery'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/onboarding-members', [OrganizationCommunityController::class, 'onboardingMembers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/onboarding-recovery/apply', [OrganizationCommunityController::class, 'onboardingRecoveryApply'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/users', [UserAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/users/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/organisation/structure?ouvrir=membre')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
