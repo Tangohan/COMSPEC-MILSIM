@@ -93,6 +93,7 @@ $boNavAudit = str_starts_with($p, 'back-office/audit');
 $boNavMod = str_starts_with($p, 'back-office/moderation');
 $canMemberModeration = $gate->allows('admin.members.moderate');
 $boNavEvents = str_starts_with($p, 'back-office/events');
+$boNavEventInsights = str_starts_with($p, 'back-office/events/insights');
 $boNavOpsBoard = str_starts_with($p, 'back-office/tableau-operationnel');
 $studioPath = function_exists('training_studio_path') ? training_studio_path() : 'back-office/ressources/training/studio';
 $boNavStudioActive = str_starts_with($p, $studioPath . '/') || $p === $studioPath;
@@ -167,6 +168,7 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
             <?php $boLink('back-office/moderation', 'Restrictions membres', $boNavMod); ?>
         <?php endif; ?>
         <?php $boLink('back-office/events', 'RSVP & pointage', $boNavEvents); ?>
+        <?php $boLink('back-office/events/insights', 'Insights présence', $boNavEventInsights); ?>
 
         <?php if ($canDocs || $canTraining || $canTenantModules): ?>
             <?php $boSection('Ressources & outils'); ?>
