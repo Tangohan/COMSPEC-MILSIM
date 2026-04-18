@@ -169,6 +169,14 @@ $filterOptions = [
                                     <option value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>" <?= $cur === $val ? ' selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
                                 <?php endforeach; ?>
                             </select>
+                            <select name="absence_reason" class="bo-select min-w-[12rem] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/25">
+                                <option value="">Motif d’absence</option>
+                                <option value="service">Service</option>
+                                <option value="sante">Santé</option>
+                                <option value="indisponibilite_planifiee">Indisponibilité planifiée</option>
+                                <option value="absence_non_justifiee">Absence non justifiée</option>
+                                <option value="autre">Autre</option>
+                            </select>
                             <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2">
                                 Mettre à jour
                             </button>
