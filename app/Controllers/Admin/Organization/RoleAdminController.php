@@ -12,6 +12,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\PermissionRepository;
 use App\Repositories\RoleRepository;
+use App\Repositories\TenantRepository;
 use App\Services\Admin\RolePermissionService;
 use App\Services\Admin\TenantRolePermissionPresetService;
 use App\Services\Audit\AuditAction;
@@ -25,6 +26,7 @@ class RoleAdminController
         private PermissionRepository $permissionRepository,
         private RoleRepository $roleRepository,
         private TenantRolePermissionPresetService $presetService,
+        private TenantRepository $tenantRepository,
         private ?AuditService $auditService = null
     ) {
         $this->auditService ??= new AuditService();
@@ -180,6 +182,8 @@ class RoleAdminController
             'content' => 'admin.organization.roles.presets',
             'title' => 'Profils de permissions',
             'presetMeta' => $this->presetService->listPresetMeta(),
+            'customPresetKits' => $this->listCustomPresetKits($tenantId),
+            'allPermissions' => $this->permissionRepository->allForTenant($tenantId),
             'roles' => $roles,
             'presetsPreviewUrl' => url('back-office/roles/presets/preview'),
         ]);
@@ -215,21 +219,13 @@ class RoleAdminController
 
         $rows = $this->permissionRepository->allForTenant($tenantId);
         $current = $this->rolePermissionService->getPermissionIdsForRole($roleId);
-        $diff = $this->presetService->buildApplyDiff($presetId, $current, $rows);
-        if (!$diff['ok']) {
-            return Response::json(['ok' => false, 'error' => $diff['error']], 400);
+        $resolved = $this->resolvePresetDetails($tenantId, $presetId, $rows);
+        if (!$resolved['ok']) {
+            return Response::json(['ok' => false, 'error' => $resolved['error'] ?? 'Profil invalide.'], 400);
         }
-
-        $presetLabel = $presetId;
-        $presetDescription = '';
-        foreach ($this->presetService->listPresetMeta() as $m) {
-            if (($m['id'] ?? '') === $presetId) {
-                $presetLabel = (string) ($m['label'] ?? $presetId);
-                $presetDescription = (string) ($m['description'] ?? '');
-
-                break;
-            }
-        }
+        $diff = $this->buildDiffFromPermissionIds($current, $resolved['permission_ids'], $rows);
+        $presetLabel = (string) ($resolved['label'] ?? $presetId);
+        $presetDescription = (string) ($resolved['description'] ?? '');
 
         return Response::json([
             'ok' => true,
@@ -262,8 +258,7 @@ class RoleAdminController
 
         $presetId = trim((string) $request->input('preset_id'));
         $roleId = (int) $request->input('role_id');
-        $allowedIds = array_column($this->presetService->listPresetMeta(), 'id');
-        if ($presetId === '' || !in_array($presetId, $allowedIds, true)) {
+        if ($presetId === '') {
             Session::flash('error', 'Profil invalide.');
 
             return Response::redirect(url('back-office/roles/presets'));
@@ -288,14 +283,13 @@ class RoleAdminController
 
         $rows = $this->permissionRepository->allForTenant($tenantId);
         $currentIds = $this->rolePermissionService->getPermissionIdsForRole($roleId);
-        $diff = $this->presetService->buildApplyDiff($presetId, $currentIds, $rows);
-        if (!$diff['ok']) {
-            Session::flash('error', $diff['error']);
+        $resolved = $this->resolvePresetDetails($tenantId, $presetId, $rows);
+        if (!$resolved['ok']) {
+            Session::flash('error', $resolved['error'] ?? 'Profil invalide.');
 
             return Response::redirect(url('back-office/roles/presets'));
         }
-
-        $ids = $this->presetService->permissionIdsForPresetFromTenantRows($presetId, $rows);
+        $ids = $resolved['permission_ids'];
         if ($ids === []) {
             Session::flash('error', 'Aucune habilitation correspondante dans cette communauté (migrations ou catalogue à jour ?).');
 
@@ -310,14 +304,9 @@ class RoleAdminController
             return Response::redirect(url('back-office/roles/presets'));
         }
 
-        $presetLabel = $presetId;
-        foreach ($this->presetService->listPresetMeta() as $m) {
-            if (($m['id'] ?? '') === $presetId) {
-                $presetLabel = (string) ($m['label'] ?? $presetId);
+        $diff = $this->buildDiffFromPermissionIds($currentIds, $ids, $rows);
 
-                break;
-            }
-        }
+        $presetLabel = (string) ($resolved['label'] ?? $presetId);
 
         $roleName = (string) ($role['name'] ?? '');
         $msg = 'Rôle « ' . $roleName . ' » mis à jour avec le profil « ' . $presetLabel . ' ». ';
@@ -331,6 +320,243 @@ class RoleAdminController
         Session::flash('success', $msg);
 
         return Response::redirect(url('back-office/roles/' . $roleId));
+    }
+
+    public function saveCustomPresetKit(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/roles/presets'));
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        $label = trim((string) $request->input('kit_label', ''));
+        $description = trim((string) $request->input('kit_description', ''));
+        $rawPermissionIds = $request->input('kit_permission_ids', []);
+        $permissionIds = is_array($rawPermissionIds) ? array_values(array_unique(array_map('intval', $rawPermissionIds))) : [];
+        $allowedPermissionIds = array_map(static fn (array $p): int => (int) ($p['id'] ?? 0), $this->permissionRepository->allForTenant($tenantId));
+        $permissionIds = array_values(array_intersect($permissionIds, $allowedPermissionIds));
+
+        if ($label === '' || mb_strlen($label) > 90) {
+            Session::flash('error', 'Le nom du kit est requis (90 caractères max).');
+
+            return Response::redirect(url('back-office/roles/presets'));
+        }
+        if ($permissionIds === []) {
+            Session::flash('error', 'Sélectionnez au moins une permission pour créer le kit.');
+
+            return Response::redirect(url('back-office/roles/presets'));
+        }
+        $kits = $this->listCustomPresetKits($tenantId);
+        if (count($kits) >= 24) {
+            Session::flash('error', 'Limite atteinte : 24 kits personnalisés maximum.');
+
+            return Response::redirect(url('back-office/roles/presets'));
+        }
+        $kitId = 'custom_' . substr(sha1((string) microtime(true) . ':' . $label . ':' . (string) random_int(1, 999999)), 0, 10);
+        $kits[] = [
+            'id' => $kitId,
+            'label' => $label,
+            'description' => $description,
+            'permission_ids' => $permissionIds,
+            'created_at' => date('c'),
+        ];
+        $this->saveCustomPresetKits($tenantId, $kits);
+        Session::flash('success', 'Kit personnalisé enregistré.');
+
+        return Response::redirect(url('back-office/roles/presets'));
+    }
+
+    public function deleteCustomPresetKit(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/roles/presets'));
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        $kitId = trim((string) $request->input('kit_id', ''));
+        if ($kitId === '') {
+            Session::flash('error', 'Kit invalide.');
+
+            return Response::redirect(url('back-office/roles/presets'));
+        }
+        $kits = $this->listCustomPresetKits($tenantId);
+        $before = count($kits);
+        $kits = array_values(array_filter($kits, static fn (array $k): bool => (string) ($k['id'] ?? '') !== $kitId));
+        if (count($kits) === $before) {
+            Session::flash('error', 'Kit introuvable.');
+
+            return Response::redirect(url('back-office/roles/presets'));
+        }
+        $this->saveCustomPresetKits($tenantId, $kits);
+        Session::flash('success', 'Kit personnalisé supprimé.');
+
+        return Response::redirect(url('back-office/roles/presets'));
+    }
+
+    /**
+     * @param list<array<string, mixed>> $tenantPermissionRows
+     * @return array{ok: bool, permission_ids?: list<int>, label?: string, description?: string, error?: string}
+     */
+    private function resolvePresetDetails(int $tenantId, string $presetId, array $tenantPermissionRows): array
+    {
+        $builtinIds = array_column($this->presetService->listPresetMeta(), 'id');
+        if (in_array($presetId, $builtinIds, true)) {
+            $label = $presetId;
+            $description = '';
+            foreach ($this->presetService->listPresetMeta() as $m) {
+                if (($m['id'] ?? '') === $presetId) {
+                    $label = (string) ($m['label'] ?? $presetId);
+                    $description = (string) ($m['description'] ?? '');
+                    break;
+                }
+            }
+
+            return [
+                'ok' => true,
+                'permission_ids' => $this->presetService->permissionIdsForPresetFromTenantRows($presetId, $tenantPermissionRows),
+                'label' => $label,
+                'description' => $description,
+            ];
+        }
+
+        if (str_starts_with($presetId, 'custom:')) {
+            $target = substr($presetId, strlen('custom:'));
+            foreach ($this->listCustomPresetKits($tenantId) as $kit) {
+                if ((string) ($kit['id'] ?? '') !== $target) {
+                    continue;
+                }
+                $ids = is_array($kit['permission_ids'] ?? null) ? array_values(array_unique(array_map('intval', $kit['permission_ids']))) : [];
+
+                return [
+                    'ok' => true,
+                    'permission_ids' => $ids,
+                    'label' => (string) ($kit['label'] ?? $presetId),
+                    'description' => (string) ($kit['description'] ?? ''),
+                ];
+            }
+        }
+
+        return ['ok' => false, 'error' => 'Profil introuvable.'];
+    }
+
+    /**
+     * @param list<int> $currentIds
+     * @param list<int> $targetIds
+     * @param list<array<string,mixed>> $tenantPermissionRows
+     * @return array{ok: true, added: list<array{id: int, name: string, module: string, slug: string}>, removed: list<array{id: int, name: string, module: string, slug: string}>, added_by_module: array<string, list<array{id: int, name: string, module: string, slug: string}>>, removed_by_module: array<string, list<array{id: int, name: string, module: string, slug: string}>>, unchanged_count: int, current_total: int, preset_total: int, added_count: int, removed_count: int}
+     */
+    private function buildDiffFromPermissionIds(array $currentIds, array $targetIds, array $tenantPermissionRows): array
+    {
+        $currentSet = array_flip(array_values(array_unique(array_map('intval', $currentIds))));
+        $targetSet = array_flip(array_values(array_unique(array_map('intval', $targetIds))));
+        $byId = [];
+        foreach ($tenantPermissionRows as $r) {
+            $pid = (int) ($r['id'] ?? 0);
+            if ($pid > 0) {
+                $byId[$pid] = [
+                    'id' => $pid,
+                    'name' => (string) ($r['name'] ?? ''),
+                    'module' => (string) ($r['module'] ?? 'autre'),
+                    'slug' => (string) ($r['slug'] ?? ''),
+                ];
+            }
+        }
+        $added = [];
+        $removed = [];
+        foreach (array_keys($targetSet) as $id) {
+            if (!isset($currentSet[$id])) {
+                $added[] = $byId[$id] ?? ['id' => $id, 'name' => 'Permission #' . $id, 'module' => 'autre', 'slug' => ''];
+            }
+        }
+        foreach (array_keys($currentSet) as $id) {
+            if (!isset($targetSet[$id])) {
+                $removed[] = $byId[$id] ?? ['id' => $id, 'name' => 'Permission #' . $id, 'module' => 'autre', 'slug' => ''];
+            }
+        }
+
+        $group = static function (array $rows): array {
+            $out = [];
+            foreach ($rows as $r) {
+                $m = (string) ($r['module'] ?? 'autre');
+                $out[$m][] = $r;
+            }
+            ksort($out);
+
+            return $out;
+        };
+
+        return [
+            'ok' => true,
+            'added' => $added,
+            'removed' => $removed,
+            'added_by_module' => $group($added),
+            'removed_by_module' => $group($removed),
+            'unchanged_count' => count(array_intersect(array_keys($currentSet), array_keys($targetSet))),
+            'current_total' => count($currentSet),
+            'preset_total' => count($targetSet),
+            'added_count' => count($added),
+            'removed_count' => count($removed),
+        ];
+    }
+
+    /**
+     * @return list<array{id: string, label: string, description: string, permission_ids: list<int>, created_at: string}>
+     */
+    private function listCustomPresetKits(int $tenantId): array
+    {
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $rows = [];
+        if (is_array($settings['roles_custom_preset_kits'] ?? null)) {
+            $rows = $settings['roles_custom_preset_kits'];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $id = trim((string) ($row['id'] ?? ''));
+            $label = trim((string) ($row['label'] ?? ''));
+            if ($id === '' || $label === '') {
+                continue;
+            }
+            $ids = is_array($row['permission_ids'] ?? null) ? array_values(array_unique(array_map('intval', $row['permission_ids']))) : [];
+            if ($ids === []) {
+                continue;
+            }
+            $out[] = [
+                'id' => $id,
+                'label' => $label,
+                'description' => trim((string) ($row['description'] ?? '')),
+                'permission_ids' => $ids,
+                'created_at' => (string) ($row['created_at'] ?? ''),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array<string,mixed>> $kits
+     */
+    private function saveCustomPresetKits(int $tenantId, array $kits): void
+    {
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $settings['roles_custom_preset_kits'] = array_values($kits);
+        $this->tenantRepository->updateSettings($tenantId, $settings);
     }
 
     /**

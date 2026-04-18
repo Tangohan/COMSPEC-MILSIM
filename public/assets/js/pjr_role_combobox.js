@@ -8,6 +8,7 @@
   var activePanel = null;
   var activeTrigger = null;
   var repositionHandler = null;
+  var swallowNextClick = false;
 
   function esc(s) {
     return String(s)
@@ -140,7 +141,7 @@
 
     var panel = document.createElement('div');
     panel.className =
-      'pjr-role-combobox-float fixed z-[400] flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl ring-1 ring-slate-900/5';
+      'pjr-role-combobox-float fixed z-[1200] flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl ring-1 ring-slate-900/5';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'Choisir un emploi');
 
@@ -214,7 +215,11 @@
     }, 10);
   }
 
-  document.addEventListener('click', function (e) {
+  function handleTriggerEvent(e) {
+    if (e.type === 'click' && swallowNextClick) {
+      swallowNextClick = false;
+      return;
+    }
     if (e.target.closest('.pjr-role-combobox-float')) {
       return;
     }
@@ -230,6 +235,25 @@
       return;
     }
     closePanel();
+  }
+
+  document.addEventListener('click', handleTriggerEvent);
+  document.addEventListener('pointerdown', function (e) {
+    if (!e.isPrimary || e.button !== 0) return;
+    swallowNextClick = true;
+    handleTriggerEvent(e);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var trigger = e.target.closest ? e.target.closest('.pjr-role-combobox-trigger') : null;
+    if (!trigger) return;
+    e.preventDefault();
+    if (activeTrigger === trigger && activePanel) {
+      closePanel();
+    } else {
+      openFor(trigger);
+    }
   });
 
   document.addEventListener('keydown', function (e) {

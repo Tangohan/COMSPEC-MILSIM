@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin\Organization;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -35,6 +36,11 @@ class PersonnelJobRoleAdminController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
+        if (!$this->canManageJobRoles()) {
+            Session::flash('error', 'Vous n’avez pas les droits pour gérer le référentiel des emplois.');
+
+            return Response::redirect(url('dashboard'));
+        }
         if (!$this->jobRoleRepository->tablesExist()) {
             return (new Response())->setStatusCode(503)->setBody('Migration rôles métier non appliquée. Exécutez les migrations.');
         }
@@ -63,6 +69,11 @@ class PersonnelJobRoleAdminController
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
+        }
+        if (!$this->canManageJobRoles()) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
         }
         if (!$this->jobRoleRepository->tablesExist()) {
             return (new Response())->setStatusCode(503)->setBody('Migration rôles métier non appliquée.');
@@ -98,6 +109,11 @@ class PersonnelJobRoleAdminController
             Session::flash('error', 'Session expirée.');
 
             return Response::redirect(url('back-office/personnel-job-roles'));
+        }
+        if (!$this->canManageJobRoles()) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
         }
         $id = (int) $request->input('id', 0);
         $categoryId = (int) $request->input('category_id', 0);
@@ -169,6 +185,11 @@ class PersonnelJobRoleAdminController
 
             return Response::redirect(url('back-office/personnel-job-roles'));
         }
+        if (!$this->canManageJobRoles()) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0) {
             return Response::redirect(url('back-office/personnel-job-roles'));
@@ -189,6 +210,11 @@ class PersonnelJobRoleAdminController
             Session::flash('error', 'Session expirée.');
 
             return Response::redirect(url('back-office/personnel-job-roles'));
+        }
+        if (!$this->canManageJobRoles()) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
         }
         $id = (int) $request->input('category_id', 0);
         $parentRaw = $request->input('parent_id');
@@ -237,6 +263,11 @@ class PersonnelJobRoleAdminController
 
             return Response::redirect(url('back-office/personnel-job-roles'));
         }
+        if (!$this->canManageJobRoles()) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0) {
             return Response::redirect(url('back-office/personnel-job-roles'));
@@ -255,6 +286,11 @@ class PersonnelJobRoleAdminController
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
+        }
+        if (!$this->canManageAssignments()) {
+            Session::flash('error', 'Vous n’avez pas les droits pour attribuer les emplois.');
+
+            return Response::redirect(url('dashboard'));
         }
         if (!$this->jobRoleRepository->tablesExist() || !$this->jobRoleRepository->personnelProfilesHaveJobRoleColumns()) {
             return (new Response())->setStatusCode(503)->setBody('Migration rôles métier non appliquée. Exécutez les migrations.');
@@ -326,6 +362,9 @@ class PersonnelJobRoleAdminController
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::json(['ok' => false, 'message' => 'Session expirée.'], 401);
+        }
+        if (!$this->canManageAssignments()) {
+            return Response::json(['ok' => false, 'message' => 'Permission refusée.'], 403);
         }
         if (!$this->jobRoleRepository->tablesExist() || !$this->jobRoleRepository->personnelProfilesHaveJobRoleColumns()) {
             return Response::json(['ok' => false, 'message' => 'Fonction indisponible.'], 503);
@@ -425,6 +464,11 @@ class PersonnelJobRoleAdminController
 
             return Response::redirect(url('back-office/personnel-job-roles/assignments'));
         }
+        if (!$this->canManageAssignments()) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
         $current = $this->tenantRepository->getSettings($tenantId);
         $patch = [
             'max_roles_per_member' => max(1, min(12, (int) $request->input('max_roles_per_member', 5))),
@@ -449,6 +493,11 @@ class PersonnelJobRoleAdminController
             Session::flash('error', 'Session expirée.');
 
             return Response::redirect(url('back-office/personnel-job-roles/assignments'));
+        }
+        if (!$this->canManageAssignments()) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
         }
         if (!$this->jobRoleRepository->tablesExist() || !$this->jobRoleRepository->personnelProfilesHaveJobRoleColumns()) {
             Session::flash('error', 'Migration non appliquée.');
@@ -673,5 +722,23 @@ class PersonnelJobRoleAdminController
         $s = trim($s, '-');
 
         return $s !== '' ? $s : 'categorie';
+    }
+
+    private function canManageJobRoles(): bool
+    {
+        $gate = Gate::getInstance();
+
+        return $gate->allows('admin.organization')
+            || $gate->allows('admin.roles.manage')
+            || $gate->allows('personnel.assignments.manage');
+    }
+
+    private function canManageAssignments(): bool
+    {
+        $gate = Gate::getInstance();
+
+        return $gate->allows('admin.organization')
+            || $gate->allows('personnel.assignments.manage')
+            || $gate->allows('admin.roles.manage');
     }
 }
