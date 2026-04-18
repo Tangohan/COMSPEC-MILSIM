@@ -1436,7 +1436,9 @@ class Container
                 self::get(\App\Repositories\Courrier\CourrierDocumentRepository::class),
                 self::get(\App\Services\Courrier\DocumentBuilderService::class),
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class)
+                self::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class),
+                self::get(\App\Services\Courrier\DocumentWorkflowService::class),
+                self::get(\App\Services\Courrier\DocumentValidationService::class)
             ),
             \App\Controllers\Courrier\CourrierNotificationController::class => new \App\Controllers\Courrier\CourrierNotificationController(
                 self::get(\App\Repositories\Courrier\CourrierDocumentRepository::class),

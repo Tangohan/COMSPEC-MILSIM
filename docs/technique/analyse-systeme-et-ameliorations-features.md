@@ -134,18 +134,20 @@ La présence est suivie, mais l’exploitation de la donnée pour l’améliorat
 ## 4.7 Courrier officiel / Documents
 
 ### Problème
-Les modules sont puissants, mais la traçabilité décisionnelle peut encore gagner en lisibilité.
+Les modules sont puissants, mais la chaîne de décision reste fragmentée entre versions, validations et impacts RH, ce qui nuit à la lisibilité opérationnelle.
 
 ### Améliorations
-- Historique unifié des versions + décisions (qui a validé quoi, quand, pourquoi).
-- Moteur de modèles “smart defaults” basé sur contexte (type, unité, destinataires).
-- Checklists conformité pré-envoi (signature, métadonnées, permissions).
-- Lien bidirectionnel courrier <-> dossier personnel lorsqu’un document impacte un membre.
+- Historique unifié **version + décision** sur une même frise (qui a validé, quand, pourquoi, et sous quelle délégation).
+- Moteur de modèles avec **smart defaults contextuels** (type de courrier, unité émettrice, destinataires, niveau de confidentialité).
+- Checklists de conformité pré-envoi (signature requise, métadonnées minimales, permissions de diffusion, statut des pièces jointes).
+- Lien bidirectionnel **courrier ↔ dossier personnel** lorsqu’un document impacte un membre (consultable depuis les deux écrans).
+- Journal des écarts et exceptions (dérogation de validation, diffusion urgente, correction post-publication) pour auditabilité.
 
 ### KPI
-- Taux d’erreur documentaire détectée avant diffusion.
-- Temps moyen de cycle brouillon -> validé.
+- Taux d’erreur documentaire détectée **avant diffusion**.
+- Temps moyen de cycle **brouillon → validé**.
 - Taux d’usage des modèles recommandés.
+- Délai moyen d’alignement courrier ↔ dossier personnel après publication.
 
 ## 4.8 Administration org/système
 
