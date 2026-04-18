@@ -127,6 +127,9 @@ $canMurOperationnel = $gate->allows('operational.board.view')
     || $gate->allows('admin.organization')
     || $gate->allows('admin.access')
     || $gate->allows('site.support');
+$boNavLmsSubPage = $boNavHrCharter || $boNavLmsFeedback || $boNavStudioActive
+    || $boNavLmsEnrollments || $boNavLmsReports || $boNavLmsCertificates || $boNavLmsAuditTrail || $boNavLmsCompetences;
+$canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support');
 ?>
 <div class="flex h-full min-h-0 flex-col border-r border-slate-800/80 bg-slate-950">
     <div class="border-b border-slate-800/80 px-4 py-5">
@@ -156,8 +159,12 @@ $canMurOperationnel = $gate->allows('operational.board.view')
             <?php $boLink('back-office/recruitment/offers/create', 'Nouvelle offre', $boNavRecOfferNew); ?>
         <?php endif; ?>
         <?php $boLink('back-office/roles', 'Rôles communautaires', $boNavRoles); ?>
-        <?php $boLink('back-office/roles-functions', 'Rôles & fonctions', $boNavRolesFx); ?>
-        <?php $boLink('back-office/personnel-job-roles', 'Emplois & missions', $boNavPjr); ?>
+        <?php $boLink('back-office/roles/presets', 'Profils & kits de rôles', $boNavRolesPresets); ?>
+        <?php $boLink('back-office/roles-functions', 'Cellule S1 — doctrine des fonctions', $boNavRolesFx); ?>
+        <?php $boLink('back-office/personnel-job-roles', 'Emplois & missions', $boNavPjr && !$boNavPjrAssignments); ?>
+        <?php if ($canOrgStructure): ?>
+            <?php $boLink('back-office/personnel-job-roles/assignments', 'Affectations emplois & missions', $boNavPjrAssignments); ?>
+        <?php endif; ?>
         <?php $boLink('deploiement', 'Déploiement personnel', $boNavPersonnelDeployment); ?>
         <?php $boLink('back-office/roleplay-followup', 'Suivi roleplay', $boNavRoleplayFollowup); ?>
 
@@ -170,11 +177,19 @@ $canMurOperationnel = $gate->allows('operational.board.view')
         <?php $boLink('back-office/teams', 'Équipes', $boNavTeams); ?>
         <?php $boLink('back-office/categories', 'Catégories', $boNavCats); ?>
         <?php $boLink('back-office/referentiels/grades', 'Référentiel des grades', $boNavGrades); ?>
+        <?php if ($canOrgStructure): ?>
+            <?php $boLink('back-office/positions', 'Postes & fonctions (état-major)', $boNavPositions); ?>
+        <?php endif; ?>
         <?php if ($canTenantModules || $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support')): ?>
             <?php $boLink('back-office/organisation/anciennete', 'Ancienneté (fiches & RH)', $boNavSeniority); ?>
         <?php endif; ?>
+
+        <?php $boSection('Communications'); ?>
         <?php if ($canCommsSection): ?>
-            <?php $boLink('back-office/communications', 'E-mails aux membres', $boNavCommunications); ?>
+            <?php $boLink('back-office/communications', 'Nouveau message', $boNavCommunications && !$boNavCommsHistory && !$boNavCommsTemplates && !$boNavCommsGroups); ?>
+            <?php $boLink('back-office/communications/history', 'Historique des envois', $boNavCommsHistory); ?>
+            <?php $boLink('back-office/communications/templates', 'Modèles d’e-mail', $boNavCommsTemplates); ?>
+            <?php $boLink('back-office/communications/groups', 'Groupes de diffusion', $boNavCommsGroups); ?>
         <?php endif; ?>
 
         <?php $boSection('Communauté'); ?>
@@ -192,9 +207,15 @@ $canMurOperationnel = $gate->allows('operational.board.view')
         <?php $boLink('back-office/onboarding-recovery', 'Aide après inscription', $boNavOnb); ?>
 
         <?php $boSection('Pilotage'); ?>
+        <?php if ($canMurOperationnel): ?>
+            <?php $boLink('tableau-operationnel', 'Mur opérationnel (vue membres)', $boNavPortalOpsBoard); ?>
+        <?php endif; ?>
         <?php $boLink('back-office/centre-operations', 'Centre d’opérations admin', $boNavOpsAdmin); ?>
-        <?php $boLink('back-office/tableau-operationnel', 'Tableau opérationnel', $boNavOpsBoard); ?>
+        <?php $boLink('back-office/tableau-operationnel', 'Pilotage du mur opérationnel', $boNavOpsBoard); ?>
         <?php $boLink('back-office/courrier/traceabilite', 'Traçabilité courrier', $boNavCourrierTrace); ?>
+        <?php if ($canOrgStructure): ?>
+            <?php $boLink('back-office/conformite/export-dossier', 'Export dossier conformité', $boNavConformite); ?>
+        <?php endif; ?>
         <?php $boLink('back-office/audit', 'Journal d’activité', $boNavAudit); ?>
         <?php if ($canMemberModeration): ?>
             <?php $boLink('back-office/moderation', 'Restrictions membres', $boNavMod); ?>
@@ -208,7 +229,12 @@ $canMurOperationnel = $gate->allows('operational.board.view')
                 <?php $boLink('documents/gestion', 'Bibliothèque documentaire', false); ?>
             <?php endif; ?>
             <?php if ($canTraining): ?>
-                <?php $boLink($lmsResPath, 'Formations', $boNavLmsRes && !$boNavHrCharter); ?>
+                <?php $boLink($lmsResPath, 'Formations (tableau de bord)', $boNavLmsRes && !$boNavLmsSubPage); ?>
+                <?php $boLink('back-office/ressources/training/enrollments', 'Inscriptions & validations', $boNavLmsEnrollments); ?>
+                <?php $boLink('back-office/ressources/training/reports', 'Rapports & suivis', $boNavLmsReports); ?>
+                <?php $boLink('back-office/ressources/training/certificates', 'Certificats & attestations', $boNavLmsCertificates); ?>
+                <?php $boLink('back-office/ressources/training/audit', 'Journal pédagogique (audit)', $boNavLmsAuditTrail); ?>
+                <?php $boLink('back-office/ressources/training/competences/bureau-personnel', 'Compétences personnel', $boNavLmsCompetences); ?>
                 <?php $boLink('back-office/ressources/training/charte-rh', 'Charte RH (formations)', $boNavHrCharter); ?>
                 <?php $boLink('back-office/ressources/training/feedback', 'Feedback post-leçon', $boNavLmsFeedback); ?>
                 <?php $boLink(training_studio_path(), 'Studio des parcours', $boNavStudioActive); ?>
