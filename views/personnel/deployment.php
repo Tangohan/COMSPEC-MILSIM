@@ -7,12 +7,37 @@ $eventFilter = (int) ($deploymentEventFilter ?? 0);
 $campaignTags = is_array($deploymentCampaignTags ?? null) ? $deploymentCampaignTags : [];
 $events = is_array($deploymentEvents ?? null) ? $deploymentEvents : [];
 $csrf = htmlspecialchars((string) ($deploymentCsrf ?? ''), ENT_QUOTES, 'UTF-8');
+$totalRows = count($rows);
+$deployableRows = 0;
+$notDeployableRows = 0;
+foreach ($rows as $sr) {
+    $isDeployableProfile = ((int) ($sr['deployable'] ?? 1)) === 1;
+    if ($isDeployableProfile) {
+        $deployableRows++;
+    } else {
+        $notDeployableRows++;
+    }
+}
 ?>
 <section class="mx-auto w-full max-w-7xl space-y-6">
     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <p class="text-xs font-black uppercase tracking-[0.25em] text-emerald-600">Opérations RH</p>
         <h1 class="mt-2 text-2xl font-black text-slate-900">Déploiement du personnel</h1>
         <p class="mt-2 max-w-4xl text-sm text-slate-600">Déployez les personnels disponibles puis validez leur check-up obligatoire, avec rattachement à une campagne et un événement opérationnel (RSVP connecté automatiquement).</p>
+        <div class="mt-4 grid gap-3 sm:grid-cols-3">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Personnel affiché</p>
+                <p class="mt-1 text-2xl font-black text-slate-900"><?= $totalRows ?></p>
+            </div>
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                <p class="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-700">Déployable</p>
+                <p class="mt-1 text-2xl font-black text-emerald-900"><?= $deployableRows ?></p>
+            </div>
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                <p class="text-[10px] font-black uppercase tracking-[0.14em] text-amber-700">Non déployable</p>
+                <p class="mt-1 text-2xl font-black text-amber-900"><?= $notDeployableRows ?></p>
+            </div>
+        </div>
     </div>
 
     <?php if ($canManage): ?>
@@ -57,6 +82,24 @@ $csrf = htmlspecialchars((string) ($deploymentCsrf ?? ''), ENT_QUOTES, 'UTF-8');
                 $anomalies = is_array($r['anomalies'] ?? null) ? $r['anomalies'] : [];
                 $currentCampaign = trim((string) ($r['campaign_tag'] ?? ''));
                 $currentEventId = (int) ($r['event_id'] ?? 0);
+                $isDeployableProfile = ((int) ($r['deployable'] ?? 1)) === 1;
+                $missingRequirements = [];
+                if (!$isDeployableProfile) {
+                    $missingRequirements[] = 'Profil marqué "non déployable" dans la fiche personnel';
+                }
+                if (trim((string) ($r['primary_role'] ?? '')) === '') {
+                    $missingRequirements[] = 'Rôle principal non renseigné';
+                }
+                if ((int) ($r['primary_unit_id'] ?? 0) < 1) {
+                    $missingRequirements[] = 'Unité principale non renseignée';
+                }
+                if (trim((string) (($r['matricule_internal'] ?? '') ?: ($r['matricule'] ?? ''))) === '') {
+                    $missingRequirements[] = 'Matricule manquant';
+                }
+                if (trim((string) (($r['profile_blood_type'] ?? '') ?: ($r['blood_type'] ?? ''))) === '') {
+                    $missingRequirements[] = 'Groupe sanguin manquant';
+                }
+                $canBeAssigned = $canManage && $status !== 'deployed' && !$isValidated && $missingRequirements === [];
             ?>
             <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="flex flex-wrap items-start justify-between gap-3">
@@ -70,13 +113,27 @@ $csrf = htmlspecialchars((string) ($deploymentCsrf ?? ''), ENT_QUOTES, 'UTF-8');
                             <p class="text-[11px] text-indigo-800">RSVP: <?= htmlspecialchars((string) (($r['event_rsvp_status'] ?? 'non défini')), ENT_QUOTES, 'UTF-8') ?><?= !empty($r['event_checked_in_at']) ? ' · pointé' : '' ?></p>
                         <?php endif; ?>
                     </div>
-                    <div class="text-right">
+                    <div class="flex flex-col items-end gap-2 text-right">
+                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide <?= $isDeployableProfile ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' ?>">
+                            <?= $isDeployableProfile ? 'Déployable' : 'Non déployable' ?>
+                        </span>
                         <span class="inline-flex rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide <?= $isValidated ? 'bg-emerald-100 text-emerald-800' : ($status === 'deployed' ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700') ?>"><?= $isValidated ? 'Check-up validé' : ($status === 'deployed' ? 'Déployé' : 'Non déployé') ?></span>
                         <?php if ($deployedAt !== ''): ?><p class="mt-2 text-xs text-slate-500">Déployé le <?= htmlspecialchars($deployedAt, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
                     </div>
                 </div>
 
-                <?php if ($canManage && $status !== 'deployed' && !$isValidated): ?>
+                <?php if ($missingRequirements !== []): ?>
+                    <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <p class="text-xs font-black uppercase tracking-[0.14em] text-amber-800">Pré-requis manquants</p>
+                        <ul class="mt-2 list-disc space-y-1 pl-4 text-sm text-amber-950">
+                            <?php foreach ($missingRequirements as $missing): ?>
+                                <li><?= htmlspecialchars($missing, ENT_QUOTES, 'UTF-8') ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($canBeAssigned): ?>
                     <form method="post" action="<?= htmlspecialchars(url('deploiement/' . $uid . '/assigner'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 grid gap-3 sm:grid-cols-3">
                         <input type="hidden" name="_csrf" value="<?= $csrf ?>" />
                         <input list="campagnes-list" name="campaign_tag" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Campagne (optionnel)" />
@@ -89,6 +146,10 @@ $csrf = htmlspecialchars((string) ($deploymentCsrf ?? ''), ENT_QUOTES, 'UTF-8');
                         </select>
                         <button type="submit" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold uppercase tracking-wide text-white hover:bg-emerald-700">Déployer ce personnel</button>
                     </form>
+                <?php elseif ($canManage && $status !== 'deployed' && !$isValidated): ?>
+                    <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
+                        Le déploiement est bloqué tant que les pré-requis ci-dessus ne sont pas complétés.
+                    </div>
                 <?php endif; ?>
 
                 <?php if ($status === 'deployed' || $isValidated): ?>
