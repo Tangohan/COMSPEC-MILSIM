@@ -18,15 +18,15 @@
 .recruitment-cmd-shell {
   display: flex;
   flex-direction: column;
-  background: #f5f2eb;
+  background: #f8fafc;
   border-radius: inherit;
 }
 
 .recruitment-cmd-toolbar-wrap {
   flex-shrink: 0;
   padding: 0.85rem 1rem 1rem;
-  background: rgba(255, 255, 255, 0.97);
-  border-bottom: 1px solid rgba(28, 45, 65, 0.1);
+  background: linear-gradient(135deg, #0f172a, #1e293b 60%, #1d4ed8);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 1rem 1rem 0 0;
 }
 
@@ -41,7 +41,7 @@
   font-weight: 800;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #64748b;
+  color: #bfdbfe;
   margin: 0 0 0.65rem;
 }
 
@@ -57,38 +57,39 @@
   align-items: center;
   padding: 0.45rem 0.75rem;
   border-radius: 999px;
-  border: 1px solid #e7e2d9;
-  background: #faf8f3;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(255, 255, 255, 0.08);
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #57534e;
+  color: #e2e8f0;
   text-decoration: none;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .recruitment-cmd-toolbar a:hover {
-  background: #fff;
-  border-color: #d6d3d1;
-  color: #1c2d41;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(191, 219, 254, 0.9);
+  color: #fff;
 }
 
 .recruitment-cmd-toolbar a.is-active {
-  background: linear-gradient(135deg, rgba(201, 162, 39, 0.18), rgba(201, 162, 39, 0.08));
-  border-color: rgba(201, 162, 39, 0.55);
-  color: #422006;
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #dbeafe;
+  color: #0f172a;
+  box-shadow: 0 6px 20px -12px rgba(15, 23, 42, 0.7);
 }
 
 .recruitment-cmd-toolbar__ext {
   margin-left: auto;
   border-style: dashed !important;
-  color: #92400e !important;
+  color: #fef08a !important;
 }
 
 .recruitment-cmd-toolbar__ext:hover {
-  border-color: #c9a227 !important;
-  color: #713f12 !important;
+  border-color: #fef08a !important;
+  color: #fff9c4 !important;
 }
 
 @media (max-width: 640px) {
@@ -100,7 +101,7 @@
 }
 
 .recruitment-cmd-main {
-  background: #f5f2eb;
+  background: #f8fafc;
   min-width: 0;
   border-radius: 0 0 1rem 1rem;
 }

@@ -448,13 +448,63 @@ class AdminRecruitmentsController
             'reject' => 'rejected',
             'block' => 'blocked',
         ];
-        if (!isset($map[$action])) {
+        $followupActions = ['pending', 'interview'];
+        if (!isset($map[$action]) && !in_array($action, $followupActions, true)) {
             Session::flash('error', 'Décision inconnue.');
 
             return Response::redirect(url('back-office/recruitments/' . $id));
         }
         $comment = trim((string) $request->input('reviewer_comment', ''));
         $comment = $comment !== '' ? mb_substr($comment, 0, 4000) : null;
+
+        if (in_array($action, $followupActions, true)) {
+            $linePrefix = $action === 'interview'
+                ? '[DEMANDE ENTRETIEN]'
+                : '[MISE EN ATTENTE]';
+            $detail = $comment;
+            if ($action === 'interview') {
+                $slotRaw = trim((string) $request->input('interview_slot', ''));
+                if ($slotRaw !== '') {
+                    $ts = strtotime($slotRaw);
+                    if ($ts !== false) {
+                        $slotFmt = date('d/m/Y à H:i', $ts);
+                        $detail = trim(($detail ?? '') . ($detail ? "\n" : '') . 'Créneau proposé : ' . $slotFmt);
+                    }
+                }
+            }
+            if ($detail === null || $detail === '') {
+                $detail = $action === 'interview'
+                    ? 'Entretien à planifier avec le candidat.'
+                    : 'Dossier conservé en file d’instruction.';
+            }
+            $fullNote = $linePrefix . "\n" . $detail;
+
+            $okFollowup = $this->enlistmentRepository->appendInstructionFollowup((int) $tenantId, $id, $userId, $fullNote);
+            if (!$okFollowup) {
+                Session::flash('error', 'Impossible d’ajouter le suivi sur ce dossier (introuvable ou déjà traité).');
+
+                return Response::redirect(url('back-office/recruitments/' . $id));
+            }
+
+            $summary = $action === 'interview'
+                ? 'Demande d’entretien consignée'
+                : 'Dossier mis en attente';
+            $this->enlistmentTimelineRepository->append(
+                (int) $tenantId,
+                $id,
+                'staff_note',
+                'instruction',
+                $summary,
+                $detail,
+                $userId,
+                ['followup_action' => $action]
+            );
+            Session::flash('success', $action === 'interview'
+                ? 'Demande d’entretien enregistrée. Le dossier reste en instruction.'
+                : 'Mise en attente enregistrée. Le dossier reste en instruction.');
+
+            return Response::redirect(url('back-office/recruitments/' . $id));
+        }
 
         if ($action === 'accept') {
             $blocked = $this->enlistmentAcceptanceProvisioningService->assertAcceptAllowed((int) $tenantId, $id);

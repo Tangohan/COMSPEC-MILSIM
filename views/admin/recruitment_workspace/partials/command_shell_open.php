@@ -1,8 +1,25 @@
 <?php
 declare(strict_types=1);
 /** @var string $recruitmentAdminNav */
-$active = $recruitmentAdminNav ?? '';
-$is = static fn (string $k): string => $active === $k ? ' is-active' : '';
+$active = (string) ($recruitmentAdminNav ?? '');
+if ($active === '') {
+    $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+    if (str_contains($requestUri, '/back-office/recruitments/messages-prefaits')) {
+        $active = 'messages';
+    } elseif (str_contains($requestUri, '/back-office/recruitments/settings')) {
+        $active = 'sla';
+    } elseif (str_contains($requestUri, '/back-office/recruitment/offers')) {
+        $active = 'offers';
+    } elseif (str_contains($requestUri, '/back-office/ressources/recrutement/analyses')) {
+        $active = 'analytics';
+    } elseif (str_contains($requestUri, '/back-office/ressources/recrutement')) {
+        $active = 'dashboard';
+    } elseif (str_contains($requestUri, '/back-office/recruitments')) {
+        $active = 'queue';
+    }
+}
+$navClass = static fn (string $k): string => $active === $k ? 'is-active' : '';
+$navCurrent = static fn (string $k): string => $active === $k ? ' aria-current="page"' : '';
 $gateNav = \App\Core\Gate::getInstance();
 $canRecOffers = $gateNav->allows('organization.recruitment.openings.manage') || $gateNav->allows('organization.recruitment.manage');
 $canStructureHub = $gateNav->allows('organization.orbat.view')
@@ -20,14 +37,14 @@ $rwAnalyses = function_exists('recruitment_workspace_url') ? recruitment_workspa
         <div class="recruitment-cmd-toolbar-wrap">
             <p class="recruitment-cmd-toolbar-eyebrow">Bureau recrutement</p>
             <nav class="recruitment-cmd-toolbar" aria-label="Sections bureau recrutement">
-                <a href="<?= htmlspecialchars($rwBase, ENT_QUOTES, 'UTF-8') ?>" class="<?= trim($is('dashboard')) ?>">Vue d’ensemble</a>
-                <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="<?= trim($is('queue')) ?>">File des dossiers</a>
-                <a href="<?= htmlspecialchars($rwAnalyses, ENT_QUOTES, 'UTF-8') ?>" class="<?= trim($is('analytics')) ?>">Analyses</a>
+                <a href="<?= htmlspecialchars($rwBase, ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('dashboard'), ENT_QUOTES, 'UTF-8') ?>"<?= $navCurrent('dashboard') ?>>Vue d’ensemble</a>
+                <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('queue'), ENT_QUOTES, 'UTF-8') ?>"<?= $navCurrent('queue') ?>>File des dossiers</a>
+                <a href="<?= htmlspecialchars($rwAnalyses, ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('analytics'), ENT_QUOTES, 'UTF-8') ?>"<?= $navCurrent('analytics') ?>>Analyses</a>
                 <?php if ($canRecOffers): ?>
-                    <a href="<?= htmlspecialchars(url('back-office/recruitment/offers'), ENT_QUOTES, 'UTF-8') ?>" class="<?= trim($is('offers')) ?>">Offres</a>
+                    <a href="<?= htmlspecialchars(url('back-office/recruitment/offers'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('offers'), ENT_QUOTES, 'UTF-8') ?>"<?= $navCurrent('offers') ?>>Offres</a>
                 <?php endif; ?>
-                <a href="<?= htmlspecialchars(url('back-office/recruitments/settings'), ENT_QUOTES, 'UTF-8') ?>" class="<?= trim($is('sla')) ?>">Délais</a>
-                <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits'), ENT_QUOTES, 'UTF-8') ?>" class="<?= trim($is('messages')) ?>">Messages préfaits</a>
+                <a href="<?= htmlspecialchars(url('back-office/recruitments/settings'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('sla'), ENT_QUOTES, 'UTF-8') ?>"<?= $navCurrent('sla') ?>>Délais</a>
+                <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('messages'), ENT_QUOTES, 'UTF-8') ?>"<?= $navCurrent('messages') ?>>Messages préfaits</a>
                 <?php if ($canStructureHub): ?>
                     <a href="<?= htmlspecialchars(url('back-office/organisation/structure'), ENT_QUOTES, 'UTF-8') ?>" class="recruitment-cmd-toolbar__ext">Structure &amp; recrutement</a>
                 <?php endif; ?>

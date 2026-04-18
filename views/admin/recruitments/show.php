@@ -368,6 +368,7 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
                               var raw = document.getElementById('enlistment-canned-json');
                               var ta = document.getElementById('reviewer_comment');
                               var actionButtons = document.querySelectorAll('.enlist-decision-actions [name=\"decision\"]');
+                              var interviewWrap = document.getElementById('interview-slot-wrap');
                               if (!sel || !raw || !ta) return;
                               var list = [];
                               try { list = JSON.parse(raw.textContent || '[]'); } catch (e) { return; }
@@ -381,7 +382,13 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
                                 if (decision === 'accept') return 'accept';
                                 if (decision === 'reject') return 'reject';
                                 if (decision === 'block') return 'reject';
+                                if (decision === 'pending') return 'pending';
+                                if (decision === 'interview') return 'pending';
                                 return 'generic';
+                              };
+                              var syncInterviewField = function () {
+                                if (!interviewWrap) return;
+                                interviewWrap.classList.toggle('hidden', currentDecision !== 'interview');
                               };
                               var updateOptions = function () {
                                 var wanted = toContext(currentDecision);
@@ -396,13 +403,20 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
                                 btn.addEventListener('focus', function () {
                                   currentDecision = btn.value || 'accept';
                                   updateOptions();
+                                  syncInterviewField();
                                 });
                                 btn.addEventListener('mouseenter', function () {
                                   currentDecision = btn.value || 'accept';
                                   updateOptions();
+                                  syncInterviewField();
+                                });
+                                btn.addEventListener('click', function () {
+                                  currentDecision = btn.value || 'accept';
+                                  syncInterviewField();
                                 });
                               });
                               updateOptions();
+                              syncInterviewField();
                               sel.addEventListener('change', function () {
                                 var id = sel.value;
                                 if (!id || !byId[id]) { sel.selectedIndex = 0; return; }
@@ -421,11 +435,39 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
                             $btnBase = 'enlist-decision-btn inline-flex min-h-[2.75rem] items-center justify-center px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer';
                             ?>
                             <button type="submit" name="decision" value="accept" class="<?= $btnBase ?> enlist-decision-btn--accept">Accepter</button>
+                            <button type="submit" name="decision" value="pending" class="<?= $btnBase ?> border-sky-300 bg-sky-100 text-sky-900 hover:bg-sky-200 focus-visible:ring-sky-500">Mettre en attente</button>
+                            <button type="submit" name="decision" value="interview" class="<?= $btnBase ?> border-violet-300 bg-violet-100 text-violet-900 hover:bg-violet-200 focus-visible:ring-violet-500">Demander un entretien</button>
                             <button type="submit" name="decision" value="reject" class="<?= $btnBase ?> enlist-decision-btn--reject">Refuser</button>
                             <button type="submit" name="decision" value="block" class="<?= $btnBase ?> enlist-decision-btn--block">Marquer non admis</button>
                         </div>
-                        <p class="text-xs text-amber-900/85"><strong>Non admis</strong> clôt le dossier de façon définitive pour cette candidature. La note reste dans le service.</p>
+                        <div id="interview-slot-wrap" class="hidden rounded-xl border border-violet-200 bg-violet-50/70 p-4">
+                            <label for="interview_slot" class="block text-xs font-bold uppercase tracking-wide text-violet-900">Créneau d’entretien proposé (optionnel)</label>
+                            <input type="datetime-local" id="interview_slot" name="interview_slot" class="mt-2 w-full max-w-xs rounded-lg border border-violet-300 bg-white px-3 py-2 text-sm text-violet-950">
+                        </div>
+                        <p class="text-xs text-amber-900/85"><strong>En attente</strong> et <strong>demande d’entretien</strong> gardent le dossier dans la file. <strong>Non admis</strong> clôt le dossier de façon définitive pour cette candidature.</p>
                     </form>
+                </div>
+            </section>
+            <?php endif; ?>
+
+            <?php if ($statusRaw === 'submitted'): ?>
+            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-200 bg-slate-50 px-6 py-3">
+                    <h2 class="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-600">Espaces complémentaires de recrutement</h2>
+                </div>
+                <div class="grid gap-4 p-6 md:grid-cols-3">
+                    <article class="rounded-xl border border-sky-200 bg-sky-50/70 p-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-sky-900">Pré-qualification</h3>
+                        <p class="mt-2 text-sm text-sky-900/90">Utilisez « Mettre en attente » pour conserver le dossier actif le temps d’obtenir des informations complémentaires.</p>
+                    </article>
+                    <article class="rounded-xl border border-violet-200 bg-violet-50/70 p-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-violet-900">Entretien</h3>
+                        <p class="mt-2 text-sm text-violet-900/90">« Demander un entretien » journalise le besoin d’échange et peut inclure un créneau proposé.</p>
+                    </article>
+                    <article class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-emerald-900">Décision finale</h3>
+                        <p class="mt-2 text-sm text-emerald-900/90">Accepter, refuser ou non admettre finalise l’arbitrage RH et met à jour l’état du dossier.</p>
+                    </article>
                 </div>
             </section>
             <?php endif; ?>
@@ -549,3 +591,21 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
     </div>
 </div>
 <?php require base_path('views/admin/recruitment_workspace/partials/command_shell_close.php'); ?>
+<?php if ($statusRaw === 'submitted'): ?>
+<script>
+(function () {
+    var wrap = document.getElementById('interview-slot-wrap');
+    var buttons = document.querySelectorAll('.enlist-decision-actions [name="decision"]');
+    if (!wrap || !buttons.length) return;
+    var sync = function (value) {
+        wrap.classList.toggle('hidden', value !== 'interview');
+    };
+    buttons.forEach(function (btn) {
+        btn.addEventListener('focus', function () { sync(btn.value || ''); });
+        btn.addEventListener('mouseenter', function () { sync(btn.value || ''); });
+        btn.addEventListener('click', function () { sync(btn.value || ''); });
+    });
+    sync('');
+})();
+</script>
+<?php endif; ?>
