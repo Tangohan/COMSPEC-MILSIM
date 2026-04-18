@@ -7,6 +7,7 @@ $roleCounts = $opsCenterRoleCounts ?? ['moderator' => 0, 'support' => 0, 'admin'
 $templates = $opsCenterTemplates ?? [];
 $statusDictionary = $opsCenterStatusDictionary ?? [];
 $crossLinks = $opsCenterCrossLinks ?? [];
+$priorityBacklog = $opsCenterPriorityBacklog ?? [];
 
 $roleLabels = [
     'moderator' => 'Modérateur',
@@ -24,6 +25,11 @@ $priorityBadge = [
     'high' => 'bg-rose-100 text-rose-800 border-rose-200',
     'medium' => 'bg-amber-100 text-amber-900 border-amber-200',
     'low' => 'bg-slate-100 text-slate-700 border-slate-200',
+];
+
+$ticketPriorityBadge = [
+    'P0' => 'bg-rose-100 text-rose-800 border-rose-200',
+    'P1' => 'bg-amber-100 text-amber-900 border-amber-200',
 ];
 ?>
 <div class="min-h-0 flex-1 bg-slate-50">
@@ -112,6 +118,49 @@ $priorityBadge = [
             </div>
 
             <p id="ops-actions-empty" class="hidden mt-3 text-sm text-slate-500">Aucune action ne correspond aux filtres sélectionnés.</p>
+        </section>
+
+        <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-labelledby="ops-backlog-heading">
+            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-4">
+                <div>
+                    <h2 id="ops-backlog-heading" class="text-lg font-bold text-slate-900">Backlog prioritaire plateforme</h2>
+                    <p class="text-sm text-slate-600">Section intégrée au système avec les 10 tickets prioritaires à piloter.</p>
+                </div>
+                <span class="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-800">
+                    <?= count($priorityBacklog) ?> ticket(s)
+                </span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col" class="px-3 py-2 text-left font-semibold text-slate-700">Ticket</th>
+                        <th scope="col" class="px-3 py-2 text-left font-semibold text-slate-700">Priorité</th>
+                        <th scope="col" class="px-3 py-2 text-left font-semibold text-slate-700">Résultat attendu</th>
+                        <th scope="col" class="px-3 py-2 text-left font-semibold text-slate-700">Livrable clé</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                    <?php foreach ($priorityBacklog as $ticket): ?>
+                        <?php $prio = (string) ($ticket['priority'] ?? 'P1'); ?>
+                        <tr>
+                            <td class="px-3 py-3 align-top">
+                                <p class="font-semibold text-slate-900"><?= htmlspecialchars((string) ($ticket['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="text-slate-600"><?= htmlspecialchars((string) ($ticket['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                            </td>
+                            <td class="px-3 py-3 align-top">
+                                <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold <?= $ticketPriorityBadge[$prio] ?? $ticketPriorityBadge['P1'] ?>">
+                                    <?= htmlspecialchars($prio, ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                            </td>
+                            <td class="px-3 py-3 align-top text-slate-700"><?= htmlspecialchars((string) ($ticket['outcome'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="px-3 py-3 align-top text-slate-700"><?= htmlspecialchars((string) ($ticket['deliverable'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </section>
 
         <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
