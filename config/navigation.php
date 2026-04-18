@@ -399,6 +399,7 @@ return [
                         ['label' => 'Vitrine publique', 'path' => 'back-office/community/presentation', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Page publique de présentation'],
                         ['label' => 'Événements (gestion)', 'path' => 'back-office/events', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Dossiers de recrutement', 'path' => 'back-office/recruitments', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Onboarding membres', 'path' => 'back-office/onboarding-members', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Suivi J7/J14, activation cross-modules et relances'],
                         ['label' => 'Rubriques du forum', 'path' => 'back-office/categories', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Arborescence des catégories et sous-rubriques'],
                         ['label' => 'Invitations', 'path' => 'back-office/invitations', 'any_permissions' => ['admin.organization', 'admin.access', 'invitations.send']],
                         ['label' => 'Utilisateurs', 'path' => 'back-office/users', 'any_permissions' => ['admin.organization', 'admin.access']],
