@@ -63,6 +63,8 @@ $canRecOffers = $gate->allows('organization.recruitment.openings.manage') || $ga
 $boNavRoles = $p === 'back-office/roles' || str_starts_with($p, 'back-office/roles/');
 $boNavRolesFx = $p === 'back-office/roles-functions' || str_starts_with($p, 'back-office/roles-functions/');
 $boNavPjr = str_starts_with($p, 'back-office/personnel-job-roles');
+$boNavPersonnelDeployment = str_starts_with($p, 'deploiement');
+$boNavRoleplayFollowup = str_starts_with($p, 'back-office/roleplay-followup');
 $boNavEff = str_starts_with($p, 'back-office/organisation-effectifs');
 $boNavStructureHub = str_starts_with($p, 'back-office/organisation/structure');
 $boNavGroups = str_starts_with($p, 'back-office/groups');
@@ -127,6 +129,8 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
         <?php $boLink('back-office/roles', 'Rôles communautaires', $boNavRoles); ?>
         <?php $boLink('back-office/roles-functions', 'Rôles & fonctions', $boNavRolesFx); ?>
         <?php $boLink('back-office/personnel-job-roles', 'Emplois & missions', $boNavPjr); ?>
+        <?php $boLink('deploiement', 'Déploiement personnel', $boNavPersonnelDeployment); ?>
+        <?php $boLink('back-office/roleplay-followup', 'Suivi roleplay', $boNavRoleplayFollowup); ?>
 
         <?php $boSection('Organisation'); ?>
         <?php $boLink('back-office/organisation-effectifs', 'Structure des effectifs', $boNavEff); ?>
