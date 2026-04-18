@@ -344,6 +344,9 @@ return function (Router $router) {
     $router->post('/documents/gestion/{id}/archiver', [AdminDocumentsController::class, 'archive'], $mwDocuments);
     $router->get('/documents/gestion/{id}/historique', [AdminDocumentsController::class, 'history'], $mwDocuments);
     $router->get('/documents/gestion/{id}/acces', [AdminDocumentsController::class, 'access'], $mwDocuments);
+    $router->post('/documents/{id}/unlock', [DocumentsController::class, 'unlock'], $mwDocuments);
+    $router->post('/documents/{id}/signature', [DocumentsController::class, 'signature'], $mwDocuments);
+    $router->post('/documents/{id}/access-track', [DocumentsController::class, 'accessTrack'], $mwDocuments);
     $router->get('/documents/{id}/file', [DocumentsController::class, 'file'], $mwDocuments);
     $router->get('/documents/{id}/download', [DocumentsController::class, 'download'], $mwDocuments);
     $router->get('/documents/{slug}', [DocumentsController::class, 'show'], $mwDocuments);
