@@ -62,7 +62,8 @@ $boNavRecMessages = str_starts_with($p, 'back-office/recruitments/messages-prefa
 $boNavRecOfferNew = str_starts_with($p, 'back-office/recruitment/offers/create');
 $boNavRecOffers = (str_starts_with($p, 'back-office/recruitment/offers') && !$boNavRecOfferNew) || str_starts_with($p, 'back-office/recruitment/reference-format');
 $canRecOffers = $gate->allows('organization.recruitment.openings.manage') || $gate->allows('organization.recruitment.manage');
-$boNavRoles = $p === 'back-office/roles' || str_starts_with($p, 'back-office/roles/');
+$boNavRolesPresets = str_starts_with($p, 'back-office/roles/presets');
+$boNavRoles = ($p === 'back-office/roles' || str_starts_with($p, 'back-office/roles/')) && !$boNavRolesPresets;
 $boNavRolesFx = $p === 'back-office/roles-functions' || str_starts_with($p, 'back-office/roles-functions/');
 $boNavPjr = str_starts_with($p, 'back-office/personnel-job-roles');
 $boNavPersonnelDeployment = str_starts_with($p, 'deploiement');
@@ -71,6 +72,9 @@ $boNavEff = str_starts_with($p, 'back-office/organisation-effectifs');
 $boNavStructureHub = str_starts_with($p, 'back-office/organisation/structure');
 $boNavGroups = str_starts_with($p, 'back-office/groups');
 $boNavCommunications = str_starts_with($p, 'back-office/communications');
+$boNavCommsHistory = str_starts_with($p, 'back-office/communications/history');
+$boNavCommsTemplates = str_starts_with($p, 'back-office/communications/templates');
+$boNavCommsGroups = str_starts_with($p, 'back-office/communications/groups');
 $canCommsSection = $gate->allows('comms.email.send.orbat')
     || $gate->allows('comms.email.send.mission')
     || $gate->allows('comms.email.send.activity')
@@ -100,15 +104,29 @@ $canMemberModeration = $gate->allows('admin.members.moderate');
 $boNavEventInsights = str_starts_with($p, 'back-office/events/insights');
 $boNavEvents = str_starts_with($p, 'back-office/events') && !$boNavEventInsights;
 $boNavCourrierTrace = str_starts_with($p, 'back-office/courrier/traceabilite');
+$boNavPortalOpsBoard = $p === 'tableau-operationnel' || str_starts_with($p, 'tableau-operationnel/');
 $boNavOpsBoard = str_starts_with($p, 'back-office/tableau-operationnel');
 $boNavOpsAdmin = str_starts_with($p, 'back-office/centre-operations') || str_starts_with($p, 'back-office/operations-admin');
+$boNavPositions = str_starts_with($p, 'back-office/positions');
+$boNavConformite = str_starts_with($p, 'back-office/conformite');
 $studioPath = function_exists('training_studio_path') ? training_studio_path() : 'back-office/ressources/training/studio';
 $boNavStudioActive = str_starts_with($p, $studioPath . '/') || $p === $studioPath;
 $lmsResPath = function_exists('training_lms_admin_path') ? training_lms_admin_path() : 'back-office/ressources/training';
 $boNavLmsRes = $p === $lmsResPath || str_starts_with($p, $lmsResPath . '/');
 $boNavHrCharter = str_starts_with($p, 'back-office/ressources/training/charte-rh');
 $boNavLmsFeedback = str_starts_with($p, 'back-office/ressources/training/feedback');
+$boNavLmsEnrollments = str_starts_with($p, 'back-office/ressources/training/enrollments');
+$boNavLmsReports = str_starts_with($p, 'back-office/ressources/training/reports');
+$boNavLmsCertificates = str_starts_with($p, 'back-office/ressources/training/certificates');
+$boNavLmsAuditTrail = str_starts_with($p, 'back-office/ressources/training/audit');
+$boNavLmsCompetences = str_starts_with($p, 'back-office/ressources/training/competences');
+$boNavPjrAssignments = str_starts_with($p, 'back-office/personnel-job-roles/assignments');
 $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request();
+$canMurOperationnel = $gate->allows('operational.board.view')
+    || $gate->allows('operational.board.edit')
+    || $gate->allows('admin.organization')
+    || $gate->allows('admin.access')
+    || $gate->allows('site.support');
 ?>
 <div class="flex h-full min-h-0 flex-col border-r border-slate-800/80 bg-slate-950">
     <div class="border-b border-slate-800/80 px-4 py-5">

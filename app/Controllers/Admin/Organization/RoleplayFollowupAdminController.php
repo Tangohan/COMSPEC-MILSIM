@@ -79,13 +79,14 @@ final class RoleplayFollowupAdminController
                     $nextDue = $raw;
                 }
             }
+            $rpProgress = $p['rp_followup_progress'] ?? null;
             $rows[] = [
                 'user_id' => $uid,
                 'display_name' => trim((string) ($u['display_name'] ?? '')),
                 'callsign' => trim((string) ($u['callsign'] ?? '')),
                 'stage' => trim((string) ($p['rp_followup_stage'] ?? '')),
                 'status' => trim((string) ($p['rp_followup_status'] ?? '')),
-                'progress' => $p['rp_followup_progress'] !== null ? (int) $p['rp_followup_progress'] : null,
+                'progress' => $rpProgress !== null ? (int) $rpProgress : null,
                 'track' => trim((string) ($p['rp_recruitment_stream'] ?? '')),
                 'tutor_label' => $tutorLabel,
                 'next_due' => $nextDue,
