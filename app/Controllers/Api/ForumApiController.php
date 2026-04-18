@@ -88,6 +88,7 @@ class ForumApiController
             'set_post_reaction' => $this->setPostReaction($input, $userId, $tenantId),
             'clear_post_reaction' => $this->clearPostReaction($input, $userId, $tenantId),
             'set_post_publication_badge' => $this->setPostPublicationBadge($input, $userId, $tenantId),
+            'ack_mandatory_read' => $this->ackMandatoryRead($input, $userId, (int) $tenantId),
             default => Response::json(['success' => false, 'error' => 'Action inconnue'], 400),
         };
     }
@@ -213,7 +214,32 @@ class ForumApiController
         }
         $slug = $this->slugify($title) ?: 'sujet-' . time();
         $slug = $slug . '-' . substr(uniqid('', true), -6);
-        $topicId = $this->topicRepository->create($tenantId, $categoryId, $userId, $title, $slug);
+        $topicOptions = [];
+        $canModerate = function_exists('can') && (can('forum.moderate') || can('forum.moderate_organization'));
+        if ($canModerate) {
+            $priorityLevel = strtolower(trim((string) ($input['mission_priority_level'] ?? '')));
+            $allowedPriorityLevels = ['critical', 'high', 'standard'];
+            if ($priorityLevel !== '' && in_array($priorityLevel, $allowedPriorityLevels, true)) {
+                $topicOptions['mission_priority_level'] = $priorityLevel;
+            }
+            $priorityRole = strtolower(trim((string) ($input['mission_priority_role'] ?? '')));
+            $priorityRole = preg_replace('/[^a-z0-9_]/', '', $priorityRole ?? '');
+            if (is_string($priorityRole) && $priorityRole !== '') {
+                $topicOptions['mission_priority_role'] = $priorityRole;
+            }
+            $mandatoryRead = !empty($input['mandatory_read']);
+            if ($mandatoryRead) {
+                $topicOptions['mandatory_read'] = 1;
+                $dueAtRaw = trim((string) ($input['mandatory_read_due_at'] ?? ''));
+                if ($dueAtRaw !== '') {
+                    $dueTs = strtotime($dueAtRaw);
+                    if ($dueTs !== false) {
+                        $topicOptions['mandatory_read_due_at'] = date('Y-m-d H:i:s', $dueTs);
+                    }
+                }
+            }
+        }
+        $topicId = $this->topicRepository->create($tenantId, $categoryId, $userId, $title, $slug, $topicOptions);
         $firstPostId = $this->postRepository->create($tenantId, $topicId, $userId, $content);
         $this->topicRepository->touchUpdatedAt($topicId);
         $this->userForumStatsRepository->incrementPostCount((int) $tenantId, (int) $userId);
@@ -223,6 +249,29 @@ class ForumApiController
         }
 
         return Response::json(['success' => true, 'topic_id' => $topicId]);
+    }
+
+    private function ackMandatoryRead(array $input, int $userId, int $tenantId): Response
+    {
+        $topicId = (int) ($input['topic_id'] ?? 0);
+        if ($topicId <= 0) {
+            return Response::json(['success' => false, 'error' => 'Sujet invalide'], 400);
+        }
+        $topic = $this->topicRepository->findById($topicId, $tenantId);
+        if (!$topic) {
+            return Response::json(['success' => false, 'error' => 'Sujet introuvable'], 404);
+        }
+        if ((int) ($topic['mandatory_read'] ?? 0) !== 1) {
+            return Response::json(['success' => false, 'error' => 'Ce sujet ne requiert pas d’accusé de réception'], 400);
+        }
+        $this->topicRepository->acknowledgeMandatoryRead($tenantId, $topicId, $userId);
+        $status = $this->topicRepository->getMandatoryReadStatus($tenantId, $topicId, $userId);
+
+        return Response::json([
+            'success' => true,
+            'status' => $status['status'] ?? 'acknowledged',
+            'acknowledged_at' => $status['acknowledged_at'] ?? date('Y-m-d H:i:s'),
+        ]);
     }
 
     private function createPost(array $input, int $userId, int $tenantId): Response
