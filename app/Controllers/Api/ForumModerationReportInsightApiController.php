@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\ForumPostRepository;
 use App\Repositories\ForumReportRepository;
 use App\Repositories\UserRepository;
+use App\Services\Forum\ForumModerationEngine;
 use App\Support\NonDefaultTenantContextGuard;
 
 /**
@@ -22,6 +23,7 @@ final class ForumModerationReportInsightApiController
         private ForumReportRepository $reportRepository,
         private ForumPostRepository $postRepository,
         private UserRepository $userRepository,
+        private ForumModerationEngine $moderationEngine,
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -216,6 +218,70 @@ final class ForumModerationReportInsightApiController
         }
 
         return null;
+    }
+
+    public function manualScan(Request $request, array $params = []): Response
+    {
+        $guard = $this->jsonGuard();
+        if ($guard !== null) {
+            return $guard;
+        }
+
+        if (strtoupper((string) $request->method()) !== 'POST') {
+            return Response::json(['ok' => false, 'error' => 'Méthode non autorisée.'], 405);
+        }
+        $input = $this->jsonInput($request);
+        $csrf = (string) ($input['_csrf_token'] ?? $request->input('_csrf_token', ''));
+        if (!\App\Core\Csrf::validate($csrf)) {
+            return Response::json(['ok' => false, 'error' => 'Jeton CSRF invalide.'], 403);
+        }
+
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        $content = trim((string) ($input['content'] ?? $request->input('content', '')));
+        $target = trim((string) ($input['target'] ?? $request->input('target', '')));
+        $priority = trim((string) ($input['priority'] ?? $request->input('priority', '')));
+        if ($content === '' || mb_strlen($content) < 5) {
+            return Response::json(['ok' => false, 'error' => 'Ajoutez au moins 5 caractères à analyser.'], 422);
+        }
+
+        $scan = $this->moderationEngine->analyze($tenantId, $userId, null, $content);
+        $scorePercent = (int) max(0, min(100, round((float) ($scan['score'] ?? 0.0) * 100)));
+        $status = $scorePercent >= 50 ? 'Auto-flag' : ($scorePercent >= 30 ? 'Surveillance' : 'Validé');
+        $createdAt = new \DateTimeImmutable('now');
+
+        $primaryDetector = 'heuristic';
+        $firstReason = is_array($scan['reasons'] ?? null) ? trim((string) (($scan['reasons'][0] ?? ''))) : '';
+        if ($firstReason !== '') {
+            $primaryDetector = $firstReason;
+        }
+
+        return Response::json([
+            'ok' => true,
+            'scan' => [
+                'target' => $target,
+                'priority' => $priority,
+                'action' => (string) ($scan['action'] ?? 'allow'),
+                'score_percent' => $scorePercent,
+                'status_label' => $status,
+                'primary_detector' => str_replace(['_', '-'], ' ', $primaryDetector),
+                'reasons' => array_values(array_map(static fn ($r): string => str_replace(['_', '-'], ' ', (string) $r), (array) ($scan['reasons'] ?? []))),
+                'created_at' => $createdAt->format(DATE_ATOM),
+                'created_at_label' => $createdAt->format('d/m/Y H:i'),
+            ],
+        ]);
+    }
+
+    /** @return array<string,mixed> */
+    private function jsonInput(Request $request): array
+    {
+        $raw = (string) file_get_contents('php://input');
+        if ($raw === '') {
+            return [];
+        }
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     private static function followUpFrenchLabel(string $code): string

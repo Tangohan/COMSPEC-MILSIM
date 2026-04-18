@@ -875,6 +875,7 @@ return function (Router $router) {
     $router->post('/forum/new-topic', [ForumNewTopicController::class, 'store'], $mwForum);
     $router->get('/back-office/forum-moderation', [ForumModerationDashboardController::class, 'index'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->get('/api/back-office/forum-report/{id}/insight', [ForumModerationReportInsightApiController::class, 'show'], [AuthMiddleware::class]);
+    $router->post('/api/back-office/forum-moderation/manual-scan', [ForumModerationReportInsightApiController::class, 'manualScan'], [AuthMiddleware::class]);
     /** Console modération fichiers / quarantaine : URL canonique /admin/… (alias /back-office/… pour anciens liens). */
     $router->get('/admin/content-moderation', [ContentModerationController::class, 'index'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->get('/admin/content-moderation/{id}/preview', [ContentModerationController::class, 'preview'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
