@@ -90,6 +90,7 @@ $boNavConfig = str_starts_with($p, 'back-office/configuration');
 $boNavAnalytics = str_starts_with($p, 'back-office/analytics');
 $boNavPins = str_starts_with($p, 'back-office/dashboard-pins');
 $boNavCoop = str_starts_with($p, 'back-office/cooperation/');
+$boNavForumMissionPriority = str_starts_with($p, 'back-office/forum/priorite-mission/');
 $boNavOnb = str_starts_with($p, 'back-office/onboarding-recovery');
 $boNavOnbMembers = str_starts_with($p, 'back-office/onboarding-members');
 $boNavAudit = str_starts_with($p, 'back-office/audit');
@@ -191,6 +192,7 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
             <?php if ($canTenantModules): ?>
                 <?php $boLink('admin/modpacks', 'Modpacks', false); ?>
                 <?php $boLink('admin/forum-config', 'Briefing & forum', false); ?>
+                <?php $boLink('back-office/forum/priorite-mission/nouveau', 'Publication priorité mission', $boNavForumMissionPriority); ?>
                 <?php $boLink('back-office/cooperation/missions', 'Coopérations inter-unités', $boNavCoop); ?>
                 <?php if (function_exists('can') && (can('cooperation.catalog.manage') || can('cooperation.announcements.manage'))): ?>
                     <?php $boLink('back-office/cooperation/catalog', 'Types de coopération (catalogue)', str_starts_with($p, 'back-office/cooperation/catalog')); ?>

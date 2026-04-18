@@ -508,6 +508,7 @@ return function (Router $router) {
     $router->post('/back-office/events/{id}/participant/presence', [CommunityEventsAdminController::class, 'forceCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/participant/presence/clear', [CommunityEventsAdminController::class, 'clearCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/cancel', [CommunityEventsAdminController::class, 'cancel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/forum/priorite-mission/nouveau', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('forum/new-topic?mission_priority_level=critical&mandatory_read=1')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/graph.json', [RolesFunctionsAdminController::class, 'graphJson'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/definitions/store', [RolesFunctionsAdminController::class, 'storeDefinition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
