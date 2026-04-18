@@ -78,6 +78,7 @@ return [
                     'links' => [
                         ['label' => 'Accueil du forum', 'path' => 'forum', 'permission' => 'forum.view', 'description' => 'Rubriques, sujets et échanges'],
                         ['label' => 'Publier un sujet', 'path' => 'forum/new-topic', 'permission' => 'forum.create_topic', 'description' => 'Démarrer une discussion'],
+                        ['label' => 'Priorité mission (staff)', 'path' => 'back-office/forum/priorite-mission/nouveau', 'any_permissions' => ['forum.moderate', 'forum.moderate_organization', 'admin.organization', 'admin.access'], 'description' => 'Créer un fil critique avec accusé de lecture'],
                     ],
                 ],
                 [
