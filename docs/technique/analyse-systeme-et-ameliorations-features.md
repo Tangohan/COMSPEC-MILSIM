@@ -168,22 +168,46 @@ Le back-office est complet, mais la priorisation quotidienne reste difficile.
 1. **Observabilité produit + technique**
    - Événements d’usage standardisés (nomenclature commune).
    - Tableaux de bord de santé (erreurs, latence, file jobs, emails, cron).
+   - Contrat d’événements versionné (`domain.object.action.v1`) avec propriétaires métier/techniques.
+   - Revue mensuelle “signal vs bruit” pour supprimer les métriques non actionnables.
 
 2. **Gouvernance des permissions**
    - Audit automatique des droits sensibles.
    - Recertification périodique des rôles.
+   - Inventaire centralisé des permissions critiques (RBAC + exemptions “break glass”).
+   - Rapport d’écarts horodaté (création, extension, révocation) avec validation nominative.
 
 3. **Fiabilité des workflows asynchrones**
    - File de tâches avec retries, idempotence et dead-letter queue.
    - Alerting en cas d’échecs répétés de relances/notifications.
+   - Politique de retries par type de job (backoff exponentiel + jitter).
+   - Clés d’idempotence obligatoires pour toutes les relances utilisateurs (email, webhook, notification).
 
 4. **Qualité UX et design system léger**
    - Standardiser composants feedback (succès/erreur/vide/chargement).
    - Harmoniser la terminologie produit entre modules.
+   - Bibliothèque minimale de patterns (formulaires, tables, filtres, états) partagée avec snippets prêts à l’emploi.
+   - Glossaire produit unique FR/EN aligné avec les libellés back-office et portail.
 
 5. **Stratégie anti-abus et confiance**
    - Scores de risque (contact, forum, enrôlement) + throttling progressif.
    - Mode dégradé sécurisé quand un service externe est indisponible.
+   - Matrice de réponses graduées (silent flag, challenge, blocage temporaire, revue manuelle).
+   - Journal de décisions anti-abus explorable (raison, score, règle déclenchée, durée de mitigation).
+
+### Cadence de livraison recommandée (transverse)
+
+- **S1–S3** : cadrage des schémas d’événements, inventaire permissions sensibles, définition des SLO workflows.
+- **S4–S8** : instrumentation dashboards santé + alerting, déploiement retries/idempotence/DLQ, kit UX feedback V1.
+- **S9–S12** : recertification rôles automatisée, score de risque V1 sur contact/forum, premiers modes dégradés testés.
+
+### Critères d’acceptation minimaux
+
+- Observabilité : >90% des parcours critiques couverts par événements standardisés.
+- Permissions : 100% des rôles sensibles recertifiés sur la période cible.
+- Asynchrone : baisse mesurable des échecs finaux (DLQ) et du temps de reprise.
+- UX : états success/error/loading/empty homogènes sur les 3 modules à plus fort trafic.
+- Anti-abus : réduction des incidents répétés sans hausse significative des faux positifs.
 
 ## 6) Priorisation recommandée (impact / effort)
 
