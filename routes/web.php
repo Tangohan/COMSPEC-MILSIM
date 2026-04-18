@@ -508,6 +508,8 @@ return function (Router $router) {
     $router->post('/back-office/events/{id}/cancel', [CommunityEventsAdminController::class, 'cancel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/graph.json', [RolesFunctionsAdminController::class, 'graphJson'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roles-functions/definitions/store', [RolesFunctionsAdminController::class, 'storeDefinition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roles-functions/relations/store', [RolesFunctionsAdminController::class, 'storeRoleRelation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles', [RoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets', [RoleAdminController::class, 'presets'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets/preview', [RoleAdminController::class, 'presetsPreview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
