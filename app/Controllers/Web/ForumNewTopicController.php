@@ -144,6 +144,7 @@ class ForumNewTopicController
         }
         $fc = forum_config_for_tenant((int) $tenantId);
         $maxLen = (int) ($fc['forum_max_post_length'] ?? 10000);
+        $canSetMissionPriority = function_exists('can') && (can('forum.moderate') || can('forum.moderate_organization'));
 
         return Response::view('layout.forum', [
             'content' => 'forum.new-topic',
@@ -153,6 +154,7 @@ class ForumNewTopicController
             'preselectedCategoryId' => $preselectedCategoryId,
             'maxLen' => $maxLen,
             'forumNewTopicTenantContext' => $forumNewTopicTenantContext,
+            'canSetMissionPriority' => $canSetMissionPriority,
         ]);
     }
 

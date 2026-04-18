@@ -10,6 +10,8 @@ use PDO;
 class ForumTopicRepository
 {
     private PDO $pdo;
+    /** @var array<string, true>|null */
+    private ?array $topicColumnMap = null;
 
     public function __construct()
     {
@@ -152,14 +154,63 @@ class ForumTopicRepository
         return $row ?: null;
     }
 
-    public function create(int $tenantId, int $categoryId, int $userId, string $title, string $slug): int
+    public function create(int $tenantId, int $categoryId, int $userId, string $title, string $slug, array $options = []): int
     {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO forum_topics (tenant_id, category_id, user_id, title, slug, is_pinned, is_locked, is_archived, is_hidden, view_count, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0, 0, NOW(), NOW())'
-        );
-        $stmt->execute([$tenantId, $categoryId, $userId, $title, $slug]);
+        $columns = ['tenant_id', 'category_id', 'user_id', 'title', 'slug', 'is_pinned', 'is_locked', 'is_archived', 'is_hidden', 'view_count', 'created_at', 'updated_at'];
+        $placeholders = ['?', '?', '?', '?', '?', '0', '0', '0', '0', '0', 'NOW()', 'NOW()'];
+        $params = [$tenantId, $categoryId, $userId, $title, $slug];
+
+        $topicColumns = $this->topicColumns();
+        $priorityLevel = trim((string) ($options['mission_priority_level'] ?? ''));
+        if ($priorityLevel !== '' && isset($topicColumns['mission_priority_level'])) {
+            $columns[] = 'mission_priority_level';
+            $placeholders[] = '?';
+            $params[] = $priorityLevel;
+        }
+        $priorityRole = trim((string) ($options['mission_priority_role'] ?? ''));
+        if ($priorityRole !== '' && isset($topicColumns['mission_priority_role'])) {
+            $columns[] = 'mission_priority_role';
+            $placeholders[] = '?';
+            $params[] = $priorityRole;
+        }
+        $mandatoryRead = !empty($options['mandatory_read']) ? 1 : 0;
+        if (isset($topicColumns['mandatory_read'])) {
+            $columns[] = 'mandatory_read';
+            $placeholders[] = '?';
+            $params[] = $mandatoryRead;
+        }
+        $mandatoryDueAt = trim((string) ($options['mandatory_read_due_at'] ?? ''));
+        if ($mandatoryDueAt !== '' && isset($topicColumns['mandatory_read_due_at'])) {
+            $columns[] = 'mandatory_read_due_at';
+            $placeholders[] = '?';
+            $params[] = $mandatoryDueAt;
+        }
+
+        $sql = 'INSERT INTO forum_topics (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $placeholders) . ')';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         return (int) $this->pdo->lastInsertId();
+    }
+
+    /** @return array<string, true> */
+    private function topicColumns(): array
+    {
+        if ($this->topicColumnMap !== null) {
+            return $this->topicColumnMap;
+        }
+        $map = [];
+        $stmt = $this->pdo->query('SHOW COLUMNS FROM forum_topics');
+        if ($stmt) {
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $name = (string) ($row['Field'] ?? '');
+                if ($name !== '') {
+                    $map[$name] = true;
+                }
+            }
+        }
+        $this->topicColumnMap = $map;
+
+        return $map;
     }
 
     public function update(int $id, int $tenantId, array $data): bool
@@ -192,6 +243,80 @@ class ForumTopicRepository
     {
         $stmt = $this->pdo->prepare('UPDATE forum_topics SET view_count = view_count + 1 WHERE id = ?');
         $stmt->execute([$topicId]);
+    }
+
+    public function touchMandatoryReadSeen(int $tenantId, int $topicId, int $userId): void
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "INSERT INTO forum_topic_mandatory_reads (tenant_id, topic_id, user_id, status, seen_at, updated_at, created_at)
+                 VALUES (?, ?, ?, 'seen', NOW(), NOW(), NOW())
+                 ON DUPLICATE KEY UPDATE
+                    status = CASE
+                        WHEN status = 'acknowledged' THEN status
+                        WHEN status = 'overdue' THEN 'seen'
+                        ELSE 'seen'
+                    END,
+                    seen_at = COALESCE(seen_at, NOW()),
+                    updated_at = NOW()"
+            );
+            $stmt->execute([$tenantId, $topicId, $userId]);
+        } catch (\Throwable) {
+        }
+    }
+
+    public function acknowledgeMandatoryRead(int $tenantId, int $topicId, int $userId): void
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "INSERT INTO forum_topic_mandatory_reads (tenant_id, topic_id, user_id, status, seen_at, acknowledged_at, updated_at, created_at)
+                 VALUES (?, ?, ?, 'acknowledged', NOW(), NOW(), NOW(), NOW())
+                 ON DUPLICATE KEY UPDATE
+                    status = 'acknowledged',
+                    seen_at = COALESCE(seen_at, NOW()),
+                    acknowledged_at = NOW(),
+                    updated_at = NOW()"
+            );
+            $stmt->execute([$tenantId, $topicId, $userId]);
+        } catch (\Throwable) {
+        }
+    }
+
+    public function getMandatoryReadStatus(int $tenantId, int $topicId, int $userId): ?array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT ft.mandatory_read, ft.mandatory_read_due_at,
+                        fmr.status, fmr.seen_at, fmr.acknowledged_at
+                 FROM forum_topics ft
+                 LEFT JOIN forum_topic_mandatory_reads fmr
+                    ON fmr.tenant_id = ft.tenant_id
+                   AND fmr.topic_id = ft.id
+                   AND fmr.user_id = ?
+                 WHERE ft.id = ? AND ft.tenant_id = ?
+                 LIMIT 1"
+            );
+            $stmt->execute([$userId, $topicId, $tenantId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (\Throwable) {
+            return null;
+        }
+        if (!$row || (int) ($row['mandatory_read'] ?? 0) !== 1) {
+            return null;
+        }
+        $status = (string) ($row['status'] ?? 'unseen');
+        $dueAt = (string) ($row['mandatory_read_due_at'] ?? '');
+        $isOverdue = $dueAt !== '' && strtotime($dueAt) !== false && strtotime($dueAt) < time() && $status !== 'acknowledged';
+        if ($isOverdue) {
+            $status = 'overdue';
+        }
+
+        return [
+            'status' => $status,
+            'seen_at' => $row['seen_at'] ?? null,
+            'acknowledged_at' => $row['acknowledged_at'] ?? null,
+            'mandatory_read_due_at' => $row['mandatory_read_due_at'] ?? null,
+        ];
     }
 
     /**

@@ -140,7 +140,7 @@ Le LMS est riche, mais le lien avec progression opérationnelle et événements 
 ## 4.5 Forum et communication communautaire
 
 ### Problème
-Le forum existe, mais n’est pas toujours intégré aux flux de mission quotidiens.
+Le forum existe, mais n’est pas toujours intégré aux flux de mission quotidiens : les informations critiques se noient dans le volume général, le suivi de lecture est partiel et les échanges staff arrivent parfois trop tard.
 
 ### Améliorations
 - Fil “priorité mission” (annonces critiques, doctrine, AAR) épinglé par rôle.
@@ -148,10 +148,34 @@ Le forum existe, mais n’est pas toujours intégré aux flux de mission quotidi
 - Relances de lecture ciblées pour contenus obligatoires (avec ack).
 - Pont avec messagerie interne pour notifications à fort impact.
 
+### Détail d’implémentation proposé
+- **Canal “Priorité mission” par tenant + audience RBAC** :
+  - Nouvelle taxonomie `mission_priority` avec niveaux (`critical`, `high`, `standard`) et cibles (`all`, `command`, `instructors`, `recruiters`, etc.).
+  - Épinglage contextuel selon rôle au chargement du tableau de bord forum.
+  - Règle de visibilité stricte (tenant + rôle + statut actif) pour éviter la surcharge hors périmètre.
+- **Digest hebdomadaire intelligent** :
+  - Job planifié hebdo qui agrège : threads prioritaires, top réponses staff, AAR récents, sujets sans réponse > X heures.
+  - Génération d’un digest court (3-7 items) et d’un digest long (avec liens directs et actions suggérées).
+  - Publication dans le forum + envoi optionnel par notification interne.
+- **Lecture obligatoire avec accusé de réception (ack)** :
+  - Drapeau `mandatory_read` au niveau sujet/post + date limite de lecture.
+  - Tracking des statuts (`unseen`, `seen`, `acknowledged`, `overdue`) pour chaque membre ciblé.
+  - Relances automatiques ciblées (J+1, J+3, J+7) avec escalade vers staff si `overdue`.
+- **Pont forum ↔ messagerie interne** :
+  - Événements forum critiques transformés en notifications “impact fort” dans la messagerie interne.
+  - Idempotence sur les envois (clé d’événement unique) pour éviter les doublons.
+  - Deep-links vers le post exact + CTA “Accuser réception” si contenu obligatoire.
+
 ### KPI
 - Taux de lecture des publications prioritaires.
 - Temps médian publication → première réponse staff.
 - Ratio sujets actifs / sujets créés à 7 jours.
+
+### Instrumentation KPI (définition opérationnelle)
+- **Taux de lecture prioritaire** = `membres ciblés ayant vu le post / membres ciblés total` (fenêtre 72h).
+- **Temps médian de première réponse staff** = médiane `(timestamp première réponse staff - timestamp publication)` sur les posts prioritaires.
+- **Ratio sujets actifs à J+7** = `sujets avec au moins 1 réponse entre J0 et J7 / sujets créés`.
+- Segmenter tous les KPI par tenant, rôle cible et niveau de priorité pour piloter la qualité de diffusion.
 
 ## 4.6 Événements / Pointage
 
