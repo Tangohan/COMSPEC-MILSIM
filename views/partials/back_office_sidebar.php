@@ -97,7 +97,7 @@ $boNavAudit = str_starts_with($p, 'back-office/audit');
 $boNavMod = str_starts_with($p, 'back-office/moderation');
 $canMemberModeration = $gate->allows('admin.members.moderate');
 $boNavEvents = str_starts_with($p, 'back-office/events');
-$boNavEventInsights = str_starts_with($p, 'back-office/events/insights');
+$boNavCourrierTrace = str_starts_with($p, 'back-office/courrier/traceabilite');
 $boNavOpsBoard = str_starts_with($p, 'back-office/tableau-operationnel');
 $boNavOpsAdmin = str_starts_with($p, 'back-office/centre-operations') || str_starts_with($p, 'back-office/operations-admin');
 $studioPath = function_exists('training_studio_path') ? training_studio_path() : 'back-office/ressources/training/studio';
@@ -172,6 +172,7 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
         <?php $boSection('Pilotage'); ?>
         <?php $boLink('back-office/centre-operations', 'Centre d’opérations admin', $boNavOpsAdmin); ?>
         <?php $boLink('back-office/tableau-operationnel', 'Tableau opérationnel', $boNavOpsBoard); ?>
+        <?php $boLink('back-office/courrier/traceabilite', 'Traçabilité courrier', $boNavCourrierTrace); ?>
         <?php $boLink('back-office/audit', 'Journal d’activité', $boNavAudit); ?>
         <?php if ($canMemberModeration): ?>
             <?php $boLink('back-office/moderation', 'Restrictions membres', $boNavMod); ?>

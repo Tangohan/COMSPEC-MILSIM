@@ -138,5 +138,6 @@ $h = static fn (string $s): string => $baseUrl . '/courrier/history?status=' . r
         <a href="<?= $baseUrl ?>/courrier/presets" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">Formats</a>
         <a href="<?= $baseUrl ?>/courrier/history" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">Historique complet</a>
         <a href="<?= $baseUrl ?>/courrier/archives" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">Archives</a>
+        <a href="<?= $baseUrl ?>/courrier/traceabilite" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">Traçabilité décisionnelle</a>
     </nav>
 </div>

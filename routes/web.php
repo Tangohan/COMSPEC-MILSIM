@@ -508,7 +508,7 @@ return function (Router $router) {
     $router->post('/back-office/events/{id}/participant/presence', [CommunityEventsAdminController::class, 'forceCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/participant/presence/clear', [CommunityEventsAdminController::class, 'clearCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/cancel', [CommunityEventsAdminController::class, 'cancel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/forum/priorite-mission/nouveau', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('forum/new-topic?mission_priority_level=critical&mandatory_read=1')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/courrier/traceabilite', [CourrierDashboardController::class, 'traceability'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/graph.json', [RolesFunctionsAdminController::class, 'graphJson'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/definitions/store', [RolesFunctionsAdminController::class, 'storeDefinition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -843,6 +843,7 @@ return function (Router $router) {
     $router->get('/courrier/api/snippets', [CourrierSnippetController::class, 'list'], $mwCourrier);
     $router->get('/courrier/history', [CourrierDashboardController::class, 'history'], $mwCourrier);
     $router->get('/courrier/archives', [CourrierDashboardController::class, 'archives'], $mwCourrier);
+    $router->get('/courrier/traceabilite', [CourrierDashboardController::class, 'traceability'], $mwCourrier);
 
     // Sortie vers lien externe (interstitiel sécurité)
     $router->get('/leave', [ExternalLeaveController::class, 'show'], [AuthMiddleware::class]);
