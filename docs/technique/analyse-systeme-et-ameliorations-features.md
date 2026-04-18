@@ -83,6 +83,45 @@ Après inscription, la marche à suivre dépend trop de la connaissance implicit
 - Taux de complétion onboarding à J7/J14.
 - % de nouveaux membres ayant réalisé au moins 1 action dans 3 modules distincts.
 
+### Cadrage d'implémentation recommandé
+- **Checklist onboarding multi-modules (source unique)**
+  - Étapes standard : `profil_complet`, `presentation_forum`, `document_essentiel_lu`, `formation_entree_completee`, `evenement_rejoint`.
+  - Chaque étape expose : module source, action attendue, statut (`todo`, `done`, `skipped`), date d’échéance, criticité.
+  - Les actions sont alimentées par des événements applicatifs déjà existants (forum, docs, formation, événements) plutôt que par des doubles saisies staff.
+- **Plans par rôle (templates activables)**
+  - `membre` : parcours de base orienté activation rapide.
+  - `cadre` : ajoute obligations organisationnelles (lecture doctrine + prise de poste).
+  - `instructeur` : ajoute validation d’outils pédagogiques et publication d’une première ressource.
+  - `recruteur` : ajoute traitements candidats + conformité process.
+  - Les templates restent surchargeables par tenant (ordre, obligatoire/facultatif, délais).
+- **Nudges intelligents**
+  - Nudge J+2 si aucune action validée.
+  - Nudge contextuel si une tâche critique est manquante à J+5.
+  - Nudge staff si risque d’échec onboarding à J+7 (ex: 0 action cross-modules ou < 40% complétion).
+  - Canaux recommandés : in-app prioritaire, puis e-mail de relance si inactivité persistante.
+- **Visibilité progression**
+  - Côté membre : badge de progression global (ex: `3/5`) + prochaine action suggérée.
+  - Côté staff : vue liste avec filtres par rôle, ancienneté, score de risque, module bloquant.
+  - Exposer un état “bloqué par dépendance” quand une étape nécessite une validation préalable.
+
+### Instrumentation KPI minimale (version 1)
+- **KPI 1 — Taux de complétion J7/J14**
+  - Numérateur : membres inscrits ayant un onboarding à 100% à J7/J14.
+  - Dénominateur : membres inscrits sur la même cohorte avec au moins 7/14 jours d’ancienneté.
+- **KPI 2 — Activation cross-modules**
+  - `% nouveaux membres avec >= 1 action dans >= 3 modules distincts` sur fenêtre J0-J14.
+  - Modules suivis recommandés : profil/RH, forum, documents, formations, événements.
+- **KPI de pilotage complémentaire**
+  - Délai médian inscription -> première action utile.
+  - Répartition des étapes les plus bloquantes (top 5 causes d’inachèvement).
+  - Taux d’efficacité des nudges (ouverture/clic/action réalisée sous 72 h).
+
+### Lotissement exécutable
+1. **Lot A (fondation, 1-2 sprints)** : modèle checklist + événements de complétion + affichage badge membre.
+2. **Lot B (activation, 1 sprint)** : templates onboarding par rôle + personnalisation tenant.
+3. **Lot C (rétention, 1 sprint)** : moteur de nudges + file de suivi staff.
+4. **Lot D (pilotage, continu)** : dashboard cohortes J7/J14 + analyse des points de friction.
+
 ## 4.4 LMS / Training Studio
 
 ### Problème

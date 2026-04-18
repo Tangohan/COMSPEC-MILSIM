@@ -89,6 +89,7 @@ $boNavAnalytics = str_starts_with($p, 'back-office/analytics');
 $boNavPins = str_starts_with($p, 'back-office/dashboard-pins');
 $boNavCoop = str_starts_with($p, 'back-office/cooperation/');
 $boNavOnb = str_starts_with($p, 'back-office/onboarding-recovery');
+$boNavOnbMembers = str_starts_with($p, 'back-office/onboarding-members');
 $boNavAudit = str_starts_with($p, 'back-office/audit');
 $boNavMod = str_starts_with($p, 'back-office/moderation');
 $canMemberModeration = $gate->allows('admin.members.moderate');
@@ -158,6 +159,7 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
         <?php endif; ?>
         <?php $boLink('back-office/analytics', 'Indicateurs d’usage', $boNavAnalytics); ?>
         <?php $boLink('back-office/dashboard-pins', 'Raccourcis du portail', $boNavPins); ?>
+        <?php $boLink('back-office/onboarding-members', 'Onboarding membres', $boNavOnbMembers); ?>
         <?php $boLink('back-office/onboarding-recovery', 'Aide après inscription', $boNavOnb); ?>
 
         <?php $boSection('Pilotage'); ?>
