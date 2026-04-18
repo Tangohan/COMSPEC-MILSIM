@@ -47,6 +47,55 @@ $dailyMax = 0;
 foreach ($platformDailyEvents as $de) {
     $dailyMax = max($dailyMax, (int) ($de['events'] ?? 0));
 }
+
+$transverseTracks = [
+    [
+        'title' => 'Observabilité produit + technique',
+        'summary' => 'Normaliser les événements d’usage et piloter la santé plateforme (erreurs, latence, jobs, emails, cron).',
+        'kpi_label' => 'Événements de suivi (période)',
+        'kpi_value' => (int) ($kpis['usage_events_in_period'] ?? 0),
+        'target_label' => 'Traçabilité active',
+        'status' => ((int) ($kpis['usage_events_in_period'] ?? 0) > 0) ? 'ok' : 'watch',
+    ],
+    [
+        'title' => 'Gouvernance des permissions',
+        'summary' => 'Auditer les droits sensibles et recertifier régulièrement les rôles critiques.',
+        'kpi_label' => 'Écritures journal d’audit (période)',
+        'kpi_value' => (int) ($kpis['audit_actions_in_period'] ?? 0),
+        'target_label' => 'Contrôle continu',
+        'status' => ((int) ($kpis['audit_actions_in_period'] ?? 0) >= 10) ? 'ok' : 'watch',
+    ],
+    [
+        'title' => 'Fiabilité des workflows asynchrones',
+        'summary' => 'Sécuriser retries, idempotence, dead-letter queue et alerting sur échecs répétés.',
+        'kpi_label' => 'Relances opérationnelles',
+        'kpi_value' => (int) ($kpis['enlistments_created_in_period'] ?? 0) + (int) ($kpis['training_enrollments_assigned_in_period'] ?? 0),
+        'target_label' => 'Flux suivis',
+        'status' => (((int) ($kpis['enlistments_created_in_period'] ?? 0) + (int) ($kpis['training_enrollments_assigned_in_period'] ?? 0)) > 0) ? 'ok' : 'watch',
+    ],
+    [
+        'title' => 'Qualité UX et design system léger',
+        'summary' => 'Standardiser feedback (succès/erreur/vide/chargement) et harmoniser la terminologie produit.',
+        'kpi_label' => 'Actions utilisateurs distinctes',
+        'kpi_value' => (int) ($kpis['usage_distinct_actors_in_period'] ?? 0),
+        'target_label' => 'Adoption transverse',
+        'status' => ((int) ($kpis['usage_distinct_actors_in_period'] ?? 0) > 0) ? 'ok' : 'watch',
+    ],
+    [
+        'title' => 'Stratégie anti-abus et confiance',
+        'summary' => 'Déployer scores de risque, throttling progressif et mode dégradé sécurisé.',
+        'kpi_label' => 'Signal de vigilance',
+        'kpi_value' => (int) ($kpis['audit_actions_in_period'] ?? 0) + (int) ($kpis['forum_posts_in_period'] ?? 0),
+        'target_label' => 'Monitoring actif',
+        'status' => (((int) ($kpis['audit_actions_in_period'] ?? 0) + (int) ($kpis['forum_posts_in_period'] ?? 0)) > 0) ? 'watch' : 'risk',
+    ],
+];
+
+$statusUi = [
+    'ok' => ['label' => 'En place', 'class' => 'bg-emerald-50 text-emerald-800 border-emerald-200'],
+    'watch' => ['label' => 'À consolider', 'class' => 'bg-amber-50 text-amber-800 border-amber-200'],
+    'risk' => ['label' => 'À initialiser', 'class' => 'bg-rose-50 text-rose-800 border-rose-200'],
+];
 ?>
 <div class="max-w-6xl mx-auto px-6 py-10">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -63,6 +112,40 @@ foreach ($platformDailyEvents as $de) {
             <a href="<?= htmlspecialchars(url('admin'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm text-slate-500 hover:text-slate-800 ml-1">Tableau de bord</a>
         </div>
     </div>
+
+    <section class="mb-10">
+        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Chantiers techniques transverses (mise en œuvre système)</h2>
+        <p class="text-sm text-slate-600 mb-4 max-w-3xl">
+            Cette section implémente le pilotage des 5 chantiers dans l’interface d’administration site avec une lecture
+            directe des signaux disponibles sur la période sélectionnée.
+        </p>
+        <div class="grid lg:grid-cols-2 gap-4">
+            <?php foreach ($transverseTracks as $track):
+                $status = (string) ($track['status'] ?? 'watch');
+                $ui = $statusUi[$status] ?? $statusUi['watch'];
+                ?>
+                <article class="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <h3 class="text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($track['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
+                        <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold <?= htmlspecialchars((string) ($ui['class'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                            <?= htmlspecialchars((string) ($ui['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                    </div>
+                    <p class="mt-2 text-xs text-slate-600"><?= htmlspecialchars((string) ($track['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                    <dl class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <div class="rounded-lg bg-slate-50 border border-slate-200 p-2">
+                            <dt class="uppercase tracking-wide text-slate-500"><?= htmlspecialchars((string) ($track['kpi_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dt>
+                            <dd class="mt-1 text-base font-black text-slate-900 tabular-nums"><?= (int) ($track['kpi_value'] ?? 0) ?></dd>
+                        </div>
+                        <div class="rounded-lg bg-slate-50 border border-slate-200 p-2">
+                            <dt class="uppercase tracking-wide text-slate-500">Objectif</dt>
+                            <dd class="mt-1 text-sm font-semibold text-slate-800"><?= htmlspecialchars((string) ($track['target_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd>
+                        </div>
+                    </dl>
+                </article>
+            <?php endforeach; ?>
+        </div>
+    </section>
 
     <section class="mb-10">
         <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Activité enregistrée (tout le site)</h2>
