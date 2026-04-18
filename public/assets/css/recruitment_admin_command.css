@@ -1,0 +1,217 @@
+/**
+ * Bureau recrutement — coque type « command » (grain, barre horizontale).
+ */
+
+.recruitment-cmd {
+  position: relative;
+}
+
+.recruitment-cmd__grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  border-radius: inherit;
+}
+
+.recruitment-cmd-shell {
+  display: flex;
+  flex-direction: column;
+  background: #f5f2eb;
+  border-radius: inherit;
+}
+
+.recruitment-cmd-toolbar-wrap {
+  flex-shrink: 0;
+  padding: 0.85rem 1rem 1rem;
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid rgba(28, 45, 65, 0.1);
+  border-radius: 1rem 1rem 0 0;
+}
+
+@media (min-width: 768px) {
+  .recruitment-cmd-toolbar-wrap {
+    padding: 1rem 1.5rem 1.1rem;
+  }
+}
+
+.recruitment-cmd-toolbar-eyebrow {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin: 0 0 0.65rem;
+}
+
+.recruitment-cmd-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.35rem;
+}
+
+.recruitment-cmd-toolbar a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #e7e2d9;
+  background: #faf8f3;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #57534e;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.recruitment-cmd-toolbar a:hover {
+  background: #fff;
+  border-color: #d6d3d1;
+  color: #1c2d41;
+}
+
+.recruitment-cmd-toolbar a.is-active {
+  background: linear-gradient(135deg, rgba(201, 162, 39, 0.18), rgba(201, 162, 39, 0.08));
+  border-color: rgba(201, 162, 39, 0.55);
+  color: #422006;
+}
+
+.recruitment-cmd-toolbar__ext {
+  margin-left: auto;
+  border-style: dashed !important;
+  color: #92400e !important;
+}
+
+.recruitment-cmd-toolbar__ext:hover {
+  border-color: #c9a227 !important;
+  color: #713f12 !important;
+}
+
+@media (max-width: 640px) {
+  .recruitment-cmd-toolbar__ext {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.recruitment-cmd-main {
+  background: #f5f2eb;
+  min-width: 0;
+  border-radius: 0 0 1rem 1rem;
+}
+
+.recruitment-cmd-main-inner {
+  padding: 1.25rem 1rem 2rem;
+}
+
+@media (min-width: 768px) {
+  .recruitment-cmd-main-inner {
+    padding: 1.75rem 1.75rem 2.5rem;
+  }
+}
+
+.recruitment-cmd-panel {
+  border-radius: 1rem;
+  border: 1px solid rgba(28, 45, 65, 0.12);
+  background: #fff;
+  box-shadow: 0 18px 50px -24px rgba(28, 45, 65, 0.25);
+  padding: 1.25rem 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .recruitment-cmd-panel {
+    padding: 1.5rem 1.75rem;
+  }
+}
+
+.recruitment-cmd-kicker {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #92400e;
+  margin: 0 0 0.35rem;
+}
+
+.recruitment-cmd-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #1c2d41;
+  margin: 0 0 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .recruitment-cmd-title {
+    font-size: 1.75rem;
+  }
+}
+
+.recruitment-cmd-stat {
+  border-radius: 0.75rem;
+  border: 1px solid #e7e5e4;
+  background: #fafaf9;
+  padding: 0.85rem 1rem;
+}
+
+.recruitment-cmd-stat__k {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #78716c;
+  margin: 0;
+}
+
+.recruitment-cmd-stat__v {
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #1c2d41;
+  margin: 0.25rem 0 0;
+}
+
+.recruitment-cmd-card {
+  display: block;
+  border-radius: 0.85rem;
+  border: 1px solid #e7e2d9;
+  background: #fff;
+  padding: 1rem 1.1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.recruitment-cmd-card:hover {
+  border-color: rgba(201, 162, 39, 0.45);
+  box-shadow: 0 12px 30px -18px rgba(28, 45, 65, 0.2);
+}
+
+.recruitment-cmd-card__k {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #a8a29e;
+  margin: 0 0 0.35rem;
+}
+
+.recruitment-cmd-card__t {
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #1c2d41;
+  margin: 0;
+}
+
+.recruitment-cmd-card__d {
+  font-size: 0.75rem;
+  color: #57534e;
+  margin: 0.45rem 0 0;
+  line-height: 1.45;
+}

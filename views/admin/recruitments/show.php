@@ -21,6 +21,17 @@ $enlistmentSlaHours = max(1, (int) ($enlistmentSlaHours ?? 72));
 $submittedAgeHours = isset($e['submitted_age_hours']) ? (int) $e['submitted_age_hours'] : null;
 $submittedSlaBreached = !empty($e['submitted_sla_breached']);
 
+$enlistmentTimeline = is_array($enlistmentTimeline ?? null) ? $enlistmentTimeline : [];
+$timelineActorLabels = is_array($enlistmentTimelineActorLabels ?? null) ? $enlistmentTimelineActorLabels : [];
+$timelineTableMissing = !empty($enlistmentTimelineTableMissing);
+$timelineStepLabels = [
+    'reception' => 'Réception du dossier',
+    'instruction' => 'Instruction et arbitrage',
+    'decision' => 'Décision',
+    'adhesion' => 'Rattachement au compte membre',
+    'general' => 'Commentaire général',
+];
+
 $linkedRo = is_array($linkedRecruitmentOpening ?? null) ? $linkedRecruitmentOpening : null;
 $submitterId = (int) ($e['submitter_user_id'] ?? 0);
 $isInternalOpeningApplication = $submitterId > 0 && $linkedRo !== null;
@@ -80,6 +91,7 @@ $statusBand = match ($statusRaw) {
     'blocked' => 'from-slate-600 to-slate-800',
     default => 'from-stone-400 to-stone-600',
 };
+require base_path('views/admin/recruitment_workspace/partials/command_shell_open.php');
 ?>
 <div class="recruitment-bureau min-h-[calc(100vh-3.5rem)] bg-gradient-to-b from-[#ebe6dc] via-[#f5f2eb] to-[#e8e4db]">
     <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
@@ -88,7 +100,7 @@ $statusBand = match ($statusRaw) {
             <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="rounded-lg px-2 py-1 transition hover:bg-white/60 hover:text-[#1c2d41]">Dossiers de candidature</a>
             <span class="text-stone-400" aria-hidden="true">/</span>
             <span class="rounded-lg bg-white/80 px-2 py-1 text-[#1c2d41] ring-1 ring-stone-200/80">Dossier n°<?= $id ?></span>
-            <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="ml-auto rounded-lg border border-stone-300 bg-white px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-stone-700 transition hover:bg-stone-50">Paramètres SLA</a>
+            <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="ml-auto rounded-lg border border-stone-300 bg-white px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-stone-700 transition hover:bg-stone-50">Délais d’alerte</a>
         </nav>
 
         <?php if ($flashOk): ?>
@@ -97,6 +109,79 @@ $statusBand = match ($statusRaw) {
         <?php if ($flashErr): ?>
             <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 shadow-sm" role="alert"><?= htmlspecialchars((string) $flashErr) ?></div>
         <?php endif; ?>
+
+        <section id="journal-dossier" class="mb-8 overflow-hidden rounded-2xl border border-stone-300/90 bg-white shadow-[0_16px_40px_-20px_rgba(28,45,65,0.35)] ring-1 ring-black/[0.04]" aria-labelledby="journal-dossier-heading">
+            <div class="border-b border-stone-200 bg-gradient-to-r from-[#1c2d41] to-[#2a3f56] px-6 py-4 sm:px-8">
+                <h2 id="journal-dossier-heading" class="text-[11px] font-bold uppercase tracking-[0.28em] text-[#c9a227]/95">Journal du dossier</h2>
+                <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">Historique des événements et des notes internes, mis à jour à chaque action sur ce dossier. Vous pouvez commenter chaque étape pour la traçabilité de l’équipe.</p>
+            </div>
+            <div class="px-6 py-6 sm:px-8 sm:py-8">
+                <?php if ($timelineTableMissing): ?>
+                    <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Le journal n’est pas encore activé sur cette base : exécutez les migrations pour créer la table dédiée.</p>
+                <?php elseif ($enlistmentTimeline === []): ?>
+                    <p class="text-sm text-stone-600">Aucune entrée pour l’instant.</p>
+                <?php else: ?>
+                    <ol class="space-y-5 border-l-2 border-stone-200 pl-5 sm:pl-6">
+                        <?php foreach ($enlistmentTimeline as $ev): ?>
+                            <?php
+                            $evKind = (string) ($ev['entry_kind'] ?? '');
+                            $evStep = (string) ($ev['step_code'] ?? 'general');
+                            $stepTitle = $timelineStepLabels[$evStep] ?? $timelineStepLabels['general'];
+                            $actorId = (int) ($ev['actor_user_id'] ?? 0);
+                            $actorName = $actorId > 0 ? ($timelineActorLabels[$actorId] ?? ('Compte n°' . $actorId)) : null;
+                            $created = trim((string) ($ev['created_at'] ?? ''));
+                            $createdFmt = $created !== '' ? date('d/m/Y à H:i', strtotime($created) ?: time()) : '—';
+                            $summary = trim((string) ($ev['summary'] ?? ''));
+                            $body = trim((string) ($ev['body'] ?? ''));
+                            ?>
+                            <li class="relative pl-2">
+                                <span class="absolute -left-[1.4rem] top-1.5 flex h-2.5 w-2.5 rounded-full ring-4 ring-white <?= $evKind === 'staff_note' ? 'bg-sky-500' : 'bg-[#c9a227]' ?>" aria-hidden="true"></span>
+                                <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                    <time class="text-xs font-bold tabular-nums text-stone-500" datetime="<?= htmlspecialchars($created, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($createdFmt, ENT_QUOTES, 'UTF-8') ?></time>
+                                    <span class="rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stone-700"><?= htmlspecialchars($stepTitle, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="text-[10px] font-bold uppercase tracking-wide <?= $evKind === 'staff_note' ? 'text-sky-800' : 'text-[#8a7228]' ?>"><?= $evKind === 'staff_note' ? 'Note interne' : 'Événement' ?></span>
+                                </div>
+                                <?php if ($summary !== ''): ?>
+                                    <p class="mt-2 text-sm font-semibold text-stone-900"><?= htmlspecialchars($summary, ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php endif; ?>
+                                <?php if ($body !== ''): ?>
+                                    <div class="mt-2 rounded-xl border border-stone-200/90 bg-[#faf8f3] px-4 py-3 text-sm leading-relaxed text-stone-800 whitespace-pre-wrap"><?= htmlspecialchars($body, ENT_QUOTES, 'UTF-8') ?></div>
+                                <?php endif; ?>
+                                <?php if ($actorName !== null): ?>
+                                    <p class="mt-2 text-xs text-stone-500">Par <?= htmlspecialchars($actorName, ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ol>
+                <?php endif; ?>
+
+                <?php if (!$timelineTableMissing): ?>
+                    <div class="mt-8 border-t border-stone-200 pt-8">
+                        <h3 class="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">Ajouter une note sur une étape</h3>
+                        <p class="mt-2 text-sm text-stone-600">Visible uniquement dans ce dossier (pas envoyée au candidat).</p>
+                        <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/timeline-comment'), ENT_QUOTES, 'UTF-8') ?>" class="mt-5 space-y-4">
+                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                            <div>
+                                <label for="timeline_step" class="mb-1 block text-xs font-bold text-stone-700">Étape concernée</label>
+                                <select id="timeline_step" name="timeline_step" class="<?= htmlspecialchars(bo_select_class('w-full max-w-md border-stone-300 text-sm text-stone-900'), ENT_QUOTES, 'UTF-8') ?>">
+                                    <?php foreach (['instruction', 'decision', 'adhesion', 'reception', 'general'] as $code): ?>
+                                        <?php if (!isset($timelineStepLabels[$code])) {
+                                            continue;
+                                        } ?>
+                                        <option value="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $timelineStepLabels[$code], ENT_QUOTES, 'UTF-8') ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="timeline_body" class="mb-1 block text-xs font-bold text-stone-700">Commentaire</label>
+                                <textarea id="timeline_body" name="timeline_body" rows="4" required maxlength="8000" class="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 shadow-inner placeholder:text-stone-400" placeholder="Consignes, rappel d’échange, point de vigilance…"></textarea>
+                            </div>
+                            <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-[#1c2d41] px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#152436] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a227] focus-visible:ring-offset-2">Enregistrer dans le journal</button>
+                        </form>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </section>
 
         <!-- Couverture dossier -->
         <header class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-[0_20px_50px_-24px_rgba(28,45,65,0.4)] ring-1 ring-black/[0.03]">
@@ -119,7 +204,7 @@ $statusBand = match ($statusRaw) {
                     </span>
                     <?php if ($statusRaw === 'submitted' && $submittedAgeHours !== null): ?>
                         <span class="inline-flex items-center rounded-lg border px-2 py-1 text-[10px] font-bold uppercase tracking-wide <?= $submittedSlaBreached ? 'border-rose-300 bg-rose-100 text-rose-950' : 'border-sky-300 bg-sky-100 text-sky-900' ?>">
-                            <?= $submittedSlaBreached ? 'SLA dépassé' : 'SLA en cours' ?> · <?= $submittedAgeHours ?> h / <?= $enlistmentSlaHours ?> h
+                            <?= $submittedSlaBreached ? 'Délai dépassé' : 'Dans le délai' ?> · <?= $submittedAgeHours ?> h / <?= $enlistmentSlaHours ?> h
                         </span>
                     <?php endif; ?>
                     <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="text-xs font-bold uppercase tracking-wider text-slate-400 transition hover:text-white">← Retour à la liste</a>
@@ -463,3 +548,4 @@ $statusBand = match ($statusRaw) {
         </p>
     </div>
 </div>
+<?php require base_path('views/admin/recruitment_workspace/partials/command_shell_close.php'); ?>

@@ -55,9 +55,10 @@ if ($currentGrade) {
 $bloodOptions = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Inconnu'];
 $rpStages = is_array($roleplayFollowupConfig['stages'] ?? null) ? $roleplayFollowupConfig['stages'] : [];
 $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $roleplayFollowupConfig['recruitment_tracks'] : [];
+$rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
 ?>
 <div class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/80 pb-16">
-  <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
     <header class="mb-8 flex flex-col gap-4 border-b border-slate-200/80 pb-8 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700">Dossier opérationnel</p>
@@ -94,11 +95,49 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
       </div>
     </div>
 
+    <?php
+    $editNav = [
+        ['id' => 'edit-civil', 'label' => 'Identité civile', 'show' => $isMe],
+        ['id' => 'edit-identite-rp', 'label' => 'Identité RP', 'show' => true],
+        ['id' => 'edit-orbat', 'label' => 'Unité & ORBAT', 'show' => true],
+        ['id' => 'edit-habilitation', 'label' => 'Habilitation', 'show' => true],
+        ['id' => 'edit-suivi-immersion', 'label' => 'Suivi immersion', 'show' => !empty($roleplayFollowupConfig['enabled'])],
+        ['id' => 'forum-community-settings', 'label' => 'Forum & fiche', 'show' => true],
+        ['id' => 'edit-equipement', 'label' => 'Équipement', 'show' => true],
+        ['id' => 'edit-notes', 'label' => 'Notes commandement', 'show' => true],
+    ];
+    $navLinkClass = 'block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900';
+    $navPillClass = 'shrink-0 snap-start rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50';
+    ?>
+    <nav class="mb-8 lg:hidden" aria-label="Sommaire du formulaire">
+      <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Aller à</p>
+      <div class="-mx-1 flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory px-1">
+        <?php foreach ($editNav as $ni): ?>
+          <?php if (empty($ni['show'])) { continue; } ?>
+          <a href="#<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>" class="<?= $navPillClass ?>"><?= htmlspecialchars($ni['label'], ENT_QUOTES, 'UTF-8') ?></a>
+        <?php endforeach; ?>
+      </div>
+    </nav>
+
+    <div class="lg:grid lg:grid-cols-[minmax(0,13.75rem)_1fr] lg:items-start lg:gap-10 xl:gap-12">
+      <aside class="hidden lg:block" aria-label="Navigation du formulaire">
+        <div class="sticky top-24 space-y-3">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Sommaire</p>
+          <nav class="rounded-2xl border border-slate-200/90 bg-white p-3 shadow-sm ring-1 ring-slate-900/[0.03]" aria-label="Sections">
+            <?php foreach ($editNav as $ni): ?>
+              <?php if (empty($ni['show'])) { continue; } ?>
+              <a href="#<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>" class="<?= $navLinkClass ?>"><?= htmlspecialchars($ni['label'], ENT_QUOTES, 'UTF-8') ?></a>
+            <?php endforeach; ?>
+          </nav>
+        </div>
+      </aside>
+
+      <div class="min-w-0 space-y-8">
     <form method="post" action="<?= htmlspecialchars($formAction) ?>" class="space-y-8">
         <?= \App\Core\Csrf::field() ?>
 
         <?php if ($isMe): ?>
-        <section class="overflow-hidden rounded-2xl border border-indigo-200/80 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
+        <section id="edit-civil" class="scroll-mt-24 overflow-hidden rounded-2xl border border-indigo-200/80 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-indigo-100 bg-indigo-50/80 px-6 py-4">
             <h2 class="text-sm font-black uppercase tracking-wider text-indigo-950">Identité civile &amp; contact (compte)</h2>
             <p class="mt-1 text-xs text-indigo-900/80">Ces champs alimentent aussi la fiche « civile » et les exports ; le fuseau et la langue guident l’interface.</p>
@@ -146,7 +185,7 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
         </section>
         <?php endif; ?>
 
-        <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
+        <section id="edit-identite-rp" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-4">
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-900">Identité opérationnelle (RP)</h2>
             <p class="mt-1 text-xs text-slate-600">Nom de personnage, indicatif et rôles tels qu’affichés en mission.</p>
@@ -209,7 +248,7 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
           </div>
         </section>
 
-        <section class="overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
+        <section id="edit-orbat" class="scroll-mt-24 overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
           <div class="border-b border-cyan-100 bg-cyan-50/70 px-6 py-4">
             <h2 class="text-sm font-black uppercase tracking-wider text-cyan-950">Unité &amp; affectation (ORBAT)</h2>
             <p class="mt-1 text-xs text-cyan-900/85">Choisissez l’unité principale et le rôle dans cette unité : l’enregistrement met à jour le dossier <strong>et</strong> l’affectation ORBAT (fiche, forum, indicateurs admin « sans unité »).</p>
@@ -304,7 +343,7 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
           </div>
         </section>
 
-        <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
+        <section id="edit-habilitation" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-4">
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-900">Habilitation &amp; disponibilité</h2>
           </div>
@@ -345,66 +384,97 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
         </section>
 
         <?php if (!empty($roleplayFollowupConfig['enabled'])): ?>
-        <section class="overflow-hidden rounded-2xl border border-emerald-200/90 bg-white shadow-sm ring-1 ring-emerald-900/[0.05]">
-          <div class="border-b border-emerald-100 bg-emerald-50/70 px-6 py-4">
-            <h2 class="text-sm font-black uppercase tracking-wider text-emerald-950">Back-office roleplay — suivi individuel</h2>
-            <p class="mt-1 text-xs text-emerald-900/80">Tutorat, calendrier de suivi et progression de dossier/recrutement (config tenant).</p>
+        <section id="edit-suivi-immersion" class="scroll-mt-24 overflow-hidden rounded-2xl border border-emerald-200/90 bg-white shadow-sm ring-1 ring-emerald-900/[0.05]">
+          <div class="border-b border-emerald-100 bg-emerald-50/70 px-6 py-5 sm:px-8">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">Suivi d’immersion</p>
+            <h2 class="mt-2 text-base font-black tracking-tight text-emerald-950 sm:text-lg">Tutorat, filière et jalons</h2>
+            <p class="mt-2 max-w-3xl text-xs leading-relaxed text-emerald-900/85">Parcours, dates et notes staff. Les listes déroulantes « étape » et « filière » sont définies dans la configuration de la communauté.</p>
           </div>
-          <div class="grid gap-4 p-6 md:grid-cols-2">
-            <div>
-              <label for="rp_followup_stage" class="mb-1 block text-xs font-bold text-slate-600">Étape actuelle</label>
-              <select name="rp_followup_stage" id="rp_followup_stage" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                <option value="">— Non définie —</option>
-                <?php foreach ($rpStages as $st): $st = trim((string) $st); if ($st === '') { continue; } ?>
-                <option value="<?= htmlspecialchars($st) ?>" <?= (string) ($p['rp_followup_stage'] ?? '') === $st ? 'selected' : '' ?>><?= htmlspecialchars($st) ?></option>
-                <?php endforeach; ?>
-              </select>
+          <div class="space-y-8 p-6 sm:p-8">
+            <div class="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 sm:p-6">
+              <h3 class="border-b border-slate-200/80 pb-3 text-xs font-black uppercase tracking-wider text-slate-700">Parcours &amp; place dans l’unité</h3>
+              <div class="mt-5 grid gap-5 md:grid-cols-2 lg:gap-x-8">
+                <div>
+                  <label for="rp_followup_stage" class="mb-1 block text-xs font-bold text-slate-600">Étape actuelle</label>
+                  <select name="rp_followup_stage" id="rp_followup_stage" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <option value="">— Non définie —</option>
+                    <?php foreach ($rpStages as $st): $st = trim((string) $st); if ($st === '') { continue; } ?>
+                    <option value="<?= htmlspecialchars($st) ?>" <?= (string) ($p['rp_followup_stage'] ?? '') === $st ? 'selected' : '' ?>><?= htmlspecialchars($st) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div>
+                  <label for="rp_followup_status" class="mb-1 block text-xs font-bold text-slate-600">Statut de suivi</label>
+                  <input type="text" name="rp_followup_status" id="rp_followup_status" value="<?= htmlspecialchars((string) ($p['rp_followup_status'] ?? '')) ?>" maxlength="60" placeholder="Ex. Sous observation / En mentorat actif" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                  <label for="rp_operational_function" class="mb-1 block text-xs font-bold text-slate-600">Fonction sur la feuille de route</label>
+                  <input type="text" name="rp_operational_function" id="rp_operational_function" value="<?= htmlspecialchars((string) ($p['rp_operational_function'] ?? '')) ?>" maxlength="120" placeholder="Ex. Chef d’équipe feu, artilleur, analyste…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                  <p class="mt-1 text-[11px] leading-relaxed text-slate-500">Poste suivi en jeu, distinct du rôle métier référentiel (bloc ORBAT).</p>
+                </div>
+                <div>
+                  <label for="rp_recruitment_stream" class="mb-1 block text-xs font-bold text-slate-600">Filière de recrutement</label>
+                  <select name="rp_recruitment_stream" id="rp_recruitment_stream" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <option value="">— Non définie —</option>
+                    <?php foreach ($rpTracks as $tr): $tr = trim((string) $tr); if ($tr === '') { continue; } ?>
+                    <option value="<?= htmlspecialchars($tr) ?>" <?= (string) ($p['rp_recruitment_stream'] ?? '') === $tr ? 'selected' : '' ?>><?= htmlspecialchars($tr) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                  <p class="mt-1 text-[11px] leading-relaxed text-slate-500">Liste éditée dans le back-office, page configuration.</p>
+                </div>
+                <div>
+                  <label for="rp_recruitment_origin" class="mb-1 block text-xs font-bold text-slate-600">Profil recrutement</label>
+                  <select name="rp_recruitment_origin" id="rp_recruitment_origin" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <option value=""<?= $rpOriginSel === '' ? ' selected' : '' ?>>— Non renseigné —</option>
+                    <option value="internal"<?= $rpOriginSel === 'internal' ? ' selected' : '' ?>>Interne (déjà membre / réseau proche)</option>
+                    <option value="external"<?= $rpOriginSel === 'external' ? ' selected' : '' ?>>Externe (nouvelle recrue)</option>
+                  </select>
+                  <p class="mt-1 text-[11px] leading-relaxed text-slate-500">Interne ou externe pour le pilotage accueil / tutorat.</p>
+                </div>
+                <div>
+                  <label for="rp_followup_progress" class="mb-1 block text-xs font-bold text-slate-600">Progression dossier (%)</label>
+                  <input type="number" min="0" max="100" name="rp_followup_progress" id="rp_followup_progress" value="<?= htmlspecialchars((string) ($p['rp_followup_progress'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                </div>
+                <div class="md:col-span-2">
+                  <label for="rp_tutor_user_id" class="mb-1 block text-xs font-bold text-slate-600">Tuteur ou référent tutorat</label>
+                  <select name="rp_tutor_user_id" id="rp_tutor_user_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <option value="">— Aucun —</option>
+                    <?php $selTutor = (int) ($p['rp_tutor_user_id'] ?? 0); foreach ($rpTutorChoices as $tu): ?>
+                    <option value="<?= (int) $tu['id'] ?>" <?= $selTutor === (int) $tu['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tu['label']) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div>
-              <label for="rp_followup_status" class="mb-1 block text-xs font-bold text-slate-600">Statut de suivi</label>
-              <input type="text" name="rp_followup_status" id="rp_followup_status" value="<?= htmlspecialchars((string) ($p['rp_followup_status'] ?? '')) ?>" maxlength="60" placeholder="Ex. Sous observation / En mentorat actif" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+
+            <div class="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 sm:p-6">
+              <h3 class="border-b border-slate-200/80 pb-3 text-xs font-black uppercase tracking-wider text-slate-700">Échéances &amp; rendez-vous</h3>
+              <div class="mt-5 grid gap-5 md:grid-cols-3 lg:gap-x-8">
+                <div>
+                  <label for="rp_next_interview_date" class="mb-1 block text-xs font-bold text-slate-600">Prochain entretien individuel</label>
+                  <input type="date" name="rp_next_interview_date" id="rp_next_interview_date" value="<?= htmlspecialchars((string) ($p['rp_next_interview_date'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                  <label for="rp_medical_due_date" class="mb-1 block text-xs font-bold text-slate-600">Échéance visite médicale</label>
+                  <input type="date" name="rp_medical_due_date" id="rp_medical_due_date" value="<?= htmlspecialchars((string) ($p['rp_medical_due_date'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                  <label for="rp_service_rotation_date" class="mb-1 block text-xs font-bold text-slate-600">Rotation de service prévue</label>
+                  <input type="date" name="rp_service_rotation_date" id="rp_service_rotation_date" value="<?= htmlspecialchars((string) ($p['rp_service_rotation_date'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                </div>
+              </div>
             </div>
-            <div>
-              <label for="rp_followup_progress" class="mb-1 block text-xs font-bold text-slate-600">Progression (%)</label>
-              <input type="number" min="0" max="100" name="rp_followup_progress" id="rp_followup_progress" value="<?= htmlspecialchars((string) ($p['rp_followup_progress'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+
+            <div class="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 sm:p-6">
+              <h3 class="border-b border-slate-200/80 pb-3 text-xs font-black uppercase tracking-wider text-slate-700">Notes de suivi (staff)</h3>
+              <div class="mt-5">
+                <label for="rp_followup_notes" class="sr-only">Notes de suivi</label>
+                <textarea name="rp_followup_notes" id="rp_followup_notes" rows="4" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm leading-relaxed" placeholder="Objectifs individuels, points de vigilance, observations tutorat…"><?= htmlspecialchars((string) ($p['rp_followup_notes'] ?? '')) ?></textarea>
+              </div>
             </div>
-            <div>
-              <label for="rp_recruitment_stream" class="mb-1 block text-xs font-bold text-slate-600">Filière recrutement</label>
-              <select name="rp_recruitment_stream" id="rp_recruitment_stream" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                <option value="">— Non définie —</option>
-                <?php foreach ($rpTracks as $tr): $tr = trim((string) $tr); if ($tr === '') { continue; } ?>
-                <option value="<?= htmlspecialchars($tr) ?>" <?= (string) ($p['rp_recruitment_stream'] ?? '') === $tr ? 'selected' : '' ?>><?= htmlspecialchars($tr) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="md:col-span-2">
-              <label for="rp_tutor_user_id" class="mb-1 block text-xs font-bold text-slate-600">Tuteur / référent tutorat</label>
-              <select name="rp_tutor_user_id" id="rp_tutor_user_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                <option value="">— Aucun —</option>
-                <?php $selTutor = (int) ($p['rp_tutor_user_id'] ?? 0); foreach ($rpTutorChoices as $tu): ?>
-                <option value="<?= (int) $tu['id'] ?>" <?= $selTutor === (int) $tu['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tu['label']) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div>
-              <label for="rp_next_interview_date" class="mb-1 block text-xs font-bold text-slate-600">Prochain entretien individuel</label>
-              <input type="date" name="rp_next_interview_date" id="rp_next_interview_date" value="<?= htmlspecialchars((string) ($p['rp_next_interview_date'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-            </div>
-            <div>
-              <label for="rp_medical_due_date" class="mb-1 block text-xs font-bold text-slate-600">Échéance visite médicale</label>
-              <input type="date" name="rp_medical_due_date" id="rp_medical_due_date" value="<?= htmlspecialchars((string) ($p['rp_medical_due_date'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-            </div>
-            <div>
-              <label for="rp_service_rotation_date" class="mb-1 block text-xs font-bold text-slate-600">Rotation de service prévue</label>
-              <input type="date" name="rp_service_rotation_date" id="rp_service_rotation_date" value="<?= htmlspecialchars((string) ($p['rp_service_rotation_date'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-            </div>
-            <div class="md:col-span-2">
-              <label for="rp_followup_notes" class="mb-1 block text-xs font-bold text-slate-600">Notes de suivi roleplay</label>
-              <textarea name="rp_followup_notes" id="rp_followup_notes" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Objectifs individuels, points de vigilance, observations tutorat…"><?= htmlspecialchars((string) ($p['rp_followup_notes'] ?? '')) ?></textarea>
-            </div>
-            <div class="md:col-span-2 rounded-xl border border-emerald-200/90 bg-emerald-50/50 p-4">
-              <p class="text-[10px] font-black uppercase tracking-wider text-emerald-900">Ajouter un événement timeline</p>
-              <p class="mt-1 text-[11px] text-emerald-900/80">Optionnel : crée un événement historisé au moment de l’enregistrement (suivi individuel détaillé).</p>
+            <div class="rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-5 sm:p-6">
+              <h3 class="border-b border-emerald-200/60 pb-3 text-xs font-black uppercase tracking-wider text-emerald-900">Historique du dossier (optionnel)</h3>
+              <p class="mt-3 text-[11px] leading-relaxed text-emerald-900/85">Si vous remplissez un titre ci-dessous, une entrée datée est ajoutée à la frise à l’enregistrement.</p>
               <div class="mt-3 grid gap-3 md:grid-cols-2">
                 <div>
                   <label for="rp_timeline_type" class="mb-1 block text-xs font-bold text-slate-600">Type d’événement</label>
@@ -566,7 +636,7 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
         </script>
         <?php endif; ?>
 
-        <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
+        <section id="edit-equipement" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-4">
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-900">Équipement / dotation</h2>
           </div>
@@ -598,7 +668,7 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
           </div>
         </section>
 
-        <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
+        <section id="edit-notes" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-4">
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-900">Notes de commandement</h2>
             <p class="mt-1 text-xs text-slate-500">Visibles par vous et le personnel habilité.</p>
@@ -624,6 +694,9 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
       </form>
     </div>
     <?php endif; ?>
+
+      </div>
+    </div>
   </div>
 </div>
 <?php if (!empty($dossierPresets)): ?>

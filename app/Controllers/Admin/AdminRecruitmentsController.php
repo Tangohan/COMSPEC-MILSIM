@@ -10,8 +10,10 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\EnlistmentCannedMessageRepository;
 use App\Repositories\EnlistmentRepository;
+use App\Repositories\EnlistmentTimelineRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserRepository;
 use App\Services\Recruitment\EnlistmentAcceptanceProvisioningService;
 use App\Services\Recruitment\TenantRecruitmentSettings;
 
@@ -20,9 +22,11 @@ class AdminRecruitmentsController
     public function __construct(
         private EnlistmentRepository $enlistmentRepository,
         private EnlistmentCannedMessageRepository $cannedMessageRepository,
+        private EnlistmentTimelineRepository $enlistmentTimelineRepository,
         private EnlistmentAcceptanceProvisioningService $enlistmentAcceptanceProvisioningService,
         private TenantRepository $tenantRepository,
-        private RecruitmentOpeningRepository $recruitmentOpeningRepository
+        private RecruitmentOpeningRepository $recruitmentOpeningRepository,
+        private UserRepository $userRepository,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -56,6 +60,7 @@ class AdminRecruitmentsController
             'enlistmentCounts' => $enlistmentCounts,
             'enlistmentSlaHours' => $slaHours,
             'submittedOlderThanSla' => $submittedOlderThanSla,
+            'recruitmentAdminNav' => 'queue',
             'showPortalFooter' => false,
         ]);
     }
@@ -97,17 +102,100 @@ class AdminRecruitmentsController
             }
         }
 
+        $this->enlistmentTimelineRepository->seedLegacyIfEmpty((int) $tenantId, $id, $row);
+        $timelineRows = $this->enlistmentTimelineRepository->listForEnlistment((int) $tenantId, $id);
+        $actorIds = [];
+        foreach ($timelineRows as $tr) {
+            $aid = (int) ($tr['actor_user_id'] ?? 0);
+            if ($aid > 0) {
+                $actorIds[] = $aid;
+            }
+        }
+        $actorIds = array_values(array_unique($actorIds));
+        $actorUsers = $actorIds !== [] ? $this->userRepository->findByIdsForTenant((int) $tenantId, $actorIds) : [];
+        $timelineActorLabels = [];
+        foreach ($actorUsers as $uid => $urow) {
+            $lab = trim((string) ($urow['display_name'] ?? ''));
+            if ($lab === '') {
+                $lab = trim((string) ($urow['callsign'] ?? ''));
+            }
+            $timelineActorLabels[(int) $uid] = $lab !== '' ? $lab : ('Compte n°' . (int) $uid);
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.recruitments.show',
             'title' => 'Candidature #' . $id,
             'enlistment' => $row,
             'enlistmentCannedMessages' => $canned,
+            'enlistmentTimeline' => $timelineRows,
+            'enlistmentTimelineActorLabels' => $timelineActorLabels,
+            'enlistmentTimelineTableMissing' => !$this->enlistmentTimelineRepository->tableExists(),
             'membershipRepairHint' => $this->enlistmentAcceptanceProvisioningService->membershipRepairHint((int) $tenantId, $row),
             'linkedRecruitmentOpening' => $linkedOpening,
             'communitySlug' => $communitySlug,
             'enlistmentSlaHours' => $slaHours,
+            'recruitmentAdminNav' => 'queue',
             'showPortalFooter' => false,
         ]);
+    }
+
+    public function timelineComment(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost()) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $userId = (int) Session::get('user_id');
+        if ($id < 1 || $userId < 1) {
+            Session::flash('error', 'Action impossible.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        if (!$this->enlistmentTimelineRepository->tableExists()) {
+            Session::flash('error', 'Le journal des dossiers n’est pas encore disponible sur cette installation (migration à exécuter).');
+
+            return Response::redirect(url('back-office/recruitments/' . $id));
+        }
+        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+        if (!$row) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $step = trim((string) $request->input('timeline_step', 'general'));
+        $allowedSteps = ['reception', 'instruction', 'decision', 'adhesion', 'general'];
+        if (!in_array($step, $allowedSteps, true)) {
+            $step = 'general';
+        }
+        $body = trim((string) $request->input('timeline_body', ''));
+        if (mb_strlen($body) < 1) {
+            Session::flash('error', 'Saisissez le texte du commentaire.');
+
+            return Response::redirect(url('back-office/recruitments/' . $id));
+        }
+        if (mb_strlen($body) > 8000) {
+            Session::flash('error', 'Commentaire trop long (8 000 caractères maximum).');
+
+            return Response::redirect(url('back-office/recruitments/' . $id));
+        }
+        $this->enlistmentTimelineRepository->append(
+            (int) $tenantId,
+            $id,
+            'staff_note',
+            $step,
+            null,
+            $body,
+            $userId,
+            null,
+            null
+        );
+        Session::flash('success', 'Commentaire ajouté au journal du dossier.');
+
+        return Response::redirect(url('back-office/recruitments/' . $id));
     }
 
     public function settingsSave(Request $request, array $params = []): Response
@@ -128,7 +216,7 @@ class AdminRecruitmentsController
                 'enlistment_sla_hours' => $slaHours,
             ],
         ]);
-        Session::flash('success', 'SLA candidature mis à jour à ' . $slaHours . ' h.');
+        Session::flash('success', 'Délai d’alerte enregistré : ' . $slaHours . ' h sans traitement.');
 
         return Response::redirect(url('back-office/recruitments'));
     }
@@ -152,10 +240,11 @@ class AdminRecruitmentsController
 
         return Response::view('layout.main', [
             'content' => 'admin.recruitments.settings',
-            'title' => 'Paramètres recrutement',
+            'title' => 'Délais d’alerte recrutement',
             'enlistmentSlaHours' => $slaHours,
             'submittedCount' => count($submitted),
             'submittedOlderThanSla' => $breached,
+            'recruitmentAdminNav' => 'sla',
             'showPortalFooter' => false,
         ]);
     }
@@ -190,6 +279,13 @@ class AdminRecruitmentsController
                     ? 'Adhésion mise à jour. ' . $extra
                     : 'Adhésion finalisée : le compte est bien rattaché comme membre de la communauté.'
             );
+            $this->enlistmentTimelineRepository->logAdhesionStep(
+                (int) $tenantId,
+                $id,
+                $actorId,
+                'Finalisation manuelle du rattachement',
+                $extra !== '' ? $extra : 'Action « forcer le rattachement » enregistrée pour ce dossier.'
+            );
         }
 
         return Response::redirect(url('back-office/recruitments/' . $id));
@@ -210,6 +306,7 @@ class AdminRecruitmentsController
             'title' => 'Messages préfaits — recrutement',
             'cannedMessages' => $rows,
             'cannedMessagesTableMissing' => !$this->cannedMessageRepository->tableExists(),
+            'recruitmentAdminNav' => 'messages',
             'showPortalFooter' => false,
         ]);
     }
@@ -381,6 +478,8 @@ class AdminRecruitmentsController
         ];
         Session::flash('success', $messages[$map[$action]]);
 
+        $this->enlistmentTimelineRepository->logDecision((int) $tenantId, $id, $userId, $map[$action], $comment);
+
         if ($ok && $map[$action] === 'reviewed') {
             $provision = $this->enlistmentAcceptanceProvisioningService->provisionAfterAccept(
                 (int) $tenantId,
@@ -390,8 +489,30 @@ class AdminRecruitmentsController
             );
             if (!$provision['ok'] && $provision['message'] !== null && $provision['message'] !== '') {
                 Session::flash('error', $provision['message']);
+                $this->enlistmentTimelineRepository->logAdhesionStep(
+                    (int) $tenantId,
+                    $id,
+                    $userId,
+                    'Synchronisation du compte : point d’attention',
+                    (string) $provision['message']
+                );
             } elseif ($provision['message'] !== null && $provision['message'] !== '') {
                 Session::flash('success', 'Candidature acceptée. ' . $provision['message']);
+                $this->enlistmentTimelineRepository->logAdhesionStep(
+                    (int) $tenantId,
+                    $id,
+                    $userId,
+                    'Synchronisation du compte membre',
+                    (string) $provision['message']
+                );
+            } else {
+                $this->enlistmentTimelineRepository->logAdhesionStep(
+                    (int) $tenantId,
+                    $id,
+                    $userId,
+                    'Synchronisation du compte membre',
+                    'Les étapes automatiques (compte, rôle, messages) se sont déroulées sans message d’alerte particulier.'
+                );
             }
         }
 

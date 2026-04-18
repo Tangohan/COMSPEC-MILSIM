@@ -49,7 +49,7 @@ $rpTimelineTableReady = !empty($rpTimelineTableReady);
             <p class="mt-1 text-xs text-slate-500">Trié par échéance la plus proche (retards en priorité).</p>
         </div>
         <?php if ($rpRows === []): ?>
-        <p class="px-5 py-8 text-sm text-slate-500">Aucun membre actif pour ce tenant.</p>
+        <p class="px-5 py-8 text-sm text-slate-500">Aucun membre actif pour cette communauté.</p>
         <?php else: ?>
         <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
@@ -58,6 +58,7 @@ $rpTimelineTableReady = !empty($rpTimelineTableReady);
                         <th class="px-4 py-3 text-left">Membre</th>
                         <th class="px-4 py-3 text-left">Tutorat</th>
                         <th class="px-4 py-3 text-left">Avancement</th>
+                        <th class="px-4 py-3 text-left">Fonction</th>
                         <th class="px-4 py-3 text-left">Filière</th>
                         <th class="px-4 py-3 text-left">Échéance</th>
                         <th class="px-4 py-3 text-left">Éligibilité</th>
@@ -73,6 +74,13 @@ $rpTimelineTableReady = !empty($rpTimelineTableReady);
                         }
                         $nextDue = $row['next_due'] ? date('d/m/Y', strtotime((string) $row['next_due'])) : '—';
                         $latest = is_array($row['latest_timeline'] ?? null) ? $row['latest_timeline'] : null;
+                        $fnCell = trim((string) ($row['function'] ?? ''));
+                        $originRaw = trim((string) ($row['origin'] ?? ''));
+                        $originFr = match ($originRaw) {
+                            'internal' => 'Interne',
+                            'external' => 'Externe',
+                            default => '',
+                        };
                     ?>
                     <tr class="align-top">
                         <td class="px-4 py-3">
@@ -88,12 +96,16 @@ $rpTimelineTableReady = !empty($rpTimelineTableReady);
                             </div>
                             <?php else: ?>—<?php endif; ?>
                         </td>
-                        <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string) ($row['track'] !== '' ? $row['track'] : '—')) ?></td>
+                        <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars($fnCell !== '' ? $fnCell : '—') ?></td>
+                        <td class="px-4 py-3 text-slate-700">
+                            <span class="font-medium"><?= htmlspecialchars((string) ($row['track'] !== '' ? $row['track'] : '—')) ?></span>
+                            <?php if ($originFr !== ''): ?><p class="mt-1 text-[11px] text-slate-500">Profil : <span class="font-semibold text-slate-700"><?= htmlspecialchars($originFr) ?></span></p><?php endif; ?>
+                        </td>
                         <td class="px-4 py-3">
                             <span class="inline-flex rounded-full px-2 py-1 text-xs font-bold <?= !empty($row['next_due_is_overdue']) ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-700' ?>"><?= htmlspecialchars($nextDue) ?></span>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="inline-flex rounded-full px-2 py-1 text-xs font-bold <?= !empty($row['eligible']) ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' ?>"><?= !empty($row['eligible']) ? 'Eligible' : 'À compléter' ?></span>
+                            <span class="inline-flex rounded-full px-2 py-1 text-xs font-bold <?= !empty($row['eligible']) ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' ?>"><?= !empty($row['eligible']) ? 'Éligible' : 'À compléter' ?></span>
                         </td>
                         <td class="px-4 py-3 text-xs text-slate-600">
                             <?php if ($latest): ?>

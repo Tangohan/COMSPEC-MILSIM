@@ -91,6 +91,9 @@ final class EmailEvents
     /** Notification envoyée à la validation complète du check-up de déploiement. */
     public const PERSONNEL_DEPLOYMENT_CHECKUP_VALIDATED = 'PERSONNEL_DEPLOYMENT_CHECKUP_VALIDATED';
 
+    /** Mise à jour du suivi roleplay / tutorat (membre ou tuteur). */
+    public const ROLEPLAY_FOLLOWUP_UPDATED = 'ROLEPLAY_FOLLOWUP_UPDATED';
+
     /** @var list<string> */
     public const EMAIL_EVENTS = [
         self::USER_REGISTER_CONFIRMATION,
@@ -137,5 +140,6 @@ final class EmailEvents
         self::MAINTENANCE_MEMBER_BROADCAST,
         self::PERSONNEL_DEPLOYMENT_ASSIGNED,
         self::PERSONNEL_DEPLOYMENT_CHECKUP_VALIDATED,
+        self::ROLEPLAY_FOLLOWUP_UPDATED,
     ];
 }

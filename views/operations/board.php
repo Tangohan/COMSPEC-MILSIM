@@ -504,5 +504,7 @@ if ($tenantName === '') {
 .board-mode-briefing .entry-card > p,
 .board-mode-briefing .entry-card .entry-card-actions { display: none !important; }
 .board-mode-briefing .entry-card > h3 { margin-bottom: 0; }
+/* Les brouillons doivent rester ouvrables en vue synthèse : le bandeau pointe vers l’éditeur */
+.board-mode-briefing .entry-card .entry-card-draft-open { display: block !important; }
 </style>
 <?php endif; ?>

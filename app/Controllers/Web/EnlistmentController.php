@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\Csrf;
 use App\Repositories\EnlistmentRepository;
+use App\Repositories\EnlistmentTimelineRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
@@ -35,6 +36,7 @@ class EnlistmentController
 {
     public function __construct(
         private EnlistmentRepository $enlistmentRepository,
+        private EnlistmentTimelineRepository $enlistmentTimelineRepository,
         private TenantRepository $tenantRepository,
         private AuthService $authService,
         private UserRepository $userRepository,
@@ -431,6 +433,14 @@ class EnlistmentController
 
             return Response::redirect(url('enlistment/error'));
         }
+
+        $subUid = isset($payload['submitter_user_id']) ? (int) $payload['submitter_user_id'] : 0;
+        $this->enlistmentTimelineRepository->logIntakeFromSubmission(
+            (int) $tenant['id'],
+            $enlistmentId,
+            $subUid > 0 ? $subUid : null,
+            (string) ($payload['submitted_via'] ?? 'guest')
+        );
 
         $submittedProps = null;
         if (!empty($payload['recruitment_opening_id'])) {

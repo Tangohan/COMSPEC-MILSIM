@@ -53,11 +53,11 @@ final class UnifiedActionDigestService
         $sections = [];
 
         $personal = [];
-        if ($forumUnread > 0 && $gate->allows('forum.view')) {
+        if ($forumUnread > 0) {
             $personal[] = [
-                'label' => 'Alertes du forum',
+                'label' => 'Notifications à lire',
                 'href' => url('activite'),
-                'hint' => 'Notifications non lues sur vos sujets suivis.',
+                'hint' => 'Forum, suivi roleplay et autres alertes non lues dans Mon activité.',
                 'count' => $forumUnread,
             ];
         }
@@ -126,7 +126,7 @@ final class UnifiedActionDigestService
         $d = $this->buildActionCenter($tenantId, $userId, $userEmail, $gate, $showStaffRecruitment);
         $lines = [];
         if ($d['forum_unread'] > 0) {
-            $lines[] = 'Vous avez des alertes forum non lues : ouvrez « Mon activité » pour les traiter.';
+            $lines[] = 'Vous avez des notifications non lues : ouvrez « Mon activité » pour les traiter.';
         }
         if ($d['courrier_unread'] > 0) {
             $lines[] = 'Des éléments du courrier interne attendent votre lecture.';

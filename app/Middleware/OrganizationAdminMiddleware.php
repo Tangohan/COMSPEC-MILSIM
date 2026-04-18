@@ -22,7 +22,9 @@ class OrganizationAdminMiddleware
         $scopedOrgAccess = $gate->allows('admin.organization') || $gate->allows('admin.access')
             || $gate->allows('site.support');
         if (!$scopedOrgAccess) {
-            if (str_starts_with($path, '/back-office/recruitments') && $gate->allows('organization.recruitment.manage')) {
+            if (str_starts_with($path, '/back-office/ressources/recrutement') && $gate->allows('organization.recruitment.manage')) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/recruitments') && $gate->allows('organization.recruitment.manage')) {
                 $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/recruitment/offers') && ($gate->allows('organization.recruitment.openings.manage') || $gate->allows('organization.recruitment.manage'))) {
                 $scopedOrgAccess = true;

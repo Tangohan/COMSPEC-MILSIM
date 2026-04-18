@@ -54,6 +54,7 @@ use App\Controllers\Admin\AdminAtakConfigController;
 use App\Controllers\Admin\AdminAtakModController;
 use App\Controllers\Admin\AdminConfigurationController;
 use App\Controllers\Admin\AdminRecruitmentsController;
+use App\Controllers\Admin\RecruitmentWorkspaceController;
 use App\Controllers\Admin\AdminDocumentsController;
 use App\Controllers\Admin\AdminTrainingController;
 use App\Controllers\Admin\AdminTrainingStudioController;
@@ -596,6 +597,8 @@ return function (Router $router) {
     $router->post('/back-office/alerts/{id}/update', [TenantAlertsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/alerts/{id}/delete', [TenantAlertsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/alerts', [TenantAlertsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/recrutement', [RecruitmentWorkspaceController::class, 'dashboard'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/recrutement/analyses', [RecruitmentWorkspaceController::class, 'analytics'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments', [AdminRecruitmentsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/settings', [AdminRecruitmentsController::class, 'settings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/settings', [AdminRecruitmentsController::class, 'settingsSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -606,6 +609,7 @@ return function (Router $router) {
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/decision', [AdminRecruitmentsController::class, 'decision'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/finalize-membership', [AdminRecruitmentsController::class, 'finalizeMembership'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/{id}/timeline-comment', [AdminRecruitmentsController::class, 'timelineComment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitment/offers', [RecruitmentOffersController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitment/offers/create', [RecruitmentOffersController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitment/offers/store', [RecruitmentOffersController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

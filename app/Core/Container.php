@@ -431,7 +431,8 @@ class Container
                 self::get(\App\Repositories\ArmaPlaytimeRepository::class),
                 self::get(\App\Services\Steam\SteamWebApiService::class),
                 self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
-                self::get(\App\Repositories\PersonnelRoleplayTimelineRepository::class)
+                self::get(\App\Repositories\PersonnelRoleplayTimelineRepository::class),
+                self::get(\App\Services\Personnel\RoleplayFollowupNotificationService::class),
             ),
             \App\Controllers\Admin\Organization\RoleplayFollowupAdminController::class => new \App\Controllers\Admin\Organization\RoleplayFollowupAdminController(
                 self::get(UserRepository::class),
@@ -473,9 +474,11 @@ class Container
             \App\Repositories\OrbatChartTypeRepository::class => new \App\Repositories\OrbatChartTypeRepository(),
             \App\Repositories\EnlistmentRepository::class => new \App\Repositories\EnlistmentRepository(),
             \App\Repositories\EnlistmentCannedMessageRepository::class => new \App\Repositories\EnlistmentCannedMessageRepository(),
+            \App\Repositories\EnlistmentTimelineRepository::class => new \App\Repositories\EnlistmentTimelineRepository(),
             \App\Repositories\RecruitmentPresetRepository::class => new \App\Repositories\RecruitmentPresetRepository(),
             \App\Controllers\Web\EnlistmentController::class => new \App\Controllers\Web\EnlistmentController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
+                self::get(\App\Repositories\EnlistmentTimelineRepository::class),
                 self::get(TenantRepository::class),
                 self::get(AuthService::class),
                 self::get(UserRepository::class),
@@ -500,6 +503,7 @@ class Container
             \App\Repositories\DocumentPermissionRepository::class => new \App\Repositories\DocumentPermissionRepository(),
             \App\Repositories\DocumentRelationRepository::class => new \App\Repositories\DocumentRelationRepository(),
             \App\Repositories\DocumentAuditRepository::class => new \App\Repositories\DocumentAuditRepository(),
+            \App\Repositories\DocumentSecurityRepository::class => new \App\Repositories\DocumentSecurityRepository(),
             \App\Repositories\EquipmentClassRepository::class => new \App\Repositories\EquipmentClassRepository(),
             \App\Services\Moderation\ContentModerationConfig::class => \App\Services\Moderation\ContentModerationConfig::fromEnv(),
             \App\Services\Moderation\HtmlTextExtractor::class => new \App\Services\Moderation\HtmlTextExtractor(),
@@ -613,6 +617,13 @@ class Container
             \App\Repositories\PersonnelOrgHistoryRepository::class => new \App\Repositories\PersonnelOrgHistoryRepository(),
             \App\Repositories\UserLegalIdentityRepository::class => new \App\Repositories\UserLegalIdentityRepository(),
             \App\Repositories\PersonnelRoleplayTimelineRepository::class => new \App\Repositories\PersonnelRoleplayTimelineRepository(),
+            \App\Services\Personnel\RoleplayFollowupNotificationService::class => new \App\Services\Personnel\RoleplayFollowupNotificationService(
+                self::get(\App\Services\EmailService::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Repositories\ForumNotificationRepository::class),
+                self::get(TenantRepository::class),
+            ),
             \App\Services\Personnel\PersonnelOrgHistoryRecorder::class => new \App\Services\Personnel\PersonnelOrgHistoryRecorder(
                 self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
@@ -652,7 +663,8 @@ class Container
                 self::get(\App\Services\Audit\AuditService::class),
                 self::get(\App\Repositories\ModerationArtifactRepository::class),
                 self::get(\App\Services\Documents\DocumentTrainingReferencesService::class),
-                self::get(\App\Repositories\PersonnelProfileRepository::class)
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\DocumentSecurityRepository::class)
             ),
             \App\Controllers\Web\PortalSearchController::class => new \App\Controllers\Web\PortalSearchController(
                 self::get(\App\Repositories\DocumentRepository::class),
@@ -928,7 +940,14 @@ class Container
             \App\Controllers\Admin\AdminRecruitmentsController::class => new \App\Controllers\Admin\AdminRecruitmentsController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(\App\Repositories\EnlistmentCannedMessageRepository::class),
+                self::get(\App\Repositories\EnlistmentTimelineRepository::class),
                 self::get(\App\Services\Recruitment\EnlistmentAcceptanceProvisioningService::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\RecruitmentOpeningRepository::class),
+                self::get(UserRepository::class)
+            ),
+            \App\Controllers\Admin\RecruitmentWorkspaceController::class => new \App\Controllers\Admin\RecruitmentWorkspaceController(
+                self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\RecruitmentOpeningRepository::class)
             ),
@@ -1015,7 +1034,8 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Services\Documents\DocumentUploadService::class),
                 self::get(\App\Services\Audit\AuditService::class),
-                self::get(\App\Repositories\RoleRepository::class)
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\DocumentSecurityRepository::class)
             ),
             \App\Repositories\ForumCategoryRepository::class => new \App\Repositories\ForumCategoryRepository(),
             \App\Repositories\ForumAuthorIdentityRepository::class => new \App\Repositories\ForumAuthorIdentityRepository(),

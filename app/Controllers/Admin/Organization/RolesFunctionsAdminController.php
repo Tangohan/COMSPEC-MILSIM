@@ -12,6 +12,7 @@ use App\Core\Session;
 use App\Repositories\RoleRepository;
 use App\Repositories\UnitRepository;
 use App\Services\Admin\TenantRolePermissionPresetService;
+use App\Support\RoleDoctrineUiLabels;
 use PDO;
 
 /**
@@ -150,8 +151,8 @@ class RolesFunctionsAdminController
         $fromRoleId = (int) $request->input('from_role_id', 0);
         $toRoleId = (int) $request->input('to_role_id', 0);
         $relationType = trim((string) $request->input('relation_type', 'reports_to'));
-        if ($fromRoleId < 1 || $toRoleId < 1 || $fromRoleId === $toRoleId || $relationType === '') {
-            Session::flash('error', 'Relation invalide (source, destination ou type).');
+        if ($fromRoleId < 1 || $toRoleId < 1 || $fromRoleId === $toRoleId || $relationType === '' || !RoleDoctrineUiLabels::relationTypeIsAllowed($relationType)) {
+            Session::flash('error', 'Relation invalide : vérifiez les rôles choisis et le type de lien.');
 
             return Response::redirect(url('back-office/roles-functions'));
         }
@@ -228,10 +229,12 @@ class RolesFunctionsAdminController
                 if ($tid > 0) {
                     $nodeMap[$tid] = ['id' => 'r' . $tid, 'label' => (string) ($r['to_name'] ?? ''), 'slug' => (string) ($r['to_slug'] ?? '')];
                 }
+                $rtype = (string) ($r['relation_type'] ?? '');
                 $edges[] = [
                     'from' => 'r' . $fid,
                     'to' => 'r' . $tid,
-                    'type' => (string) ($r['relation_type'] ?? ''),
+                    'type' => $rtype,
+                    'type_label' => RoleDoctrineUiLabels::relationTypeShort($rtype),
                 ];
             }
             $nodes = array_values($nodeMap);

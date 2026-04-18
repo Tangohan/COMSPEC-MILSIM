@@ -1,4 +1,7 @@
 <?php
+
+use App\Support\RoleDoctrineUiLabels;
+
 $roleDefinitions = is_array($roleDefinitions ?? null) ? $roleDefinitions : [];
 $definitionRelations = is_array($definitionRelations ?? null) ? $definitionRelations : [];
 $tenantRoles = is_array($tenantRoles ?? null) ? $tenantRoles : [];
@@ -10,8 +13,22 @@ $success = \App\Core\Session::get('success');
 $error = \App\Core\Session::get('error');
 \App\Core\Session::forget('success');
 \App\Core\Session::forget('error');
+
+$defNameBySlug = [];
+foreach ($roleDefinitions as $d) {
+    $slug = trim((string) ($d['slug'] ?? ''));
+    if ($slug !== '') {
+        $defNameBySlug[$slug] = trim((string) ($d['name_fr'] ?? '')) ?: $slug;
+    }
+}
+$edgePalette = [];
+$edgeLegend = [];
+foreach (RoleDoctrineUiLabels::relationTypeValues() as $rv) {
+    $edgePalette[$rv] = RoleDoctrineUiLabels::relationTypeChartColor($rv);
+    $edgeLegend[] = ['type' => $rv, 'label' => RoleDoctrineUiLabels::relationTypeShort($rv), 'color' => $edgePalette[$rv]];
+}
 ?>
-<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-6">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
     <nav class="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600" aria-label="Fil d’Ariane">
         <a href="<?= htmlspecialchars(url('back-office/configuration'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg px-2 py-1 transition hover:bg-slate-100 hover:text-slate-900">Configuration</a>
         <span class="text-slate-400" aria-hidden="true">/</span>
@@ -29,7 +46,7 @@ $error = \App\Core\Session::get('error');
         </div>
         <div class="mt-4 flex flex-wrap gap-2">
             <a href="<?= htmlspecialchars(url('back-office/personnel-job-roles/assignments'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-blue-300/70 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-blue-800 transition hover:bg-blue-100">Attributions membres</a>
-            <a href="<?= htmlspecialchars(url('back-office/roles-functions/graph.json'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-700 transition hover:bg-slate-100">JSON du graphe</a>
+            <a href="<?= htmlspecialchars(url('back-office/roles-functions/graph.json'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-700 transition hover:bg-slate-100">Exporter la carte des relations</a>
         </div>
     </header>
 
@@ -42,11 +59,11 @@ $error = \App\Core\Session::get('error');
             <p class="mt-1 text-sm text-slate-600">Ajoute une nouvelle fonction doctrinale dans le catalogue global.</p>
             <form method="post" action="<?= url('back-office/roles-functions/definitions/store') ?>" class="mt-4 grid gap-3 sm:grid-cols-2">
                 <?= \App\Core\Csrf::field() ?>
-                <label class="text-xs font-semibold text-slate-600 sm:col-span-1">Slug
-                    <input name="slug" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="officier-s1">
+                <label class="text-xs font-semibold text-slate-600 sm:col-span-1">Référence courte (unique)
+                    <input name="slug" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="officier-s1" title="Identifiant stable pour le système ; laissez vide pour le déduire du nom français.">
                 </label>
-                <label class="text-xs font-semibold text-slate-600 sm:col-span-1">Famille
-                    <input name="family" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="command">
+                <label class="text-xs font-semibold text-slate-600 sm:col-span-1">Famille de fonction
+                    <input name="family" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="command" title="Regroupement logique (ex. command, hr, training).">
                 </label>
                 <label class="text-xs font-semibold text-slate-600 sm:col-span-1">Nom FR *
                     <input name="name_fr" type="text" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Officier S1">
@@ -79,14 +96,14 @@ $error = \App\Core\Session::get('error');
                         <?php endforeach; ?>
                     </select>
                 </label>
-                <label class="text-xs font-semibold text-slate-600">Type de relation
-                    <select name="relation_type" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                        <option value="reports_to">reports_to (subordination)</option>
-                        <option value="cross_cutting">cross_cutting (transversal)</option>
-                        <option value="mentored_by">mentored_by (accompagnement)</option>
-                        <option value="independent">independent (indépendant)</option>
+                <label class="text-xs font-semibold text-slate-600">Nature du lien
+                    <select name="relation_type" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" aria-describedby="rf-relation-type-help">
+                        <?php foreach (RoleDoctrineUiLabels::relationSelectRows() as $row): ?>
+                            <option value="<?= htmlspecialchars($row['value'], ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </label>
+                <p id="rf-relation-type-help" class="text-xs text-slate-500 -mt-1">Survolez un intitulé pour lire la définition opérationnelle du lien.</p>
                 <label class="text-xs font-semibold text-slate-600">Rôle destination
                     <select name="to_role_id" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                         <option value="">Sélectionner</option>
@@ -106,13 +123,22 @@ $error = \App\Core\Session::get('error');
         <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 class="text-lg font-bold text-slate-900">Graphe des rôles du tenant</h2>
             <p class="mt-1 text-sm text-slate-600">Visualisation du maillage de commandement actif.</p>
-            <div class="mt-4 rounded-xl border border-slate-100 bg-slate-50/80 p-4 min-h-[220px]" id="roles-graph-host" data-graph-url="<?= htmlspecialchars($graphJsonUrl, ENT_QUOTES, 'UTF-8') ?>">
+            <div class="mt-4 rounded-xl border border-slate-100 bg-slate-50/80 p-4 min-h-[220px]" id="roles-graph-host" data-graph-url="<?= htmlspecialchars($graphJsonUrl, ENT_QUOTES, 'UTF-8') ?>" data-edge-palette="<?= htmlspecialchars(json_encode($edgePalette, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>">
                 <canvas id="roles-graph-canvas" class="w-full max-h-64 border border-slate-200 rounded-lg bg-white" width="800" height="240"></canvas>
+                <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-slate-600" aria-label="Légende des types de liens">
+                    <?php foreach ($edgeLegend as $leg): ?>
+                        <li class="inline-flex items-center gap-2">
+                            <span class="inline-block h-0.5 w-7 rounded-full shrink-0" style="background-color: <?= htmlspecialchars($leg['color'], ENT_QUOTES, 'UTF-8') ?>"></span>
+                            <span><?= htmlspecialchars($leg['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
             </div>
             <?php if ($roleRelations !== []): ?>
-                <ul class="mt-4 space-y-1 text-xs text-slate-600">
+                <ul class="mt-4 space-y-1.5 text-xs text-slate-600">
                     <?php foreach ($roleRelations as $rr): ?>
-                        <li><?= htmlspecialchars((string) ($rr['from_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?> → <?= htmlspecialchars((string) ($rr['to_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?> <span class="text-slate-400">(<?= htmlspecialchars((string) ($rr['relation_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)</span></li>
+                        <?php $rt = (string) ($rr['relation_type'] ?? ''); ?>
+                        <li><?= htmlspecialchars((string) ($rr['from_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?> → <?= htmlspecialchars((string) ($rr['to_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?> <span class="text-slate-500">(<?= htmlspecialchars(RoleDoctrineUiLabels::relationTypeShort($rt), ENT_QUOTES, 'UTF-8') ?>)</span></li>
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
@@ -137,16 +163,50 @@ $error = \App\Core\Session::get('error');
     </section>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <h2 class="text-lg font-bold text-slate-900">Toile doctrinale du référentiel</h2>
+        <p class="text-sm text-slate-600 max-w-3xl">Liens entre <strong>fonctions de référence</strong> (catalogue global). Ils servent de modèle lors de l’amorçage des relations entre rôles du tenant, lorsque les mêmes codes de fonction existent côté organisation.</p>
+        <?php if ($definitionRelations === []): ?>
+            <p class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Aucune relation doctrinale n’est encore enregistrée dans le référentiel.</p>
+        <?php else: ?>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-200">
+                            <th class="py-2 pr-4">Fonction source</th>
+                            <th class="py-2 pr-4">Fonction cible</th>
+                            <th class="py-2">Nature du lien</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($definitionRelations as $dr): ?>
+                            <?php
+                            $fs = trim((string) ($dr['from_slug'] ?? ''));
+                            $ts = trim((string) ($dr['to_slug'] ?? ''));
+                            $drt = (string) ($dr['relation_type'] ?? '');
+                            ?>
+                            <tr class="border-b border-slate-100">
+                                <td class="py-2 pr-4"><?= htmlspecialchars($defNameBySlug[$fs] ?? $fs, ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="py-2 pr-4"><?= htmlspecialchars($defNameBySlug[$ts] ?? $ts, ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="py-2 text-slate-700"><?= htmlspecialchars(RoleDoctrineUiLabels::relationTypeShort($drt), ENT_QUOTES, 'UTF-8') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <h2 class="text-lg font-bold text-slate-900">Catalogue des fonctions</h2>
         <div class="grid gap-3 sm:grid-cols-2">
             <label class="text-xs font-semibold text-slate-600">Recherche rapide
-                <input id="rf-library-search" type="search" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Slug, nom FR/US, famille…">
+                <input id="rf-library-search" type="search" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Référence, nom FR ou US, famille…">
             </label>
             <label class="text-xs font-semibold text-slate-600">Filtrer par famille
                 <select id="rf-library-family" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="">Toutes les familles</option>
                     <?php foreach (array_values(array_unique(array_filter(array_map(static fn(array $d): string => trim((string) ($d['family'] ?? '')), $roleDefinitions)))) as $fam): ?>
-                        <option value="<?= htmlspecialchars($fam, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($fam, ENT_QUOTES, 'UTF-8') ?></option>
+                        <option value="<?= htmlspecialchars($fam, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(RoleDoctrineUiLabels::definitionFamilyLabel($fam), ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                 </select>
             </label>
@@ -155,7 +215,7 @@ $error = \App\Core\Session::get('error');
             <table class="min-w-full text-sm" id="rf-library-table">
                 <thead>
                     <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-200">
-                        <th class="py-2 pr-4">Slug</th>
+                        <th class="py-2 pr-4">Référence</th>
                         <th class="py-2 pr-4">Nom FR</th>
                         <th class="py-2 pr-4">Nom US</th>
                         <th class="py-2">Famille</th>
@@ -163,11 +223,12 @@ $error = \App\Core\Session::get('error');
                 </thead>
                 <tbody>
                     <?php foreach ($roleDefinitions as $d): ?>
-                        <tr class="border-b border-slate-100" data-rf-row data-family="<?= htmlspecialchars((string) ($d['family'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(mb_strtolower(trim((string) (($d['slug'] ?? '') . ' ' . ($d['name_fr'] ?? '') . ' ' . ($d['name_us'] ?? '') . ' ' . ($d['family'] ?? ''))), 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>">
+                        <?php $famRaw = trim((string) ($d['family'] ?? '')); ?>
+                        <tr class="border-b border-slate-100" data-rf-row data-family="<?= htmlspecialchars($famRaw, ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(mb_strtolower(trim((string) (($d['slug'] ?? '') . ' ' . ($d['name_fr'] ?? '') . ' ' . ($d['name_us'] ?? '') . ' ' . ($d['family'] ?? '') . ' ' . RoleDoctrineUiLabels::definitionFamilyLabel($famRaw))), 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>">
                             <td class="py-2 pr-4 font-mono text-xs"><?= htmlspecialchars((string) ($d['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                             <td class="py-2 pr-4"><?= htmlspecialchars((string) ($d['name_fr'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                             <td class="py-2 pr-4"><?= htmlspecialchars((string) ($d['name_us'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td class="py-2 text-slate-600"><?= htmlspecialchars((string) ($d['family'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td class="py-2 text-slate-600"><?= htmlspecialchars(RoleDoctrineUiLabels::definitionFamilyLabel($famRaw), ENT_QUOTES, 'UTF-8') ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -197,6 +258,10 @@ $error = \App\Core\Session::get('error');
   if (!host || !canvas) return;
   var url = host.getAttribute('data-graph-url');
   if (!url) return;
+  var palette = {};
+  try {
+    palette = JSON.parse(host.getAttribute('data-edge-palette') || '{}') || {};
+  } catch (e) {}
   fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (data) {
     var nodes = data.nodes || [];
     var edges = data.edges || [];
@@ -204,7 +269,7 @@ $error = \App\Core\Session::get('error');
     var w = canvas.width;
     var h = canvas.height;
     ctx.clearRect(0, 0, w, h);
-    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.5;
     ctx.fillStyle = '#0f172a';
     ctx.font = '11px system-ui,sans-serif';
     var pos = {};
@@ -216,6 +281,7 @@ $error = \App\Core\Session::get('error');
       var a = pos[e.from], b = pos[e.to];
       if (!a || !b) return;
       ctx.beginPath();
+      ctx.strokeStyle = palette[e.type] || '#94a3b8';
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
       ctx.stroke();

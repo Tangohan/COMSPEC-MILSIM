@@ -19,6 +19,8 @@ $eid = (int) ($entry['id'] ?? 0);
 $valStat = (string) ($entry['validation_status'] ?? 'draft');
 $pubRow = (string) ($entry['status'] ?? 'active');
 $isDraftPublication = ($pubRow === 'draft' || $valStat === 'draft');
+$titleRaw = trim((string) ($entry['title'] ?? ''));
+$titleDisplay = $titleRaw !== '' ? $titleRaw : 'Sans titre';
 ?>
 <article class="entry-card rounded-xl border border-l-4 bg-white p-3 text-xs shadow-sm <?= htmlspecialchars($priorityClass[$priority] ?? $priorityClass['normal'], ENT_QUOTES, 'UTF-8') ?>"
          data-entry_type="<?= htmlspecialchars($etype, ENT_QUOTES, 'UTF-8') ?>"
@@ -28,18 +30,23 @@ $isDraftPublication = ($pubRow === 'draft' || $valStat === 'draft');
     <div class="flex items-start justify-between gap-2">
         <?php if ($showAdminActions && $eid > 0): ?>
             <h3 class="min-w-0 flex-1 font-bold leading-snug text-slate-900">
-                <a href="<?= url('back-office/tableau-operationnel/fiche/' . $eid) ?>" class="text-slate-900 underline decoration-emerald-200 decoration-2 underline-offset-2 hover:text-emerald-900 hover:decoration-emerald-400"><?= htmlspecialchars((string) ($entry['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></a>
+                <a href="<?= url('back-office/tableau-operationnel/fiche/' . $eid) ?>" class="text-slate-900 underline decoration-emerald-200 decoration-2 underline-offset-2 hover:text-emerald-900 hover:decoration-emerald-400"><?= htmlspecialchars($titleDisplay, ENT_QUOTES, 'UTF-8') ?></a>
             </h3>
         <?php else: ?>
-            <h3 class="min-w-0 flex-1 font-bold text-slate-900"><?= htmlspecialchars((string) ($entry['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
+            <h3 class="min-w-0 flex-1 font-bold text-slate-900"><?= htmlspecialchars($titleDisplay, ENT_QUOTES, 'UTF-8') ?></h3>
         <?php endif; ?>
         <div class="flex shrink-0 flex-wrap items-center justify-end gap-1">
             <?php if ($showAdminActions && $isDraftPublication): ?>
-                <a href="<?= htmlspecialchars(url('back-office/tableau-operationnel') . '?' . http_build_query(['status' => 'draft'], '', '&', PHP_QUERY_RFC3986), ENT_QUOTES, 'UTF-8') ?>" class="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950 hover:bg-amber-100">Brouillon</a>
+                <span class="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950" title="En cours de préparation : visible ici pour le pilotage, pas encore sur le mur des membres">Brouillon</span>
             <?php endif; ?>
             <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700"><?= htmlspecialchars($priorityShort[$priority] ?? $priority, ENT_QUOTES, 'UTF-8') ?></span>
         </div>
     </div>
+    <?php if ($showAdminActions && $eid > 0 && $isDraftPublication): ?>
+        <div class="entry-card-draft-open mt-2">
+            <a href="<?= url('back-office/tableau-operationnel/fiche/' . $eid) ?>" class="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-[11px] font-bold text-amber-950 shadow-sm hover:bg-amber-100">Continuer la rédaction</a>
+        </div>
+    <?php endif; ?>
     <?php if ($etype === 'flash_info' && !empty($entry['description'])): ?>
         <div class="mt-2 text-sm leading-relaxed text-slate-800"><?= nl2br(htmlspecialchars((string) $entry['description'], ENT_QUOTES, 'UTF-8')) ?></div>
     <?php elseif (!empty($entry['description'])): ?>
@@ -76,7 +83,7 @@ $isDraftPublication = ($pubRow === 'draft' || $valStat === 'draft');
     <?php if ($showAdminActions && $eid > 0): ?>
         <div class="entry-card-actions mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3">
             <div class="flex flex-wrap items-center gap-2">
-                <a href="<?= url('back-office/tableau-operationnel/fiche/' . $eid) ?>" class="inline-flex w-fit rounded-lg border border-emerald-600 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-900 hover:bg-emerald-100">Ouvrir la fiche</a>
+                <a href="<?= url('back-office/tableau-operationnel/fiche/' . $eid) ?>" class="inline-flex w-fit rounded-lg border border-emerald-600 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-900 hover:bg-emerald-100"><?= $isDraftPublication ? 'Ouvrir pour modifier' : 'Ouvrir la fiche' ?></a>
                 <form method="post" action="<?= url('back-office/tableau-operationnel/fiche/' . $eid . '/dupliquer') ?>" class="inline">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
                     <button type="submit" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-800 hover:bg-slate-50" title="Crée un brouillon reprenant le contenu de cette entrée">Copier en brouillon</button>

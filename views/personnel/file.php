@@ -229,6 +229,13 @@ $rpProgress = isset($personnelProfile['rp_followup_progress']) && $personnelProf
 $rpStage = trim((string) ($personnelProfile['rp_followup_stage'] ?? ''));
 $rpStatus = trim((string) ($personnelProfile['rp_followup_status'] ?? ''));
 $rpTrack = trim((string) ($personnelProfile['rp_recruitment_stream'] ?? ''));
+$rpFunction = trim((string) ($personnelProfile['rp_operational_function'] ?? ''));
+$rpOriginRaw = trim((string) ($personnelProfile['rp_recruitment_origin'] ?? ''));
+$rpOriginLabel = match ($rpOriginRaw) {
+    'internal' => 'Interne',
+    'external' => 'Externe',
+    default => '',
+};
 $rpNotes = trim((string) ($personnelProfile['rp_followup_notes'] ?? ''));
 $rpDateFr = static function (?string $date): ?string {
     $raw = trim((string) $date);
@@ -714,15 +721,17 @@ if (!function_exists('personnel_file_render_admin_value')) {
                             </article>
                             <?php endforeach; ?>
                         </div>
-                        <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Étape</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpStage !== '' ? htmlspecialchars($rpStage) : '—' ?></p></div>
                             <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Statut</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpStatus !== '' ? htmlspecialchars($rpStatus) : '—' ?></p></div>
                             <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Filière</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpTrack !== '' ? htmlspecialchars($rpTrack) : '—' ?></p></div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Fonction (dossier)</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpFunction !== '' ? htmlspecialchars($rpFunction) : '—' ?></p></div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Profil recrutement</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpOriginLabel !== '' ? htmlspecialchars($rpOriginLabel) : '—' ?></p></div>
                             <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Tuteur</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpTutorLabel !== null && $rpTutorLabel !== '' ? htmlspecialchars($rpTutorLabel) : '—' ?></p></div>
                         </div>
                         <?php if ($roleplayEligibility['checks'] !== []): ?>
                         <div class="mt-5 rounded-2xl border <?= !empty($roleplayEligibility['eligible']) ? 'border-emerald-200 bg-emerald-50/50' : 'border-amber-200 bg-amber-50/60' ?> p-4">
-                            <p class="text-[10px] font-black uppercase tracking-wider <?= !empty($roleplayEligibility['eligible']) ? 'text-emerald-900' : 'text-amber-900' ?>">Éligibilité roleplay (tenant)</p>
+                            <p class="text-[10px] font-black uppercase tracking-wider <?= !empty($roleplayEligibility['eligible']) ? 'text-emerald-900' : 'text-amber-900' ?>">Indicateur dossier prêt (suivi)</p>
                             <ul class="mt-2 space-y-1.5 text-xs text-slate-700">
                                 <?php foreach ($roleplayEligibility['checks'] as $check): ?>
                                 <li class="flex items-start gap-2"><span class="font-black <?= !empty($check['ok']) ? 'text-emerald-700' : 'text-amber-700' ?>"><?= !empty($check['ok']) ? '✓' : '!' ?></span><span><?= htmlspecialchars((string) ($check['label'] ?? 'Critère')) ?></span></li>

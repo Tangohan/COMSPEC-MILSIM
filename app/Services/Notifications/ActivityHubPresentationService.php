@@ -107,6 +107,19 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'roleplay_followup' => [
+                'title' => (($payload['recipient_role'] ?? '') === 'tutor')
+                    ? 'Mise à jour du dossier tutoré (roleplay)'
+                    : 'Mise à jour de votre suivi roleplay',
+                'detail' => trim((string) ($payload['summary'] ?? '')) !== ''
+                    ? trim((string) $payload['summary'])
+                    : ('Dossier : ' . trim((string) ($payload['subject_label'] ?? 'Membre'))),
+                'href' => (isset($payload['href']) && trim((string) $payload['href']) !== '')
+                    ? trim((string) $payload['href'])
+                    : url('personnel/me/edit'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             default => [
                 'title' => 'Forum',
                 'detail' => 'Notification',

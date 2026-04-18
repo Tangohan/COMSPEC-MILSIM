@@ -8,11 +8,11 @@ $activity_message_items = $activity_message_items ?? [];
 ?>
 <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6">
     <h1 class="text-2xl font-black uppercase italic tracking-tight text-slate-900">Mon activité</h1>
-    <p class="mt-2 text-sm text-slate-600">Résumé des alertes forum, courrier interne et messagerie pour votre espace.</p>
+    <p class="mt-2 text-sm text-slate-600">Résumé des alertes (forum, suivi roleplay, etc.), courrier interne et messagerie pour votre espace.</p>
 
     <section class="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Forum</h2>
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Alertes et notifications</h2>
             <?php if ($activity_forum_items !== []): ?>
             <form method="post" action="<?= htmlspecialchars(url('activite/forum/lu'), ENT_QUOTES, 'UTF-8') ?>">
                 <?= \App\Core\Csrf::field() ?>
@@ -21,7 +21,7 @@ $activity_message_items = $activity_message_items ?? [];
             <?php endif; ?>
         </div>
         <?php if ($activity_forum_items === []): ?>
-            <p class="mt-4 text-sm text-slate-500">Aucune notification récente.</p>
+            <p class="mt-4 text-sm text-slate-500">Aucune alerte récente.</p>
         <?php else: ?>
             <ul class="mt-4 divide-y divide-slate-100">
                 <?php foreach ($activity_forum_items as $it): ?>

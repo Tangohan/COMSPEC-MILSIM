@@ -38,6 +38,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\ArmaPlaytimeRepository;
 use App\Repositories\PersonnelOrgHistoryRepository;
 use App\Repositories\PersonnelRoleplayTimelineRepository;
+use App\Services\Personnel\RoleplayFollowupNotificationService;
 use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Steam\SteamWebApiService;
 use App\Core\Gate;
@@ -95,7 +96,7 @@ class PersonnelController
             $checks[] = ['label' => 'Affectation unité renseignée', 'ok' => !empty($personnelProfile['primary_unit_id'])];
         }
         if (!empty($rules['require_callsign'])) {
-            $checks[] = ['label' => 'Callsign renseigné', 'ok' => trim((string) ($personnelProfile['callsign'] ?? '')) !== ''];
+            $checks[] = ['label' => 'Indicatif radio renseigné', 'ok' => trim((string) ($personnelProfile['callsign'] ?? '')) !== ''];
         }
         if (!empty($rules['require_tutor'])) {
             $checks[] = ['label' => 'Tuteur affecté', 'ok' => (int) ($personnelProfile['rp_tutor_user_id'] ?? 0) > 0];
@@ -198,6 +199,7 @@ class PersonnelController
         private SteamWebApiService $steamWebApiService,
         private PersonnelOrgHistoryRepository $personnelOrgHistoryRepository,
         private PersonnelRoleplayTimelineRepository $personnelRoleplayTimelineRepository,
+        private RoleplayFollowupNotificationService $roleplayFollowupNotificationService,
     ) {}
 
     private function formatArmaPlaytimeFrench(int $seconds): string
@@ -990,6 +992,15 @@ class PersonnelController
             $data['rp_followup_progress'] = $progress;
             $data['rp_tutor_user_id'] = $tutorId;
             $data['rp_recruitment_stream'] = $stream !== '' ? $stream : null;
+            $fn = trim((string) $request->input('rp_operational_function'));
+            if (function_exists('mb_strlen') && mb_strlen($fn) > 120) {
+                $fn = mb_substr($fn, 0, 120);
+            } elseif (strlen($fn) > 120) {
+                $fn = substr($fn, 0, 120);
+            }
+            $data['rp_operational_function'] = $fn !== '' ? $fn : null;
+            $originRaw = trim((string) $request->input('rp_recruitment_origin'));
+            $data['rp_recruitment_origin'] = in_array($originRaw, ['internal', 'external'], true) ? $originRaw : null;
             $data['rp_next_interview_date'] = trim((string) $request->input('rp_next_interview_date')) ?: null;
             $data['rp_medical_due_date'] = trim((string) $request->input('rp_medical_due_date')) ?: null;
             $data['rp_service_rotation_date'] = trim((string) $request->input('rp_service_rotation_date')) ?: null;
@@ -1090,6 +1101,35 @@ class PersonnelController
                     $actorId > 0 ? $actorId : null
                 );
             }
+
+            $rpMergeKeys = [
+                'rp_followup_stage',
+                'rp_followup_status',
+                'rp_followup_progress',
+                'rp_tutor_user_id',
+                'rp_recruitment_stream',
+                'rp_next_interview_date',
+                'rp_medical_due_date',
+                'rp_service_rotation_date',
+                'rp_eligibility_snapshot_json',
+            ];
+            $afterProfile = $existingProfile;
+            foreach ($rpMergeKeys as $rk) {
+                if (array_key_exists($rk, $data)) {
+                    $afterProfile[$rk] = $data[$rk];
+                }
+            }
+            $manualTimelineAdded = trim((string) $request->input('rp_timeline_title')) !== '';
+            $this->roleplayFollowupNotificationService->notifyAfterSave(
+                $tenantId,
+                (int) $target['id'],
+                $actorId > 0 ? $actorId : 0,
+                $existingProfile,
+                $afterProfile,
+                $target,
+                url('personnel/' . $this->personPathSegment($target) . '/edit'),
+                $manualTimelineAdded
+            );
         }
 
         if ($jobRolesEnabled && $this->personnelJobRoleRepository->pivotTableExists()) {

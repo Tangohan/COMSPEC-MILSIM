@@ -549,6 +549,34 @@ if (!function_exists('training_lms_admin_redirect_from_legacy')) {
     }
 }
 
+if (!function_exists('recruitment_workspace_path')) {
+    /**
+     * Chemin URL canonique du bureau recrutement (pilotage type LMS), sans slash initial.
+     */
+    function recruitment_workspace_path(): string
+    {
+        return 'back-office/ressources/recrutement';
+    }
+}
+
+if (!function_exists('recruitment_workspace_url')) {
+    /**
+     * Lien vers le tableau de bord recrutement ou une sous-section (ex. « analyses »).
+     *
+     * @param string $suffix ex. '', 'analyses'
+     */
+    function recruitment_workspace_url(string $suffix = ''): string
+    {
+        $base = recruitment_workspace_path();
+        if ($suffix === '') {
+            return url($base);
+        }
+        $suffix = trim($suffix, '/');
+
+        return $suffix === '' ? url($base) : url($base . '/' . $suffix);
+    }
+}
+
 if (!function_exists('can')) {
     function can(string $permission): bool
     {

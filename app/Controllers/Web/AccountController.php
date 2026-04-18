@@ -624,6 +624,13 @@ class AccountController
             ];
         }
 
+        $items[] = [
+            'key' => EmailEvents::ROLEPLAY_FOLLOWUP_UPDATED,
+            'label' => 'Mises à jour du suivi roleplay et du tutorat',
+            'hint' => 'Lorsque votre dossier d’immersion est modifié par l’équipe, ou lorsque vous suivez un membre en tant que tuteur.',
+            'group' => 'Immersion',
+        ];
+
         $encadrement = 'Messages de l’encadrement';
         $items[] = [
             'key' => TenantEmailKind::notificationPreferenceKey(TenantEmailKind::ORBAT),

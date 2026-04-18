@@ -13,6 +13,8 @@ class EnlistmentRepository
 
     private static ?bool $hasAccountColumns = null;
 
+    private static ?bool $hasRecruitmentOpeningIdColumn = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -26,6 +28,16 @@ class EnlistmentRepository
         }
 
         return self::$hasAccountColumns;
+    }
+
+    private function hasRecruitmentOpeningIdColumn(): bool
+    {
+        if (self::$hasRecruitmentOpeningIdColumn === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistments' AND COLUMN_NAME = 'recruitment_opening_id' LIMIT 1");
+            self::$hasRecruitmentOpeningIdColumn = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasRecruitmentOpeningIdColumn;
     }
 
     public function create(int $tenantId, array $data): int
@@ -324,5 +336,117 @@ class EnlistmentRepository
         $stmt->execute([$tenantId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Dossiers « soumis » dont l’âge (heures) dépasse le SLA interne.
+     */
+    public function countSubmittedExceedingSlaHours(int $tenantId, int $slaHours): int
+    {
+        $slaHours = max(1, min(720, $slaHours));
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM enlistments
+             WHERE tenant_id = ? AND status = 'submitted'
+             AND TIMESTAMPDIFF(HOUR, COALESCE(updated_at, created_at), UTC_TIMESTAMP()) > ?"
+        );
+        $stmt->execute([$tenantId, $slaHours]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Volume de candidatures par semaine calendaire (lundi comme début), sur une fenêtre glissante.
+     *
+     * @return list<array{week_start: string, c: int}>
+     */
+    public function countsCreatedByWeekForTenant(int $tenantId, int $weeks = 12): array
+    {
+        $weeks = max(1, min(52, $weeks));
+        $days = $weeks * 7;
+        $stmt = $this->pdo->prepare(
+            "SELECT DATE_FORMAT(
+                    DATE_SUB(DATE(created_at), INTERVAL WEEKDAY(DATE(created_at)) DAY),
+                    '%Y-%m-%d'
+                ) AS week_start,
+                COUNT(*) AS c
+             FROM enlistments
+             WHERE tenant_id = ? AND created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+             GROUP BY week_start
+             ORDER BY week_start ASC"
+        );
+        $stmt->execute([$tenantId, $days]);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $ws = (string) ($row['week_start'] ?? '');
+            if ($ws === '') {
+                continue;
+            }
+            $out[] = ['week_start' => $ws, 'c' => (int) ($row['c'] ?? 0)];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Répartition par canal de dépôt (colonne absente sur anciennes bases : tableau vide).
+     *
+     * @return array<string, int>
+     */
+    public function countsBySubmittedViaForTenant(int $tenantId): array
+    {
+        if (!$this->hasAccountColumns()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT COALESCE(NULLIF(TRIM(submitted_via), \'\'), \'guest\') AS via, COUNT(*) AS c
+             FROM enlistments WHERE tenant_id = ? GROUP BY via'
+        );
+        $stmt->execute([$tenantId]);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $k = (string) ($row['via'] ?? 'guest');
+            $out[$k !== '' ? $k : 'guest'] = (int) ($row['c'] ?? 0);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Offres liées les plus citées (nécessite colonne recruitment_opening_id et table recruitment_openings).
+     *
+     * @return list<array{opening_id: int, c: int, title: string}>
+     */
+    public function topLinkedOpeningsByVolume(int $tenantId, int $limit = 10): array
+    {
+        $limit = max(1, min(50, $limit));
+        if (!$this->hasRecruitmentOpeningIdColumn()) {
+            return [];
+        }
+        $st = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'recruitment_openings' LIMIT 1");
+        if (!$st || !(bool) $st->fetchColumn()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT e.recruitment_opening_id AS opening_id, COUNT(*) AS c,
+                    COALESCE(MAX(ro.title), MAX(ro.reference_public), CONCAT('Offre #', e.recruitment_opening_id)) AS title
+             FROM enlistments e
+             INNER JOIN recruitment_openings ro ON ro.id = e.recruitment_opening_id AND ro.tenant_id = e.tenant_id
+             WHERE e.tenant_id = ? AND e.recruitment_opening_id IS NOT NULL AND e.recruitment_opening_id > 0
+             GROUP BY e.recruitment_opening_id
+             ORDER BY c DESC
+             LIMIT {$limit}"
+        );
+        $stmt->execute([$tenantId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'opening_id' => (int) ($row['opening_id'] ?? 0),
+                'c' => (int) ($row['c'] ?? 0),
+                'title' => (string) ($row['title'] ?? ''),
+            ];
+        }
+
+        return $out;
     }
 }

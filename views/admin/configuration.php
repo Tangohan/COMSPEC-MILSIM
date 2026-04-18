@@ -248,45 +248,83 @@ $card = static function (string $href, string $title, string $desc, string $acce
         $rpTracks = is_array($rpCfg['recruitment_tracks'] ?? null) ? $rpCfg['recruitment_tracks'] : ['Infanterie', 'Support', 'Commandement'];
         $rpEligibility = is_array($rpCfg['eligibility'] ?? null) ? $rpCfg['eligibility'] : [];
         ?>
-        <section class="rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
-            <h2 class="text-sm font-bold text-slate-900">Back-office roleplay — suivi individuel</h2>
-            <p class="mt-1 text-xs text-slate-600 max-w-3xl">Active une section optionnelle dans les dossiers personnel : tuteur, timeline opérationnelle (entretien, visite médicale, rotation), avancement et filière de recrutement. Tous les paramètres sont isolés par tenant.</p>
-            <form method="post" action="<?= htmlspecialchars(url('back-office/configuration/roleplay-followup'), ENT_QUOTES, 'UTF-8') ?>" class="mt-5 space-y-4 max-w-3xl">
+        <section class="rounded-2xl border border-emerald-200 bg-white p-6 sm:p-8 shadow-sm">
+            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-700">Dossiers personnel</p>
+            <h2 class="mt-2 text-lg font-black tracking-tight text-slate-900">Suivi d’immersion (tutorat &amp; dossier)</h2>
+            <p class="mt-3 text-sm text-slate-600 max-w-3xl leading-relaxed">Permet d’afficher sur chaque fiche dossier le tuteur, une frise des évènements importants (entretien, visite médicale, rotation…), l’avancement recrutement et la filière choisie. Ces réglages ne concernent que votre communauté.</p>
+
+            <form method="post" action="<?= htmlspecialchars(url('back-office/configuration/roleplay-followup'), ENT_QUOTES, 'UTF-8') ?>" class="mt-8 max-w-4xl space-y-8">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                <label class="flex items-start gap-3 text-sm text-slate-800 cursor-pointer">
-                    <input type="checkbox" name="rp_followup_enabled" value="1" class="mt-1 rounded border-slate-300" <?= !empty($rpCfg['enabled']) ? 'checked' : '' ?>>
-                    <span>Activer la section roleplay back-office (affichée sur les fiches et formulaires dossier).</span>
-                </label>
-                <label class="flex items-start gap-3 text-sm text-slate-800 cursor-pointer">
-                    <input type="checkbox" name="rp_followup_optional" value="1" class="mt-1 rounded border-slate-300" <?= !empty($rpCfg['optional']) ? 'checked' : '' ?>>
-                    <span>Section facultative (ne bloque pas la complétude globale si les champs roleplay ne sont pas renseignés).</span>
-                </label>
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div>
-                        <label for="rp_followup_stages" class="block text-xs font-semibold text-slate-700 mb-1">Étapes d’avancement (une ligne = une étape)</label>
-                        <textarea id="rp_followup_stages" name="rp_followup_stages" rows="5" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"><?= htmlspecialchars(implode("\n", array_map(static fn ($v) => trim((string) $v), $rpStages))) ?></textarea>
-                    </div>
-                    <div>
-                        <label for="rp_followup_tracks" class="block text-xs font-semibold text-slate-700 mb-1">Filières recrutement (une ligne = une filière)</label>
-                        <textarea id="rp_followup_tracks" name="rp_followup_tracks" rows="5" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"><?= htmlspecialchars(implode("\n", array_map(static fn ($v) => trim((string) $v), $rpTracks))) ?></textarea>
+
+                <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-5 sm:p-6">
+                    <h3 class="text-sm font-bold text-slate-900">Activation</h3>
+                    <p class="mt-2 text-xs text-slate-600 leading-relaxed max-w-2xl">Sans la première case, la section n’apparaît pas sur les fiches ni dans les formulaires dossier.</p>
+                    <div class="mt-6 space-y-4">
+                        <label class="flex items-start gap-3 rounded-lg border border-transparent p-1 text-sm text-slate-800 cursor-pointer hover:border-slate-200/80">
+                            <input type="checkbox" name="rp_followup_enabled" value="1" class="mt-1 shrink-0 rounded border-slate-300" <?= !empty($rpCfg['enabled']) ? 'checked' : '' ?>>
+                            <span><span class="font-semibold text-slate-900">Afficher le suivi d’immersion</span> sur les fiches et formulaires dossier.</span>
+                        </label>
+                        <label class="flex items-start gap-3 rounded-lg border border-transparent p-1 text-sm text-slate-800 cursor-pointer hover:border-slate-200/80">
+                            <input type="checkbox" name="rp_followup_optional" value="1" class="mt-1 shrink-0 rounded border-slate-300" <?= !empty($rpCfg['optional']) ? 'checked' : '' ?>>
+                            <span><span class="font-semibold text-slate-900">Ne pas bloquer la validation du dossier</span> si les champs de cette section sont encore vides.</span>
+                        </label>
                     </div>
                 </div>
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div>
-                        <label for="rp_eligibility_min_completeness" class="block text-xs font-semibold text-slate-700 mb-1">Éligibilité — complétude minimum (%)</label>
-                        <input type="number" min="0" max="100" id="rp_eligibility_min_completeness" name="rp_eligibility_min_completeness" value="<?= (int) ($rpEligibility['min_completeness'] ?? 50) ?>" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label for="rp_eligibility_min_readiness" class="block text-xs font-semibold text-slate-700 mb-1">Éligibilité — disponibilité minimum (%)</label>
-                        <input type="number" min="0" max="100" id="rp_eligibility_min_readiness" name="rp_eligibility_min_readiness" value="<?= (int) ($rpEligibility['min_readiness'] ?? 30) ?>" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+
+                <div class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+                    <h3 class="text-sm font-bold text-slate-900">Listes proposées aux équipiers</h3>
+                    <p class="mt-2 text-xs text-slate-600 leading-relaxed max-w-3xl">Chaque ligne devient un choix dans les menus (étapes d’avancement et filières de recrutement). Vous pouvez renommer ou réordonner librement.</p>
+                    <div class="mt-6 grid gap-6 lg:grid-cols-2 lg:gap-x-10">
+                        <div>
+                            <label for="rp_followup_stages" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-700">Étapes d’avancement</label>
+                            <p class="mb-2 text-[11px] text-slate-500">Une ligne = une étape, de la plus tôt à la plus avancée.</p>
+                            <textarea id="rp_followup_stages" name="rp_followup_stages" rows="6" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm leading-relaxed"><?= htmlspecialchars(implode("\n", array_map(static fn ($v) => trim((string) $v), $rpStages))) ?></textarea>
+                        </div>
+                        <div>
+                            <label for="rp_followup_tracks" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-700">Filières de recrutement</label>
+                            <p class="mb-2 text-[11px] text-slate-500">Une ligne = une filière affichée aux staffs.</p>
+                            <textarea id="rp_followup_tracks" name="rp_followup_tracks" rows="6" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm leading-relaxed"><?= htmlspecialchars(implode("\n", array_map(static fn ($v) => trim((string) $v), $rpTracks))) ?></textarea>
+                        </div>
                     </div>
                 </div>
-                <div class="flex flex-wrap gap-4 text-sm text-slate-800">
-                    <label class="inline-flex items-center gap-2"><input type="checkbox" name="rp_eligibility_require_unit" value="1" class="rounded border-slate-300" <?= !empty($rpEligibility['require_unit']) ? 'checked' : '' ?>> Unité obligatoire</label>
-                    <label class="inline-flex items-center gap-2"><input type="checkbox" name="rp_eligibility_require_callsign" value="1" class="rounded border-slate-300" <?= !empty($rpEligibility['require_callsign']) ? 'checked' : '' ?>> Callsign obligatoire</label>
-                    <label class="inline-flex items-center gap-2"><input type="checkbox" name="rp_eligibility_require_tutor" value="1" class="rounded border-slate-300" <?= !empty($rpEligibility['require_tutor']) ? 'checked' : '' ?>> Tuteur obligatoire</label>
+
+                <div class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+                    <h3 class="text-sm font-bold text-slate-900">Indicateur « dossier prêt » sur la fiche</h3>
+                    <p class="mt-2 text-xs text-slate-600 leading-relaxed max-w-3xl">Sur la fiche, un encadré indique si le dossier atteint ces minimums. Les pourcentages reprennent la complétude du dossier et le niveau d’engagement déjà saisis ailleurs dans le portail.</p>
+                    <div class="mt-6 grid gap-6 sm:grid-cols-2 sm:gap-x-10">
+                        <div>
+                            <label for="rp_eligibility_min_completeness" class="mb-2 block text-xs font-semibold text-slate-700">Complétude du dossier — minimum (%)</label>
+                            <input type="number" min="0" max="100" id="rp_eligibility_min_completeness" name="rp_eligibility_min_completeness" value="<?= (int) ($rpEligibility['min_completeness'] ?? 50) ?>" class="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2.5 text-sm">
+                        </div>
+                        <div>
+                            <label for="rp_eligibility_min_readiness" class="mb-2 block text-xs font-semibold text-slate-700">Engagement / disponibilité — minimum (%)</label>
+                            <input type="number" min="0" max="100" id="rp_eligibility_min_readiness" name="rp_eligibility_min_readiness" value="<?= (int) ($rpEligibility['min_readiness'] ?? 30) ?>" class="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2.5 text-sm">
+                        </div>
+                    </div>
                 </div>
-                <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800">Enregistrer la configuration roleplay</button>
+
+                <div class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+                    <h3 class="text-sm font-bold text-slate-900">Exigences supplémentaires pour le même indicateur</h3>
+                    <p class="mt-2 text-xs text-slate-600 leading-relaxed max-w-3xl">Cochez les informations qui doivent obligatoirement être présentes sur la fiche pour compter le dossier comme prêt (en plus des deux pourcentages ci-dessus).</p>
+                    <div class="mt-6 space-y-3 text-sm text-slate-800">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="checkbox" name="rp_eligibility_require_unit" value="1" class="mt-1 shrink-0 rounded border-slate-300" <?= !empty($rpEligibility['require_unit']) ? 'checked' : '' ?>>
+                            <span>Affectation à une unité renseignée</span>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="checkbox" name="rp_eligibility_require_callsign" value="1" class="mt-1 shrink-0 rounded border-slate-300" <?= !empty($rpEligibility['require_callsign']) ? 'checked' : '' ?>>
+                            <span>Indicatif radio renseigné</span>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="checkbox" name="rp_eligibility_require_tutor" value="1" class="mt-1 shrink-0 rounded border-slate-300" <?= !empty($rpEligibility['require_tutor']) ? 'checked' : '' ?>>
+                            <span>Tuteur désigné sur le dossier</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-slate-800">Enregistrer le suivi d’immersion</button>
+                </div>
             </form>
         </section>
         <?php endif; ?>

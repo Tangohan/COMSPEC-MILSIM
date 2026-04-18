@@ -57,6 +57,9 @@ $boNavHome = $p === 'back-office';
 $boNavUsers = $p === 'back-office/users' || str_starts_with($p, 'back-office/users/');
 $boNavInv = str_starts_with($p, 'back-office/invitations');
 $boNavRec = str_starts_with($p, 'back-office/recruitments');
+$rwPath = function_exists('recruitment_workspace_path') ? recruitment_workspace_path() : 'back-office/ressources/recrutement';
+$boNavRecWorkspaceDash = $p === $rwPath;
+$boNavRecWorkspaceAnalytics = $p === $rwPath . '/analyses';
 $boNavRecSettings = str_starts_with($p, 'back-office/recruitments/settings');
 $boNavRecMessages = str_starts_with($p, 'back-office/recruitments/messages-prefaits');
 $boNavRecOfferNew = str_starts_with($p, 'back-office/recruitment/offers/create');
@@ -151,9 +154,12 @@ $canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.a
         <?php if ($canInv): ?>
             <?php $boLink('back-office/invitations', 'Invitations', $boNavInv); ?>
         <?php endif; ?>
-        <?php $boLink('back-office/recruitments', 'Candidatures', $boNavRec); ?>
-        <?php $boLink('back-office/recruitments/settings', 'Paramètres SLA recrutement', $boNavRecSettings); ?>
-        <?php $boLink('back-office/recruitments/messages-prefaits', 'Messages préfaits recrutement', $boNavRecMessages); ?>
+        <?php $boSection('Recrutement'); ?>
+        <?php $boLink($rwPath, 'Bureau recrutement', $boNavRecWorkspaceDash); ?>
+        <?php $boLink('back-office/recruitments', 'File des dossiers', $boNavRec && !$boNavRecSettings && !$boNavRecMessages); ?>
+        <?php $boLink($rwPath . '/analyses', 'Analyses candidatures', $boNavRecWorkspaceAnalytics); ?>
+        <?php $boLink('back-office/recruitments/settings', 'SLA recrutement', $boNavRecSettings); ?>
+        <?php $boLink('back-office/recruitments/messages-prefaits', 'Messages préfaits', $boNavRecMessages); ?>
         <?php if ($canRecOffers): ?>
             <?php $boLink('back-office/recruitment/offers', 'Offres publiées', $boNavRecOffers); ?>
             <?php $boLink('back-office/recruitment/offers/create', 'Nouvelle offre', $boNavRecOfferNew); ?>

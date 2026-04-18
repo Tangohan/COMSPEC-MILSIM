@@ -48,7 +48,9 @@ final class RoleplayFollowupAdminController
             $p = $this->personnelProfileRepository->getByUserId($uid) ?? [];
             $hasTracking = trim((string) ($p['rp_followup_stage'] ?? '')) !== ''
                 || (int) ($p['rp_tutor_user_id'] ?? 0) > 0
-                || trim((string) ($p['rp_recruitment_stream'] ?? '')) !== '';
+                || trim((string) ($p['rp_recruitment_stream'] ?? '')) !== ''
+                || trim((string) ($p['rp_operational_function'] ?? '')) !== ''
+                || trim((string) ($p['rp_recruitment_origin'] ?? '')) !== '';
             if ($hasTracking) {
                 $countTracked++;
             }
@@ -88,6 +90,8 @@ final class RoleplayFollowupAdminController
                 'status' => trim((string) ($p['rp_followup_status'] ?? '')),
                 'progress' => $rpProgress !== null ? (int) $rpProgress : null,
                 'track' => trim((string) ($p['rp_recruitment_stream'] ?? '')),
+                'function' => trim((string) ($p['rp_operational_function'] ?? '')),
+                'origin' => trim((string) ($p['rp_recruitment_origin'] ?? '')),
                 'tutor_label' => $tutorLabel,
                 'next_due' => $nextDue,
                 'next_due_is_overdue' => $nextDue !== null && $nextDue < $today,

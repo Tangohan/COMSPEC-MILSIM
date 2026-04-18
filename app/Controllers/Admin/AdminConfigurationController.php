@@ -265,7 +265,7 @@ class AdminConfigurationController
                 ],
             ],
         ]);
-        Session::flash('success', 'Configuration du suivi roleplay enregistrée.');
+        Session::flash('success', 'Réglages du suivi d’immersion enregistrés.');
 
         return Response::redirect(url('back-office/configuration'));
     }

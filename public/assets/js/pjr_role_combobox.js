@@ -8,6 +8,7 @@
   var activePanel = null;
   var activeTrigger = null;
   var repositionHandler = null;
+  var scrollParentsForPanel = [];
   var swallowNextClick = false;
 
   function esc(s) {
@@ -29,6 +30,10 @@
     if (repositionHandler) {
       window.removeEventListener('scroll', repositionHandler, true);
       window.removeEventListener('resize', repositionHandler);
+      for (var si = 0; si < scrollParentsForPanel.length; si++) {
+        scrollParentsForPanel[si].removeEventListener('scroll', repositionHandler, true);
+      }
+      scrollParentsForPanel = [];
       repositionHandler = null;
     }
     if (activePanel && activePanel.parentNode) {
@@ -140,17 +145,22 @@
     trigger.classList.add('ring-2', 'ring-emerald-500/40', 'border-emerald-400');
 
     var panel = document.createElement('div');
-    panel.className =
-      'pjr-role-combobox-float fixed z-[1200] flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl ring-1 ring-slate-900/5';
+    panel.className = 'pjr-role-combobox-float';
+    // Styles inline : le panneau est créé en JS ; avec Tailwind CDN ou purge, les utilitaires
+    // peuvent être absents → panneau invisible ou hauteur nulle sans ces règles.
+    panel.style.cssText =
+      'position:fixed;z-index:12000;box-sizing:border-box;display:flex;flex-direction:column;' +
+      'overflow:hidden;border-radius:12px;border:1px solid #e2e8f0;background:#fff;' +
+      'box-shadow:0 25px 50px -12px rgba(15,23,42,0.25)';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'Choisir un emploi');
 
     panel.innerHTML =
-      '<div class="border-b border-slate-100 p-2">' +
+      '<div style="flex-shrink:0;padding:8px;border-bottom:1px solid #f1f5f9">' +
       '<label class="sr-only" for="pjr-combobox-filter-active">Filtrer la liste</label>' +
-      '<input type="search" id="pjr-combobox-filter-active" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30" placeholder="Tapez pour filtrer…" autocomplete="off">' +
+      '<input type="search" id="pjr-combobox-filter-active" style="box-sizing:border-box;width:100%;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;padding:8px 12px;font-size:14px;color:#0f172a" placeholder="Tapez pour filtrer…" autocomplete="off">' +
       '</div>' +
-      '<ul class="pjr-role-combobox-ul min-h-0 flex-1 overflow-y-auto overscroll-contain p-1" role="listbox"></ul>';
+      '<ul class="pjr-role-combobox-ul" role="listbox" style="flex:1 1 auto;min-height:12rem;min-width:0;overflow-y:auto;overflow-x:hidden;margin:0;padding:4px;list-style:none"></ul>';
 
     document.body.appendChild(panel);
     activePanel = panel;
@@ -184,6 +194,16 @@
     };
     window.addEventListener('scroll', repositionHandler, true);
     window.addEventListener('resize', repositionHandler);
+    scrollParentsForPanel = [];
+    var anc = trigger.parentElement;
+    while (anc && anc !== document.body && anc !== document.documentElement) {
+      var st = window.getComputedStyle(anc);
+      if (st.overflowY === 'auto' || st.overflowY === 'scroll' || st.overflowX === 'auto' || st.overflowX === 'scroll') {
+        anc.addEventListener('scroll', repositionHandler, true);
+        scrollParentsForPanel.push(anc);
+      }
+      anc = anc.parentElement;
+    }
     repositionHandler();
 
     filterInput.addEventListener('input', function () {
@@ -216,17 +236,20 @@
   }
 
   function handleTriggerEvent(e) {
+    if (!e || !e.target || typeof e.target.closest !== 'function') {
+      return;
+    }
+    // Clics dans le panneau : ne pas appliquer le « swallow » du clic fantôme après ouverture.
+    if (e.target.closest('.pjr-role-combobox-float')) {
+      swallowNextClick = false;
+      return;
+    }
     if (e.type === 'click' && swallowNextClick) {
       swallowNextClick = false;
       return;
     }
-    if (e.target.closest('.pjr-role-combobox-float')) {
-      return;
-    }
     var trigger = e.target.closest('.pjr-role-combobox-trigger');
     if (trigger) {
-      e.preventDefault();
-      e.stopPropagation();
       if (activeTrigger === trigger && activePanel) {
         closePanel();
       } else {
@@ -239,7 +262,13 @@
 
   document.addEventListener('click', handleTriggerEvent);
   document.addEventListener('pointerdown', function (e) {
-    if (!e.isPrimary || e.button !== 0) return;
+    if (e.button !== 0) {
+      return;
+    }
+    // Ne filtrer que les pointeurs explicitement non primaires (évite les faux négatifs si isPrimary est absent).
+    if (e.isPrimary === false) {
+      return;
+    }
     var trigger = e.target && e.target.closest ? e.target.closest('.pjr-role-combobox-trigger') : null;
     swallowNextClick = !!trigger;
     handleTriggerEvent(e);
