@@ -85,6 +85,7 @@ return [
                     'slot' => 'center',
                     'links' => [
                         ['label' => 'Mur opérationnel', 'path' => 'tableau-operationnel', 'permission' => 'operational.board.view', 'description' => 'Permanences et consignes publiées'],
+                        ['label' => 'Centre d’opérations admin', 'path' => 'back-office/centre-operations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'File actionnable, playbooks, audit et objectifs KPI'],
                         ['label' => 'Pilotage du mur opérationnel', 'path' => 'back-office/tableau-operationnel', 'any_permissions' => ['operational.board.edit', 'admin.organization', 'admin.access', 'admin.system'], 'description' => 'Publication et mise à jour des entrées'],
                         ['label' => 'ORBAT', 'path' => 'orbat', 'permission' => 'organization.orbat.view', 'description' => 'Structure et effectifs'],
                         ['label' => 'Situation tactique (ATAK)', 'path' => 'atak', 'description' => 'Vue opérationnelle'],
@@ -391,7 +392,7 @@ return [
                     'slot' => 'center',
                     'links' => [
                         ['label' => 'Back-office communauté', 'path' => 'back-office', 'any_permissions' => ['admin.organization', 'admin.access']],
-                        ['label' => 'Centre opérationnel', 'path' => 'back-office/centre-operations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Synthèse des leviers d’administration'],
+                        ['label' => 'Centre d’opérations admin', 'path' => 'back-office/centre-operations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'File actionnable, playbooks, audit et objectifs KPI'],
                         ['label' => 'Mur opérationnel', 'path' => 'tableau-operationnel', 'permission' => 'operational.board.view', 'description' => 'Permanences et consignes publiées'],
                         ['label' => 'Pilotage du mur opérationnel', 'path' => 'back-office/tableau-operationnel', 'any_permissions' => ['operational.board.edit', 'admin.organization', 'admin.access', 'admin.system'], 'description' => 'Publication et mise à jour des entrées'],
                         ['label' => 'E-mails aux membres', 'path' => 'back-office/communications', 'any_permissions' => ['comms.email.send.orbat', 'comms.email.send.mission', 'comms.email.send.activity', 'comms.email.send.custom', 'comms.email.broadcast', 'comms.email_templates.manage', 'comms.notifications.history.view'], 'description' => 'Diffusions, modèles et groupes de destinataires'],
