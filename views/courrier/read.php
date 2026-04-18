@@ -3,6 +3,9 @@ $c = $courrier ?? [];
 $doc = $c['document'] ?? null;
 $previewHtml = $c['preview_html'] ?? '';
 $tenantUsers = $c['tenant_users'] ?? [];
+$versions = $c['versions'] ?? [];
+$workflowHistory = $c['workflow_history'] ?? [];
+$alerts = $c['alerts'] ?? [];
 $baseUrl = url('');
 $currentUserId = (int) (\App\Core\Session::get('user_id') ?? 0);
 if (!$doc) {
@@ -32,6 +35,48 @@ $statusBadgeClass = match ($status) {
 };
 $isDraft = $status === 'draft';
 $isSigned = !empty($doc['signed_at']);
+$blockingAlerts = array_values(array_filter($alerts, static fn (array $a): bool => ($a['severity'] ?? '') === 'blocking'));
+$checklist = [
+    ['label' => 'Modèle sélectionné', 'ok' => !empty($doc['template_id'])],
+    ['label' => 'Format (preset) défini', 'ok' => !empty($doc['preset_id'])],
+    ['label' => 'Objet renseigné', 'ok' => trim((string) ($doc['subject'] ?? '')) !== ''],
+    ['label' => 'Destinataire renseigné', 'ok' => trim((string) ($doc['destination_label'] ?? '')) !== ''],
+    ['label' => 'Signataire renseigné', 'ok' => trim((string) ($doc['issuer_label'] ?? '')) !== ''],
+    ['label' => 'Aucune alerte bloquante', 'ok' => count($blockingAlerts) === 0],
+];
+$timeline = [];
+foreach ($versions as $v) {
+    $timeline[] = [
+        'kind' => 'version',
+        'at' => (string) ($v['created_at'] ?? ''),
+        'title' => 'Version v' . (int) ($v['version_number'] ?? 0),
+        'detail' => trim((string) ($v['created_by_name'] ?? '')) !== ''
+            ? 'Snapshot par ' . (string) $v['created_by_name']
+            : 'Snapshot enregistré',
+    ];
+}
+foreach ($workflowHistory as $w) {
+    $timeline[] = [
+        'kind' => 'decision',
+        'at' => (string) ($w['acted_at'] ?? ''),
+        'title' => (string) ($w['action_label'] ?? 'Décision'),
+        'detail' => trim((string) ($w['acted_by_name'] ?? '')) !== ''
+            ? 'Par ' . (string) $w['acted_by_name']
+            : 'Action système/utilisateur',
+        'comment' => trim((string) ($w['comment'] ?? '')),
+    ];
+}
+usort($timeline, static function (array $a, array $b): int {
+    return strcmp((string) ($b['at'] ?? ''), (string) ($a['at'] ?? ''));
+});
+$timeline = array_slice($timeline, 0, 12);
+$memberLinks = [];
+foreach (['created_by' => 'Rédacteur', 'validated_by' => 'Validateur', 'signed_by' => 'Signataire'] as $field => $label) {
+    $uid = (int) ($doc[$field] ?? 0);
+    if ($uid > 0) {
+        $memberLinks[] = ['label' => $label, 'user_id' => $uid];
+    }
+}
 ?>
 <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl) ?>/assets/css/courrier-document.css" />
 <div class="min-h-screen bg-gradient-to-b from-slate-200 via-slate-100 to-slate-200/90">
@@ -194,6 +239,62 @@ $isSigned = !empty($doc['signed_at']);
                     </a>
                     <?php endif; ?>
                 </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-md shadow-slate-900/5 ring-1 ring-slate-900/5 space-y-4">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Traçabilité décisionnelle</p>
+                <div>
+                    <p class="text-xs font-semibold text-slate-800 mb-2">Checklist conformité pré-envoi</p>
+                    <ul class="space-y-1.5">
+                        <?php foreach ($checklist as $item): ?>
+                        <li class="flex items-start gap-2 text-xs <?= $item['ok'] ? 'text-emerald-700' : 'text-rose-700' ?>">
+                            <span aria-hidden="true"><?= $item['ok'] ? '✓' : '•' ?></span>
+                            <span><?= htmlspecialchars((string) $item['label']) ?></span>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php if (!empty($blockingAlerts)): ?>
+                    <p class="mt-2 text-[11px] text-rose-700">Blocage actif : corrigez les éléments ci-dessus avant diffusion.</p>
+                    <?php endif; ?>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold text-slate-800 mb-2">Historique unifié (versions + décisions)</p>
+                    <?php if (empty($timeline)): ?>
+                    <p class="text-xs text-slate-500">Aucun événement historisé pour le moment.</p>
+                    <?php else: ?>
+                    <ul class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        <?php foreach ($timeline as $event): ?>
+                        <li class="rounded-xl border px-3 py-2 <?= ($event['kind'] ?? '') === 'decision' ? 'border-sky-200 bg-sky-50/60' : 'border-slate-200 bg-slate-50/70' ?>">
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] <?= ($event['kind'] ?? '') === 'decision' ? 'text-sky-700' : 'text-slate-500' ?>">
+                                <?= ($event['kind'] ?? '') === 'decision' ? 'Décision' : 'Version' ?>
+                            </p>
+                            <p class="text-xs font-semibold text-slate-900"><?= htmlspecialchars((string) ($event['title'] ?? 'Événement')) ?></p>
+                            <p class="text-[11px] text-slate-600"><?= htmlspecialchars((string) ($event['detail'] ?? '')) ?></p>
+                            <?php if (!empty($event['comment'])): ?>
+                            <p class="mt-1 text-[11px] text-slate-500 italic">“<?= htmlspecialchars((string) $event['comment']) ?>”</p>
+                            <?php endif; ?>
+                            <p class="mt-1 text-[10px] text-slate-400"><?= !empty($event['at']) ? htmlspecialchars(date('d/m/Y H:i', strtotime((string) $event['at']))) : 'Date inconnue' ?></p>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php endif; ?>
+                </div>
+
+                <?php if (!empty($memberLinks)): ?>
+                <div>
+                    <p class="text-xs font-semibold text-slate-800 mb-2">Liens vers dossiers personnels</p>
+                    <ul class="space-y-1.5">
+                        <?php foreach ($memberLinks as $link): ?>
+                        <li>
+                            <a href="<?= $baseUrl ?>/personnel/<?= (int) $link['user_id'] ?>" class="text-xs font-semibold text-indigo-700 hover:text-indigo-900 hover:underline">
+                                <?= htmlspecialchars((string) $link['label']) ?> → dossier membre #<?= (int) $link['user_id'] ?>
+                            </a>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
             </div>
 
             <div class="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-md shadow-slate-900/5 ring-1 ring-slate-900/5">

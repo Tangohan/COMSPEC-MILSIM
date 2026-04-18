@@ -37,5 +37,37 @@ if (!hasInterface) exitWith {};
         [] call comspec_overwatch_connect_fnc_pollMapShapes;
     }, 10, []] call CBA_fnc_addPerFrameHandler;
 
+
+    // Event bus wiring C2: propagation hiérarchique simple (Commandant -> Squad -> Fireteam)
+    ["OnOrderIssued", {
+        params ["_order"];
+        private _target = _order getOrDefault ["target", ""];
+        if (_target isEqualTo "") exitWith {};
+
+        // Simule la propagation en log local, consommable par UI/replay
+        private _chainLog = missionNamespace getVariable ["COMSPEC_OrderPropagationLog", []];
+        _chainLog pushBack [
+            serverTime,
+            _order getOrDefault ["id", ""],
+            "COMMANDER",
+            "SQUAD_LEADER",
+            _target
+        ];
+        _chainLog pushBack [
+            serverTime,
+            _order getOrDefault ["id", ""],
+            "SQUAD_LEADER",
+            "FIRETEAM",
+            _target
+        ];
+        missionNamespace setVariable ["COMSPEC_OrderPropagationLog", _chainLog, true];
+    }] call comspec_overwatch_connect_fnc_registerEventHandler;
+
+    ["OnTrackingAnomaly", {
+        params ["_alert"];
+        private _kind = _alert getOrDefault ["kind", "ANOMALY"];
+        systemChat format ["[COMSPEC][TRACK] %1 détectée.", _kind];
+    }] call comspec_overwatch_connect_fnc_registerEventHandler;
+
     [] spawn comspec_overwatch_connect_fnc_playtimeTracker;
 }] call CBA_fnc_addEventHandler;

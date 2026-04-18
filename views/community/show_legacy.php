@@ -28,6 +28,13 @@ $contactEmail = (string) ($cp['contactEmail'] ?? '');
 $contactIntro = (string) ($cp['contactIntro'] ?? '');
 $contactFormEnabled = !empty($cp['contactFormEnabled']);
 $publicAudience = ($cp['publicAudience'] ?? 'unit') === 'platform' ? 'platform' : 'unit';
+$hasContactCta = $discordUrl !== '' || $contactEmail !== '' || $contactFormEnabled;
+$primaryCta = null;
+if (!$isLocked) {
+    $primaryCta = $publicAudience === 'platform' ? 'candidater' : 'rejoindre';
+} elseif ($hasContactCta) {
+    $primaryCta = 'contacter';
+}
 
 $communityCode = trim((string) ($tenant['community_code'] ?? ''));
 $flashSuccess = \App\Core\Session::getFlash('success');
@@ -114,13 +121,13 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
             <span class="inline-flex items-center px-4 py-2.5 bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-xl cursor-not-allowed" title="Forum réservé aux membres">Forum (réservé membres)</span>
         <?php endif; ?>
 
-        <?php if (!$isLocked): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center px-4 py-2.5 <?= $publicAudience === 'platform' ? 'border border-dashed border-slate-300 text-slate-600' : 'border border-slate-300' ?> text-xs font-bold uppercase rounded-xl hover:bg-slate-50" data-comspec-zone="fiche_classique"><?= $publicAudience === 'platform' ? 'Candidater' : 'Rejoindre (candidature)' ?></a>
+        <?php if ($primaryCta === 'rejoindre' || $primaryCta === 'candidater'): ?>
+            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center px-4 py-2.5 <?= $primaryCta === 'rejoindre' ? 'bg-emerald-600 text-white hover:bg-emerald-500 border border-emerald-600' : 'border border-dashed border-slate-300 text-slate-700 hover:bg-slate-50' ?> text-xs font-bold uppercase rounded-xl" data-comspec-zone="fiche_classique" data-comspec-cta="<?= $primaryCta ?>"><?= $primaryCta === 'rejoindre' ? 'Rejoindre' : 'Candidater' ?></a>
         <?php else: ?>
             <span class="inline-flex items-center px-4 py-2.5 border border-slate-200 text-slate-400 text-xs font-bold uppercase rounded-xl"><?= $publicAudience === 'platform' ? 'Candidatures fermées' : 'Inscription fermée' ?></span>
         <?php endif; ?>
-        <?php if ($discordUrl !== '' || $contactEmail !== '' || $contactFormEnabled): ?>
-            <a href="#community-contact" class="inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50">Contacter l'équipe</a>
+        <?php if ($hasContactCta): ?>
+            <a href="#community-contact" class="comspec-analytics-cta inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50" data-comspec-zone="fiche_classique" data-comspec-cta="contacter">Contacter</a>
         <?php endif; ?>
 
         <?php if (!\App\Core\Session::get('user_id')): ?>

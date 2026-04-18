@@ -167,12 +167,86 @@ final class SystemOpsCenterController
             ['code' => 'done', 'label' => 'Terminé', 'usage' => 'Action clôturée, conserver la traçabilité.'],
         ];
 
+        $priorityBacklog = [
+            [
+                'code' => 'COMM-001',
+                'priority' => 'P0',
+                'title' => 'Funnel conversion communautés',
+                'outcome' => 'Mesurer la conversion visiteur -> membre actif par communauté.',
+                'deliverable' => 'Tableau de funnel multi-tenant + export CSV/PDF.',
+            ],
+            [
+                'code' => 'REC-002',
+                'priority' => 'P0',
+                'title' => 'SLA candidature + alertes inactivité',
+                'outcome' => 'Réduire les candidatures sans réponse.',
+                'deliverable' => 'SLA paramétrable + alertes de relance par rôle.',
+            ],
+            [
+                'code' => 'ONB-003',
+                'priority' => 'P0',
+                'title' => 'Checklist onboarding multi-modules',
+                'outcome' => 'Structurer l’intégration utilisateur inter-modules.',
+                'deliverable' => 'Checklist de parcours avec progression persistante.',
+            ],
+            [
+                'code' => 'ONB-004',
+                'priority' => 'P1',
+                'title' => 'Nudges d’inactivité contextualisés',
+                'outcome' => 'Réengager les utilisateurs inactifs sans bruit.',
+                'deliverable' => 'Relances ciblées selon module, profil et fréquence.',
+            ],
+            [
+                'code' => 'LMS-005',
+                'priority' => 'P1',
+                'title' => 'Parcours recommandés selon rôle métier',
+                'outcome' => 'Améliorer la complétion des parcours de formation.',
+                'deliverable' => 'Recommandation LMS basée sur rôle + activité.',
+            ],
+            [
+                'code' => 'EVT-006',
+                'priority' => 'P1',
+                'title' => 'Score régularité présence + motifs d’absence',
+                'outcome' => 'Rendre visible les patterns de présence/absence.',
+                'deliverable' => 'Score de régularité + catégorisation des motifs.',
+            ],
+            [
+                'code' => 'FOR-007',
+                'priority' => 'P1',
+                'title' => 'Digest hebdo des contenus prioritaires',
+                'outcome' => 'Accélérer la lecture des sujets critiques du forum.',
+                'deliverable' => 'Digest hebdomadaire personnalisé par rôle.',
+            ],
+            [
+                'code' => 'DOC-008',
+                'priority' => 'P0',
+                'title' => 'Historique décisionnel unifié courrier/documents',
+                'outcome' => 'Renforcer la traçabilité des validations.',
+                'deliverable' => 'Timeline décisionnelle horodatée et signée.',
+            ],
+            [
+                'code' => 'ADM-009',
+                'priority' => 'P0',
+                'title' => 'Centre d’opérations admin',
+                'outcome' => 'Trier les actions selon impact et urgence.',
+                'deliverable' => 'Vue consolidée des actions priorisées.',
+            ],
+            [
+                'code' => 'PLAT-010',
+                'priority' => 'P0',
+                'title' => 'Standard d’événements analytiques transverse',
+                'outcome' => 'Uniformiser la mesure KPI inter-modules.',
+                'deliverable' => 'Schéma d’événements versionné + dictionnaire.',
+            ],
+        ];
+
         return Response::view('layout.main', [
             'content' => 'admin.system.ops_center',
             'title' => 'Ops Center — Modération / Support / Admin',
             'opsCenterActions' => $actions,
             'opsCenterTemplates' => $templates,
             'opsCenterStatusDictionary' => $statusDictionary,
+            'opsCenterPriorityBacklog' => $priorityBacklog,
             'opsCenterRoleCounts' => [
                 'moderator' => count(array_filter($actions, static fn (array $item): bool => $item['role'] === 'moderator')),
                 'support' => count(array_filter($actions, static fn (array $item): bool => $item['role'] === 'support')),
