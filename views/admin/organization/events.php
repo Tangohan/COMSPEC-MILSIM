@@ -159,11 +159,16 @@ $dowLabel = static function (int $day): string {
                 <h2 class="text-lg font-bold text-slate-900"><?= htmlspecialchars($vueMeta['titre']) ?></h2>
                 <p class="mt-1 text-sm text-slate-600 max-w-xl"><?= htmlspecialchars($vueMeta['soustitre']) ?></p>
             </div>
-            <nav class="inline-flex flex-wrap rounded-xl bg-slate-200/70 p-1 gap-1 shadow-inner" aria-label="Filtre des créneaux">
-                <a href="<?= url('back-office/events') ?>?vue=a_venir" class="rounded-lg px-3.5 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 <?= $eventsVue === 'a_venir' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900' ?>">À venir</a>
-                <a href="<?= url('back-office/events') ?>?vue=passes" class="rounded-lg px-3.5 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 <?= $eventsVue === 'passes' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900' ?>">Passés</a>
-                <a href="<?= url('back-office/events') ?>?vue=annules" class="rounded-lg px-3.5 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 <?= $eventsVue === 'annules' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900' ?>">Annulés</a>
-            </nav>
+            <div class="flex flex-wrap items-center gap-2">
+                <nav class="inline-flex flex-wrap rounded-xl bg-slate-200/70 p-1 gap-1 shadow-inner" aria-label="Filtre des créneaux">
+                    <a href="<?= url('back-office/events') ?>?vue=a_venir" class="rounded-lg px-3.5 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 <?= $eventsVue === 'a_venir' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900' ?>">À venir</a>
+                    <a href="<?= url('back-office/events') ?>?vue=passes" class="rounded-lg px-3.5 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 <?= $eventsVue === 'passes' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900' ?>">Passés</a>
+                    <a href="<?= url('back-office/events') ?>?vue=annules" class="rounded-lg px-3.5 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 <?= $eventsVue === 'annules' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900' ?>">Annulés</a>
+                </nav>
+                <a href="<?= url('back-office/events/insights') ?>" class="inline-flex items-center rounded-xl border border-violet-200 bg-violet-50 px-3.5 py-2 text-sm font-semibold text-violet-900 transition hover:border-violet-300 hover:bg-violet-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2">
+                    Insights présence
+                </a>
+            </div>
         </div>
 
         <?php

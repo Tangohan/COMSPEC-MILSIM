@@ -50,11 +50,7 @@ final class CommunityEventsAdminController
             'annules' => $this->events->cancelledForTenant($tenantId, 100),
             default => $this->events->upcomingForTenant($tenantId, 100),
         };
-        $attendanceKpis = $this->events->attendanceKpisForTenant($tenantId, 90);
-        $absenceReasons = $this->events->absenceReasonBreakdownForTenant($tenantId, 90, 5);
-        $recommendedSlots = $this->events->recommendedSlotsForTenant($tenantId, 120, 3);
-        $regularityScores = $this->events->regularityScoresForTenant($tenantId, 60, 8);
-        $newMemberParticipationDelta = $this->events->newMembersParticipationDeltaForTenant($tenantId, 120);
+        $insights = $this->buildAttendanceInsights($tenantId);
         $quota = $this->featureGate->quotaStatusForFeature($tenantId, 'events');
 
         return Response::view('layout.main', [
@@ -64,11 +60,36 @@ final class CommunityEventsAdminController
             'eventsVue' => $vue,
             'eventsQuota' => $quota,
             'canCreateEvent' => $this->featureGate->allows($tenantId, 'events'),
-            'eventsAttendanceKpis' => $attendanceKpis,
-            'eventsAbsenceReasons' => $absenceReasons,
-            'eventsRecommendedSlots' => $recommendedSlots,
-            'eventsRegularityScores' => $regularityScores,
-            'eventsNewMemberParticipationDelta' => $newMemberParticipationDelta,
+            'eventsAttendanceKpis' => $insights['kpis'],
+            'eventsAbsenceReasons' => $insights['absenceReasons'],
+            'eventsRecommendedSlots' => $insights['recommendedSlots'],
+            'eventsRegularityScores' => $insights['regularityScores'],
+            'eventsNewMemberParticipationDelta' => $insights['newMemberParticipationDelta'],
+        ]);
+    }
+
+    public function insights(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::view('layout.main', [
+                'title' => 'Insights présence',
+                'content' => 'platform.upgrade',
+                'feature' => 'events',
+                'planName' => 'pro',
+            ]);
+        }
+
+        $insights = $this->buildAttendanceInsights($tenantId);
+
+        return Response::view('layout.main', [
+            'title' => 'Insights présence',
+            'content' => 'admin.organization.events_insights',
+            'eventsAttendanceKpis' => $insights['kpis'],
+            'eventsAbsenceReasons' => $insights['absenceReasons'],
+            'eventsRecommendedSlots' => $insights['recommendedSlots'],
+            'eventsRegularityScores' => $insights['regularityScores'],
+            'eventsNewMemberParticipationDelta' => $insights['newMemberParticipationDelta'],
         ]);
     }
 
@@ -451,5 +472,25 @@ final class CommunityEventsAdminController
         }
 
         return Response::redirect(url('back-office/events/' . (string) $id));
+    }
+
+    /**
+     * @return array{
+     *   kpis: array{confirmed_yes:int,effective_yes:int,no_show_yes:int},
+     *   absenceReasons: list<array<string,mixed>>,
+     *   recommendedSlots: list<array<string,mixed>>,
+     *   regularityScores: list<array<string,mixed>>,
+     *   newMemberParticipationDelta: float
+     * }
+     */
+    private function buildAttendanceInsights(int $tenantId): array
+    {
+        return [
+            'kpis' => $this->events->attendanceKpisForTenant($tenantId, 90),
+            'absenceReasons' => $this->events->absenceReasonBreakdownForTenant($tenantId, 90, 5),
+            'recommendedSlots' => $this->events->recommendedSlotsForTenant($tenantId, 120, 3),
+            'regularityScores' => $this->events->regularityScoresForTenant($tenantId, 60, 8),
+            'newMemberParticipationDelta' => $this->events->newMembersParticipationDeltaForTenant($tenantId, 120),
+        ];
     }
 }

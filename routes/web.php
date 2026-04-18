@@ -499,6 +499,7 @@ return function (Router $router) {
     $router->get('/back-office/conformite/export-dossier', [ComplianceBundleExportController::class, 'form'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/conformite/export-dossier/telecharger', [ComplianceBundleExportController::class, 'download'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events', [CommunityEventsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/events/insights', [CommunityEventsAdminController::class, 'insights'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events', [CommunityEventsAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events/{id}/export-presences', [CommunityEventsAdminController::class, 'exportPresences'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events/{id}', [CommunityEventsAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
