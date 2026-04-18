@@ -453,8 +453,10 @@ document.addEventListener('DOMContentLoaded', function () {
 window.__LMS_CSRF__ = <?= json_encode($csrfToken) ?>;
 window.__LMS_LESSON_PROGRESS__ = <?= json_encode([
     'apiUrl' => url('api/training/progress/lesson'),
+    'feedbackApiUrl' => url('api/training/lesson-feedback'),
     'enrollmentId' => (int) $enrollment['id'],
     'lessonId' => (int) $lesson['id'],
+    'courseUrl' => url('formations/' . rawurlencode((string) ($enrollment['course_slug'] ?? ''))),
     'alreadyCompleted' => $lessonAlreadyCompleted,
     'auto' => $autoLessonComplete,
     'lessonType' => $lessonType,

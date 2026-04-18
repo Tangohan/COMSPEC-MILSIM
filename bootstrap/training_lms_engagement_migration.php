@@ -142,5 +142,36 @@ CREATE TABLE IF NOT EXISTS `training_course_comments` (
 SQL
     );
 
+    $pdo->exec(
+        <<<'SQL'
+CREATE TABLE IF NOT EXISTS `training_lesson_feedback` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `tenant_id` INT UNSIGNED NOT NULL,
+  `course_id` BIGINT UNSIGNED NOT NULL,
+  `module_id` BIGINT UNSIGNED NOT NULL,
+  `lesson_id` BIGINT UNSIGNED NOT NULL,
+  `enrollment_id` BIGINT UNSIGNED NOT NULL,
+  `user_id` INT UNSIGNED NOT NULL,
+  `difficulty_rating` TINYINT UNSIGNED NOT NULL,
+  `clarity_rating` TINYINT UNSIGNED NOT NULL,
+  `utility_rating` TINYINT UNSIGNED NOT NULL,
+  `comment` TEXT NULL DEFAULT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_tlf_enrollment_lesson_user` (`enrollment_id`,`lesson_id`,`user_id`),
+  KEY `idx_tlf_course` (`course_id`),
+  KEY `idx_tlf_module` (`module_id`),
+  KEY `idx_tlf_tenant` (`tenant_id`),
+  CONSTRAINT `fk_tlf_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_tlf_course` FOREIGN KEY (`course_id`) REFERENCES `training_courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_tlf_module` FOREIGN KEY (`module_id`) REFERENCES `training_modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_tlf_lesson` FOREIGN KEY (`lesson_id`) REFERENCES `training_lessons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_tlf_enrollment` FOREIGN KEY (`enrollment_id`) REFERENCES `training_enrollments` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_tlf_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+    );
+
     echo "training_lms_engagement : OK.\n";
 };
