@@ -30,6 +30,16 @@ $statusLabel = static function (string $s): string {
         default => $s,
     };
 };
+$absenceLabel = static function (?string $reason): string {
+    return match ((string) $reason) {
+        'service' => 'Service',
+        'sante' => 'Santé',
+        'indisponibilite_planifiee' => 'Indisponibilité planifiée',
+        'absence_non_justifiee' => 'Absence non justifiée',
+        'autre' => 'Autre',
+        default => '—',
+    };
+};
 
 $nYes = 0;
 $nMaybe = 0;
@@ -141,6 +151,14 @@ foreach ($eventRsvps as $r) {
                                         <option value="maybe">Peut-être</option>
                                         <option value="no">Absent</option>
                                     </select>
+                                    <select name="absence_reason" class="border border-slate-300 rounded px-2 py-1.5 text-xs">
+                                        <option value="">Motif absence</option>
+                                        <option value="service">Service</option>
+                                        <option value="sante">Santé</option>
+                                        <option value="indisponibilite_planifiee">Indisponibilité planifiée</option>
+                                        <option value="absence_non_justifiee">Absence non justifiée</option>
+                                        <option value="autre">Autre</option>
+                                    </select>
                                     <button type="submit" class="px-3 py-1.5 bg-emerald-700 text-white text-xs font-semibold rounded hover:bg-emerald-800">Ajouter</button>
                                 </form>
                             <?php endif; ?>
@@ -160,6 +178,7 @@ foreach ($eventRsvps as $r) {
                 <tr>
                     <th class="px-4 py-2">Membre</th>
                     <th class="px-4 py-2">Participation</th>
+                    <th class="px-4 py-2">Motif absence</th>
                     <th class="px-4 py-2">Rappel</th>
                     <th class="px-4 py-2">Pointage</th>
                     <th class="px-4 py-2">Actions staff</th>
@@ -191,10 +210,24 @@ foreach ($eventRsvps as $r) {
                                         <option value="no" <?= $st === 'no' ? ' selected' : '' ?>>Absent</option>
                                         <option value="remove">Retirer de la liste</option>
                                     </select>
+                                    <select name="absence_reason" class="border border-slate-300 rounded px-2 py-1.5 text-xs max-w-[13rem]">
+                                        <option value="">Motif absence</option>
+                                        <option value="service" <?= ($r['absence_reason'] ?? '') === 'service' ? ' selected' : '' ?>>Service</option>
+                                        <option value="sante" <?= ($r['absence_reason'] ?? '') === 'sante' ? ' selected' : '' ?>>Santé</option>
+                                        <option value="indisponibilite_planifiee" <?= ($r['absence_reason'] ?? '') === 'indisponibilite_planifiee' ? ' selected' : '' ?>>Indisponibilité planifiée</option>
+                                        <option value="absence_non_justifiee" <?= ($r['absence_reason'] ?? '') === 'absence_non_justifiee' ? ' selected' : '' ?>>Absence non justifiée</option>
+                                        <option value="autre" <?= ($r['absence_reason'] ?? '') === 'autre' ? ' selected' : '' ?>>Autre</option>
+                                    </select>
                                     <button type="submit" class="text-xs font-semibold text-emerald-700 hover:underline whitespace-nowrap">Enregistrer</button>
                                 </form>
                             <?php else: ?>
                                 <?= htmlspecialchars($statusLabel($st)) ?>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-4 py-3 text-xs text-slate-700">
+                            <?= htmlspecialchars($absenceLabel(is_string($r['absence_reason'] ?? null) ? (string) $r['absence_reason'] : null)) ?>
+                            <?php if (!empty($r['absence_note'])): ?>
+                                <div class="text-[11px] text-slate-500 mt-1"><?= htmlspecialchars((string) $r['absence_note']) ?></div>
                             <?php endif; ?>
                         </td>
                         <td class="px-4 py-3 text-xs text-slate-600">

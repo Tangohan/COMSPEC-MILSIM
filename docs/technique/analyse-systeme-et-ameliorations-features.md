@@ -183,15 +183,24 @@ Le forum existe, mais n’est pas toujours intégré aux flux de mission quotidi
 La présence est suivie, mais l’exploitation de la donnée pour l’amélioration continue est limitée.
 
 ### Améliorations
-- Score de régularité présence par membre/équipe (avec fenêtre glissante).
-- Motifs d’absence normalisés + statistiques exploitables.
-- Recommandations automatiques de créneaux à forte probabilité de participation.
-- Lien avec onboarding/LMS : proposer l’événement “utile suivant”.
+- **Score de régularité présence** par membre et par équipe avec fenêtre glissante (30/60/90 jours), pondéré par type d’événement (opération, entraînement, briefing) et rôle (participant vs encadrant).
+- **Motifs d’absence normalisés** (`service`, `santé`, `indisponibilité planifiée`, `absence non justifiée`, `autre`) avec champ commentaire facultatif et gouvernance de qualité des données.
+- **Recommandations automatiques de créneaux** (jour/heure) à forte probabilité de participation à partir de l’historique RSVP + présences effectives + saisonnalité.
+- **Lien avec onboarding/LMS** : après chaque événement, suggestion de « prochain événement utile » aligné sur le niveau de progression du membre.
+- **Alertes staff** : détection précoce des risques (`no-show` récurrent, baisse de régularité, nouvel arrivant sans participation à J+14/J+30).
+
+### Détails d’implémentation recommandés
+- Calcul quotidien batch + recalcul à la demande pour les tableaux de bord.
+- Table de dimensions pour les motifs d’absence afin d’éviter les libellés libres.
+- Export analytique mensuel (CSV/API) : présence, no-show, motifs, régularité par escouade.
+- Segmentation minimale : ancienneté (0-30, 31-90, 90+ jours), unité, fuseau horaire, type d’événement.
 
 ### KPI
-- Taux de présence confirmée vs effective.
-- Taux de no-show.
-- Progression de participation des nouveaux membres.
+- **Taux de présence confirmée vs effective** = présents effectifs / RSVP “présent”.
+- **Taux de no-show** = RSVP “présent” non pointés / RSVP “présent”.
+- **Progression de participation des nouveaux membres** = variation du nombre moyen d’événements pointés entre J+30 et J+90.
+- **Délai de première participation** (nouveaux membres).
+- **Taux de couverture des motifs d’absence** (absences avec motif normalisé / absences totales).
 
 ## 4.7 Courrier officiel / Documents
 

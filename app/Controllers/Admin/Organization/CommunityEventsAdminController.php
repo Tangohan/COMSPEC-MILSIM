@@ -50,6 +50,11 @@ final class CommunityEventsAdminController
             'annules' => $this->events->cancelledForTenant($tenantId, 100),
             default => $this->events->upcomingForTenant($tenantId, 100),
         };
+        $attendanceKpis = $this->events->attendanceKpisForTenant($tenantId, 90);
+        $absenceReasons = $this->events->absenceReasonBreakdownForTenant($tenantId, 90, 5);
+        $recommendedSlots = $this->events->recommendedSlotsForTenant($tenantId, 120, 3);
+        $regularityScores = $this->events->regularityScoresForTenant($tenantId, 60, 8);
+        $newMemberParticipationDelta = $this->events->newMembersParticipationDeltaForTenant($tenantId, 120);
         $quota = $this->featureGate->quotaStatusForFeature($tenantId, 'events');
 
         return Response::view('layout.main', [
@@ -59,6 +64,11 @@ final class CommunityEventsAdminController
             'eventsVue' => $vue,
             'eventsQuota' => $quota,
             'canCreateEvent' => $this->featureGate->allows($tenantId, 'events'),
+            'eventsAttendanceKpis' => $attendanceKpis,
+            'eventsAbsenceReasons' => $absenceReasons,
+            'eventsRecommendedSlots' => $recommendedSlots,
+            'eventsRegularityScores' => $regularityScores,
+            'eventsNewMemberParticipationDelta' => $newMemberParticipationDelta,
         ]);
     }
 
@@ -196,7 +206,14 @@ final class CommunityEventsAdminController
 
             return $this->redirectToEvent($params, $id);
         }
-        $result = $this->attendance->adminSetParticipantRsvp($id, $tenantId, $targetUserId, $action);
+        $result = $this->attendance->adminSetParticipantRsvpWithReason(
+            $id,
+            $tenantId,
+            $targetUserId,
+            $action,
+            trim((string) $request->input('absence_reason', '')) ?: null,
+            trim((string) $request->input('absence_note', '')) ?: null
+        );
         if (!($result['ok'] ?? false)) {
             Session::flash('error', $result['error'] ?? 'Modification impossible.');
 
@@ -229,7 +246,14 @@ final class CommunityEventsAdminController
         if (!in_array($action, ['yes', 'no', 'maybe'], true)) {
             $action = 'yes';
         }
-        $result = $this->attendance->adminSetParticipantRsvp($id, $tenantId, $targetUserId, $action);
+        $result = $this->attendance->adminSetParticipantRsvpWithReason(
+            $id,
+            $tenantId,
+            $targetUserId,
+            $action,
+            trim((string) $request->input('absence_reason', '')) ?: null,
+            trim((string) $request->input('absence_note', '')) ?: null
+        );
         if (!($result['ok'] ?? false)) {
             Session::flash('error', $result['error'] ?? 'Ajout impossible.');
 
@@ -314,7 +338,7 @@ final class CommunityEventsAdminController
         $rows = $this->events->listRsvpsWithUsersForEvent($id);
         $sep = ';';
         $lines = [];
-        $lines[] = implode($sep, ['Nom affiché', 'Indicatif', 'Adresse e-mail', 'Participation', 'Pointage', 'Inscription', 'Rappel envoyé']);
+        $lines[] = implode($sep, ['Nom affiché', 'Indicatif', 'Adresse e-mail', 'Participation', 'Motif absence', 'Note absence', 'Pointage', 'Inscription', 'Rappel envoyé']);
         $lab = static function (string $s): string {
             return match ($s) {
                 'yes' => 'Présent',
@@ -330,6 +354,8 @@ final class CommunityEventsAdminController
                 '"' . str_replace('"', '""', (string) ($r['callsign'] ?? '')) . '"',
                 '"' . str_replace('"', '""', (string) ($r['email'] ?? '')) . '"',
                 '"' . str_replace('"', '""', $lab((string) ($r['status'] ?? ''))) . '"',
+                '"' . str_replace('"', '""', (string) ($r['absence_reason'] ?? '')) . '"',
+                '"' . str_replace('"', '""', (string) ($r['absence_note'] ?? '')) . '"',
                 '"' . str_replace('"', '""', (string) ($r['checked_in_at'] ?? '')) . '"',
                 '"' . str_replace('"', '""', (string) ($r['rsvp_created_at'] ?? '')) . '"',
                 '"' . $rem . '"',
