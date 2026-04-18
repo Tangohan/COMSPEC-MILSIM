@@ -85,7 +85,8 @@ $boNavCommPres = str_starts_with($p, 'back-office/community/presentation');
 $boNavInteg = str_starts_with($p, 'back-office/integrations');
 $boNavAlerts = str_starts_with($p, 'back-office/alerts');
 $boNavConfig = str_starts_with($p, 'back-office/configuration');
-$boNavAnalytics = str_starts_with($p, 'back-office/analytics');
+$boNavAnalytics = $p === 'back-office/analytics';
+$boNavAnalyticsConversion = str_starts_with($p, 'back-office/analytics/conversion');
 $boNavPins = str_starts_with($p, 'back-office/dashboard-pins');
 $boNavCoop = str_starts_with($p, 'back-office/cooperation/');
 $boNavOnb = str_starts_with($p, 'back-office/onboarding-recovery');
@@ -157,6 +158,7 @@ $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') &&
             <?php $boLink('back-office/integrations', 'Intégrations externes', $boNavInteg); ?>
         <?php endif; ?>
         <?php $boLink('back-office/analytics', 'Indicateurs d’usage', $boNavAnalytics); ?>
+        <?php $boLink('back-office/analytics/conversion', 'Conversion communautés', $boNavAnalyticsConversion); ?>
         <?php $boLink('back-office/dashboard-pins', 'Raccourcis du portail', $boNavPins); ?>
         <?php $boLink('back-office/onboarding-recovery', 'Aide après inscription', $boNavOnb); ?>
 

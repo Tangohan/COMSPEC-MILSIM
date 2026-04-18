@@ -489,6 +489,7 @@ return function (Router $router) {
     $router->post('/back-office/moderation/apply', [ModerationOrganizationController::class, 'apply'], $mwTenantMemberModeration);
     $router->post('/back-office/moderation/revoke', [ModerationOrganizationController::class, 'revoke'], $mwTenantMemberModeration);
     $router->get('/back-office/analytics', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/analytics/conversion', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/integrations', [OrganizationIntegrationsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys', [OrganizationIntegrationsController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys/{id}/update', [OrganizationIntegrationsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

@@ -54,6 +54,18 @@ final class OrganizationAnalyticsController
         $operationalKpis = $this->tenantAnalyticsRepository->getTenantOperationalKpis($tenantId, $since);
         $enlistmentStatusBreakdown = $this->tenantAnalyticsRepository->getTenantEnlistmentStatusBreakdownSince($tenantId, $since);
         $documentInsights = $this->tenantAnalyticsRepository->getTenantDocumentInsights($tenantId, $since);
+        $conversionFunnel = $this->tenantAnalyticsRepository->getTenantConversionFunnel($tenantId, $since);
+        $sevenDaysAgo = (new \DateTimeImmutable('-7 days'))->format('Y-m-d H:i:s');
+        $fourteenDaysAgo = (new \DateTimeImmutable('-14 days'))->format('Y-m-d H:i:s');
+        $funnelLast7 = $this->tenantAnalyticsRepository->getTenantConversionFunnel($tenantId, $sevenDaysAgo);
+        $funnelPrev7 = $this->tenantAnalyticsRepository->getTenantConversionFunnel($tenantId, $fourteenDaysAgo);
+        $funnelPrev7Only = [
+            'visits' => max(0, (int) ($funnelPrev7['visits'] ?? 0) - (int) ($funnelLast7['visits'] ?? 0)),
+            'cta_clicks' => max(0, (int) ($funnelPrev7['cta_clicks'] ?? 0) - (int) ($funnelLast7['cta_clicks'] ?? 0)),
+            'applications' => max(0, (int) ($funnelPrev7['applications'] ?? 0) - (int) ($funnelLast7['applications'] ?? 0)),
+            'accepted' => max(0, (int) ($funnelPrev7['accepted'] ?? 0) - (int) ($funnelLast7['accepted'] ?? 0)),
+        ];
+        $analyticsFocus = $request->path() === '/back-office/analytics/conversion' ? 'conversion' : 'overview';
 
         return Response::view('layout.main', [
             'title' => 'Indicateurs d’usage',
@@ -75,6 +87,10 @@ final class OrganizationAnalyticsController
             'operationalKpis' => $operationalKpis,
             'enlistmentStatusBreakdown' => $enlistmentStatusBreakdown,
             'documentInsights' => $documentInsights,
+            'conversionFunnel' => $conversionFunnel,
+            'funnelLast7' => $funnelLast7,
+            'funnelPrev7Only' => $funnelPrev7Only,
+            'analyticsFocus' => $analyticsFocus,
         ]);
     }
 }
