@@ -95,6 +95,7 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
 <div class="forum-mod-console w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pb-16"
      data-insight-base="<?= htmlspecialchars($baseUrl . '/api/back-office/forum-report/', ENT_QUOTES, 'UTF-8') ?>"
      data-csrf="<?= htmlspecialchars($csrfTokenForumMod, ENT_QUOTES, 'UTF-8') ?>"
+     data-manual-scan-endpoint="<?= htmlspecialchars($baseUrl . '/api/back-office/forum-moderation/manual-scan', ENT_QUOTES, 'UTF-8') ?>"
      data-sanction-action-base="<?= htmlspecialchars($baseUrl . '/forum/report/', ENT_QUOTES, 'UTF-8') ?>">
   <nav class="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500 mb-8" aria-label="Fil d’Ariane">
     <a href="<?= htmlspecialchars($baseUrl . '/back-office', ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-emerald-700 transition-colors">Back-office</a>
@@ -599,6 +600,10 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
             </select>
           </div>
         </div>
+        <div class="mt-4">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5" for="manual-scan-content">Contenu à vérifier</label>
+          <textarea id="manual-scan-content" rows="5" maxlength="10000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none" placeholder="Collez ici le texte à analyser."></textarea>
+        </div>
         <button type="button" id="manual-scan-trigger" class="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:from-emerald-500 hover:to-emerald-600 transition-colors">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
           Analyser le contenu
@@ -904,38 +909,74 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
   var manualTrigger = root.querySelector('#manual-scan-trigger');
   var manualTarget = root.querySelector('#manual-scan-target');
   var manualPriority = root.querySelector('#manual-scan-priority');
+  var manualContent = root.querySelector('#manual-scan-content');
   var manualResult = root.querySelector('#manual-scan-result');
+  var manualScanEndpoint = root.getAttribute('data-manual-scan-endpoint') || '';
   var historyBody = root.querySelector('#auto-scan-history');
-  if (manualTrigger && manualTarget && manualPriority && manualResult && historyBody) {
+  if (manualTrigger && manualTarget && manualPriority && manualContent && manualResult && historyBody && manualScanEndpoint) {
     manualTrigger.addEventListener('click', function() {
-      var detectors = ['image porno', 'termes crus', 'racisme'];
-      var picked = detectors[Math.floor(Math.random() * detectors.length)];
-      var risk = Math.floor(Math.random() * 65) + (manualPriority.value === 'critique' ? 30 : (manualPriority.value === 'renforce' ? 20 : 10));
-      if (risk > 100) risk = 100;
-      var status = risk >= 80 ? 'Auto-flag' : (risk >= 55 ? 'Surveillance' : 'Validé');
-      var statusClass = status === 'Auto-flag'
-        ? 'border-amber-200 bg-amber-50 text-amber-900'
-        : (status === 'Surveillance' ? 'border-violet-200 bg-violet-50 text-violet-900' : 'border-emerald-200 bg-emerald-50 text-emerald-900');
-      var now = new Date();
-      var dateText = now.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-      manualResult.classList.remove('hidden');
-      manualResult.textContent = 'Scan terminé — ' + manualTarget.value + ' | détecteur dominant: ' + picked + ' | score: ' + risk + '/100 | statut: ' + status + '.';
-
-      var empty = historyBody.querySelector('td[colspan=\"6\"]');
-      if (empty && empty.parentElement) {
-        empty.parentElement.remove();
+      var content = (manualContent.value || '').trim();
+      if (content.length < 5) {
+        manualResult.classList.remove('hidden');
+        manualResult.textContent = 'Renseignez au moins 5 caractères pour lancer une vérification réelle.';
+        return;
       }
-      var row = document.createElement('tr');
-      row.className = 'hover:bg-slate-50/60 transition-colors';
-      row.innerHTML =
-        '<td class="px-4 py-3 whitespace-nowrap tabular-nums text-xs text-slate-600">' + dateText + '</td>' +
-        '<td class="px-4 py-3 whitespace-nowrap text-xs font-semibold text-slate-700">' + manualTarget.value + '</td>' +
-        '<td class="px-4 py-3 whitespace-nowrap text-xs text-slate-700">' + picked + '</td>' +
-        '<td class="px-4 py-3 whitespace-nowrap text-xs font-semibold tabular-nums text-slate-800">' + risk + '</td>' +
-        '<td class="px-4 py-3 whitespace-nowrap"><span class="inline-flex rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ' + statusClass + '">' + status + '</span></td>' +
-        '<td class="px-4 py-3 text-xs text-slate-600">Scan manuel (' + manualPriority.value + ') par le bot de conformité.</td>';
-      historyBody.insertBefore(row, historyBody.firstChild);
+      manualResult.classList.remove('hidden');
+      manualResult.textContent = 'Analyse en cours…';
+      manualTrigger.disabled = true;
+
+      fetch(manualScanEndpoint, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          _csrf_token: root.getAttribute('data-csrf') || '',
+          target: manualTarget.value,
+          priority: manualPriority.value,
+          content: content
+        })
+      })
+        .then(function(resp) {
+          return resp.json().then(function(data) {
+            if (!resp.ok || !data || !data.ok) {
+              throw new Error((data && data.error) ? data.error : 'La vérification a échoué.');
+            }
+            return data;
+          });
+        })
+        .then(function(data) {
+          var scan = data.scan || {};
+          var status = scan.status_label || 'Info';
+          var statusClass = status === 'Auto-flag'
+            ? 'border-amber-200 bg-amber-50 text-amber-900'
+            : (status === 'Surveillance' ? 'border-violet-200 bg-violet-50 text-violet-900' : 'border-emerald-200 bg-emerald-50 text-emerald-900');
+          var detector = scan.primary_detector || 'heuristic';
+          var details = (Array.isArray(scan.reasons) && scan.reasons.length)
+            ? scan.reasons.join(', ')
+            : 'Aucun motif déclenché';
+          manualResult.textContent = 'Scan terminé — ' + manualTarget.value + ' | détecteur dominant: ' + detector + ' | score: ' + (scan.score_percent || 0) + '/100 | statut: ' + status + '.';
+
+          var empty = historyBody.querySelector('td[colspan=\"6\"]');
+          if (empty && empty.parentElement) {
+            empty.parentElement.remove();
+          }
+          var row = document.createElement('tr');
+          row.className = 'hover:bg-slate-50/60 transition-colors';
+          row.innerHTML =
+            '<td class="px-4 py-3 whitespace-nowrap tabular-nums text-xs text-slate-600">' + (scan.created_at_label || '—') + '</td>' +
+            '<td class="px-4 py-3 whitespace-nowrap text-xs font-semibold text-slate-700">' + manualTarget.value + '</td>' +
+            '<td class="px-4 py-3 whitespace-nowrap text-xs text-slate-700">' + detector + '</td>' +
+            '<td class="px-4 py-3 whitespace-nowrap text-xs font-semibold tabular-nums text-slate-800">' + (scan.score_percent || 0) + '</td>' +
+            '<td class="px-4 py-3 whitespace-nowrap"><span class="inline-flex rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ' + statusClass + '">' + status + '</span></td>' +
+            '<td class="px-4 py-3 text-xs text-slate-600">Scan manuel (' + manualPriority.value + ') — ' + details + '.</td>';
+          historyBody.insertBefore(row, historyBody.firstChild);
+        })
+        .catch(function(err) {
+          manualResult.textContent = err && err.message ? err.message : 'La vérification a échoué.';
+        })
+        .finally(function() {
+          manualTrigger.disabled = false;
+        });
     });
   }
 

@@ -1318,7 +1318,8 @@ class Container
             \App\Controllers\Api\ForumModerationReportInsightApiController::class => new \App\Controllers\Api\ForumModerationReportInsightApiController(
                 self::get(\App\Repositories\ForumReportRepository::class),
                 self::get(\App\Repositories\ForumPostRepository::class),
-                self::get(UserRepository::class)
+                self::get(UserRepository::class),
+                self::get(\App\Services\Forum\ForumModerationEngine::class)
             ),
             \App\Controllers\Api\ForumUploadController::class => new \App\Controllers\Api\ForumUploadController(
                 self::get(\App\Services\Moderation\ContentModerationOrchestrator::class),
