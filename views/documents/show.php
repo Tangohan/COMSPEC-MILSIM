@@ -10,6 +10,11 @@ $title = htmlspecialchars($document['title']);
 $fileUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/file';
 $downloadUrl = $baseUrl . '/documents/' . (int)$document['id'] . '/download';
 $lifecycleBlocked = (bool) ($lifecycleBlocked ?? false);
+$securitySessionToken = (string) ($securitySessionToken ?? '');
+$requiresAccessCode = (bool) ($requiresAccessCode ?? false);
+$requiresSignature = (bool) ($requiresSignature ?? false);
+$signatureBeforeDownload = (bool) ($signatureBeforeDownload ?? true);
+$isAccessCodeUnlocked = (bool) ($isAccessCodeUnlocked ?? false);
 $updatedAt = !empty($document['updated_at']) ? date('d/m/Y H:i', strtotime((string) $document['updated_at'])) : '—';
 $reviewDueAt = !empty($document['review_due_at']) ? date('d/m/Y', strtotime((string) $document['review_due_at'])) : 'Non défini';
 $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) $document['expires_at'])) : 'Non défini';
@@ -32,7 +37,7 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <a href="<?= $downloadUrl ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-colors">
+            <a id="doc-download-link" href="<?= $downloadUrl . '?security_session_token=' . rawurlencode($securitySessionToken) ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Télécharger
             </a>
@@ -253,8 +258,114 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
             <div><dt class="text-slate-500">Revue prévue</dt><dd class="font-semibold text-slate-900"><?= htmlspecialchars($reviewDueAt) ?></dd></div>
             <div><dt class="text-slate-500">Expiration</dt><dd class="font-semibold text-slate-900"><?= htmlspecialchars($expiresAt) ?></dd></div>
         </dl>
+        <?php if ($requiresAccessCode || $requiresSignature): ?>
+        <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            <p class="font-semibold mb-2">Sécurité document</p>
+            <?php if ($requiresAccessCode): ?>
+            <div class="mb-2">
+                <label class="block mb-1">Code d'accès</label>
+                <input id="doc-access-code-input" type="password" class="w-full rounded border border-amber-200 px-2 py-1.5" placeholder="Saisir le code" />
+                <button id="doc-access-code-btn" type="button" class="mt-2 w-full rounded bg-amber-900 px-3 py-1.5 font-semibold text-white">Déverrouiller</button>
+            </div>
+            <?php endif; ?>
+            <?php if ($requiresSignature): ?>
+            <div>
+                <label class="block mb-1">Signature numérique (compte)</label>
+                <input id="doc-sign-name" type="text" class="w-full rounded border border-amber-200 px-2 py-1.5 mb-2" placeholder="Nom affiché/signataire" />
+                <canvas id="doc-sign-pad" width="280" height="120" class="w-full rounded border border-amber-200 bg-white"></canvas>
+                <div class="mt-2 flex gap-2">
+                    <button id="doc-sign-clear" type="button" class="flex-1 rounded border border-amber-300 px-2 py-1.5">Effacer</button>
+                    <button id="doc-sign-submit" type="button" class="flex-1 rounded bg-amber-900 px-2 py-1.5 font-semibold text-white">Signer</button>
+                </div>
+            </div>
+            <?php endif; ?>
+            <p id="doc-security-message" class="mt-2 text-[11px]"></p>
+        </div>
+        <?php endif; ?>
         <p class="mt-4 text-xs text-slate-500">Astuce: flèches clavier pour naviguer, +/− pour zoomer rapidement.</p>
     </aside>
     </div>
 </div>
 <?php require base_path('views/partials/documents_copy_protection.php'); ?>
+<script>
+(function() {
+  const docId = <?= (int) $document['id'] ?>;
+  const token = <?= json_encode($securitySessionToken) ?>;
+  const requiresAccessCode = <?= $requiresAccessCode ? 'true' : 'false' ?>;
+  const requiresSignature = <?= $requiresSignature ? 'true' : 'false' ?>;
+  const isAccessCodeUnlocked = <?= $isAccessCodeUnlocked ? 'true' : 'false' ?>;
+  const signatureBeforeDownload = <?= $signatureBeforeDownload ? 'true' : 'false' ?>;
+  const msg = document.getElementById('doc-security-message');
+  const track = (eventType, readSeconds) => {
+    const fd = new FormData();
+    fd.append('security_session_token', token);
+    fd.append('event_type', eventType);
+    if (readSeconds) fd.append('read_seconds', String(readSeconds));
+    fetch(<?= json_encode(url('documents/' . (int) $document['id'] . '/access-track')) ?>, { method: 'POST', body: fd, credentials: 'same-origin' }).catch(() => {});
+  };
+  let startedAt = Date.now();
+  setInterval(() => track('heartbeat', 15), 15000);
+  window.addEventListener('beforeunload', function() {
+    const secs = Math.max(1, Math.floor((Date.now() - startedAt) / 1000));
+    track('closed', secs);
+  });
+
+  const dlink = document.getElementById('doc-download-link');
+  if (dlink && (requiresAccessCode && !isAccessCodeUnlocked)) {
+    dlink.classList.add('pointer-events-none', 'opacity-50');
+  }
+
+  const unlockBtn = document.getElementById('doc-access-code-btn');
+  if (unlockBtn) {
+    unlockBtn.addEventListener('click', function() {
+      const code = document.getElementById('doc-access-code-input').value || '';
+      const fd = new FormData();
+      fd.append('security_session_token', token);
+      fd.append('access_code', code);
+      fetch(<?= json_encode(url('documents/' . (int) $document['id'] . '/unlock')) ?>, { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(r => r.json().then(j => ({ ok: r.ok, j })))
+        .then(({ ok, j }) => {
+          if (!ok) throw new Error((j && j.message) || 'Erreur');
+          if (msg) msg.textContent = 'Code validé. Rechargement…';
+          window.location.reload();
+        })
+        .catch(e => { if (msg) msg.textContent = e.message; });
+    });
+  }
+
+  const pad = document.getElementById('doc-sign-pad');
+  if (pad) {
+    const ctx = pad.getContext('2d');
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    let drawing = false;
+    const pos = (ev) => {
+      const r = pad.getBoundingClientRect();
+      const p = ev.touches ? ev.touches[0] : ev;
+      return { x: p.clientX - r.left, y: p.clientY - r.top };
+    };
+    const start = (ev) => { drawing = true; const p = pos(ev); ctx.beginPath(); ctx.moveTo(p.x, p.y); ev.preventDefault(); };
+    const move = (ev) => { if (!drawing) return; const p = pos(ev); ctx.lineTo(p.x, p.y); ctx.stroke(); ev.preventDefault(); };
+    const end = () => { drawing = false; };
+    pad.addEventListener('mousedown', start); pad.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
+    pad.addEventListener('touchstart', start, { passive:false }); pad.addEventListener('touchmove', move, { passive:false }); window.addEventListener('touchend', end);
+    document.getElementById('doc-sign-clear')?.addEventListener('click', () => ctx.clearRect(0, 0, pad.width, pad.height));
+    document.getElementById('doc-sign-submit')?.addEventListener('click', () => {
+      const signatureName = (document.getElementById('doc-sign-name').value || '').trim();
+      const dataUrl = pad.toDataURL('image/png');
+      const fd = new FormData();
+      fd.append('security_session_token', token);
+      fd.append('signature_name', signatureName);
+      fd.append('signature_data_url', dataUrl);
+      fetch(<?= json_encode(url('documents/' . (int) $document['id'] . '/signature')) ?>, { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(r => r.json().then(j => ({ ok: r.ok, j })))
+        .then(({ ok, j }) => {
+          if (!ok) throw new Error((j && j.message) || 'Erreur');
+          if (msg) msg.textContent = 'Signature enregistrée.';
+          track('signature_completed');
+        })
+        .catch(e => { if (msg) msg.textContent = e.message; });
+    });
+  }
+})();
+</script>

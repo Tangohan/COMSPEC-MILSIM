@@ -395,6 +395,22 @@ $permTypeLabels = [
                                 <input type="checkbox" name="inherit_parent_security" value="1" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                                 <span><strong>Hériter sécurité du parent</strong></span>
                             </label>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800 sm:col-span-2">
+                                <input type="checkbox" name="require_access_code" value="1" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                <span><strong>Exiger un code d'accès</strong> <span class="text-[11px] text-slate-500">(saisie obligatoire avant lecture/téléchargement)</span></span>
+                            </label>
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-[11px] font-bold uppercase text-slate-600">Code d'accès</label>
+                                <input type="password" name="access_code" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Laisser vide pour conserver l'éventuel code existant" />
+                            </div>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800 sm:col-span-2">
+                                <input type="checkbox" name="require_account_signature" value="1" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                <span><strong>Signature numérique obligatoire</strong> <span class="text-[11px] text-slate-500">(compte + pad de signature)</span></span>
+                            </label>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800 sm:col-span-2">
+                                <input type="checkbox" name="signature_mandatory_before_download" value="1" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                <span><strong>Bloquer le téléchargement avant signature</strong></span>
+                            </label>
                           </div>
                         </div>
                     </div>

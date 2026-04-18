@@ -138,13 +138,13 @@ class DocumentRepository
                 classification_level, visibility_scope, owner_user_id, author_user_id, parent_document_id,
                 relation_type, version_label, sort_order, current_file_id, formation_id, equipment_class_id, unit_id,
                 operator_id, mission_id, effective_at, review_due_at, expires_at, download_allowed, print_allowed,
-                locked, tags, inherit_parent_security, status, created_by
+                locked, tags, inherit_parent_security, require_access_code, access_code_hash, require_account_signature, signature_mandatory_before_download, status, created_by
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?
             )'
         );
         $stmt->execute([
@@ -178,6 +178,10 @@ class DocumentRepository
             isset($data['locked']) ? (int) (bool) $data['locked'] : 0,
             isset($data['tags']) ? (is_string($data['tags']) ? $data['tags'] : json_encode($data['tags'])) : null,
             isset($data['inherit_parent_security']) ? (int) (bool) $data['inherit_parent_security'] : 0,
+            isset($data['require_access_code']) ? (int) (bool) $data['require_access_code'] : 0,
+            isset($data['access_code_hash']) && $data['access_code_hash'] !== '' ? (string) $data['access_code_hash'] : null,
+            isset($data['require_account_signature']) ? (int) (bool) $data['require_account_signature'] : 0,
+            isset($data['signature_mandatory_before_download']) ? (int) (bool) $data['signature_mandatory_before_download'] : 1,
             $data['status'] ?? 'draft',
             isset($data['created_by']) ? (int) $data['created_by'] : null,
         ]);
@@ -192,7 +196,7 @@ class DocumentRepository
             'parent_document_id', 'relation_type', 'version_label', 'sort_order', 'current_file_id',
             'formation_id', 'equipment_class_id', 'unit_id', 'operator_id', 'mission_id',
             'effective_at', 'review_due_at', 'expires_at', 'download_allowed', 'print_allowed',
-            'locked', 'tags', 'inherit_parent_security', 'updated_at',
+            'locked', 'tags', 'inherit_parent_security', 'require_access_code', 'access_code_hash', 'require_account_signature', 'signature_mandatory_before_download', 'updated_at',
         ];
         $fields = [];
         $params = [];
@@ -203,7 +207,7 @@ class DocumentRepository
             $fields[] = $key . ' = ?';
             if (in_array($key, ['document_category_id', 'owner_user_id', 'author_user_id', 'parent_document_id', 'current_file_id', 'formation_id', 'equipment_class_id', 'unit_id', 'operator_id'], true)) {
                 $params[] = $data[$key] !== null && $data[$key] !== '' ? (int) $data[$key] : null;
-            } elseif (in_array($key, ['download_allowed', 'print_allowed', 'locked', 'inherit_parent_security'], true)) {
+            } elseif (in_array($key, ['download_allowed', 'print_allowed', 'locked', 'inherit_parent_security', 'require_access_code', 'require_account_signature', 'signature_mandatory_before_download'], true)) {
                 $params[] = (int) (bool) $data[$key];
             } elseif ($key === 'tags') {
                 $params[] = is_array($data[$key]) ? json_encode($data[$key]) : (isset($data[$key]) && $data[$key] !== '' ? (string) $data[$key] : null);

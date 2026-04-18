@@ -240,6 +240,13 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                             <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800"><input type="checkbox" name="print_allowed" value="1" class="mt-0.5" <?= !empty($document['print_allowed']) ? 'checked' : '' ?> /><span><strong>Impression</strong></span></label>
                             <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800"><input type="checkbox" name="locked" value="1" class="mt-0.5" <?= !empty($document['locked']) ? 'checked' : '' ?> /><span><strong>Verrouillé</strong></span></label>
                             <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800"><input type="checkbox" name="inherit_parent_security" value="1" class="mt-0.5" <?= !empty($document['inherit_parent_security']) ? 'checked' : '' ?> /><span><strong>Hériter sécurité du parent</strong></span></label>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800 sm:col-span-2"><input type="checkbox" name="require_access_code" value="1" class="mt-0.5" <?= !empty($document['require_access_code']) ? 'checked' : '' ?> /><span><strong>Exiger un code d'accès</strong> <span class="text-[11px] text-slate-500">(saisie avant consultation)</span></span></label>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Nouveau code d'accès</label>
+                                <input type="password" name="access_code" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="Laisser vide pour conserver le code actuel" />
+                            </div>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800 sm:col-span-2"><input type="checkbox" name="require_account_signature" value="1" class="mt-0.5" <?= !empty($document['require_account_signature']) ? 'checked' : '' ?> /><span><strong>Signature numérique obligatoire</strong> <span class="text-[11px] text-slate-500">(compte + pad)</span></span></label>
+                            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800 sm:col-span-2"><input type="checkbox" name="signature_mandatory_before_download" value="1" class="mt-0.5" <?= !empty($document['signature_mandatory_before_download']) ? 'checked' : '' ?> /><span><strong>Bloquer téléchargement tant que non signé</strong></span></label>
                           </div>
                         </div>
                     </div>

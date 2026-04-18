@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\DocumentCategoryRepository;
 use App\Repositories\DocumentLinkRepository;
 use App\Repositories\DocumentRepository;
+use App\Repositories\DocumentSecurityRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Services\Audit\AuditService;
@@ -30,7 +31,8 @@ class DocumentsController
         private AuditService $auditService,
         private ModerationArtifactRepository $moderationArtifactRepository,
         private DocumentTrainingReferencesService $documentTrainingReferencesService,
-        private PersonnelProfileRepository $personnelProfileRepository
+        private PersonnelProfileRepository $personnelProfileRepository,
+        private DocumentSecurityRepository $documentSecurityRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -198,12 +200,22 @@ class DocumentsController
         if (str_starts_with($doc['mime_type'], 'image/')) {
             $viewType = 'image';
         }
+        $userId = (int) Session::get('user_id');
+        $signatureRequired = !empty($doc['require_account_signature']);
+        $sessionToken = $this->documentSecurityRepository->createSession((int) $tenantId, (int) $doc['id'], $userId, $signatureRequired);
+        $this->documentSecurityRepository->logEvent($sessionToken, (int) $doc['id'], $userId, 'document_opened');
+
         return Response::view('layout.main', [
             'content' => 'documents.show',
             'title' => $doc['title'],
             'document' => $doc,
             'viewType' => $viewType,
             'lifecycleBlocked' => $this->isDocumentLifecycleBlocked($doc),
+            'securitySessionToken' => $sessionToken,
+            'requiresAccessCode' => !empty($doc['require_access_code']),
+            'requiresSignature' => $signatureRequired,
+            'signatureBeforeDownload' => !empty($doc['signature_mandatory_before_download']),
+            'isAccessCodeUnlocked' => $this->isAccessCodeUnlocked((int) $doc['id']),
         ]);
     }
 
@@ -221,6 +233,9 @@ class DocumentsController
         $doc = $this->documentRepository->findById($id, (int) $tenantId);
         if (!$doc || empty($doc['file_path'])) {
             return (new Response())->setStatusCode(404)->setBody('Document non trouvé');
+        }
+        if (!empty($doc['require_access_code']) && !$this->isAccessCodeUnlocked($id)) {
+            return (new Response())->setStatusCode(423)->setBody('Code d\'accès requis');
         }
         if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
             return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
@@ -270,6 +285,9 @@ class DocumentsController
         if (!$doc || empty($doc['file_path'])) {
             return (new Response())->setStatusCode(404)->setBody('Document non trouvé');
         }
+        if (!empty($doc['require_access_code']) && !$this->isAccessCodeUnlocked($id)) {
+            return (new Response())->setStatusCode(423)->setBody('Code d\'accès requis');
+        }
         if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
             return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
         }
@@ -285,11 +303,22 @@ class DocumentsController
         if ($this->isDocumentFileBlockedForViewer($doc)) {
             return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
         }
+        $securitySessionToken = trim((string) $request->input('security_session_token'));
+        if (!empty($doc['require_account_signature']) && !empty($doc['signature_mandatory_before_download'])) {
+            $session = $securitySessionToken !== '' ? $this->documentSecurityRepository->findSessionByToken($securitySessionToken) : null;
+            if (!$session || (int) ($session['document_id'] ?? 0) !== $id || empty($session['signature_completed_at'])) {
+                return (new Response())->setStatusCode(423)->setBody('Signature numérique requise avant téléchargement');
+            }
+        }
         $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
         if (!is_file($fullPath)) {
             return (new Response())->setStatusCode(404)->setBody('Fichier absent');
         }
         $this->auditService->logDocumentDownloaded((int) $tenantId, $userId ? (int) $userId : 0, $id);
+        if ($securitySessionToken !== '') {
+            $this->documentSecurityRepository->markDownloaded($securitySessionToken);
+            $this->documentSecurityRepository->logEvent($securitySessionToken, $id, $userId ? (int) $userId : null, 'document_downloaded');
+        }
         $response = new Response();
         $response->header('Content-Type', $doc['mime_type'] ?: 'application/octet-stream');
         $response->header('Content-Disposition', 'attachment; filename="' . basename($doc['file_path']) . '"');
@@ -302,6 +331,111 @@ class DocumentsController
             }
         });
         return $response;
+    }
+
+    public function unlock(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId <= 0 || $userId <= 0) {
+            return (new Response())->setStatusCode(403)->json(['ok' => false, 'message' => 'Non autorisé']);
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $doc = $this->documentRepository->findById($id, $tenantId);
+        if (!$doc) {
+            return (new Response())->setStatusCode(404)->json(['ok' => false, 'message' => 'Document introuvable']);
+        }
+        $code = trim((string) $request->input('access_code'));
+        $sessionToken = trim((string) $request->input('security_session_token'));
+        $hash = (string) ($doc['access_code_hash'] ?? '');
+        if ($code === '' || $hash === '' || !password_verify($code, $hash)) {
+            if ($sessionToken !== '') {
+                $this->documentSecurityRepository->logEvent($sessionToken, $id, $userId, 'access_code_failed');
+            }
+
+            return (new Response())->setStatusCode(422)->json(['ok' => false, 'message' => 'Code invalide']);
+        }
+        Session::set('doc_access_code_unlocked_' . $id, true);
+        if ($sessionToken !== '') {
+            $this->documentSecurityRepository->logEvent($sessionToken, $id, $userId, 'access_code_validated');
+        }
+
+        return (new Response())->json(['ok' => true]);
+    }
+
+    public function signature(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId <= 0 || $userId <= 0) {
+            return (new Response())->setStatusCode(403)->json(['ok' => false, 'message' => 'Non autorisé']);
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $sessionToken = trim((string) $request->input('security_session_token'));
+        $signatureDataUrl = trim((string) $request->input('signature_data_url'));
+        $signatureName = trim((string) $request->input('signature_name'));
+        if ($sessionToken === '' || $signatureDataUrl === '' || $signatureName === '') {
+            return (new Response())->setStatusCode(422)->json(['ok' => false, 'message' => 'Signature incomplète']);
+        }
+        $session = $this->documentSecurityRepository->findSessionByToken($sessionToken);
+        if (!$session || (int) ($session['document_id'] ?? 0) !== $id || (int) ($session['tenant_id'] ?? 0) !== $tenantId) {
+            return (new Response())->setStatusCode(404)->json(['ok' => false, 'message' => 'Session de sécurité invalide']);
+        }
+        if (!preg_match('#^data:image/png;base64,#', $signatureDataUrl)) {
+            return (new Response())->setStatusCode(422)->json(['ok' => false, 'message' => 'Format de signature invalide']);
+        }
+        $raw = base64_decode(substr($signatureDataUrl, strlen('data:image/png;base64,')), true);
+        if ($raw === false || strlen($raw) < 100) {
+            return (new Response())->setStatusCode(422)->json(['ok' => false, 'message' => 'Signature vide']);
+        }
+        $relativeDir = 'signatures/' . date('Y/m');
+        $baseDir = base_path(self::STORAGE_BASE . $relativeDir);
+        if (!is_dir($baseDir)) {
+            @mkdir($baseDir, 0775, true);
+        }
+        $filename = 'doc_' . $id . '_u_' . $userId . '_' . time() . '.png';
+        $fullPath = $baseDir . '/' . $filename;
+        file_put_contents($fullPath, $raw);
+        $relativePath = 'documents/' . $relativeDir . '/' . $filename;
+
+        $this->documentSecurityRepository->completeSignature($sessionToken, $signatureName, $relativePath);
+        $this->documentSecurityRepository->logEvent($sessionToken, $id, $userId, 'signature_completed', ['signature_name' => $signatureName]);
+
+        return (new Response())->json(['ok' => true]);
+    }
+
+    public function accessTrack(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId <= 0 || $userId <= 0) {
+            return (new Response())->setStatusCode(403)->json(['ok' => false]);
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $token = trim((string) $request->input('security_session_token'));
+        if ($token === '') {
+            return (new Response())->setStatusCode(422)->json(['ok' => false]);
+        }
+        $session = $this->documentSecurityRepository->findSessionByToken($token);
+        if (!$session || (int) ($session['document_id'] ?? 0) !== $id || (int) ($session['tenant_id'] ?? 0) !== $tenantId) {
+            return (new Response())->setStatusCode(404)->json(['ok' => false]);
+        }
+        $seconds = (int) $request->input('read_seconds');
+        $eventType = trim((string) $request->input('event_type')) ?: 'heartbeat';
+        if ($seconds > 0) {
+            $this->documentSecurityRepository->addReadSeconds($token, $seconds);
+        }
+        $this->documentSecurityRepository->logEvent($token, $id, $userId, $eventType);
+        if ($eventType === 'closed') {
+            $this->documentSecurityRepository->closeSession($token);
+        }
+
+        return (new Response())->json(['ok' => true]);
+    }
+
+    private function isAccessCodeUnlocked(int $documentId): bool
+    {
+        return (bool) Session::get('doc_access_code_unlocked_' . $documentId);
     }
 
     /** @param array<string, mixed> $doc */

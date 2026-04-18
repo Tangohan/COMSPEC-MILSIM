@@ -5,6 +5,8 @@ $collaborators = $collaborators ?? [];
 $children = $children ?? [];
 $auditEntries = $auditEntries ?? [];
 $usersMap = $usersMap ?? [];
+$accessSessions = $accessSessions ?? [];
+$accessEvents = $accessEvents ?? [];
 if (!$document) {
     echo '<p>Document non trouvé.</p>';
     return;
@@ -134,6 +136,57 @@ $docId = (int)$document['id'];
                     <?php endforeach; ?>
                 </ul>
                 <p class="mt-2"><a href="<?= url('documents/gestion/' . $docId . '/historique') ?>" class="underline">Voir tout l'historique</a></p>
+                <?php endif; ?>
+            </section>
+
+            <section class="bg-white border border-slate-200 rounded-lg p-4">
+                <h2 class="text-sm font-bold text-slate-800 mb-2">Timeline des accès</h2>
+                <?php if (empty($accessEvents)): ?>
+                <p class="text-slate-500 text-sm">Aucun accès journalisé.</p>
+                <?php else: ?>
+                <ul class="space-y-2 text-xs">
+                    <?php foreach (array_slice($accessEvents, 0, 20) as $ev): ?>
+                    <li class="border-b border-slate-100 pb-1">
+                        <span class="text-slate-500"><?= !empty($ev['created_at']) ? date('d.m.Y H:i:s', strtotime($ev['created_at'])) : '' ?></span>
+                        — <span class="font-semibold text-slate-800"><?= htmlspecialchars((string) ($ev['event_type'] ?? 'event')) ?></span>
+                        <?php if (!empty($ev['display_name']) || !empty($ev['email'])): ?>
+                        <span class="text-slate-600">par <?= htmlspecialchars((string) ($ev['display_name'] ?? $ev['email'])) ?></span>
+                        <?php endif; ?>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
+            </section>
+
+            <section class="bg-white border border-slate-200 rounded-lg p-4">
+                <h2 class="text-sm font-bold text-slate-800 mb-2">Temps de lecture & téléchargements</h2>
+                <?php if (empty($accessSessions)): ?>
+                <p class="text-slate-500 text-sm">Aucune session.</p>
+                <?php else: ?>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-xs">
+                        <thead>
+                            <tr class="text-left text-slate-500">
+                                <th class="py-1 pr-2">Compte</th>
+                                <th class="py-1 pr-2">Ouvert</th>
+                                <th class="py-1 pr-2">Lecture</th>
+                                <th class="py-1 pr-2">Téléchargements</th>
+                                <th class="py-1 pr-2">Signature</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($accessSessions as $s): ?>
+                            <tr class="border-t border-slate-100">
+                                <td class="py-1 pr-2"><?= htmlspecialchars((string) ($s['display_name'] ?? $s['email'] ?? ('#' . ($s['user_id'] ?? '')))) ?></td>
+                                <td class="py-1 pr-2"><?= !empty($s['opened_at']) ? date('d.m H:i', strtotime($s['opened_at'])) : '—' ?></td>
+                                <td class="py-1 pr-2"><?= (int) (($s['read_seconds'] ?? 0) / 60) ?> min</td>
+                                <td class="py-1 pr-2"><?= (int) ($s['download_count'] ?? 0) ?></td>
+                                <td class="py-1 pr-2"><?= !empty($s['signature_completed_at']) ? '✅' : (!empty($s['signature_required']) ? '⏳' : '—') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
                 <?php endif; ?>
             </section>
         </div>

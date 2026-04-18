@@ -21,6 +21,7 @@ use App\Repositories\DocumentLinkRepository;
 use App\Repositories\DocumentPermissionRepository;
 use App\Repositories\DocumentRelationRepository;
 use App\Repositories\DocumentRepository;
+use App\Repositories\DocumentSecurityRepository;
 use App\Repositories\EquipmentClassRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TrainingCourseRepository;
@@ -51,7 +52,8 @@ class AdminDocumentsController
         private UserRepository $userRepository,
         private DocumentUploadService $uploadService,
         private AuditService $auditService,
-        private RoleRepository $roleRepository
+        private RoleRepository $roleRepository,
+        private DocumentSecurityRepository $documentSecurityRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -280,6 +282,9 @@ class AdminDocumentsController
                 $usersMap[$uid] = $u['display_name'] ?? $u['email'] ?? '#' . $uid;
             }
         }
+        $accessSessions = $this->documentSecurityRepository->latestStatsForDocument($id, 25);
+        $accessEvents = $this->documentSecurityRepository->latestEventsForDocument($id, 80);
+
         return Response::view('layout.main', [
             'content' => 'admin.documents.show',
             'title' => $doc['title'],
@@ -289,6 +294,8 @@ class AdminDocumentsController
             'children' => $children,
             'auditEntries' => $auditEntries,
             'usersMap' => $usersMap,
+            'accessSessions' => $accessSessions,
+            'accessEvents' => $accessEvents,
         ]);
     }
 
@@ -502,6 +509,8 @@ class AdminDocumentsController
             'document' => $doc,
             'auditEntries' => $auditEntries,
             'usersMap' => $usersMap,
+            'accessSessions' => $accessSessions,
+            'accessEvents' => $accessEvents,
         ]);
     }
 
@@ -729,9 +738,21 @@ class AdminDocumentsController
             'print_allowed' => $request->input('print_allowed') !== '0',
             'locked' => (bool) $request->input('locked'),
             'inherit_parent_security' => (bool) $request->input('inherit_parent_security'),
+            'require_access_code' => (bool) $request->input('require_access_code'),
+            'require_account_signature' => (bool) $request->input('require_account_signature'),
+            'signature_mandatory_before_download' => (bool) $request->input('signature_mandatory_before_download'),
         ];
         $tags = $request->input('tags');
         $tagsText = trim((string) $request->input('tags_text'));
+        $accessCodeRaw = trim((string) $request->input('access_code'));
+        if (!empty($data['require_access_code'])) {
+            if ($accessCodeRaw !== '') {
+                $data['access_code_hash'] = password_hash($accessCodeRaw, PASSWORD_DEFAULT);
+            }
+        } else {
+            $data['access_code_hash'] = null;
+        }
+
         if (is_array($tags)) {
             $data['tags'] = json_encode(array_values(array_filter($tags)));
         } elseif ($tagsText !== '') {
