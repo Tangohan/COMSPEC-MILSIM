@@ -50,6 +50,7 @@ final class CommunityEventsAdminController
             'annules' => $this->events->cancelledForTenant($tenantId, 100),
             default => $this->events->upcomingForTenant($tenantId, 100),
         };
+        $insights = $this->buildAttendanceInsights($tenantId);
         $quota = $this->featureGate->quotaStatusForFeature($tenantId, 'events');
 
         return Response::view('layout.main', [
@@ -59,6 +60,36 @@ final class CommunityEventsAdminController
             'eventsVue' => $vue,
             'eventsQuota' => $quota,
             'canCreateEvent' => $this->featureGate->allows($tenantId, 'events'),
+            'eventsAttendanceKpis' => $insights['kpis'],
+            'eventsAbsenceReasons' => $insights['absenceReasons'],
+            'eventsRecommendedSlots' => $insights['recommendedSlots'],
+            'eventsRegularityScores' => $insights['regularityScores'],
+            'eventsNewMemberParticipationDelta' => $insights['newMemberParticipationDelta'],
+        ]);
+    }
+
+    public function insights(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::view('layout.main', [
+                'title' => 'Insights présence',
+                'content' => 'platform.upgrade',
+                'feature' => 'events',
+                'planName' => 'pro',
+            ]);
+        }
+
+        $insights = $this->buildAttendanceInsights($tenantId);
+
+        return Response::view('layout.main', [
+            'title' => 'Insights présence',
+            'content' => 'admin.organization.events_insights',
+            'eventsAttendanceKpis' => $insights['kpis'],
+            'eventsAbsenceReasons' => $insights['absenceReasons'],
+            'eventsRecommendedSlots' => $insights['recommendedSlots'],
+            'eventsRegularityScores' => $insights['regularityScores'],
+            'eventsNewMemberParticipationDelta' => $insights['newMemberParticipationDelta'],
         ]);
     }
 
@@ -196,7 +227,14 @@ final class CommunityEventsAdminController
 
             return $this->redirectToEvent($params, $id);
         }
-        $result = $this->attendance->adminSetParticipantRsvp($id, $tenantId, $targetUserId, $action);
+        $result = $this->attendance->adminSetParticipantRsvpWithReason(
+            $id,
+            $tenantId,
+            $targetUserId,
+            $action,
+            trim((string) $request->input('absence_reason', '')) ?: null,
+            trim((string) $request->input('absence_note', '')) ?: null
+        );
         if (!($result['ok'] ?? false)) {
             Session::flash('error', $result['error'] ?? 'Modification impossible.');
 
@@ -229,7 +267,14 @@ final class CommunityEventsAdminController
         if (!in_array($action, ['yes', 'no', 'maybe'], true)) {
             $action = 'yes';
         }
-        $result = $this->attendance->adminSetParticipantRsvp($id, $tenantId, $targetUserId, $action);
+        $result = $this->attendance->adminSetParticipantRsvpWithReason(
+            $id,
+            $tenantId,
+            $targetUserId,
+            $action,
+            trim((string) $request->input('absence_reason', '')) ?: null,
+            trim((string) $request->input('absence_note', '')) ?: null
+        );
         if (!($result['ok'] ?? false)) {
             Session::flash('error', $result['error'] ?? 'Ajout impossible.');
 
@@ -314,7 +359,7 @@ final class CommunityEventsAdminController
         $rows = $this->events->listRsvpsWithUsersForEvent($id);
         $sep = ';';
         $lines = [];
-        $lines[] = implode($sep, ['Nom affiché', 'Indicatif', 'Adresse e-mail', 'Participation', 'Pointage', 'Inscription', 'Rappel envoyé']);
+        $lines[] = implode($sep, ['Nom affiché', 'Indicatif', 'Adresse e-mail', 'Participation', 'Motif absence', 'Note absence', 'Pointage', 'Inscription', 'Rappel envoyé']);
         $lab = static function (string $s): string {
             return match ($s) {
                 'yes' => 'Présent',
@@ -330,6 +375,8 @@ final class CommunityEventsAdminController
                 '"' . str_replace('"', '""', (string) ($r['callsign'] ?? '')) . '"',
                 '"' . str_replace('"', '""', (string) ($r['email'] ?? '')) . '"',
                 '"' . str_replace('"', '""', $lab((string) ($r['status'] ?? ''))) . '"',
+                '"' . str_replace('"', '""', (string) ($r['absence_reason'] ?? '')) . '"',
+                '"' . str_replace('"', '""', (string) ($r['absence_note'] ?? '')) . '"',
                 '"' . str_replace('"', '""', (string) ($r['checked_in_at'] ?? '')) . '"',
                 '"' . str_replace('"', '""', (string) ($r['rsvp_created_at'] ?? '')) . '"',
                 '"' . $rem . '"',
@@ -425,5 +472,25 @@ final class CommunityEventsAdminController
         }
 
         return Response::redirect(url('back-office/events/' . (string) $id));
+    }
+
+    /**
+     * @return array{
+     *   kpis: array{confirmed_yes:int,effective_yes:int,no_show_yes:int},
+     *   absenceReasons: list<array<string,mixed>>,
+     *   recommendedSlots: list<array<string,mixed>>,
+     *   regularityScores: list<array<string,mixed>>,
+     *   newMemberParticipationDelta: float
+     * }
+     */
+    private function buildAttendanceInsights(int $tenantId): array
+    {
+        return [
+            'kpis' => $this->events->attendanceKpisForTenant($tenantId, 90),
+            'absenceReasons' => $this->events->absenceReasonBreakdownForTenant($tenantId, 90, 5),
+            'recommendedSlots' => $this->events->recommendedSlotsForTenant($tenantId, 120, 3),
+            'regularityScores' => $this->events->regularityScoresForTenant($tenantId, 60, 8),
+            'newMemberParticipationDelta' => $this->events->newMembersParticipationDeltaForTenant($tenantId, 120),
+        ];
     }
 }

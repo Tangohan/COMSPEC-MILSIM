@@ -85,8 +85,10 @@
         if (!c || !c.beaconUrl) return;
         var zone = el.getAttribute('data-comspec-zone') || 'cta';
         var opening = el.getAttribute('data-comspec-opening') || '';
+        var ctaType = el.getAttribute('data-comspec-cta') || '';
         var props = { zone: zone };
         if (opening) props.opening_id = parseInt(opening, 10) || 0;
+        if (ctaType) props.cta_type = ctaType;
         sendBeacon({
             name: 'tenant_recruitment_cta_click',
             category: 'recruitment',

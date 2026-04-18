@@ -115,7 +115,9 @@ final class PointageController
             $eventId,
             (int) $user['id'],
             $tenantId,
-            $status
+            $status,
+            trim((string) $request->input('absence_reason', '')) ?: null,
+            trim((string) $request->input('absence_note', '')) ?: null
         );
         if (!($result['ok'] ?? false)) {
             Session::flash('error', $result['error'] ?? 'Impossible d’enregistrer.');

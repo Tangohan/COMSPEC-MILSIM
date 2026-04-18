@@ -182,7 +182,11 @@ class CourrierDocumentRepository
 
     public function getVersions(int $documentId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM courrier_document_versions WHERE document_id = ? ORDER BY version_number DESC');
+        $stmt = $this->pdo->prepare('SELECT v.*, u.display_name AS created_by_name
+                FROM courrier_document_versions v
+                LEFT JOIN users u ON u.id = v.created_by
+                WHERE v.document_id = ?
+                ORDER BY v.version_number DESC');
         $stmt->execute([$documentId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

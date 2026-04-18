@@ -1135,10 +1135,45 @@ $overwatchPageCsrf = \App\Core\Csrf::token();
             if (slider) { slider.max = Math.max(0, (data.timeline || []).length - 1); slider.value = 0; }
             var info = document.getElementById('replay-info');
             if (info) info.textContent = (data.timeline || []).length + ' instant(s)';
+            loadReplayAar();
           })
           .catch(function () { overwatchHealthStatus.replay = 'Erreur'; if (window.refreshHealthPanel) refreshHealthPanel(); var el = document.getElementById('replay-info'); if (el) el.textContent = 'Erreur chargement.'; });
       }
+      function loadReplayAar() {
+        var box = document.getElementById('replay-aar');
+        if (box) box.textContent = 'Analyse AAR en cours…';
+        fetch(apiBase + '/replay/aar/' + encodeURIComponent(getMissionId()), { credentials: 'include' })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!box) return;
+            var s = data.summary || {};
+            var errors = data.errors || [];
+            var line = [];
+            line.push('<p><strong>Unités</strong>: ' + (s.unitCount || 0) + '</p>');
+            line.push('<p><strong>Samples</strong>: ' + (s.positionSamples || 0) + '</p>');
+            line.push('<p><strong>Intel</strong>: ' + (s.intelEvents || 0) + '</p>');
+            line.push('<p><strong>Délai médian</strong>: ' + (s.medianReactionDelaySeconds != null ? s.medianReactionDelaySeconds + ' s' : 'N/A') + '</p>');
+            if (errors.length > 0) {
+              line.push('<p class="mt-2"><strong>Erreurs détectées</strong>:</p><ul class="list-disc pl-4">');
+              errors.forEach(function (e) {
+                line.push('<li>' + (e.label || e.code || 'Erreur') + ' (' + (e.count || 0) + ')</li>');
+              });
+              line.push('</ul>');
+            } else {
+              line.push('<p class="mt-2 text-emerald-700">Aucune erreur automatique détectée.</p>');
+            }
+            box.innerHTML = line.join('');
+          })
+          .catch(function () {
+            if (box) box.textContent = 'Erreur chargement analyse AAR.';
+          });
+      }
       document.querySelector('[data-tab="replay"]')?.addEventListener('click', loadReplay);
+      document.getElementById('replay-aar-refresh')?.addEventListener('click', loadReplayAar);
+      document.getElementById('replay-aar-export')?.addEventListener('click', function () {
+        var url = apiBase + '/replay/aar/' + encodeURIComponent(getMissionId()) + '/export.pdf';
+        window.open(url, '_blank');
+      });
       loadReplay();
 
       function loadIff() {

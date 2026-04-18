@@ -6,6 +6,13 @@ $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
 $listUrl = url('back-office/recruitments');
 $formAction = url('back-office/recruitments/messages-prefaits');
+$contextLabels = [
+    'generic' => 'Tous contextes',
+    'accept' => 'Acceptation',
+    'pending' => 'Mise en attente',
+    'reject' => 'Refus / non admission',
+    'redirect' => 'Redirection',
+];
 ?>
 <div class="recruitment-bureau min-h-[calc(100vh-3.5rem)] bg-gradient-to-b from-[#ebe6dc] via-[#f5f2eb] to-[#e8e4db]">
     <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
@@ -21,9 +28,14 @@ $formAction = url('back-office/recruitments/messages-prefaits');
                             Phrases toutes prêtes à insérer dans le <strong class="text-white/95">commentaire interne</strong> lors du traitement d’une candidature (accueil, refus, non-admission). Chaque communauté gère sa propre liste.
                         </p>
                     </div>
-                    <a href="<?= htmlspecialchars($listUrl) ?>" class="inline-flex shrink-0 items-center rounded-xl border border-white/15 bg-black/20 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:bg-black/30">
-                        ← Candidatures
-                    </a>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 items-center rounded-xl border border-sky-300/40 bg-sky-300/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-sky-100 transition hover:bg-sky-300/20">
+                            Paramètres SLA
+                        </a>
+                        <a href="<?= htmlspecialchars($listUrl) ?>" class="inline-flex shrink-0 items-center rounded-xl border border-white/15 bg-black/20 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:bg-black/30">
+                            ← Candidatures
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -62,6 +74,14 @@ $formAction = url('back-office/recruitments/messages-prefaits');
                                 <label for="new-sort" class="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-600">Ordre d’affichage (optionnel)</label>
                                 <input type="number" id="new-sort" name="sort_order" value="0" min="0" max="99999" class="w-36 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20">
                             </div>
+                            <div>
+                                <label for="new-context" class="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-600">Contexte</label>
+                                <select id="new-context" name="context" class="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20">
+                                    <?php foreach ($contextLabels as $key => $label): ?>
+                                    <option value="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
                             <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-[#1c2d41] px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-[#1c2d41]/25 transition hover:bg-[#152333]">
                                 Ajouter le modèle
                             </button>
@@ -83,6 +103,8 @@ $formAction = url('back-office/recruitments/messages-prefaits');
                             <article class="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm ring-1 ring-black/[0.02]">
                                 <div class="flex items-center justify-between gap-3 border-b border-stone-100 bg-[#f4f1ea] px-5 py-2.5">
                                     <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Réf. <?= $rid ?></span>
+                                    <?php $ctx = (string) ($r['context'] ?? 'generic'); ?>
+                                    <span class="rounded-md border border-stone-300 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stone-700"><?= htmlspecialchars($contextLabels[$ctx] ?? $contextLabels['generic'], ENT_QUOTES, 'UTF-8') ?></span>
                                 </div>
                                 <div class="p-5 sm:p-6">
                                     <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits/' . $rid . '/update')) ?>" class="space-y-4">
@@ -98,6 +120,14 @@ $formAction = url('back-office/recruitments/messages-prefaits');
                                         <div>
                                             <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-600">Ordre</label>
                                             <input type="number" name="sort_order" value="<?= (int) ($r['sort_order'] ?? 0) ?>" min="0" max="99999" class="w-36 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-600">Contexte</label>
+                                            <select name="context" class="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20">
+                                                <?php foreach ($contextLabels as $key => $label): ?>
+                                                <option value="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" <?= $ctx === $key ? 'selected' : '' ?>><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
                                         </div>
                                         <div class="flex flex-wrap gap-3 pt-2">
                                             <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-[#1c2d41] px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#152333]">Enregistrer</button>
