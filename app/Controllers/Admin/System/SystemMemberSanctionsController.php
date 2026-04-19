@@ -14,6 +14,8 @@ use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Moderation\ModerationRestrictionsCatalog;
 use App\Services\Moderation\ModerationService;
+use App\Services\Admin\AdminActionService;
+use App\Services\Audit\AuditAction;
 
 /**
  * Sanctions « site » (niveaux 1 à 3) sur un membre d’une communauté — hors périmètre RH tenant.
@@ -25,8 +27,11 @@ final class SystemMemberSanctionsController
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
         private ModerationRepository $moderationRepository,
-        private ModerationService $moderationService
-    ) {}
+        private ModerationService $moderationService,
+        private ?AdminActionService $adminActionService = null
+    ) {
+        $this->adminActionService ??= new AdminActionService();
+    }
 
     public function index(Request $request, array $params = []): Response
     {
@@ -133,7 +138,7 @@ final class SystemMemberSanctionsController
         }
 
         try {
-            $this->moderationService->applySanction(
+            $moderationActionId = $this->moderationService->applySanction(
                 $tenantId,
                 (int) $actor['id'],
                 $targetId,
@@ -143,6 +148,25 @@ final class SystemMemberSanctionsController
                 $restrictions,
                 'platform'
             );
+            $this->adminActionService->log($request, [
+                'tenant_id' => $tenantId,
+                'actor_user_id' => (int) $actor['id'],
+                'action_type' => AuditAction::MODERATION_ACTION,
+                'target_type' => 'user',
+                'target_id' => (string) $targetId,
+                'scope' => 'platform',
+                'status' => 'applied',
+                'reason' => $reason !== '' ? $reason : 'Sanction plateforme',
+                'is_undoable' => 1,
+                'is_compensable' => 1,
+                'undo_strategy' => 'moderation.revoke',
+            ], [], [
+                'moderation_action_id' => (int) ($moderationActionId ?? 0),
+                'type' => $type,
+                'target_user_id' => $targetId,
+                'expires_at' => $expires?->format(\DateTimeInterface::ATOM),
+            ]);
+
             Session::flash('success', 'Mesure enregistrée.');
         } catch (\Throwable $e) {
             Session::flash('error', $e->getMessage());
@@ -170,6 +194,19 @@ final class SystemMemberSanctionsController
             return Response::redirect(url('admin/system/member-sanctions'));
         }
         if ($this->moderationService->revokeForScope($tenantId, $actionId, (int) $actor['id'], 'platform')) {
+            $this->adminActionService->log($request, [
+                'tenant_id' => $tenantId,
+                'actor_user_id' => (int) $actor['id'],
+                'action_type' => AuditAction::MODERATION_REVOKED,
+                'target_type' => 'moderation_action',
+                'target_id' => (string) $actionId,
+                'scope' => 'platform',
+                'status' => 'applied',
+                'reason' => 'Action de levée de sanction',
+                'is_undoable' => 0,
+                'is_compensable' => 1,
+                'non_reversible_reason' => 'La sanction doit être ré-émise explicitement.',
+            ]);
             Session::flash('success', 'Sanction levée.');
         } else {
             Session::flash('error', 'Action introuvable, déjà levée, ou hors périmètre plateforme.');
