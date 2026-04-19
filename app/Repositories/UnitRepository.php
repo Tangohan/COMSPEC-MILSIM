@@ -136,6 +136,144 @@ class UnitRepository
     }
 
     /**
+     * Score de readiness par opérateur (0-100) et composantes.
+     *
+     * @param list<int> $userIds
+     * @return array<int, array{
+     *   readiness:int,
+     *   components:array{
+     *     certification:int,
+     *     presence:int,
+     *     medical:?int,
+     *     availability:int
+     *   }
+     * }>
+     */
+    public function readinessByUsersForTenant(int $tenantId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $v): bool => $v > 0)));
+        if ($userIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        $paramsBase = array_merge([$tenantId], $userIds);
+
+        $certByUser = [];
+        if ($this->tableExists('user_certifications')) {
+            $sql = "SELECT uc.user_id,
+                           COUNT(DISTINCT uc.certification_id) AS total_count,
+                           SUM(CASE
+                               WHEN (uc.status IN ('active','valid','completed') OR uc.status IS NULL OR uc.status = '')
+                                    AND (uc.expires_at IS NULL OR DATE(uc.expires_at) >= CURDATE())
+                               THEN 1 ELSE 0 END) AS valid_count
+                    FROM user_certifications uc
+                    INNER JOIN users u ON u.id = uc.user_id AND u.tenant_id = ?
+                    WHERE uc.user_id IN ({$placeholders})
+                    GROUP BY uc.user_id";
+            $st = $this->pdo->prepare($sql);
+            $st->execute($paramsBase);
+            while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                $uid = (int) ($row['user_id'] ?? 0);
+                $total = max(0, (int) ($row['total_count'] ?? 0));
+                $valid = max(0, (int) ($row['valid_count'] ?? 0));
+                if ($uid > 0) {
+                    $certByUser[$uid] = $total > 0 ? (int) round(min(1, $valid / $total) * 100) : 50;
+                }
+            }
+        }
+
+        $presenceByUser = [];
+        if ($this->tableExists('community_event_rsvps') && $this->tableExists('community_events')) {
+            $sql = "SELECT r.user_id,
+                           COUNT(*) AS sample_size,
+                           SUM(CASE WHEN r.checked_in_at IS NOT NULL THEN 1 ELSE 0 END) AS checked_in_count,
+                           SUM(CASE WHEN r.status IN ('yes','maybe') THEN 1 ELSE 0 END) AS committed_count
+                    FROM community_event_rsvps r
+                    INNER JOIN community_events ce ON ce.id = r.event_id
+                    INNER JOIN users u ON u.id = r.user_id AND u.tenant_id = ?
+                    WHERE r.user_id IN ({$placeholders})
+                      AND ce.tenant_id = ?
+                      AND ce.cancelled_at IS NULL
+                      AND ce.starts_at >= DATE_SUB(NOW(), INTERVAL 45 DAY)
+                    GROUP BY r.user_id";
+            $st = $this->pdo->prepare($sql);
+            $st->execute(array_merge($paramsBase, [$tenantId]));
+            while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                $uid = (int) ($row['user_id'] ?? 0);
+                $sample = max(0, (int) ($row['sample_size'] ?? 0));
+                $checked = max(0, (int) ($row['checked_in_count'] ?? 0));
+                $committed = max(0, (int) ($row['committed_count'] ?? 0));
+                if ($uid < 1) {
+                    continue;
+                }
+                if ($sample === 0) {
+                    $presenceByUser[$uid] = 50;
+                    continue;
+                }
+                $softCommitted = max(0, $committed - $checked);
+                $value = (($checked * 1.0) + ($softCommitted * 0.6)) / $sample;
+                $presenceByUser[$uid] = (int) round(max(0, min(1, $value)) * 100);
+            }
+        }
+
+        $medicalEnabled = $this->isMedicalReadinessEnabled($tenantId);
+        $medicalByUser = [];
+        $availabilityByUser = [];
+        if ($this->tableExists('personnel_profiles') && $this->columnExists('personnel_profiles', 'deployable')) {
+            $medicalDateColumn = $this->columnExists('personnel_profiles', 'rp_medical_due_date');
+            $extraMedicalSelect = $medicalDateColumn ? ', pp.rp_medical_due_date AS medical_due_date' : ', NULL AS medical_due_date';
+            $sql = "SELECT pp.user_id, pp.deployable {$extraMedicalSelect}
+                    FROM personnel_profiles pp
+                    INNER JOIN users u ON u.id = pp.user_id AND u.tenant_id = ?
+                    WHERE pp.user_id IN ({$placeholders})";
+            $st = $this->pdo->prepare($sql);
+            $st->execute($paramsBase);
+            while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                $uid = (int) ($row['user_id'] ?? 0);
+                if ($uid < 1) {
+                    continue;
+                }
+                $deployable = (int) ($row['deployable'] ?? 0) === 1;
+                $availabilityByUser[$uid] = $deployable ? 100 : 35;
+                if ($medicalEnabled) {
+                    $due = trim((string) ($row['medical_due_date'] ?? ''));
+                    $dueOver = $due !== '' && $due < date('Y-m-d');
+                    $medicalByUser[$uid] = $deployable ? ($dueOver ? 60 : 100) : 20;
+                }
+            }
+        }
+
+        $out = [];
+        foreach ($userIds as $uid) {
+            $cert = $certByUser[$uid] ?? 50;
+            $presence = $presenceByUser[$uid] ?? 50;
+            $availability = $availabilityByUser[$uid] ?? 50;
+            $medical = $medicalEnabled ? ($medicalByUser[$uid] ?? 50) : null;
+
+            $weighted = ($cert * 0.40) + ($presence * 0.25) + ($availability * 0.15);
+            $den = 0.80;
+            if ($medical !== null) {
+                $weighted += $medical * 0.20;
+                $den += 0.20;
+            }
+            $readiness = (int) round(max(0, min(100, $den > 0 ? $weighted / $den : 0)));
+
+            $out[$uid] = [
+                'readiness' => $readiness,
+                'components' => [
+                    'certification' => $cert,
+                    'presence' => $presence,
+                    'medical' => $medical,
+                    'availability' => $availability,
+                ],
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Chef d’unité (commander_user_id) → libellé affichable.
      *
      * @param list<array<string, mixed>> $unitsFlat
@@ -477,6 +615,39 @@ class UnitRepository
         }
 
         return array_map('intval', array_keys($ids));
+    }
+
+    private function isMedicalReadinessEnabled(int $tenantId): bool
+    {
+        $stmt = $this->pdo->prepare('SELECT settings FROM tenants WHERE id = ? LIMIT 1');
+        $stmt->execute([$tenantId]);
+        $raw = $stmt->fetchColumn();
+        if (!is_string($raw) || trim($raw) === '') {
+            return false;
+        }
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return false;
+        }
+        $community = is_array($decoded['community'] ?? null) ? $decoded['community'] : [];
+        $readiness = is_array($community['readiness'] ?? null) ? $community['readiness'] : [];
+        $roleplayFollowup = is_array($community['roleplay_followup'] ?? null) ? $community['roleplay_followup'] : [];
+
+        $candidates = [
+            $readiness['medical_simulation_enabled'] ?? null,
+            $readiness['medical_enabled'] ?? null,
+            $roleplayFollowup['medical_simulation_enabled'] ?? null,
+            $roleplayFollowup['medical_enabled'] ?? null,
+        ];
+        foreach ($candidates as $value) {
+            if ($value === null) {
+                continue;
+            }
+
+            return (bool) $value;
+        }
+
+        return false;
     }
 
     private function buildTree(array $byParent, int $parentId): array
