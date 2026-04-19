@@ -7,6 +7,7 @@ namespace App\Controllers\Api;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
+use App\Support\Api\ApiResponder;
 use App\Core\Session;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserUiPreferencesRepository;
@@ -29,11 +30,11 @@ class MePreferencesApiController
     {
         $user = $this->authService->user();
         if (!$user) {
-            return Response::json(['error' => 'Non autorisé.'], 401);
+            return ApiResponder::error('unauthorized', 'Non autorisé.', 401);
         }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId) {
-            return Response::json(['error' => 'Communauté non sélectionnée.'], 400);
+            return ApiResponder::error('tenant_missing', 'Communauté non sélectionnée.', 400);
         }
         $tenantId = (int) $tenantId;
         $userId = (int) $user['id'];
@@ -42,7 +43,7 @@ class MePreferencesApiController
             $ui = $this->uiPreferencesRepository->getOrDefaults($userId, $tenantId);
             $notifications = $this->notificationPreferencesRepository->listForUser($userId);
 
-            return Response::json([
+            return ApiResponder::success([
                 'ui' => $ui,
                 'notifications' => $notifications,
                 'meta' => [
@@ -56,7 +57,7 @@ class MePreferencesApiController
 
         if ($request->method() === 'PATCH' || $request->method() === 'POST') {
             if (!$this->validateCsrf($request)) {
-                return Response::json(['error' => 'Token CSRF invalide.'], 403);
+                return ApiResponder::error('csrf_invalid', 'Token CSRF invalide.', 403);
             }
             $body = $this->jsonBody($request);
             $uiInput = $body['ui'] ?? $body;
@@ -66,7 +67,7 @@ class MePreferencesApiController
 
             $v = $this->validationService->validatePatch($uiInput);
             if (!$v['ok']) {
-                return Response::json(['error' => 'Validation échouée.', 'details' => $v['errors']], 422);
+                return ApiResponder::error('validation_failed', 'Validation échouée.', 422, ['fields' => $v['errors']]);
             }
             if (!empty($v['normalized'])) {
                 $this->uiPreferencesRepository->upsert($userId, $tenantId, $v['normalized']);
@@ -80,7 +81,7 @@ class MePreferencesApiController
                     }
                     $ch = (string) ($row['channel'] ?? 'in_app');
                     if (!in_array($ch, ['email', 'in_app', 'push'], true)) {
-                        return Response::json(['error' => 'notifications[].channel invalide.'], 422);
+                        return ApiResponder::error('notifications_channel_invalid', 'notifications[].channel invalide.', 422);
                     }
                     $notifRows[] = [
                         'channel' => $ch,
@@ -94,10 +95,10 @@ class MePreferencesApiController
             $ui = $this->uiPreferencesRepository->getOrDefaults($userId, $tenantId);
             $notifications = $this->notificationPreferencesRepository->listForUser($userId);
 
-            return Response::json(['ok' => true, 'ui' => $ui, 'notifications' => $notifications]);
+            return ApiResponder::success(['ok' => true, 'ui' => $ui, 'notifications' => $notifications]);
         }
 
-        return Response::json(['error' => 'Méthode non autorisée.'], 405);
+        return ApiResponder::error('method_not_allowed', 'Méthode non autorisée.', 405);
     }
 
     private function validateCsrf(Request $request): bool

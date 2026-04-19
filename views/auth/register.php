@@ -14,6 +14,7 @@ $active = 'register';
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
     <link href="<?= htmlspecialchars($base) ?>/assets/css/styles.css" rel="stylesheet">
     <?php endif; ?>
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/design-system.css" rel="stylesheet">
     <link href="<?= htmlspecialchars($base) ?>/assets/css/public-portal-day.css" rel="stylesheet">
     <style>
         body.public-portal-day { font-family: Inter, system-ui, sans-serif; }
@@ -81,7 +82,7 @@ $active = 'register';
                         maxlength="64"
                         placeholder="Ex. UNIT-ALPHA"
                         autocomplete="off"
-                        class="w-full bg-white border-2 border-slate-200 px-4 py-3.5 rounded-2xl text-sm font-semibold tracking-wide uppercase text-slate-900 placeholder:text-slate-400 placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors shadow-inner shadow-slate-100/60"
+                        class="ds-input w-full text-sm font-semibold tracking-wide uppercase placeholder:normal-case placeholder:tracking-normal shadow-inner shadow-slate-100/60"
                     >
                 </div>
 
@@ -91,10 +92,11 @@ $active = 'register';
                         id="email"
                         type="email"
                         name="email"
+                        data-lowercase="email"
                         required
                         autocomplete="email"
                         placeholder="operateur@exemple.fr"
-                        class="w-full bg-white border-2 border-slate-200 px-4 py-3.5 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors shadow-inner shadow-slate-100/60"
+                        class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
                     >
                 </div>
 
@@ -110,7 +112,7 @@ $active = 'register';
                         maxlength="100"
                         autocomplete="nickname"
                         placeholder="Votre nom ou pseudo"
-                        class="w-full bg-white border-2 border-slate-200 px-4 py-3.5 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors shadow-inner shadow-slate-100/60"
+                        class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
                     >
                 </div>
 
@@ -125,7 +127,7 @@ $active = 'register';
                             minlength="8"
                             autocomplete="new-password"
                             placeholder="••••••••"
-                            class="w-full bg-white border-2 border-slate-200 px-4 py-3.5 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors shadow-inner shadow-slate-100/60"
+                            class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
                         >
                     </div>
                     <div class="space-y-2">
@@ -138,7 +140,7 @@ $active = 'register';
                             minlength="8"
                             autocomplete="new-password"
                             placeholder="••••••••"
-                            class="w-full bg-white border-2 border-slate-200 px-4 py-3.5 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors shadow-inner shadow-slate-100/60"
+                            class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
                         >
                     </div>
                 </div>
@@ -160,14 +162,14 @@ $active = 'register';
                             maxlength="150"
                             autocomplete="off"
                             placeholder="Nom de votre personnage"
-                            class="w-full bg-white border border-emerald-100 px-4 py-3.5 rounded-2xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-colors"
+                            class="ds-input w-full text-sm font-semibold"
                         >
                     </div>
                 </div>
 
                 <button
                     type="submit"
-                    class="w-full rounded-2xl bg-slate-900 py-4 text-[11px] font-black uppercase tracking-[0.28em] text-white shadow-lg shadow-slate-200/80 transition-all hover:bg-emerald-600 hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-emerald-500/15"
+                    class="ds-btn ds-btn--primary shadow-lg shadow-slate-200/80"
                 >
                     Valider l’inscription
                 </button>
@@ -187,6 +189,7 @@ $active = 'register';
 </main>
 
 <?php require base_path('views/partials/public_portal_auth_footer.php'); ?>
+<script defer src="<?= htmlspecialchars($base) ?>/assets/js/auth_forms.js"></script>
 
 </body>
 </html>

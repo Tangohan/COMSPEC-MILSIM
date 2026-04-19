@@ -37,6 +37,23 @@ class Response
         return $this;
     }
 
+
+    public function statusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    /** @return array<string,string> */
+    public function headers(): array
+    {
+        return $this->headers;
+    }
+
+    public function body(): string
+    {
+        return $this->body;
+    }
+
     public function send(): void
     {
         http_response_code($this->statusCode);
