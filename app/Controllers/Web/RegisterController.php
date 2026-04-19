@@ -14,6 +14,7 @@ use App\Repositories\EmailTokenRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserLegalIdentityRepository;
 use App\Repositories\UserRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
@@ -31,6 +32,7 @@ final class RegisterController
         private AuthService $authService,
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
+        private UserLegalIdentityRepository $userLegalIdentityRepository,
         private RoleRepository $roleRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
         private RbacService $rbacService,
@@ -74,6 +76,10 @@ final class RegisterController
         $displayName = trim((string) $request->input('display_name'));
         $characterName = trim((string) $request->input('character_name'));
         $steamProfile = trim((string) $request->input('steam_profile'));
+        $legalFirstName = trim((string) $request->input('legal_first_name'));
+        $legalLastName = trim((string) $request->input('legal_last_name'));
+        $acceptTerms = (string) $request->input('accept_terms') === '1';
+        $acceptIdentitySplit = (string) $request->input('accept_identity_split') === '1';
 
         $v = new Validator(
             [
@@ -83,6 +89,8 @@ final class RegisterController
                 'display_name' => $displayName,
                 'character_name' => $characterName,
                 'steam_profile' => $steamProfile,
+                'legal_first_name' => $legalFirstName,
+                'legal_last_name' => $legalLastName,
             ],
             [
                 'email' => 'required|email',
@@ -91,12 +99,14 @@ final class RegisterController
                 'display_name' => 'required|min:2|max:100',
                 'character_name' => 'required|min:2|max:150',
                 'steam_profile' => 'max:512',
+                'legal_first_name' => 'required|min:2|max:100',
+                'legal_last_name' => 'required|min:2|max:100',
             ]
         );
-        if (!$v->validate() || $password !== $confirm) {
+        if (!$v->validate() || $password !== $confirm || !$acceptTerms || !$acceptIdentitySplit) {
             Session::flash(
                 'error',
-                'Vérifiez les champs : email valide, mot de passe 8+ caractères, confirmation identique, nom affiché et nom opérateur / RP.'
+                'Vérifiez les champs : identité légale (prénom + nom), email valide, mot de passe 8+ caractères, confirmation identique, nom affiché, nom opérateur / RP et validations obligatoires.'
             );
 
             return Response::redirect(url('register'));
@@ -167,6 +177,10 @@ final class RegisterController
             $this->personnelProfileRepository->ensureRecord($userId);
             $this->personnelProfileRepository->update($userId, [
                 'character_name' => $characterName,
+            ]);
+            $this->userLegalIdentityRepository->upsert($userId, $tenantId, [
+                'first_name' => $legalFirstName,
+                'last_name' => $legalLastName,
             ]);
             if ($resolvedSteamId !== null) {
                 $steamPatch = ['steam_id' => $resolvedSteamId];
