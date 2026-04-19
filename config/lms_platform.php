@@ -13,9 +13,20 @@ declare(strict_types=1);
  * }
  */
 return [
-    'version' => '1.2.0',
+    'version' => '1.3.0',
     'label' => 'Studio & parcours formation',
     'changelog' => [
+        [
+            'version' => '1.3.0',
+            'date' => '2026-04-19',
+            'title' => 'Loader visuel + timeline enrichie + personnalisation Studio',
+            'items' => [
+                'Présentation Studio : nouveau bloc « Loader d’ouverture (slide) » pour définir une image, un titre et un texte affichés pendant la préparation du parcours.',
+                'Côté apprenant, l’écran de chargement du parcours peut afficher une carte visuelle de briefing (image + contenu) avant l’introduction plein écran.',
+                'Frise du parcours (structure) enrichie avec une lecture temporelle réaliste : repère de démarrage cumulé (T+XX min) et durée estimée par module.',
+                'Mise à jour de la version fonctionnelle LMS pour tracer cette évolution majeure dans le journal Studio.',
+            ],
+        ],
         [
             'version' => '1.2.0',
             'date' => '2026-04-06',

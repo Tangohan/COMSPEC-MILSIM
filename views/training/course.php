@@ -56,6 +56,9 @@ $bannerSrc = training_media_url($bannerPick);
 $lmsOpeningCourseId = $courseId;
 $lmsOpeningTitle = (string) $course['title'];
 $lmsOpeningBannerSrc = $bannerSrc;
+$lmsOpeningLoaderImageSrc = training_media_url((string) ($theme['openingLoaderImage'] ?? ''));
+$lmsOpeningLoaderTitle = trim((string) ($theme['openingLoaderTitle'] ?? ''));
+$lmsOpeningLoaderBody = trim((string) ($theme['openingLoaderBody'] ?? ''));
 $lmsOpeningCtaMode = 'scroll_inscription';
 $lmsOpeningLessonUrl = '';
 if ($enrollment && $canAccessLearning && $firstLesson) {
