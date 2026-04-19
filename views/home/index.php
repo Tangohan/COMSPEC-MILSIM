@@ -2,6 +2,14 @@
 $base = url('');
 $title = $title ?? 'Athena Compsec — Portail MILSIM';
 $loggedIn = (bool) \App\Core\Session::get('user_id');
+$platformKpis = is_array($platformKpis ?? null) ? $platformKpis : [];
+$platformKpiDays = max(1, (int) ($platformKpiDays ?? 30));
+$kpiValue = static function (string $key) use ($platformKpis): int {
+    return max(0, (int) ($platformKpis[$key] ?? 0));
+};
+$formatInt = static function (int $value): string {
+    return number_format($value, 0, ',', ' ');
+};
 ?>
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
@@ -205,6 +213,88 @@ $loggedIn = (bool) \App\Core\Session::get('user_id');
 
             <div class="absolute bottom-0 left-0 w-full h-[2px] bg-white/5 z-20">
                 <div id="progress" class="h-full bg-white/20 w-0 transition-all duration-[6000ms] ease-linear"></div>
+            </div>
+        </section>
+
+        <section class="relative overflow-hidden border-y border-slate-200 bg-gradient-to-b from-white to-slate-50/70">
+            <div class="pointer-events-none absolute inset-0 opacity-[0.04]" style="background-image:linear-gradient(rgba(15,23,42,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.12) 1px, transparent 1px); background-size: 56px 56px;"></div>
+            <div class="relative mx-auto max-w-6xl px-6 py-16 md:py-20">
+                <div class="max-w-3xl">
+                    <p class="mb-3 text-[10px] font-black uppercase tracking-[0.38em] text-emerald-700">Athena en deux couches</p>
+                    <h2 class="text-3xl font-black uppercase tracking-tight text-slate-900 md:text-4xl">Différencier le site et le roleplay</h2>
+                    <p class="mt-4 text-sm leading-relaxed text-slate-600 md:text-base">
+                        Le <strong>site Athena</strong> reste votre couche de pilotage (organisation, workflow, permissions, traçabilité).
+                        La couche <strong>roleplay</strong> structure l’immersion (identité opérateur, dossiers, progression RP, narration unité).
+                    </p>
+                </div>
+
+                <div class="mt-10 grid gap-6 lg:grid-cols-2">
+                    <article class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+                        <p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Couche plateforme (hors RP)</p>
+                        <h3 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Site Athena</h3>
+                        <p class="mt-3 text-sm leading-relaxed text-slate-600">Pour le staff et la logistique réelle : coordonner, tracer, former et recruter sans ambiguïté avec le jeu.</p>
+                        <ul class="mt-5 space-y-2 text-xs leading-relaxed text-slate-600">
+                            <li><span class="font-bold text-slate-900">• Gouvernance:</span> rôles, accès, workflows d’administration.</li>
+                            <li><span class="font-bold text-slate-900">• Pilotage:</span> événements, présences, communication interne.</li>
+                            <li><span class="font-bold text-slate-900">• Capitalisation:</span> docs, formation, archives opérationnelles.</li>
+                        </ul>
+                    </article>
+
+                    <article class="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-7 shadow-sm">
+                        <p class="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700">Couche immersion (in-universe)</p>
+                        <h3 class="mt-2 text-2xl font-black tracking-tight text-emerald-900">Roleplay de l’unité</h3>
+                        <p class="mt-3 text-sm leading-relaxed text-emerald-900/80">Pour le personnage et la fiction tactique : identité RP, chaines de progression, jalons d’accréditation et suivi d’immersion.</p>
+                        <ul class="mt-5 space-y-2 text-xs leading-relaxed text-emerald-900/80">
+                            <li><span class="font-bold text-emerald-900">• Identité RP:</span> nom opérateur, callsign, profil fictionnel.</li>
+                            <li><span class="font-bold text-emerald-900">• Parcours RP:</span> dossier opérateur, étapes tutorées, timeline.</li>
+                            <li><span class="font-bold text-emerald-900">• Cohérence:</span> séparation claire compte civil / personnage.</li>
+                        </ul>
+                    </article>
+                </div>
+
+                <div class="mt-8 rounded-2xl border border-slate-200 bg-slate-900 px-5 py-4 text-[11px] text-white/85 md:px-6">
+                    <span class="font-black uppercase tracking-[0.2em] text-emerald-300">Principe de séparation</span>
+                    <span class="ml-2">Athena gère la réalité organisationnelle ; le roleplay gère la réalité narrative. Les deux se complètent sans se mélanger.</span>
+                </div>
+
+                <div class="mt-10">
+                    <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+                        <p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Données réelles de la plateforme</p>
+                        <p class="text-xs text-slate-500">Fenêtre glissante : <strong><?= (int) $platformKpiDays ?> derniers jours</strong>.</p>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+                            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Communautés actives</p>
+                            <p class="mt-2 text-3xl font-black tracking-tight text-slate-900"><?= htmlspecialchars($formatInt($kpiValue('communities_total'))) ?></p>
+                            <p class="mt-2 text-xs text-slate-500">Espaces communautaires enregistrés sur la plateforme.</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+                            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Membres actifs</p>
+                            <p class="mt-2 text-3xl font-black tracking-tight text-slate-900"><?= htmlspecialchars($formatInt($kpiValue('users_active_total'))) ?></p>
+                            <p class="mt-2 text-xs text-slate-500">Comptes actifs non techniques actuellement présents.</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+                            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Messages forum</p>
+                            <p class="mt-2 text-3xl font-black tracking-tight text-slate-900"><?= htmlspecialchars($formatInt($kpiValue('forum_posts_in_period'))) ?></p>
+                            <p class="mt-2 text-xs text-slate-500">Publications créées sur la période.</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+                            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Formations validées</p>
+                            <p class="mt-2 text-3xl font-black tracking-tight text-slate-900"><?= htmlspecialchars($formatInt($kpiValue('training_completions_in_period'))) ?></p>
+                            <p class="mt-2 text-xs text-slate-500">Parcours marqués « complétés » par les membres.</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+                            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Dossiers d’enrôlement</p>
+                            <p class="mt-2 text-3xl font-black tracking-tight text-slate-900"><?= htmlspecialchars($formatInt($kpiValue('enlistments_created_in_period'))) ?></p>
+                            <p class="mt-2 text-xs text-slate-500">Candidatures créées par les recrues.</p>
+                        </div>
+                        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700">Événements d’usage</p>
+                            <p class="mt-2 text-3xl font-black tracking-tight text-emerald-900"><?= htmlspecialchars($formatInt($kpiValue('usage_events_in_period'))) ?></p>
+                            <p class="mt-2 text-xs text-emerald-900/70">Interactions produit suivies pour l’amélioration continue.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

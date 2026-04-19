@@ -14,7 +14,35 @@ class HomeController
 {
     public function index(Request $request, array $params = []): Response
     {
-        return Response::view('home.index', ['title' => 'Athena Compsec — Portail MILSIM']);
+        $days = 30;
+        $platformKpis = [
+            'communities_total' => 0,
+            'users_active_total' => 0,
+            'forum_posts_in_period' => 0,
+            'training_completions_in_period' => 0,
+            'enlistments_created_in_period' => 0,
+            'usage_events_in_period' => 0,
+        ];
+
+        try {
+            /** @var \App\Repositories\TenantAnalyticsRepository $analyticsRepo */
+            $analyticsRepo = \App\Core\Container::get(\App\Repositories\TenantAnalyticsRepository::class);
+            $raw = $analyticsRepo->getPlatformOperationalKpis($days);
+            $platformKpis['communities_total'] = (int) ($raw['communities_total'] ?? 0);
+            $platformKpis['users_active_total'] = (int) ($raw['users_active_total'] ?? 0);
+            $platformKpis['forum_posts_in_period'] = (int) ($raw['forum_posts_in_period'] ?? 0);
+            $platformKpis['training_completions_in_period'] = (int) ($raw['training_completions_in_period'] ?? 0);
+            $platformKpis['enlistments_created_in_period'] = (int) ($raw['enlistments_created_in_period'] ?? 0);
+            $platformKpis['usage_events_in_period'] = (int) ($raw['usage_events_in_period'] ?? 0);
+        } catch (\Throwable) {
+            // La home publique doit rester disponible même si les tables analytics ne sont pas prêtes.
+        }
+
+        return Response::view('home.index', [
+            'title' => 'Athena Compsec — Portail MILSIM',
+            'platformKpis' => $platformKpis,
+            'platformKpiDays' => $days,
+        ]);
     }
 
     /** Page d’information sur les offres (fondateurs, essai Pro, Stripe). */
