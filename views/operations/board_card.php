@@ -21,12 +21,22 @@ $pubRow = (string) ($entry['status'] ?? 'active');
 $isDraftPublication = ($pubRow === 'draft' || $valStat === 'draft');
 $titleRaw = trim((string) ($entry['title'] ?? ''));
 $titleDisplay = $titleRaw !== '' ? $titleRaw : 'Sans titre';
+$searchHaystack = strtolower(trim(implode(' ', array_filter([
+    $titleDisplay,
+    (string) ($entry['description'] ?? ''),
+    (string) ($entry['chief_name'] ?? ''),
+    (string) ($entry['deputy_name'] ?? ''),
+    (string) ($entry['replacement_name'] ?? ''),
+    (string) ($entry['operation_zone'] ?? ''),
+    $tagBlob,
+]))));
 ?>
 <article class="entry-card rounded-xl border border-l-4 bg-white p-3 text-xs shadow-sm <?= htmlspecialchars($priorityClass[$priority] ?? $priorityClass['normal'], ENT_QUOTES, 'UTF-8') ?>"
          data-entry_type="<?= htmlspecialchars($etype, ENT_QUOTES, 'UTF-8') ?>"
          data-operational_status="<?= htmlspecialchars($opKey, ENT_QUOTES, 'UTF-8') ?>"
          data-priority="<?= htmlspecialchars($priority, ENT_QUOTES, 'UTF-8') ?>"
-         data-tag="<?= htmlspecialchars($tagBlob, ENT_QUOTES, 'UTF-8') ?>">
+         data-tag="<?= htmlspecialchars($tagBlob, ENT_QUOTES, 'UTF-8') ?>"
+         data-search="<?= htmlspecialchars($searchHaystack, ENT_QUOTES, 'UTF-8') ?>">
     <div class="flex items-start justify-between gap-2">
         <?php if ($showAdminActions && $eid > 0): ?>
             <h3 class="min-w-0 flex-1 font-bold leading-snug text-slate-900">
@@ -52,15 +62,31 @@ $titleDisplay = $titleRaw !== '' ? $titleRaw : 'Sans titre';
     <?php elseif (!empty($entry['description'])): ?>
         <p class="mt-2 text-slate-700"><?= nl2br(htmlspecialchars((string) $entry['description'], ENT_QUOTES, 'UTF-8')) ?></p>
     <?php endif; ?>
-    <p class="mt-2 text-slate-700">
-        Commandement : <?= htmlspecialchars((string) ($entry['chief_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?> ·
-        Adjoint : <?= htmlspecialchars((string) ($entry['deputy_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?> ·
-        Remplaçant : <?= htmlspecialchars((string) ($entry['replacement_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
-    </p>
+    <dl class="mt-2 grid grid-cols-1 gap-1 text-slate-700 md:grid-cols-2">
+        <div>
+            <dt class="inline font-semibold text-slate-800">Commandement :</dt>
+            <dd class="inline"><?= htmlspecialchars((string) ($entry['chief_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></dd>
+        </div>
+        <div>
+            <dt class="inline font-semibold text-slate-800">Adjoint :</dt>
+            <dd class="inline"><?= htmlspecialchars((string) ($entry['deputy_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></dd>
+        </div>
+        <div>
+            <dt class="inline font-semibold text-slate-800">Remplaçant :</dt>
+            <dd class="inline"><?= htmlspecialchars((string) ($entry['replacement_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></dd>
+        </div>
+        <div>
+            <dt class="inline font-semibold text-slate-800">Zone :</dt>
+            <dd class="inline"><?= htmlspecialchars((string) ($entry['operation_zone'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></dd>
+            <?php if (!empty($entry['map_link'])): ?>
+                · <a class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-900" href="<?= htmlspecialchars((string) $entry['map_link'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">Carte</a>
+            <?php endif; ?>
+        </div>
+    </dl>
     <p class="mt-1 text-slate-600">
-        <?= htmlspecialchars($operationalLabels[$opKey] ?? $opKey, ENT_QUOTES, 'UTF-8') ?>
-        · <?= htmlspecialchars($phaseLabels[$phaseKey] ?? $phaseKey, ENT_QUOTES, 'UTF-8') ?>
-        · <?= htmlspecialchars($entryTypeLabels[$etype] ?? $etype, ENT_QUOTES, 'UTF-8') ?>
+        <span class="font-semibold text-slate-800">Statut :</span> <?= htmlspecialchars($operationalLabels[$opKey] ?? $opKey, ENT_QUOTES, 'UTF-8') ?>
+        · <span class="font-semibold text-slate-800">Phase :</span> <?= htmlspecialchars($phaseLabels[$phaseKey] ?? $phaseKey, ENT_QUOTES, 'UTF-8') ?>
+        · <span class="font-semibold text-slate-800">Type :</span> <?= htmlspecialchars($entryTypeLabels[$etype] ?? $etype, ENT_QUOTES, 'UTF-8') ?>
     </p>
     <?php if ($showAdminActions): ?>
     <p class="mt-1 text-[10px] uppercase tracking-wide text-slate-500">Publication : <?= htmlspecialchars($valStat === 'draft' ? 'brouillon' : ($valStat === 'rejected' ? 'refusée' : ($valStat === 'validated' ? 'approuvée' : 'active')), ENT_QUOTES, 'UTF-8') ?></p>
@@ -69,12 +95,6 @@ $titleDisplay = $titleRaw !== '' ? $titleRaw : 'Sans titre';
         Points de contrôle : <?= (int) ($entry['checklist_done'] ?? 0) ?> / <?= (int) ($entry['checklist_required'] ?? 0) ?>
         <?php if (!empty($entry['dossier_ref'])): ?>
             · Dossier : <?= htmlspecialchars((string) $entry['dossier_ref'], ENT_QUOTES, 'UTF-8') ?>
-        <?php endif; ?>
-    </p>
-    <p class="mt-1 text-slate-600">
-        Zone : <?= htmlspecialchars((string) ($entry['operation_zone'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
-        <?php if (!empty($entry['map_link'])): ?>
-            · <a class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-900" href="<?= htmlspecialchars((string) $entry['map_link'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">Carte</a>
         <?php endif; ?>
     </p>
     <?php if ($tags): ?>

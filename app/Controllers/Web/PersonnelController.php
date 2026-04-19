@@ -526,8 +526,9 @@ class PersonnelController
         }
 
         $personnelOrgHistory = [];
-        $personnelOrgHistorySection = ($isSelf || $canStaffView) && $this->personnelOrgHistoryRepository->schemaReady();
-        if ($personnelOrgHistorySection) {
+        $personnelOrgHistorySection = ($isSelf || $canStaffView);
+        $personnelOrgHistorySchemaReady = $personnelOrgHistorySection && $this->personnelOrgHistoryRepository->schemaReady();
+        if ($personnelOrgHistorySchemaReady) {
             $histRows = $this->personnelOrgHistoryRepository->listForUser((int) $tenantId, $uid, 25);
             foreach ($histRows as &$hRow) {
                 $hRow['actor_label'] = null;
@@ -613,6 +614,7 @@ class PersonnelController
             'steamProfileSyncOffered' => $steamProfileSyncOffered,
             'personnelOrgHistory' => $personnelOrgHistory,
             'personnelOrgHistorySection' => $personnelOrgHistorySection,
+            'personnelOrgHistorySchemaReady' => $personnelOrgHistorySchemaReady,
             'personnelIsSelf' => $isSelf,
             'communityRoleLabel' => $communityRoleLabel,
             'qualificationIssuerLabels' => $qualificationIssuerLabels,

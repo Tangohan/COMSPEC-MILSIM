@@ -189,7 +189,17 @@ if ($tenantName === '') {
     </header>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div id="js-filters" class="grid grid-cols-2 gap-2 md:grid-cols-7">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800">Filtres rapides</h2>
+                <p class="text-xs text-slate-500">Affinez la vue pour ne garder que l’essentiel. Le compteur se met à jour automatiquement.</p>
+            </div>
+            <p id="filter-live-count" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700" aria-live="polite">
+                Affichage : —
+            </p>
+        </div>
+        <div id="js-filters" class="grid grid-cols-1 gap-2 md:grid-cols-4 xl:grid-cols-8">
+            <input type="search" data-filter="text" class="rounded-lg border border-slate-300 bg-white p-2 text-xs font-medium text-slate-800 md:col-span-2" aria-label="Recherche texte" placeholder="Recherche : titre, description, responsables, zone, tags…">
             <select data-filter="entry_type" class="rounded-lg border border-slate-300 bg-white p-2 text-xs font-medium text-slate-800" aria-label="Filtrer par type">
                 <option value="">Tous les types</option>
                 <?php foreach ($entryTypeLabels as $k => $lbl): ?>
@@ -244,6 +254,9 @@ if ($tenantName === '') {
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+        <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+            <span class="font-semibold text-slate-700">Astuce :</span> <span class="font-semibold">Vue synthèse crise</span> masque tout sauf les lignes critiques ou déjà en cours. <span class="font-semibold">Vue briefing</span> réduit les cartes pour lecture rapide avant point de situation.
+        </div>
     </section>
 
     <?php
@@ -444,6 +457,7 @@ if ($tenantName === '') {
     const modeSwitch = document.getElementById('mode-switch');
     const resetBtn = document.getElementById('filter-reset');
     const live = document.getElementById('live-stream');
+    const liveCount = document.getElementById('filter-live-count');
     const boardColumns = document.getElementById('board-columns');
     let sinceId = 0;
 
@@ -451,6 +465,8 @@ if ($tenantName === '') {
         const state = {};
         filters.forEach(el => { state[el.dataset.filter] = (el.value || '').toLowerCase(); });
         const mode = (modeSwitch?.value || 'standard');
+        let visibleCount = 0;
+        let hiddenCount = 0;
 
         if (boardColumns) {
             boardColumns.classList.toggle('board-mode-briefing', mode === 'briefing');
@@ -459,6 +475,9 @@ if ($tenantName === '') {
         cards.forEach(card => {
             const ok = Object.entries(state).every(([k, v]) => {
                 if (!v) return true;
+                if (k === 'text') {
+                    return (card.dataset.search || '').includes(v);
+                }
                 if (k === 'tag') {
                     return (card.dataset.tag || '').includes(v);
                 }
@@ -468,8 +487,18 @@ if ($tenantName === '') {
             const isCritical = (card.dataset.priority || '') === 'critical';
             const inProgress = (card.dataset.operational_status || '') === 'in_progress';
             const showInMode = mode !== 'crise' || isCritical || inProgress;
-            card.style.display = ok && showInMode ? '' : 'none';
+            const visible = ok && showInMode;
+            card.style.display = visible ? '' : 'none';
+            if (visible) {
+                visibleCount += 1;
+            } else {
+                hiddenCount += 1;
+            }
         });
+
+        if (liveCount) {
+            liveCount.textContent = 'Affichage : ' + visibleCount + ' visible(s) · ' + hiddenCount + ' masquée(s)';
+        }
     }
 
     filters.forEach(el => el.addEventListener('change', applyFilters));
