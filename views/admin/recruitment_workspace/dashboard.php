@@ -15,49 +15,56 @@ $viaLabel = static function (string $k): string {
         default => $k !== '' ? $k : 'Autre',
     };
 };
-require base_path('views/admin/recruitment_workspace/partials/command_shell_open.php');
 ?>
-                <header class="recruitment-cmd-panel">
-                    <p class="recruitment-cmd-kicker">Pilotage recrutement</p>
-                    <h1 class="recruitment-cmd-title">Candidatures &amp; dossiers</h1>
+        <div class="lms-infobanner" role="note">
+            <span class="lms-infobanner__icon" aria-hidden="true">
+                <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
+            <p><strong>Vue d’ensemble.</strong> Les actions de traitement des dossiers se font depuis la <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="text-sky-700 font-semibold hover:underline">file des candidatures</a>.</p>
+        </div>
+
+                <header class="lms-panel rounded-[2rem] p-6 md:p-8 overflow-hidden relative">
+                    <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-sky-500/80 via-sky-500/20 to-transparent" aria-hidden="true"></div>
+                    <p class="text-[9px] font-black tracking-[0.45em] text-sky-600 uppercase mb-3">Pilotage recrutement</p>
+                    <h1 class="text-3xl md:text-4xl font-black tracking-tight uppercase text-slate-900 leading-tight">Candidatures &amp; dossiers</h1>
                     <p class="text-sm text-stone-600 max-w-2xl leading-relaxed">
                         Point d’entrée unique pour suivre la file, les délais internes (SLA) et les volumes. Les actions de traitement se font depuis la file ou la fiche dossier.
                     </p>
                     <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-8">
-                        <div class="recruitment-cmd-stat">
-                            <p class="recruitment-cmd-stat__k">Total dossiers</p>
-                            <p class="recruitment-cmd-stat__v"><?= $nTotal ?></p>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total dossiers</p>
+                            <p class="mt-2 text-2xl font-black text-slate-900 tabular-nums"><?= $nTotal ?></p>
                         </div>
-                        <div class="recruitment-cmd-stat border-amber-200/80 bg-amber-50/50">
-                            <p class="recruitment-cmd-stat__k">À traiter</p>
-                            <p class="recruitment-cmd-stat__v text-amber-950"><?= $nSubmitted ?></p>
+                        <div class="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-900/70">À traiter</p>
+                            <p class="mt-2 text-2xl font-black text-amber-950 tabular-nums"><?= $nSubmitted ?></p>
                         </div>
-                        <div class="recruitment-cmd-stat <?= $submittedOlderThanSla > 0 ? 'border-rose-200 bg-rose-50/70' : 'border-sky-200 bg-sky-50/40' ?>">
-                            <p class="recruitment-cmd-stat__k">Dépassement SLA</p>
-                            <p class="recruitment-cmd-stat__v <?= $submittedOlderThanSla > 0 ? 'text-rose-900' : 'text-sky-950' ?>"><?= $submittedOlderThanSla ?></p>
+                        <div class="rounded-2xl border <?= $submittedOlderThanSla > 0 ? 'border-rose-200 bg-rose-50/70' : 'border-sky-200 bg-sky-50/40' ?> p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider <?= $submittedOlderThanSla > 0 ? 'text-rose-800' : 'text-sky-800' ?>">Dépassement SLA</p>
+                            <p class="mt-2 text-2xl font-black <?= $submittedOlderThanSla > 0 ? 'text-rose-900' : 'text-sky-950' ?> tabular-nums"><?= $submittedOlderThanSla ?></p>
                         </div>
-                        <div class="recruitment-cmd-stat border-emerald-200/80 bg-emerald-50/40">
-                            <p class="recruitment-cmd-stat__k">SLA (heures)</p>
-                            <p class="recruitment-cmd-stat__v text-emerald-900"><?= $enlistmentSlaHours ?></p>
+                        <div class="rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-900/70">SLA (heures)</p>
+                            <p class="mt-2 text-2xl font-black text-emerald-900 tabular-nums"><?= $enlistmentSlaHours ?></p>
                         </div>
                     </div>
                 </header>
 
                 <section class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="recruitment-cmd-card">
-                        <p class="recruitment-cmd-card__k">File</p>
-                        <h2 class="recruitment-cmd-card__t">Ouvrir la file des dossiers</h2>
-                        <p class="recruitment-cmd-card__d">Filtrer par statut, consulter chaque dossier et enregistrer une décision.</p>
+                    <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="lms-panel rounded-2xl p-5 border border-slate-200/80 block transition hover:border-sky-300/60 hover:shadow-md">
+                        <p class="text-[10px] font-black uppercase tracking-wider text-sky-600">File</p>
+                        <h2 class="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">Ouvrir la file des dossiers</h2>
+                        <p class="mt-2 text-xs text-slate-600 leading-relaxed">Filtrer par statut, consulter chaque dossier et enregistrer une décision.</p>
                     </a>
-                    <a href="<?= htmlspecialchars(recruitment_workspace_url('analyses'), ENT_QUOTES, 'UTF-8') ?>" class="recruitment-cmd-card">
-                        <p class="recruitment-cmd-card__k">Indicateurs</p>
-                        <h2 class="recruitment-cmd-card__t">Analyses détaillées</h2>
-                        <p class="recruitment-cmd-card__d">Volumes par semaine, canaux de dépôt et offres les plus sollicitées.</p>
+                    <a href="<?= htmlspecialchars(recruitment_workspace_url('analyses'), ENT_QUOTES, 'UTF-8') ?>" class="lms-panel rounded-2xl p-5 border border-slate-200/80 block transition hover:border-sky-300/60 hover:shadow-md">
+                        <p class="text-[10px] font-black uppercase tracking-wider text-sky-600">Indicateurs</p>
+                        <h2 class="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">Analyses détaillées</h2>
+                        <p class="mt-2 text-xs text-slate-600 leading-relaxed">Volumes par semaine, canaux de dépôt et offres les plus sollicitées.</p>
                     </a>
-                    <a href="<?= htmlspecialchars(url('back-office/recruitments/settings'), ENT_QUOTES, 'UTF-8') ?>" class="recruitment-cmd-card sm:col-span-2 xl:col-span-1">
-                        <p class="recruitment-cmd-card__k">Paramètres</p>
-                        <h2 class="recruitment-cmd-card__t">SLA &amp; messages</h2>
-                        <p class="recruitment-cmd-card__d">Ajuster le délai d’alerte et préparer les modèles de texte pour le traitement.</p>
+                    <a href="<?= htmlspecialchars(url('back-office/recruitments/settings'), ENT_QUOTES, 'UTF-8') ?>" class="lms-panel rounded-2xl p-5 border border-slate-200/80 block transition hover:border-sky-300/60 hover:shadow-md sm:col-span-2 xl:col-span-1">
+                        <p class="text-[10px] font-black uppercase tracking-wider text-sky-600">Paramètres</p>
+                        <h2 class="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">SLA &amp; messages</h2>
+                        <p class="mt-2 text-xs text-slate-600 leading-relaxed">Ajuster le délai d’alerte et préparer les modèles de texte pour le traitement.</p>
                     </a>
                 </section>
 
