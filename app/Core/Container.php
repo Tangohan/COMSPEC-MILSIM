@@ -354,6 +354,7 @@ class Container
             \App\Controllers\Web\AccountController::class => new \App\Controllers\Web\AccountController(
                 self::get(AuthService::class),
                 self::get(UserRepository::class),
+                self::get(\App\Repositories\UserLegalIdentityRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(\App\Repositories\RecruitmentPresetRepository::class),
