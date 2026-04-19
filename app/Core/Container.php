@@ -1017,6 +1017,7 @@ class Container
                 self::get(\App\Services\Training\TrainingCourseSessionNotificationService::class),
                 self::get(\App\Repositories\DocumentRepository::class),
                 self::get(\App\Services\Training\TrainingLessonResourceStorageService::class),
+                self::get(\App\Services\Documents\DocumentUploadService::class),
                 self::get(\App\Services\Training\TrainingCoursePublicationGuard::class),
                 self::get(\App\Services\Training\TrainingSessionInstructorGuard::class),
                 self::get(\App\Repositories\PedagogyRepository::class),
