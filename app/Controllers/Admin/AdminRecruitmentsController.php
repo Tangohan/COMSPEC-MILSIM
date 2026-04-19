@@ -130,6 +130,7 @@ class AdminRecruitmentsController
         }
 
         $navCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
+        $candidatePortalAttachments = $this->enlistmentRepository->listCandidatePortalAttachments((int) $tenantId, $id);
 
         return Response::view('layout.recruitment_lms', [
             'content' => 'admin.recruitments.show',
@@ -147,7 +148,90 @@ class AdminRecruitmentsController
             'recruitmentSidebarCounts' => $navCounts,
             'recruitmentAdminNav' => 'queue',
             'showPortalFooter' => false,
+            'candidatePortalAttachments' => $candidatePortalAttachments,
+            'candidatePortalUploadsReady' => $this->enlistmentRepository->candidatePortalUploadsReady(),
         ]);
+    }
+
+    public function portalOptionsSave(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost()) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+        if (!$row) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        if (!$this->enlistmentRepository->candidatePortalUploadsReady()) {
+            Session::flash('error', 'Les options du portail candidat ne sont pas encore disponibles sur cette installation (migration à exécuter).');
+
+            return Response::redirect(url('back-office/recruitments/' . $id));
+        }
+        $allowFiles = $request->input('candidate_portal_allow_files') === '1' || $request->input('candidate_portal_allow_files') === 'on';
+        $allowAudio = $request->input('candidate_portal_allow_audio') === '1' || $request->input('candidate_portal_allow_audio') === 'on';
+        $ok = $this->enlistmentRepository->updateCandidatePortalOptions((int) $tenantId, $id, $allowFiles, $allowAudio);
+        Session::flash($ok ? 'success' : 'error', $ok ? 'Options du portail candidat enregistrées.' : 'Impossible d’enregistrer les options.');
+
+        return Response::redirect(url('back-office/recruitments/' . $id));
+    }
+
+    public function portalAttachmentDownload(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $enlistmentId = (int) ($params['id'] ?? 0);
+        $attachmentId = (int) ($params['attachmentId'] ?? 0);
+        if ($enlistmentId < 1 || $attachmentId < 1) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $enlistmentId);
+        if (!$row) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $att = $this->enlistmentRepository->findCandidatePortalAttachment((int) $tenantId, $enlistmentId, $attachmentId);
+        if (!$att) {
+            Session::flash('error', 'Pièce jointe introuvable.');
+
+            return Response::redirect(url('back-office/recruitments/' . $enlistmentId));
+        }
+        $path = $this->enlistmentPortalAttachmentService->absolutePathForStorage((string) ($att['storage_path'] ?? ''));
+        if ($path === '' || !is_file($path)) {
+            Session::flash('error', 'Fichier introuvable sur le serveur.');
+
+            return Response::redirect(url('back-office/recruitments/' . $enlistmentId));
+        }
+        $mime = trim((string) ($att['mime'] ?? ''));
+        if ($mime === '') {
+            $mime = 'application/octet-stream';
+        }
+        $name = trim((string) ($att['original_name'] ?? 'piece-jointe'));
+        $disp = 'attachment; filename="' . str_replace(['"', "\r", "\n"], '', $name) . '"';
+
+        $response = new Response();
+        $response->setStatusCode(200)
+            ->header('Content-Type', $mime)
+            ->header('Content-Disposition', $disp)
+            ->setBodyStream(static function () use ($path): void {
+                $h = fopen($path, 'rb');
+                if ($h !== false) {
+                    fpassthru($h);
+                    fclose($h);
+                }
+            });
+
+        return $response;
     }
 
     public function timelineComment(Request $request, array $params = []): Response

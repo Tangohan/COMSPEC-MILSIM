@@ -210,6 +210,7 @@ class Container
                 self::get(AuthService::class),
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
+                self::get(\App\Repositories\UserLegalIdentityRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(RbacService::class),
