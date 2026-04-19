@@ -7,23 +7,36 @@ $competencySchemaAvailable = !empty($competencySchemaAvailable);
 $competencyTrainerSchemaReady = !empty($competencyTrainerSchemaReady);
 $competencyMatricesSchemaReady = !empty($competencyMatricesSchemaReady);
 $pedagogyChainAssess = $pedagogyChainAssess ?? ['ok' => true, 'gaps' => []];
+$matrixCount = count($competencyMatrices);
+$userCount = count($competencyUsers);
 ?>
 <header class="tc-panel p-6 md:p-8">
     <p class="tc-kicker">Vue commandement</p>
     <h1 class="tc-hero-title mb-4">Carte de compétences &amp; readiness</h1>
     <p class="text-slate-600 text-sm max-w-3xl leading-relaxed">
         Pilotage des matrices de compétence, règles de détection automatique et assignations opérationnelles.
+        La page est organisée en 3 étapes : <strong>1) préparer</strong>, <strong>2) créer</strong>, <strong>3) affecter</strong>.
     </p>
 </header>
 
 <section class="grid gap-4 md:grid-cols-3">
-    <article class="tc-panel p-5"><p class="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">Matrices actives</p><p class="mt-2 text-3xl font-black text-emerald-600"><?= count($competencyMatrices) ?></p></article>
-    <article class="tc-panel p-5"><p class="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">Personnel assignable</p><p class="mt-2 text-3xl font-black text-slate-900"><?= count($competencyUsers) ?></p></article>
+    <article class="tc-panel p-5"><p class="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">Matrices actives</p><p class="mt-2 text-3xl font-black text-emerald-600"><?= $matrixCount ?></p></article>
+    <article class="tc-panel p-5"><p class="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">Personnel assignable</p><p class="mt-2 text-3xl font-black text-slate-900"><?= $userCount ?></p></article>
     <article class="tc-panel p-5"><p class="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">Schéma compétence</p><p class="mt-2 text-sm font-black <?= $competencySchemaAvailable ? 'text-emerald-700' : 'text-amber-700' ?>"><?= $competencySchemaAvailable ? 'Actif' : 'Migration à exécuter' ?></p></article>
 </section>
 
+<section class="tc-panel p-6 space-y-4">
+    <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Mode d'emploi rapide</h2>
+    <ol class="space-y-2 text-sm text-slate-700 list-decimal pl-5">
+        <li><strong>Préparer la chaîne pédagogique :</strong> vérifiez les sections et désignez un référent si besoin.</li>
+        <li><strong>Créer une matrice :</strong> nom, objectif, règles de détection automatique (rôles + minimum de formations).</li>
+        <li><strong>Lancer l'affectation :</strong> utilisez « Détection auto » pour du massif, ou « Assigner » pour du ciblé.</li>
+    </ol>
+    <p class="text-xs text-slate-500">Astuce : commencez par « Ajouter les matrices suggérées » pour partir d'une base prête à l'emploi.</p>
+</section>
+
 <section class="tc-panel p-6 space-y-3">
-    <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Chaîne pédagogique</h2>
+    <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Étape 1 — Chaîne pédagogique</h2>
     <?php if (!empty($pedagogyChainAssess['ok'])): ?>
     <p class="text-sm text-emerald-800 font-medium">Les profils clés attendus sont présents dans votre organisation.</p>
     <?php else: ?>
@@ -82,7 +95,7 @@ $pedagogyChainAssess = $pedagogyChainAssess ?? ['ok' => true, 'gaps' => []];
 <?php endif; ?>
 
 <section class="tc-panel p-6 space-y-4">
-    <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Créer une matrice</h2>
+    <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Étape 2 — Créer une matrice</h2>
     <form method="post" class="grid gap-3 lg:grid-cols-2">
         <?= \App\Core\Csrf::field() ?>
         <input type="hidden" name="action" value="create_matrix">
@@ -95,16 +108,39 @@ $pedagogyChainAssess = $pedagogyChainAssess ?? ['ok' => true, 'gaps' => []];
 </section>
 
 <section class="tc-panel p-6">
-    <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Matrices existantes</h2>
+    <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Étape 3 — Matrices existantes</h2>
+        <p class="text-xs text-slate-500"><?= $matrixCount ?> matrice(s) · <?= $userCount ?> membre(s) assignable(s)</p>
+    </div>
     <div class="mt-4 space-y-3">
         <?php foreach ($competencyMatrices as $m): ?>
-        <article class="rounded-xl border border-slate-200 p-4 space-y-2">
+        <?php
+        $rules = json_decode((string) ($m['auto_detect_rules_json'] ?? '{}'), true);
+        $ruleRoleIds = is_array($rules['role_ids'] ?? null) ? $rules['role_ids'] : [];
+        $ruleMinCompleted = max(0, (int) ($rules['min_completed_courses'] ?? 0));
+        ?>
+        <article class="rounded-xl border border-slate-200 p-4 space-y-3">
             <p class="font-bold text-slate-900"><?= htmlspecialchars((string) ($m['name'] ?? 'Matrice')) ?> <span class="text-xs text-slate-500">#<?= (int) ($m['id'] ?? 0) ?></span></p>
             <p class="text-xs text-slate-600"><?= htmlspecialchars((string) ($m['description'] ?? '')) ?></p>
             <p class="text-xs text-slate-500">Assignations: <?= (int) ($m['assignment_count'] ?? 0) ?></p>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-2 text-[11px]">
+                <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700">Auto-rôles: <?= count($ruleRoleIds) ?></span>
+                <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700">Min. formations: <?= $ruleMinCompleted ?></span>
+            </div>
+            <div class="flex flex-wrap gap-2 items-start">
                 <form method="post" class="flex items-center gap-2"><?= \App\Core\Csrf::field() ?><input type="hidden" name="action" value="auto_detect"><input type="hidden" name="matrix_id" value="<?= (int) $m['id'] ?>"><button class="tc-btn-primary tc-btn-ghost" type="submit">Détection auto</button></form>
-                <form method="post" class="flex items-center gap-2"><?= \App\Core\Csrf::field() ?><input type="hidden" name="action" value="assign_matrix"><input type="hidden" name="matrix_id" value="<?= (int) $m['id'] ?>"><select name="user_ids[]" multiple size="2" class="border border-slate-200 rounded px-2 py-1 text-xs"><?php foreach ($competencyUsers as $u): ?><option value="<?= (int) $u['id'] ?>"><?= htmlspecialchars((string) ($u['display_name'] ?? $u['email'] ?? '')) ?></option><?php endforeach; ?></select><button class="tc-btn-primary tc-btn-emerald" type="submit">Assigner</button></form>
+                <form method="post" class="flex items-center gap-2">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="action" value="assign_matrix">
+                    <input type="hidden" name="matrix_id" value="<?= (int) $m['id'] ?>">
+                    <label class="text-xs font-semibold text-slate-600">Assignation ciblée</label>
+                    <select name="user_ids[]" multiple size="2" class="border border-slate-200 rounded px-2 py-1 text-xs">
+                        <?php foreach ($competencyUsers as $u): ?>
+                        <option value="<?= (int) $u['id'] ?>"><?= htmlspecialchars((string) ($u['display_name'] ?? $u['email'] ?? '')) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button class="tc-btn-primary tc-btn-emerald" type="submit">Assigner</button>
+                </form>
             </div>
         </article>
         <?php endforeach; ?>
