@@ -39,7 +39,7 @@ $active = 'register';
             </div>
             <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Créer un compte opérateur</h1>
             <p class="mt-3 text-sm text-slate-700 leading-relaxed max-w-lg mx-auto">
-                Identité affichée sur la plateforme et personnage RP de départ. Le code ci-dessous ne se remplit que si un responsable vous a invité à rejoindre une communauté.
+                Parcours en 2 blocs : <strong>identité légale</strong> (administrative, isolée) puis <strong>identité plateforme</strong> (affichage + RP).
             </p>
             <p class="mt-2 text-xs text-slate-500 leading-relaxed max-w-lg mx-auto">
                 Après inscription, vous recevez aussi un e-mail de checklist (sécurité OTP, profil Steam et démarrage).
@@ -74,6 +74,49 @@ $active = 'register';
 
             <form method="post" action="<?= htmlspecialchars(url('register'), ENT_QUOTES, 'UTF-8') ?>" class="px-6 sm:px-8 py-8 space-y-6">
                 <?= \App\Core\Csrf::field() ?>
+                <div class="rounded-2xl border border-amber-200/90 bg-gradient-to-br from-amber-50/90 to-white p-5 sm:p-6">
+                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-amber-900/90 mb-1">1 · Identité légale</p>
+                    <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+                        Données administratives minimales, isolées de la vitrine RP et uniquement exposées aux profils habilités.
+                    </p>
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="legal_first_name">Prénom légal</label>
+                            <input
+                                id="legal_first_name"
+                                type="text"
+                                name="legal_first_name"
+                                required
+                                minlength="2"
+                                maxlength="100"
+                                autocomplete="given-name"
+                                placeholder="Prénom administratif"
+                                class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
+                            >
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="legal_last_name">Nom légal</label>
+                            <input
+                                id="legal_last_name"
+                                type="text"
+                                name="legal_last_name"
+                                required
+                                minlength="2"
+                                maxlength="100"
+                                autocomplete="family-name"
+                                placeholder="Nom administratif"
+                                class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/60 to-white p-5 sm:p-6">
+                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-800/90 mb-3">2 · Accès plateforme</p>
+                    <p class="text-xs text-slate-600 mb-0 leading-relaxed">
+                        Informations de connexion, identité affichée et personnage de départ pour la plateforme.
+                    </p>
+                </div>
 
                 <div class="space-y-2">
                     <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="community_code">Code reçu (si applicable)</label>
@@ -181,6 +224,17 @@ $active = 'register';
                             class="ds-input w-full text-sm font-semibold"
                         >
                     </div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 sm:p-6 space-y-4">
+                    <label class="flex items-start gap-3 text-sm text-slate-700 leading-relaxed">
+                        <input type="checkbox" name="accept_identity_split" value="1" required class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                        <span>Je comprends que l’identité légale (administrative) est séparée de l’identité affichée sur la plateforme et du personnage RP.</span>
+                    </label>
+                    <label class="flex items-start gap-3 text-sm text-slate-700 leading-relaxed">
+                        <input type="checkbox" name="accept_terms" value="1" required class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                        <span>J’accepte les <a href="<?= htmlspecialchars(url('cgu'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 hover:underline">conditions d’utilisation</a> et la <a href="<?= htmlspecialchars(url('donnees-personnelles'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 hover:underline">politique de données personnelles</a>.</span>
+                    </label>
                 </div>
 
                 <button
