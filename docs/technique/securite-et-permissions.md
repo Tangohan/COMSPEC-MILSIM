@@ -33,6 +33,14 @@
 - Notifications de connexion, nouvel appareil, tentatives multiples : services sous `app/Services/Auth/` et vues e-mail associées.
 - La configuration SMTP et les secrets ne doivent pas être commités (`.env` uniquement sur le serveur).
 
+## Coordonnées légales (confidentialité plateforme)
+
+- Lors de la création d’un compte, les **coordonnées légales** (identité civile, adresse, informations de facturation/conformité) doivent être **stockées dans un périmètre séparé** des données de profil visibles sur le site.
+- Ces données ne doivent **jamais** être affichées dans les pages publiques, les espaces communautaires, ni les interfaces back-office tenant.
+- Accès autorisé uniquement aux rôles **modération site** et **administration système** (niveau plateforme), avec journalisation d’accès.
+- Les administrateurs de communauté (tenant) et les membres, quel que soit leur rôle local, ne doivent pas pouvoir consulter ces informations.
+- Les exports, APIs et logs doivent appliquer la même règle (masquage/redaction par défaut, déverrouillage explicite côté plateforme uniquement).
+
 ## Maintenance
 
 - Le garde de maintenance peut bloquer le site pour les utilisateurs non autorisés tout en laissant passer des routes critiques (webhooks, health) — voir liste blanche dans le point d’entrée public.
