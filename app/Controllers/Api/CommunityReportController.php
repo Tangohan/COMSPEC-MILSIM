@@ -57,7 +57,8 @@ final class CommunityReportController
                 $tenantId,
                 (int) ($result['report_id'] ?? 0),
                 $userId,
-                (string) ($result['reason_preview'] ?? '')
+                (string) ($result['reason_preview'] ?? ''),
+                $targetType
             );
         } catch (\Throwable) {
         }

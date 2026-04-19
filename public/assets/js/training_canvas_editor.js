@@ -361,6 +361,16 @@
     return d.innerHTML;
   }
 
+  /** Pour attributs HTML value="…" (évite de casser le DOM si guillemets ou & dans le texte). */
+  function escapeAttr(s) {
+    if (s == null) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;');
+  }
+
   /** Aperçu : même esprit que training_canvas_sanitize_html côté serveur */
   function sanitizePreviewHtml(html) {
     if (!html) return '';
@@ -1087,18 +1097,18 @@
     op.stats.forEach(function (st, idx) {
       var row = st && typeof st === 'object' ? st : { label: '', value: '' };
       statsRows +=
-        '<div class="flex flex-wrap gap-2 mb-2 items-end" data-stat-row="' +
+        '<div class="flex flex-wrap gap-2 mb-2 items-end rounded-lg border border-slate-100 bg-white/90 p-2 shadow-sm" data-stat-row="' +
         idx +
         '">' +
         '<div class="flex-1 min-w-[6rem]"><label class="text-[10px] text-slate-500">Libellé</label>' +
-        '<input type="text" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-stat-lab value="' +
-        escapeHtml(String(row.label || '')) +
+        '<input type="text" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:ring-2 focus:ring-violet-200 focus:border-violet-400 outline-none" data-stat-lab value="' +
+        escapeAttr(String(row.label || '')) +
         '" /></div>' +
         '<div class="flex-1 min-w-[6rem]"><label class="text-[10px] text-slate-500">Valeur affichée</label>' +
-        '<input type="text" class="w-full border rounded px-2 py-1 text-xs mt-0.5" data-stat-val value="' +
-        escapeHtml(String(row.value || '')) +
+        '<input type="text" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:ring-2 focus:ring-violet-200 focus:border-violet-400 outline-none" data-stat-val value="' +
+        escapeAttr(String(row.value || '')) +
         '" /></div>' +
-        '<button type="button" class="text-xs text-rose-600 font-semibold underline h-8 shrink-0 px-1" data-stat-rm>Retirer</button></div>';
+        '<button type="button" class="text-xs font-bold text-rose-700 h-9 shrink-0 px-2 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 transition" data-stat-rm>Retirer</button></div>';
     });
 
     host.innerHTML =
@@ -1107,30 +1117,34 @@
       '<p class="text-[11px] text-slate-500 mt-2 mb-3">Textes du haut de page pour les parcours visuels. Champs vides : le site propose des libellés adaptés à la leçon.</p>' +
       '<div class="grid gap-3">' +
       '<div><label class="text-[10px] font-bold text-slate-600">Sur-titre</label>' +
-      '<input type="text" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-op-eyebrow value="' +
-      escapeHtml(String(op.eyebrow || '')) +
+      '<input type="text" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:ring-2 focus:ring-violet-200 focus:border-violet-400 outline-none" data-mis-op-eyebrow value="' +
+      escapeAttr(String(op.eyebrow || '')) +
       '" /></div>' +
       '<div><label class="text-[10px] font-bold text-slate-600">Titre</label>' +
-      '<input type="text" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-op-title value="' +
-      escapeHtml(String(op.title || '')) +
+      '<input type="text" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:ring-2 focus:ring-violet-200 focus:border-violet-400 outline-none" data-mis-op-title value="' +
+      escapeAttr(String(op.title || '')) +
       '" /></div>' +
       '<div><label class="text-[10px] font-bold text-slate-600">Accroche</label>' +
-      '<textarea rows="2" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-op-lead>' +
+      '<textarea rows="2" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:ring-2 focus:ring-violet-200 focus:border-violet-400 outline-none" data-mis-op-lead>' +
       escapeHtml(String(op.lead || '')) +
       '</textarea></div>' +
-      '<div><p class="text-[10px] font-bold text-slate-600 mb-1">Vignettes chiffres (optionnel)</p>' +
-      '<div data-mis-op-stats-rows>' +
+      '<div class="rounded-xl border border-violet-100 bg-violet-50/50 p-3 space-y-2">' +
+      '<div class="flex flex-wrap items-center justify-between gap-2">' +
+      '<p class="text-[10px] font-black uppercase tracking-wider text-violet-900">Vignettes chiffres <span class="font-semibold text-slate-500 normal-case">(optionnel)</span></p>' +
+      '<button type="button" class="inline-flex items-center gap-1 rounded-lg border border-violet-300 bg-white px-2.5 py-1.5 text-[11px] font-black text-violet-900 shadow-sm hover:bg-violet-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" data-mis-op-stat-add aria-label="Ajouter une vignette chiffres">' +
+      '<span class="text-base leading-none" aria-hidden="true">+</span> Vignette</button></div>' +
+      '<div class="space-y-2 max-h-64 overflow-y-auto pr-1" data-mis-op-stats-rows>' +
       statsRows +
       '</div>' +
-      '<button type="button" class="mt-1 text-xs font-bold text-violet-700 underline" data-mis-op-stat-add>Ajouter une vignette</button></div>' +
-      '</div></details>' +
+      '</div></div>' +
+      '</details>' +
       '<details class="rounded-xl border border-slate-200 bg-slate-50/80 p-3 mt-3 open:bg-white open:shadow-sm">' +
       '<summary class="cursor-pointer text-xs font-black uppercase tracking-wider text-slate-600 select-none">Synthèse de fin</summary>' +
       '<p class="text-[11px] text-slate-500 mt-2 mb-3">Résumé affiché après le défilement des étapes, avant les boutons de navigation.</p>' +
       '<div class="grid gap-3">' +
       '<div><label class="text-[10px] font-bold text-slate-600">Titre du bloc</label>' +
-      '<input type="text" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-cl-title value="' +
-      escapeHtml(String(cl.title || '')) +
+      '<input type="text" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:ring-2 focus:ring-violet-200 focus:border-violet-400 outline-none" data-mis-cl-title value="' +
+      escapeAttr(String(cl.title || '')) +
       '" /></div>' +
       '<div><label class="text-[10px] font-bold text-slate-600">Ce qui a été parcouru (une ligne par point)</label>' +
       '<textarea rows="3" class="w-full border rounded px-2 py-1.5 text-xs mt-0.5" data-mis-cl-seen>' +
@@ -1155,31 +1169,37 @@
         .filter(Boolean);
     }
 
-    host.querySelector('[data-mis-op-eyebrow]').addEventListener('input', function (e) {
+    function bindMissionInput(sel, fn) {
+      var el = host.querySelector(sel);
+      if (el) {
+        el.addEventListener('input', fn);
+      }
+    }
+    bindMissionInput('[data-mis-op-eyebrow]', function (e) {
       op.eyebrow = e.target.value;
       self.sync();
     });
-    host.querySelector('[data-mis-op-title]').addEventListener('input', function (e) {
+    bindMissionInput('[data-mis-op-title]', function (e) {
       op.title = e.target.value;
       self.sync();
     });
-    host.querySelector('[data-mis-op-lead]').addEventListener('input', function (e) {
+    bindMissionInput('[data-mis-op-lead]', function (e) {
       op.lead = e.target.value;
       self.sync();
     });
-    host.querySelector('[data-mis-cl-title]').addEventListener('input', function (e) {
+    bindMissionInput('[data-mis-cl-title]', function (e) {
       cl.title = e.target.value;
       self.sync();
     });
-    host.querySelector('[data-mis-cl-seen]').addEventListener('input', function (e) {
+    bindMissionInput('[data-mis-cl-seen]', function (e) {
       cl.seen = linesToArr(e.target);
       self.sync();
     });
-    host.querySelector('[data-mis-cl-acq]').addEventListener('input', function (e) {
+    bindMissionInput('[data-mis-cl-acq]', function (e) {
       cl.acquired = linesToArr(e.target);
       self.sync();
     });
-    host.querySelector('[data-mis-cl-hint]').addEventListener('input', function (e) {
+    bindMissionInput('[data-mis-cl-hint]', function (e) {
       cl.nextHint = e.target.value;
       self.sync();
     });
@@ -1215,15 +1235,6 @@
       });
     }
     bindStatRows();
-
-    var addStat = host.querySelector('[data-mis-op-stat-add]');
-    if (addStat) {
-      addStat.addEventListener('click', function () {
-        op.stats.push({ label: '', value: '' });
-        self.sync();
-        self._renderMissionPanel();
-      });
-    }
   };
 
   LmsCanvasEditor.prototype.schedulePreview = function () {
@@ -1259,6 +1270,21 @@
     mission.className = 'mb-4 space-y-3';
     this.uiRoot.appendChild(mission);
     this._missionEl = mission;
+    if (!this._lmsMissionPanelClickBound) {
+      this._lmsMissionPanelClickBound = true;
+      mission.addEventListener('click', function (e) {
+        var addBtn = e.target && e.target.closest ? e.target.closest('[data-mis-op-stat-add]') : null;
+        if (!addBtn) {
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        self.deck.opening = ensureOpening(self.deck.opening);
+        self.deck.opening.stats.push({ label: '', value: '' });
+        self.sync();
+        self._renderMissionPanel();
+      });
+    }
 
     var strip = document.createElement('div');
     strip.setAttribute('data-lms-slide-strip', '');

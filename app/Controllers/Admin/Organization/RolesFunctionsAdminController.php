@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin\Organization;
 
+use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\RoleRepository;
+use App\Repositories\TenantRequiredRoleDefinitionRepository;
 use App\Repositories\UnitRepository;
+use App\Repositories\UserRepository;
 use App\Services\Admin\TenantRolePermissionPresetService;
 use App\Support\RoleDoctrineUiLabels;
+use InvalidArgumentException;
 use PDO;
 
 /**
@@ -23,7 +27,9 @@ class RolesFunctionsAdminController
     public function __construct(
         private RoleRepository $roleRepository,
         private UnitRepository $unitRepository,
-        private TenantRolePermissionPresetService $presetService
+        private TenantRolePermissionPresetService $presetService,
+        private TenantRequiredRoleDefinitionRepository $requiredRoleDefinitionRepository,
+        private UserRepository $userRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -69,6 +75,34 @@ class RolesFunctionsAdminController
         $units = $this->unitRepository->allForTenant($tenantId);
         $presets = $this->presetService->listPresetMeta();
 
+        $requiredRoleDefinitionsFeature = $this->requiredRoleDefinitionRepository->tableExists();
+        $requiredDefinitionIds = $requiredRoleDefinitionsFeature
+            ? $this->requiredRoleDefinitionRepository->listDefinitionIdsForTenant($tenantId)
+            : [];
+        $coverageRows = $requiredRoleDefinitionsFeature && $requiredDefinitionIds !== []
+            ? $this->requiredRoleDefinitionRepository->coverageForRequiredDefinitions($tenantId, $requiredDefinitionIds)
+            : [];
+
+        $assignRolesByDefinition = [];
+        foreach ($coverageRows as $row) {
+            $did = (int) ($row['definition_id'] ?? 0);
+            if ($did < 1) {
+                continue;
+            }
+            $filtered = [];
+            foreach ($row['roles_for_definition'] ?? [] as $r) {
+                $rid = (int) ($r['id'] ?? 0);
+                if ($rid > 0 && $this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
+                    $filtered[] = $r;
+                }
+            }
+            $assignRolesByDefinition[$did] = $filtered;
+        }
+
+        $assignMembers = $requiredRoleDefinitionsFeature
+            ? $this->userRepository->listForTenant($tenantId, null, 'active', null, 200, 0)
+            : [];
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.roles_functions',
             'title' => 'Cellule S1 — Doctrine des fonctions',
@@ -78,7 +112,116 @@ class RolesFunctionsAdminController
             'roleRelations' => $roleRelations,
             'units' => $units,
             'rolePresetMeta' => $presets,
+            'requiredRoleDefinitionsFeature' => $requiredRoleDefinitionsFeature,
+            'requiredDefinitionIds' => $requiredDefinitionIds,
+            'coverageRows' => $coverageRows,
+            'assignMembers' => $assignMembers,
+            'assignRolesByDefinitionJson' => (static function (array $map): string {
+                $json = json_encode($map, JSON_UNESCAPED_UNICODE);
+
+                return $json !== false ? $json : '{}';
+            })($assignRolesByDefinition),
         ]);
+    }
+
+    public function saveRequiredDefinitions(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $forbidden = $this->guardBackOfficeAccess();
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée ou jeton de sécurité invalide.');
+
+            return Response::redirect(url('back-office/roles-functions'));
+        }
+        if (!$this->requiredRoleDefinitionRepository->tableExists()) {
+            Session::flash('error', 'Cette possibilité nécessite une mise à jour de la base de données (migration).');
+
+            return Response::redirect(url('back-office/roles-functions'));
+        }
+        $raw = $request->input('definition_ids');
+        $ids = is_array($raw) ? array_map('intval', $raw) : [];
+        try {
+            $this->requiredRoleDefinitionRepository->replaceForTenant($tenantId, $ids);
+            Session::flash('success', 'Fonctions obligatoires pour l’organisation enregistrées.');
+        } catch (\Throwable) {
+            Session::flash('error', 'Impossible d’enregistrer les fonctions obligatoires.');
+        }
+
+        return Response::redirect(url('back-office/roles-functions'));
+    }
+
+    public function quickAssignRole(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $actorUserId = (int) Session::get('user_id');
+        if (!$tenantId || !$actorUserId) {
+            return Response::redirect(url('login'));
+        }
+        $forbidden = $this->guardBackOfficeAccess();
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée ou jeton de sécurité invalide.');
+
+            return Response::redirect(url('back-office/roles-functions'));
+        }
+        if (!$this->requiredRoleDefinitionRepository->tableExists()) {
+            Session::flash('error', 'Cette possibilité nécessite une mise à jour de la base de données (migration).');
+
+            return Response::redirect(url('back-office/roles-functions'));
+        }
+
+        $userId = (int) $request->input('user_id', 0);
+        $defId = (int) $request->input('role_definition_id', 0);
+        $roleId = (int) $request->input('role_id', 0);
+        if ($userId < 1 || $defId < 1 || $roleId < 1) {
+            Session::flash('error', 'Choisissez un membre, une fonction obligatoire et un rôle.');
+
+            return Response::redirect(url('back-office/roles-functions'));
+        }
+
+        $required = $this->requiredRoleDefinitionRepository->listDefinitionIdsForTenant($tenantId);
+        if (!in_array($defId, $required, true)) {
+            Session::flash('error', 'La fonction choisie doit figurer parmi les fonctions obligatoires de votre organisation.');
+
+            return Response::redirect(url('back-office/roles-functions'));
+        }
+
+        $user = $this->userRepository->findById($userId, $tenantId);
+        if (!$user) {
+            Session::flash('error', 'Membre introuvable dans cette organisation.');
+
+            return Response::redirect(url('back-office/roles-functions'));
+        }
+
+        $role = $this->roleRepository->findById($roleId, $tenantId);
+        if (!$role || (int) ($role['definition_id'] ?? 0) !== $defId) {
+            Session::flash('error', 'Le rôle choisi ne correspond pas à la fonction ciblée. Vérifiez que le rôle est bien lié au référentiel des fonctions.');
+
+            return Response::redirect(url('back-office/roles-functions'));
+        }
+
+        if (!$this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
+            Session::flash('error', 'Ce rôle ne peut pas être attribué depuis l’administration de l’organisation.');
+
+            return Response::redirect(url('back-office/roles-functions'));
+        }
+
+        try {
+            $added = $this->userRepository->addOrganizationRoleIfMissing($userId, $tenantId, $roleId, $actorUserId);
+            Session::flash('success', $added ? 'Rôle ajouté au membre.' : 'Ce membre possédait déjà ce rôle.');
+        } catch (InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+        }
+
+        return Response::redirect(url('back-office/roles-functions'));
     }
 
     public function storeDefinition(Request $request, array $params = []): Response
@@ -201,7 +344,7 @@ class RolesFunctionsAdminController
             return Response::json(['error' => 'unauthorized'], 401);
         }
         $gate = Gate::getInstance();
-        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage')) {
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
             return Response::json(['error' => 'forbidden'], 403);
         }
 

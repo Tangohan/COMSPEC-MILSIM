@@ -1078,6 +1078,7 @@ class AccountController
             $this->applyRecruitmentPresetImageUpload($uid, $payload, null, $errors);
             if (empty($errors)) {
                 $this->recruitmentPresetRepository->create($uid, $label, $payload);
+                $this->applyPersonnelAutoFillFromRecruitmentPreset($uid, $payload);
                 Session::flash('success', 'Profil enregistré.');
                 return Response::redirect(url('account/recruitment-presets'));
             }
@@ -1130,6 +1131,7 @@ class AccountController
             $this->applyRecruitmentPresetImageUpload($uid, $payload, $existing, $errors);
             if (empty($errors)) {
                 $this->recruitmentPresetRepository->update($id, $uid, $label, $payload);
+                $this->applyPersonnelAutoFillFromRecruitmentPreset($uid, $payload);
                 Session::flash('success', 'Profil mis à jour.');
                 return Response::redirect(url('account/recruitment-presets'));
             }
@@ -1174,6 +1176,30 @@ class AccountController
      * @param array<string, mixed>|null $previousNormalized
      * @param array<string, list<string>> $errors
      */
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function applyPersonnelAutoFillFromRecruitmentPreset(int $userId, array $payload): void
+    {
+        $normalized = $this->recruitmentPresetPayloadService->normalizeDecodedPayload($payload);
+        $patch = $this->recruitmentPresetPayloadService->personnelAutoFillPatchFromPayload($normalized);
+        if ($patch === []) {
+            return;
+        }
+        $this->personnelProfileRepository->ensureRecord($userId);
+        $cur = $this->personnelProfileRepository->getByUserId($userId) ?? [];
+        $apply = [];
+        if (isset($patch['character_name']) && trim((string) ($cur['character_name'] ?? '')) === '') {
+            $apply['character_name'] = $patch['character_name'];
+        }
+        if (isset($patch['nationality']) && trim((string) ($cur['nationality'] ?? '')) === '') {
+            $apply['nationality'] = $patch['nationality'];
+        }
+        if ($apply !== []) {
+            $this->personnelProfileRepository->update($userId, $apply);
+        }
+    }
+
     private function applyRecruitmentPresetImageUpload(int $userId, array &$payload, ?array $previousNormalized, array &$errors): void
     {
         $file = $_FILES['rp_character_image'] ?? null;

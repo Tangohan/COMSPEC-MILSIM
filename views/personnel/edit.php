@@ -192,7 +192,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
           </div>
           <div class="grid gap-4 p-6 md:grid-cols-2">
             <div>
-              <label for="character_name" class="mb-1 block text-xs font-bold text-slate-600">Nom opérateur / RP</label>
+              <label for="character_name" class="mb-1 block text-xs font-bold text-slate-600">Nom affiché dossier personnage</label>
               <input type="text" name="character_name" id="character_name" value="<?= htmlspecialchars($p['character_name'] ?? $targetUser['display_name'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/15" maxlength="150">
             </div>
             <div>
@@ -228,6 +228,22 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
             <div>
               <label for="nationality_rp" class="mb-1 block text-xs font-bold text-slate-600">Nationalité (RP)</label>
               <input type="text" name="nationality_rp" id="nationality_rp" value="<?= htmlspecialchars((string) ($p['nationality'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+            </div>
+            <div>
+              <label for="public_flag_country_code" class="mb-1 block text-xs font-bold text-slate-600">Pays affiché sur la fiche (drapeau)</label>
+              <select name="public_flag_country_code" id="public_flag_country_code" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                <?php
+                $flagCur = strtoupper(trim((string) ($up['public_flag_country_code'] ?? '')));
+                foreach (\App\Support\Profile\PublicFlagCountryCatalog::optionsForSelect() as $code => $label) {
+                    $sel = ($flagCur === strtoupper((string) $code)) ? ' selected' : '';
+                    echo '<option value="' . htmlspecialchars((string) $code, ENT_QUOTES, 'UTF-8') . '"' . $sel . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</option>';
+                }
+                if ($flagCur !== '' && !\App\Support\Profile\PublicFlagCountryCatalog::isAllowed($flagCur)) {
+                    echo '<option value="' . htmlspecialchars($flagCur, ENT_QUOTES, 'UTF-8') . '" selected>(code inconnu : ' . htmlspecialchars($flagCur, ENT_QUOTES, 'UTF-8') . ')</option>';
+                }
+                ?>
+              </select>
+              <p class="mt-1 text-[11px] leading-relaxed text-slate-500">Optionnel : arrière-plan du bloc portrait en tête de fiche. Indépendant de la nationalité RP ou civile ; choisissez « Ne pas afficher » pour revenir au fond neutre.</p>
             </div>
             <div>
               <label for="blood_type" class="mb-1 block text-xs font-bold text-slate-600">Groupe sanguin (RP)</label>
@@ -538,7 +554,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
                   $modes = [
                       'display_name' => 'Nom d’affichage compte',
                       'callsign' => 'Callsign',
-                      'character_name' => 'Nom opérateur / RP',
+                      'character_name' => 'Nom affiché dossier personnage',
                       'forum_alias' => 'Pseudo forum uniquement (fallback si vide)',
                   ];
                   foreach ($modes as $k => $label) {

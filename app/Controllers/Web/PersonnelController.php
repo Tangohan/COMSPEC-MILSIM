@@ -30,6 +30,7 @@ use App\Services\Personnel\PersonnelCompletenessService;
 use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserLegalIdentityRepository;
+use App\Services\Profile\RecruitmentPresetPayloadService;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PlanningEntryRepository;
@@ -43,6 +44,7 @@ use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Steam\SteamWebApiService;
 use App\Core\Gate;
 use App\Support\OrbatRosterPayload;
+use App\Support\Profile\PublicFlagCountryCatalog;
 
 class PersonnelController
 {
@@ -435,7 +437,7 @@ class PersonnelController
         $adminPanels = $this->adminPanelRepository->listForTenant((int) $tenantId);
         $adminDataByPanel = $this->adminDataRepository->getAllForUser($uid);
 
-        $rpDossierNeedsAttention = $isSelf && trim((string) ($personnelProfile['character_name'] ?? '')) === '';
+        $rpDossierNeedsAttention = $isSelf && RecruitmentPresetPayloadService::personnelRpDossierNeedsAttention(is_array($personnelProfile) ? $personnelProfile : []);
         $canStaffEdit = $this->canStaffEditPersonnel();
         $canStaffView = $this->canStaffViewPersonnel();
         $canSensitive = $this->canViewSensitivePersonnel();
@@ -1228,6 +1230,14 @@ class PersonnelController
                 $this->userRepository->setPreferredDisplayRoleId((int) $target['id'], $tenantId, $prefId);
             }
         }
+
+        if ($isSelf || $canStaffEdit) {
+            $this->userProfileRepository->ensureRow((int) $target['id']);
+            $this->userProfileRepository->upsert((int) $target['id'], [
+                'public_flag_country_code' => PublicFlagCountryCatalog::normalize((string) $request->input('public_flag_country_code')),
+            ]);
+        }
+
         Session::flash('success', 'Dossier mis à jour.');
         $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
         return Response::redirect($redirect);

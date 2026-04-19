@@ -16,6 +16,8 @@ if ($active === '') {
         $active = 'analytics';
     } elseif (str_contains($requestUri, '/back-office/ressources/recrutement')) {
         $active = 'dashboard';
+    } elseif (str_contains($requestUri, '/back-office/recruitments/equipe')) {
+        $active = 'teamwall';
     } elseif (str_contains($requestUri, '/back-office/recruitments')) {
         $active = 'queue';
     }
@@ -65,6 +67,13 @@ $navClass = static function (string $id) use ($active): string {
                 <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">File des dossiers</span>
             </span>
             <span class="text-[10px] font-black tracking-widest uppercase text-white/25"><?= $nSubmitted > 0 ? (string) $nSubmitted : '—' ?></span>
+        </a>
+        <a href="<?= htmlspecialchars(url('back-office/recruitments/equipe'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('teamwall'), ENT_QUOTES, 'UTF-8') ?>">
+            <span>
+                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'teamwall' ? 'text-sky-400' : 'text-white/25' ?>">—</span>
+                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Fil recruteurs</span>
+            </span>
+            <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Global</span>
         </a>
         <a href="<?= htmlspecialchars($rwAnalyses, ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('analytics'), ENT_QUOTES, 'UTF-8') ?>">
             <span>

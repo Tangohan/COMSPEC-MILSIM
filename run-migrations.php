@@ -416,6 +416,13 @@ try {
     echo '  [ATTENTION] training_onboarding_course : ' . $e->getMessage() . "\n";
 }
 
+require_once $root . '/bootstrap/training_roles_org_course_seed.php';
+try {
+    run_training_roles_org_course_seed($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_roles_org_course : ' . $e->getMessage() . "\n";
+}
+
 // Pointage / RSVP : colonnes community_events + community_event_rsvps (idempotent si bootstrap déjà passé)
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_events' AND COLUMN_NAME = 'cancelled_at'");
 if ($stmt && !$stmt->fetch()) {
@@ -1785,6 +1792,13 @@ try {
     $recruitmentOpeningsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] recruitment_openings : ' . $e->getMessage() . "\n";
+}
+
+$recruitmentTeamWallKindSubjectMigrate = require $root . '/bootstrap/recruitment_team_wall_kind_subject_migration.php';
+try {
+    $recruitmentTeamWallKindSubjectMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] recruitment_team_wall_kind_subject : ' . $e->getMessage() . "\n";
 }
 
 $tenantDashboardPinsMigrate = require $root . '/bootstrap/tenant_dashboard_pins_migration.php';

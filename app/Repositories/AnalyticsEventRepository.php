@@ -90,4 +90,37 @@ class AnalyticsEventRepository
 
         return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * Dernières traces d’activité enregistrées pour un dossier de candidature (consultations, volontariats, bilans).
+     *
+     * @return list<array{name: string, created_at: string, actor_user_id: int|null}>
+     */
+    public function listRecentForEnlistmentSubject(int $tenantId, int $enlistmentId, int $limit = 20): array
+    {
+        if (!$this->tablesExist() || $tenantId < 1 || $enlistmentId < 1) {
+            return [];
+        }
+        $limit = max(1, min(50, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT name, created_at, actor_user_id FROM usage_analytics_events
+             WHERE tenant_id = ? AND subject_type = 'enlistment' AND subject_id = ?
+               AND name IN ('enlistment_backoffice_view','enlistment_recruiter_pick','enlistment_staff_retro_submit','enlistment_candidate_retro_submit')
+             ORDER BY created_at DESC, id DESC
+             LIMIT {$limit}"
+        );
+        $stmt->execute([$tenantId, $enlistmentId]);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $out[] = [
+                'name' => (string) ($row['name'] ?? ''),
+                'created_at' => (string) ($row['created_at'] ?? ''),
+                'actor_user_id' => isset($row['actor_user_id']) && $row['actor_user_id'] !== null && $row['actor_user_id'] !== ''
+                    ? (int) $row['actor_user_id']
+                    : null,
+            ];
+        }
+
+        return $out;
+    }
 }

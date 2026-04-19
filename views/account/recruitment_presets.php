@@ -1,6 +1,7 @@
 <?php
 /** @var list<array<string,mixed>> $presets */
 $presets = $presets ?? [];
+$presetNorm = new \App\Services\Profile\RecruitmentPresetPayloadService();
 ?>
 <div class="max-w-3xl mx-auto px-6 py-12">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -27,15 +28,16 @@ $presets = $presets ?? [];
         <ul class="space-y-3">
             <?php foreach ($presets as $p): ?>
                 <?php
-                $pay = $p['payload'] ?? [];
-                $rp = is_array($pay) && is_array($pay['rp'] ?? null) ? $pay['rp'] : [];
-                $char = trim((string) ($rp['character_name'] ?? ''));
+                $pay = is_array($p['payload'] ?? null) ? $p['payload'] : [];
+                $norm = $presetNorm->normalizeDecodedPayload($pay);
+                $rp = is_array($norm['rp'] ?? null) ? $norm['rp'] : [];
+                $rpLabel = \App\Services\Profile\RecruitmentPresetPayloadService::deriveOperatorDisplayName($rp);
                 ?>
                 <li class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                     <div>
                         <p class="font-bold text-slate-900"><?= htmlspecialchars((string) ($p['label'] ?? '')) ?></p>
-                        <?php if ($char !== ''): ?>
-                            <p class="text-sm text-slate-600 mt-0.5">RP : <?= htmlspecialchars($char) ?></p>
+                        <?php if ($rpLabel !== ''): ?>
+                            <p class="text-sm text-slate-600 mt-0.5">Personnage : <?= htmlspecialchars($rpLabel) ?></p>
                         <?php endif; ?>
                         <p class="text-xs text-slate-500 mt-0.5">Modifié <?= !empty($p['updated_at']) ? htmlspecialchars((string) $p['updated_at']) : '—' ?></p>
                     </div>

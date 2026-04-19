@@ -127,6 +127,14 @@ final class AnalyticsEventService
         return true;
     }
 
+    /**
+     * @return list<array{name: string, created_at: string, actor_user_id: int|null}>
+     */
+    public function listRecentForEnlistment(int $tenantId, int $enlistmentId, int $limit = 20): array
+    {
+        return $this->repository->listRecentForEnlistmentSubject($tenantId, $enlistmentId, $limit);
+    }
+
     /** @param array<string, mixed>|null $props @return array<string, mixed>|null */
     private function normalizeProps(?array $props): ?array
     {

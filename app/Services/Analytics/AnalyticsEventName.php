@@ -20,6 +20,14 @@ final class AnalyticsEventName
 
     public const ENLISTMENT_SUBMITTED = 'enlistment_submitted';
 
+    public const ENLISTMENT_BACKOFFICE_VIEW = 'enlistment_backoffice_view';
+
+    public const ENLISTMENT_RECRUITER_PICK = 'enlistment_recruiter_pick';
+
+    public const ENLISTMENT_STAFF_RETRO_SUBMIT = 'enlistment_staff_retro_submit';
+
+    public const ENLISTMENT_CANDIDATE_RETRO_SUBMIT = 'enlistment_candidate_retro_submit';
+
     public const COURSE_PAGE_DURATION = 'course_page_duration';
 
     public const TENANT_PUBLIC_PAGE_DURATION = 'tenant_public_page_duration';
@@ -44,6 +52,10 @@ final class AnalyticsEventName
                 self::RECRUITMENT_OPENING_VIEW,
                 self::ENLISTMENT_FORM_OPEN,
                 self::ENLISTMENT_SUBMITTED,
+                self::ENLISTMENT_BACKOFFICE_VIEW,
+                self::ENLISTMENT_RECRUITER_PICK,
+                self::ENLISTMENT_STAFF_RETRO_SUBMIT,
+                self::ENLISTMENT_CANDIDATE_RETRO_SUBMIT,
             ],
         ];
     }

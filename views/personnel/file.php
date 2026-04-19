@@ -222,7 +222,27 @@ if (!empty($personnelProfile['character_portrait_path'])) {
     $portraitUrl = $baseUrl . '/' . ltrim($personnelProfile['character_portrait_path'], '/');
 }
 
+$publicFlagCodeRaw = strtoupper(trim((string) ($userProfile['public_flag_country_code'] ?? '')));
+$publicFlagCode = ($publicFlagCodeRaw !== '' && \App\Support\Profile\PublicFlagCountryCatalog::isAllowed($publicFlagCodeRaw))
+    ? $publicFlagCodeRaw
+    : null;
+$publicFlagEmoji = $publicFlagCode !== null ? \App\Support\Profile\PublicFlagCountryCatalog::flagEmoji($publicFlagCode) : '';
+
 $unitName = $primaryAssignment['unit_name'] ?? $primaryUnitFallbackName ?? ($personnelExtras['squadron'] ?? null);
+$heroFlagLine = '';
+if ($publicFlagCode !== null) {
+    $heroTail = trim((string) ($unitName ?? ''));
+    if ($heroTail === '') {
+        $heroTail = trim((string) ($callsign ?? ''));
+    }
+    if ($heroTail === '') {
+        $heroTail = trim((string) ($displayName ?? ''));
+    }
+    if ($heroTail === '') {
+        $heroTail = 'Opérateur';
+    }
+    $heroFlagLine = '[' . $publicFlagCode . '] ' . $heroTail;
+}
 $enlistmentDate = $personnelProfile['enlistment_date'] ?? $personnelExtras['date_of_enlistment'] ?? null;
 $rpProgress = isset($personnelProfile['rp_followup_progress']) && $personnelProfile['rp_followup_progress'] !== null
     ? max(0, min(100, (int) $personnelProfile['rp_followup_progress']))
@@ -311,7 +331,7 @@ $steamProfileSyncOffered = !empty($steamProfileSyncOffered ?? false);
 
 $completenessDetails = is_array($completeness['details'] ?? null) ? $completeness['details'] : [];
 $completenessCheckLabels = [
-    'identity_name' => 'Nom opérateur / RP',
+    'identity_name' => 'Nom affiché dossier personnage',
     'identity_callsign' => 'Indicatif radio',
     'identity_matricule' => 'Matricule',
     'identity_role' => 'Rôle principal (dossier)',
@@ -497,26 +517,38 @@ if (!function_exists('personnel_file_render_admin_value')) {
                     </details>
                     <?php endif; ?>
                 </div>
-                <div class="flex items-center gap-4 md:gap-6">
-                    <div class="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 border-slate-600/50 bg-slate-800 flex-shrink-0" title="Avatar compte" x-data="{ ready: false }">
+                <div class="flex items-end gap-4 md:gap-6">
+                    <div class="relative w-20 h-20 md:w-24 md:h-24 shrink-0 overflow-hidden rounded-2xl border-2 border-slate-600/50 bg-slate-800" title="Avatar compte" x-data="{ ready: false }">
                         <?php if ($avatarUrl): ?>
                         <div class="absolute inset-0 z-0 bg-slate-700 animate-pulse" x-show="!ready" x-transition.opacity.duration.200ms></div>
                         <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Avatar" loading="eager" decoding="async" draggable="false" width="96" height="96" @load="ready = true" class="relative z-[1] h-full w-full object-cover transition-opacity duration-300" :class="ready ? 'opacity-100' : 'opacity-0'" />
                         <?php else: ?>
-                        <div class="w-full h-full flex items-center justify-center text-slate-500">
-                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        <div class="flex h-full w-full items-center justify-center text-slate-500">
+                            <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                         </div>
                         <?php endif; ?>
                     </div>
-                    <div class="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 border-slate-600/50 bg-slate-800 flex-shrink-0" title="Portrait opérateur" x-data="{ ready: false }">
-                        <?php if ($portraitUrl): ?>
-                        <div class="absolute inset-0 z-0 bg-slate-700 animate-pulse" x-show="!ready" x-transition.opacity.duration.200ms></div>
-                        <img src="<?= htmlspecialchars($portraitUrl) ?>" alt="Portrait opérateur" loading="eager" decoding="async" draggable="false" width="96" height="96" @load="ready = true" class="relative z-[1] h-full w-full object-cover transition-opacity duration-300" :class="ready ? 'opacity-100' : 'opacity-0'" />
-                        <?php else: ?>
-                        <div class="w-full h-full flex items-center justify-center text-slate-500">
-                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                        </div>
+                    <div class="flex shrink-0 flex-col items-end gap-2">
+                        <?php if ($heroFlagLine !== ''): ?>
+                        <p class="line-clamp-2 max-w-[10.5rem] text-right text-[9px] font-black uppercase tracking-[0.22em] text-white/90 md:max-w-[13rem]"><?= htmlspecialchars($heroFlagLine, ENT_QUOTES, 'UTF-8') ?></p>
                         <?php endif; ?>
+                        <div class="relative aspect-[3/5] w-[10.5rem] max-h-[min(22rem,52vh)] overflow-hidden rounded-2xl border-2 border-slate-600/50 bg-slate-900 shadow-lg shadow-black/40 md:w-[12rem]" title="Portrait opérateur" x-data="{ ready: false }">
+                            <?php if ($publicFlagEmoji !== ''): ?>
+                            <div class="pointer-events-none absolute inset-0 flex select-none items-end justify-center pb-5 text-[min(7rem,30vw)] leading-none text-white/90 opacity-[0.42] contrast-[1.05] saturate-[0.82] brightness-[0.92] blur-[0.5px]" aria-hidden="true"><?= htmlspecialchars($publicFlagEmoji, ENT_QUOTES, 'UTF-8') ?></div>
+                            <?php else: ?>
+                            <div class="absolute inset-0 bg-gradient-to-b from-slate-700 to-slate-950" aria-hidden="true"></div>
+                            <?php endif; ?>
+                            <div class="pointer-events-none absolute inset-0 opacity-[0.38] mix-blend-overlay" style="background-image:repeating-linear-gradient(-33deg,transparent,transparent 5px,rgba(0,0,0,0.22) 5px,rgba(0,0,0,0.22) 6px)" aria-hidden="true"></div>
+                            <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" aria-hidden="true"></div>
+                            <?php if ($portraitUrl): ?>
+                            <div class="absolute inset-0 z-0 bg-slate-800 animate-pulse" x-show="!ready" x-transition.opacity.duration.200ms></div>
+                            <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur" loading="eager" decoding="async" draggable="false" width="280" height="420" @load="ready = true" class="relative z-[1] h-full w-full object-contain object-bottom transition-opacity duration-300 drop-shadow-[0_8px_24px_rgba(0,0,0,0.65)]" :class="ready ? 'opacity-100' : 'opacity-0'" />
+                            <?php else: ?>
+                            <div class="relative z-[1] flex h-full w-full items-center justify-center text-slate-500">
+                                <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                            </div>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             </div>

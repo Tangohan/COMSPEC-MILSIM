@@ -236,7 +236,8 @@ class RecruitmentOffersController
         $year = (int) date('Y');
         $lastSeq = $this->openings->tablesExist() ? $this->openings->currentLastSeq($tenantId, $year) : 0;
         $previewSeq = $lastSeq < 1 ? 1 : $lastSeq + 1;
-        $previewRef = $this->referenceService->buildReference($fmt, $tenantRow, $previewUnit, $year, $previewSeq);
+        $previewOpening = ['arm_domain' => 'signals'];
+        $previewRef = $this->referenceService->buildReference($fmt, $tenantRow, $previewUnit, $year, $previewSeq, $previewOpening);
 
         return Response::view('layout.recruitment_lms', [
             'title' => 'Format des références des offres',
@@ -274,6 +275,10 @@ class RecruitmentOffersController
         if ($recSeg === '') {
             $recSeg = 'REC';
         }
+        $aoSeg = trim((string) $request->input('ao_segment', 'AO'));
+        if ($aoSeg === '') {
+            $aoSeg = 'AO';
+        }
         $patch = [
             'recruitment' => [
                 'prospection_document_ref' => trim((string) $request->input('prospection_document_ref', '')),
@@ -281,7 +286,11 @@ class RecruitmentOffersController
                     'separator' => substr($sep, 0, 4),
                     'include_organization_tag' => $request->input('include_organization_tag') === '1',
                     'organization_tag' => substr($orgTag, 0, 32),
+                    'include_ao_segment' => $request->input('include_ao_segment') === '1',
+                    'ao_segment' => substr($aoSeg, 0, 12),
                     'include_unit_code' => $request->input('include_unit_code') === '1',
+                    'include_unit_name_abbr' => $request->input('include_unit_name_abbr') === '1',
+                    'include_arm_domain_abbr' => $request->input('include_arm_domain_abbr') === '1',
                     'include_rec_segment' => $request->input('include_rec_segment') === '1',
                     'rec_segment' => substr($recSeg, 0, 16),
                 ],

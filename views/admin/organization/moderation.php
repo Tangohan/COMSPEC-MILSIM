@@ -42,7 +42,7 @@ $modulesSummary = static function (?string $json): string {
     </div>
     <div class="rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-950 mb-6">
         <p class="font-semibold">Niveau organisation</p>
-        <p class="mt-1 text-amber-900/90">Ici vous limitez l’accès du membre à certains <strong>domaines du portail</strong> de votre communauté (formations, documents, candidatures, etc.). Les mesures sur le compte, le forum, la messagerie ou les listes de blocage à l’échelle du site sont gérées par l’administration de la plateforme.</p>
+        <p class="mt-1 text-amber-900/90">Ici vous limitez l’accès du membre à certains <strong>domaines du portail</strong> de votre communauté (formations, documents, candidatures, etc.). Les <strong>blocages e-mail / réseau</strong> déclenchés par la modération automatique du portail recrutement se lèvent dans <a class="font-semibold text-amber-950 underline hover:no-underline" href="<?= url('back-office/security-indicators') ?>">Blocages portail & sécurité</a>. Les mesures sur le compte, le forum, la messagerie ou les listes globales du site restent gérées par l’administration de la plateforme.</p>
     </div>
     <?php $f = \App\Core\Session::getFlash('error'); $s = \App\Core\Session::getFlash('success'); $w = \App\Core\Session::getFlash('warning'); ?>
     <?php if ($f): ?><p class="text-red-600 text-sm mb-4"><?= htmlspecialchars($f) ?></p><?php endif; ?>

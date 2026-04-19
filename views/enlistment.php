@@ -264,7 +264,8 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                                     </div>
                                     <?php
                                     $rpShareLabels = [
-                                        'character_name' => 'Nom du personnage',
+                                        'identity' => 'Identité personnage (prénom, nom, naissance, nationalité)',
+                                        'character_name' => 'Nom de scène (optionnel)',
                                         'bio' => 'Biographie',
                                         'cv' => 'Parcours (CV)',
                                         'image_url' => 'Portrait enregistré (fichier)',
@@ -335,6 +336,31 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                             <div id="legal-full-row" class="space-y-2 md:col-span-2 hidden">
                                 <label class="text-[10px] font-black tracking-wider uppercase"><?= htmlspecialchars($fld('legal_full_name')['label']) ?></label>
                                 <input type="text" name="legal_full_name" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('legal_full_name')['placeholder']) ?>" autocomplete="name">
+                            </div>
+                            <div id="guest-rp-detail" class="hidden md:col-span-2 space-y-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
+                                <p class="text-[10px] font-black uppercase tracking-wider text-emerald-900">Identité personnage (optionnel si le champ unique ci-dessus suffit)</p>
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-black tracking-wider uppercase text-slate-600">Prénom (personnage)</label>
+                                        <input type="text" name="guest_rp_first_name" class="input-field track-field" maxlength="100" autocomplete="off">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-black tracking-wider uppercase text-slate-600">Nom (personnage)</label>
+                                        <input type="text" name="guest_rp_last_name" class="input-field track-field" maxlength="100" autocomplete="off">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-black tracking-wider uppercase text-slate-600">Date de naissance (personnage)</label>
+                                        <input type="date" name="guest_rp_birth_date" class="input-field track-field" autocomplete="off">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-black tracking-wider uppercase text-slate-600">Nationalité (personnage)</label>
+                                        <input type="text" name="guest_rp_nationality" class="input-field track-field" maxlength="100" autocomplete="off">
+                                    </div>
+                                    <div class="space-y-2 md:col-span-2">
+                                        <label class="text-[10px] font-black tracking-wider uppercase text-slate-600">Nom de scène (optionnel)</label>
+                                        <input type="text" name="guest_rp_scene_name" class="input-field track-field" maxlength="150" autocomplete="off" placeholder="Surcharge du libellé si renseigné">
+                                    </div>
+                                </div>
                             </div>
                             <div class="space-y-2 md:col-span-2">
                                 <label class="text-[10px] font-black tracking-wider uppercase"><?= htmlspecialchars($fld('email')['label']) ?></label>
@@ -502,6 +528,7 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
             var btnGuest = document.getElementById('enlist-btn-flow-guest');
             var btnExpand = document.getElementById('enlist-btn-expand-full');
             var legalRow = document.getElementById('legal-full-row');
+            var guestRpDetail = document.getElementById('guest-rp-detail');
             var labelFull = document.getElementById('label-full-name');
             var LABEL_ADMIN = <?= json_encode($fld('full_name')['label'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
             var LABEL_RP = 'Nom du personnage (RP)';
@@ -539,6 +566,9 @@ $twCss = is_file(base_path('public/assets/css/tailwind.css')) ? url('assets/css/
                 });
                 if (legalRow) {
                     legalRow.classList.toggle('hidden', !rp);
+                }
+                if (guestRpDetail) {
+                    guestRpDetail.classList.toggle('hidden', !rp);
                 }
                 if (labelFull) {
                     labelFull.textContent = rp ? LABEL_RP : LABEL_ADMIN;

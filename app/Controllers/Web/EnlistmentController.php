@@ -383,11 +383,36 @@ class EnlistmentController
             }
             $legalFull = trim((string) $request->input('legal_full_name'));
             if ($identityKind === 'rp') {
-                $payload['recruitment_rp_snapshot'] = [
-                    'identity_kind' => 'rp',
-                    'character_name' => $fullName,
-                    'legal_contact_name' => $legalFull !== '' ? $legalFull : null,
+                $guestFn = trim((string) $request->input('guest_rp_first_name'));
+                $guestLn = trim((string) $request->input('guest_rp_last_name'));
+                $guestBd = RecruitmentPresetPayloadService::normalizeRpBirthDate((string) $request->input('guest_rp_birth_date'));
+                $guestNat = trim((string) $request->input('guest_rp_nationality'));
+                $guestScene = trim((string) $request->input('guest_rp_scene_name'));
+                if ($guestFn === '' && $guestLn === '' && $fullName !== '') {
+                    $guestFn = $fullName;
+                    $guestLn = '';
+                    if (str_contains($fullName, ' ')) {
+                        $pos = strpos($fullName, ' ');
+                        $guestFn = trim(substr($fullName, 0, $pos));
+                        $guestLn = trim(substr($fullName, $pos));
+                    }
+                }
+                $pseudoPreset = [
+                    'payload_version' => RecruitmentPresetPayloadService::PAYLOAD_VERSION,
+                    'rp' => [
+                        'first_name' => $guestFn,
+                        'last_name' => $guestLn,
+                        'birth_date' => $guestBd,
+                        'nationality' => function_exists('mb_substr') ? mb_substr($guestNat, 0, 100) : substr($guestNat, 0, 100),
+                        'character_name' => function_exists('mb_substr') ? mb_substr($guestScene, 0, 150) : substr($guestScene, 0, 150),
+                    ],
+                    'admin_notes' => '',
+                    'availability' => ['schedule' => [], 'timezone_label' => '', 'free_text' => ''],
                 ];
+                $snap = $this->recruitmentPresetPayloadService->buildRpSnapshotForEnlistment($pseudoPreset, null);
+                $snap['identity_kind'] = 'rp';
+                $snap['legal_contact_name'] = $legalFull !== '' ? $legalFull : null;
+                $payload['recruitment_rp_snapshot'] = $snap;
                 $nameForSplit = $legalFull !== '' ? $legalFull : $fullName;
             } else {
                 $nameForSplit = $fullName;
@@ -475,8 +500,13 @@ class EnlistmentController
     {
         $message = Session::getFlash('enlistment_error', 'Une erreur est survenue lors de la soumission.');
         $retry = Session::getFlash('enlistment_retry_url', url('enlistment'));
+        $errorContext = trim((string) Session::getFlash('enlistment_error_context', ''));
 
-        return Response::view('enlistment.error', ['message' => $message, 'enlistmentRetryUrl' => $retry]);
+        return Response::view('enlistment.error', [
+            'message' => $message,
+            'enlistmentRetryUrl' => $retry,
+            'errorContext' => $errorContext !== '' ? $errorContext : null,
+        ]);
     }
 
     /**

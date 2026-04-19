@@ -12,9 +12,11 @@ final class AnalyticsSubjectType
 
     public const RECRUITMENT_OPENING = 'recruitment_opening';
 
+    public const ENLISTMENT = 'enlistment';
+
     /** @return list<string> */
     public static function all(): array
     {
-        return [self::TRAINING_COURSE, self::TENANT, self::RECRUITMENT_OPENING];
+        return [self::TRAINING_COURSE, self::TENANT, self::RECRUITMENT_OPENING, self::ENLISTMENT];
     }
 }

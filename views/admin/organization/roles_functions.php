@@ -9,10 +9,21 @@ $roleRelations = is_array($roleRelations ?? null) ? $roleRelations : [];
 $units = is_array($units ?? null) ? $units : [];
 $rolePresetMeta = is_array($rolePresetMeta ?? null) ? $rolePresetMeta : [];
 $graphJsonUrl = url('back-office/roles-functions/graph.json');
-$success = \App\Core\Session::get('success');
-$error = \App\Core\Session::get('error');
-\App\Core\Session::forget('success');
-\App\Core\Session::forget('error');
+$success = \App\Core\Session::getFlash('success');
+$error = \App\Core\Session::getFlash('error');
+if ($success === null || $success === '') {
+    $success = \App\Core\Session::get('success');
+    \App\Core\Session::forget('success');
+}
+if ($error === null || $error === '') {
+    $error = \App\Core\Session::get('error');
+    \App\Core\Session::forget('error');
+}
+$requiredRoleDefinitionsFeature = !empty($requiredRoleDefinitionsFeature ?? false);
+$requiredDefinitionIds = is_array($requiredDefinitionIds ?? null) ? array_map('intval', $requiredDefinitionIds) : [];
+$coverageRows = is_array($coverageRows ?? null) ? $coverageRows : [];
+$assignMembers = is_array($assignMembers ?? null) ? $assignMembers : [];
+$assignRolesByDefinitionJson = is_string($assignRolesByDefinitionJson ?? null) ? $assignRolesByDefinitionJson : '{}';
 
 $defNameBySlug = [];
 foreach ($roleDefinitions as $d) {
@@ -52,6 +63,150 @@ foreach (RoleDoctrineUiLabels::relationTypeValues() as $rv) {
 
     <?php if ($success): ?><p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"><?= htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
     <?php if ($error): ?><p class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+
+    <?php if (!$requiredRoleDefinitionsFeature): ?>
+        <aside class="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 text-sm text-amber-950">
+            <p class="font-bold text-amber-950">Fonctions obligatoires par organisation</p>
+            <p class="mt-2 leading-relaxed">Après application de la migration de base de données prévue pour cette fonctionnalité, vous pourrez indiquer quelles fonctions du référentiel doivent être pourvues dans votre organisation, suivre l’état de couverture et attribuer un rôle adapté à un membre depuis cette page.</p>
+        </aside>
+    <?php else: ?>
+        <section class="rounded-2xl border border-indigo-200 bg-white p-6 shadow-sm space-y-6" aria-labelledby="s1-required-heading">
+            <div>
+                <h2 id="s1-required-heading" class="text-lg font-bold text-slate-900">Fonctions obligatoires pour l’organisation</h2>
+                <p class="mt-1 max-w-3xl text-sm text-slate-600">Cochez les fonctions du référentiel qui doivent être assurées au sein de votre communauté. La couverture indique si au moins un membre actif possède un rôle lié à cette fonction (via le rattachement du rôle au référentiel).</p>
+            </div>
+            <form method="post" action="<?= htmlspecialchars(url('back-office/roles-functions/required/save'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-4">
+                <?= \App\Core\Csrf::field() ?>
+                <div class="max-h-64 overflow-y-auto rounded-xl border border-slate-200 p-3 space-y-2">
+                    <?php foreach ($roleDefinitions as $d): ?>
+                        <?php $did = (int) ($d['id'] ?? 0); ?>
+                        <?php if ($did < 1) {
+                            continue;
+                        } ?>
+                        <label class="flex cursor-pointer items-start gap-3 rounded-lg px-2 py-1.5 hover:bg-slate-50">
+                            <input type="checkbox" name="definition_ids[]" value="<?= $did ?>" class="mt-1 rounded border-slate-300 text-indigo-600" <?= in_array($did, $requiredDefinitionIds, true) ? 'checked' : '' ?>>
+                            <span class="text-sm text-slate-800"><span class="font-semibold"><?= htmlspecialchars((string) ($d['name_fr'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="text-slate-500 font-mono text-xs"> · <?= htmlspecialchars((string) ($d['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+                <button type="submit" class="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-800">Enregistrer les fonctions obligatoires</button>
+            </form>
+
+            <?php if ($requiredDefinitionIds !== []): ?>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Couverture</h3>
+                    <p class="mt-1 text-sm text-slate-600">« Pourvue » signifie qu’au moins un membre actif a un rôle communautaire ou opérationnel relié à cette fonction.</p>
+                    <div class="mt-4 overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-200">
+                                    <th class="py-2 pr-4">Fonction</th>
+                                    <th class="py-2 pr-4">État</th>
+                                    <th class="py-2 pr-4">Titulaires</th>
+                                    <th class="py-2">Rôles liés dans l’organisation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($coverageRows as $cr): ?>
+                                    <?php
+                                    $filled = !empty($cr['filled']);
+                                    $holders = is_array($cr['holders'] ?? null) ? $cr['holders'] : [];
+                                    $rlist = is_array($cr['roles_for_definition'] ?? null) ? $cr['roles_for_definition'] : [];
+                                    ?>
+                                    <tr class="border-b border-slate-100 align-top">
+                                        <td class="py-2 pr-4 font-medium text-slate-900"><?= htmlspecialchars((string) ($cr['name_fr'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td class="py-2 pr-4">
+                                            <?php if ($filled): ?>
+                                                <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-900">Pourvue</span>
+                                            <?php else: ?>
+                                                <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-950">À pourvoir</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-2 pr-4 text-slate-700">
+                                            <?php if ($holders === []): ?>
+                                                <span class="text-slate-500">—</span>
+                                            <?php else: ?>
+                                                <ul class="space-y-1">
+                                                    <?php foreach ($holders as $h): ?>
+                                                        <?php $hid = (int) ($h['user_id'] ?? 0); ?>
+                                                        <li>
+                                                            <a href="<?= htmlspecialchars(url('back-office/users/' . $hid . '/edit'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-indigo-700 hover:underline"><?= htmlspecialchars((string) ($h['display_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></a>
+                                                            <span class="text-xs text-slate-500"><?= htmlspecialchars((string) ($h['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                                        </li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-2 text-slate-600">
+                                            <?php if ($rlist === []): ?>
+                                                <span class="text-amber-800 text-xs font-medium">Aucun rôle de l’organisation n’est relié à cette fonction. Créez ou modifiez un rôle pour le rattacher au référentiel.</span>
+                                            <?php else: ?>
+                                                <ul class="list-disc pl-4 space-y-0.5">
+                                                    <?php foreach ($rlist as $rr): ?>
+                                                        <li><?= htmlspecialchars((string) ($rr['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?> <span class="text-xs text-slate-500">(<?= htmlspecialchars((string) ($rr['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)</span></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-5">
+                <h3 class="text-base font-bold text-slate-900">Attribuer un rôle à un membre</h3>
+                <p class="mt-1 text-sm text-slate-600">Choisissez d’abord une fonction marquée comme obligatoire, puis un rôle compatible. Le rôle est <strong>ajouté</strong> à ceux déjà possédés par le membre (sans les retirer).</p>
+                <?php if ($requiredDefinitionIds === []): ?>
+                    <p class="mt-3 text-sm text-slate-600">Cochez au moins une fonction obligatoire ci-dessus pour activer cette attribution rapide.</p>
+                <?php elseif ($assignMembers === []): ?>
+                    <p class="mt-3 text-sm text-slate-600">Aucun membre actif trouvé pour la liste déroulante.</p>
+                <?php else: ?>
+                    <script type="application/json" id="s1-assign-roles-data"><?= htmlspecialchars($assignRolesByDefinitionJson, ENT_QUOTES, 'UTF-8') ?></script>
+                    <form method="post" action="<?= htmlspecialchars(url('back-office/roles-functions/quick-assign-role'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <?= \App\Core\Csrf::field() ?>
+                        <label class="text-xs font-semibold text-slate-600 sm:col-span-2 lg:col-span-1">Membre
+                            <select name="user_id" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                <option value="">Choisir</option>
+                                <?php foreach ($assignMembers as $m): ?>
+                                    <?php $mid = (int) ($m['id'] ?? 0); ?>
+                                    <?php if ($mid < 1) {
+                                        continue;
+                                    } ?>
+                                    <?php $mlabel = trim((string) ($m['display_name'] ?? '')) !== '' ? trim((string) $m['display_name']) : (string) ($m['email'] ?? ''); ?>
+                                    <option value="<?= $mid ?>"><?= htmlspecialchars($mlabel, ENT_QUOTES, 'UTF-8') ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="text-xs font-semibold text-slate-600 sm:col-span-2 lg:col-span-1">Fonction obligatoire ciblée
+                            <select name="role_definition_id" id="s1-def-pick" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                <option value="">Choisir</option>
+                                <?php foreach ($roleDefinitions as $d): ?>
+                                    <?php $did = (int) ($d['id'] ?? 0); ?>
+                                    <?php if ($did < 1 || !in_array($did, $requiredDefinitionIds, true)) {
+                                        continue;
+                                    } ?>
+                                    <option value="<?= $did ?>"><?= htmlspecialchars((string) ($d['name_fr'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="text-xs font-semibold text-slate-600 sm:col-span-2 lg:col-span-2">Rôle à ajouter
+                            <select name="role_id" id="s1-role-pick" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                <option value="">Choisir une fonction d’abord</option>
+                            </select>
+                        </label>
+                        <div class="sm:col-span-2 lg:col-span-4 flex flex-wrap items-center gap-3">
+                            <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Ajouter le rôle</button>
+                            <p id="s1-no-roles-hint" class="hidden text-xs text-amber-900">Aucun rôle attribuable n’est relié à cette fonction : créez ou ajustez un rôle dans votre organisation.</p>
+                        </div>
+                    </form>
+                <?php endif; ?>
+            </div>
+        </section>
+    <?php endif; ?>
 
     <section class="grid gap-4 lg:grid-cols-2">
         <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -320,5 +475,34 @@ foreach (RoleDoctrineUiLabels::relationTypeValues() as $rv) {
   }
   search.addEventListener('input', apply);
   family.addEventListener('change', apply);
+})();
+
+(function () {
+  var dataEl = document.getElementById('s1-assign-roles-data');
+  var defSel = document.getElementById('s1-def-pick');
+  var roleSel = document.getElementById('s1-role-pick');
+  var hint = document.getElementById('s1-no-roles-hint');
+  if (!dataEl || !defSel || !roleSel) return;
+  var map = {};
+  try {
+    map = JSON.parse(dataEl.textContent || '{}') || {};
+  } catch (e) {}
+  function refill() {
+    var did = String(defSel.value || '');
+    roleSel.innerHTML = '';
+    var opt0 = document.createElement('option');
+    opt0.value = '';
+    opt0.textContent = did ? 'Choisir un rôle' : 'Choisir une fonction d’abord';
+    roleSel.appendChild(opt0);
+    var list = map[did] || [];
+    list.forEach(function (r) {
+      var o = document.createElement('option');
+      o.value = String(r.id);
+      o.textContent = (r.name || '') + ' (' + (r.slug || '') + ')';
+      roleSel.appendChild(o);
+    });
+    if (hint) hint.classList.toggle('hidden', !(did && list.length === 0));
+  }
+  defSel.addEventListener('change', refill);
 })();
 </script>

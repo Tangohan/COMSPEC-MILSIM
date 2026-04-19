@@ -281,7 +281,7 @@ class RecruitmentOpeningRepository
         $year = (int) date('Y');
         $format = TenantRecruitmentSettings::referenceFormatFromSettings($tenantSettings);
         $seq = $this->allocateNextSeq($tenantId, $year);
-        $reference = $this->referenceService->buildReference($format, $tenant, $unit, $year, $seq);
+        $reference = $this->referenceService->buildReference($format, $tenant, $unit, $year, $seq, $row);
         $baseSlug = $this->referenceService->slugFromReference($reference);
         $slug = $baseSlug;
         $n = 2;

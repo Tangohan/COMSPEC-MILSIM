@@ -61,9 +61,28 @@ $imgPreview = $imgUrl !== '' ? url($imgUrl) : null;
 
         <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
             <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Personnage &amp; RP</h2>
-            <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">Nom du personnage (RP)</label>
-                <input type="text" name="rp_character_name" maxlength="200" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" value="<?= htmlspecialchars((string) ($rp['character_name'] ?? '')) ?>" placeholder="ex. Sgt. M. Durant">
+            <p class="text-xs text-slate-500">L’identité personnage est surtout <strong>prénom + nom</strong> (et naissance / nationalité). Le <strong>nom de scène</strong> est optionnel et remplace l’affichage court si vous le remplissez.</p>
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Prénom (personnage)</label>
+                    <input type="text" name="rp_first_name" maxlength="100" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" value="<?= htmlspecialchars((string) ($rp['first_name'] ?? '')) ?>" autocomplete="off">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Nom (personnage)</label>
+                    <input type="text" name="rp_last_name" maxlength="100" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" value="<?= htmlspecialchars((string) ($rp['last_name'] ?? '')) ?>" autocomplete="off">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Date de naissance (personnage)</label>
+                    <input type="date" name="rp_birth_date" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" value="<?= htmlspecialchars((string) ($rp['birth_date'] ?? '')) ?>" autocomplete="off">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Nationalité (personnage)</label>
+                    <input type="text" name="rp_nationality" maxlength="100" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" value="<?= htmlspecialchars((string) ($rp['nationality'] ?? '')) ?>" autocomplete="off">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Nom de scène (optionnel)</label>
+                    <input type="text" name="rp_character_name" maxlength="200" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" value="<?= htmlspecialchars((string) ($rp['character_name'] ?? '')) ?>" placeholder="ex. Sgt. M. Durant — prioritaire sur prénom + nom si renseigné">
+                </div>
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-600 mb-1">Bio / fil narratif</label>

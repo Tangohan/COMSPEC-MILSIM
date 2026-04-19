@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Portal;
 
 use App\Core\Gate;
-use App\Repositories\Courrier\CourrierDocumentNotificationRepository;
 use App\Repositories\EnlistmentRepository;
-use App\Repositories\ForumNotificationRepository;
+use App\Services\Notifications\PersonalMessageUnreadCounter;
 
 /**
  * Agrégation « lecture seule » pour le centre d’actions et futurs résumés (e-mail / in-app).
@@ -15,15 +14,15 @@ use App\Repositories\ForumNotificationRepository;
 final class UnifiedActionDigestService
 {
     public function __construct(
-        private ForumNotificationRepository $forumNotifications,
-        private CourrierDocumentNotificationRepository $courrierNotifications,
         private EnlistmentRepository $enlistmentRepository,
+        private PersonalMessageUnreadCounter $personalMessageUnreadCounter,
     ) {}
 
     /**
      * @return array{
      *   forum_unread: int,
      *   courrier_unread: int,
+     *   tenant_messages_unread: int,
      *   my_enlistments_pending: int,
      *   staff_enlistments_pending: int,
      *   sections: list<array{title: string, items: list<array{label: string, href: string, hint: string, count?: int}>}>
@@ -36,12 +35,11 @@ final class UnifiedActionDigestService
         Gate $gate,
         bool $showStaffRecruitment,
     ): array {
-        $forumUnread = $this->forumNotifications->tableExists()
-            ? $this->forumNotifications->unreadCount($tenantId, $userId)
-            : 0;
-        $courrierUnread = $this->courrierNotifications->tableExists()
-            ? $this->courrierNotifications->countUnread($tenantId, $userId)
-            : 0;
+        $msg = $this->personalMessageUnreadCounter->countsForUser($tenantId, $userId, $gate);
+        $forumUnread = $msg['forum_unread'];
+        $courrierUnread = $msg['courrier_unread'];
+        $tenantMessagesUnread = $msg['tenant_messages_unread'];
+
         $myPending = $this->enlistmentRepository->listPendingSubmittedForSubmitter($tenantId, $userId, $userEmail);
         $myPendingN = count($myPending);
         $staffPendingN = 0;
@@ -67,6 +65,14 @@ final class UnifiedActionDigestService
                 'href' => url('courrier/notifications'),
                 'hint' => 'Documents ou messages officiels non lus.',
                 'count' => $courrierUnread,
+            ];
+        }
+        if ($tenantMessagesUnread > 0) {
+            $personal[] = [
+                'label' => 'Messagerie interne',
+                'href' => url('messages'),
+                'hint' => 'Conversations avec l’encadrement — nouveaux messages non lus.',
+                'count' => $tenantMessagesUnread,
             ];
         }
         if ($myPendingN > 0) {
@@ -105,6 +111,7 @@ final class UnifiedActionDigestService
         return [
             'forum_unread' => $forumUnread,
             'courrier_unread' => $courrierUnread,
+            'tenant_messages_unread' => $tenantMessagesUnread,
             'my_enlistments_pending' => $myPendingN,
             'staff_enlistments_pending' => $staffPendingN,
             'sections' => $sections,
@@ -130,6 +137,9 @@ final class UnifiedActionDigestService
         }
         if ($d['courrier_unread'] > 0) {
             $lines[] = 'Des éléments du courrier interne attendent votre lecture.';
+        }
+        if ($d['tenant_messages_unread'] > 0) {
+            $lines[] = 'La messagerie interne contient des messages non lus.';
         }
         if ($d['my_enlistments_pending'] > 0) {
             $lines[] = 'Votre dossier de recrutement contient des actions à finaliser.';

@@ -33,15 +33,14 @@ if ($opBoardPublishVariant === 'events_dark'): ?>
                         <p class="text-[10px] text-neutral-500 max-w-md"><?= htmlspecialchars($opBoardPublishHelp, ENT_QUOTES, 'UTF-8') ?></p>
                     </form>
 <?php elseif ($opBoardPublishVariant === 'course'): ?>
-                            <div class="inline-flex flex-col gap-1 w-full sm:w-auto">
-                            <form method="post" action="<?= $action ?>" class="inline w-full sm:w-auto">
+                            <p class="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-emerald-800/80">Mur opérationnel</p>
+                            <form method="post" action="<?= $action ?>" class="block w-full">
                                 <input type="hidden" name="_csrf_token" value="<?= $csrfEsc ?>">
                                 <input type="hidden" name="source_type" value="<?= $typeEsc ?>">
                                 <input type="hidden" name="source_id" value="<?= $opBoardPublishSourceId ?>">
-                                <button type="submit" class="w-full sm:w-auto px-4 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-xs font-black uppercase tracking-wider text-emerald-900 hover:bg-emerald-100">Publier au mur opérationnel</button>
+                                <button type="submit" class="flex w-full min-h-[2.5rem] items-center justify-center rounded-xl border border-emerald-400/60 bg-white px-4 py-2 text-xs font-black uppercase tracking-wider text-emerald-900 shadow-sm transition-colors hover:bg-emerald-100/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">Publier au mur opérationnel</button>
                             </form>
-                            <p class="text-[10px] text-slate-500 max-w-xs"><?= htmlspecialchars($opBoardPublishHelp, ENT_QUOTES, 'UTF-8') ?></p>
-                            </div>
+                            <p class="mt-2 text-[10px] leading-snug text-slate-600"><?= htmlspecialchars($opBoardPublishHelp, ENT_QUOTES, 'UTF-8') ?></p>
 <?php elseif ($opBoardPublishVariant === 'mission_compact'): ?>
 <div class="mt-2 mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
     <form method="post" action="<?= $action ?>" class="inline-block shrink-0">

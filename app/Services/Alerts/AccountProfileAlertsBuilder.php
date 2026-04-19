@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Alerts;
 
 use App\Repositories\EnlistmentRepository;
+use App\Services\Profile\RecruitmentPresetPayloadService;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
@@ -35,14 +36,13 @@ final class AccountProfileAlertsBuilder
         }
 
         $profile = $this->userProfiles->getByUserId($userId);
-        $personnelProfile = $this->personnelProfiles->getByUserId($userId);
+        $personnelProfile = $this->personnelProfiles->getByUserId($userId) ?? [];
         $latestEnlistment = $this->enlistments->findLatestBySubmitter($tenantId, $userId);
 
         $civil = $this->resolveCivilIdentity($profile, $user, $latestEnlistment);
         $missingCivil = $civil['first_name'] === '' || $civil['last_name'] === '';
 
-        $rpName = trim((string) ($personnelProfile['character_name'] ?? ''));
-        $missingRp = $rpName === '';
+        $missingRp = RecruitmentPresetPayloadService::personnelRpDossierNeedsAttention($personnelProfile);
 
         $out = [];
 
@@ -64,8 +64,8 @@ final class AccountProfileAlertsBuilder
                 'scope' => 'Compte',
                 'id' => -1002,
                 'kind' => 'novelty',
-                'title' => 'Identité de personnage (RP) à définir',
-                'body' => 'Aucun nom d’opérateur / RP n’est enregistré sur votre fiche personnelle. Renseignez-le pour l’ORBAT, le forum et les documents.',
+                'title' => 'Identité personnage à compléter',
+                'body' => 'Renseignez au minimum le nom affiché dossier ou la nationalité personnage sur votre fiche (ou via un profil de candidature) pour l’ORBAT et le forum.',
                 'cta_label' => 'Éditer la fiche personnel',
                 'cta_url' => url('personnel/me/edit'),
                 'coupon_code' => null,

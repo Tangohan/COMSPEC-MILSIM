@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Portal;
 
 use App\Core\Gate;
-use App\Repositories\Courrier\CourrierDocumentNotificationRepository;
 use App\Repositories\EnlistmentRepository;
-use App\Repositories\ForumNotificationRepository;
 use App\Repositories\ForumReportRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\UserRepository;
+use App\Services\Notifications\PersonalMessageUnreadCounter;
 
 /**
  * Compteurs pour pastilles de la barre latérale back-office communauté.
@@ -20,10 +19,9 @@ final class BackOfficeSidebarBadgeService
     public function __construct(
         private EnlistmentRepository $enlistmentRepository,
         private ForumReportRepository $forumReportRepository,
-        private ForumNotificationRepository $forumNotificationRepository,
-        private CourrierDocumentNotificationRepository $courrierDocumentNotificationRepository,
         private ModerationArtifactRepository $moderationArtifactRepository,
         private UserRepository $userRepository,
+        private PersonalMessageUnreadCounter $personalMessageUnreadCounter,
     ) {}
 
     /**
@@ -63,12 +61,7 @@ final class BackOfficeSidebarBadgeService
         $personalInbox = 0;
         if ($tenantId > 0 && $userId > 0) {
             try {
-                if ($this->forumNotificationRepository->tableExists()) {
-                    $personalInbox += $this->forumNotificationRepository->unreadCount($tenantId, $userId);
-                }
-                if ($gate->allows('courrier.view') && $this->courrierDocumentNotificationRepository->tableExists()) {
-                    $personalInbox += $this->courrierDocumentNotificationRepository->countUnread($tenantId, $userId);
-                }
+                $personalInbox = $this->personalMessageUnreadCounter->countsForUser($tenantId, $userId, $gate)['total'];
                 $myPending = $this->enlistmentRepository->listPendingSubmittedForSubmitter($tenantId, $userId, $userEmail);
                 $personalInbox += count($myPending);
             } catch (\Throwable) {

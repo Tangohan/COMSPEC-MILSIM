@@ -1,10 +1,13 @@
 <?php
 declare(strict_types=1);
 $preamblePostUrl = url(training_studio_path() . '/preamble-ack');
+$studioPreambleBgUrl = 'https://i.redd.it/zjiqhy0q5lx61.png';
 ?>
 <div class="training-studio-panel overflow-hidden border border-slate-200/90 shadow-lg">
-    <div class="relative min-h-[min(70vh,520px)] bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 px-6 py-12 md:px-12 md:py-16 text-white">
-        <div class="pointer-events-none absolute inset-0 opacity-[0.12]" style="background-image:radial-gradient(circle at 20% 20%,#fff 0.5px,transparent 0.6px),radial-gradient(circle at 80% 60%,#fff 0.5px,transparent 0.6px);background-size:20px 20px" aria-hidden="true"></div>
+    <div class="relative min-h-[min(70vh,520px)] px-6 py-12 md:px-12 md:py-16 text-white">
+        <div class="pointer-events-none absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style="background-image:url('<?= htmlspecialchars($studioPreambleBgUrl, ENT_QUOTES, 'UTF-8') ?>')" aria-hidden="true"></div>
+        <div class="pointer-events-none absolute inset-0 z-0 bg-gradient-to-br from-slate-950/90 via-slate-900/82 to-emerald-950/88" aria-hidden="true"></div>
+        <div class="pointer-events-none absolute inset-0 z-0 opacity-[0.1]" style="background-image:radial-gradient(circle at 20% 20%,#fff 0.5px,transparent 0.6px),radial-gradient(circle at 80% 60%,#fff 0.5px,transparent 0.6px);background-size:20px 20px" aria-hidden="true"></div>
         <div class="relative z-[1] max-w-2xl">
             <p class="text-[0.65rem] font-black uppercase tracking-[0.35em] text-emerald-300/90 mb-4">Studio LMS</p>
             <h1 class="text-2xl md:text-4xl font-black tracking-tight leading-tight mb-5">Accès à l’atelier de conception</h1>

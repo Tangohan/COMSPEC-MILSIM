@@ -617,19 +617,38 @@ class EnlistmentRepository
 
     public function findValidCandidatePortalTokenForEnlistment(int $tenantId, int $enlistmentId): ?string
     {
+        $row = $this->findActiveCandidatePortalAccessRow($tenantId, $enlistmentId);
+
+        return $row !== null ? (string) $row['access_token'] : null;
+    }
+
+    /**
+     * Jeton de suivi invité encore valide (même URL que celle reçue par le candidat).
+     *
+     * @return array{access_token: string, expires_at: string}|null
+     */
+    public function findActiveCandidatePortalAccessRow(int $tenantId, int $enlistmentId): ?array
+    {
         if (!$this->hasCandidatePortalTables()) {
             return null;
         }
         $stmt = $this->pdo->prepare(
-            'SELECT access_token
+            'SELECT access_token, expires_at
              FROM enlistment_candidate_tokens
              WHERE tenant_id = ? AND enlistment_id = ? AND expires_at > NOW()
              LIMIT 1'
         );
         $stmt->execute([$tenantId, $enlistmentId]);
-        $token = $stmt->fetchColumn();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return null;
+        }
+        $tok = trim((string) ($row['access_token'] ?? ''));
+        if ($tok === '') {
+            return null;
+        }
 
-        return is_string($token) && trim($token) !== '' ? trim($token) : null;
+        return ['access_token' => $tok, 'expires_at' => (string) ($row['expires_at'] ?? '')];
     }
 
     /**

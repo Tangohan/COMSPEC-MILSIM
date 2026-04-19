@@ -39,7 +39,7 @@ $active = 'register';
             </div>
             <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Créer un compte opérateur</h1>
             <p class="mt-3 text-sm text-slate-700 leading-relaxed max-w-lg mx-auto">
-                Parcours en 2 blocs : <strong>identité légale</strong> (administrative, isolée) puis <strong>identité plateforme</strong> (affichage + RP).
+                Parcours en 2 blocs : <strong>identité légale</strong> (administrative, isolée) puis <strong>identité plateforme</strong> (pseudo affiché). L’identité <strong>personnage</strong> se complète dans votre dossier de candidature ou sur la fiche personnelle.
             </p>
             <p class="mt-2 text-xs text-slate-500 leading-relaxed max-w-lg mx-auto">
                 Après inscription, vous recevez aussi un e-mail de checklist (sécurité OTP, profil Steam et démarrage).
@@ -77,7 +77,7 @@ $active = 'register';
                 <div class="rounded-2xl border border-amber-200/90 bg-gradient-to-br from-amber-50/90 to-white p-5 sm:p-6">
                     <p class="text-[10px] font-black uppercase tracking-[0.28em] text-amber-900/90 mb-1">1 · Identité légale</p>
                     <p class="text-xs text-slate-600 mb-4 leading-relaxed">
-                        Données administratives minimales, isolées de la vitrine RP et uniquement exposées aux profils habilités.
+                        Données administratives, isolées du pseudo public. Date de naissance, pays et Discord sont utiles à l’équipe ; laissez vide si vous préférez ne pas les renseigner tout de suite.
                     </p>
                     <div class="grid sm:grid-cols-2 gap-4">
                         <div class="space-y-2">
@@ -108,128 +108,143 @@ $active = 'register';
                                 class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
                             >
                         </div>
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="legal_birth_date">Date de naissance</label>
+                            <input
+                                id="legal_birth_date"
+                                type="date"
+                                name="legal_birth_date"
+                                autocomplete="bday"
+                                class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
+                            >
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="legal_country">Pays (résidence)</label>
+                            <input
+                                id="legal_country"
+                                type="text"
+                                name="legal_country"
+                                maxlength="100"
+                                autocomplete="country-name"
+                                placeholder="ex. France"
+                                class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
+                            >
+                        </div>
+                        <div class="space-y-2 sm:col-span-2">
+                            <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="discord_handle">Pseudo ou identifiant Discord</label>
+                            <input
+                                id="discord_handle"
+                                type="text"
+                                name="discord_handle"
+                                maxlength="120"
+                                autocomplete="off"
+                                placeholder="ex. pseudo#1234 ou @pseudo"
+                                class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
+                            >
+                        </div>
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/60 to-white p-5 sm:p-6">
-                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-800/90 mb-3">2 · Accès plateforme</p>
-                    <p class="text-xs text-slate-600 mb-0 leading-relaxed">
-                        Informations de connexion, identité affichée et personnage de départ pour la plateforme.
-                    </p>
-                </div>
-
-                <div class="space-y-2">
-                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="community_code">Code reçu (si applicable)</label>
-                    <input
-                        id="community_code"
-                        type="text"
-                        name="community_code"
-                        value="<?= htmlspecialchars((string) $prefillCc, ENT_QUOTES, 'UTF-8') ?>"
-                        maxlength="64"
-                        placeholder="Ex. UNIT-ALPHA"
-                        autocomplete="off"
-                        class="ds-input w-full text-sm font-semibold tracking-wide uppercase placeholder:normal-case placeholder:tracking-normal shadow-inner shadow-slate-100/60"
-                    >
-                </div>
-
-                <div class="space-y-2">
-                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="email">E-mail</label>
-                    <input
-                        id="email"
-                        type="email"
-                        name="email"
-                        data-lowercase="email"
-                        required
-                        autocomplete="email"
-                        placeholder="operateur@exemple.fr"
-                        class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
-                    >
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="steam_profile">Profil Steam (optionnel)</label>
-                    <p class="text-xs text-slate-500 ml-1">SteamID 64, lien <code>/profiles/…</code> ou <code>/id/…</code> — synchronisé dès l’inscription.</p>
-                    <input
-                        id="steam_profile"
-                        type="text"
-                        name="steam_profile"
-                        maxlength="512"
-                        autocomplete="off"
-                        placeholder="https://steamcommunity.com/id/votre-profil"
-                        class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
-                    >
-                </div>
-
-                <div class="space-y-2">
-                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="display_name">Nom affiché</label>
-                    <p class="text-xs text-slate-500 ml-1">Visible sur la plateforme (2 à 100 caractères).</p>
-                    <input
-                        id="display_name"
-                        type="text"
-                        name="display_name"
-                        required
-                        minlength="2"
-                        maxlength="100"
-                        autocomplete="nickname"
-                        placeholder="Votre nom ou pseudo"
-                        class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
-                    >
-                </div>
-
-                <div class="grid sm:grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                        <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="password">Mot de passe</label>
-                        <input
-                            id="password"
-                            type="password"
-                            name="password"
-                            required
-                            minlength="8"
-                            autocomplete="new-password"
-                            placeholder="••••••••"
-                            class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
-                        >
+                <div class="rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/60 to-white p-5 sm:p-6 space-y-6">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-800/90 mb-1">2 · Accès plateforme</p>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Connexion, pseudo affiché publiquement et sécurité du compte.
+                        </p>
                     </div>
-                    <div class="space-y-2">
-                        <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="password_confirmation">Confirmation</label>
-                        <input
-                            id="password_confirmation"
-                            type="password"
-                            name="password_confirmation"
-                            required
-                            minlength="8"
-                            autocomplete="new-password"
-                            placeholder="••••••••"
-                            class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
-                        >
-                    </div>
-                </div>
-                <p class="text-xs text-slate-500 -mt-2">Au moins 8 caractères.</p>
 
-                <div class="rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 to-white p-5 sm:p-6">
-                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-800/90 mb-1">Personnage role play</p>
-                    <p class="text-xs text-slate-600 mb-4 leading-relaxed">
-                        Nom d’opérateur / RP de départ. Callsign, grade et affectation se complètent ensuite dans le dossier personnel.
-                    </p>
                     <div class="space-y-2">
-                        <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="character_name">Nom opérateur / RP</label>
+                        <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="community_code">Code reçu (si applicable)</label>
                         <input
-                            id="character_name"
+                            id="community_code"
                             type="text"
-                            name="character_name"
+                            name="community_code"
+                            value="<?= htmlspecialchars((string) $prefillCc, ENT_QUOTES, 'UTF-8') ?>"
+                            maxlength="64"
+                            placeholder="Ex. UNIT-ALPHA"
+                            autocomplete="off"
+                            class="ds-input w-full text-sm font-semibold tracking-wide uppercase placeholder:normal-case placeholder:tracking-normal shadow-inner shadow-slate-100/60"
+                        >
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="email">E-mail</label>
+                        <input
+                            id="email"
+                            type="email"
+                            name="email"
+                            data-lowercase="email"
+                            required
+                            autocomplete="email"
+                            placeholder="operateur@exemple.fr"
+                            class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
+                        >
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="steam_profile">Profil Steam (optionnel)</label>
+                        <p class="text-xs text-slate-500 ml-1">SteamID 64, lien <code>/profiles/…</code> ou <code>/id/…</code> — synchronisé dès l’inscription.</p>
+                        <input
+                            id="steam_profile"
+                            type="text"
+                            name="steam_profile"
+                            maxlength="512"
+                            autocomplete="off"
+                            placeholder="https://steamcommunity.com/id/votre-profil"
+                            class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
+                        >
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="display_name">Pseudo / nom affiché</label>
+                        <p class="text-xs text-slate-500 ml-1">Visible sur la plateforme (2 à 100 caractères). Différent du prénom et nom légaux.</p>
+                        <input
+                            id="display_name"
+                            type="text"
+                            name="display_name"
                             required
                             minlength="2"
-                            maxlength="150"
-                            autocomplete="off"
-                            placeholder="Nom de votre personnage"
-                            class="ds-input w-full text-sm font-semibold"
+                            maxlength="100"
+                            autocomplete="nickname"
+                            placeholder="Votre pseudo public"
+                            class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
                         >
                     </div>
+
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="password">Mot de passe</label>
+                            <input
+                                id="password"
+                                type="password"
+                                name="password"
+                                required
+                                minlength="8"
+                                autocomplete="new-password"
+                                placeholder="••••••••"
+                                class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
+                            >
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1" for="password_confirmation">Confirmation</label>
+                            <input
+                                id="password_confirmation"
+                                type="password"
+                                name="password_confirmation"
+                                required
+                                minlength="8"
+                                autocomplete="new-password"
+                                placeholder="••••••••"
+                                class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
+                            >
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500">Au moins 8 caractères.</p>
                 </div>
 
                 <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 sm:p-6 space-y-4">
                     <label class="flex items-start gap-3 text-sm text-slate-700 leading-relaxed">
                         <input type="checkbox" name="accept_identity_split" value="1" required class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
-                        <span>Je comprends que l’identité légale (administrative) est séparée de l’identité affichée sur la plateforme et du personnage RP.</span>
+                        <span>Je comprends que l’identité légale (administrative) est séparée du pseudo affiché sur la plateforme et que l’identité personnage se complète dans le dossier de recrutement ou la fiche personnelle.</span>
                     </label>
                     <label class="flex items-start gap-3 text-sm text-slate-700 leading-relaxed">
                         <input type="checkbox" name="accept_terms" value="1" required class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">

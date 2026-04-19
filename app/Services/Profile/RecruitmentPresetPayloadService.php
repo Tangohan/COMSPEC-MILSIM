@@ -52,6 +52,22 @@ final class RecruitmentPresetPayloadService
         }
         $rp = &$out['rp'];
         $rp['character_name'] = isset($rp['character_name']) ? trim((string) $rp['character_name']) : '';
+        $rp['first_name'] = isset($rp['first_name']) ? trim((string) $rp['first_name']) : '';
+        $rp['last_name'] = isset($rp['last_name']) ? trim((string) $rp['last_name']) : '';
+        if (function_exists('mb_substr')) {
+            $rp['first_name'] = mb_substr($rp['first_name'], 0, 100);
+            $rp['last_name'] = mb_substr($rp['last_name'], 0, 100);
+        } else {
+            $rp['first_name'] = substr($rp['first_name'], 0, 100);
+            $rp['last_name'] = substr($rp['last_name'], 0, 100);
+        }
+        $rp['birth_date'] = self::normalizeRpBirthDate(isset($rp['birth_date']) ? (string) $rp['birth_date'] : '');
+        $rp['nationality'] = isset($rp['nationality']) ? trim((string) $rp['nationality']) : '';
+        if (function_exists('mb_substr')) {
+            $rp['nationality'] = mb_substr($rp['nationality'], 0, 100);
+        } else {
+            $rp['nationality'] = substr($rp['nationality'], 0, 100);
+        }
         $rp['bio'] = isset($rp['bio']) ? trim((string) $rp['bio']) : '';
         $rp['cv'] = isset($rp['cv']) ? trim((string) $rp['cv']) : '';
         $rp['image_url'] = isset($rp['image_url']) ? trim((string) $rp['image_url']) : '';
@@ -185,6 +201,76 @@ final class RecruitmentPresetPayloadService
     }
 
     /**
+     * Date de naissance personnage (YYYY-MM-DD) ou chaîne vide.
+     */
+    public static function normalizeRpBirthDate(string $raw): string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return '';
+        }
+        $d = \DateTimeImmutable::createFromFormat('Y-m-d', $raw);
+
+        return $d && $d->format('Y-m-d') === $raw ? $raw : '';
+    }
+
+    /**
+     * Libellé unique affiché sur dossiers / snapshot : nom de scène optionnel prioritaire, sinon « prénom nom ».
+     *
+     * @param array<string, mixed> $rp
+     */
+    public static function deriveOperatorDisplayName(array $rp): string
+    {
+        $scene = trim((string) ($rp['character_name'] ?? ''));
+        if ($scene !== '') {
+            return function_exists('mb_substr') ? mb_substr($scene, 0, 150) : substr($scene, 0, 150);
+        }
+        $fn = trim((string) ($rp['first_name'] ?? ''));
+        $ln = trim((string) ($rp['last_name'] ?? ''));
+        $joined = trim($fn . ' ' . $ln);
+
+        return $joined !== '' ? (function_exists('mb_substr') ? mb_substr($joined, 0, 150) : substr($joined, 0, 150)) : '';
+    }
+
+    /**
+     * Complète personnel_profiles à partir d’un preset normalisé (sans écraser une valeur déjà saisie).
+     *
+     * @param array<string, mixed> $normalizedPayload payload complet normalisé
+     * @return array<string, string> colonnes à passer à PersonnelProfileRepository::update
+     */
+    public function personnelAutoFillPatchFromPayload(array $normalizedPayload): array
+    {
+        $rp = is_array($normalizedPayload['rp'] ?? null) ? $normalizedPayload['rp'] : [];
+        $patch = [];
+        $label = self::deriveOperatorDisplayName($rp);
+        if ($label !== '') {
+            $patch['character_name'] = $label;
+        }
+        $nat = trim((string) ($rp['nationality'] ?? ''));
+        if ($nat !== '') {
+            $patch['nationality'] = function_exists('mb_substr') ? mb_substr($nat, 0, 100) : substr($nat, 0, 100);
+        }
+
+        return $patch;
+    }
+
+    /**
+     * Indique si le titulaire doit être invité à compléter l’identité personnage sur la fiche (nom affiché dossier ou nationalité RP).
+     *
+     * @param array<string, mixed> $personnelProfile
+     */
+    public static function personnelRpDossierNeedsAttention(array $personnelProfile): bool
+    {
+        $cn = trim((string) ($personnelProfile['character_name'] ?? ''));
+        if ($cn !== '') {
+            return false;
+        }
+        $nat = trim((string) ($personnelProfile['nationality'] ?? ''));
+
+        return $nat === '';
+    }
+
+    /**
      * Construit le tableau payload à enregistrer (hors upload fichier — fait par le contrôleur).
      *
      * @param array<string, mixed> $existingNormalized
@@ -215,6 +301,10 @@ final class RecruitmentPresetPayloadService
             $p['rp'] = [];
         }
         $p['rp']['character_name'] = trim((string) $request->input('rp_character_name'));
+        $p['rp']['first_name'] = trim((string) $request->input('rp_first_name'));
+        $p['rp']['last_name'] = trim((string) $request->input('rp_last_name'));
+        $p['rp']['birth_date'] = self::normalizeRpBirthDate((string) $request->input('rp_birth_date'));
+        $p['rp']['nationality'] = trim((string) $request->input('rp_nationality'));
         $p['rp']['bio'] = trim((string) $request->input('rp_bio'));
         $p['rp']['cv'] = trim((string) $request->input('rp_cv'));
         $p['rp']['image_external_url'] = trim((string) $request->input('rp_image_external_url'));
@@ -255,6 +345,7 @@ final class RecruitmentPresetPayloadService
     public static function rpShareSelectionKeys(): array
     {
         return [
+            'identity',
             'character_name',
             'bio',
             'cv',
@@ -320,13 +411,18 @@ final class RecruitmentPresetPayloadService
 
         $notesParts = [];
         $rp = is_array($p['rp'] ?? null) ? $p['rp'] : [];
-        $cn = trim((string) ($rp['character_name'] ?? ''));
+        $scene = trim((string) ($rp['character_name'] ?? ''));
+        $rfn = trim((string) ($rp['first_name'] ?? ''));
+        $rln = trim((string) ($rp['last_name'] ?? ''));
+        $rbd = trim((string) ($rp['birth_date'] ?? ''));
+        $rnat = trim((string) ($rp['nationality'] ?? ''));
         $bio = trim((string) ($rp['bio'] ?? ''));
         $cv = trim((string) ($rp['cv'] ?? ''));
         $img = trim((string) ($rp['image_url'] ?? ''));
         $ext = trim((string) ($rp['image_external_url'] ?? ''));
         $adm = trim((string) ($p['admin_notes'] ?? ''));
 
+        $allowIdentity = $rpShares === null || !empty($rpShares['identity']);
         $allowChar = $rpShares === null || !empty($rpShares['character_name']);
         $allowBio = $rpShares === null || !empty($rpShares['bio']);
         $allowCv = $rpShares === null || !empty($rpShares['cv']);
@@ -334,8 +430,26 @@ final class RecruitmentPresetPayloadService
         $allowExt = $rpShares === null || !empty($rpShares['image_external_url']);
         $allowAdm = $rpShares === null || !empty($rpShares['admin_notes']);
 
-        if ($allowChar && $cn !== '') {
-            $notesParts[] = "— Personnage RP —\nNom : " . $cn;
+        $idLines = [];
+        if ($allowIdentity) {
+            if ($rfn !== '') {
+                $idLines[] = 'Prénom (personnage) : ' . $rfn;
+            }
+            if ($rln !== '') {
+                $idLines[] = 'Nom (personnage) : ' . $rln;
+            }
+            if ($rbd !== '') {
+                $idLines[] = 'Date de naissance (personnage) : ' . $rbd;
+            }
+            if ($rnat !== '') {
+                $idLines[] = 'Nationalité (personnage) : ' . $rnat;
+            }
+        }
+        if ($allowChar && $scene !== '') {
+            $idLines[] = 'Nom de scène (optionnel) : ' . $scene;
+        }
+        if ($idLines !== []) {
+            $notesParts[] = "— Personnage RP —\n" . implode("\n", $idLines);
         }
         if ($allowBio && $bio !== '') {
             $notesParts[] = "Bio :\n" . $bio;
@@ -370,9 +484,20 @@ final class RecruitmentPresetPayloadService
         $p = $this->normalizeDecodedPayload($presetPayload);
         $rp = is_array($p['rp'] ?? null) ? $p['rp'] : [];
 
+        $scene = trim((string) ($rp['character_name'] ?? ''));
+        $rfn = trim((string) ($rp['first_name'] ?? ''));
+        $rln = trim((string) ($rp['last_name'] ?? ''));
+        $rbd = trim((string) ($rp['birth_date'] ?? ''));
+        $rnat = trim((string) ($rp['nationality'] ?? ''));
+
         $snap = [
             'payload_version' => $p['payload_version'] ?? self::PAYLOAD_VERSION,
-            'character_name' => $rp['character_name'] ?? '',
+            'rp_scene_name' => $scene,
+            'rp_first_name' => $rfn,
+            'rp_last_name' => $rln,
+            'rp_birth_date' => $rbd,
+            'rp_nationality' => $rnat,
+            'character_name' => self::deriveOperatorDisplayName($rp),
             'bio' => $rp['bio'] ?? '',
             'cv' => $rp['cv'] ?? '',
             'image_url' => $rp['image_url'] ?? '',
@@ -397,8 +522,14 @@ final class RecruitmentPresetPayloadService
     public function filterRpSnapshotByShares(array $snapshot, array $rpShares): array
     {
         $out = $snapshot;
+        if (empty($rpShares['identity'])) {
+            $out['rp_first_name'] = '';
+            $out['rp_last_name'] = '';
+            $out['rp_birth_date'] = '';
+            $out['rp_nationality'] = '';
+        }
         if (empty($rpShares['character_name'])) {
-            $out['character_name'] = '';
+            $out['rp_scene_name'] = '';
         }
         if (empty($rpShares['bio'])) {
             $out['bio'] = '';
@@ -420,6 +551,12 @@ final class RecruitmentPresetPayloadService
             $out['derived_availability'] = ['availability' => '', 'weekly_availability' => ''];
         }
 
+        $out['character_name'] = self::deriveOperatorDisplayName([
+            'character_name' => (string) ($out['rp_scene_name'] ?? ''),
+            'first_name' => (string) ($out['rp_first_name'] ?? ''),
+            'last_name' => (string) ($out['rp_last_name'] ?? ''),
+        ]);
+
         return $out;
     }
 
@@ -439,6 +576,22 @@ final class RecruitmentPresetPayloadService
                 }
                 $av = $snapshot['availability'] ?? [];
                 if (is_array($av) && $av !== []) {
+                    return true;
+                }
+
+                continue;
+            }
+            if ($k === 'identity') {
+                foreach (['rp_first_name', 'rp_last_name', 'rp_birth_date', 'rp_nationality'] as $ik) {
+                    if (trim((string) ($snapshot[$ik] ?? '')) !== '') {
+                        return true;
+                    }
+                }
+
+                continue;
+            }
+            if ($k === 'character_name') {
+                if (trim((string) ($snapshot['rp_scene_name'] ?? '')) !== '') {
                     return true;
                 }
 

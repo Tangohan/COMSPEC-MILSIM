@@ -97,6 +97,7 @@ final class LoginSecurityOtpService
             $tenantId
         );
         if (!$ok) {
+            $this->emailTokenRepository->deletePendingForUserPurpose($userId, EmailTokenPurpose::LOGIN_SECURITY_OTP);
             Session::flash('error', 'Impossible d’envoyer le code par e-mail pour le moment.');
 
             return Response::redirect(url('login'));
@@ -166,7 +167,16 @@ final class LoginSecurityOtpService
             $tenantId
         );
         if (!$ok) {
-            return ['ok' => false, 'message' => 'L’envoi a échoué. Réessayez plus tard ou contactez l’administration si le problème continue.'];
+            $this->emailTokenRepository->deletePendingForUserPurpose($userId, EmailTokenPurpose::LOGIN_OTP_MAILBOX_SELF_TEST);
+            $detail = '';
+            if (filter_var((string) \env('APP_DEBUG', ''), FILTER_VALIDATE_BOOLEAN)) {
+                $err = trim((string) $this->emailService->getLastSendError());
+                if ($err !== '') {
+                    $detail = ' ' . $err;
+                }
+            }
+
+            return ['ok' => false, 'message' => 'L’envoi a échoué. Réessayez plus tard ou contactez l’administration si le problème continue.' . $detail];
         }
 
         return [

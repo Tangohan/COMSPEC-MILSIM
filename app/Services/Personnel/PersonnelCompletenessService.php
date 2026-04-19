@@ -110,7 +110,7 @@ class PersonnelCompletenessService
     {
         $base = $this->getScore($userId, $user, $userProfile, $personnelExtras, $tenantId);
         $labels = [
-            'identity_name' => 'Nom opérateur / RP',
+            'identity_name' => 'Nom affiché dossier personnage',
             'identity_callsign' => 'Indicatif',
             'identity_matricule' => 'Matricule',
             'identity_role' => 'Rôle principal (dossier)',
@@ -152,7 +152,7 @@ class PersonnelCompletenessService
         $base = $this->getScore($userId, $user, $userProfile, $personnelExtras, $tenantId);
 
         $labelsFull = [
-            'identity_name' => 'Nom opérateur / RP',
+            'identity_name' => 'Nom affiché dossier personnage',
             'identity_callsign' => 'Indicatif',
             'identity_matricule' => 'Matricule',
             'identity_role' => 'Rôle principal (dossier)',
@@ -168,7 +168,7 @@ class PersonnelCompletenessService
         ];
 
         $labelsCommunity = [
-            'identity_name' => 'Nom opérateur / RP',
+            'identity_name' => 'Nom affiché dossier personnage',
             'identity_callsign' => 'Indicatif',
             'identity_matricule' => 'Matricule',
             'identity_role' => 'Rôle principal sur la fiche',

@@ -62,7 +62,7 @@ return static function (PDO $pdo): void {
                 mission_lead TEXT DEFAULT NULL,
                 responsibility_blocks JSON DEFAULT NULL,
                 public_page_slug VARCHAR(120) DEFAULT NULL,
-                reference_public VARCHAR(180) DEFAULT NULL,
+                reference_public VARCHAR(280) DEFAULT NULL,
                 status VARCHAR(20) NOT NULL DEFAULT \'draft\',
                 published_at DATETIME DEFAULT NULL,
                 closed_at DATETIME DEFAULT NULL,

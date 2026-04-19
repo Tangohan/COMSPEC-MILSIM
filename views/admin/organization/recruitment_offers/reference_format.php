@@ -49,9 +49,28 @@ $previewHasUnits = (bool) ($previewHasUnits ?? false);
                 <input type="text" name="organization_tag" value="<?= htmlspecialchars((string) ($format['organization_tag'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="32" class="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm" />
             </div>
             <label class="flex items-center gap-2 text-sm text-slate-800">
+                <input type="hidden" name="include_ao_segment" value="0" />
+                <input type="checkbox" name="include_ao_segment" value="1" <?= !empty($format['include_ao_segment']) ? 'checked' : '' ?> class="rounded border-slate-300" />
+                Inclure un segment « avis » (type appel à candidatures)
+            </label>
+            <div class="ml-6">
+                <label class="block text-xs font-medium text-slate-600 mb-1">Libellé court du segment (souvent AO, AOC, AVIS…)</label>
+                <input type="text" name="ao_segment" value="<?= htmlspecialchars((string) ($format['ao_segment'] ?? 'AO'), ENT_QUOTES, 'UTF-8') ?>" maxlength="12" class="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono uppercase" />
+            </div>
+            <label class="flex items-center gap-2 text-sm text-slate-800">
                 <input type="hidden" name="include_unit_code" value="0" />
                 <input type="checkbox" name="include_unit_code" value="1" <?= !empty($format['include_unit_code']) ? 'checked' : '' ?> class="rounded border-slate-300" />
                 Inclure le code de l’unité porteuse
+            </label>
+            <label class="flex items-center gap-2 text-sm text-slate-800">
+                <input type="hidden" name="include_unit_name_abbr" value="0" />
+                <input type="checkbox" name="include_unit_name_abbr" value="1" <?= !empty($format['include_unit_name_abbr']) ? 'checked' : '' ?> class="rounded border-slate-300" />
+                Inclure un abrégé du nom complet de l’unité (plusieurs mots du nom d’unité)
+            </label>
+            <label class="flex items-center gap-2 text-sm text-slate-800">
+                <input type="hidden" name="include_arm_domain_abbr" value="0" />
+                <input type="checkbox" name="include_arm_domain_abbr" value="1" <?= !empty($format['include_arm_domain_abbr']) ? 'checked' : '' ?> class="rounded border-slate-300" />
+                Inclure le domaine d’armes (abrégé : infanterie → INF, transmissions → TRS, etc.)
             </label>
             <label class="flex items-center gap-2 text-sm text-slate-800">
                 <input type="hidden" name="include_rec_segment" value="0" />
@@ -71,7 +90,8 @@ $previewHasUnits = (bool) ($previewHasUnits ?? false);
             <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside leading-relaxed">
                 <li>Communauté : <?= htmlspecialchars($previewTenantName !== '' ? $previewTenantName : '—', ENT_QUOTES, 'UTF-8') ?> — l’identifiant organisationnel du format suit vos réglages (ou le code / le nom court dérivé du portail si le champ est vide).</li>
                 <li>Unité servant d’exemple : <?= htmlspecialchars($previewUnitLabel, ENT_QUOTES, 'UTF-8') ?> (première unité dans l’ordre d’affichage administration). La référence réelle utilisera l’unité porteuse choisie sur chaque avis.</li>
-                <li>Numéro de fin : <?= (int) $previewSeq ?> pour <?= (int) $previewYear ?> (prochain numéro prévu pour une nouvelle publication cette année<?= $previewLastSeq === 0 ? ' — aucune publication enregistrée sur cette année pour l’instant' : '' ?>).</li>
+                <li>Domaine d’armes dans l’aperçu : transmissions (TRS), pour illustrer le segment domaine lorsqu’il est activé.</li>
+                <li>Numéro de fin : année puis rang sur quatre chiffres (ex. <?= (int) $previewYear ?>-<?= str_pad((string) max(1, (int) $previewSeq), 4, '0', STR_PAD_LEFT) ?>) — prochain numéro prévu pour une nouvelle publication cette année<?= $previewLastSeq === 0 ? ' — aucune publication enregistrée sur cette année pour l’instant' : '' ?>.</li>
             </ul>
             <?php if (!$previewHasUnits && !empty($format['include_unit_code'])): ?>
                 <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">Aucune unité n’est encore créée : le segment « code unité » est reconstruit à partir d’un libellé de secours tant qu’aucune unité réelle n’existe.</p>

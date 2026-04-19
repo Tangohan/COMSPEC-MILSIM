@@ -284,19 +284,21 @@ $headHtml = ob_get_clean();
                         <?php endif; ?>
                     </div>
 
-                    <div class="lms-panel min-w-0 rounded-[2rem] p-6 md:p-8">
-                        <div class="flex items-center justify-between gap-4 mb-6">
-                            <div class="min-w-0">
-                                <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-2">Suivi</p>
-                                <h3 class="text-2xl font-black tracking-tight uppercase">Mes formations</h3>
+                    <div class="lms-panel relative min-w-0 overflow-hidden rounded-[2rem] p-6 md:p-8">
+                        <div class="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-emerald-500/55 via-emerald-500/15 to-transparent" aria-hidden="true"></div>
+                        <header class="mb-5">
+                            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-[9px] font-black uppercase tracking-[0.35em] text-slate-400">Suivi</p>
+                                <span class="shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-emerald-800">Actif</span>
                             </div>
-                            <span class="shrink-0 px-3 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black tracking-[0.18em] uppercase text-emerald-700">Actif</span>
-                        </div>
-                        <p class="text-[12px] text-slate-700 leading-relaxed font-medium mb-4 min-w-0 break-words text-pretty">
+                            <h3 class="text-xl font-black uppercase tracking-tight text-slate-900 sm:text-2xl">Mes formations</h3>
+                        </header>
+                        <p class="mb-5 min-w-0 max-w-prose text-pretty text-sm font-medium leading-relaxed text-slate-600">
                             Aperçu de vos parcours sur cette communauté. Sous chaque titre, l’état et l’avancement. Pour un parcours terminé avec attestation, un lien de téléchargement est proposé.
                         </p>
                         <?php if ($catalogueSidebarEnrollments !== []): ?>
-                        <ul class="mb-5 space-y-3 max-h-[min(22rem,50vh)] overflow-y-auto pr-0.5 -mr-0.5" aria-label="Aperçu de vos formations">
+                        <div class="mb-5 max-h-[min(22rem,52vh)] overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/60 p-1.5 shadow-inner">
+                        <ul class="max-h-[min(20.5rem,48vh)] space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-gutter:stable]" aria-label="Aperçu de vos formations">
                             <?php foreach ($catalogueSidebarEnrollments as $se):
                                 $seStatus = (string) ($se['status'] ?? '');
                                 $seSlug = trim((string) ($se['course_slug'] ?? ''));
@@ -320,13 +322,13 @@ $headHtml = ob_get_clean();
                                     default => 'bg-slate-100 text-slate-700 border-slate-200',
                                 };
                                 ?>
-                            <li class="min-w-0 rounded-2xl border border-slate-200/90 bg-white/90 px-3.5 py-3 shadow-sm">
-                                <a href="<?= htmlspecialchars($seHref) ?>" class="block text-left text-[13px] font-black uppercase tracking-tight text-slate-900 leading-snug break-words hyphens-auto hover:text-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2 rounded-lg">
+                            <li class="min-w-0 rounded-xl border border-slate-200/90 bg-white/95 px-3.5 py-3 shadow-sm transition-colors hover:border-emerald-300/40 hover:shadow-md">
+                                <a href="<?= htmlspecialchars($seHref) ?>" class="block rounded-md text-left text-[13px] font-black uppercase leading-snug tracking-tight text-slate-900 break-words hyphens-auto hover:text-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2">
                                     <?= htmlspecialchars((string) ($se['course_title'] ?? 'Parcours')) ?>
                                 </a>
-                                <div class="mt-3 flex flex-col gap-2">
+                                <div class="mt-3 flex flex-col gap-2.5">
                                     <?php if ($seStatus !== 'completed' && $seStatus !== 'pending_approval'): ?>
-                                    <div class="inline-flex w-fit max-w-full items-center gap-2 rounded-full border border-slate-200/90 bg-slate-50/90 px-2.5 py-1.5">
+                                    <div class="inline-flex w-fit max-w-full flex-wrap items-center gap-2 rounded-full border border-slate-200/90 bg-slate-50/90 px-2.5 py-1.5">
                                         <span class="inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] <?= htmlspecialchars($statusClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabel) ?></span>
                                         <span class="h-3.5 w-px shrink-0 bg-slate-200" aria-hidden="true"></span>
                                         <span class="text-[10px] font-bold tabular-nums leading-none text-slate-600"><?= $sePct ?> %</span>
@@ -335,7 +337,7 @@ $headHtml = ob_get_clean();
                                     <span class="inline-flex w-fit max-w-full items-center rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] <?= htmlspecialchars($statusClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabel) ?></span>
                                     <?php endif; ?>
                                     <?php if ($seCertifying && $seCertId > 0 && $seStatus === 'completed'): ?>
-                                    <a href="<?= htmlspecialchars($base) ?>/formations/certificate/<?= $seCertId ?>" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-sm shadow-emerald-900/15 transition-colors hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:w-auto sm:justify-start">
+                                    <a href="<?= htmlspecialchars($base) ?>/formations/certificate/<?= $seCertId ?>" class="inline-flex min-h-[2.75rem] w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-sm shadow-emerald-900/15 transition-colors hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:w-fit sm:justify-start">
                                         <svg class="h-3.5 w-3.5 shrink-0 opacity-95" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
                                         Télécharger l’attestation
                                     </a>
@@ -344,12 +346,15 @@ $headHtml = ob_get_clean();
                             </li>
                             <?php endforeach; ?>
                         </ul>
+                        </div>
                         <?php else: ?>
-                        <p class="text-[11px] text-slate-500 mb-5 leading-relaxed">Vous n’avez pas encore de parcours en suivi sur cette communauté. Parcourez le catalogue ou ouvrez l’espace dédié.</p>
+                        <p class="mb-5 text-sm leading-relaxed text-slate-500">Vous n’avez pas encore de parcours en suivi sur cette communauté. Parcourez le catalogue ou ouvrez l’espace dédié.</p>
                         <?php endif; ?>
-                        <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-emerald-600 transition-all">
-                            Ouvrir Mes formations
-                        </a>
+                        <div class="mt-2 border-t border-slate-200/80 pt-5">
+                            <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:w-auto">
+                                Ouvrir Mes formations
+                            </a>
+                        </div>
                     </div>
                 </section>
 

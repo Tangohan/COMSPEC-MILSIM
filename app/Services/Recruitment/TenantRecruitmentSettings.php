@@ -39,7 +39,11 @@ final class TenantRecruitmentSettings
             'separator' => '/',
             'include_organization_tag' => true,
             'organization_tag' => '',
+            'include_ao_segment' => true,
+            'ao_segment' => 'AO',
             'include_unit_code' => true,
+            'include_unit_name_abbr' => true,
+            'include_arm_domain_abbr' => true,
             'include_rec_segment' => true,
             'rec_segment' => 'REC',
         ];

@@ -15,7 +15,9 @@ use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserLegalIdentityRepository;
+use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
+use App\Services\Profile\RecruitmentPresetPayloadService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\AuthService;
@@ -33,6 +35,7 @@ final class RegisterController
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
         private UserLegalIdentityRepository $userLegalIdentityRepository,
+        private UserProfileRepository $userProfileRepository,
         private RoleRepository $roleRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
         private RbacService $rbacService,
@@ -74,10 +77,22 @@ final class RegisterController
         $password = (string) $request->input('password');
         $confirm = (string) $request->input('password_confirmation');
         $displayName = trim((string) $request->input('display_name'));
-        $characterName = trim((string) $request->input('character_name'));
         $steamProfile = trim((string) $request->input('steam_profile'));
         $legalFirstName = trim((string) $request->input('legal_first_name'));
         $legalLastName = trim((string) $request->input('legal_last_name'));
+        $legalBirthDate = RecruitmentPresetPayloadService::normalizeRpBirthDate((string) $request->input('legal_birth_date'));
+        $legalCountry = trim((string) $request->input('legal_country'));
+        if (function_exists('mb_substr')) {
+            $legalCountry = mb_substr($legalCountry, 0, 100);
+        } else {
+            $legalCountry = substr($legalCountry, 0, 100);
+        }
+        $discordHandle = trim((string) $request->input('discord_handle'));
+        if (function_exists('mb_substr')) {
+            $discordHandle = mb_substr($discordHandle, 0, 120);
+        } else {
+            $discordHandle = substr($discordHandle, 0, 120);
+        }
         $acceptTerms = (string) $request->input('accept_terms') === '1';
         $acceptIdentitySplit = (string) $request->input('accept_identity_split') === '1';
 
@@ -87,26 +102,30 @@ final class RegisterController
                 'password' => $password,
                 'password_confirmation' => $confirm,
                 'display_name' => $displayName,
-                'character_name' => $characterName,
                 'steam_profile' => $steamProfile,
                 'legal_first_name' => $legalFirstName,
                 'legal_last_name' => $legalLastName,
+                'legal_birth_date' => $legalBirthDate,
+                'legal_country' => $legalCountry,
+                'discord_handle' => $discordHandle,
             ],
             [
                 'email' => 'required|email',
                 'password' => 'required|min:8',
                 'password_confirmation' => 'required',
                 'display_name' => 'required|min:2|max:100',
-                'character_name' => 'required|min:2|max:150',
                 'steam_profile' => 'max:512',
                 'legal_first_name' => 'required|min:2|max:100',
                 'legal_last_name' => 'required|min:2|max:100',
+                'legal_birth_date' => 'max:12',
+                'legal_country' => 'max:100',
+                'discord_handle' => 'max:120',
             ]
         );
         if (!$v->validate() || $password !== $confirm || !$acceptTerms || !$acceptIdentitySplit) {
             Session::flash(
                 'error',
-                'Vérifiez les champs : identité légale (prénom + nom), email valide, mot de passe 8+ caractères, confirmation identique, nom affiché, nom opérateur / RP et validations obligatoires.'
+                'Vérifiez les champs : identité légale (prénom + nom, date et pays si renseignés), email valide, mot de passe 8+ caractères, confirmation identique, nom affiché sur la plateforme et validations obligatoires.'
             );
 
             return Response::redirect(url('register'));
@@ -175,13 +194,26 @@ final class RegisterController
                 $this->userRepository->syncOrganizationRoles($userId, $tenantId, [$roleId], null, true);
             }
             $this->personnelProfileRepository->ensureRecord($userId);
-            $this->personnelProfileRepository->update($userId, [
-                'character_name' => $characterName,
-            ]);
             $this->userLegalIdentityRepository->upsert($userId, $tenantId, [
                 'first_name' => $legalFirstName,
                 'last_name' => $legalLastName,
+                'birth_date' => $legalBirthDate,
             ]);
+            $this->userProfileRepository->ensureRow($userId);
+            $profileUpsert = [
+                'first_name' => $legalFirstName,
+                'last_name' => $legalLastName,
+            ];
+            if ($legalBirthDate !== '') {
+                $profileUpsert['birth_date'] = $legalBirthDate;
+            }
+            if ($legalCountry !== '') {
+                $profileUpsert['country_of_residence'] = $legalCountry;
+            }
+            if ($discordHandle !== '') {
+                $profileUpsert['discord_handle'] = $discordHandle;
+            }
+            $this->userProfileRepository->upsert($userId, $profileUpsert);
             if ($resolvedSteamId !== null) {
                 $steamPatch = ['steam_id' => $resolvedSteamId];
                 $steamPlayer = $this->steamWebApiService->fetchPublicPlayer($resolvedSteamId);

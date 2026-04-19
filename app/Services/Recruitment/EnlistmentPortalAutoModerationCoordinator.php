@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Recruitment;
 
 use App\Repositories\BlockedIndicatorRepository;
+use App\Repositories\EnlistmentTimelineRepository;
 use App\Repositories\UserRepository;
 use App\Services\EmailService;
 
@@ -20,6 +21,7 @@ final class EnlistmentPortalAutoModerationCoordinator
         private BlockedIndicatorRepository $blockedIndicatorRepository,
         private UserRepository $userRepository,
         private EmailService $emailService,
+        private EnlistmentTimelineRepository $enlistmentTimelineRepository,
     ) {}
 
     /**
@@ -63,6 +65,13 @@ final class EnlistmentPortalAutoModerationCoordinator
             $this->maybeBlockEmailTenant($tenantId, $email, 'Portail recrutement — contenu refusé (candidat)');
         }
         $this->broadcastAlerts($tenantId, $tenantName, $enlistment, 'candidat', $hit, $textPreviewForLog, null);
+        $this->appendModerationTimeline(
+            $tenantId,
+            $enlistment,
+            'candidat',
+            $hit,
+            null
+        );
     }
 
     /**
@@ -90,6 +99,53 @@ final class EnlistmentPortalAutoModerationCoordinator
             $this->maybeBlockEmailTenant($tenantId, $staffEmail, 'Portail recrutement — contenu refusé (équipe)');
         }
         $this->broadcastAlerts($tenantId, $tenantName, $enlistment, 'equipe', $hit, $textPreviewForLog, $staffEmail !== '' ? $staffEmail : null);
+        $this->appendModerationTimeline(
+            $tenantId,
+            $enlistment,
+            'equipe',
+            $hit,
+            $staffUserId > 0 ? $staffUserId : null
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $enlistment
+     * @param array{code: string, public_label: string} $hit
+     */
+    private function appendModerationTimeline(
+        int $tenantId,
+        array $enlistment,
+        string $side,
+        array $hit,
+        ?int $actorUserId,
+    ): void {
+        $eid = (int) ($enlistment['id'] ?? 0);
+        if ($eid < 1 || !$this->enlistmentTimelineRepository->tableExists()) {
+            return;
+        }
+        $label = trim((string) ($hit['public_label'] ?? ''));
+        if ($label === '') {
+            $label = 'contenu refusé';
+        }
+        $who = $side === 'equipe' ? 'un membre de l’équipe' : 'le candidat';
+        $body = 'Filtre automatique du portail : « ' . $label . ' ». Origine : ' . $who . '.'
+            . ' Des courriels d’alerte ont été envoyés au candidat, à l’équipe recrutement et aux contacts de pilotage de la communauté.'
+            . ' Les blocages automatiques (e-mail / réseau) peuvent être levés dans le back-office : Blocages portail & sécurité.';
+        $this->enlistmentTimelineRepository->append(
+            $tenantId,
+            $eid,
+            'system',
+            'instruction',
+            'Modération automatique du portail',
+            $body,
+            $actorUserId,
+            [
+                'timeline_family' => 'moderation',
+                'moderation_side' => $side,
+                'moderation_code' => (string) ($hit['code'] ?? ''),
+            ],
+            null
+        );
     }
 
     private function maybeBlockIpTenant(int $tenantId, string $ip, string $reason): void
@@ -198,6 +254,7 @@ final class EnlistmentPortalAutoModerationCoordinator
                 $this->userRepository->listRecruitmentNotificationEmailsForTenant($tenantId),
                 $this->userRepository->listGovernanceEmailsForTenant($tenantId),
                 $this->userRepository->listAdministratorEmailsForTenant($tenantId),
+                $this->userRepository->listEmailsForTenantAccessDelegation($tenantId),
             ) as $em
         ) {
             $e = strtolower(trim((string) $em));

@@ -33,7 +33,7 @@ class UserProfileRepository
 
     public function upsert(int $userId, array $data): void
     {
-        $fields = ['first_name', 'last_name', 'birth_date', 'nationality', 'timezone', 'language', 'bio', 'phone'];
+        $fields = ['first_name', 'last_name', 'birth_date', 'nationality', 'country_of_residence', 'public_flag_country_code', 'discord_handle', 'timezone', 'language', 'bio', 'phone'];
         $existing = $this->getByUserId($userId);
         if ($existing) {
             $set = [];

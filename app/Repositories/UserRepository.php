@@ -338,6 +338,28 @@ class UserRepository
         }
     }
 
+    /**
+     * Ajoute un rôle organisation (périmètre tenant) s'il n'est pas déjà présent.
+     *
+     * @throws InvalidArgumentException si la fusion viole la cohérence métier
+     *
+     * @return bool true si le rôle a été ajouté, false s'il était déjà attribué
+     */
+    public function addOrganizationRoleIfMissing(int $userId, int $tenantId, int $roleId, ?int $actorUserId = null): bool
+    {
+        if ($userId < 1 || $tenantId < 1 || $roleId < 1) {
+            return false;
+        }
+        $current = $this->listOrganizationRoleIdsForUser($userId);
+        if (in_array($roleId, $current, true)) {
+            return false;
+        }
+        $merged = array_merge($current, [$roleId]);
+        $this->syncOrganizationRoles($userId, $tenantId, $merged, $actorUserId);
+
+        return true;
+    }
+
     private function hasPreferredDisplayRoleColumn(): bool
     {
         static $v;

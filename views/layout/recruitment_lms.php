@@ -13,7 +13,7 @@ $headHtml = ob_get_clean();
 <head>
 <?= $headHtml ?>
 </head>
-<body class="bg-slate-100 text-slate-900 overflow-x-hidden">
+<body class="bg-slate-100 text-slate-900">
     <?php
     $lmsBootMessage = 'Chargement du bureau recrutement…';
     require base_path('views/training/partials/lms_page_boot_overlay.php');
@@ -24,7 +24,7 @@ $headHtml = ob_get_clean();
         <div class="grid lg:grid-cols-[290px_1fr] min-h-screen">
             <?php require base_path('views/admin/recruitment_workspace/partials/recruitment_lms_sidebar.php'); ?>
 
-            <main class="p-5 md:p-8 lg:p-10 space-y-8">
+            <main class="recruitment-lms-main min-w-0 p-5 md:p-8 lg:p-10 space-y-8">
                 <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
                 <?php
                 $contentPath = str_replace('.', '/', (string) $content);

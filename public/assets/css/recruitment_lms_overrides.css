@@ -1,7 +1,215 @@
 /**
  * Bureau recrutement — légers compléments au gabarit LMS (training_lms.css).
  */
+
+/* Empêche le débordement horizontal sans casser position: sticky (éviter overflow-x sur body) */
+.recruitment-lms-main {
+  overflow-x: clip;
+  min-width: 0;
+}
+
+/* Cartes de choix d’issue (fiche dossier) — lisibles sans dépendre du purge Tailwind */
+.enlist-decision-card {
+  display: block;
+  cursor: pointer;
+  border-radius: 0.75rem;
+  border: 2px solid #e7e5e4;
+  background: #fafaf9;
+  padding: 0.85rem 1rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.enlist-decision-card:hover {
+  border-color: #d6d3d1;
+  background: #ffffff;
+}
+.enlist-decision-card:has(.enlist-decision-choice:checked) {
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35);
+}
+.enlist-decision-card--accept:has(.enlist-decision-choice:checked) {
+  border-color: #059669;
+  background: #ecfdf5;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25);
+}
+.enlist-decision-card--pending:has(.enlist-decision-choice:checked) {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.22);
+}
+.enlist-decision-card--interview:has(.enlist-decision-choice:checked) {
+  border-color: #7c3aed;
+  background: #f5f3ff;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.22);
+}
+.enlist-decision-card--reject:has(.enlist-decision-choice:checked) {
+  border-color: #94a3b8;
+  background: #f8fafc;
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.35);
+}
+.enlist-decision-card--block:has(.enlist-decision-choice:checked) {
+  border-color: #991b1b;
+  background: #fef2f2;
+  box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.2);
+}
+
 .recruitment-lms-sidebar .lms-active-nav {
   border-color: rgba(14, 165, 233, 0.45) !important;
   background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(15, 23, 42, 0.35)) !important;
+}
+
+/**
+ * Le gabarit recruitment_lms ne charge pas public/assets/css/styles.css :
+ * les boutons de décision dépendent uniquement de ces classes — sans elles, fond blanc / texte illisible.
+ * (Aligné sur styles.css § back-office candidatures.)
+ */
+.enlist-decision-actions .enlist-decision-btn {
+  text-decoration: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.enlist-decision-actions .enlist-decision-btn--accept {
+  background-color: #047857 !important;
+  color: #ffffff !important;
+  border-color: rgba(6, 95, 70, 0.45) !important;
+  -webkit-text-fill-color: #ffffff;
+}
+.enlist-decision-actions .enlist-decision-btn--accept:hover {
+  background-color: #065f46 !important;
+  color: #ffffff !important;
+}
+.enlist-decision-actions .enlist-decision-btn--accept:focus-visible {
+  --tw-ring-color: rgb(5 150 105 / 0.55);
+}
+.enlist-decision-actions .enlist-decision-btn--reject {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: rgba(148, 163, 184, 0.9) !important;
+  -webkit-text-fill-color: #0f172a;
+}
+.enlist-decision-actions .enlist-decision-btn--reject:hover {
+  background-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.enlist-decision-actions .enlist-decision-btn--block {
+  background-color: #7f1d1d !important;
+  color: #ffffff !important;
+  border-color: rgba(69, 10, 10, 0.5) !important;
+  -webkit-text-fill-color: #ffffff;
+}
+.enlist-decision-actions .enlist-decision-btn--block:hover {
+  background-color: #450a0a !important;
+  color: #ffffff !important;
+}
+.enlist-decision-actions .enlist-decision-btn--pending {
+  background-color: #e0f2fe !important;
+  color: #0c4a6e !important;
+  border-color: rgba(14, 165, 233, 0.45) !important;
+  -webkit-text-fill-color: #0c4a6e;
+}
+.enlist-decision-actions .enlist-decision-btn--pending:hover {
+  background-color: #bae6fd !important;
+  color: #082f49 !important;
+}
+.enlist-decision-actions .enlist-decision-btn--interview {
+  background-color: #ede9fe !important;
+  color: #4c1d95 !important;
+  border-color: rgba(139, 92, 246, 0.45) !important;
+  -webkit-text-fill-color: #4c1d95;
+}
+.enlist-decision-actions .enlist-decision-btn--interview:hover {
+  background-color: #ddd6fe !important;
+  color: #2e1065 !important;
+}
+
+.enlist-membership-repair-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  background-color: #0c4a6e !important;
+  color: #ffffff !important;
+  border: 1px solid #0a3d5c !important;
+  -webkit-text-fill-color: #ffffff;
+}
+.enlist-membership-repair-btn:hover {
+  background-color: #0a3d5c !important;
+  color: #ffffff !important;
+}
+.enlist-membership-repair-btn:focus-visible {
+  outline: 2px solid #0369a1;
+  outline-offset: 2px;
+}
+
+/* Autres envois formulaire fiche (si classes Tailwind absentes du bundle LMS) */
+.recruitment-lms-submit-primary {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #0f172a !important;
+  -webkit-text-fill-color: #ffffff;
+}
+.recruitment-lms-submit-primary:hover {
+  background-color: #1e293b !important;
+  border-color: #1e293b !important;
+  color: #ffffff !important;
+}
+.recruitment-lms-submit-primary:focus-visible {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 2px;
+}
+
+.recruitment-lms-submit-sky {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  background-color: #0c4a6e !important;
+  color: #ffffff !important;
+  border: 1px solid #0a3d5c !important;
+  -webkit-text-fill-color: #ffffff;
+}
+.recruitment-lms-submit-sky:hover {
+  background-color: #0a3d5c !important;
+  color: #ffffff !important;
+}
+
+/* Bouton secondaire (pages réglages, bandeaux) — fond clair, texte foncé */
+.recruitment-lms-submit-secondary {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  -webkit-text-fill-color: #0f172a;
+  text-decoration: none;
+}
+.recruitment-lms-submit-secondary:hover {
+  background-color: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #020617 !important;
+}
+.recruitment-lms-submit-secondary:focus-visible {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 2px;
+}
+
+/* Lien / bouton sombre compact (navigation secondaire) */
+.recruitment-lms-nav-dark {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #0f172a !important;
+  -webkit-text-fill-color: #ffffff;
+  text-decoration: none;
+}
+.recruitment-lms-nav-dark:hover {
+  background-color: #1e293b !important;
+  border-color: #1e293b !important;
+  color: #ffffff !important;
+}
+.recruitment-lms-nav-dark:focus-visible {
+  outline: 2px solid #34d399;
+  outline-offset: 2px;
 }

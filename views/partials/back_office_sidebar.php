@@ -135,7 +135,12 @@ $boNavOnb = str_starts_with($p, 'back-office/onboarding-recovery');
 $boNavOnbMembers = str_starts_with($p, 'back-office/onboarding-members');
 $boNavAudit = str_starts_with($p, 'back-office/audit');
 $boNavMod = str_starts_with($p, 'back-office/moderation');
+$boNavSecurityIndicators = str_starts_with($p, 'back-office/security-indicators');
 $canMemberModeration = $gate->allows('admin.members.moderate');
+$canTenantSecurityIndicators = $gate->allows('admin.organization')
+    || $gate->allows('admin.access')
+    || $gate->allows('admin.members.moderate')
+    || $gate->allows('organization.recruitment.manage');
 $boNavEventInsights = str_starts_with($p, 'back-office/events/insights');
 $boNavEvents = str_starts_with($p, 'back-office/events') && !$boNavEventInsights;
 $boNavCourrierTrace = str_starts_with($p, 'back-office/courrier/traceabilite');
@@ -264,6 +269,9 @@ $canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.a
         <?php $boLink('back-office/audit', 'Journal d’activité', $boNavAudit); ?>
         <?php if ($canMemberModeration): ?>
             <?php $boLink('back-office/moderation', 'Restrictions membres', $boNavMod); ?>
+        <?php endif; ?>
+        <?php if ($canTenantSecurityIndicators): ?>
+            <?php $boLink('back-office/security-indicators', 'Blocages portail & sécurité', $boNavSecurityIndicators); ?>
         <?php endif; ?>
         <?php $boLink('back-office/events', 'RSVP & pointage', $boNavEvents); ?>
         <?php $boLink('back-office/events/insights', 'Insights présence', $boNavEventInsights); ?>

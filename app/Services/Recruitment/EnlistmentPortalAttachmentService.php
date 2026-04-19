@@ -28,11 +28,16 @@ final class EnlistmentPortalAttachmentService
     private const AUDIO_MIMES = [
         'audio/webm' => true,
         'audio/mpeg' => true,
+        'audio/mp3' => true,
         'audio/mp4' => true,
         'audio/wav' => true,
         'audio/x-wav' => true,
         'audio/ogg' => true,
         'audio/m4a' => true,
+        'audio/x-m4a' => true,
+        'audio/aac' => true,
+        /** Conteneur WebM souvent renvoyé par MediaRecorder (piste audio seule). */
+        'video/webm' => true,
     ];
 
     public function __construct(
@@ -72,11 +77,17 @@ final class EnlistmentPortalAttachmentService
             $original = 'fichier';
         }
 
-        $mime = $this->detectMime($tmp);
+        $mimeRaw = strtolower(trim($this->detectMime($tmp)));
+        $mime = $mimeRaw;
         if ($mime === 'application/octet-stream' || $mime === '') {
-            $mime = $this->mimeFromFilename($original) ?: $mime;
+            $mime = strtolower(trim((string) ($this->mimeFromFilename($original) ?? '')));
         }
-        $isAudio = str_starts_with($mime, 'audio/');
+        if (str_contains($mime, ';')) {
+            $mime = strtolower(trim(explode(';', $mime, 2)[0]));
+        }
+        /** WebM issu du navigateur : parfois annoncé en video/webm alors que seule la piste audio est utile. */
+        $isAudio = str_starts_with($mime, 'audio/')
+            || ($allowAudio && $mime === 'video/webm');
         if ($isAudio) {
             if (!$allowAudio) {
                 return ['ok' => false, 'error' => 'L’équipe n’a pas activé l’envoi d’enregistrements audio pour ce dossier.'];
@@ -150,6 +161,7 @@ final class EnlistmentPortalAttachmentService
             'webm' => 'audio/webm',
             'ogg' => 'audio/ogg',
             'm4a' => 'audio/mp4',
+            'aac' => 'audio/aac',
             'pdf' => 'application/pdf',
             'jpg' => 'image/jpeg',
             'jpeg' => 'image/jpeg',
@@ -187,12 +199,16 @@ final class EnlistmentPortalAttachmentService
             'image/webp' => 'webp',
             'text/plain' => 'txt',
             'audio/webm' => 'webm',
+            'video/webm' => 'webm',
             'audio/mpeg' => 'mp3',
+            'audio/mp3' => 'mp3',
             'audio/mp4' => 'm4a',
             'audio/m4a' => 'm4a',
             'audio/wav' => 'wav',
             'audio/x-wav' => 'wav',
             'audio/ogg' => 'ogg',
+            'audio/aac' => 'aac',
+            'audio/x-m4a' => 'm4a',
             default => '',
         };
         if ($fromMime !== '') {

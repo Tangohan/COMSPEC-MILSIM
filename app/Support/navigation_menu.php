@@ -72,6 +72,47 @@ function navigation_apply_internal_messages_badge(array $resolved): array
 }
 
 /**
+ * Total non lu agrégé (forum + courrier si habilitation + messagerie interne), pour pastille « Mon activité ».
+ */
+function navigation_aggregate_message_activity_unread_total(): int
+{
+    if (!(\App\Core\Session::get('user_id'))) {
+        return 0;
+    }
+    $tenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+    $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
+    if ($tenantId < 1 || $userId < 1) {
+        return 0;
+    }
+    try {
+        $gate = \App\Core\Gate::getInstance();
+        $n = \App\Core\Container::get(\App\Services\Notifications\PersonalMessageUnreadCounter::class)
+            ->countsForUser($tenantId, $userId, $gate)['total'];
+
+        return max(0, $n);
+    } catch (\Throwable) {
+        return 0;
+    }
+}
+
+/**
+ * @param array{label: string, href: string, path: string, active_match: string, description?: string|null, badge?: string} $resolved
+ * @return array{label: string, href: string, path: string, active_match: string, description?: string|null, badge?: string}
+ */
+function navigation_apply_activity_hub_badge(array $resolved): array
+{
+    if (($resolved['path'] ?? '') !== '/activite') {
+        return $resolved;
+    }
+    $n = navigation_aggregate_message_activity_unread_total();
+    if ($n > 0) {
+        $resolved['badge'] = (string) min(99, $n);
+    }
+
+    return $resolved;
+}
+
+/**
  * @param array{permission?: string, any_permissions?: string[], all_permissions?: string[]} $item
  */
 function navigation_item_allowed(array $item): bool
@@ -123,7 +164,7 @@ function navigation_menu_item_visible(array $item, bool $loggedIn): bool
  * Résout un lien avec href + path canonique pour l’état actif.
  *
  * @param array{path: string, active_match?: string, label: string, description?: string} $link
- * @return array{label: string, href: string, path: string, active_match: string, description?: string}|null
+ * @return array{label: string, href: string, path: string, active_match: string, description?: string|null, badge?: string}|null
  */
 function navigation_resolve_link(array $link): ?array
 {
@@ -142,7 +183,7 @@ function navigation_resolve_link(array $link): ?array
         'description' => isset($link['description']) ? (string) $link['description'] : null,
     ];
 
-    return navigation_apply_internal_messages_badge($out);
+    return navigation_apply_activity_hub_badge(navigation_apply_internal_messages_badge($out));
 }
 
 function navigation_normalize_accent(?string $accent): string

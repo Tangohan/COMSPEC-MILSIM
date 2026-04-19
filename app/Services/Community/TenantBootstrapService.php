@@ -96,6 +96,7 @@ final class TenantBootstrapService
             $newUserId = $this->userRepository->cloneUserToTenant($creatorUserId, $tenantId, $communityOwnerRoleId, $gradeId);
 
             TenantSeedHelper::ensureOnboardingPortalCourse($pdo, $tenantId, $newUserId);
+            TenantSeedHelper::ensureRolesOrgCourse($pdo, $tenantId, $newUserId);
 
             $this->tenantRepository->setOwner($tenantId, $newUserId);
             $communitySettings = [

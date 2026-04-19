@@ -564,6 +564,10 @@ final class EmailService
     ): bool {
         $sourceSideLabel = $sourceSide === 'equipe' ? 'Équipe recrutement' : 'Candidat';
 
+        $portalBlocklistManageUrl = $recipientAudience !== 'candidate'
+            ? \url('back-office/security-indicators')
+            : '';
+
         return $this->sendTemplated(
             EmailEvents::ENLISTMENT_PORTAL_AUTOMOD_ALERT,
             'enlistment_portal_moderation_alert',
@@ -576,6 +580,7 @@ final class EmailService
                 'sourceSideLabel' => $sourceSideLabel,
                 'categoryLabel' => $categoryLabel,
                 'maskedPreview' => $maskedPreview,
+                'portalBlocklistManageUrl' => $portalBlocklistManageUrl,
             ],
             $tenantId,
             null,

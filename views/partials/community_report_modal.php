@@ -6,7 +6,7 @@ if (!\App\Core\Session::get('user_id')) {
 $crEndpoint = url('api/community/report');
 $crCsrf = \App\Core\Csrf::token();
 ?>
-<div id="community-report-modal" class="fixed inset-0 z-[500] hidden flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="community-report-title">
+<div id="community-report-modal" class="fixed inset-0 z-[500] hidden flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="community-report-title" tabindex="-1">
     <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/90">
             <h2 id="community-report-title" class="text-sm font-black uppercase tracking-wide text-slate-900">Signaler un contenu</h2>
@@ -43,30 +43,67 @@ $crCsrf = \App\Core\Csrf::token();
 </div>
 <script>
 (function () {
+    if (document.documentElement.getAttribute('data-community-report-modal-init') === '1') {
+        return;
+    }
+    document.documentElement.setAttribute('data-community-report-modal-init', '1');
+
     var endpoint = <?= json_encode($crEndpoint, JSON_UNESCAPED_SLASHES) ?>;
     var csrf = <?= json_encode($crCsrf, JSON_UNESCAPED_SLASHES) ?>;
-    var modal = document.getElementById('community-report-modal');
-    var form = document.getElementById('community-report-form');
-    if (!modal || !form) return;
-    var summaryEl = document.getElementById('community-report-summary');
-    function openCr(opts) {
-        opts = opts || {};
-        document.getElementById('cr-target-type').value = opts.type || '';
-        document.getElementById('cr-target-id').value = String(opts.id || '0');
-        document.getElementById('cr-doc-key').value = opts.docKey || '';
-        document.getElementById('cr-reported-url').value = opts.reportedUrl || '';
-        document.getElementById('cr-page-url').value = opts.pageUrl || window.location.href;
-        if (summaryEl) summaryEl.textContent = opts.summary || '';
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-    function closeCr() {
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-    document.querySelectorAll('[data-community-report]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            openCr({
+
+    function boot() {
+        var modal = document.getElementById('community-report-modal');
+        var form = document.getElementById('community-report-form');
+        if (!modal || !form) {
+            return;
+        }
+        var summaryEl = document.getElementById('community-report-summary');
+        var cancelBtn = document.getElementById('cr-cancel');
+
+        function fillCr(opts) {
+            opts = opts || {};
+            document.getElementById('cr-target-type').value = opts.type || '';
+            document.getElementById('cr-target-id').value = String(opts.id || '0');
+            document.getElementById('cr-doc-key').value = opts.docKey || '';
+            document.getElementById('cr-reported-url').value = opts.reportedUrl || '';
+            document.getElementById('cr-page-url').value = opts.pageUrl || window.location.href;
+            if (summaryEl) {
+                summaryEl.textContent = opts.summary || '';
+            }
+        }
+
+        function showCr() {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(function () {
+                try {
+                    modal.focus({ preventScroll: true });
+                } catch (e1) {
+                    modal.focus();
+                }
+                var reason = document.getElementById('cr-reason');
+                if (reason) {
+                    try {
+                        reason.focus({ preventScroll: true });
+                    } catch (e2) {
+                        reason.focus();
+                    }
+                }
+            });
+        }
+
+        function closeCr() {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('click', function (ev) {
+            var btn = ev.target && typeof ev.target.closest === 'function' ? ev.target.closest('[data-community-report]') : null;
+            if (!btn) {
+                return;
+            }
+            ev.preventDefault();
+            fillCr({
                 type: btn.getAttribute('data-cr-type') || '',
                 id: parseInt(btn.getAttribute('data-cr-id') || '0', 10) || 0,
                 docKey: btn.getAttribute('data-cr-doc-key') || '',
@@ -74,40 +111,65 @@ $crCsrf = \App\Core\Csrf::token();
                 pageUrl: btn.getAttribute('data-cr-page-url') || window.location.href,
                 summary: btn.getAttribute('data-cr-summary') || ''
             });
+            try {
+                btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } catch (e) {
+                try {
+                    btn.scrollIntoView();
+                } catch (e2) {}
+            }
+            window.setTimeout(showCr, 180);
+        }, false);
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', closeCr);
+        }
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                closeCr();
+            }
         });
-    });
-    document.getElementById('cr-cancel').addEventListener('click', closeCr);
-    modal.addEventListener('click', function (e) {
-        if (e.target === modal) closeCr();
-    });
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var payload = {
-            csrf_token: csrf,
-            target_type: document.getElementById('cr-target-type').value,
-            target_id: parseInt(document.getElementById('cr-target-id').value, 10) || 0,
-            documentation_key: document.getElementById('cr-doc-key').value,
-            reported_url: document.getElementById('cr-reported-url').value,
-            page_url: document.getElementById('cr-page-url').value,
-            reason: document.getElementById('cr-reason').value,
-            details: document.getElementById('cr-details').value
-        };
-        fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify(payload),
-            credentials: 'same-origin'
-        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-            .then(function (x) {
-                if (x.ok && x.j && x.j.success) {
-                    closeCr();
-                    document.getElementById('cr-details').value = '';
-                    alert('Merci, votre signalement a été transmis à l’équipe de modération.');
-                } else {
-                    alert((x.j && x.j.error) ? x.j.error : 'Envoi impossible pour le moment.');
-                }
-            })
-            .catch(function () { alert('Erreur réseau.'); });
-    });
+        document.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeCr();
+            }
+        });
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var payload = {
+                csrf_token: csrf,
+                target_type: document.getElementById('cr-target-type').value,
+                target_id: parseInt(document.getElementById('cr-target-id').value, 10) || 0,
+                documentation_key: document.getElementById('cr-doc-key').value,
+                reported_url: document.getElementById('cr-reported-url').value,
+                page_url: document.getElementById('cr-page-url').value,
+                reason: document.getElementById('cr-reason').value,
+                details: document.getElementById('cr-details').value
+            };
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload),
+                credentials: 'same-origin'
+            }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+                .then(function (x) {
+                    if (x.ok && x.j && x.j.success) {
+                        closeCr();
+                        document.getElementById('cr-details').value = '';
+                        alert('Merci, votre signalement a été transmis à l’équipe de modération.');
+                    } else {
+                        alert((x.j && x.j.error) ? x.j.error : 'Envoi impossible pour le moment.');
+                    }
+                })
+                .catch(function () { alert('Erreur réseau.'); });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
 })();
 </script>

@@ -28,11 +28,15 @@ final class CommunityReportNotificationService
         private SiteRoleAssignmentRepository $siteRoleAssignmentRepository,
     ) {}
 
+    /**
+     * @param ?string $contentKind Valeur stockée côté dossier (ex. training_course) pour affinages d’alerte.
+     */
     public function notifyReportCreated(
         int $tenantId,
         int $reportId,
         int $reporterId,
-        string $reasonText
+        string $reasonText,
+        ?string $contentKind = null,
     ): void {
         $summary = $this->truncateOneLine($reasonText, 220);
         if ($summary === '') {
@@ -43,6 +47,9 @@ final class CommunityReportNotificationService
         if (function_exists('community_display_name') && $tenant) {
             $tenantName = community_display_name($tenant);
         }
+
+        /** @var array<string, true> */
+        $staffEmailsSent = [];
 
         $reporter = $reporterId > 0 ? $this->userRepository->findById($reporterId, $tenantId) : null;
         $reporterEmail = $reporter ? trim((string) ($reporter['email'] ?? '')) : '';
@@ -93,6 +100,7 @@ final class CommunityReportNotificationService
                     $reportId,
                     $tenantId
                 );
+                $staffEmailsSent[strtolower($modEmail)] = true;
             } catch (\Throwable) {
             }
         }
@@ -109,6 +117,10 @@ final class CommunityReportNotificationService
             if ($reporterEmail !== '' && strcasecmp($reporterEmail, $email) === 0) {
                 continue;
             }
+            $el = strtolower(trim($email));
+            if ($el === '' || isset($staffEmailsSent[$el])) {
+                continue;
+            }
             $display = $this->displayNameFromEmail($email);
             try {
                 $this->emailService->sendCommunityReportNewStaff(
@@ -119,7 +131,51 @@ final class CommunityReportNotificationService
                     $reportId,
                     $tenantId
                 );
+                $staffEmailsSent[$el] = true;
             } catch (\Throwable) {
+            }
+        }
+
+        if (strtolower(trim((string) $contentKind)) === 'training_course' && $tenantId > 0) {
+            foreach ($this->userRepository->listAdministratorEmailsForTenant($tenantId) as $email) {
+                $el = strtolower(trim($email));
+                if ($el === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || isset($staffEmailsSent[$el])) {
+                    continue;
+                }
+                if ($reporterEmail !== '' && strcasecmp($reporterEmail, $email) === 0) {
+                    continue;
+                }
+                $display = $this->displayNameFromEmail($email);
+                try {
+                    $this->emailService->sendCommunityReportNewStaff(
+                        $email,
+                        $display,
+                        $tenantName,
+                        $summary,
+                        $reportId,
+                        $tenantId
+                    );
+                    $staffEmailsSent[$el] = true;
+                } catch (\Throwable) {
+                }
+            }
+            $contact = $this->tenantCommunityContactEmail($tenantId);
+            if ($contact !== null) {
+                $el = strtolower($contact);
+                if (!isset($staffEmailsSent[$el]) && ($reporterEmail === '' || strcasecmp($reporterEmail, $contact) !== 0)) {
+                    try {
+                        $this->emailService->sendCommunityReportNewStaff(
+                            $contact,
+                            $this->displayNameFromEmail($contact),
+                            $tenantName,
+                            $summary,
+                            $reportId,
+                            $tenantId
+                        );
+                        $staffEmailsSent[$el] = true;
+                    } catch (\Throwable) {
+                    }
+                }
             }
         }
 
@@ -307,6 +363,32 @@ final class CommunityReportNotificationService
             } catch (\Throwable) {
             }
         }
+    }
+
+    private function tenantCommunityContactEmail(int $tenantId): ?string
+    {
+        if ($tenantId < 1) {
+            return null;
+        }
+        $row = $this->tenantRepository->findById($tenantId);
+        if ($row === null) {
+            return null;
+        }
+        $raw = $row['settings'] ?? null;
+        if (!is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return null;
+        }
+        $community = $decoded['community'] ?? null;
+        if (!is_array($community)) {
+            return null;
+        }
+        $contact = strtolower(trim((string) ($community['contact_email'] ?? '')));
+
+        return $contact !== '' && filter_var($contact, FILTER_VALIDATE_EMAIL) ? $contact : null;
     }
 
     private function truncateOneLine(string $text, int $max): string

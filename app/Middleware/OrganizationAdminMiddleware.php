@@ -44,6 +44,11 @@ class OrganizationAdminMiddleware
                 || $gate->allows('comms.notifications.history.view')
             )) {
                 $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/security-indicators') && (
+                $gate->allows('organization.recruitment.manage')
+                || $gate->allows('admin.members.moderate')
+            )) {
+                $scopedOrgAccess = true;
             }
         }
         if (!$scopedOrgAccess) {
