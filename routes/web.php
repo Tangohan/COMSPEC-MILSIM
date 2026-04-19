@@ -735,6 +735,8 @@ return function (Router $router) {
     $router->post('/back-office/cooperation/missions/{id}/accept', [InterteamMissionWebController::class, 'accept'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/decline', [InterteamMissionWebController::class, 'decline'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/activate', [InterteamMissionWebController::class, 'activate'], $interteamMw);
+    $router->post('/back-office/cooperation/missions/{id}/operational-stage', [InterteamMissionWebController::class, 'updateOperationalStage'], $interteamMw);
+    $router->post('/back-office/cooperation/missions/{id}/sitrep', [InterteamMissionWebController::class, 'addSitrep'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/grant-topic', [InterteamMissionWebController::class, 'grantTopic'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/grants/{grantId}/revoke', [InterteamMissionWebController::class, 'revokeGrant'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/close', [InterteamMissionWebController::class, 'close'], $interteamMw);

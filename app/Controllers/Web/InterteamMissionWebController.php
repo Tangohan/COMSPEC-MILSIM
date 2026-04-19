@@ -689,6 +689,10 @@ class InterteamMissionWebController
                 $typoKeyForLabel
             );
         }
+        $operationalStage = trim((string) ($mission['operational_stage'] ?? 'opord_draft'));
+        if ($operationalStage === '') {
+            $operationalStage = 'opord_draft';
+        }
 
         return [
             'interteamMission' => $mission,
@@ -721,7 +725,87 @@ class InterteamMissionWebController
                 ? $this->userRepository->listForTenant($tenantId, null, null, null, 120) : [],
             'cooperationActivationSnapshot' => $this->decodeActivationSnapshot($mission),
             'interteamCooperationTypologyLabel' => $interteamCooperationTypologyLabel,
+            'interteamOperationalStageChoices' => $this->operationalStageChoices(),
+            'interteamOperationalStage' => $operationalStage,
+            'interteamSitreps' => $this->interteamRepository->listSitreps($missionId, 40),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function operationalStageChoices(): array
+    {
+        return [
+            'opord_draft' => '1) Brouillon OPORD',
+            'command_validation' => '2) Validation commandement',
+            'execution' => '3) Exécution (SITREP)',
+            'closed_aar' => '4) Clôture + AAR',
+            'corrective_actions' => '5) Actions correctives',
+        ];
+    }
+
+    private function operationalStageErrorLabel(string $error): string
+    {
+        return match ($error) {
+            'workflow_unavailable' => 'Workflow opérationnel non disponible (migration manquante).',
+            'invalid_stage' => 'Statut opérationnel invalide.',
+            'mission_not_found' => 'Mission introuvable.',
+            'backward_transition_forbidden' => 'Retour arrière interdit par la doctrine.',
+            'jump_transition_forbidden' => 'Transition impossible : respectez l’ordre des étapes.',
+            'opord_required' => 'OPORD requis avant validation commandement.',
+            'mission_must_be_active' => 'La mission doit être active pour passer en exécution.',
+            'aar_required' => 'AAR requis pour clôturer la mission.',
+            default => 'Impossible de mettre à jour le statut opérationnel.',
+        };
+    }
+
+    private function normalizeDateTimeInput(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+        $normalized = str_replace('T', ' ', $value);
+        $dt = date_create($normalized);
+        if (!$dt) {
+            return null;
+        }
+
+        return $dt->format('Y-m-d H:i:s');
+    }
+
+    /**
+     * @return string|null
+     */
+    private function normalizeJsonOrNull(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+        json_decode($value, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function normalizeJsonOrArray(mixed $value): ?array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+        if (!is_string($value) || trim($value) === '') {
+            return null;
+        }
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? $decoded : null;
     }
 
     /**
@@ -923,6 +1007,96 @@ class InterteamMissionWebController
         $this->coopForumService->ensureCooperativeSpace($id);
         $this->cooperationAnnouncementDispatcher->dispatch(CooperationAnnouncementEvents::MISSION_ACTIVATED, $id, $userId, $tenantId, []);
         Session::flash('success', 'La coopération est en cours. Un fil commun a été préparé sur le brief de l’unité hôte ; les partages complémentaires restent possibles.');
+
+        return Response::redirect(cooperation_mission_show_url($id));
+    }
+
+    public function updateOperationalStage(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Jeton de sécurité invalide.');
+            $id = (int) ($params['id'] ?? 0);
+
+            return Response::redirect($id > 0 ? cooperation_mission_show_url($id) : cooperation_mission_index_url());
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$this->interteamRepository->tenantCanPilotMission($id, $tenantId) || !$this->canManageInterteam()) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(cooperation_mission_show_url($id));
+        }
+        $stage = trim((string) $request->input('operational_stage', ''));
+        $opord = trim((string) $request->input('opord_text', ''));
+        $aar = trim((string) $request->input('aar_summary', ''));
+        $validationNotes = trim((string) $request->input('command_validation_notes', ''));
+        $corrective = trim((string) $request->input('corrective_actions_json', ''));
+        $resources = trim((string) $request->input('linked_resources_json', ''));
+        $losses = trim((string) $request->input('simulated_losses_json', ''));
+        $lessons = trim((string) $request->input('lessons_learned_json', ''));
+
+        $fields = [
+            'opord_text' => $opord !== '' ? $opord : null,
+            'aar_summary' => $aar !== '' ? $aar : null,
+            'command_validation_notes' => $validationNotes !== '' ? $validationNotes : null,
+            'corrective_actions_json' => $this->normalizeJsonOrNull($corrective),
+            'linked_resources_json' => $this->normalizeJsonOrNull($resources),
+            'simulated_losses_json' => $this->normalizeJsonOrNull($losses),
+            'lessons_learned_json' => $this->normalizeJsonOrNull($lessons),
+        ];
+
+        $result = $this->interteamRepository->updateOperationalStage($id, $stage, $fields);
+        if (!($result['ok'] ?? false)) {
+            Session::flash('error', $this->operationalStageErrorLabel((string) ($result['error'] ?? '')));
+
+            return Response::redirect(cooperation_mission_show_url($id));
+        }
+        $this->interteamRepository->logEvent($id, $userId, $tenantId, 'operational_stage_updated', ['operational_stage' => $stage]);
+        Session::flash('success', 'Statut opérationnel mis à jour.');
+
+        return Response::redirect(cooperation_mission_show_url($id));
+    }
+
+    public function addSitrep(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Jeton de sécurité invalide.');
+            $id = (int) ($params['id'] ?? 0);
+
+            return Response::redirect($id > 0 ? cooperation_mission_show_url($id) : cooperation_mission_index_url());
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$this->interteamRepository->tenantCanPilotMission($id, $tenantId) || !$this->canManageInterteam()) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(cooperation_mission_show_url($id));
+        }
+        $mission = $this->interteamRepository->findById($id);
+        if (!$mission || (string) ($mission['operational_stage'] ?? '') !== 'execution') {
+            Session::flash('error', 'Les SITREP sont ouverts pendant la phase d’exécution.');
+
+            return Response::redirect(cooperation_mission_show_url($id));
+        }
+        $summary = trim((string) $request->input('sitrep_summary', ''));
+        if ($summary === '') {
+            Session::flash('error', 'Le contenu SITREP est obligatoire.');
+
+            return Response::redirect(cooperation_mission_show_url($id));
+        }
+        $occurredAt = trim((string) $request->input('sitrep_occurred_at', ''));
+        $occurredAt = $this->normalizeDateTimeInput($occurredAt);
+        $payload = $this->normalizeJsonOrArray($request->input('sitrep_payload_json', ''));
+        $ok = $this->interteamRepository->createSitrep($id, $userId, $tenantId, $summary, $occurredAt, $payload);
+        if (!$ok) {
+            Session::flash('error', 'Impossible d’enregistrer le SITREP.');
+
+            return Response::redirect(cooperation_mission_show_url($id));
+        }
+        $this->interteamRepository->logEvent($id, $userId, $tenantId, 'sitrep_logged', ['summary' => mb_substr($summary, 0, 220)]);
+        Session::flash('success', 'SITREP enregistré.');
 
         return Response::redirect(cooperation_mission_show_url($id));
     }

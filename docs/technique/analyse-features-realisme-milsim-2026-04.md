@@ -62,6 +62,36 @@ Pour renforcer la crédibilité et l’immersion, les améliorations les plus ef
 **Bénéfice réalisme**
 - Introduit discipline d’état-major + boucle d’apprentissage opérationnelle.
 
+**Doctrine opérationnelle proposée (cadre d’exécution)**
+- **Statut 1 — Brouillon OPORD**  
+  Rédaction de l’intention, METT-TC simplifié, objectifs, ROE, critères de succès/échec, plan de commandement et de soutien.
+  Sortie attendue : OPORD versionnée, prête à soumission.
+- **Statut 2 — Validation commandement**  
+  Revue hiérarchique (chef d’unité / XO / S3 selon organisation), contrôle readiness, cohérence logistique, conformité doctrine.
+  Sortie attendue : EXORD (ordre d’exécution) horodaté, mission verrouillée.
+- **Statut 3 — Exécution**  
+  Conduite en temps réel avec SITREP horodatés, journal tactique et traçabilité des décisions majeures (changement d’axe, appui, CASEVAC/MEDEVAC).
+  Sortie attendue : timeline exploitable et état final consolidé.
+- **Statut 4 — Clôture + AAR**  
+  Fermeture administrative et tactique, synthèse des résultats (objectifs atteints/non atteints), pertes simulées, incidents doctrine, facteurs clés.
+  Sortie attendue : AAR structuré validé commandement.
+- **Statut 5 — Actions correctives**  
+  Transformation du RETEX en plan d’action : mesures, propriétaire, échéance, statut, preuve de clôture.
+  Sortie attendue : backlog d’amélioration opérationnelle relié à la mission source.
+
+**Règles de transition (gates)**
+- Passage `brouillon -> validation` : OPORD complet + unités affectées + ressources prévisionnelles.
+- Passage `validation -> exécution` : approbation commandement + fenêtre temporelle fixée + diffusion EXORD.
+- Passage `exécution -> clôture` : fin de mission déclarée + SITREP final + état des pertes simulées.
+- Passage `clôture -> actions correctives` : AAR publié + recommandations priorisées.
+
+**Objets à relier nativement**
+- Mission ↔ unités engagées (rôle, chaîne de commandement, disponibilité).
+- Mission ↔ ressources (dotation initiale, consommation, réapprovisionnement).
+- Mission ↔ événements carte (zones, pings critiques, marqueurs, incidents).
+- Mission ↔ pertes simulées et statut médical.
+- Mission ↔ enseignements / actions correctives (traçabilité complète du cycle d’apprentissage).
+
 ---
 
 ### P0.3 — Gestion des rôles critiques (JTAC, Medic, RTO, SL, PL)

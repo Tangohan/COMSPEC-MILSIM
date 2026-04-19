@@ -223,6 +223,87 @@ class InterteamMissionRepository
     }
 
     /**
+     * @return list<string>
+     */
+    public function operationalStageChoices(): array
+    {
+        return ['opord_draft', 'command_validation', 'execution', 'closed_aar', 'corrective_actions'];
+    }
+
+    /**
+     * @return array{ok: bool, error?: string}
+     */
+    public function updateOperationalStage(int $missionId, string $targetStage, array $fields = []): array
+    {
+        if (!$this->tableExists() || !$this->columnExists('interteam_missions', 'operational_stage')) {
+            return ['ok' => false, 'error' => 'workflow_unavailable'];
+        }
+        $targetStage = trim($targetStage);
+        if (!in_array($targetStage, $this->operationalStageChoices(), true)) {
+            return ['ok' => false, 'error' => 'invalid_stage'];
+        }
+        $mission = $this->findById($missionId);
+        if (!$mission) {
+            return ['ok' => false, 'error' => 'mission_not_found'];
+        }
+        $currentStage = (string) ($mission['operational_stage'] ?? 'opord_draft');
+        $sequence = array_flip($this->operationalStageChoices());
+        $currentSeq = $sequence[$currentStage] ?? 0;
+        $targetSeq = $sequence[$targetStage] ?? 0;
+        if ($targetSeq < $currentSeq) {
+            return ['ok' => false, 'error' => 'backward_transition_forbidden'];
+        }
+        if ($targetSeq > $currentSeq + 1) {
+            return ['ok' => false, 'error' => 'jump_transition_forbidden'];
+        }
+
+        if ($targetStage === 'command_validation' && trim((string) ($fields['opord_text'] ?? $mission['opord_text'] ?? '')) === '') {
+            return ['ok' => false, 'error' => 'opord_required'];
+        }
+        if ($targetStage === 'execution' && ($mission['status'] ?? '') !== 'active') {
+            return ['ok' => false, 'error' => 'mission_must_be_active'];
+        }
+        if ($targetStage === 'closed_aar' && trim((string) ($fields['aar_summary'] ?? $mission['aar_summary'] ?? '')) === '') {
+            return ['ok' => false, 'error' => 'aar_required'];
+        }
+
+        $set = ['operational_stage = ?'];
+        $params = [$targetStage];
+        $allowedFields = [
+            'opord_text',
+            'command_validation_notes',
+            'aar_summary',
+            'corrective_actions_json',
+            'linked_resources_json',
+            'simulated_losses_json',
+            'lessons_learned_json',
+        ];
+        foreach ($allowedFields as $column) {
+            if (!array_key_exists($column, $fields) || !$this->columnExists('interteam_missions', $column)) {
+                continue;
+            }
+            $set[] = "`{$column}` = ?";
+            $params[] = $fields[$column];
+        }
+
+        if ($targetStage === 'command_validation' && $this->columnExists('interteam_missions', 'command_validated_at')) {
+            $set[] = 'command_validated_at = NOW()';
+        }
+        if ($targetStage === 'execution' && $this->columnExists('interteam_missions', 'execution_started_at')) {
+            $set[] = 'execution_started_at = COALESCE(execution_started_at, NOW())';
+        }
+        if ($targetStage === 'closed_aar' && $this->columnExists('interteam_missions', 'closed_at')) {
+            $set[] = 'closed_at = COALESCE(closed_at, NOW())';
+        }
+
+        $params[] = $missionId;
+        $sql = 'UPDATE interteam_missions SET ' . implode(', ', $set) . ', updated_at = NOW() WHERE id = ? LIMIT 1';
+        $this->pdo->prepare($sql)->execute($params);
+
+        return ['ok' => true];
+    }
+
+    /**
      * Première invitation : passage en « proposition envoyée » (status pending + phase proposed si colonnes présentes).
      */
     public function markProposalSentIfDraft(int $missionId): void
@@ -440,6 +521,60 @@ class InterteamMissionRepository
         $stmt->execute([$missionId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function sitrepTableExists(): bool
+    {
+        try {
+            $st = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'interteam_mission_sitreps' LIMIT 1");
+
+            return (bool) ($st && $st->fetch());
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listSitreps(int $missionId, int $limit = 40): array
+    {
+        if (!$this->sitrepTableExists() || $missionId <= 0) {
+            return [];
+        }
+        $limit = max(1, min(200, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT s.*, u.display_name AS actor_display_name
+             FROM interteam_mission_sitreps s
+             LEFT JOIN users u ON u.id = s.actor_user_id
+             WHERE s.mission_id = ?
+             ORDER BY s.occurred_at DESC, s.id DESC
+             LIMIT {$limit}"
+        );
+        $stmt->execute([$missionId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     */
+    public function createSitrep(int $missionId, int $actorUserId, int $actorTenantId, string $summary, ?string $occurredAt = null, ?array $payload = null): bool
+    {
+        if (!$this->sitrepTableExists() || $missionId <= 0 || trim($summary) === '') {
+            return false;
+        }
+        $timestamp = trim((string) $occurredAt);
+        if ($timestamp === '') {
+            $timestamp = date('Y-m-d H:i:s');
+        }
+        $json = $payload !== null ? json_encode($payload, JSON_UNESCAPED_UNICODE) : null;
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO interteam_mission_sitreps (mission_id, actor_user_id, actor_tenant_id, occurred_at, summary, payload_json, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, NOW())'
+        );
+
+        return $stmt->execute([$missionId, $actorUserId, $actorTenantId, $timestamp, $summary, $json]);
     }
 
     public function countEvents(int $missionId): int
