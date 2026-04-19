@@ -604,7 +604,10 @@ class AdminRecruitmentsController
             return;
         }
         $tenant = $this->tenantRepository->findById($tenantId);
-        $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
+        $tenantName = trim((string) ((is_array($tenant) ? $tenant : [])['name'] ?? ''));
+        if ($tenantName === '') {
+            $tenantName = 'Communauté';
+        }
         $token = $this->enlistmentRepository->ensureCandidatePortalToken($tenantId, (int) ($enlistment['id'] ?? 0), 24 * 7);
         $portalUrl = $token !== null ? url('enlistment/suivi/' . rawurlencode($token)) : url('enlistment');
         $statusLabel = match ($action) {
