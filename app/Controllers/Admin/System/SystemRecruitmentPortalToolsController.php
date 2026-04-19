@@ -38,6 +38,44 @@ final class SystemRecruitmentPortalToolsController
     {
         $tenantId = max(0, (int) $request->query('tenant_id', 0));
         $enlistmentId = max(0, (int) $request->query('enlistment_id', 0));
+
+        $tenantIdsPortalBlock = $this->blockedIndicatorRepository->distinctTenantIdsWithActivePortalRecruitmentBlocks(300);
+        $portalBlockSet = array_fill_keys($tenantIdsPortalBlock, true);
+
+        $tenantRows = $this->tenantRepository->listBasicAll();
+        usort($tenantRows, static function (array $a, array $b) use ($portalBlockSet): int {
+            $ida = (int) ($a['id'] ?? 0);
+            $idb = (int) ($b['id'] ?? 0);
+            $ha = isset($portalBlockSet[$ida]);
+            $hb = isset($portalBlockSet[$idb]);
+            if ($ha !== $hb) {
+                return $ha ? -1 : 1;
+            }
+
+            return strcasecmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+        });
+
+        $enlistmentSummaries = [];
+        if ($tenantId > 0) {
+            $enlistmentSummaries = $this->enlistmentRepository->listPortalAssistSelectSummariesForTenant($tenantId, 400);
+            $seenIds = [];
+            foreach ($enlistmentSummaries as $r) {
+                $seenIds[(int) ($r['id'] ?? 0)] = true;
+            }
+            if ($enlistmentId > 0 && !isset($seenIds[$enlistmentId])) {
+                $one = $this->enlistmentRepository->findForTenant($tenantId, $enlistmentId);
+                if ($one !== null) {
+                    array_unshift($enlistmentSummaries, [
+                        'id' => (int) ($one['id'] ?? 0),
+                        'email' => (string) ($one['email'] ?? ''),
+                        'status' => (string) ($one['status'] ?? ''),
+                        'first_name' => (string) ($one['first_name'] ?? ''),
+                        'last_name' => (string) ($one['last_name'] ?? ''),
+                    ]);
+                }
+            }
+        }
+
         $lookup = $this->buildLookupPayload($tenantId, $enlistmentId);
         $automodMailEnabled = $this->platformSettingsRepository->getBool(EnlistmentPortalAutoModerationCoordinator::SETTING_AUTOMOD_ALERT_EMAILS_ENABLED, true);
 
@@ -47,6 +85,9 @@ final class SystemRecruitmentPortalToolsController
             'lookup' => $lookup,
             'automodMailEnabled' => $automodMailEnabled,
             'automodMailSettingKey' => EnlistmentPortalAutoModerationCoordinator::SETTING_AUTOMOD_ALERT_EMAILS_ENABLED,
+            'tenantSelectRows' => $tenantRows,
+            'tenantIdsWithPortalBlocks' => $tenantIdsPortalBlock,
+            'enlistmentSelectRows' => $enlistmentSummaries,
         ]);
     }
 
@@ -170,9 +211,14 @@ final class SystemRecruitmentPortalToolsController
                 'pending',
                 $enlistmentId
             );
-            $lines[] = $mailOk
-                ? 'Jeton de suivi régénéré ou prolongé et courriel envoyé au candidat.'
-                : 'Jeton de suivi régénéré ou prolongé ; l’envoi du courriel a échoué ou est désactivé.';
+            if ($mailOk) {
+                $lines[] = 'Jeton de suivi régénéré ou prolongé et courriel envoyé au candidat.';
+            } else {
+                $err = $this->emailService->getLastSendError();
+                $lines[] = $err !== null && $err !== ''
+                    ? ('Jeton de suivi régénéré ou prolongé ; courriel non envoyé : ' . $err)
+                    : 'Jeton de suivi régénéré ou prolongé ; l’envoi du courriel a échoué ou est désactivé.';
+            }
         }
         if ($this->enlistmentTimelineRepository->tableExists()) {
             $this->enlistmentTimelineRepository->append(

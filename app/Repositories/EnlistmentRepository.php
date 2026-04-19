@@ -400,6 +400,39 @@ class EnlistmentRepository
     }
 
     /**
+     * Liste compacte des dossiers pour sélecteur assistance (portail / blocages).
+     *
+     * @return list<array{id: int, email: string, status: string, first_name: string, last_name: string}>
+     */
+    public function listPortalAssistSelectSummariesForTenant(int $tenantId, int $limit = 400): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $lim = max(1, min(800, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT id, email, status, first_name, last_name
+             FROM enlistments WHERE tenant_id = ?
+             ORDER BY id DESC
+             LIMIT {$lim}"
+        );
+        $stmt->execute([$tenantId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'email' => (string) ($row['email'] ?? ''),
+                'status' => (string) ($row['status'] ?? ''),
+                'first_name' => (string) ($row['first_name'] ?? ''),
+                'last_name' => (string) ($row['last_name'] ?? ''),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Enregistre une décision sur une candidature encore « soumise » (statut submitted).
      *
      * @return bool true si une ligne a été mise à jour

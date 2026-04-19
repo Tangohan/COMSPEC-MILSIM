@@ -3,6 +3,9 @@ declare(strict_types=1);
 /** @var array<string, mixed> $lookup */
 /** @var bool $automodMailEnabled */
 /** @var string $automodMailSettingKey */
+/** @var list<array{id: int|string, name: string, slug: string}> $tenantSelectRows */
+/** @var list<int> $tenantIdsWithPortalBlocks */
+/** @var list<array{id: int, email: string, status: string, first_name: string, last_name: string}> $enlistmentSelectRows */
 
 $lookup = is_array($lookup ?? null) ? $lookup : [];
 $tid = (int) ($lookup['tenant_id'] ?? 0);
@@ -11,8 +14,31 @@ $tenantName = $lookup['tenant_name'] ?? null;
 $enlistment = is_array($lookup['enlistment'] ?? null) ? $lookup['enlistment'] : null;
 $lookupErr = isset($lookup['error']) ? (string) $lookup['error'] : '';
 $blocks = is_array($lookup['portal_blocks'] ?? null) ? $lookup['portal_blocks'] : [];
+$tenantSelectRows = is_array($tenantSelectRows ?? null) ? $tenantSelectRows : [];
+$tenantIdsWithPortalBlocks = is_array($tenantIdsWithPortalBlocks ?? null) ? $tenantIdsWithPortalBlocks : [];
+$enlistmentSelectRows = is_array($enlistmentSelectRows ?? null) ? $enlistmentSelectRows : [];
+$portalBlockTenantSet = array_fill_keys(array_map(static fn ($v) => (int) $v, $tenantIdsWithPortalBlocks), true);
 $typeLab = static function (string $t): string {
     return $t === 'ip' ? 'Réseau' : ($t === 'email' ? 'E-mail (empreinte)' : $t);
+};
+$enlistStatusLabel = static function (string $s): string {
+    return match ($s) {
+        'submitted' => 'À traiter',
+        'reviewed' => 'Acceptée',
+        'rejected' => 'Refusée',
+        'blocked' => 'Non admis',
+        default => $s !== '' ? $s : '—',
+    };
+};
+$enlistmentOptionLabel = static function (array $r) use ($enlistStatusLabel): string {
+    $id = (int) ($r['id'] ?? 0);
+    $em = trim((string) ($r['email'] ?? ''));
+    $st = $enlistStatusLabel((string) ($r['status'] ?? ''));
+    $fn = trim((string) ($r['first_name'] ?? ''));
+    $ln = trim((string) ($r['last_name'] ?? ''));
+    $name = trim($fn . ' ' . $ln);
+
+    return '#' . $id . ' — ' . ($em !== '' ? $em : '—') . ' — ' . $st . ($name !== '' ? ' · ' . $name : '');
 };
 ?>
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-10">
@@ -64,19 +90,62 @@ $typeLab = static function (string $t): string {
     <section class="rounded-2xl border border-sky-200 bg-sky-50/50 p-6 shadow-sm mb-8">
         <h2 class="text-sm font-bold text-sky-950 mb-2">Assistance — réouvrir le suivi après un message bloqué</h2>
         <p class="text-sm text-sky-950/90 mb-4">
-            Saisissez l’identifiant de la <strong>communauté</strong> (tenant) et du <strong>dossier</strong> (enlistment), visibles sur la fiche recrutement back-office. Cela liste les blocages actifs liés au portail ; vous pouvez en lever un précis, ou lancer la réouverture guidée (e-mail dossier, option réseau, option nouveau lien).
+            Choisissez la <strong>communauté</strong> et le <strong>dossier</strong> dans les listes issues de la base (mêmes données que le back-office). Les dossiers affichés sont les plus récents de la communauté (limite technique) ; un numéro hors liste reste accessible si vous l’ouvrez via un lien direct. Ensuite : blocages actifs liés au portail, levée ciblée ou réouverture guidée (e-mail dossier, option réseau, option nouveau lien).
         </p>
-        <form method="get" action="<?= htmlspecialchars(url('admin/system/recruitment-portal-tools'), ENT_QUOTES, 'UTF-8') ?>" class="grid gap-3 sm:grid-cols-3 items-end mb-6">
+        <?php if ($tenantIdsWithPortalBlocks !== []): ?>
+            <p class="text-xs text-sky-900/90 mb-4 rounded-lg border border-sky-300/80 bg-white/80 px-3 py-2 leading-relaxed" role="status">
+                <strong>Détection en base</strong> — <?= count($tenantIdsWithPortalBlocks) ?> communauté<?= count($tenantIdsWithPortalBlocks) > 1 ? 's' : '' ?> avec au moins un blocage actif dont le motif mentionne le <strong>portail recrutement</strong>. Elles sont listées en premier dans le menu déroulant (préfixe ●).
+            </p>
+        <?php endif; ?>
+        <form method="get" action="<?= htmlspecialchars(url('admin/system/recruitment-portal-tools'), ENT_QUOTES, 'UTF-8') ?>" class="grid gap-3 sm:grid-cols-[1fr_1fr_auto] items-end mb-6">
             <div>
-                <label class="block text-xs text-slate-600 mb-1">ID communauté (tenant_id)</label>
-                <input type="number" name="tenant_id" value="<?= $tid > 0 ? $tid : '' ?>" min="1" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" required>
+                <label for="rpt-tenant_id" class="block text-xs text-slate-600 mb-1">Communauté</label>
+                <select
+                    id="rpt-tenant_id"
+                    name="tenant_id"
+                    required
+                    class="w-full max-w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+                    onchange="var e=document.getElementById('rpt-enlistment_id');if(e){e.value='';}this.form.submit();"
+                >
+                    <option value=""<?= $tid < 1 ? ' selected' : '' ?>>— Choisir une communauté —</option>
+                    <?php foreach ($tenantSelectRows as $tr): ?>
+                        <?php
+                        $trid = (int) ($tr['id'] ?? 0);
+                        if ($trid < 2) {
+                            continue;
+                        }
+                        $tname = trim((string) ($tr['name'] ?? ''));
+                        $mark = isset($portalBlockTenantSet[$trid]) ? '● ' : '';
+                        ?>
+                        <option value="<?= $trid ?>"<?= $tid === $trid ? ' selected' : '' ?>><?= htmlspecialchars($mark . $tname . ' (#' . $trid . ')', ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             <div>
-                <label class="block text-xs text-slate-600 mb-1">ID dossier (enlistment_id)</label>
-                <input type="number" name="enlistment_id" value="<?= $eid > 0 ? $eid : '' ?>" min="1" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" required>
+                <label for="rpt-enlistment_id" class="block text-xs text-slate-600 mb-1">Dossier de candidature</label>
+                <select
+                    id="rpt-enlistment_id"
+                    name="enlistment_id"
+                    class="w-full max-w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+                    <?= $tid < 1 ? ' disabled' : '' ?>
+                >
+                    <option value=""<?= $eid < 1 ? ' selected' : '' ?>><?= $tid < 1 ? '— Choisir d’abord une communauté —' : '— Choisir un dossier —' ?></option>
+                    <?php foreach ($enlistmentSelectRows as $er): ?>
+                        <?php
+                        $erid = (int) ($er['id'] ?? 0);
+                        if ($erid < 1) {
+                            continue;
+                        }
+                        ?>
+                        <option value="<?= $erid ?>"<?= $eid === $erid ? ' selected' : '' ?>><?= htmlspecialchars($enlistmentOptionLabel($er), ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
-            <button type="submit" class="rounded-lg bg-sky-700 px-4 py-2 text-sm font-bold text-white hover:bg-sky-800">Afficher</button>
+            <button type="submit" class="rounded-lg bg-sky-700 px-4 py-2 text-sm font-bold text-white hover:bg-sky-800 shrink-0">Afficher</button>
         </form>
+        <?php if ($tid > 0 && $eid < 1): ?>
+            <p class="text-xs text-sky-900/85 mb-4">Sélectionnez un dossier puis cliquez sur <strong>Afficher</strong> pour charger les blocages et la réouverture guidée.</p>
+        <?php endif; ?>
 
         <?php if ($tid > 0 && $eid > 0): ?>
             <?php if ($lookupErr !== ''): ?>
@@ -122,6 +191,10 @@ $typeLab = static function (string $t): string {
 
                 <div class="mt-8 rounded-xl border border-slate-200 bg-white p-4">
                     <h3 class="text-xs font-black uppercase tracking-wider text-slate-600 mb-3">Réouverture guidée (dossier)</h3>
+                    <?php
+                    $portalCandEmail = trim((string) ($enlistment['email'] ?? ''));
+                    $defaultPortalCandidateMail = $portalCandEmail !== '' && filter_var($portalCandEmail, FILTER_VALIDATE_EMAIL);
+                    ?>
                     <form method="post" action="<?= htmlspecialchars(url('admin/system/recruitment-portal-tools/reopen-enlistment'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-4" onsubmit="return confirm('Confirmer la réouverture pour ce dossier ?');">
                         <?= \App\Core\Csrf::field() ?>
                         <input type="hidden" name="tenant_id" value="<?= $tid ?>">
@@ -130,9 +203,18 @@ $typeLab = static function (string $t): string {
                             <input type="checkbox" name="also_revoke_ip_candidate" value="1" class="mt-1 rounded border-slate-300">
                             <span><strong>Lever aussi</strong> les blocages <strong>réseau</strong> actifs liés au portail pour les messages <strong>candidat</strong> sur cette communauté (peut toucher plusieurs adresses IP enregistrées).</span>
                         </label>
+                        <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 text-xs text-slate-600">
+                            <strong>Courriel candidat</strong> — le message utilise le modèle « mise à jour de candidature » avec le lien de suivi. Décochez l’option ci-dessous pour ne pas envoyer de courriel (ni régénérer le jeton).
+                            <?php if (!$defaultPortalCandidateMail): ?>
+                                <span class="block mt-1 text-amber-800 font-semibold">Adresse du dossier absente ou invalide : l’envoi automatique ne sera pas possible.</span>
+                            <?php endif; ?>
+                        </div>
                         <label class="flex items-start gap-2 text-sm text-slate-800">
-                            <input type="checkbox" name="refresh_token_and_email" value="1" class="mt-1 rounded border-slate-300">
-                            <span><strong>Régénérer / prolonger</strong> le jeton de suivi et <strong>envoyer un courriel</strong> au candidat avec le lien actuel (recommandé si le lien a expiré).</span>
+                            <span class="inline-flex flex-col gap-0.5">
+                                <input type="hidden" name="refresh_token_and_email" value="0">
+                                <input type="checkbox" name="refresh_token_and_email" value="1" class="mt-1 rounded border-slate-300"<?= $defaultPortalCandidateMail ? ' checked' : '' ?>>
+                            </span>
+                            <span><strong>Régénérer / prolonger</strong> le jeton de suivi et <strong>envoyer un courriel</strong> au candidat avec le lien actuel (coché par défaut si l’e-mail du dossier est valide).</span>
                         </label>
                         <button type="submit" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800">Appliquer la réouverture</button>
                     </form>

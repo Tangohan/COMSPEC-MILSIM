@@ -154,6 +154,36 @@ class BlockedIndicatorRepository
     }
 
     /**
+     * Identifiants de communautés avec au moins un blocage actif lié au portail recrutement (détection assistance site).
+     *
+     * @return list<int>
+     */
+    public function distinctTenantIdsWithActivePortalRecruitmentBlocks(int $limit = 200): array
+    {
+        $lim = max(1, min(500, $limit));
+        $st = $this->pdo->prepare(
+            "SELECT DISTINCT bi.tenant_id AS tenant_id
+             FROM blocked_indicators bi
+             WHERE bi.scope = 'tenant' AND bi.tenant_id IS NOT NULL AND bi.tenant_id > 0
+             AND bi.revoked_at IS NULL AND (bi.expires_at IS NULL OR bi.expires_at > NOW())
+             AND bi.reason IS NOT NULL AND bi.reason LIKE ?
+             ORDER BY bi.tenant_id ASC
+             LIMIT {$lim}"
+        );
+        $st->execute(['%Portail recrutement%']);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $out = [];
+        foreach ($rows as $row) {
+            $tid = (int) ($row['tenant_id'] ?? 0);
+            if ($tid > 0) {
+                $out[] = $tid;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Lève tous les blocages e-mail actifs pour une empreinte donnée sur une communauté.
      */
     public function revokeActiveTenantEmailHash(int $tenantId, string $emailHash): int
