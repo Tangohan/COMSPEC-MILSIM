@@ -1110,9 +1110,23 @@ if (!function_exists('personnel_file_render_admin_value')) {
 
                 <?php if ($personnelAssignmentHistory !== []): ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Historique des affectations</h2>
-                    <p class="text-sm text-slate-600 mb-6 max-w-3xl leading-relaxed">Toutes les périodes enregistrées dans le dossier (y compris les affectations terminées). Les durées sont en jours calendaires (début et fin inclus). Pour chaque ligne, le temps dans l’unité et le temps sur le poste affiché sont les mêmes ; si la personne a eu plusieurs passages dans la même unité, le cumul regroupe l’ensemble des périodes.</p>
-                    <div class="space-y-5">
+                    <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-6">
+                        <div>
+                            <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Historique des affectations</h2>
+                            <p class="text-sm text-slate-600 max-w-3xl leading-relaxed">Toutes les périodes enregistrées dans le dossier (y compris les affectations terminées). Les durées sont en jours calendaires (début et fin inclus). Pour chaque ligne, le temps dans l’unité et le temps sur le poste affiché sont les mêmes ; si la personne a eu plusieurs passages dans la même unité, le cumul regroupe l’ensemble des périodes.</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 w-full md:w-auto md:min-w-[21rem]">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                                <p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Périodes</p>
+                                <p class="text-base font-black text-slate-900"><?= count($personnelAssignmentHistory) ?></p>
+                            </div>
+                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                                <p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Unités concernées</p>
+                                <p class="text-base font-black text-slate-900"><?= count($histUnitPeriodCount) ?></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
                         <?php foreach ($personnelAssignmentHistory as $hist):
                             $hUnit = trim((string) ($hist['unit_name'] ?? ''));
                             $hRole = trim((string) ($hist['role_name'] ?? ''));
@@ -1132,43 +1146,49 @@ if (!function_exists('personnel_file_render_admin_value')) {
                             $hCumulDays = (int) ($personnelAssignmentHistoryUnitTotals[$hUnitId] ?? 0);
                             $hPeriodsInUnit = (int) ($histUnitPeriodCount[$hUnitId] ?? 0);
                             $hShowCumul = $hPeriodsInUnit > 1 && $hCumulDays > 0;
+                            $hRangeLabel = $hOpen ? ($hStartDisp . ' → En cours') : ($hStartDisp . ' → ' . ($hEndDisp ?? '—'));
                             ?>
-                        <div class="rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 bg-slate-50/40">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <?php if ($hPrimary): ?>
-                                <span class="inline-flex rounded-md bg-emerald-100/90 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-900">Période principale</span>
-                                <?php else: ?>
-                                <span class="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase text-slate-600">Période complémentaire</span>
-                                <?php endif; ?>
-                                <?php if ($hStatDisp !== ''): ?>
-                                <span class="inline-flex rounded-md bg-white px-2 py-0.5 text-[9px] font-bold uppercase text-slate-600 ring-1 ring-slate-200"><?= htmlspecialchars($hStatDisp) ?></span>
-                                <?php endif; ?>
-                                <?php if ($hOpen): ?>
-                                <span class="inline-flex rounded-md bg-sky-100 px-2 py-0.5 text-[9px] font-black uppercase text-sky-900">En cours</span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="grid md:grid-cols-2 gap-4">
-                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $hUnit !== '' ? htmlspecialchars($hUnit) : '—' ?></p></div>
-                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Fonction dans l’équipe</p><p class="text-sm font-black text-slate-900"><?= $hRole !== '' ? htmlspecialchars($hRole) : '—' ?></p></div>
-                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef d’unité (référence)</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($hCmdLabel) ?></p></div>
-                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Du</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($hStartDisp) ?></p></div>
-                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Au</p><p class="text-sm font-semibold text-slate-800"><?= $hOpen ? '—' : htmlspecialchars($hEndDisp ?? '—') ?></p></div>
-                                <?php if ($hUtype !== ''): ?>
-                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nature de l’unité</p><p class="text-sm text-slate-800"><?= htmlspecialchars($hUtype) ?></p></div>
-                                <?php endif; ?>
-                                <?php if ($hDur !== '' && $hDur !== '—'): ?>
-                                <div class="md:col-span-2 rounded-xl border border-slate-100 bg-white/80 px-4 py-3">
-                                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Durée sur cette période</p>
-                                    <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($hDur) ?><?php if ($hOpen): ?> <span class="text-xs font-medium text-slate-500 normal-case">(à ce jour)</span><?php endif; ?></p>
-                                    <p class="mt-1 text-[10px] text-slate-500 leading-relaxed">Temps dans l’unité et sur ce poste : même durée pour cette ligne.</p>
-                                    <?php if ($hShowCumul): ?>
-                                    <p class="mt-2 text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Cumul dans cette unité (toutes périodes)</p>
-                                    <p class="text-sm font-semibold text-emerald-800"><?= htmlspecialchars($personnelDurationDaysFr($hCumulDays)) ?></p>
+                        <article class="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60">
+                            <div class="absolute left-6 top-0 bottom-0 w-px bg-slate-200 hidden sm:block"></div>
+                            <div class="relative p-5 sm:pl-12 flex flex-col gap-4">
+                                <span class="hidden sm:block absolute left-[1.16rem] top-7 h-3 w-3 rounded-full border-2 border-white <?= $hOpen ? 'bg-sky-500' : 'bg-emerald-500' ?>"></span>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <?php if ($hPrimary): ?>
+                                    <span class="inline-flex rounded-md bg-emerald-100/90 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-900">Période principale</span>
+                                    <?php else: ?>
+                                    <span class="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase text-slate-600">Période complémentaire</span>
+                                    <?php endif; ?>
+                                    <?php if ($hStatDisp !== ''): ?>
+                                    <span class="inline-flex rounded-md bg-white px-2 py-0.5 text-[9px] font-bold uppercase text-slate-600 ring-1 ring-slate-200"><?= htmlspecialchars($hStatDisp) ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($hOpen): ?>
+                                    <span class="inline-flex rounded-md bg-sky-100 px-2 py-0.5 text-[9px] font-black uppercase text-sky-900">En cours</span>
+                                    <?php endif; ?>
+                                    <span class="inline-flex rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-bold text-slate-600"><?= htmlspecialchars($hRangeLabel) ?></span>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $hUnit !== '' ? htmlspecialchars($hUnit) : '—' ?></p></div>
+                                    <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Fonction dans l’équipe</p><p class="text-sm font-black text-slate-900"><?= $hRole !== '' ? htmlspecialchars($hRole) : '—' ?></p></div>
+                                    <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef d’unité (référence)</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($hCmdLabel) ?></p></div>
+                                    <?php if ($hUtype !== ''): ?>
+                                    <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nature de l’unité</p><p class="text-sm text-slate-800"><?= htmlspecialchars($hUtype) ?></p></div>
+                                    <?php endif; ?>
+                                    <?php if ($hDur !== '' && $hDur !== '—'): ?>
+                                    <div class="md:col-span-2 rounded-xl border border-slate-100 bg-white/90 px-4 py-3">
+                                        <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Durée sur cette période</p>
+                                        <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($hDur) ?><?php if ($hOpen): ?> <span class="text-xs font-medium text-slate-500 normal-case">(à ce jour)</span><?php endif; ?></p>
+                                        <p class="mt-1 text-[10px] text-slate-500 leading-relaxed">Temps dans l’unité et sur ce poste : même durée pour cette ligne.</p>
+                                        <?php if ($hShowCumul): ?>
+                                        <div class="mt-2 inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-2.5 py-1.5 ring-1 ring-emerald-100">
+                                            <p class="text-[9px] font-black uppercase tracking-wide text-emerald-700">Cumul unité</p>
+                                            <p class="text-sm font-semibold text-emerald-800"><?= htmlspecialchars($personnelDurationDaysFr($hCumulDays)) ?></p>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
                                     <?php endif; ?>
                                 </div>
-                                <?php endif; ?>
                             </div>
-                        </div>
+                        </article>
                         <?php endforeach; ?>
                     </div>
                 </section>
