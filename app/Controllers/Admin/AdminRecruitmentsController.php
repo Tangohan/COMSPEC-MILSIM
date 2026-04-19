@@ -14,6 +14,8 @@ use App\Repositories\EnlistmentTimelineRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
+use App\Services\Email\EmailEvents;
+use App\Services\EmailService;
 use App\Services\Recruitment\EnlistmentAcceptanceProvisioningService;
 use App\Services\Recruitment\TenantRecruitmentSettings;
 
@@ -27,6 +29,7 @@ class AdminRecruitmentsController
         private TenantRepository $tenantRepository,
         private RecruitmentOpeningRepository $recruitmentOpeningRepository,
         private UserRepository $userRepository,
+        private EmailService $emailService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -499,6 +502,10 @@ class AdminRecruitmentsController
                 $userId,
                 ['followup_action' => $action]
             );
+            $fresh = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+            if (is_array($fresh)) {
+                $this->notifyCandidate((int) $tenantId, $fresh, $action, $detail);
+            }
             Session::flash('success', $action === 'interview'
                 ? 'Demande d’entretien enregistrée. Le dossier reste en instruction.'
                 : 'Mise en attente enregistrée. Le dossier reste en instruction.');
@@ -529,6 +536,10 @@ class AdminRecruitmentsController
         Session::flash('success', $messages[$map[$action]]);
 
         $this->enlistmentTimelineRepository->logDecision((int) $tenantId, $id, $userId, $map[$action], $comment);
+        $fresh = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+        if (is_array($fresh)) {
+            $this->notifyCandidate((int) $tenantId, $fresh, $action, $comment ?? '');
+        }
 
         if ($ok && $map[$action] === 'reviewed') {
             $provision = $this->enlistmentAcceptanceProvisioningService->provisionAfterAccept(
@@ -567,5 +578,53 @@ class AdminRecruitmentsController
         }
 
         return Response::redirect(url('back-office/recruitments/' . $id));
+    }
+
+    /**
+     * @param array<string,mixed> $enlistment
+     */
+    private function notifyCandidate(int $tenantId, array $enlistment, string $action, string $comment): void
+    {
+        $email = strtolower(trim((string) ($enlistment['email'] ?? '')));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+        $tenant = $this->tenantRepository->findById($tenantId);
+        $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
+        $token = $this->enlistmentRepository->ensureCandidatePortalToken($tenantId, (int) ($enlistment['id'] ?? 0), 24 * 7);
+        $portalUrl = $token !== null ? url('enlistment/suivi/' . rawurlencode($token)) : url('enlistment');
+        $statusLabel = match ($action) {
+            'accept' => 'Acceptée',
+            'reject' => 'Refusée',
+            'block' => 'Non admis',
+            'interview' => 'Entretien proposé',
+            default => 'Mise à jour du dossier',
+        };
+        $subject = 'Candidature ' . $statusLabel . ' — ' . $tenantName;
+        $safeComment = nl2br(htmlspecialchars(trim($comment), ENT_QUOTES, 'UTF-8'));
+        $html = '<div style="font-family:Inter,Arial,sans-serif;background:#f1f5f9;padding:20px;color:#0f172a">'
+            . '<div style="max-width:680px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden">'
+            . '<div style="background:#0f172a;padding:20px;color:#fff"><p style="margin:0;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#34d399">Recrutement</p><h2 style="margin:8px 0 0;font-size:22px">Statut: ' . htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') . '</h2></div>'
+            . '<div style="padding:20px"><p>Votre dossier de candidature a été mis à jour.</p>'
+            . ($safeComment !== '' ? '<p style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px"><strong>Commentaire équipe :</strong><br>' . $safeComment . '</p>' : '')
+            . '<p>Suivre le dossier et échanger avec l’équipe :</p>'
+            . '<p><a href="' . htmlspecialchars($portalUrl, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block;background:#0f172a;color:#fff;padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:700">Ouvrir mon suivi candidature</a></p>'
+            . '<p style="font-size:12px;color:#64748b">Ce lien temporaire reste valide 7 jours.</p></div></div></div>';
+        $text = "Mise à jour de votre dossier: {$statusLabel}\n\n"
+            . ($comment !== '' ? ("Commentaire équipe:\n" . $comment . "\n\n") : '')
+            . "Suivi candidature: {$portalUrl}\n";
+        $msgBody = 'Statut : ' . $statusLabel . ($comment !== '' ? ("\n\n" . $comment) : '');
+        $this->enlistmentRepository->appendCandidatePortalMessage($tenantId, (int) ($enlistment['id'] ?? 0), 'staff', $msgBody);
+
+        $this->emailService->send(
+            EmailEvents::TENANT_EMAIL_ACTIVITY,
+            $email,
+            $subject,
+            $html,
+            $text,
+            $tenantId,
+            null,
+            ['purpose' => 'recruitment_status_update', 'enlistment_id' => (int) ($enlistment['id'] ?? 0), 'action' => $action]
+        );
     }
 }

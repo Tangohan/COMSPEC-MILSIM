@@ -1279,12 +1279,27 @@ class AdminTrainingStudioController
         $variantKey = trim((string) $request->input('lms_theme_variant', 'default'));
         $variants = array_keys(function_exists('training_lms_theme_variant_labels_fr') ? training_lms_theme_variant_labels_fr() : []);
         $variant = in_array($variantKey, $variants, true) ? $variantKey : 'default';
+        $loaderImage = trim((string) $request->input('lms_opening_loader_image', ''));
+        if ($loaderImage !== '') {
+            $loaderImage = substr($loaderImage, 0, 255);
+        }
+        $loaderTitle = trim((string) $request->input('lms_opening_loader_title', ''));
+        if ($loaderTitle !== '') {
+            $loaderTitle = substr($loaderTitle, 0, 120);
+        }
+        $loaderBody = trim((string) $request->input('lms_opening_loader_body', ''));
+        if ($loaderBody !== '') {
+            $loaderBody = substr($loaderBody, 0, 320);
+        }
         $payload = [
             'accent' => $accent,
             'accentRgb' => $rgb,
             'font' => $font,
             'radius' => $radius,
             'variant' => $variant,
+            'openingLoaderImage' => $loaderImage,
+            'openingLoaderTitle' => $loaderTitle,
+            'openingLoaderBody' => $loaderBody,
         ];
 
         return json_encode(array_merge($base, $payload), JSON_UNESCAPED_UNICODE);

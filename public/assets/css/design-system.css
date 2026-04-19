@@ -1,0 +1,132 @@
+:root {
+  --ds-color-bg: #f8fafc;
+  --ds-color-surface: #ffffff;
+  --ds-color-border: #e2e8f0;
+  --ds-color-text: #0f172a;
+  --ds-color-muted: #64748b;
+  --ds-color-primary: #059669;
+  --ds-color-primary-strong: #065f46;
+  --ds-color-danger: #b91c1c;
+  --ds-color-warning: #b45309;
+  --ds-color-info: #1d4ed8;
+
+  --ds-radius-sm: 0.75rem;
+  --ds-radius-md: 1rem;
+  --ds-radius-lg: 1.5rem;
+
+  --ds-space-2: 0.5rem;
+  --ds-space-3: 0.75rem;
+  --ds-space-4: 1rem;
+  --ds-space-5: 1.25rem;
+
+  --ds-focus-ring: 0 0 0 4px rgba(16, 185, 129, 0.15);
+}
+
+.ds-card {
+  background: var(--ds-color-surface);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-lg);
+}
+
+.ds-label {
+  font-size: 0.56rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #94a3b8;
+  margin-left: 0.25rem;
+}
+
+.ds-help {
+  font-size: 0.75rem;
+  color: var(--ds-color-muted);
+}
+
+.ds-input {
+  width: 100%;
+  border: 2px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: #fff;
+  color: var(--ds-color-text);
+  padding: 0.875rem 1rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.ds-input:focus {
+  outline: none;
+  border-color: var(--ds-color-primary);
+  box-shadow: var(--ds-focus-ring);
+}
+
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border-radius: var(--ds-radius-md);
+  padding: 1rem 1.25rem;
+  font-size: 0.69rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  transition: transform 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.ds-btn:hover {
+  transform: translateY(-1px);
+}
+
+.ds-btn--primary {
+  background: #0f172a;
+  color: #fff;
+}
+
+.ds-btn--primary:hover {
+  background: var(--ds-color-primary);
+}
+
+.ds-btn--secondary {
+  background: var(--ds-color-primary);
+  color: #fff;
+}
+
+.ds-btn--secondary:hover {
+  background: #0f172a;
+}
+
+.ds-btn--ghost {
+  background: transparent;
+  color: #64748b;
+}
+
+.ds-state {
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid transparent;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.ds-state--success {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.ds-state--warning {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.ds-state--danger {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.ds-state--info {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1e40af;
+}

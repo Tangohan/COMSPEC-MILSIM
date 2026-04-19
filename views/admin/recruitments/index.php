@@ -108,7 +108,7 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
         }
     }
 </style>
-<div class="recruitment-bureau min-h-[calc(100vh-3.5rem)] bg-gradient-to-b from-[#ebe6dc] via-[#f5f2eb] to-[#e8e4db]">
+<div class="recruitment-bureau min-h-[calc(100vh-3.5rem)]">
     <div class="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
 
         <?php if ($flashOk): ?>
@@ -118,7 +118,7 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
             <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 shadow-sm sm:px-5" role="alert"><?= htmlspecialchars((string) $flashErr) ?></div>
         <?php endif; ?>
 
-        <div class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-[0_25px_60px_-20px_rgba(28,45,65,0.35)] ring-1 ring-black/[0.03]">
+        <div class="overflow-hidden rounded-2xl border border-stone-300/80 bg-[#f8f6f1] shadow-[0_25px_60px_-20px_rgba(28,45,65,0.25)] ring-1 ring-black/[0.03]">
             <!-- Bandeau type « dossier service » -->
             <div class="relative bg-[#1c2d41] px-5 py-6 sm:px-8 sm:py-8">
                 <div class="absolute inset-0 bg-[linear-gradient(105deg,rgba(201,162,39,0.12)_0%,transparent_45%)] pointer-events-none" aria-hidden="true"></div>
@@ -152,7 +152,7 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
                 </div>
             </div>
 
-            <div class="border-b border-stone-200 bg-[#faf8f3] px-4 py-6 sm:px-8 sm:py-8">
+            <div class="border-b border-stone-200 bg-white/80 px-4 py-6 sm:px-8 sm:py-8">
                 <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:gap-5">
                     <div class="rounded-xl border border-stone-200/90 bg-white p-4 shadow-sm sm:p-5">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-stone-500">Total dossiers</p>

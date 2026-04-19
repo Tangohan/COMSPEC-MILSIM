@@ -13,6 +13,76 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 3001;
 const UPLOAD_DIR = path.join(__dirname, 'uploads', 'intel');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || '__Host-comspec.sid';
+const SESSION_COOKIE_MAX_AGE_MS = parseInt(process.env.SESSION_COOKIE_MAX_AGE_MS || '', 10) || (8 * 60 * 60 * 1000);
+const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '', 10) || 60_000;
+const RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '', 10) || 120;
+const AUTH_RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '', 10) || 30;
+const rateBuckets = new Map();
+
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.length) return forwarded.split(',')[0].trim();
+  if (Array.isArray(forwarded) && forwarded.length) return forwarded[0].trim();
+  return req.ip || req.socket?.remoteAddress || 'unknown';
+}
+
+function writeAuditEvent(eventType, outcome, req, details) {
+  try {
+    const actor = req.headers['x-comspec-actor'] || req.body?.author || req.body?.call_sign || req.body?.callsign || null;
+    const payload = details ? JSON.stringify(details) : null;
+    db.prepare(
+      `INSERT INTO security_audit_log (event_type, outcome, route, method, actor, ip, details)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(eventType, outcome, req.originalUrl, req.method, actor, getClientIp(req), payload);
+  } catch (error) {
+    console.warn('Failed to write security audit event:', error.message);
+  }
+}
+
+function resolveAcceptedSecrets() {
+  const envSecrets = (process.env.ATAK_INTEL_SECRETS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  const legacySecrets = [process.env.ATAK_INTEL_SECRET, process.env.X_COMSPEC_KEY]
+    .map(s => (s || '').trim())
+    .filter(Boolean);
+  return new Set([...envSecrets, ...legacySecrets]);
+}
+
+function extractAccessToken(req, headerNames) {
+  for (const header of headerNames) {
+    const value = req.headers[header];
+    if (typeof value === 'string' && value.trim() !== '') return value.trim();
+  }
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    return req.headers.authorization.slice(7).trim();
+  }
+  return '';
+}
+
+function enforceRateLimit(scope, maxRequests) {
+  return (req, res, next) => {
+    const routeKey = `${scope}:${req.method}:${req.path}:${getClientIp(req)}`;
+    const now = Date.now();
+    const bucket = rateBuckets.get(routeKey);
+    if (!bucket || (now - bucket.windowStart) > RATE_LIMIT_WINDOW_MS) {
+      rateBuckets.set(routeKey, { count: 1, windowStart: now });
+      return next();
+    }
+    bucket.count += 1;
+    if (bucket.count > maxRequests) {
+      writeAuditEvent('rate_limit', 'blocked', req, { scope, limit: maxRequests, windowMs: RATE_LIMIT_WINDOW_MS });
+      return res.status(429).json({
+        error: 'Too many requests',
+        message: 'Limite de débit dépassée.',
+        retryAfterSeconds: Math.ceil((RATE_LIMIT_WINDOW_MS - (now - bucket.windowStart)) / 1000)
+      });
+    }
+    return next();
+  };
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
@@ -21,15 +91,36 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 function atakArmaAuth(req, res, next) {
-  const secret = process.env.ATAK_INTEL_SECRET || process.env.X_COMSPEC_KEY;
-  if (!secret || secret === '') return next();
-  const token = req.headers['x-comspec-key'] || req.headers['x-atak-token'] ||
-    (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') && req.headers.authorization.slice(7));
-  if (token === secret) return next();
+  const acceptedSecrets = resolveAcceptedSecrets();
+  if (acceptedSecrets.size === 0) return next();
+  const token = extractAccessToken(req, ['x-comspec-key', 'x-atak-token']);
+  if (acceptedSecrets.has(token)) return next();
+  writeAuditEvent('auth', 'denied', req, { reason: 'invalid token', authType: 'atak' });
   res.status(401).json({ error: 'Unauthorized', message: 'Clé Arma manquante ou invalide (X-COMSPEC-KEY / ATAK_INTEL_SECRET).' });
 }
 
-app.use(cors({ origin: true }));
+app.set('trust proxy', 1);
+app.use((req, res, next) => {
+  const isTls = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'");
+  res.cookie(SESSION_COOKIE_NAME, 'active', {
+    maxAge: SESSION_COOKIE_MAX_AGE_MS,
+    httpOnly: true,
+    secure: isTls,
+    sameSite: 'strict',
+    path: '/'
+  });
+  next();
+});
+app.use(cors({ origin: true, credentials: true }));
+app.use(enforceRateLimit('global', RATE_LIMIT_MAX_REQUESTS));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -188,7 +279,7 @@ app.get('/api/atak/sigint/zones', (req, res) => {
 });
 
 // --- REST: ATAK mod position update (upsert by call_sign) — BFT: role, health, fuel, ammo in extra ---
-app.post('/api/atak/position', atakArmaAuth, (req, res) => {
+app.post('/api/atak/position', enforceRateLimit('auth', AUTH_RATE_LIMIT_MAX_REQUESTS), atakArmaAuth, (req, res) => {
   lastArmaActivityTs = Date.now();
   const map = req.body.mapId || req.body.map_id || mapId;
   const call_sign = req.body.call_sign || req.body.callsign || 'Unknown';
@@ -213,6 +304,7 @@ app.post('/api/atak/position', atakArmaAuth, (req, res) => {
   }
   const units = db.prepare('SELECT * FROM units WHERE map_id = ?').all(map);
   io.to(`map-${map}`).emit('ProfilesUpdate', { units });
+  writeAuditEvent('position_update', 'success', req, { mapId: map, callSign: call_sign });
   res.status(200).json({ ok: true });
 });
 
@@ -279,7 +371,7 @@ app.post('/api/pings', (req, res) => {
 });
 
 // --- REST: ATAK Intel (Ping / Chat / Photo from mod SendIntel) ---
-app.post('/api/atak/intel', atakArmaAuth, (req, res) => {
+app.post('/api/atak/intel', enforceRateLimit('auth', AUTH_RATE_LIMIT_MAX_REQUESTS), atakArmaAuth, (req, res) => {
   const map = req.body.mapId || mapId;
   const { type, body, data, author: reqAuthor } = req.body;
   const author = reqAuthor || 'Arma';
@@ -375,14 +467,15 @@ app.get('/api/intel/photos', (req, res) => {
 // POST /api/intel/photos — Contract for mod CTAB (Arma): multipart with `photo` (file), `mapId`, `author` or `callsign`, `pos_x`, `pos_y` (optional). If ATAK_INTEL_SECRET is set, require header X-ATAK-Token or Authorization: Bearer <secret>.
 // Optional auth for POST /api/intel/photos (mod CTAB from Arma): set ATAK_INTEL_SECRET in env, mod sends X-ATAK-Token or Authorization: Bearer <secret>
 function intelPhotoAuth(req, res, next) {
-  const secret = process.env.ATAK_INTEL_SECRET;
-  if (!secret || secret === '') return next();
-  const token = req.headers['x-atak-token'] || (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') && req.headers.authorization.slice(7));
-  if (token === secret) return next();
+  const acceptedSecrets = resolveAcceptedSecrets();
+  if (acceptedSecrets.size === 0) return next();
+  const token = extractAccessToken(req, ['x-atak-token', 'x-comspec-key']);
+  if (acceptedSecrets.has(token)) return next();
+  writeAuditEvent('auth', 'denied', req, { reason: 'invalid token', authType: 'intel_photo' });
   res.status(401).json({ error: 'Unauthorized', message: 'Token manquant ou invalide pour l\'upload CTAB.' });
 }
 
-app.post('/api/intel/photos', intelPhotoAuth, upload.single('photo'), (req, res) => {
+app.post('/api/intel/photos', enforceRateLimit('auth', AUTH_RATE_LIMIT_MAX_REQUESTS), intelPhotoAuth, upload.single('photo'), (req, res) => {
   const map = req.body.mapId || mapId;
   const author = req.body.author || req.body.callsign || 'Unknown';
   const pos_x = req.body.pos_x != null ? parseFloat(req.body.pos_x) : null;
@@ -394,7 +487,14 @@ app.post('/api/intel/photos', intelPhotoAuth, upload.single('photo'), (req, res)
   const row = db.prepare('SELECT * FROM intel_photos WHERE id = ?').get(id);
   row.url = '/uploads/' + (req.file ? 'intel/' + req.file.filename : filepath);
   io.to(`map-${map}`).emit('IntelPhoto', row);
+  writeAuditEvent('intel_photo_upload', 'success', req, { mapId: map, filename: row.filename });
   res.status(201).json(row);
+});
+
+app.get('/api/security/audit', atakArmaAuth, enforceRateLimit('auth', AUTH_RATE_LIMIT_MAX_REQUESTS), (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+  const rows = db.prepare('SELECT * FROM security_audit_log ORDER BY created_at DESC LIMIT ?').all(limit);
+  res.json(rows);
 });
 
 // --- Socket.IO: Map sync (MapHub-compatible) ---

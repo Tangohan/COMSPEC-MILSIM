@@ -6,6 +6,7 @@ namespace App\Controllers\Api;
 
 use App\Core\Request;
 use App\Core\Response;
+use App\Support\Api\ApiResponder;
 use App\Repositories\CommunityEventRepository;
 use App\Services\Platform\FeatureGateService;
 
@@ -20,10 +21,10 @@ final class IntegrationsPublicEventsController
     {
         $tenantId = (int) $request->attribute('integration_tenant_id', 0);
         if ($tenantId < 1) {
-            return Response::json(['error' => 'Contexte invalide.'], 400);
+            return ApiResponder::error('invalid_context', 'Contexte invalide.', 400);
         }
         if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
-            return Response::json(['events' => [], 'notice' => 'module_disabled'], 200);
+            return ApiResponder::success(['events' => [], 'notice' => 'module_disabled']);
         }
         $rows = $this->events->upcomingForTenant($tenantId, 100);
         $out = [];
@@ -37,6 +38,6 @@ final class IntegrationsPublicEventsController
             ];
         }
 
-        return Response::json(['events' => $out]);
+        return ApiResponder::success(['events' => $out]);
     }
 }
