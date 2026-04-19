@@ -91,31 +91,7 @@ if ($updatedAt !== '' && ($lastActivity === '' || strtotime($updatedAt) > strtot
     $lastActivity = $updatedAt;
 }
 $lastActivityFmt = $lastActivity !== '' ? date('d/m/Y à H:i', strtotime($lastActivity) ?: time()) : '—';
-$portalSteps = [
-    [
-        'id' => 'depot',
-        'label' => 'Dépôt reçu',
-        'hint' => 'Votre candidature est enregistrée.',
-        'state' => 'done',
-    ],
-    [
-        'id' => 'suivi',
-        'label' => 'Suivi & échanges',
-        'hint' => 'Messages, pièces et enregistrements vocaux avec l’équipe.',
-        'state' => in_array($status, ['reviewed', 'rejected', 'blocked'], true) ? 'done' : 'current',
-    ],
-    [
-        'id' => 'decision',
-        'label' => 'Décision',
-        'hint' => match ($status) {
-            'reviewed' => 'Dossier accepté par la communauté.',
-            'rejected' => 'Dossier refusé. Vous pouvez écrire à l’équipe pour des précisions.',
-            'blocked' => 'Dossier classé non admis.',
-            default => 'L’équipe rend sa décision sur ce dossier.',
-        },
-        'state' => in_array($status, ['reviewed', 'rejected', 'blocked'], true) ? 'done' : 'upcoming',
-    ],
-];
+$portalSteps = is_array($portalSteps ?? null) ? $portalSteps : [];
 $initials = '';
 if ($fullName !== '') {
     $parts = preg_split('/\s+/u', $fullName, -1, PREG_SPLIT_NO_EMPTY);
@@ -292,21 +268,38 @@ $tailwindHead = (string) ob_get_clean();
                         $stState = (string) ($st['state'] ?? 'upcoming');
                         $isDone = $stState === 'done';
                         $isCurrent = $stState === 'current';
-                        $dotClass = $isDone
-                            ? 'border-emerald-600 bg-emerald-500 text-white'
-                            : ($isCurrent ? 'border-amber-500 bg-amber-500 text-white ring-4 ring-amber-200' : 'border-slate-200 bg-white text-slate-300');
+                        $isSkipped = $stState === 'skipped';
+                        $dotClass = $isSkipped
+                            ? 'border-slate-200 bg-slate-100 text-slate-400'
+                            : ($isDone
+                                ? 'border-emerald-600 bg-emerald-500 text-white'
+                                : ($isCurrent ? 'border-amber-500 bg-amber-500 text-white ring-4 ring-amber-200' : 'border-slate-200 bg-white text-slate-300'));
                         $lineClass = $si < count($portalSteps) - 1 ? ($isDone ? 'bg-emerald-200' : 'bg-slate-200') : '';
+                        $sid = (string) ($st['id'] ?? '');
+                        $currentNote = match ($sid) {
+                            'suivi' => 'Étape en cours — continuez à échanger sur ce fil si besoin.',
+                            'decision' => 'Étape en cours — la décision est en cours de préparation ou de transmission.',
+                            'instruction' => 'Étape en cours — l’équipe examine votre dossier.',
+                            'reception' => 'Étape en cours — votre dossier est pris en compte.',
+                            'moderation', 'escalation', 'restore' => 'Étape en cours — des contrôles ou corrections d’accès peuvent être en cours.',
+                            'staff_notes' => 'Étape en cours — l’équipe consigne des repères sur les étapes du dossier (sans afficher le détail ici).',
+                            'adhesion' => 'Étape en cours — finalisation de votre accès membre si la candidature est acceptée.',
+                            default => 'Étape en cours — consultez cette page régulièrement pour les mises à jour.',
+                        };
                         ?>
                         <li class="relative flex gap-4 pb-8 last:pb-0"<?= $isCurrent ? ' aria-current="step"' : '' ?>>
                             <?php if ($si < count($portalSteps) - 1): ?>
                                 <span class="absolute left-[0.65rem] top-8 bottom-0 w-0.5 <?= htmlspecialchars($lineClass, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
                             <?php endif; ?>
-                            <span class="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-black <?= $dotClass ?>" aria-hidden="true"><?= $isDone ? '✓' : (string) ($si + 1) ?></span>
+                            <span class="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-black <?= $dotClass ?>" aria-hidden="true"><?= $isSkipped ? '–' : ($isDone ? '✓' : htmlspecialchars($marker, ENT_QUOTES, 'UTF-8')) ?></span>
                             <div class="min-w-0 pt-0.5">
-                                <p class="text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($st['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                                <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= htmlspecialchars((string) ($st['hint'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php if ($isCurrent && (string) ($st['id'] ?? '') === 'suivi'): ?>
-                                    <p class="mt-2 text-[11px] font-semibold text-amber-800">Étape en cours — continuez à échanger sur ce fil si besoin.</p>
+                                <p class="text-sm font-bold <?= $isSkipped ? 'text-slate-500' : 'text-slate-900' ?>"><?= htmlspecialchars((string) ($st['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="mt-1 text-xs leading-relaxed <?= $isSkipped ? 'text-slate-500' : 'text-slate-600' ?>"><?= htmlspecialchars((string) ($st['hint'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php if ($isCurrent): ?>
+                                    <p class="mt-2 text-[11px] font-semibold text-amber-800"><?= htmlspecialchars($currentNote, ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php endif; ?>
+                                <?php if (!empty($st['foot'])): ?>
+                                    <p class="mt-2 text-[11px] font-medium text-slate-500"><?= htmlspecialchars((string) $st['foot'], ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php endif; ?>
                             </div>
                         </li>

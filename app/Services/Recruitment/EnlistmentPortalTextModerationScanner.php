@@ -308,6 +308,20 @@ final class EnlistmentPortalTextModerationScanner
             'je ne merite pas de vivre',
             'je ne merite pas la vie',
             'je ne merite pas d exister',
+            // Formulations fréquentes en anglais (profils bilingues, jeux, communautés).
+            'self harm',
+            'hurt myself',
+            'cut myself',
+            'kill myself',
+            'want to die',
+            'wish i was dead',
+            'end my life',
+            'end it all',
+            'cutter',
+            'lame de rasoir',
+            'ouvrir les veines',
+            'se laisser mourir',
+            'me laisser mourir',
         ];
     }
 
@@ -624,6 +638,20 @@ final class EnlistmentPortalTextModerationScanner
             'fuck you',
             'fuck off',
             'kill yourself',
+            'go die',
+            'drop dead',
+            'piece of shit',
+            'son of a bitch',
+            'motherfucker',
+            'dumb bitch',
+            'dirty whore',
+            'vieux con',
+            'vieille conne',
+            'petite pute',
+            'grosse folle',
+            'sale folle',
+            'ferme ta grande gueule',
+            'nique ton daron',
         ];
     }
 
@@ -635,6 +663,9 @@ final class EnlistmentPortalTextModerationScanner
         $w = [
             // Abréviations / argot écrit (texte normalisé en minuscules : FDP → fdp, FTG → ftg, etc.).
             'kys', 'stfu', 'gtfo',
+            'faggot', 'fgt', 'chink', 'spic', 'wetback',
+            'bitch', 'whore', 'slut', 'cunt', 'asshole', 'dickhead', 'motherfucker', 'prick', 'twat',
+            'nigger', 'nigga',
             'fdp', 'ftg', 'slp', 'ptg', 'tgm', 'tml', 'tmr', 'ntg', 'ntm', 'ntm2', 'nt1', 'nt1m',
             'ptn', 'pt1', 'pt1n', 'pd', 'pds', 'pd2', 'pd3', 'tg', 'tgl', 'tglpt',
             'n1k', 'n1que', 'n1quer', 'n1k1', 'n1k3', 'n1k3r',

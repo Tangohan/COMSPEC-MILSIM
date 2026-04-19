@@ -16,6 +16,7 @@ use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
 use App\Services\Analytics\AnalyticsEventService;
 use App\Services\Analytics\AnalyticsSubjectType;
+use App\Services\Recruitment\EnlistmentCandidatePortalJourneyService;
 use App\Services\Recruitment\EnlistmentPortalAttachmentService;
 use App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator;
 use App\Services\Recruitment\EnlistmentPortalMessagingNotificationService;
@@ -35,6 +36,7 @@ final class EnlistmentCandidatePortalController
         private EnlistmentTimelineRepository $enlistmentTimelineRepository,
         private EnlistmentRecruitmentEngagementRepository $recruitmentEngagementRepository,
         private AnalyticsEventService $analyticsEventService,
+        private EnlistmentCandidatePortalJourneyService $candidatePortalJourneyService,
     ) {}
 
     /**
@@ -75,6 +77,12 @@ final class EnlistmentCandidatePortalController
         $enlistmentId = (int) ($row['id'] ?? 0);
         $messages = $this->enlistmentRepository->listCandidatePortalMessages($tenantId, $enlistmentId);
         $attachments = $this->enlistmentRepository->listCandidatePortalAttachments($tenantId, $enlistmentId);
+        $timelineRows = [];
+        if ($this->enlistmentTimelineRepository->tableExists()) {
+            $this->enlistmentTimelineRepository->seedLegacyIfEmpty($tenantId, $enlistmentId, $row);
+            $timelineRows = $this->enlistmentTimelineRepository->listForEnlistment($tenantId, $enlistmentId);
+        }
+        $portalSteps = $this->candidatePortalJourneyService->buildSteps($row, $timelineRows, count($messages), count($attachments));
         $ageDays = $this->enlistmentAgeDaysPortal($row);
         $retroEligible = $ageDays !== null && $ageDays >= 30;
         $retroTable = $this->recruitmentEngagementRepository->retroTableExists();
@@ -96,6 +104,7 @@ final class EnlistmentCandidatePortalController
             'portalRetroEligible' => $retroEligible,
             'candidateRetroFeedback' => $candidateRetroRow,
             'portalRetroTableReady' => $retroTable,
+            'portalSteps' => $portalSteps,
         ]);
     }
 

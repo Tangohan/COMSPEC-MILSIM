@@ -1015,6 +1015,7 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\EnlistmentTimelineRepository::class)
             ),
+            \App\Services\Recruitment\EnlistmentCandidatePortalJourneyService::class => new \App\Services\Recruitment\EnlistmentCandidatePortalJourneyService(),
             \App\Controllers\Web\EnlistmentCandidatePortalController::class => new \App\Controllers\Web\EnlistmentCandidatePortalController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(TenantRepository::class),
@@ -1023,7 +1024,8 @@ class Container
                 self::get(\App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator::class),
                 self::get(\App\Repositories\EnlistmentTimelineRepository::class),
                 self::get(\App\Repositories\EnlistmentRecruitmentEngagementRepository::class),
-                self::get(\App\Services\Analytics\AnalyticsEventService::class)
+                self::get(\App\Services\Analytics\AnalyticsEventService::class),
+                self::get(\App\Services\Recruitment\EnlistmentCandidatePortalJourneyService::class)
             ),
             \App\Controllers\Admin\RecruitmentWorkspaceController::class => new \App\Controllers\Admin\RecruitmentWorkspaceController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
