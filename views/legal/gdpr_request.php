@@ -14,7 +14,8 @@ $mailto = legal_public_contact_email();
 ?>
 <div class="max-w-2xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 tracking-tight uppercase mb-2">Exercer vos droits sur vos données</h1>
-    <p class="text-sm text-slate-500 mb-8">Envoyez une demande relative à vos données personnelles (accès, rectification, effacement, etc.). Nous vous répondrons sur l’adresse e-mail que vous indiquez ci-dessous.</p>
+    <p class="text-sm text-slate-500 mb-4">Envoyez une demande relative à vos données personnelles (accès, rectification, effacement, opposition, limitation, portabilité, retrait du consentement). Nous vous répondrons sur l’adresse e-mail que vous indiquez ci-dessous.</p>
+    <p class="text-xs text-slate-400 mb-8">Pour faciliter le traitement, décrivez votre demande de manière précise. Une vérification d’identité peut être demandée lorsque nécessaire.</p>
 
     <?php if ($error): ?>
         <?php $flash_variant = 'error'; $flash_message = (string) $error; require base_path('views/partials/flash_message.php'); ?>
@@ -90,6 +91,7 @@ $mailto = legal_public_contact_email();
 
     <p class="mt-8 text-xs text-slate-500 leading-relaxed">
         Pour rappel : les administrateurs de votre communauté peuvent aussi traiter certaines demandes qui ne concernent que l’activité interne de cette communauté. En cas d’urgence liée à la sécurité de votre compte, changez votre mot de passe et contactez le support selon les mentions légales.
+        Les demandes sont traitées dans les délais prévus par la réglementation, sous réserve de la complexité et du volume des informations demandées.
     </p>
 
     <?php require base_path('views/partials/legal_crosslinks.php'); ?>
