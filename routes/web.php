@@ -6,6 +6,7 @@ use App\Controllers\Web\HomeController;
 use App\Controllers\Web\HubController;
 use App\Controllers\Web\PersonnelController;
 use App\Controllers\Web\EnlistmentController;
+use App\Controllers\Web\EnlistmentCandidatePortalController;
 use App\Controllers\Web\DocumentsController;
 use App\Controllers\Web\EquipmentController;
 use App\Controllers\Web\TrainingController;
@@ -328,6 +329,8 @@ return function (Router $router) {
     $router->post('/c/{slug}/enlistment', [EnlistmentController::class, 'store']);
     $router->get('/enlistment/success', [EnlistmentController::class, 'success']);
     $router->get('/enlistment/error', [EnlistmentController::class, 'error']);
+    $router->get('/enlistment/suivi/{token}', [EnlistmentCandidatePortalController::class, 'show']);
+    $router->post('/enlistment/suivi/{token}/message', [EnlistmentCandidatePortalController::class, 'message']);
     $router->get('/recrutement', [HomeController::class, 'recrutement']);
     $router->get('/equipement', [HomeController::class, 'equipement']);
     $router->get('/documents', [DocumentsController::class, 'index'], $mwDocuments);

@@ -14,6 +14,7 @@ class EnlistmentRepository
     private static ?bool $hasAccountColumns = null;
 
     private static ?bool $hasRecruitmentOpeningIdColumn = null;
+    private static ?bool $hasCandidatePortalTables = null;
 
     public function __construct()
     {
@@ -38,6 +39,17 @@ class EnlistmentRepository
         }
 
         return self::$hasRecruitmentOpeningIdColumn;
+    }
+
+    private function hasCandidatePortalTables(): bool
+    {
+        if (self::$hasCandidatePortalTables === null) {
+            $a = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistment_candidate_tokens' LIMIT 1");
+            $b = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistment_candidate_messages' LIMIT 1");
+            self::$hasCandidatePortalTables = ($a && (bool) $a->fetchColumn()) && ($b && (bool) $b->fetchColumn());
+        }
+
+        return self::$hasCandidatePortalTables;
     }
 
     public function create(int $tenantId, array $data): int
@@ -479,5 +491,71 @@ class EnlistmentRepository
         }
 
         return $out;
+    }
+
+    public function ensureCandidatePortalToken(int $tenantId, int $enlistmentId, int $ttlHours = 168): ?string
+    {
+        if (!$this->hasCandidatePortalTables()) {
+            return null;
+        }
+        $ttlHours = max(2, min(24 * 30, $ttlHours));
+        $token = bin2hex(random_bytes(32));
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO enlistment_candidate_tokens (tenant_id, enlistment_id, access_token, expires_at, created_at, updated_at)
+             VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR), NOW(), NOW())
+             ON DUPLICATE KEY UPDATE access_token = VALUES(access_token), expires_at = VALUES(expires_at), updated_at = NOW()"
+        );
+        $stmt->execute([$tenantId, $enlistmentId, $token, $ttlHours]);
+
+        return $token;
+    }
+
+    public function findByCandidatePortalToken(string $token): ?array
+    {
+        if (!$this->hasCandidatePortalTables()) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT e.*, t.expires_at AS candidate_portal_expires_at
+             FROM enlistment_candidate_tokens t
+             INNER JOIN enlistments e ON e.tenant_id = t.tenant_id AND e.id = t.enlistment_id
+             WHERE t.access_token = ? AND t.expires_at > NOW()
+             LIMIT 1"
+        );
+        $stmt->execute([trim($token)]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function appendCandidatePortalMessage(int $tenantId, int $enlistmentId, string $entryKind, string $body): bool
+    {
+        if (!$this->hasCandidatePortalTables()) {
+            return false;
+        }
+        $kind = $entryKind === 'staff' ? 'staff' : 'candidate';
+        $payload = trim($body);
+        if ($payload === '') {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO enlistment_candidate_messages (tenant_id, enlistment_id, entry_kind, body, created_at) VALUES (?, ?, ?, ?, NOW())'
+        );
+        $stmt->execute([$tenantId, $enlistmentId, $kind, mb_substr($payload, 0, 4000)]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function listCandidatePortalMessages(int $tenantId, int $enlistmentId): array
+    {
+        if (!$this->hasCandidatePortalTables()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM enlistment_candidate_messages WHERE tenant_id = ? AND enlistment_id = ? ORDER BY created_at ASC, id ASC LIMIT 100'
+        );
+        $stmt->execute([$tenantId, $enlistmentId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }
