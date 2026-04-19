@@ -126,6 +126,18 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS security_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type TEXT NOT NULL,
+    outcome TEXT NOT NULL,
+    route TEXT,
+    method TEXT,
+    actor TEXT,
+    ip TEXT,
+    details TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
   INSERT OR IGNORE INTO maps (id, label, world_name) VALUES (1, 'Default', 'altis');
   INSERT OR IGNORE INTO layers (id, map_id, label, "order") VALUES (1, 1, 'Base layer', 0);
 `);
