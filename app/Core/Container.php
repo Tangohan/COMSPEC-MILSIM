@@ -952,7 +952,12 @@ class Container
                 self::get(\App\Services\Recruitment\EnlistmentAcceptanceProvisioningService::class),
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\RecruitmentOpeningRepository::class),
-                self::get(UserRepository::class)
+                self::get(UserRepository::class),
+                self::get(\App\Services\EmailService::class)
+            ),
+            \App\Controllers\Web\EnlistmentCandidatePortalController::class => new \App\Controllers\Web\EnlistmentCandidatePortalController(
+                self::get(\App\Repositories\EnlistmentRepository::class),
+                self::get(TenantRepository::class)
             ),
             \App\Controllers\Admin\RecruitmentWorkspaceController::class => new \App\Controllers\Admin\RecruitmentWorkspaceController(
                 self::get(\App\Repositories\EnlistmentRepository::class),

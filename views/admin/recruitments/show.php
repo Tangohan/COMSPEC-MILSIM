@@ -340,6 +340,9 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
                 <div class="p-6">
                     <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/decision')) ?>" class="space-y-5">
                         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                        <div class="rounded-xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-xs leading-relaxed text-sky-900">
+                            Chaque action envoie maintenant un e-mail candidat avec le statut, le commentaire éventuel et un lien temporaire de suivi pour répondre.
+                        </div>
                         <div>
                             <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                                 <label for="reviewer_comment" class="text-xs font-bold text-amber-950">Note interne (facultatif)</label>
@@ -430,7 +433,7 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
                             </script>
                             <?php endif; ?>
                         </div>
-                        <div class="flex flex-wrap gap-3 enlist-decision-actions" role="group" aria-label="Décision sur la candidature">
+                        <div class="grid gap-3 sm:grid-cols-2 enlist-decision-actions" role="group" aria-label="Décision sur la candidature">
                             <?php
                             $btnBase = 'enlist-decision-btn inline-flex min-h-[2.75rem] items-center justify-center px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer';
                             ?>
@@ -444,7 +447,7 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
                             <label for="interview_slot" class="block text-xs font-bold uppercase tracking-wide text-violet-900">Créneau d’entretien proposé (optionnel)</label>
                             <input type="datetime-local" id="interview_slot" name="interview_slot" class="mt-2 w-full max-w-xs rounded-lg border border-violet-300 bg-white px-3 py-2 text-sm text-violet-950">
                         </div>
-                        <p class="text-xs text-amber-900/85"><strong>En attente</strong> et <strong>demande d’entretien</strong> gardent le dossier dans la file. <strong>Non admis</strong> clôt le dossier de façon définitive pour cette candidature.</p>
+                        <p class="text-xs text-amber-900/85"><strong>En attente</strong> et <strong>demande d’entretien</strong> gardent le dossier dans la file, avec notification e-mail. <strong>Non admis</strong> clôt le dossier de façon définitive pour cette candidature.</p>
                     </form>
                 </div>
             </section>
