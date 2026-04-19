@@ -14,6 +14,8 @@ $statusLabels = [
     'blocked' => 'Non admis',
 ];
 $statusLabel = $statusLabels[$statusRaw] ?? $statusRaw;
+$reviewedById = (int) ($e['reviewed_by'] ?? 0);
+$assigneeLabel = $reviewedById > 0 ? ('Compte interne #' . $reviewedById) : 'Non attribué';
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
 $membershipRepairHint = $membershipRepairHint ?? null;
@@ -94,7 +96,7 @@ $statusBand = match ($statusRaw) {
 require base_path('views/admin/recruitment_workspace/partials/command_shell_open.php');
 ?>
 <div class="recruitment-bureau min-h-[calc(100vh-3.5rem)] bg-gradient-to-b from-[#ebe6dc] via-[#f5f2eb] to-[#e8e4db]">
-    <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+    <div class="mx-auto max-w-[94rem] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
 
         <nav class="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold text-stone-600" aria-label="Fil d’Ariane">
             <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="rounded-lg px-2 py-1 transition hover:bg-white/60 hover:text-[#1c2d41]">Dossiers de candidature</a>
@@ -109,6 +111,42 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
         <?php if ($flashErr): ?>
             <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 shadow-sm" role="alert"><?= htmlspecialchars((string) $flashErr) ?></div>
         <?php endif; ?>
+
+        <div class="grid gap-6 xl:grid-cols-[15rem_minmax(0,1fr)]">
+            <aside class="xl:sticky xl:top-24 xl:self-start">
+                <div class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
+                    <div class="border-b border-stone-200 bg-[#1c2d41] px-4 py-3">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-[#c9a227]">Navigation dossier</p>
+                    </div>
+                    <div class="space-y-2 p-3">
+                        <a href="#recap-dossier" class="block rounded-lg border border-[#1c2d41] bg-[#1c2d41] px-3 py-2 text-center text-xs font-bold text-white transition hover:bg-[#152436]">Récapitulatif</a>
+                        <a href="#instruction-dossier" class="block rounded-lg border border-stone-300 bg-white px-3 py-2 text-center text-xs font-bold text-stone-700 transition hover:border-stone-400 hover:bg-stone-50">Instruction / décision</a>
+                        <a href="#journal-dossier" class="block rounded-lg border border-stone-300 bg-white px-3 py-2 text-center text-xs font-bold text-stone-700 transition hover:border-stone-400 hover:bg-stone-50">Journal du dossier</a>
+                    </div>
+                    <div class="border-t border-stone-200 bg-stone-50 px-4 py-3 text-[11px] text-stone-600 space-y-1">
+                        <p><span class="font-bold text-stone-700">Statut :</span> <?= htmlspecialchars($statusLabel ?: '—') ?></p>
+                        <p><span class="font-bold text-stone-700">Attribué à :</span> <?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="space-y-6">
+                <section id="recap-dossier" class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
+                    <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Étape 2 sur 3</p>
+                        <h2 class="mt-1 text-xl font-black tracking-tight text-stone-900">En cours de traitement</h2>
+                        <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-stone-200">
+                            <div class="h-full w-2/3 rounded-full bg-amber-400"></div>
+                        </div>
+                        <p class="mt-3 text-xs text-stone-600">Étape suivante : décision finale et notification candidat.</p>
+                    </div>
+                    <div class="grid gap-4 px-6 py-4 text-sm text-stone-800 md:grid-cols-2 xl:grid-cols-4">
+                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">N° de dossier</p><p class="mt-1 font-semibold text-stone-900">#<?= $id ?></p></div>
+                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Statut</p><p class="mt-1 font-semibold text-stone-900"><?= htmlspecialchars($statusLabel ?: '—', ENT_QUOTES, 'UTF-8') ?></p></div>
+                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Attribué à</p><p class="mt-1 font-semibold text-stone-900"><?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p></div>
+                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Nature</p><p class="mt-1 font-semibold text-stone-900"><?= $isInternalOpeningApplication ? 'Mobilité interne' : 'Candidature externe' ?></p></div>
+                    </div>
+                </section>
 
         <section id="journal-dossier" class="mb-8 overflow-hidden rounded-2xl border border-stone-300/90 bg-white shadow-[0_16px_40px_-20px_rgba(28,45,65,0.35)] ring-1 ring-black/[0.04]" aria-labelledby="journal-dossier-heading">
             <div class="border-b border-stone-200 bg-gradient-to-r from-[#1c2d41] to-[#2a3f56] px-6 py-4 sm:px-8">
@@ -333,7 +371,7 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
             <?php endif; ?>
 
             <?php if ($statusRaw === 'submitted'): ?>
-            <section class="overflow-hidden rounded-2xl border-2 border-amber-300/80 bg-gradient-to-b from-amber-50/90 to-white shadow-md ring-1 ring-amber-200/50">
+            <section id="instruction-dossier" class="overflow-hidden rounded-2xl border-2 border-amber-300/80 bg-gradient-to-b from-amber-50/90 to-white shadow-md ring-1 ring-amber-200/50">
                 <div class="border-b border-amber-200 bg-amber-100/60 px-6 py-3">
                     <h2 class="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-950">Décision à enregistrer</h2>
                 </div>
@@ -588,9 +626,11 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
 
         </div>
 
-        <p class="mt-10 text-center">
-            <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="text-sm font-semibold text-stone-600 underline decoration-stone-300 underline-offset-4 hover:text-[#1c2d41]">← Retour aux dossiers</a>
-        </p>
+                <p class="mt-10 text-center">
+                    <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="text-sm font-semibold text-stone-600 underline decoration-stone-300 underline-offset-4 hover:text-[#1c2d41]">← Retour aux dossiers</a>
+                </p>
+            </div>
+        </div>
     </div>
 </div>
 <?php require base_path('views/admin/recruitment_workspace/partials/command_shell_close.php'); ?>
