@@ -209,7 +209,8 @@ class Container
                 self::get(\App\Services\Audit\AuditService::class),
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Repositories\EmailTokenRepository::class),
-                self::get(\App\Services\Moderation\IndicatorBlocklistService::class)
+                self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
+                self::get(\App\Services\Steam\SteamWebApiService::class)
             ),
             \App\Controllers\Web\VerifyEmailController::class => new \App\Controllers\Web\VerifyEmailController(
                 self::get(\App\Repositories\EmailTokenRepository::class),

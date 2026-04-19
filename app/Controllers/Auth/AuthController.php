@@ -52,7 +52,7 @@ class AuthController
     {
         $slug = strtolower(trim((string) $this->userRepository->getRoleSlugForUser((int) ($user['id'] ?? 0))));
 
-        return in_array($slug, ['security_admin', 'security_officer'], true);
+        return in_array($slug, ['security_admin', 'security_officer', 'tenant_admin', 'community_owner'], true);
     }
 
     private function beginSecurityOtpLogin(array $user): Response

@@ -687,6 +687,17 @@ class CommunityController
         }
         $this->authService->loginUser($u);
         $this->rbacService->setPermissionsForGateFromUserRow($u, $this->userRepository);
+        $creatorEmail = strtolower(trim((string) ($u['email'] ?? $email)));
+        if ($creatorEmail !== '') {
+            $this->emailService->sendCommunityCreationChecklist(
+                $creatorEmail,
+                trim((string) ($u['display_name'] ?? 'Responsable')),
+                trim((string) ($tenant['name'] ?? 'Communauté')),
+                url('dashboard'),
+                url('back-office/community'),
+                $tenantId
+            );
+        }
         $this->pendingCommunityRepository->deleteById((int) $pending['id']);
         Session::forget('pending_referrer_code');
         Session::flash('success', 'Paiement confirmé. Votre communauté est prête.');
@@ -703,15 +714,26 @@ class CommunityController
         Session::forget('pending_referrer_code');
         $newUserId = (int) $result['user_id'];
         $tenantId = (int) $result['tenant_id'];
+        $t = $this->tenantRepository->findById($tenantId);
         $u = $this->userRepository->findById($newUserId, $tenantId);
         if ($u) {
             $this->authService->loginUser($u);
             $this->rbacService->setPermissionsForGateFromUserRow($u, $this->userRepository);
+            $creatorEmail = strtolower(trim((string) ($u['email'] ?? '')));
+            if ($creatorEmail !== '') {
+                $this->emailService->sendCommunityCreationChecklist(
+                    $creatorEmail,
+                    trim((string) ($u['display_name'] ?? 'Responsable')),
+                    trim((string) (($t['name'] ?? $name))),
+                    url('dashboard'),
+                    url('back-office/community'),
+                    $tenantId
+                );
+            }
         }
         $audit = \App\Core\Container::get(AuditService::class);
         $audit->log(AuditAction::TENANT_CREATED, $tenantId, $newUserId, 'tenant', $tenantId, null, (string) $name);
         Session::flash('success', 'Communauté créée et configurée.');
-        $t = $this->tenantRepository->findById($tenantId);
         $newSlug = $t['slug'] ?? $slugInput;
 
         return Response::redirect(url('dashboard'));

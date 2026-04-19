@@ -235,6 +235,56 @@ final class EmailService
         );
     }
 
+    public function sendRegisterSecurityCompanion(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $accountPreferencesUrl,
+        string $communityCreateUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::REGISTER_SECURITY_COMPANION,
+            'register_security_companion',
+            $to,
+            'Sécurité & démarrage rapide — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'accountPreferencesUrl' => $accountPreferencesUrl,
+                'communityCreateUrl' => $communityCreateUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'register_security_companion']
+        );
+    }
+
+    public function sendCommunityCreationChecklist(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $dashboardUrl,
+        string $communitySettingsUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::COMMUNITY_CREATION_CHECKLIST,
+            'community_creation_checklist',
+            $to,
+            'Communauté créée : checklist opérationnelle — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'dashboardUrl' => $dashboardUrl,
+                'communitySettingsUrl' => $communitySettingsUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'community_creation_checklist']
+        );
+    }
+
     public function sendInterteamCooperationOtp(
         string $to,
         string $displayName,

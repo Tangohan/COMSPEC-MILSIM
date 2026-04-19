@@ -7,6 +7,8 @@ namespace App\Services\Email;
 final class EmailEvents
 {
     public const USER_REGISTER_CONFIRMATION = 'USER_REGISTER_CONFIRMATION';
+    public const REGISTER_SECURITY_COMPANION = 'REGISTER_SECURITY_COMPANION';
+    public const COMMUNITY_CREATION_CHECKLIST = 'COMMUNITY_CREATION_CHECKLIST';
     public const NEW_COMMUNITY_MEMBER = 'NEW_COMMUNITY_MEMBER';
     public const SECURITY_ALERT = 'SECURITY_ALERT';
     public const NEW_DEVICE_LOGIN = 'NEW_DEVICE_LOGIN';
@@ -97,6 +99,8 @@ final class EmailEvents
     /** @var list<string> */
     public const EMAIL_EVENTS = [
         self::USER_REGISTER_CONFIRMATION,
+        self::REGISTER_SECURITY_COMPANION,
+        self::COMMUNITY_CREATION_CHECKLIST,
         self::NEW_COMMUNITY_MEMBER,
         self::SECURITY_ALERT,
         self::NEW_DEVICE_LOGIN,
