@@ -650,3 +650,29 @@
   font-weight: 700;
   color: #64748b;
 }
+
+.studio-timeline-node__timing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+  margin-top: 0.18rem;
+}
+
+.studio-timeline-node__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.08rem 0.35rem;
+  border-radius: 999px;
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #065f46;
+  background: rgba(16, 185, 129, 0.13);
+}
+
+.studio-timeline-node__duration {
+  font-size: 0.56rem;
+  font-weight: 700;
+  color: #475569;
+}

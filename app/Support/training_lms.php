@@ -3,7 +3,16 @@
 declare(strict_types=1);
 
 /**
- * @return array{accent?:string,accentRgb?:string,font?:string,radius?:string,variant?:string}
+ * @return array{
+ *   accent?:string,
+ *   accentRgb?:string,
+ *   font?:string,
+ *   radius?:string,
+ *   variant?:string,
+ *   openingLoaderImage?:string,
+ *   openingLoaderTitle?:string,
+ *   openingLoaderBody?:string
+ * }
  */
 function training_lms_parse_theme(?string $json): array
 {
@@ -15,7 +24,7 @@ function training_lms_parse_theme(?string $json): array
         return [];
     }
     $out = [];
-    foreach (['accent', 'accentRgb', 'font', 'radius', 'variant'] as $k) {
+    foreach (['accent', 'accentRgb', 'font', 'radius', 'variant', 'openingLoaderImage', 'openingLoaderTitle', 'openingLoaderBody'] as $k) {
         if (isset($d[$k]) && is_string($d[$k])) {
             $out[$k] = $d[$k];
         }

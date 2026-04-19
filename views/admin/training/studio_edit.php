@@ -122,6 +122,9 @@ $themeVariantLabels = function_exists('training_lms_theme_variant_labels_fr') ? 
 if (!array_key_exists($themeVariant, $themeVariantLabels)) {
     $themeVariant = 'default';
 }
+$themeOpeningLoaderImage = isset($themeParsed['openingLoaderImage']) && is_string($themeParsed['openingLoaderImage']) ? trim($themeParsed['openingLoaderImage']) : '';
+$themeOpeningLoaderTitle = isset($themeParsed['openingLoaderTitle']) && is_string($themeParsed['openingLoaderTitle']) ? trim($themeParsed['openingLoaderTitle']) : '';
+$themeOpeningLoaderBody = isset($themeParsed['openingLoaderBody']) && is_string($themeParsed['openingLoaderBody']) ? trim($themeParsed['openingLoaderBody']) : '';
 $themeFontPresets = function_exists('training_lms_theme_font_presets') ? training_lms_theme_font_presets() : [];
 $themeFontLabels = function_exists('training_lms_theme_font_labels_fr') ? training_lms_theme_font_labels_fr() : [];
 $themeRadiusPresets = function_exists('training_lms_theme_radius_presets') ? training_lms_theme_radius_presets() : [];
@@ -615,6 +618,24 @@ $defaultCanvasJson = json_encode([
                         </select>
                     </div>
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-slate-200/70 pt-3">
+                    <div class="md:col-span-2">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-600">Loader d’ouverture (slide)</p>
+                        <p class="text-[11px] text-slate-500">Pendant « Préparation du parcours… », vous pouvez afficher une image et un texte de contexte.</p>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Image du loader</label>
+                        <input type="text" name="lms_opening_loader_image" value="<?= htmlspecialchars($themeOpeningLoaderImage) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono" placeholder="uploads/formation-loader.webp">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Titre du slide loader</label>
+                        <input type="text" name="lms_opening_loader_title" maxlength="120" value="<?= htmlspecialchars($themeOpeningLoaderTitle) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Mise en place du module">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Texte du slide loader</label>
+                        <textarea name="lms_opening_loader_body" rows="2" maxlength="320" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Objectifs, consignes, ambiance..."><?= htmlspecialchars($themeOpeningLoaderBody) ?></textarea>
+                    </div>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -695,11 +716,15 @@ $defaultCanvasJson = json_encode([
         <div id="studio-timeline-track" class="studio-timeline-track">
             <?php
             $tIdx = 0;
+            $timelineElapsedMinutes = 0;
             foreach ($modules as $tMod):
                 $tIdx++;
                 $tMid = (int) ($tMod['id'] ?? 0);
                 $tLessons = $tMod['lessons'] ?? [];
                 $tLc = count($tLessons);
+                $tEstimated = max(0, (int) ($tMod['estimated_minutes'] ?? 0));
+                $timelineStart = $timelineElapsedMinutes;
+                $timelineElapsedMinutes += $tEstimated;
                 $tTitle = (string) ($tMod['title'] ?? '');
                 $tTitleShort = function_exists('mb_strimwidth') ? mb_strimwidth($tTitle, 0, 40, '…', 'UTF-8') : (strlen($tTitle) > 40 ? substr($tTitle, 0, 37) . '…' : $tTitle);
                 ?>
@@ -709,6 +734,12 @@ $defaultCanvasJson = json_encode([
                     <span class="studio-timeline-node__n"><?= (int) $tIdx ?></span>
                     <span class="studio-timeline-node__title"><?= htmlspecialchars($tTitleShort !== '' ? $tTitleShort : 'Module') ?></span>
                     <span class="studio-timeline-node__meta"><?= $tLc === 0 ? 'Sans leçon' : ((int) $tLc . ' leçon' . ($tLc > 1 ? 's' : '')) ?></span>
+                    <span class="studio-timeline-node__timing">
+                        <span class="studio-timeline-node__badge">T+<?= (int) $timelineStart ?> min</span>
+                        <?php if ($tEstimated > 0): ?>
+                        <span class="studio-timeline-node__duration">≈ <?= (int) $tEstimated ?> min</span>
+                        <?php endif; ?>
+                    </span>
                 </a>
             </div>
             <?php endforeach; ?>
