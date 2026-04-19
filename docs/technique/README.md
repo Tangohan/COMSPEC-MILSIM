@@ -18,6 +18,7 @@ Ce sommaire s’adresse aux **développeurs** et à l’**exploitation** : archi
 | [Plan exécution administration site](plan-execution-administration-site-mod-admin-support.md) | Roadmap exécutable par lots, RACI, DoD, KPI et run |
 | [Plan amélioration interactif/UI-UX/features](plan-amelioration-interactif-ui-ux-feature.md) | Analyse et plan exécutable pour interactions, UX/UI et fonctionnalités transverses |
 | [Analyse projet & propositions (avril 2026)](analyse-ajouts-ameliorations-2026-04.md) | Diagnostic global et feuille de route d'amélioration priorisée |
+| [Plan P2 doctrine/XP/wargaming/AAR IA](plan-p2-doctrine-xp-wargaming-aar.md) | Spécification exécutable des chantiers P2.1 à P2.4 et détails UI/UX immersion |
 
 ## Liens utiles
 
