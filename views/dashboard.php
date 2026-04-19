@@ -143,6 +143,7 @@ require base_path('views/partials/header_portal.php');
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
         <?php
         $communityMemberships = $communityMemberships ?? [];
+        $candidate_enlistment_tracking = is_array($candidate_enlistment_tracking ?? null) ? $candidate_enlistment_tracking : [];
         $currentTid = (int) (\App\Core\Session::get('tenant_id') ?? 0);
         ?>
 
@@ -174,6 +175,57 @@ require base_path('views/partials/header_portal.php');
                 </div>
             </div>
         </section>
+
+        <?php if ($candidate_enlistment_tracking !== []): ?>
+        <section class="border-b border-emerald-900/20 bg-slate-950 text-white">
+            <div class="max-w-7xl mx-auto px-6 md:px-10 py-10">
+                <div class="mb-6">
+                    <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-300/90">Candidatures existantes</p>
+                    <h3 class="mt-2 text-2xl md:text-3xl font-black uppercase italic tracking-tight">Suivez l’état de vos dossiers</h3>
+                    <p class="mt-3 text-sm text-slate-300 max-w-3xl">Retrouvez les candidatures déjà transmises, consultez leur statut en direct et ouvrez le portail de suivi du dossier.</p>
+                </div>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <?php foreach ($candidate_enlistment_tracking as $track): ?>
+                        <?php
+                        $statusRaw = (string) ($track['status'] ?? 'submitted');
+                        $statusLabel = [
+                            'submitted' => 'En cours d’instruction',
+                            'reviewed' => 'Accepté',
+                            'rejected' => 'Refusé',
+                            'blocked' => 'Non admis',
+                        ][$statusRaw] ?? ucfirst($statusRaw);
+                        $statusClass = match ($statusRaw) {
+                            'reviewed' => 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200',
+                            'rejected', 'blocked' => 'border-rose-400/40 bg-rose-500/10 text-rose-200',
+                            default => 'border-sky-400/40 bg-sky-500/10 text-sky-200',
+                        };
+                        $tenantName = trim((string) ($track['tenant_name'] ?? 'Communauté'));
+                        $createdAt = (string) ($track['created_at'] ?? '');
+                        $createdFmt = $createdAt !== '' ? date('d/m/Y H:i', strtotime($createdAt)) : '—';
+                        $portalHref = is_string($track['candidate_portal_href'] ?? null) ? (string) $track['candidate_portal_href'] : null;
+                        ?>
+                        <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-sm font-bold text-white"><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></p>
+                                <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide <?= $statusClass ?>"><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                            </div>
+                            <p class="mt-2 text-xs text-slate-300">Dossier #<?= (int) ($track['id'] ?? 0) ?> · Déposé le <?= htmlspecialchars($createdFmt, ENT_QUOTES, 'UTF-8') ?></p>
+                            <div class="mt-4 flex flex-wrap gap-3">
+                                <?php if ($portalHref !== null): ?>
+                                <a href="<?= htmlspecialchars($portalHref, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-4 py-2 text-[11px] font-black uppercase tracking-wider text-slate-950 hover:bg-emerald-400 transition-colors">
+                                    Ouvrir la page du dossier
+                                </a>
+                                <?php endif; ?>
+                                <a href="<?= htmlspecialchars(url('communities'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center justify-center rounded-xl border border-white/20 px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white hover:bg-white/10 transition-colors">
+                                    Voir les unités
+                                </a>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
         <?php endif; ?>
 
 

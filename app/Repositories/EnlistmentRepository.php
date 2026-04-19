@@ -510,6 +510,59 @@ class EnlistmentRepository
         return $token;
     }
 
+    public function findValidCandidatePortalTokenForEnlistment(int $tenantId, int $enlistmentId): ?string
+    {
+        if (!$this->hasCandidatePortalTables()) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT access_token
+             FROM enlistment_candidate_tokens
+             WHERE tenant_id = ? AND enlistment_id = ? AND expires_at > NOW()
+             LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $enlistmentId]);
+        $token = $stmt->fetchColumn();
+
+        return is_string($token) && trim($token) !== '' ? trim($token) : null;
+    }
+
+    /**
+     * @return list<array<string,mixed>>
+     */
+    public function listRecentForSubmitterAcrossTenants(int $userId, string $userEmail, int $limit = 8): array
+    {
+        $limit = max(1, min(20, $limit));
+        $emailNorm = strtolower(trim($userEmail));
+        if ($this->hasAccountColumns()) {
+            $stmt = $this->pdo->prepare(
+                "SELECT e.*, t.name AS tenant_name, t.slug AS tenant_slug
+                 FROM enlistments e
+                 INNER JOIN tenants t ON t.id = e.tenant_id
+                 WHERE e.submitter_user_id = ? OR LOWER(TRIM(e.email)) = ?
+                 ORDER BY COALESCE(e.updated_at, e.created_at) DESC, e.id DESC
+                 LIMIT {$limit}"
+            );
+            $stmt->execute([$userId, $emailNorm !== '' ? $emailNorm : '__none__']);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+        if ($emailNorm === '') {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT e.*, t.name AS tenant_name, t.slug AS tenant_slug
+             FROM enlistments e
+             INNER JOIN tenants t ON t.id = e.tenant_id
+             WHERE LOWER(TRIM(e.email)) = ?
+             ORDER BY COALESCE(e.updated_at, e.created_at) DESC, e.id DESC
+             LIMIT {$limit}"
+        );
+        $stmt->execute([$emailNorm]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function findByCandidatePortalToken(string $token): ?array
     {
         if (!$this->hasCandidatePortalTables()) {

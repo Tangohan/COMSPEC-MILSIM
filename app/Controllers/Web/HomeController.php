@@ -144,6 +144,7 @@ class HomeController
         $dashboardPins = [];
         $missionBriefing = null;
         $dashboardTesterProgram = null;
+        $candidateEnlistmentTracking = [];
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
@@ -161,6 +162,24 @@ class HomeController
                 $uemail = (string) ($currentUser['email'] ?? '');
                 $enlistRepo = \App\Core\Container::get(\App\Repositories\EnlistmentRepository::class);
                 $myEnlistmentsPending = $enlistRepo->listPendingSubmittedForSubmitter($tid, $uid, $uemail);
+                if ($tid === 1) {
+                    $candidateRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 8);
+                    foreach ($candidateRows as $row) {
+                        $candidateTid = (int) ($row['tenant_id'] ?? 0);
+                        $candidateId = (int) ($row['id'] ?? 0);
+                        if ($candidateTid < 1 || $candidateId < 1) {
+                            continue;
+                        }
+                        $token = $enlistRepo->findValidCandidatePortalTokenForEnlistment($candidateTid, $candidateId);
+                        if ($token === null) {
+                            $token = $enlistRepo->ensureCandidatePortalToken($candidateTid, $candidateId, 24 * 7);
+                        }
+                        $row['candidate_portal_href'] = $token !== null
+                            ? url('enlistment/suivi/' . rawurlencode($token))
+                            : null;
+                        $candidateEnlistmentTracking[] = $row;
+                    }
+                }
 
                 $gate = \App\Core\Gate::getInstance();
                 $roleSlug = \App\Core\Container::get(\App\Repositories\UserRepository::class)->getRoleSlugForUser($uid) ?? '';
@@ -234,6 +253,7 @@ class HomeController
             'mission_briefing' => $missionBriefing,
             'dashboard_tester_program' => $dashboardTesterProgram,
             'dashboard_next_steps' => $dashboardNextSteps,
+            'candidate_enlistment_tracking' => $candidateEnlistmentTracking,
         ]);
     }
 
