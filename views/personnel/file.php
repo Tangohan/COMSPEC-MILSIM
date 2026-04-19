@@ -49,6 +49,7 @@ $communityRoleLabel = $communityRoleLabelRaw !== '' ? $communityRoleLabelRaw : n
 $qualificationIssuerLabels = is_array($qualificationIssuerLabels ?? null) ? $qualificationIssuerLabels : [];
 $personnelOrgHistory = is_array($personnelOrgHistory ?? null) ? $personnelOrgHistory : [];
 $personnelOrgHistorySection = !empty($personnelOrgHistorySection ?? null);
+$personnelOrgHistorySchemaReady = !empty($personnelOrgHistorySchemaReady ?? null);
 $roleplayFollowupConfig = is_array($roleplayFollowupConfig ?? null) ? $roleplayFollowupConfig : ['enabled' => false, 'optional' => false];
 $roleplayEligibility = is_array($roleplayEligibility ?? null) ? $roleplayEligibility : ['eligible' => false, 'checks' => []];
 $rpTutorLabel = isset($rpTutorLabel) && is_string($rpTutorLabel) ? trim($rpTutorLabel) : null;
@@ -1433,7 +1434,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Journal du dossier</h2>
                     <p class="text-[10px] text-slate-500 mb-6 leading-relaxed">Modifications enregistrées par l’organisation (grade, rôles, statut du compte, coordonnées visibles sur la fiche, etc.).</p>
-                    <?php if ($personnelOrgHistory !== []): ?>
+                    <?php if ($personnelOrgHistorySchemaReady && $personnelOrgHistory !== []): ?>
                     <div class="space-y-3">
                         <?php foreach ($personnelOrgHistory as $oh):
                             $ohTs = strtotime((string) ($oh['created_at'] ?? ''));
@@ -1453,7 +1454,11 @@ if (!function_exists('personnel_file_render_admin_value')) {
                     </div>
                     <?php else: ?>
                     <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-8 text-center text-sm text-slate-600">
+                        <?php if (!$personnelOrgHistorySchemaReady): ?>
+                        Le journal du dossier sera disponible après l’initialisation de l’historique de l’organisation.
+                        <?php else: ?>
                         Aucune modification n’a encore été consignée dans ce journal.
+                        <?php endif; ?>
                     </div>
                     <?php endif; ?>
                 </section>
