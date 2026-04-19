@@ -1808,6 +1808,13 @@ try {
     echo '  [ATTENTION] interteam_cooperation_hub : ' . $e->getMessage() . "\n";
 }
 
+$interteamOperationalWorkflowMigrate = require $root . '/bootstrap/interteam_mission_operational_workflow_migration.php';
+try {
+    $interteamOperationalWorkflowMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] interteam_mission_operational_workflow : ' . $e->getMessage() . "\n";
+}
+
 $cooperationEnhanceMigrate = require $root . '/bootstrap/cooperation_module_enhancements_migration.php';
 try {
     $cooperationEnhanceMigrate($pdo);

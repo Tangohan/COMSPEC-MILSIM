@@ -29,6 +29,9 @@ $counterPendingShow = !empty($interteamCounterPending);
 $missionMembers = $interteamMissionMembers ?? [];
 $userPicker = $cooperationRoleUserPicker ?? [];
 $snapshot = $cooperationActivationSnapshot ?? null;
+$operationalStage = (string) ($interteamOperationalStage ?? ($m['operational_stage'] ?? 'opord_draft'));
+$operationalChoices = is_array($interteamOperationalStageChoices ?? null) ? $interteamOperationalStageChoices : [];
+$sitreps = is_array($interteamSitreps ?? null) ? $interteamSitreps : [];
 
 $myParticipant = null;
 foreach ($participants as $p) {
@@ -80,6 +83,72 @@ $card = static function (string $title, string $desc, string $href, string $acce
         <p class="mt-3 text-sm text-rose-900 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">Une contre-proposition attend votre décision. <a class="font-semibold underline" href="<?= htmlspecialchars(cooperation_mission_negotiate_url($sid), ENT_QUOTES, 'UTF-8') ?>">Traiter dans Négociation</a></p>
         <?php endif; ?>
     </div>
+
+    <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Doctrine mission (OPORD → EXORD → SITREP → AAR)</h2>
+        <p class="mt-2 text-xs text-slate-600">Cycle de conduite : statut séquentiel, journalisation des SITREP et clôture par AAR avant actions correctives.</p>
+        <p class="mt-2 text-sm text-slate-700">Étape actuelle :
+            <strong class="text-slate-900"><?= htmlspecialchars((string) ($operationalChoices[$operationalStage] ?? $operationalStage), ENT_QUOTES, 'UTF-8') ?></strong>
+        </p>
+
+        <?php if ($canPilot && $canManage && $operationalChoices !== []): ?>
+        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/operational-stage'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 grid gap-3">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+            <div class="grid gap-3 md:grid-cols-2">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Statut doctrine</label>
+                    <select name="operational_stage" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                        <?php foreach ($operationalChoices as $slug => $label): ?>
+                        <option value="<?= htmlspecialchars((string) $slug, ENT_QUOTES, 'UTF-8') ?>" <?= $operationalStage === $slug ? 'selected' : '' ?>><?= htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Actions correctives (JSON)</label>
+                    <input type="text" name="corrective_actions_json" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder='{"actions":[{"owner":"S3","due":"2026-05-01","status":"open"}]}'>
+                </div>
+            </div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">OPORD (brouillon)</label>
+            <textarea name="opord_text" rows="3" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Intentions, objectif, ROE, organisation..."><?= htmlspecialchars((string) ($m['opord_text'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Validation commandement (notes)</label>
+            <textarea name="command_validation_notes" rows="2" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Conditions de lancement, restrictions, arbitrages..."><?= htmlspecialchars((string) ($m['command_validation_notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">AAR (synthèse)</label>
+            <textarea name="aar_summary" rows="3" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Ce qui a fonctionné, écarts doctrine, recommandations..."><?= htmlspecialchars((string) ($m['aar_summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+            <div class="grid gap-3 md:grid-cols-2">
+                <input type="text" name="linked_resources_json" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder='Ressources JSON (véhicules, munitions...)'>
+                <input type="text" name="simulated_losses_json" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder='Pertes simulées JSON'>
+                <input type="text" name="lessons_learned_json" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm md:col-span-2" placeholder='Enseignements JSON'>
+            </div>
+            <div>
+                <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Mettre à jour le statut opérationnel</button>
+            </div>
+        </form>
+        <?php endif; ?>
+
+        <?php if ($canPilot && $canManage && $operationalStage === 'execution'): ?>
+        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/sitrep'), ENT_QUOTES, 'UTF-8') ?>" class="mt-6 border-t border-slate-100 pt-4 grid gap-3">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-700">SITREP horodaté</h3>
+            <input type="datetime-local" name="sitrep_occurred_at" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+            <textarea name="sitrep_summary" rows="2" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Situation, actions en cours, besoins, risques..."></textarea>
+            <input type="text" name="sitrep_payload_json" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder='JSON optionnel : {"unit":"Alpha","severity":"medium"}'>
+            <div>
+                <button type="submit" class="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-100">Ajouter SITREP</button>
+            </div>
+        </form>
+        <?php endif; ?>
+
+        <?php if ($sitreps !== []): ?>
+        <ul class="mt-4 divide-y divide-slate-100">
+            <?php foreach ($sitreps as $s): ?>
+            <li class="py-3">
+                <p class="text-xs text-slate-500"><?= htmlspecialchars((string) ($s['occurred_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars((string) ($s['actor_display_name'] ?? 'N/A'), ENT_QUOTES, 'UTF-8') ?></p>
+                <p class="text-sm text-slate-800 mt-1"><?= nl2br(htmlspecialchars((string) ($s['summary'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+    </section>
 
     <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Unités engagées</h2>
