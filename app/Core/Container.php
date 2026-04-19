@@ -966,9 +966,15 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Services\EmailService::class)
             ),
+            \App\Services\Recruitment\EnlistmentPortalMessagingNotificationService::class => new \App\Services\Recruitment\EnlistmentPortalMessagingNotificationService(
+                self::get(UserRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+            ),
             \App\Controllers\Web\EnlistmentCandidatePortalController::class => new \App\Controllers\Web\EnlistmentCandidatePortalController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
-                self::get(TenantRepository::class)
+                self::get(TenantRepository::class),
+                self::get(\App\Services\Recruitment\EnlistmentPortalMessagingNotificationService::class)
             ),
             \App\Controllers\Admin\RecruitmentWorkspaceController::class => new \App\Controllers\Admin\RecruitmentWorkspaceController(
                 self::get(\App\Repositories\EnlistmentRepository::class),

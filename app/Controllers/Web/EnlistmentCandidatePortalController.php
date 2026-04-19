@@ -10,12 +10,14 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Recruitment\EnlistmentPortalMessagingNotificationService;
 
 final class EnlistmentCandidatePortalController
 {
     public function __construct(
         private EnlistmentRepository $enlistmentRepository,
         private TenantRepository $tenantRepository,
+        private EnlistmentPortalMessagingNotificationService $portalMessagingNotificationService,
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -65,6 +67,18 @@ final class EnlistmentCandidatePortalController
             'candidate',
             $body
         );
+        if ($ok) {
+            $tenantId = (int) ($row['tenant_id'] ?? 0);
+            $tenantRow = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
+            $tenantName = trim((string) (is_array($tenantRow) ? ($tenantRow['name'] ?? '') : ''));
+            if ($tenantName === '') {
+                $tenantName = 'Communauté';
+            }
+            try {
+                $this->portalMessagingNotificationService->notifyStaffOfCandidatePortalMessage($tenantId, $tenantName, $row, $body);
+            } catch (\Throwable) {
+            }
+        }
         Session::flash($ok ? 'success' : 'error', $ok ? 'Votre message a été transmis.' : 'Impossible d’enregistrer le message.');
 
         return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));

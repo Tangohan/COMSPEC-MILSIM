@@ -360,13 +360,13 @@ class AuthController
         $pending = Session::get('pending_login_security_otp');
         if (!is_array($pending) || (int) ($pending['expires_at'] ?? 0) < time()) {
             Session::forget('pending_login_security_otp');
-            Session::flash('error', 'Code OTP expiré. Reconnectez-vous.');
+            Session::flash('error', 'Ce code a expiré. Reconnectez-vous.');
 
             return Response::redirect(url('login'));
         }
 
         return Response::view('auth.login-otp', [
-            'title' => 'Validation OTP',
+            'title' => 'Double vérification',
             'emailMasked' => (string) ($pending['email_masked'] ?? '—'),
             'expiresAt' => (int) ($pending['expires_at'] ?? 0),
         ]);
@@ -382,7 +382,7 @@ class AuthController
         $pending = Session::get('pending_login_security_otp');
         if (!is_array($pending) || (int) ($pending['expires_at'] ?? 0) < time()) {
             Session::forget('pending_login_security_otp');
-            Session::flash('error', 'Code OTP expiré. Reconnectez-vous.');
+            Session::flash('error', 'Ce code a expiré. Reconnectez-vous.');
 
             return Response::redirect(url('login'));
         }
@@ -391,7 +391,7 @@ class AuthController
         $userId = (int) ($pending['user_id'] ?? 0);
         $tenantId = (int) ($pending['tenant_id'] ?? 0);
         if ($code === '' || strlen($code) !== 6 || $stored === '') {
-            Session::flash('error', 'Code OTP invalide.');
+            Session::flash('error', 'Code invalide.');
 
             return Response::redirect(url('login/otp'));
         }
@@ -399,14 +399,14 @@ class AuthController
         // On retrouve le token exact en vérifiant les jetons valides de l’utilisateur.
         $row = $this->emailTokenRepository->findValidByHash($stored);
         if (!$row || (string) ($row['purpose'] ?? '') !== EmailTokenPurpose::LOGIN_SECURITY_OTP || (int) ($row['user_id'] ?? 0) !== $userId) {
-            Session::flash('error', 'Code OTP invalide ou expiré.');
+            Session::flash('error', 'Code invalide ou expiré.');
 
             return Response::redirect(url('login/otp'));
         }
         $nonce = (string) ($row['nonce'] ?? '');
         $candidateHash = hash('sha256', $code . '|' . $nonce);
         if (!hash_equals((string) $row['token_hash'], $candidateHash)) {
-            Session::flash('error', 'Code OTP incorrect.');
+            Session::flash('error', 'Code incorrect.');
 
             return Response::redirect(url('login/otp'));
         }
@@ -431,7 +431,7 @@ class AuthController
         }
         $pending = Session::get('pending_login_security_otp');
         if (!is_array($pending)) {
-            Session::flash('error', 'Aucune session OTP en cours.');
+            Session::flash('error', 'Aucune vérification en cours. Reconnectez-vous.');
 
             return Response::redirect(url('login'));
         }

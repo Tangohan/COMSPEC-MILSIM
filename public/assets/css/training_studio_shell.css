@@ -676,3 +676,10 @@
   font-weight: 700;
   color: #475569;
 }
+
+/* Préambule d’accès : une seule colonne (pas de barre latérale Studio) */
+@media (min-width: 1024px) {
+  .training-studio-app--preamble .training-studio-app__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

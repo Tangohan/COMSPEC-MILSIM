@@ -629,6 +629,11 @@ class AccountController
                 'hint' => 'Lorsqu’un dossier de candidature est déposé pour votre communauté.',
             ],
             [
+                'key' => EmailEvents::ENLISTMENT_PORTAL_CANDIDATE_REPLY_STAFF,
+                'label' => 'Réponse candidat sur le suivi en ligne',
+                'hint' => 'Lorsqu’un candidat écrit un message depuis son lien de suivi sécurisé (hors simple dépôt initial).',
+            ],
+            [
                 'key' => EmailEvents::ENLISTMENT_ACCEPTED_CANDIDATE,
                 'label' => 'Candidature acceptée (candidat)',
                 'hint' => 'Message de confirmation lorsque votre candidature est acceptée.',

@@ -32,6 +32,8 @@ final class EmailEvents
     public const ENLISTMENT_ACCEPTED_STAFF = 'ENLISTMENT_ACCEPTED_STAFF';
     /** Offre de poste publiée — notification équipe recrutement / RH. */
     public const RECRUITMENT_OPENING_PUBLISHED_STAFF = 'RECRUITMENT_OPENING_PUBLISHED_STAFF';
+    /** Message envoyé par le candidat depuis le portail de suivi — alerte recrutement / RH. */
+    public const ENLISTMENT_PORTAL_CANDIDATE_REPLY_STAFF = 'ENLISTMENT_PORTAL_CANDIDATE_REPLY_STAFF';
 
     /** Formation assignée par le staff (hors auto-inscription). */
     public const TRAINING_ENROLLMENT_ASSIGNED = 'TRAINING_ENROLLMENT_ASSIGNED';
@@ -121,6 +123,7 @@ final class EmailEvents
         self::ENLISTMENT_ACCEPTED_CANDIDATE,
         self::ENLISTMENT_ACCEPTED_STAFF,
         self::RECRUITMENT_OPENING_PUBLISHED_STAFF,
+        self::ENLISTMENT_PORTAL_CANDIDATE_REPLY_STAFF,
         self::TRAINING_ENROLLMENT_ASSIGNED,
         self::TRAINING_COURSE_COMPLETED,
         self::TRAINING_ENROLLMENT_PENDING_APPROVAL,

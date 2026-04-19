@@ -131,6 +131,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | GET | `/formations/quiz/{id}` | TrainingController::quiz | ✅ | |
 | GET | `/formations/certificate/{id}` | TrainingController::certificate | ✅ | |
 | GET | `/formations/{slug}` | TrainingController::showBySlug | ✅ | |
+| GET | `/formation` | AdminTrainingController::dashboard | ✅ | Pilotage LMS staff (hors catalogue apprenant `/formations`) |
 
 ### 2.7 ATAK et vues tactiques
 
@@ -284,14 +285,10 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | GET | `/admin/atak-mod` | AdminAtakModController::index | ✅ | |
 | POST | `/admin/atak-mod/upload` | AdminAtakModController::upload | ✅ | |
 | POST | `/admin/atak-mod/delete` | AdminAtakModController::delete | ✅ | |
-| GET | `/admin/training` et sous-chemins | Redirection vers `back-office/ressources/training/…` | ✅ | Compatibilité URL ; pas de POST |
-| GET | `/back-office/ressources/training` | AdminTrainingController::dashboard | ✅ | Pilotage LMS (middleware staff formation) |
-| GET | `/back-office/ressources/training/courses` | AdminTrainingController::courses | ✅ | |
-| GET | `/back-office/ressources/training/enrollments` | AdminTrainingController::enrollments | ✅ | |
-| GET | `/back-office/ressources/training/reports` | AdminTrainingController::reports | ✅ | |
-| GET | `/back-office/ressources/training/certificates` | AdminTrainingController::certificates | ✅ | |
-| GET | `/back-office/ressources/training/audit` | AdminTrainingController::audit | ✅ | |
-| GET | `/back-office/ressources/training/studio` | AdminTrainingStudioController::index | ✅ | |
+| GET | `/admin/training` et sous-chemins | Redirection vers `/formation/…` (via `training_lms_admin_url`) | ✅ | Compatibilité URL ; pas de POST |
+| GET/POST | `/formation`, `/formation/studio`, sous-chemins LMS | Mêmes contrôleurs qu’auparavant | ✅ | Pilotage LMS (middleware staff formation) ; UI sans navbar portail |
+| POST | `/formation/studio/preamble-ack` | AdminTrainingStudioController::postPreambleAck | ✅ | Validation du préambule d’accès Studio (session) |
+| GET/POST | `/back-office/ressources/training` et sous-chemins | Redirection vers `/formation/…` équivalent (query conservée ; POST → 307) | ✅ | Compatibilité URL historique |
 | GET | `/admin/forum-config` | AdminForumConfigController::index | ✅ | |
 
 ---

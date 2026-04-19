@@ -201,6 +201,22 @@ class AdminTrainingStudioController
         if ($denied !== null) {
             return $denied;
         }
+        if (!Session::get('training_studio_preamble_ok')) {
+            $tid = (int) Session::get('tenant_id');
+            $courseCount = $tid > 0 ? count($this->courseRepository->listForTenant($tid, null)) : 0;
+
+            return Response::view('layout.training_studio', [
+                'content' => 'admin.training.studio_preamble',
+                'title' => 'Accès Studio LMS',
+                'trainingStudioMode' => 'index',
+                'trainingStudioShowIntro' => false,
+                'trainingStudioHideSidebar' => true,
+                'trainingStudioCourseCount' => $courseCount,
+                'trainingStudioCourse' => null,
+                'lmsPlatformVersion' => function_exists('lms_platform_version') ? lms_platform_version() : '',
+                'lmsChangelogUrl' => training_studio_url('versions'),
+            ]);
+        }
         $tenantId = (int) Session::get('tenant_id');
         $filter = (string) $request->query('visibility', '');
         $courses = $this->courseRepository->listForTenant($tenantId, null);
@@ -224,6 +240,22 @@ class AdminTrainingStudioController
             'pedagogyColumnsReady' => $this->pedagogyRepository->trainingCoursesHavePedagogyColumns(),
             'studioStaffPickUsers' => $this->userRepository->listForTenant($tenantId, null, 'active', null, 500, 0, true, null, null),
         ]);
+    }
+
+    public function postPreambleAck(Request $request, array $params = []): Response
+    {
+        $denied = $this->assertTrainingFeatureAndAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée, réessayez.');
+
+            return Response::redirect(training_studio_url());
+        }
+        Session::set('training_studio_preamble_ok', true);
+
+        return Response::redirect(training_studio_url());
     }
 
     public function versionsGuide(Request $request, array $params = []): Response

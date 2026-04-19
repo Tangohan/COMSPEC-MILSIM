@@ -16,6 +16,7 @@ $viaLabel = static function (string $k): string {
     };
 };
 ?>
+<div class="max-w-6xl w-full space-y-8">
         <div class="lms-infobanner" role="note">
             <span class="lms-infobanner__icon" aria-hidden="true">
                 <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -121,3 +122,4 @@ $viaLabel = static function (string $k): string {
                 </section>
                 <?php endif; ?>
 
+</div>

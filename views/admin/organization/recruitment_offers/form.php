@@ -17,25 +17,24 @@ $clearanceLevels = is_array($clearanceLevels ?? null) ? $clearanceLevels : [];
 $isEdit = $opening !== null;
 /** @var array<string,mixed> $openingRow Toujours un tableau pour éviter l’accès à des clés sur null (page création). */
 $openingRow = $isEdit && is_array($opening) ? $opening : [];
-$flashErr = \App\Core\Session::getFlash('error');
 $canSubmit = $units !== [];
 $stLocked = $isEdit && (string) ($openingRow['status'] ?? '') !== 'draft';
 ?>
-<div class="max-w-3xl mx-auto px-6 py-10">
-    <div class="mb-8">
+<div class="max-w-3xl w-full space-y-6">
+    <div class="lms-panel rounded-[2rem] p-6 md:p-8 border border-slate-200/80 overflow-hidden relative">
+        <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-sky-500/80 via-sky-500/20 to-transparent" aria-hidden="true"></div>
         <a href="<?= htmlspecialchars(url('back-office/recruitment/offers'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-semibold text-sky-700 hover:underline">← Retour à la liste</a>
-        <h1 class="mt-4 text-2xl font-black text-slate-900"><?= $isEdit ? 'Modifier une offre' : 'Nouvelle offre' ?></h1>
-        <p class="mt-1 text-sm text-slate-600">Rédigez l’avis comme un document RH : les champs structurés alimentent la fiche publique.</p>
+        <h1 class="mt-4 text-2xl md:text-3xl font-black uppercase tracking-tight text-slate-900"><?= $isEdit ? 'Modifier une offre' : 'Nouvelle offre' ?></h1>
+        <p class="mt-2 text-sm text-slate-600 leading-relaxed">Rédigez l’avis comme un document RH : les champs structurés alimentent la fiche publique.</p>
     </div>
-    <?php if ($flashErr): ?>
-        <p class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-rose-900"><?= htmlspecialchars($flashErr, ENT_QUOTES, 'UTF-8') ?></p>
-    <?php endif; ?>
     <?php if ($stLocked): ?>
-        <p class="mb-4 rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-950">Cette offre n’est plus un brouillon : seule la clôture est possible depuis la liste.</p>
+        <div class="rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950" role="status">
+            Cette offre n’est plus un brouillon : seule la clôture est possible depuis la liste.
+        </div>
     <?php endif; ?>
 
     <?php if (!$canSubmit): ?>
-        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950">
+        <div class="lms-panel rounded-2xl border border-amber-200 bg-amber-50/90 p-5 text-sm text-amber-950">
             <p class="font-semibold text-amber-900">Aucune unité n’est encore définie dans votre communauté.</p>
             <p class="mt-2 text-amber-900/90">Créez d’abord une unité (groupe / sous-structure) pour pouvoir rattacher un avis de poste.</p>
             <a href="<?= htmlspecialchars(url('back-office/groups/create'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 inline-flex rounded-lg bg-amber-900 px-4 py-2 text-sm font-bold text-white hover:bg-amber-950">Créer une unité</a>
@@ -46,7 +45,7 @@ $stLocked = $isEdit && (string) ($openingRow['status'] ?? '') !== 'draft';
     <form action="<?= htmlspecialchars($isEdit ? url('back-office/recruitment/offers/' . (int) ($openingRow['id'] ?? 0) . '/update') : url('back-office/recruitment/offers/store'), ENT_QUOTES, 'UTF-8') ?>" method="post" class="space-y-8">
         <?= \App\Core\Csrf::field() ?>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <div class="lms-panel rounded-2xl border border-slate-200/80 p-6 space-y-4">
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-500">Identification</h2>
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Unité porteuse *</label>
@@ -82,7 +81,7 @@ $stLocked = $isEdit && (string) ($openingRow['status'] ?? '') !== 'draft';
             </div>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <div class="lms-panel rounded-2xl border border-slate-200/80 p-6 space-y-4">
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-500">Classification affichée</h2>
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -121,7 +120,7 @@ $stLocked = $isEdit && (string) ($openingRow['status'] ?? '') !== 'draft';
             </div>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <div class="lms-panel rounded-2xl border border-slate-200/80 p-6 space-y-4">
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-500">Contenu</h2>
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Accroche mission (fiche détail)</label>
@@ -141,7 +140,7 @@ $stLocked = $isEdit && (string) ($openingRow['status'] ?? '') !== 'draft';
             </div>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <div class="lms-panel rounded-2xl border border-slate-200/80 p-6 space-y-4">
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-500">Profil candidat (jusqu’à 8 lignes)</h2>
             <?php
             $prof = is_array($od['candidate_profile_items'] ?? null) ? $od['candidate_profile_items'] : [];
@@ -157,7 +156,7 @@ $stLocked = $isEdit && (string) ($openingRow['status'] ?? '') !== 'draft';
             <?php endfor; ?>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <div class="lms-panel rounded-2xl border border-slate-200/80 p-6 space-y-4">
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-500">Grands axes (jusqu’à 6 blocs)</h2>
             <?php
             $blocks = is_array($od['responsibility_blocks'] ?? null) ? $od['responsibility_blocks'] : [];

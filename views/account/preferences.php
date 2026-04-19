@@ -192,7 +192,7 @@ foreach ($notifEmailCatalog as $item) {
                             Envoyer un code d’essai
                         </button>
                         <p class="text-xs leading-relaxed text-slate-500 sm:max-w-sm">
-                            Au plus <strong>un envoi par minute</strong> pour éviter le sursollicitation des serveurs de messagerie.
+                            Au plus <strong>un envoi par minute</strong>, pour limiter les envois répétés.
                         </p>
                     </div>
                 </form>

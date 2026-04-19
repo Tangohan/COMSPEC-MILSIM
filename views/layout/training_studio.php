@@ -7,6 +7,7 @@ $trainingStudioCourseCount = $trainingStudioCourseCount ?? 0;
 $trainingStudioCourse = $trainingStudioCourse ?? null;
 $portalHomeUrl = url('dashboard');
 $trainingStudioShowIntro = $trainingStudioShowIntro ?? true;
+$trainingStudioHideSidebar = !empty($trainingStudioHideSidebar);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -115,17 +116,19 @@ $trainingStudioShowIntro = $trainingStudioShowIntro ?? true;
     })();
     </script>
 
-    <div class="training-studio-app training-studio-app--sidebar-open">
+    <div class="training-studio-app <?= $trainingStudioHideSidebar ? 'training-studio-app--preamble' : 'training-studio-app--sidebar-open' ?>">
         <div class="training-studio-banner">
             <span class="training-studio-banner__label">ATHENA — Studio de formations</span>
             <a href="<?= htmlspecialchars($portalHomeUrl) ?>" class="training-studio-banner__portal">Retour au portail</a>
         </div>
 
         <div class="training-studio-app__grid">
+            <?php if (!$trainingStudioHideSidebar): ?>
             <div class="training-studio-sidebar-host min-w-0 order-1 lg:order-1 lg:col-start-1 lg:row-start-1">
                 <?php require base_path('views/partials/training_studio_sidebar.php'); ?>
             </div>
-            <div class="training-studio-main min-w-0 order-2 lg:order-2 lg:col-start-2 lg:row-start-1">
+            <?php endif; ?>
+            <div class="training-studio-main min-w-0 <?= $trainingStudioHideSidebar ? 'order-1' : 'order-2 lg:order-2 lg:col-start-2 lg:row-start-1' ?>">
                 <a href="#studio-main-content" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-[3.75rem] focus:z-[60] focus:bg-white focus:px-3 focus:py-2 focus:rounded-lg focus:shadow">Aller au contenu</a>
                 <div id="studio-main-content" class="training-studio-page-inner">
         <?php if (!empty($trainingStudioShowIntro)) {

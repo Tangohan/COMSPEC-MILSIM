@@ -326,7 +326,7 @@ final class EmailService
             EmailEvents::LOGIN_SECURITY_OTP,
             'login_security_otp',
             $to,
-            'Code OTP de connexion — ' . $tenantName,
+            'Code de connexion — ' . $tenantName,
             [
                 'displayName' => $displayName,
                 'tenantName' => $tenantName,
@@ -480,6 +480,70 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'recruitment_opening_published', 'opening_id' => $openingId]
+        );
+    }
+
+    /**
+     * Mise à jour de dossier (décision ou suivi) — message au candidat avec lien portail de suivi.
+     */
+    public function sendEnlistmentRecruitmentStatusCandidate(
+        string $to,
+        string $tenantName,
+        string $statusLabel,
+        string $comment,
+        string $portalUrl,
+        int $tenantId,
+        string $action,
+        int $enlistmentId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::TENANT_EMAIL_ACTIVITY,
+            'enlistment_recruitment_status_candidate',
+            $to,
+            'Candidature ' . $statusLabel . ' — ' . $tenantName,
+            [
+                'tenantName' => $tenantName,
+                'statusLabel' => $statusLabel,
+                'comment' => $comment,
+                'portalUrl' => $portalUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'recruitment_status_update', 'enlistment_id' => $enlistmentId, 'action' => $action]
+        );
+    }
+
+    /**
+     * Réponse du candidat sur le portail de suivi — notification équipe recrutement.
+     */
+    public function sendEnlistmentPortalCandidateReplyStaffNotify(
+        string $to,
+        string $tenantName,
+        int $enlistmentId,
+        string $candidateFullName,
+        string $candidateEmail,
+        string $messageExcerpt,
+        string $reviewUrl,
+        int $tenantId
+    ): bool {
+        $replyTo = filter_var(trim($candidateEmail), FILTER_VALIDATE_EMAIL) ? trim($candidateEmail) : null;
+
+        return $this->sendTemplated(
+            EmailEvents::ENLISTMENT_PORTAL_CANDIDATE_REPLY_STAFF,
+            'enlistment_portal_candidate_reply_staff',
+            $to,
+            'Message candidat — dossier #' . $enlistmentId . ' — ' . $tenantName,
+            [
+                'tenantName' => $tenantName,
+                'enlistmentId' => $enlistmentId,
+                'candidateFullName' => $candidateFullName,
+                'candidateEmail' => $candidateEmail,
+                'messageExcerpt' => $messageExcerpt,
+                'reviewUrl' => $reviewUrl,
+            ],
+            $tenantId,
+            $replyTo,
+            ['purpose' => 'enlistment_portal_candidate_reply', 'enlistment_id' => $enlistmentId]
         );
     }
 
