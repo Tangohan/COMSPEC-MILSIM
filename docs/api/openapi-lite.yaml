@@ -1,0 +1,193 @@
+openapi: 3.0.3
+info:
+  title: Athena API (Lite)
+  version: 1.2.0
+  description: |
+    Spécification OpenAPI légère des endpoints API critiques (front + intégrations).
+servers:
+  - url: /
+paths:
+
+  /api/health:
+    get:
+      summary: Vérifie la connectivité base de données
+      tags: [Health]
+      responses:
+        '200':
+          description: Base disponible
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      db:
+                        type: string
+                        enum: [ok]
+        '500':
+          description: Base indisponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /integrations/v1/evenements:
+    get:
+      summary: Liste des événements publics à venir d'une communauté
+      tags: [Integrations]
+      responses:
+        '200':
+          description: Liste d'événements
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      events:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PublicEvent'
+                      notice:
+                        type: string
+                        nullable: true
+        '400':
+          description: Contexte d'intégration invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /api/me/preferences:
+    get:
+      summary: Lit les préférences UI/notifications de l'utilisateur
+      tags: [Me]
+      responses:
+        '200':
+          description: Préférences utilisateur
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      ui:
+                        type: object
+                        additionalProperties: true
+                      notifications:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/NotificationPreference'
+                      meta:
+                        type: object
+                        additionalProperties: true
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    patch:
+      summary: Met à jour les préférences UI/notifications de l'utilisateur
+      tags: [Me]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                _csrf_token:
+                  type: string
+                ui:
+                  type: object
+                  additionalProperties: true
+                notifications:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/NotificationPreference'
+      responses:
+        '200':
+          description: Préférences enregistrées
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      ok:
+                        type: boolean
+                      ui:
+                        type: object
+                        additionalProperties: true
+                      notifications:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/NotificationPreference'
+        '403':
+          description: CSRF invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '422':
+          description: Validation échouée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+components:
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: validation_failed
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+    PublicEvent:
+      type: object
+      properties:
+        title:
+          type: string
+        starts_at:
+          type: string
+        ends_at:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        type:
+          type: string
+    NotificationPreference:
+      type: object
+      properties:
+        channel:
+          type: string
+          enum: [email, in_app, push]
+        event_key:
+          type: string
+        enabled:
+          type: boolean

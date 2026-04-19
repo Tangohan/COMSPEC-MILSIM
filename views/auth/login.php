@@ -19,6 +19,7 @@ $title = $title ?? 'Connexion';
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
     <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
     <?php endif; ?>
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/design-system.css" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         [x-cloak] { display: none !important; }
@@ -79,8 +80,8 @@ $title = $title ?? 'Connexion';
                 <div class="space-y-2">
                     <label for="email" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Identifiant (e-mail)</label>
                     <input type="email" name="email" id="email" required autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="nom.prenom@exemple.fr"
-                           class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs font-medium tracking-normal normal-case focus:outline-none focus:border-emerald-500 transition-colors"
-                           oninput="this.value = this.value.toLowerCase()">
+                           class="ds-input w-full text-xs font-medium tracking-normal normal-case"
+                           data-lowercase="email">
                 </div>
 
                 <div class="space-y-2">
@@ -89,10 +90,10 @@ $title = $title ?? 'Connexion';
                         <button type="button" @click.prevent="view = 'forgot'" class="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-600 hover:text-slate-900 transition-colors">Perdu ?</button>
                     </div>
                     <input type="password" name="password" id="password" required autocomplete="current-password" placeholder="••••••••••••"
-                           class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+                           class="ds-input w-full text-xs">
                 </div>
 
-                <button type="submit" class="w-full py-5 bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-emerald-600 transition-all hover:translate-y-[-2px] shadow-lg shadow-slate-200">
+                <button type="submit" class="ds-btn ds-btn--primary shadow-lg shadow-slate-200">
                     Initialiser Session
                 </button>
             </form>
@@ -115,15 +116,15 @@ $title = $title ?? 'Connexion';
                 <div class="space-y-2">
                     <label for="forgot-email" class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">E-mail de secours</label>
                     <input type="email" name="email" id="forgot-email" required autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="vous@exemple.fr"
-                           class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs font-medium tracking-normal normal-case focus:outline-none focus:border-emerald-500 transition-colors"
-                           oninput="this.value = this.value.toLowerCase()">
+                           class="ds-input w-full text-xs font-medium tracking-normal normal-case"
+                           data-lowercase="email">
                 </div>
 
-                <button type="submit" class="w-full py-5 bg-emerald-600 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-slate-900 transition-all hover:translate-y-[-2px]">
+                <button type="submit" class="ds-btn ds-btn--secondary">
                     Envoyer le lien
                 </button>
 
-                <button type="button" @click.prevent="view = 'login'" class="w-full text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 transition-colors">
+                <button type="button" @click.prevent="view = 'login'" class="ds-btn ds-btn--ghost text-[9px] tracking-[0.3em]">
                     Retour au terminal
                 </button>
             </form>
@@ -152,5 +153,6 @@ $title = $title ?? 'Connexion';
 </main>
 
 <?php require base_path('views/partials/cookie_banner.php'); ?>
+<script defer src="<?= htmlspecialchars($base) ?>/assets/js/auth_forms.js"></script>
 </body>
 </html>

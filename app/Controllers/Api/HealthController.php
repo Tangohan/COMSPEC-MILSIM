@@ -7,6 +7,7 @@ namespace App\Controllers\Api;
 use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
+use App\Support\Api\ApiResponder;
 
 class HealthController
 {
@@ -15,9 +16,9 @@ class HealthController
         try {
             $pdo = Database::getPdo();
             $pdo->query('SELECT 1');
-            return Response::json(['db' => 'ok']);
+            return ApiResponder::success(['db' => 'ok']);
         } catch (\Throwable $e) {
-            return Response::json(['db' => 'error', 'message' => $e->getMessage()], 500);
+            return ApiResponder::error('db_unreachable', 'Base de données indisponible.', 500, ['reason' => $e->getMessage()]);
         }
     }
 }
