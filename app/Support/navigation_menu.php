@@ -161,6 +161,54 @@ function navigation_normalize_variant(?string $variant): string
     return in_array($v, $allowed, true) ? $v : 'operations';
 }
 
+function navigation_normalize_submenu_style(?string $style): string
+{
+    $allowed = ['standard', 'cards', 'minimal'];
+    $v = strtolower(trim((string) ($style ?? '')));
+
+    return in_array($v, $allowed, true) ? $v : 'standard';
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function navigation_tenant_portal_nav_overrides(): array
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    $tenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+    if ($tenantId < 1) {
+        $cache = [];
+
+        return $cache;
+    }
+    try {
+        $repo = \App\Core\Container::get(\App\Repositories\TenantRepository::class);
+        $settings = $repo->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $cache = is_array($community['portal_nav'] ?? null) ? $community['portal_nav'] : [];
+        $tenant = $repo->findById($tenantId);
+        $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
+        if ($slug !== '') {
+            foreach (['operations', 'resources'] as $slot) {
+                $imgRel = 'assets/img/communities/' . $slug . '-nav-' . $slot . '.jpg';
+                if (navigation_image_file_exists($imgRel)) {
+                    if (!isset($cache[$slot]) || !is_array($cache[$slot])) {
+                        $cache[$slot] = [];
+                    }
+                    $cache[$slot]['image'] = $imgRel;
+                }
+            }
+        }
+    } catch (\Throwable) {
+        $cache = [];
+    }
+
+    return $cache;
+}
+
 /**
  * Classes CSS pour le CTA du panneau latéral (définies dans portal-nav.css).
  */
@@ -488,6 +536,7 @@ function build_navigation_menu(): array
                 'icon' => (string) ($item['icon'] ?? ''),
                 'accent' => navigation_normalize_accent(isset($item['accent']) ? (string) $item['accent'] : null),
                 'variant' => navigation_normalize_variant(isset($item['variant']) ? (string) $item['variant'] : null),
+                'submenu_style' => navigation_normalize_submenu_style(isset($item['submenu_style']) ? (string) $item['submenu_style'] : null),
                 'sections' => $sectionsOut,
                 'live' => $liveBlocks,
                 'featured' => $featured,
@@ -502,6 +551,28 @@ function build_navigation_menu(): array
     }
 
     foreach ($menuOut as &$builtItem) {
+        if (($builtItem['type'] ?? '') === 'mega') {
+            $portalNav = navigation_tenant_portal_nav_overrides();
+            $slot = ($builtItem['variant'] ?? '') === 'operations'
+                ? 'operations'
+                : (($builtItem['variant'] ?? '') === 'resources' ? 'resources' : '');
+            if ($slot !== '' && is_array($portalNav[$slot] ?? null)) {
+                $custom = $portalNav[$slot];
+                if (!empty($custom['accent'])) {
+                    $builtItem['accent'] = navigation_normalize_accent((string) $custom['accent']);
+                }
+                $builtItem['submenu_style'] = navigation_normalize_submenu_style((string) ($custom['submenu_style'] ?? 'standard'));
+                if (is_array($builtItem['featured'] ?? null)) {
+                    $img = trim((string) ($custom['image'] ?? ''));
+                    if ($img !== '') {
+                        $builtItem['featured']['image'] = ltrim($img, '/');
+                    }
+                    if (array_key_exists('image_enabled', $custom)) {
+                        $builtItem['featured']['image_enabled'] = !empty($custom['image_enabled']);
+                    }
+                }
+            }
+        }
         if (($builtItem['type'] ?? '') === 'mega' && ($builtItem['variant'] ?? '') === 'operations') {
             navigation_append_forum_rubric_links($builtItem);
         }

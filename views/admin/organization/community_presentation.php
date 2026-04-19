@@ -16,6 +16,19 @@ if ($military === []) {
     ];
 }
 $registryCoverUrl = $registryCoverUrl ?? null;
+$navOpsImageUrl = $navOpsImageUrl ?? null;
+$navResImageUrl = $navResImageUrl ?? null;
+$portalNav = is_array($c['portal_nav'] ?? null) ? $c['portal_nav'] : [];
+$navAccents = \App\Services\Community\TenantCommunityProfileService::allowedNavAccents();
+$navStyles = \App\Services\Community\TenantCommunityProfileService::allowedNavSubmenuStyles();
+$navOps = is_array($portalNav['operations'] ?? null) ? $portalNav['operations'] : [];
+$navRes = is_array($portalNav['resources'] ?? null) ? $portalNav['resources'] : [];
+$navOpsAccent = in_array(($navOps['accent'] ?? 'sky'), $navAccents, true) ? (string) $navOps['accent'] : 'sky';
+$navResAccent = in_array(($navRes['accent'] ?? 'amber'), $navAccents, true) ? (string) $navRes['accent'] : 'amber';
+$navOpsStyle = in_array(($navOps['submenu_style'] ?? 'cards'), $navStyles, true) ? (string) ($navOps['submenu_style'] ?? 'cards') : 'cards';
+$navResStyle = in_array(($navRes['submenu_style'] ?? 'minimal'), $navStyles, true) ? (string) ($navRes['submenu_style'] ?? 'minimal') : 'minimal';
+$navOpsImageEnabled = !array_key_exists('image_enabled', $navOps) || !empty($navOps['image_enabled']);
+$navResImageEnabled = !array_key_exists('image_enabled', $navRes) || !empty($navRes['image_enabled']);
 $presentationMode = ($c['presentation_mode'] ?? 'simple') === 'military' ? 'military' : 'simple';
 $registrationMode = ($c['registration_mode'] ?? 'milsim') === 'simple' ? 'simple' : 'milsim';
 $em = \App\Services\Community\EnlistmentMilsimPackService::forCommunity($c);
@@ -185,6 +198,60 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
                 </label>
                 <?php endif; ?>
             </div>
+        </section>
+
+        <section class="rounded-2xl border border-sky-100 bg-sky-50/40 p-6 shadow-sm space-y-5">
+            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Navigation portail — Opérations &amp; Ressources</h2>
+            <p class="text-xs text-slate-600">Personnalisez les sous-menus (style visuel), l’accent couleur et les images du panneau latéral pour rendre la navigation plus vivante.</p>
+            <?php foreach ([
+                'operations' => ['label' => 'Opérations', 'accent' => $navOpsAccent, 'style' => $navOpsStyle, 'imageUrl' => $navOpsImageUrl, 'imageEnabled' => $navOpsImageEnabled],
+                'resources' => ['label' => 'Ressources', 'accent' => $navResAccent, 'style' => $navResStyle, 'imageUrl' => $navResImageUrl, 'imageEnabled' => $navResImageEnabled],
+            ] as $slot => $cfg): ?>
+                <div class="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-slate-800"><?= htmlspecialchars($cfg['label']) ?></h3>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Couleur d’accent</label>
+                            <select name="nav_<?= htmlspecialchars($slot) ?>_accent" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                                <?php foreach ($navAccents as $accent): ?>
+                                    <option value="<?= htmlspecialchars($accent) ?>" <?= $cfg['accent'] === $accent ? 'selected' : '' ?>><?= htmlspecialchars(ucfirst($accent)) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Style sous-menu</label>
+                            <select name="nav_<?= htmlspecialchars($slot) ?>_submenu_style" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                                <option value="standard" <?= $cfg['style'] === 'standard' ? 'selected' : '' ?>>Standard</option>
+                                <option value="cards" <?= $cfg['style'] === 'cards' ? 'selected' : '' ?>>Cartes</option>
+                                <option value="minimal" <?= $cfg['style'] === 'minimal' ? 'selected' : '' ?>>Minimal</option>
+                            </select>
+                        </div>
+                    </div>
+                    <label class="flex items-start gap-3 text-xs text-slate-700">
+                        <input type="hidden" name="nav_<?= htmlspecialchars($slot) ?>_image_enabled" value="0">
+                        <input type="checkbox" name="nav_<?= htmlspecialchars($slot) ?>_image_enabled" value="1" class="mt-0.5" <?= !empty($cfg['imageEnabled']) ? 'checked' : '' ?>>
+                        <span>Afficher l’image dans le panneau latéral du menu.</span>
+                    </label>
+                    <?php if (!empty($cfg['imageUrl'])): ?>
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Aperçu image actuelle</p>
+                            <img src="<?= htmlspecialchars((string) $cfg['imageUrl']) ?>" alt="" class="w-full max-h-36 object-cover rounded-md">
+                        </div>
+                    <?php endif; ?>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Image personnalisée (JPG, PNG, WebP — 3 Mo max)</label>
+                        <input type="file" name="nav_<?= htmlspecialchars($slot) ?>_image" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                               class="block w-full max-w-md text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-sky-700 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-sky-800">
+                    </div>
+                    <?php if (!empty($cfg['imageUrl'])): ?>
+                        <label class="flex items-start gap-3 text-xs text-slate-700">
+                            <input type="hidden" name="remove_nav_<?= htmlspecialchars($slot) ?>_image" value="0">
+                            <input type="checkbox" name="remove_nav_<?= htmlspecialchars($slot) ?>_image" value="1" class="mt-0.5">
+                            <span>Retirer l’image personnalisée de ce menu.</span>
+                        </label>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
         </section>
         </div>
 
