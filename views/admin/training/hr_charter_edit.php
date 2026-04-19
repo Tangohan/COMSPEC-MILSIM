@@ -14,7 +14,7 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                     </p>
                 </header>
                 <section class="tc-panel p-6 md:p-8 space-y-6">
-                    <form method="post" action="<?= htmlspecialchars(url('back-office/ressources/training/charte-rh'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-5 max-w-3xl">
+                    <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('charte-rh'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-5 max-w-3xl">
                         <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wide text-slate-500 mb-1">Titre affiché</label>

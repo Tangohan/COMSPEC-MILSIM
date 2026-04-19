@@ -51,8 +51,8 @@ $pedagogyPathwayRows = $pedagogyPathwayRows ?? [];
 
 <section class="tc-panel p-6">
     <div class="flex flex-wrap gap-3">
-        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/commandement'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-emerald">Vue commandement</a>
-        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/formateur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Espace formateur</a>
+        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/commandement'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-emerald">Vue commandement</a>
+        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/formateur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Espace formateur</a>
         <a href="<?= htmlspecialchars(url('formations/competences'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Vue personnelle</a>
     </div>
 </section>

@@ -22,7 +22,7 @@ $statusFr = static function (string $s): string {
                         <?php if (!$trainingCertificatesPdfReady): ?>
                         <p class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 text-sm">La génération des documents PDF n’est pas disponible sur ce serveur. Les attestations restent enregistrées, mais les fichiers ne pourront pas être produits tant que l’environnement n’est pas corrigé.</p>
                         <?php elseif ($trainingCertificatesPendingPdf > 0): ?>
-                        <form method="post" action="<?= htmlspecialchars(url('back-office/ressources/training/certificates/generer-documents')) ?>" class="flex flex-wrap items-center gap-3">
+                        <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('certificates/generer-documents')) ?>" class="flex flex-wrap items-center gap-3">
                             <?= \App\Core\Csrf::field() ?>
                             <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800">Générer les PDF en attente (<?= (int) $trainingCertificatesPendingPdf ?>)</button>
                             <span class="text-xs text-slate-500">Jusqu’à 80 fichiers par action, les plus anciens en premier.</span>

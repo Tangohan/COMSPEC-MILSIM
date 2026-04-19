@@ -69,14 +69,14 @@ $viaLabel = static function (string $k): string {
                 </section>
 
                 <?php if ($via !== []): ?>
-                <section class="recruitment-cmd-panel">
-                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-[#1c2d41] mb-3">Canal de transmission</h2>
+                <section class="lms-panel rounded-[2rem] p-6 md:p-8 border border-slate-200/80">
+                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-800 mb-3">Canal de transmission</h2>
                     <p class="text-xs text-stone-600 mb-4">Répartition des dossiers selon le mode de dépôt enregistré.</p>
                     <ul class="space-y-2">
                         <?php foreach ($via as $k => $n): ?>
                             <li class="flex justify-between gap-3 text-sm border-b border-stone-100 pb-2 last:border-0">
                                 <span class="text-stone-700"><?= htmlspecialchars($viaLabel((string) $k), ENT_QUOTES, 'UTF-8') ?></span>
-                                <span class="font-mono font-bold text-[#1c2d41]"><?= (int) $n ?></span>
+                                <span class="font-mono font-bold text-sky-800"><?= (int) $n ?></span>
                             </li>
                         <?php endforeach; ?>
                     </ul>
@@ -84,8 +84,8 @@ $viaLabel = static function (string $k): string {
                 <?php endif; ?>
 
                 <?php if ($weekly !== []): ?>
-                <section class="recruitment-cmd-panel">
-                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-[#1c2d41] mb-3">Arrivées par semaine (12 dernières)</h2>
+                <section class="lms-panel rounded-[2rem] p-6 md:p-8 border border-slate-200/80">
+                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-800 mb-3">Arrivées par semaine (12 dernières)</h2>
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm text-left">
                             <thead>
@@ -108,8 +108,8 @@ $viaLabel = static function (string $k): string {
                 <?php endif; ?>
 
                 <?php if ($topOpenings !== []): ?>
-                <section class="recruitment-cmd-panel">
-                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-[#1c2d41] mb-3">Offres les plus citées</h2>
+                <section class="lms-panel rounded-[2rem] p-6 md:p-8 border border-slate-200/80">
+                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-800 mb-3">Offres les plus citées</h2>
                     <ul class="space-y-2">
                         <?php foreach ($topOpenings as $ro): ?>
                             <li class="flex flex-wrap justify-between gap-2 text-sm border-b border-stone-100 pb-2 last:border-0">
@@ -121,4 +121,3 @@ $viaLabel = static function (string $k): string {
                 </section>
                 <?php endif; ?>
 
-<?php require base_path('views/admin/recruitment_workspace/partials/command_shell_close.php'); ?>

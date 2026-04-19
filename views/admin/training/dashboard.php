@@ -4,6 +4,42 @@ $expiring = $expiring ?? [];
 $trainingCanExportFull = !empty($trainingCanExportFull);
 require base_path('views/admin/training/partials/command_shell_open.php');
 ?>
+                <?php if (($trainingAdminNav ?? '') === 'dashboard'): ?>
+                <section class="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5 md:p-6" aria-label="Accès rapides">
+                    <h2 class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500 mb-4">Accès rapides</h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <a href="<?= htmlspecialchars(training_lms_admin_url('feedback')) ?>" class="tc-course-card group block no-underline text-inherit p-4 !shadow-sm">
+                            <p class="text-[9px] font-black tracking-[0.25em] uppercase text-sky-700 mb-1">Apprenants</p>
+                            <p class="text-sm font-black text-slate-900 group-hover:text-sky-900">Feedback post-leçon</p>
+                        </a>
+                        <a href="<?= htmlspecialchars(training_lms_admin_url('charte-rh')) ?>" class="tc-course-card group block no-underline text-inherit p-4 !shadow-sm">
+                            <p class="text-[9px] font-black tracking-[0.25em] uppercase text-emerald-700 mb-1">Engagement</p>
+                            <p class="text-sm font-black text-slate-900 group-hover:text-emerald-900">Charte RH</p>
+                        </a>
+                        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/commandement')) ?>" class="tc-course-card group block no-underline text-inherit p-4 !shadow-sm">
+                            <p class="text-[9px] font-black tracking-[0.25em] uppercase text-slate-500 mb-1">Encadrement</p>
+                            <p class="text-sm font-black text-slate-900">Commandement</p>
+                        </a>
+                        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/instructeur')) ?>" class="tc-course-card group block no-underline text-inherit p-4 !shadow-sm">
+                            <p class="text-[9px] font-black tracking-[0.25em] uppercase text-slate-500 mb-1">Terrain</p>
+                            <p class="text-sm font-black text-slate-900">Espace instructeur</p>
+                        </a>
+                        <a href="<?= htmlspecialchars(training_lms_admin_url('reports')) ?>" class="tc-course-card group block no-underline text-inherit p-4 !shadow-sm">
+                            <p class="text-[9px] font-black tracking-[0.25em] uppercase text-slate-500 mb-1">Synthèse</p>
+                            <p class="text-sm font-black text-slate-900">Rapports</p>
+                        </a>
+                        <a href="<?= htmlspecialchars(training_lms_admin_url('certificates')) ?>" class="tc-course-card group block no-underline text-inherit p-4 !shadow-sm">
+                            <p class="text-[9px] font-black tracking-[0.25em] uppercase text-slate-500 mb-1">Attestations</p>
+                            <p class="text-sm font-black text-slate-900">Certificats</p>
+                        </a>
+                        <a href="<?= htmlspecialchars(training_lms_admin_url('audit')) ?>" class="tc-course-card group block no-underline text-inherit p-4 !shadow-sm sm:col-span-2 lg:col-span-1">
+                            <p class="text-[9px] font-black tracking-[0.25em] uppercase text-slate-500 mb-1">Traçabilité</p>
+                            <p class="text-sm font-black text-slate-900">Journal pédagogique</p>
+                        </a>
+                    </div>
+                </section>
+                <?php endif; ?>
+
                 <header class="tc-panel p-6 md:p-8">
                     <p class="tc-kicker">Pilotage LMS</p>
                     <h1 class="tc-hero-title mb-4">Formations &amp; continuité pédagogique</h1>
@@ -52,7 +88,7 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                         <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 group-hover:text-emerald-800">Charte liée aux formations</h2>
                         <p class="text-xs text-slate-600 mt-2 leading-relaxed">Texte affiché aux membres et suivi des mises à jour.</p>
                     </a>
-                    <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/commandement')) ?>" class="tc-course-card group block no-underline text-inherit sm:col-span-2">
+                    <a href="<?= htmlspecialchars(training_lms_admin_url('competences/commandement')) ?>" class="tc-course-card group block no-underline text-inherit sm:col-span-2">
                         <p class="text-[9px] font-black tracking-[0.3em] uppercase text-emerald-600 mb-2">Compétences</p>
                         <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Commandement &amp; instructeurs</h2>
                         <p class="text-xs text-slate-600 mt-2 leading-relaxed">Heatmap de préparation, validations DELTA et journaux tenant/formateur.</p>

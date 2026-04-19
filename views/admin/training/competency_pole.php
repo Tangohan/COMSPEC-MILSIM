@@ -20,7 +20,7 @@
 </section>
 
 <section class="tc-panel p-6 flex flex-wrap gap-3">
-    <a href="<?= htmlspecialchars(url('back-office/ressources/training/studio'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-emerald">Ouvrir le studio</a>
-    <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/formateur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Paramétrer les rôles pédagogiques</a>
+    <a href="<?= htmlspecialchars(training_studio_url(), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-emerald">Ouvrir le studio</a>
+    <a href="<?= htmlspecialchars(training_lms_admin_url('competences/formateur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Paramétrer les rôles pédagogiques</a>
 </section>
 <?php require base_path('views/admin/training/partials/command_shell_close.php'); ?>

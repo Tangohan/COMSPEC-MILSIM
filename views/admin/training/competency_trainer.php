@@ -92,7 +92,7 @@ $tenantUsers = $tenantUsers ?? [];
 
 <section class="tc-panel p-6">
     <div class="flex flex-wrap gap-3">
-        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/commandement'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Retour commandement</a>
+        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/commandement'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Retour commandement</a>
     </div>
 </section>
 <?php require base_path('views/admin/training/partials/command_shell_close.php'); ?>

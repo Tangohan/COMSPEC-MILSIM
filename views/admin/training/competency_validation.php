@@ -39,6 +39,6 @@ $pedagogyChainAssess = $pedagogyChainAssess ?? ['ok' => true, 'gaps' => []];
 </section>
 
 <section class="tc-panel p-6">
-    <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/commandement'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Retour commandement</a>
+    <a href="<?= htmlspecialchars(training_lms_admin_url('competences/commandement'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Retour commandement</a>
 </section>
 <?php require base_path('views/admin/training/partials/command_shell_close.php'); ?>

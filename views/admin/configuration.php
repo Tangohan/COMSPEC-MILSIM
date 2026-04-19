@@ -339,7 +339,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
                 <?php $card(url('documents/gestion'), 'Documents', 'Bibliothèque et dépôt selon vos droits.'); ?>
                 <?php endif; ?>
                 <?php if ($canTraining): ?>
-                <?php $card(url('back-office/ressources/training'), 'Formations (LMS)', 'Parcours, inscriptions, certificats.'); ?>
+                <?php $card(training_lms_admin_url(), 'Formations (LMS)', 'Parcours, inscriptions, certificats.'); ?>
                 <?php endif; ?>
             </div>
         </section>

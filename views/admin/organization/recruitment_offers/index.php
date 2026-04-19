@@ -6,28 +6,24 @@ declare(strict_types=1);
 $openings = $openings ?? [];
 $statusFilter = $statusFilter ?? 'all';
 $statusLabels = is_array($statusLabels ?? null) ? $statusLabels : [];
-$flashOk = \App\Core\Session::getFlash('success');
-$flashErr = \App\Core\Session::getFlash('error');
 ?>
-<div class="max-w-6xl mx-auto px-6 py-10">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
-        <div>
-            <h1 class="text-2xl font-black text-slate-900">Offres publiées</h1>
-            <p class="mt-1 text-sm text-slate-600">Avis de vacance affichés sur la vitrine de votre communauté (mise en page « prospection »).</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="<?= htmlspecialchars(url('back-office/recruitment/reference-format'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Format des références</a>
-            <a href="<?= htmlspecialchars(url('back-office/recruitment/offers/create'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Nouvelle offre</a>
+<div class="max-w-6xl w-full space-y-6">
+    <div class="lms-panel rounded-[2rem] p-6 md:p-8 border border-slate-200/80 overflow-hidden relative">
+        <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-sky-500/80 via-sky-500/20 to-transparent" aria-hidden="true"></div>
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-[9px] font-black tracking-[0.45em] text-sky-600 uppercase mb-2">Vitrine</p>
+                <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-slate-900">Offres publiées</h1>
+                <p class="mt-2 text-sm text-slate-600 max-w-2xl leading-relaxed">Avis de vacance affichés sur la vitrine de votre communauté (mise en page « prospection »).</p>
+            </div>
+            <div class="flex flex-wrap gap-2 shrink-0">
+                <a href="<?= htmlspecialchars(url('back-office/recruitment/reference-format'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Format des références</a>
+                <a href="<?= htmlspecialchars(url('back-office/recruitment/offers/create'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Nouvelle offre</a>
+            </div>
         </div>
     </div>
-    <?php if ($flashOk): ?>
-        <p class="mb-4 rounded-lg bg-emerald-50 px-4 py-2 text-sm text-emerald-900"><?= htmlspecialchars($flashOk, ENT_QUOTES, 'UTF-8') ?></p>
-    <?php endif; ?>
-    <?php if ($flashErr): ?>
-        <p class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-rose-900"><?= htmlspecialchars($flashErr, ENT_QUOTES, 'UTF-8') ?></p>
-    <?php endif; ?>
 
-    <form method="get" action="<?= htmlspecialchars(url('back-office/recruitment/offers'), ENT_QUOTES, 'UTF-8') ?>" class="mb-6 flex flex-wrap items-center gap-3">
+    <form method="get" action="<?= htmlspecialchars(url('back-office/recruitment/offers'), ENT_QUOTES, 'UTF-8') ?>" class="lms-panel rounded-2xl p-4 md:p-5 border border-slate-200/80 flex flex-wrap items-center gap-3">
         <label class="text-sm font-medium text-slate-700">Filtrer</label>
         <select name="status" class="<?= htmlspecialchars(bo_select_class('min-w-[11rem] sm:min-w-[13rem]'), ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
             <option value="all" <?= $statusFilter === 'all' ? 'selected' : '' ?>>Tous les statuts</option>
@@ -37,7 +33,8 @@ $flashErr = \App\Core\Session::getFlash('error');
         </select>
     </form>
 
-    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div class="lms-panel rounded-[2rem] border border-slate-200/80 overflow-hidden shadow-sm">
+    <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
             <thead class="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
@@ -90,5 +87,6 @@ $flashErr = \App\Core\Session::getFlash('error');
                 <?php endif; ?>
             </tbody>
         </table>
+    </div>
     </div>
 </div>

@@ -57,7 +57,7 @@ final class HrCharterDocumentAdminController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée, réessayez.');
 
-            return Response::redirect(url('back-office/ressources/training/charte-rh'));
+            return Response::redirect(training_lms_admin_url('charte-rh'));
         }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1 || !$this->hrCharterRepository->schemaReady()) {
@@ -68,12 +68,12 @@ final class HrCharterDocumentAdminController
         if ($title === '') {
             Session::flash('error', 'Le titre est obligatoire.');
 
-            return Response::redirect(url('back-office/ressources/training/charte-rh'));
+            return Response::redirect(training_lms_admin_url('charte-rh'));
         }
         $ok = $this->hrCharterRepository->updateActiveDocumentContent($tenantId, $title, $body);
         Session::flash($ok ? 'success' : 'error', $ok ? 'Charte enregistrée. Les membres verront cette version sur la page dédiée.' : 'Enregistrement impossible.');
 
-        return Response::redirect(url('back-office/ressources/training/charte-rh'));
+        return Response::redirect(training_lms_admin_url('charte-rh'));
     }
 
     private function requireAccess(): ?Response

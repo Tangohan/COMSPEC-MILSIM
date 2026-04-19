@@ -17,6 +17,6 @@
         <?php endforeach; ?>
     </ul>
     <?php endif; ?>
-    <p class="text-sm text-slate-700">Depuis la <a class="font-bold text-emerald-800 underline" href="<?= htmlspecialchars(url('back-office/ressources/training/competences/commandement'), ENT_QUOTES, 'UTF-8') ?>">vue commandement</a>, lancez la vérification des sections réservées.</p>
+    <p class="text-sm text-slate-700">Depuis la <a class="font-bold text-emerald-800 underline" href="<?= htmlspecialchars(training_lms_admin_url('competences/commandement'), ENT_QUOTES, 'UTF-8') ?>">vue commandement</a>, lancez la vérification des sections réservées.</p>
 </section>
 <?php require base_path('views/admin/training/partials/command_shell_close.php'); ?>

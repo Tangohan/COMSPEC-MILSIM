@@ -819,7 +819,7 @@ $modActionLabelFr = static function (string $t): string {
                                 </li>
                             <?php endforeach; ?>
                         </ul>
-                        <a href="<?= url('back-office/ressources/training') ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-sky-800 hover:text-sky-950">Formations (LMS) →</a>
+                        <a href="<?= training_lms_admin_url() ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-sky-800 hover:text-sky-950">Formations (LMS) →</a>
                     <?php endif; ?>
                 </div>
 

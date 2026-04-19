@@ -712,7 +712,7 @@ class InterteamMissionWebController
             'interteamJitsiEnabled' => $jitsiEnabled,
             'interteamConsentDone' => $consentDone,
             'interteamCoopTopicUrl' => $coopTopicUrl,
-            'trainingCompetencyCommandUrl' => url('back-office/ressources/training/competences/commandement'),
+            'trainingCompetencyCommandUrl' => training_lms_admin_url('competences/commandement'),
             'sessionTenantId' => $tenantId,
             'interteamPartnerCanCounter' => $partnerCanCounter,
             'interteamCounterPending' => $counterPending,

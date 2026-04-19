@@ -740,7 +740,7 @@ require base_path('views/partials/header_portal.php');
                 <div class="flex flex-wrap gap-3">
                     <a href="<?= url('formations') ?>" class="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-blue-700 transition-colors">Ouvrir le catalogue</a>
                     <?php if (function_exists('can') && (can('training.update') || can('training.publish') || can('admin.access') || can('training.manage'))): ?>
-                    <a href="<?= url('back-office/ressources/training/courses') ?>" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-800 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white">Gérer les parcours</a>
+                    <a href="<?= training_lms_admin_url('courses') ?>" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-800 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white">Gérer les parcours</a>
                     <?php endif; ?>
                 </div>
             </div>

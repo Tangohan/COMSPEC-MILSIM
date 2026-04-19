@@ -24,7 +24,7 @@ if ($sys || $org || $support) {
     $links[] = ['href' => cooperation_mission_index_url(), 'label' => 'Coopérations inter-unités', 'desc' => 'Propositions, validation mutuelle, espace commun sur le brief et coordination opérationnelle'];
 }
 if ($training) {
-    $links[] = ['href' => url('back-office/ressources/training'), 'label' => 'Formations (LMS)', 'desc' => 'Catalogue, inscriptions et suivi pour ce tenant'];
+    $links[] = ['href' => training_lms_admin_url(), 'label' => 'Formations (LMS)', 'desc' => 'Catalogue, inscriptions et suivi pour ce tenant'];
 }
 if ($sys || $docs || ($support && $docsView)) {
     $links[] = ['href' => url('documents/gestion'), 'label' => 'Gestion documentaire', 'desc' => 'Bibliothèque documentaire de la communauté courante'];

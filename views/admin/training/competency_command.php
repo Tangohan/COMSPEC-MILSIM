@@ -114,12 +114,12 @@ $pedagogyChainAssess = $pedagogyChainAssess ?? ['ok' => true, 'gaps' => []];
 
 <section class="tc-panel p-6">
     <div class="mt-1 flex flex-wrap gap-3">
-        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/bureau-personnel'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Bureau du personnel</a>
-        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/pole-formation'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Pôle formation</a>
-        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/validation'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Validation / certification</a>
-        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/sections'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Sections organisationnelles</a>
-        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/formateur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-emerald">Espace formateur</a>
-        <a href="<?= htmlspecialchars(url('back-office/ressources/training/competences/instructeur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Vue instructeur</a>
+        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/bureau-personnel'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Bureau du personnel</a>
+        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/pole-formation'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Pôle formation</a>
+        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/validation'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Validation / certification</a>
+        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/sections'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Sections organisationnelles</a>
+        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/formateur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-emerald">Espace formateur</a>
+        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/instructeur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-ghost">Vue instructeur</a>
     </div>
 </section>
 <?php require base_path('views/admin/training/partials/command_shell_close.php'); ?>

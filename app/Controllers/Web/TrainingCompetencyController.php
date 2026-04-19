@@ -42,7 +42,7 @@ final class TrainingCompetencyController
             if (!Csrf::validate($request->input('_csrf_token'))) {
                 Session::flash('error', 'Session expirée, réessayez.');
 
-                return Response::redirect(url('back-office/ressources/training/competences/commandement'));
+                return Response::redirect(training_lms_admin_url('competences/commandement'));
             }
 
             $action = (string) $request->input('action', '');
@@ -122,7 +122,7 @@ final class TrainingCompetencyController
                         } catch (InvalidArgumentException) {
                             Session::flash('error', 'Cette combinaison de rôles n’est pas autorisée pour ce membre. Ajustez d’abord son profil depuis l’administration des comptes, ou désignez une autre personne.');
 
-                            return Response::redirect(url('back-office/ressources/training/competences/commandement'));
+                            return Response::redirect(training_lms_admin_url('competences/commandement'));
                         }
                         if ($this->trainingCompetencyRepository->competencyTrainerRolesSchemaAvailable()) {
                             $seedIds = array_values(array_filter([
@@ -206,7 +206,7 @@ final class TrainingCompetencyController
                 Session::flash('success', 'Structure minimale vérifiée ou complétée.');
             }
 
-            return Response::redirect(url('back-office/ressources/training/competences/commandement'));
+            return Response::redirect(training_lms_admin_url('competences/commandement'));
         }
 
         $matrices = $this->trainingCompetencyRepository->listMatrices($tenantId);
@@ -250,7 +250,7 @@ final class TrainingCompetencyController
             if (!Csrf::validate($request->input('_csrf_token'))) {
                 Session::flash('error', 'Session expirée, réessayez.');
 
-                return Response::redirect(url('back-office/ressources/training/competences/formateur'));
+                return Response::redirect(training_lms_admin_url('competences/formateur'));
             }
 
             $action = (string) $request->input('action', '');
@@ -302,7 +302,7 @@ final class TrainingCompetencyController
                 }
             }
 
-            return Response::redirect(url('back-office/ressources/training/competences/formateur'));
+            return Response::redirect(training_lms_admin_url('competences/formateur'));
         }
 
         return Response::view('layout.main', [
