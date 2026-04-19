@@ -41,6 +41,9 @@ $active = 'register';
             <p class="mt-3 text-sm text-slate-700 leading-relaxed max-w-lg mx-auto">
                 Identité affichée sur la plateforme et personnage RP de départ. Le code ci-dessous ne se remplit que si un responsable vous a invité à rejoindre une communauté.
             </p>
+            <p class="mt-2 text-xs text-slate-500 leading-relaxed max-w-lg mx-auto">
+                Après inscription, vous recevez aussi un e-mail de checklist (sécurité OTP, profil Steam et démarrage).
+            </p>
         </div>
 
         <?php $err = \App\Core\Session::getFlash('error'); $ok = \App\Core\Session::getFlash('success'); ?>
@@ -96,6 +99,19 @@ $active = 'register';
                         required
                         autocomplete="email"
                         placeholder="operateur@exemple.fr"
+                        class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
+                    >
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="steam_profile">Profil Steam (optionnel)</label>
+                    <p class="text-xs text-slate-500 ml-1">SteamID 64, lien <code>/profiles/…</code> ou <code>/id/…</code> — synchronisé dès l’inscription.</p>
+                    <input
+                        id="steam_profile"
+                        type="text"
+                        name="steam_profile"
+                        maxlength="512"
+                        autocomplete="off"
+                        placeholder="https://steamcommunity.com/id/votre-profil"
                         class="ds-input w-full text-sm shadow-inner shadow-slate-100/60"
                     >
                 </div>

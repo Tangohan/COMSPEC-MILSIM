@@ -22,6 +22,7 @@ use App\Services\Email\EmailTokenPurpose;
 use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Services\Rbac\RbacService;
+use App\Services\Steam\SteamWebApiService;
 use Throwable;
 
 final class RegisterController
@@ -36,7 +37,8 @@ final class RegisterController
         private AuditService $auditService,
         private EmailService $emailService,
         private EmailTokenRepository $emailTokens,
-        private IndicatorBlocklistService $indicatorBlocklist
+        private IndicatorBlocklistService $indicatorBlocklist,
+        private SteamWebApiService $steamWebApiService
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -71,6 +73,7 @@ final class RegisterController
         $confirm = (string) $request->input('password_confirmation');
         $displayName = trim((string) $request->input('display_name'));
         $characterName = trim((string) $request->input('character_name'));
+        $steamProfile = trim((string) $request->input('steam_profile'));
 
         $v = new Validator(
             [
@@ -79,6 +82,7 @@ final class RegisterController
                 'password_confirmation' => $confirm,
                 'display_name' => $displayName,
                 'character_name' => $characterName,
+                'steam_profile' => $steamProfile,
             ],
             [
                 'email' => 'required|email',
@@ -86,6 +90,7 @@ final class RegisterController
                 'password_confirmation' => 'required',
                 'display_name' => 'required|min:2|max:100',
                 'character_name' => 'required|min:2|max:150',
+                'steam_profile' => 'max:512',
             ]
         );
         if (!$v->validate() || $password !== $confirm) {
@@ -95,6 +100,18 @@ final class RegisterController
             );
 
             return Response::redirect(url('register'));
+        }
+        $resolvedSteamId = null;
+        if ($steamProfile !== '') {
+            $resolvedSteamId = $this->steamWebApiService->resolveSteamIdFromUserInput($steamProfile);
+            if ($resolvedSteamId === null) {
+                Session::flash(
+                    'error',
+                    'Profil Steam invalide : utilisez un SteamID 64 (17 chiffres), un lien « /profiles/... » ou « /id/... ».'
+                );
+
+                return Response::redirect(url('register'));
+            }
         }
 
         $communityCodeInput = trim((string) $request->input('community_code'));
@@ -151,6 +168,14 @@ final class RegisterController
             $this->personnelProfileRepository->update($userId, [
                 'character_name' => $characterName,
             ]);
+            if ($resolvedSteamId !== null) {
+                $steamPatch = ['steam_id' => $resolvedSteamId];
+                $steamPlayer = $this->steamWebApiService->fetchPublicPlayer($resolvedSteamId);
+                if ($steamPlayer && trim((string) ($steamPlayer['avatar_url'] ?? '')) !== '') {
+                    $steamPatch['avatar_url'] = trim((string) $steamPlayer['avatar_url']);
+                }
+                $this->userRepository->update($userId, $tenantId, $steamPatch);
+            }
             $pdo->commit();
         } catch (Throwable) {
             $pdo->rollBack();
@@ -198,6 +223,15 @@ final class RegisterController
             $tokenHash,
             bin2hex(random_bytes(16)),
             $expires
+        );
+
+        $this->emailService->sendRegisterSecurityCompanion(
+            $emailNorm,
+            $displayName,
+            $tenantName,
+            url('account/preferences'),
+            url('communities/create'),
+            $tenantId
         );
 
         return Response::redirect(url('register/check-email'));

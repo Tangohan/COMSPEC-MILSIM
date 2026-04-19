@@ -652,6 +652,15 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                                     </p>
                                 </details>
                             </div>
+
+                            <div class="rounded-2xl border border-blue-200 bg-blue-50/70 p-5">
+                                <p class="text-[11px] font-black uppercase tracking-[0.2em] text-blue-900">Sécurité & intégrations</p>
+                                <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-slate-700">
+                                    <li><strong class="text-slate-900">OTP renforcé :</strong> les rôles administratifs (fondateur / admin) valident la connexion par code e-mail.</li>
+                                    <li><strong class="text-slate-900">E-mail supplémentaire :</strong> après création, le responsable reçoit une checklist opérationnelle.</li>
+                                    <li><strong class="text-slate-900">Steam :</strong> pensez à demander la synchronisation des profils Steam dans les préférences compte pour le staff.</li>
+                                </ul>
+                            </div>
                         </section>
 
                         <div id="paid-hint" class="mt-6 hidden rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-900">
