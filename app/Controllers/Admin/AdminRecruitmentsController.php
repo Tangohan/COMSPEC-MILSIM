@@ -17,6 +17,7 @@ use App\Repositories\UserRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Recruitment\EnlistmentAcceptanceProvisioningService;
+use App\Services\Recruitment\EnlistmentPortalAttachmentService;
 use App\Services\Recruitment\TenantRecruitmentSettings;
 
 class AdminRecruitmentsController
@@ -30,6 +31,7 @@ class AdminRecruitmentsController
         private RecruitmentOpeningRepository $recruitmentOpeningRepository,
         private UserRepository $userRepository,
         private EmailService $emailService,
+        private EnlistmentPortalAttachmentService $enlistmentPortalAttachmentService,
     ) {}
 
     public function index(Request $request, array $params = []): Response

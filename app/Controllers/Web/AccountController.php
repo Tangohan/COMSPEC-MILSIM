@@ -796,7 +796,8 @@ class AccountController
                 if ($otpPassword === '' || !password_verify($otpPassword, (string) ($user['password_hash'] ?? ''))) {
                     $otpErrors['otp_toggle_password'] = ['Mot de passe actuel incorrect.'];
                 } else {
-                    $want = (string) $request->input('email_login_otp_enabled') === '1';
+                    $want = $request->input('email_login_otp_enabled') !== null
+                        && (string) $request->input('email_login_otp_enabled') === '1';
                     if ($loginOtpForcedByRole && !$want) {
                         $otpErrors['email_login_otp_enabled'] = ['Votre rôle impose déjà cette protection : elle ne peut pas être désactivée.'];
                     } else {

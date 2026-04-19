@@ -77,4 +77,15 @@ final class EnlistmentPortalMessagingNotificationService
             }
         }
     }
+
+    /**
+     * @param array<string, mixed> $enlistment
+     */
+    public function notifyStaffOfCandidatePortalUpload(int $tenantId, string $tenantName, array $enlistment, string $kind, string $originalName): void
+    {
+        $isAudio = $kind === 'audio';
+        $label = $isAudio ? 'Enregistrement audio transmis' : 'Document transmis';
+        $body = $label . ' : ' . $originalName;
+        $this->notifyStaffOfCandidatePortalMessage($tenantId, $tenantName, $enlistment, $body);
+    }
 }

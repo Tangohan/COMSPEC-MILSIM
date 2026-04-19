@@ -76,6 +76,12 @@ class EnlistmentRepository
         return self::$hasPortalAttachmentsTable;
     }
 
+    /** Portail candidat : colonnes options + table pièces jointes présentes en base. */
+    public function candidatePortalUploadsReady(): bool
+    {
+        return $this->hasPortalAllowColumns() && $this->hasPortalAttachmentsTable();
+    }
+
     public function updateCandidatePortalOptions(int $tenantId, int $enlistmentId, bool $allowFiles, bool $allowAudio): bool
     {
         if (!$this->hasPortalAllowColumns()) {
