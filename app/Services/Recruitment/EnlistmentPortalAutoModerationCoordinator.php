@@ -6,6 +6,7 @@ namespace App\Services\Recruitment;
 
 use App\Repositories\BlockedIndicatorRepository;
 use App\Repositories\EnlistmentTimelineRepository;
+use App\Repositories\PlatformSettingsRepository;
 use App\Repositories\UserRepository;
 use App\Services\EmailService;
 
@@ -16,12 +17,16 @@ final class EnlistmentPortalAutoModerationCoordinator
 {
     private const BLOCK_TTL_DAYS = 365;
 
+    /** Clé `platform_settings` : si désactivé (0), aucun courriel d’alerte automod n’est expédié (blocages inchangés). */
+    public const SETTING_AUTOMOD_ALERT_EMAILS_ENABLED = 'recruitment_portal_automod_alert_emails_enabled';
+
     public function __construct(
         private EnlistmentPortalTextModerationScanner $textModerationScanner,
         private BlockedIndicatorRepository $blockedIndicatorRepository,
         private UserRepository $userRepository,
         private EmailService $emailService,
         private EnlistmentTimelineRepository $enlistmentTimelineRepository,
+        private PlatformSettingsRepository $platformSettingsRepository,
     ) {}
 
     /**
@@ -206,6 +211,9 @@ final class EnlistmentPortalAutoModerationCoordinator
         string $textPreviewForLog,
         ?string $staffActorEmail,
     ): void {
+        if (!$this->platformSettingsRepository->getBool(self::SETTING_AUTOMOD_ALERT_EMAILS_ENABLED, true)) {
+            return;
+        }
         $eid = (int) ($enlistment['id'] ?? 0);
         $candidateEmail = strtolower(trim((string) ($enlistment['email'] ?? '')));
         if ($candidateEmail !== '' && !filter_var($candidateEmail, FILTER_VALIDATE_EMAIL)) {

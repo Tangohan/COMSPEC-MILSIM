@@ -8,6 +8,19 @@ $submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
 $via = is_array($submittedViaCounts ?? null) ? $submittedViaCounts : [];
 $weekly = is_array($weeklyCreated ?? null) ? $weeklyCreated : [];
 $topOpenings = is_array($topOpenings ?? null) ? $topOpenings : [];
+$automodDossiers = is_array($automodDossiers ?? null) ? $automodDossiers : [];
+$canOpenSystemRecruitmentTools = !empty($canOpenSystemRecruitmentTools);
+$nPortalBlocks = is_array($portalRecruitmentBlocks ?? null) ? count($portalRecruitmentBlocks) : 0;
+$maskEmail = static function (string $e): string {
+    $e = trim($e);
+    if ($e === '' || !str_contains($e, '@')) {
+        return '—';
+    }
+    [$u, $d] = explode('@', $e, 2);
+    $prefix = mb_substr($u, 0, 2);
+
+    return $prefix . '•••@' . $d;
+};
 $viaLabel = static function (string $k): string {
     return match ($k) {
         'guest' => 'Sans compte (invité)',
@@ -50,6 +63,88 @@ $viaLabel = static function (string $k): string {
                         </div>
                     </div>
                 </header>
+
+                <section class="lms-panel rounded-[2rem] p-6 md:p-8 border border-amber-200/90 bg-amber-50/30 space-y-4" aria-labelledby="automod-heading">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <p class="text-[9px] font-black tracking-[0.35em] text-amber-800 uppercase">Modération automatique</p>
+                            <h2 id="automod-heading" class="mt-2 text-lg font-black text-slate-900 tracking-tight">Dossiers concernés par le filtre du portail</h2>
+                            <p class="mt-2 text-sm text-stone-700 max-w-3xl leading-relaxed">
+                                Lorsqu’un texte est refusé sur le portail candidat ou par un membre de l’équipe, des blocages peuvent s’appliquer et un courriel d’alerte part aux contacts de la communauté.
+                                Ici vous voyez les dossiers ayant déclenché cette protection, vous pouvez <strong>rétablir l’accès</strong> sur votre communauté ou <strong>solliciter l’équipe du site</strong> pour un arbitrage plus large.
+                            </p>
+                        </div>
+                        <?php if ($canOpenSystemRecruitmentTools): ?>
+                        <a href="<?= htmlspecialchars(url('admin/system/recruitment-portal-tools'), ENT_QUOTES, 'UTF-8') ?>" class="shrink-0 inline-flex items-center justify-center rounded-xl border border-sky-300 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wide text-sky-900 hover:bg-sky-50 transition">Outil assistance site</a>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($nPortalBlocks > 0): ?>
+                    <p class="text-xs text-amber-950/90 rounded-xl border border-amber-200 bg-white/80 px-3 py-2">
+                        <span class="font-bold"><?= (int) $nPortalBlocks ?></span> blocage(s) encore actif(s) lié(s) au portail recrutement sur cette communauté (tous dossiers confondus).
+                    </p>
+                    <?php endif; ?>
+                    <?php if ($automodDossiers === []): ?>
+                    <p class="text-sm text-stone-600">Aucun dossier avec modération automatique enregistrée pour le moment.</p>
+                    <?php else: ?>
+                    <div class="overflow-x-auto rounded-xl border border-stone-200 bg-white">
+                        <table class="min-w-full text-sm text-left">
+                            <thead>
+                                <tr class="text-[10px] font-black uppercase tracking-wider text-stone-500 border-b border-stone-200 bg-stone-50/80">
+                                    <th class="py-3 px-4">Dernière alerte</th>
+                                    <th class="py-3 px-4">Dossier</th>
+                                    <th class="py-3 px-4">Contact</th>
+                                    <th class="py-3 px-4">Origine</th>
+                                    <th class="py-3 px-4">Blocage e-mail dossier</th>
+                                    <th class="py-3 px-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($automodDossiers as $d): ?>
+                                <?php
+                                $eid = (int) ($d['enlistment_id'] ?? 0);
+                                $blocked = !empty($d['portal_email_blocked']);
+                                ?>
+                                <tr class="border-b border-stone-100 last:border-0 align-top">
+                                    <td class="py-3 px-4 text-stone-800 whitespace-nowrap"><?= htmlspecialchars((string) ($d['mod_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="py-3 px-4">
+                                        <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $eid), ENT_QUOTES, 'UTF-8') ?>" class="font-bold text-sky-800 hover:underline">Dossier n°<?= $eid ?></a>
+                                        <p class="text-[11px] text-stone-500 mt-0.5">Statut : <?= htmlspecialchars((string) ($d['enlistment_status'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                    </td>
+                                    <td class="py-3 px-4 text-stone-700"><?= htmlspecialchars($maskEmail((string) ($d['email'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="py-3 px-4 text-stone-700"><?= htmlspecialchars((string) ($d['moderation_side_fr'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="py-3 px-4">
+                                        <?php if ($blocked): ?>
+                                        <span class="inline-flex rounded-full bg-rose-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-rose-900">Oui</span>
+                                        <?php else: ?>
+                                        <span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-900">Non</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="py-3 px-4 text-right space-y-2">
+                                        <form method="post" action="<?= htmlspecialchars(url('back-office/ressources/recrutement/automod/restore-access'), ENT_QUOTES, 'UTF-8') ?>" class="inline-block text-left space-y-1" onsubmit="return confirm('Rétablir l’accès pour ce dossier sur votre communauté ?');">
+                                            <?= \App\Core\Csrf::field() ?>
+                                            <input type="hidden" name="enlistment_id" value="<?= $eid ?>">
+                                            <label class="flex items-center gap-2 text-[11px] text-stone-600 cursor-pointer">
+                                                <input type="checkbox" name="also_revoke_ip" value="1" class="rounded border-stone-300">
+                                                Lever aussi les blocages réseau « portail candidat »
+                                            </label>
+                                            <button type="submit" class="mt-1 w-full sm:w-auto inline-flex justify-center rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-white hover:bg-emerald-800 transition">Rétablir l’accès</button>
+                                        </form>
+                                        <form method="post" action="<?= htmlspecialchars(url('back-office/ressources/recrutement/automod/escalate'), ENT_QUOTES, 'UTF-8') ?>" class="block text-left space-y-1 border-t border-stone-100 pt-2 mt-2">
+                                            <?= \App\Core\Csrf::field() ?>
+                                            <input type="hidden" name="enlistment_id" value="<?= $eid ?>">
+                                            <label class="block text-[11px] font-semibold text-stone-600">Message pour l’équipe du site (optionnel)</label>
+                                            <textarea name="staff_note" rows="2" maxlength="2000" class="w-full min-w-[12rem] rounded-lg border border-stone-300 px-2 py-1.5 text-xs" placeholder="Contexte, urgence, pièces jointes à vérifier…"></textarea>
+                                            <button type="submit" class="w-full sm:w-auto inline-flex justify-center rounded-lg border border-sky-400 bg-sky-50 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-sky-950 hover:bg-sky-100 transition">Solliciter l’équipe du site</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs text-stone-600">La sollicitation envoie un courriel aux personnes chargées de l’administration technique du site. Si aucun destinataire n’est trouvé, demandez à l’équipe qui gère l’hébergement d’ajouter des adresses dédiées aux escalades recrutement.</p>
+                    <?php endif; ?>
+                </section>
 
                 <section class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="lms-panel rounded-2xl p-5 border border-slate-200/80 block transition hover:border-sky-300/60 hover:shadow-md">

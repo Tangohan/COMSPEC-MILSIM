@@ -121,6 +121,41 @@ final class EnlistmentTimelineRepository
     }
 
     /**
+     * Dossiers ayant déclenché la modération automatique du portail (événements les plus récents en premier).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRecentPortalAutomodForTenant(int $tenantId, int $limit = 50): array
+    {
+        if (!$this->tableExists() || $tenantId < 1) {
+            return [];
+        }
+        $lim = max(1, min(120, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT e.id AS enlistment_id, e.email, e.status AS enlistment_status, e.created_at AS enlistment_created_at,
+                    t.id AS timeline_entry_id, t.created_at AS mod_at, t.body, t.metadata
+             FROM enlistment_timeline_entries t
+             INNER JOIN enlistments e ON e.id = t.enlistment_id AND e.tenant_id = t.tenant_id
+             WHERE t.tenant_id = ? AND t.summary = 'Modération automatique du portail'
+             ORDER BY t.created_at DESC, t.id DESC
+             LIMIT {$lim}"
+        );
+        $stmt->execute([$tenantId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($rows as &$row) {
+            if (!empty($row['metadata']) && is_string($row['metadata'])) {
+                $d = json_decode($row['metadata'], true);
+                $row['metadata'] = is_array($d) ? $d : null;
+            } else {
+                $row['metadata'] = null;
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
      * Reconstitue un journal minimal pour les dossiers créés avant la table (une seule fois, sous verrou).
      *
      * @param array<string, mixed> $enlistmentRow

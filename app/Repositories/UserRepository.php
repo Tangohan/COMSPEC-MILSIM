@@ -1895,6 +1895,62 @@ class UserRepository
         return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
     }
 
+    /**
+     * Courriels des comptes actifs disposant d’une permission donnée sur au moins une communauté (ex. escale vers l’équipe site).
+     *
+     * @return list<string>
+     */
+    public function listActiveEmailsHavingPermissionGlobally(string $permissionSlug, int $limit = 40): array
+    {
+        $slug = trim($permissionSlug);
+        if ($slug === '') {
+            return [];
+        }
+        $lim = max(1, min(80, $limit));
+        $seen = [];
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $params = array_merge($pack['params'], [$slug]);
+        $sql = "SELECT DISTINCT u.email FROM users u
+            INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
+            INNER JOIN role_permissions rp ON rp.role_id = r.id
+            INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
+            WHERE u.status = 'active' AND {$pack['sql']} AND p.slug = ?
+            LIMIT {$lim}";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $e = strtolower(trim((string) ($row['email'] ?? '')));
+                if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                    $seen[$e] = true;
+                }
+            }
+        } catch (\Throwable) {
+        }
+        if ($this->hasTenantUserRolesTable()) {
+            $sql2 = "SELECT DISTINCT u.email FROM users u
+                INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
+                INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
+                INNER JOIN role_permissions rp ON rp.role_id = r.id
+                INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
+                WHERE u.status = 'active' AND {$pack['sql']} AND p.slug = ?
+                LIMIT {$lim}";
+            try {
+                $st = $this->pdo->prepare($sql2);
+                $st->execute($params);
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $e = strtolower(trim((string) ($row['email'] ?? '')));
+                    if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                        $seen[$e] = true;
+                    }
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return array_keys($seen);
+    }
+
     public function invalidateAllSessionsForUser(int $userId, ?int $tenantId = null): void
     {
         if ($tenantId !== null) {

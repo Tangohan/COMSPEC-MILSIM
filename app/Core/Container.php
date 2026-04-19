@@ -979,7 +979,18 @@ class Container
                 self::get(\App\Repositories\BlockedIndicatorRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Services\EmailService::class),
-                self::get(\App\Repositories\EnlistmentTimelineRepository::class)
+                self::get(\App\Repositories\EnlistmentTimelineRepository::class),
+                self::get(\App\Repositories\PlatformSettingsRepository::class)
+            ),
+            \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController::class => new \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\BlockedIndicatorRepository::class),
+                self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
+                self::get(\App\Repositories\EnlistmentRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\EnlistmentTimelineRepository::class),
+                self::get(\App\Repositories\PlatformSettingsRepository::class)
             ),
             \App\Repositories\RecruitmentTeamWallRepository::class => new \App\Repositories\RecruitmentTeamWallRepository(),
             \App\Controllers\Admin\AdminRecruitmentsController::class => new \App\Controllers\Admin\AdminRecruitmentsController(
@@ -1017,7 +1028,12 @@ class Container
             \App\Controllers\Admin\RecruitmentWorkspaceController::class => new \App\Controllers\Admin\RecruitmentWorkspaceController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(TenantRepository::class),
-                self::get(\App\Repositories\RecruitmentOpeningRepository::class)
+                self::get(\App\Repositories\RecruitmentOpeningRepository::class),
+                self::get(\App\Repositories\EnlistmentTimelineRepository::class),
+                self::get(\App\Repositories\BlockedIndicatorRepository::class),
+                self::get(\App\Services\Auth\AuthService::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\UserRepository::class)
             ),
             \App\Controllers\Admin\AdminTrainingController::class => new \App\Controllers\Admin\AdminTrainingController(
                 self::get(\App\Repositories\TrainingCourseRepository::class),

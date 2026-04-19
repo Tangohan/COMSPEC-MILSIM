@@ -8,6 +8,29 @@ declare(strict_types=1);
  *
  * @param PDO $pdo Connexion SQL (comme run-migrations.php)
  */
+
+function training_roles_org_course_thumbnail_path(): string
+{
+    return 'assets/images/armee-de-terre-recrute-chef-equipe-specialiste-terrain-infrastructure.jpg';
+}
+
+function training_roles_org_course_banner_path(): string
+{
+    return 'assets/images/mutations.jpg';
+}
+
+/** Met à jour miniature et bannière pour un parcours déjà présent (ex. après ajout d’assets). */
+function training_roles_org_sync_course_cover(PDO $pdo, int $tenantId, string $slug): void
+{
+    $st = $pdo->prepare('UPDATE training_courses SET thumbnail_path = ?, banner_path = ? WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $st->execute([
+        training_roles_org_course_thumbnail_path(),
+        training_roles_org_course_banner_path(),
+        $tenantId,
+        $slug,
+    ]);
+}
+
 function run_training_roles_org_course_seed(PDO $pdo): void
 {
     $chk = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'training_courses' LIMIT 1");
@@ -28,6 +51,8 @@ function run_training_roles_org_course_seed(PDO $pdo): void
             continue;
         }
         if (training_roles_org_course_exists($pdo, $tenantId, $slug)) {
+            training_roles_org_sync_course_cover($pdo, $tenantId, $slug);
+
             continue;
         }
         $authorId = training_roles_org_resolve_author_user_id($pdo, $tenantId);
@@ -54,6 +79,8 @@ function run_training_roles_org_course_for_tenant(PDO $pdo, int $tenantId, ?int 
     }
     $slug = 'parcours-postes-rbac';
     if (training_roles_org_course_exists($pdo, $tenantId, $slug)) {
+        training_roles_org_sync_course_cover($pdo, $tenantId, $slug);
+
         return;
     }
     $authorId = $authorUserId !== null && $authorUserId > 0
@@ -701,7 +728,7 @@ function training_roles_org_seed_one_tenant(PDO $pdo, int $tenantId, int $author
             'target_audience' => ['staff', 'membres', 'référents RH'],
             'pedagogical_style' => 'structured_reference',
             'completion_message' => 'Parcours terminé : vous disposez des repères pour distinguer rôles, fonctions, spécialité et affectation sur le portail. Les décisions d’habilitation opérationnelle restent du ressort de votre unité.',
-            'tags' => ['roles', 'fonctions', 'specialite', 'affectation', 'orbat', 'S1'],
+            'tags' => ['rôles', 'fonctions', 'spécialité', 'affectation', 'ORBAT', 'S1'],
         ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -721,7 +748,7 @@ function training_roles_org_seed_one_tenant(PDO $pdo, int $tenantId, int $author
                 theme_json, thumbnail_path, banner_path, category, level, language_code,
                 estimated_minutes, passing_score, is_mandatory, is_certifying, validity_days, visibility,
                 created_by, updated_by, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?, 0, 1, NULL, ?, ?, ?, ?, ?)'
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, NULL, ?, ?, ?, ?, ?)'
         );
         $ins->execute([
             $tenantId,
@@ -733,6 +760,8 @@ function training_roles_org_seed_one_tenant(PDO $pdo, int $tenantId, int $author
             training_roles_org_course_description(),
             training_roles_org_course_objectives(),
             $themeJson,
+            training_roles_org_course_thumbnail_path(),
+            training_roles_org_course_banner_path(),
             'Organisation',
             'intermediaire',
             'fr',

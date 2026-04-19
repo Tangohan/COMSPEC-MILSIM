@@ -644,7 +644,7 @@ if (!function_exists('training_course_default_cover_url')) {
      */
     function training_course_default_cover_url(): string
     {
-        return 'https://www.armytimes.com/resizer/v2/RAZQ3MLRIBFRLBIO4MWPXAB6XM.jpg?width=1200&auth=45ae6a1e3391a70c6e9e748d98ade72e1ed3f43ae5d0a5441a65e1d8a4a93e00';
+        return rtrim(url(''), '/') . '/assets/images/formation-de-specialite.jpg';
     }
 }
 

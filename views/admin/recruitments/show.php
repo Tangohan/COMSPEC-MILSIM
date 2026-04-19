@@ -395,6 +395,13 @@ $recapMeta = match ($statusRaw) {
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Suivi en ligne</p>
                     <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Portail candidat</h2>
                     <p class="mt-2 max-w-3xl text-sm leading-relaxed text-stone-600">Autorisez ou non l’envoi de pièces depuis le lien de suivi sécurisé envoyé au candidat. Ces réglages valent uniquement pour ce dossier.</p>
+                    <?php if (\App\Core\Gate::getInstance()->allows('admin.system')): ?>
+                    <p class="mt-3 max-w-3xl rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-2 text-xs text-sky-950">
+                        <strong>Assistance site :</strong> après un message bloqué par la modération automatique, en cas de blocage persistant, les opérateurs plateforme peuvent utiliser
+                        <a href="<?= htmlspecialchars(url('admin/system/recruitment-portal-tools?' . http_build_query(['tenant_id' => (int) ($e['tenant_id'] ?? 0), 'enlistment_id' => $id])), ENT_QUOTES, 'UTF-8') ?>" class="font-bold underline decoration-sky-400 hover:text-sky-900">Portail recrutement — automod &amp; réouverture</a>
+                        (IDs préremplis).
+                    </p>
+                    <?php endif; ?>
                     <?php if ($candidatePortalSuiviUrl !== null): ?>
                         <div class="mt-4 flex flex-wrap items-center gap-3">
                             <a href="<?= htmlspecialchars($candidatePortalSuiviUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[2.5rem] items-center justify-center rounded-xl bg-sky-700 px-5 text-xs font-black uppercase tracking-wide text-white shadow-sm transition hover:bg-sky-800">Ouvrir la page de suivi complète</a>

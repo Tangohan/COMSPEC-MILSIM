@@ -14,6 +14,7 @@ $boForumMod = url('back-office/forum-moderation');
 $contentMod = url('admin/content-moderation');
 $memberSanctionsSite = url('admin/system/member-sanctions');
 $blocklistSite = url('admin/system/blocklist');
+$recruitmentPortalTools = url('admin/system/recruitment-portal-tools');
 $gateMod = \App\Core\Gate::getInstance();
 $canSystemModerationTools = $gateMod->allows('admin.system');
 $canOpenForumModConsole = $canSystemModerationTools
@@ -42,6 +43,7 @@ $tenantLabel = static function (array $row): string {
         <p class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
             <a href="<?= htmlspecialchars($memberSanctionsSite, ENT_QUOTES, 'UTF-8') ?>" class="text-rose-800 hover:underline">Sanctions membres (site) →</a>
             <a href="<?= htmlspecialchars($blocklistSite, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-700 hover:underline">Liste e-mail et réseau (site) →</a>
+            <a href="<?= htmlspecialchars($recruitmentPortalTools, ENT_QUOTES, 'UTF-8') ?>" class="text-sky-800 hover:underline">Portail recrutement (automod &amp; réouverture) →</a>
         </p>
         <?php endif; ?>
     </div>

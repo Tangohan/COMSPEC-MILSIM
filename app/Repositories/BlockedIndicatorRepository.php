@@ -135,6 +135,62 @@ class BlockedIndicatorRepository
     }
 
     /**
+     * Blocages tenant actifs liés au portail recrutement (motifs créés par la modération automatique ou l’équipe).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listActiveTenantPortalRecruitmentRelated(int $tenantId, int $limit = 150): array
+    {
+        $lim = max(1, min(500, $limit));
+        $st = $this->pdo->prepare(
+            "SELECT * FROM blocked_indicators WHERE scope = 'tenant' AND tenant_id = ?
+             AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW())
+             AND reason IS NOT NULL AND reason LIKE ?
+             ORDER BY id DESC LIMIT {$lim}"
+        );
+        $st->execute([$tenantId, '%Portail recrutement%']);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Lève tous les blocages e-mail actifs pour une empreinte donnée sur une communauté.
+     */
+    public function revokeActiveTenantEmailHash(int $tenantId, string $emailHash): int
+    {
+        if ($tenantId < 1 || $emailHash === '') {
+            return 0;
+        }
+        $st = $this->pdo->prepare(
+            "UPDATE blocked_indicators SET revoked_at = NOW()
+             WHERE scope = 'tenant' AND tenant_id = ? AND indicator_type = 'email'
+             AND value_hash = ? AND revoked_at IS NULL"
+        );
+        $st->execute([$tenantId, $emailHash]);
+
+        return $st->rowCount();
+    }
+
+    /**
+     * Lève les blocages réseau actifs dont le motif indique un refus côté candidat sur le portail (assistance site).
+     */
+    public function revokeActiveTenantIpPortalCandidateViolations(int $tenantId): int
+    {
+        if ($tenantId < 1) {
+            return 0;
+        }
+        $st = $this->pdo->prepare(
+            "UPDATE blocked_indicators SET revoked_at = NOW()
+             WHERE scope = 'tenant' AND tenant_id = ? AND indicator_type = 'ip'
+             AND revoked_at IS NULL
+             AND reason IS NOT NULL AND reason LIKE ? AND reason LIKE ?"
+        );
+        $st->execute([$tenantId, '%Portail recrutement%', '%(candidat)%']);
+
+        return $st->rowCount();
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function listGlobal(int $limit = 200): array

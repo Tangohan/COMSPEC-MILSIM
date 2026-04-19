@@ -107,30 +107,80 @@ class TrainingService
         return !in_array($st, ['revoked', 'expired', 'pending_approval', 'withdrawn'], true);
     }
 
-    /** Pourcentage global de progression (leçons complétées / total des leçons du parcours). */
+    /**
+     * Pourcentage global de progression : leçons obligatoires + quiz de module (hors examen final)
+     * + examens finaux — aligné sur la logique de validation du parcours (pas seulement les leçons).
+     */
     public function getGlobalProgress(int $enrollmentId): float
     {
         $enrollment = $this->enrollmentRepository->findById($enrollmentId, null);
         if (!$enrollment) {
             return 0.0;
         }
-        $lessonIds = $this->getCourseLessonIds((int) $enrollment['course_id']);
-        $total = count($lessonIds);
-        if ($total === 0) {
-            return 0.0;
-        }
+        $courseId = (int) $enrollment['course_id'];
+        $modules = $this->moduleRepository->listByCourseId($courseId);
         $progressRows = $this->progressRepository->listByEnrollmentId($enrollmentId);
         $byLesson = [];
         foreach ($progressRows as $p) {
             $byLesson[(int) $p['lesson_id']] = (string) ($p['status'] ?? '');
         }
-        $completed = 0;
-        foreach ($lessonIds as $lid) {
-            if (($byLesson[$lid] ?? '') === 'completed') {
-                $completed++;
+
+        $total = 0;
+        $done = 0;
+
+        foreach ($modules as $mod) {
+            if ((int) ($mod['is_required'] ?? 1) !== 1) {
+                continue;
+            }
+            $moduleId = (int) $mod['id'];
+            foreach ($this->lessonRepository->listByModuleId($moduleId) as $l) {
+                if ((int) ($l['is_required'] ?? 1) !== 1) {
+                    continue;
+                }
+                ++$total;
+                $lid = (int) $l['id'];
+                if (($byLesson[$lid] ?? '') === 'completed') {
+                    ++$done;
+                }
+            }
+            foreach ($this->quizRepository->listQuizzesByModuleId($moduleId) as $q) {
+                if ((int) ($q['is_final_exam'] ?? 0) === 1) {
+                    continue;
+                }
+                ++$total;
+                if ($this->quizHasPassedAttempt($enrollmentId, (int) $q['id'])) {
+                    ++$done;
+                }
             }
         }
 
-        return round(100.0 * $completed / $total, 2);
+        foreach ($modules as $mod) {
+            foreach ($this->quizRepository->listQuizzesByModuleId((int) $mod['id']) as $q) {
+                if ((int) ($q['is_final_exam'] ?? 0) !== 1) {
+                    continue;
+                }
+                ++$total;
+                if ($this->quizHasPassedAttempt($enrollmentId, (int) $q['id'])) {
+                    ++$done;
+                }
+            }
+        }
+
+        if ($total === 0) {
+            return 0.0;
+        }
+
+        return round(100.0 * $done / $total, 2);
+    }
+
+    private function quizHasPassedAttempt(int $enrollmentId, int $quizId): bool
+    {
+        foreach ($this->quizRepository->listAttemptsByEnrollmentAndQuiz($enrollmentId, $quizId) as $a) {
+            if ((int) ($a['passed'] ?? 0) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

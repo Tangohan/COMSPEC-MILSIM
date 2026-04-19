@@ -13,6 +13,19 @@ declare(strict_types=1);
  *
  * @param PDO $pdo Connexion SQL (comme run-migrations.php)
  */
+
+/** Miniature catalogue / fiche (relatif à public/). */
+function training_onboarding_course_thumbnail_path(): string
+{
+    return 'assets/images/formation-de-specialite.jpg';
+}
+
+/** Bannière en-tête du parcours (relatif à public/). */
+function training_onboarding_course_banner_path(): string
+{
+    return 'assets/images/home.jpg';
+}
+
 function run_training_onboarding_course_seed(PDO $pdo): void
 {
     $chk = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'training_courses' LIMIT 1");
@@ -553,12 +566,14 @@ function training_onboarding_refresh_portal_canvas_for_tenant(PDO $pdo, int $ten
     }
 
     $pdo->prepare(
-        'UPDATE training_courses SET description = ?, short_description = ?, learning_objectives = ?, estimated_minutes = ?, updated_at = ? WHERE id = ?'
+        'UPDATE training_courses SET description = ?, short_description = ?, learning_objectives = ?, estimated_minutes = ?, thumbnail_path = ?, banner_path = ?, updated_at = ? WHERE id = ?'
     )->execute([
         training_onboarding_course_description(),
         training_onboarding_course_short_description(),
         training_onboarding_course_objectives(),
         $totalMin,
+        training_onboarding_course_thumbnail_path(),
+        training_onboarding_course_banner_path(),
         $now,
         $courseId,
     ]);
@@ -1345,7 +1360,7 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
                 theme_json, thumbnail_path, banner_path, category, level, language_code,
                 estimated_minutes, passing_score, is_mandatory, is_certifying, validity_days, visibility,
                 created_by, updated_by, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?, 1, 1, NULL, ?, ?, ?, ?, ?)'
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, NULL, ?, ?, ?, ?, ?)'
         );
         $ins->execute([
             $tenantId,
@@ -1357,6 +1372,8 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
             training_onboarding_course_description(),
             training_onboarding_course_objectives(),
             $themeJson,
+            training_onboarding_course_thumbnail_path(),
+            training_onboarding_course_banner_path(),
             'Portail',
             'initiation',
             'fr',

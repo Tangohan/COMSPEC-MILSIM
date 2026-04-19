@@ -89,6 +89,7 @@ use App\Controllers\Admin\System\SystemAuditController;
 use App\Controllers\Admin\System\SystemSiteRoleAssignmentController;
 use App\Controllers\Admin\System\SystemMaintenanceController;
 use App\Controllers\Admin\System\SystemIndicatorBlocklistController;
+use App\Controllers\Admin\System\SystemRecruitmentPortalToolsController;
 use App\Controllers\Admin\System\SystemMemberSanctionsController;
 use App\Controllers\Admin\System\SystemUserLookupApiController;
 use App\Controllers\Admin\Organization\OrganizationDashboardController;
@@ -412,6 +413,10 @@ return function (Router $router) {
     $router->get('/admin/system/blocklist', [SystemIndicatorBlocklistController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/blocklist/add', [SystemIndicatorBlocklistController::class, 'add'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/blocklist/revoke', [SystemIndicatorBlocklistController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/recruitment-portal-tools', [SystemRecruitmentPortalToolsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/recruitment-portal-tools/save-mail', [SystemRecruitmentPortalToolsController::class, 'saveAutomodMailSetting'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/recruitment-portal-tools/revoke-indicator', [SystemRecruitmentPortalToolsController::class, 'revokeIndicator'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/recruitment-portal-tools/reopen-enlistment', [SystemRecruitmentPortalToolsController::class, 'reopenEnlistmentPortal'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/member-sanctions', [SystemMemberSanctionsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/member-sanctions/apply', [SystemMemberSanctionsController::class, 'apply'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/member-sanctions/revoke', [SystemMemberSanctionsController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -626,6 +631,8 @@ return function (Router $router) {
     $router->get('/back-office/alerts', [TenantAlertsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/recrutement', [RecruitmentWorkspaceController::class, 'dashboard'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/recrutement/analyses', [RecruitmentWorkspaceController::class, 'analytics'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/recrutement/automod/restore-access', [RecruitmentWorkspaceController::class, 'automodRestoreAccess'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/recrutement/automod/escalate', [RecruitmentWorkspaceController::class, 'automodEscalateToPlatform'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments', [AdminRecruitmentsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/equipe', [AdminRecruitmentsController::class, 'teamWall'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/equipe', [AdminRecruitmentsController::class, 'teamWallPost'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
