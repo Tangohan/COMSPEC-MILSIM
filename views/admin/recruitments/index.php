@@ -147,27 +147,27 @@ $submittedViaLabel = static function (string $raw): string {
                 <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:gap-5">
                     <div class="rounded-xl border border-stone-200/90 bg-white p-4 shadow-sm sm:p-5">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-stone-500">Total dossiers</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-[#1c2d41] tabular-nums"><?= $nTotal ?></p>
+                        <p class="mt-2 text-2xl font-extrabold text-[#1c2d41] tabular-nums"><?= $nTotal ?></p>
                     </div>
                     <div class="rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 shadow-sm sm:p-5">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-amber-900/70">À traiter</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-amber-950 tabular-nums"><?= $nSubmitted ?></p>
+                        <p class="mt-2 text-2xl font-extrabold text-amber-950 tabular-nums"><?= $nSubmitted ?></p>
                     </div>
                     <div class="rounded-xl border <?= $submittedOlderThanSla > 0 ? 'border-rose-300 bg-rose-50/60' : 'border-sky-200/80 bg-sky-50/40' ?> p-4 shadow-sm sm:p-5">
                         <p class="text-[10px] font-bold uppercase tracking-wider leading-snug <?= $submittedOlderThanSla > 0 ? 'text-rose-900/75' : 'text-sky-900/75' ?>">Sans action depuis le délai</p>
-                        <p class="mt-2 font-serif text-2xl font-bold <?= $submittedOlderThanSla > 0 ? 'text-rose-950' : 'text-sky-950' ?> tabular-nums"><?= $submittedOlderThanSla ?></p>
+                        <p class="mt-2 text-2xl font-extrabold <?= $submittedOlderThanSla > 0 ? 'text-rose-950' : 'text-sky-950' ?> tabular-nums"><?= $submittedOlderThanSla ?></p>
                     </div>
                     <div class="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4 shadow-sm sm:p-5">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-900/70">Acceptées</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-emerald-950 tabular-nums"><?= $nReviewed ?></p>
+                        <p class="mt-2 text-2xl font-extrabold text-emerald-950 tabular-nums"><?= $nReviewed ?></p>
                     </div>
                     <div class="rounded-xl border border-rose-200/80 bg-rose-50/40 p-4 shadow-sm sm:p-5">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-rose-900/70">Refusées</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-rose-950 tabular-nums"><?= $nRejected ?></p>
+                        <p class="mt-2 text-2xl font-extrabold text-rose-950 tabular-nums"><?= $nRejected ?></p>
                     </div>
                     <div class="col-span-2 rounded-xl border border-stone-300 bg-stone-100/80 p-4 shadow-sm sm:col-span-1 sm:p-5 lg:col-span-1">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-stone-600">Non admis</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-stone-900 tabular-nums"><?= $nBlocked ?></p>
+                        <p class="mt-2 text-2xl font-extrabold text-stone-900 tabular-nums"><?= $nBlocked ?></p>
                     </div>
                 </div>
 
@@ -196,8 +196,8 @@ $submittedViaLabel = static function (string $raw): string {
                                 class="mt-2 w-full max-w-[10rem] rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm font-semibold text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20"
                             >
                         </div>
-                        <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-[#1c2d41] bg-[#1c2d41] px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#152333] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a227] focus-visible:ring-offset-2">Enregistrer</button>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-stone-300 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-700 transition hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2">Page détaillée</a>
+                        <button type="submit" class="lms-btn lms-btn--dark">Enregistrer</button>
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="lms-btn lms-btn--secondary">Page détaillée</a>
                     </form>
                 </div>
             </div>
@@ -208,7 +208,7 @@ $submittedViaLabel = static function (string $raw): string {
                         <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-stone-300 bg-white shadow-inner">
                             <svg class="h-8 w-8 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         </div>
-                        <p class="mt-6 font-serif text-xl font-bold text-stone-900">Aucun dossier<?= $statusFilter ? ' pour ce filtre' : '' ?></p>
+                        <p class="mt-6 text-xl font-extrabold text-stone-900">Aucun dossier<?= $statusFilter ? ' pour ce filtre' : '' ?></p>
                         <p class="mt-2 max-w-md mx-auto text-sm text-stone-600">
                             Les candidatures reçues depuis la page d’enrôlement apparaîtront ici. Vérifiez un autre filtre ou partagez le lien du formulaire aux candidats.
                         </p>

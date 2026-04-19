@@ -26,10 +26,10 @@ $submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
                         </p>
                     </div>
                     <div class="flex shrink-0 flex-wrap gap-3">
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] items-center rounded-xl border border-sky-300/40 bg-sky-300/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-sky-100 transition hover:bg-sky-300/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c2d41]">
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits'), ENT_QUOTES, 'UTF-8') ?>" class="lms-btn lms-btn--emerald">
                             Messages préfaits
                         </a>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm transition hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c2d41]">
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="lms-btn lms-btn--secondary">
                             ← File des dossiers
                         </a>
                     </div>
@@ -41,12 +41,12 @@ $submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
                 <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <div class="rounded-xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-stone-500">Dossiers à traiter</p>
-                        <p class="mt-2 font-serif text-3xl font-bold text-[#1c2d41] tabular-nums"><?= $submittedCount ?></p>
+                        <p class="mt-2 text-3xl font-extrabold text-[#1c2d41] tabular-nums"><?= $submittedCount ?></p>
                         <p class="mt-3 text-xs leading-relaxed text-stone-600">En attente d’une décision de l’équipe.</p>
                     </div>
                     <div class="rounded-xl border <?= $submittedOlderThanSla > 0 ? 'border-rose-300 bg-rose-50/60' : 'border-sky-200 bg-sky-50/50' ?> p-5 shadow-sm sm:p-6">
                         <p class="text-[10px] font-bold uppercase tracking-wider <?= $submittedOlderThanSla > 0 ? 'text-rose-900/80' : 'text-sky-900/80' ?>">Sans action depuis le délai</p>
-                        <p class="mt-2 font-serif text-3xl font-bold <?= $submittedOlderThanSla > 0 ? 'text-rose-950' : 'text-sky-950' ?> tabular-nums"><?= $submittedOlderThanSla ?></p>
+                        <p class="mt-2 text-3xl font-extrabold <?= $submittedOlderThanSla > 0 ? 'text-rose-950' : 'text-sky-950' ?> tabular-nums"><?= $submittedOlderThanSla ?></p>
                         <p class="mt-3 text-xs leading-relaxed <?= $submittedOlderThanSla > 0 ? 'text-rose-900/90' : 'text-sky-900/85' ?>">Comptabilisés parmi les dossiers à traiter, au-delà du seuil que vous fixez ci-dessous.</p>
                     </div>
                 </div>
@@ -79,10 +79,10 @@ $submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
                         <p id="sla-help" class="mt-6 text-xs leading-relaxed text-stone-500">Les dossiers concernés restent visibles : ils sont simplement mis en évidence pour l’équipe recrutement.</p>
                     </div>
                     <div class="flex flex-wrap gap-3">
-                        <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-[#1c2d41] px-8 py-2.5 text-sm font-bold text-white shadow-md shadow-[#1c2d41]/25 transition hover:bg-[#152333] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a227] focus-visible:ring-offset-2">
+                        <button type="submit" class="lms-btn lms-btn--dark">
                             Enregistrer
                         </button>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-stone-300 bg-white px-8 py-2.5 text-sm font-semibold text-stone-800 transition hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2">
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="lms-btn lms-btn--secondary">
                             Retour aux dossiers
                         </a>
                     </div>
