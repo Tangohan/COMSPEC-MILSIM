@@ -20,6 +20,7 @@ use App\Repositories\TrainingLessonRepository;
 use App\Repositories\TrainingModuleRepository;
 use App\Repositories\TrainingResourceRepository;
 use App\Services\Platform\FeatureGateService;
+use App\Services\Documents\DocumentUploadService;
 use App\Repositories\PedagogyRepository;
 use App\Services\Training\TrainingAuditService;
 use App\Services\Training\TrainingCoursePublicationGuard;
@@ -190,6 +191,7 @@ class AdminTrainingStudioController
         private TrainingCourseSessionNotificationService $courseSessionNotificationService,
         private DocumentRepository $documentRepository,
         private TrainingLessonResourceStorageService $lessonResourceStorageService,
+        private DocumentUploadService $documentUploadService,
         private TrainingCoursePublicationGuard $coursePublicationGuard,
         private TrainingSessionInstructorGuard $sessionInstructorGuard,
         private PedagogyRepository $pedagogyRepository,
@@ -1059,8 +1061,76 @@ class AdminTrainingStudioController
         }
         $hash = '#lesson-res-' . $lessonId;
         $mode = (string) $request->input('resource_add_mode', 'link');
-        if (!in_array($mode, ['link', 'file', 'library'], true)) {
+        if (!in_array($mode, ['link', 'file', 'library', 'library_upload'], true)) {
             $mode = 'link';
+        }
+        if ($mode === 'library_upload') {
+            $upload = isset($_FILES['resource_library_upload']) && is_array($_FILES['resource_library_upload'])
+                ? $_FILES['resource_library_upload']
+                : null;
+            if ($upload === null || (int) ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                Session::flash('error', 'Choisissez un fichier à envoyer dans la bibliothèque d’assets.');
+
+                return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+            }
+            $userId = (int) Session::get('user_id');
+            if ($userId < 1) {
+                Session::flash('error', 'Session invalide, reconnectez-vous.');
+
+                return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+            }
+            $title = trim((string) $request->input('resource_library_title', ''));
+            if ($title === '') {
+                $rawName = (string) ($upload['name'] ?? 'Asset LMS');
+                $title = trim((string) pathinfo($rawName, PATHINFO_FILENAME));
+                if ($title === '') {
+                    $title = 'Asset LMS';
+                }
+            }
+            $slugBase = $this->documentRepository->slugify($title);
+            $slug = $slugBase;
+            $suffix = 2;
+            while ($this->documentRepository->slugExists($tenantId, $slug)) {
+                $slug = $slugBase . '-' . $suffix;
+                $suffix++;
+            }
+            $isPrivate = (bool) $request->input('resource_library_private');
+            $docId = $this->documentRepository->create([
+                'tenant_id' => $tenantId,
+                'title' => mb_substr($title, 0, 255),
+                'slug' => $slug,
+                'description' => trim((string) $request->input('resource_library_description', '')) ?: null,
+                'document_type' => 'asset',
+                'classification_level' => 'interne',
+                'visibility_scope' => $isPrivate ? 'private' : 'tenant',
+                'status' => 'published',
+                'created_by' => $userId,
+                'owner_user_id' => $userId,
+                'author_user_id' => $userId,
+            ]);
+            try {
+                $this->documentUploadService->uploadNewVersion($tenantId, $docId, $upload, 'Upload Studio LMS', $userId);
+            } catch (\Throwable $e) {
+                $this->documentRepository->deleteHard($docId, $tenantId);
+                Session::flash('error', 'Upload impossible pour la bibliothèque d’assets : ' . $e->getMessage());
+
+                return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+            }
+            $this->resourceRepository->create($lessonId, [
+                'resource_type' => 'library_document',
+                'title' => mb_substr($title, 0, 255),
+                'file_path' => null,
+                'external_url' => null,
+                'mime_type' => null,
+                'file_size' => null,
+                'document_id' => $docId,
+            ]);
+            $this->markCourseSavedWithCurrentStudioVersion($courseId);
+            Session::flash('success', $isPrivate
+                ? 'Asset importé en bibliothèque (privé) et lié à la leçon.'
+                : 'Asset importé en bibliothèque et lié à la leçon.');
+
+            return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
         }
 
         if ($mode === 'library') {

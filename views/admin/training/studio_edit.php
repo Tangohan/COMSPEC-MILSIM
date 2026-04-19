@@ -989,6 +989,7 @@ $defaultCanvasJson = json_encode([
                                             <option value="link">Une adresse web (site, article, vidéo en ligne…)</option>
                                             <option value="file">Un fichier (dépôt ou copie déjà sur le serveur)</option>
                                             <option value="library">Un document du centre documentaire de la communauté</option>
+                                            <option value="library_upload">Bibliothèque d’assets (upload type YouTube Studio)</option>
                                         </select>
                                     </div>
                                     <div class="space-y-2" data-lms-res-panel="link">
@@ -1070,8 +1071,48 @@ $defaultCanvasJson = json_encode([
                                         <p class="rounded border border-amber-200 bg-amber-50/80 px-2 py-1.5 text-[10px] text-amber-950">Aucun document dans le centre pour cette communauté. Ajoutez-en depuis la gestion documentaire, puis revenez ici.</p>
                                         <?php endif; ?>
                                     </div>
-                                    <button type="submit" class="w-full px-3 py-1.5 bg-sky-700 text-white text-xs font-bold rounded-lg hover:bg-sky-800">Ajouter la ressource</button>
+                                    <div class="space-y-2 hidden" data-lms-res-panel="library_upload">
+                                        <div class="rounded-lg border border-violet-200 bg-violet-50/70 px-2.5 py-2 text-[11px] text-violet-900">
+                                            <p class="font-semibold">Bibliothèque d’assets Studio</p>
+                                            <p class="mt-0.5">Importez un média depuis votre ordinateur, ajoutez un descriptif et choisissez sa visibilité <strong>privé</strong> comme sur YouTube Studio.</p>
+                                        </div>
+                                        <button type="button" class="w-full rounded-lg border border-violet-300 bg-white px-3 py-2 text-xs font-black uppercase tracking-wide text-violet-800 hover:bg-violet-50" data-lms-open-upload-modal data-lms-upload-modal-target="studio-asset-modal-<?= (int) $lid ?>">
+                                            Ouvrir le modal d’upload d’asset
+                                        </button>
+                                        <p class="text-[10px] text-slate-500">Après l’upload, l’asset est ajouté à la bibliothèque documentaire puis lié à cette leçon.</p>
+                                    </div>
+                                    <button type="submit" class="w-full px-3 py-1.5 bg-sky-700 text-white text-xs font-bold rounded-lg hover:bg-sky-800" data-lms-inline-submit>Ajouter la ressource</button>
                                 </form>
+                                <dialog id="studio-asset-modal-<?= (int) $lid ?>" class="w-full max-w-xl rounded-2xl border border-slate-200 p-0 shadow-xl backdrop:bg-slate-950/45">
+                                    <form method="dialog" class="border-b border-slate-100 px-4 py-3 flex items-center justify-between gap-3">
+                                        <p class="text-sm font-black text-slate-800">Upload asset — Leçon <?= (int) $li ?></p>
+                                        <button type="submit" class="rounded-md border border-slate-200 px-2 py-1 text-xs font-bold text-slate-600 hover:bg-slate-50">Fermer</button>
+                                    </form>
+                                    <form method="post" action="<?= training_studio_url($cid) ?>" enctype="multipart/form-data" class="space-y-3 p-4">
+                                        <?= \App\Core\Csrf::field() ?>
+                                        <input type="hidden" name="_action" value="add_lesson_resource">
+                                        <input type="hidden" name="lesson_id" value="<?= (int) $lid ?>">
+                                        <input type="hidden" name="resource_add_mode" value="library_upload">
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-slate-700 mb-0.5">Fichier (depuis votre poste)</label>
+                                            <input type="file" name="resource_library_upload" required class="block w-full text-xs text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-violet-100 file:px-2 file:py-1">
+                                            <p class="mt-1 text-[10px] text-slate-500">Formats acceptés par la bibliothèque : PDF, JPG/PNG/WEBP, MP4 (max 10 Mo).</p>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-slate-700 mb-0.5">Titre de l’asset</label>
+                                            <input type="text" name="resource_library_title" maxlength="255" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Ex. Débrief Alpha — vidéo courte">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-slate-700 mb-0.5">Description (bibliothèque)</label>
+                                            <textarea name="resource_library_description" rows="2" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Contexte, auteur, restrictions d’usage…"></textarea>
+                                        </div>
+                                        <label class="inline-flex items-center gap-2 text-xs text-slate-700">
+                                            <input type="checkbox" name="resource_library_private" value="1">
+                                            Asset privé (uniquement staff autorisé)
+                                        </label>
+                                        <button type="submit" class="w-full rounded-lg bg-violet-700 px-3 py-2 text-xs font-black uppercase tracking-wide text-white hover:bg-violet-800">Uploader l’asset et lier à la leçon</button>
+                                    </form>
+                                </dialog>
                             </div>
                         </details>
                     </aside>

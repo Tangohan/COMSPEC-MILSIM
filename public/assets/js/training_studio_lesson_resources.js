@@ -15,6 +15,10 @@
         inp.disabled = !show;
       });
     });
+    var submitBtn = form.querySelector('[data-lms-inline-submit]');
+    if (submitBtn) {
+      submitBtn.classList.toggle('hidden', v === 'library_upload');
+    }
   }
 
   function bindDocFilter(form) {
@@ -60,6 +64,16 @@
       var form = e.target.closest('form[data-lms-lesson-resource-form]');
       if (form) syncForm(form);
     }
+  });
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-lms-open-upload-modal]');
+    if (!btn) return;
+    var targetId = btn.getAttribute('data-lms-upload-modal-target');
+    if (!targetId) return;
+    var modal = document.getElementById(targetId);
+    if (!modal || typeof modal.showModal !== 'function') return;
+    modal.showModal();
   });
 
   document.querySelectorAll('form[data-lms-lesson-resource-form]').forEach(function (form) {
