@@ -548,6 +548,42 @@ final class EmailService
     }
 
     /**
+     * Modération automatique portail recrutement — alerte (candidat, équipe, administration communauté).
+     *
+     * @param 'candidate'|'staff' $recipientAudience
+     */
+    public function sendEnlistmentPortalModerationAlert(
+        string $to,
+        string $tenantName,
+        int $enlistmentId,
+        string $recipientAudience,
+        string $sourceSide,
+        string $categoryLabel,
+        string $maskedPreview,
+        int $tenantId
+    ): bool {
+        $sourceSideLabel = $sourceSide === 'equipe' ? 'Équipe recrutement' : 'Candidat';
+
+        return $this->sendTemplated(
+            EmailEvents::ENLISTMENT_PORTAL_AUTOMOD_ALERT,
+            'enlistment_portal_moderation_alert',
+            $to,
+            'Modération automatique — dossier #' . $enlistmentId . ' — ' . $tenantName,
+            [
+                'tenantName' => $tenantName,
+                'enlistmentId' => $enlistmentId,
+                'recipientAudience' => $recipientAudience,
+                'sourceSideLabel' => $sourceSideLabel,
+                'categoryLabel' => $categoryLabel,
+                'maskedPreview' => $maskedPreview,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'enlistment_portal_automod', 'enlistment_id' => $enlistmentId, 'side' => $sourceSide]
+        );
+    }
+
+    /**
      * Candidature acceptée — message au candidat (message du recruteur + lien espace).
      *
      * @param 'existing'|'new_password_pending' $accountScenario existing : compte déjà présent sur la communauté ; new_password_pending : compte tout juste créé, autre mail pour le mot de passe.

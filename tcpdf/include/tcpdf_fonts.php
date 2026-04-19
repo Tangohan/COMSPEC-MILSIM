@@ -1,4 +1,7 @@
 <?php
+// Signatures des méthodes UTF-8 / Bidi : ordre des paramètres ajusté pour PHP 8+ (évite « optional before required »).
+// Déployer ce fichier avec tcpdf/include/tcpdf_static.php et tcpdf/tcpdf.php du même dépôt.
+
 //============================================================+
 // File name   : tcpdf_fonts.php
 // Version     : 1.1.0

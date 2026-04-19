@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Recruitment\EnlistmentPortalAttachmentService;
+use App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator;
 use App\Services\Recruitment\EnlistmentPortalMessagingNotificationService;
 
 final class EnlistmentCandidatePortalController
@@ -20,7 +21,19 @@ final class EnlistmentCandidatePortalController
         private TenantRepository $tenantRepository,
         private EnlistmentPortalMessagingNotificationService $portalMessagingNotificationService,
         private EnlistmentPortalAttachmentService $portalAttachmentService,
+        private EnlistmentPortalAutoModerationCoordinator $portalAutoModerationCoordinator,
     ) {}
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function isPortalAccessBlocked(Request $request, array $row): bool
+    {
+        $tenantId = (int) ($row['tenant_id'] ?? 0);
+        $email = strtolower(trim((string) ($row['email'] ?? '')));
+
+        return $this->portalAutoModerationCoordinator->isPortalAccessBlocked($tenantId, $email, trim($request->ip()));
+    }
 
     public function show(Request $request, array $params = []): Response
     {
@@ -28,6 +41,12 @@ final class EnlistmentCandidatePortalController
         $row = $this->enlistmentRepository->findByCandidatePortalToken($token);
         if (!$row) {
             return Response::view('enlistment.error', ['message' => 'Lien invalide ou expiré.', 'enlistmentRetryUrl' => url('enlistment/error')]);
+        }
+        if ($this->isPortalAccessBlocked($request, $row)) {
+            return Response::view('enlistment.error', [
+                'message' => 'L’accès à ce suivi en ligne est suspendu pour cette communauté. Pour toute question, utilisez un canal déjà connu avec l’équipe recrutement.',
+                'enlistmentRetryUrl' => url('enlistment/error'),
+            ]);
         }
         $tenantId = (int) ($row['tenant_id'] ?? 0);
         $tenant = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
@@ -61,10 +80,29 @@ final class EnlistmentCandidatePortalController
 
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
+        if ($this->isPortalAccessBlocked($request, $row)) {
+            Session::flash('error', 'L’accès à ce suivi en ligne est suspendu pour cette communauté.');
+
+            return Response::redirect(url('enlistment/error'));
+        }
 
         $body = trim((string) $request->input('candidate_message', ''));
         if (mb_strlen($body) < 2) {
             Session::flash('error', 'Message trop court.');
+
+            return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+        }
+
+        $hit = $this->portalAutoModerationCoordinator->scan($body);
+        if ($hit !== null) {
+            $tenantId = (int) ($row['tenant_id'] ?? 0);
+            $tenantRow = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
+            $tenantName = trim((string) (is_array($tenantRow) ? ($tenantRow['name'] ?? '') : ''));
+            if ($tenantName === '') {
+                $tenantName = 'Communauté';
+            }
+            $this->portalAutoModerationCoordinator->enforceAfterCandidateViolation($tenantId, $tenantName, $row, trim($request->ip()), $hit, $body);
+            Session::flash('error', 'Ce message ne peut pas être envoyé : il contient des formulations interdites par le filtre automatique du portail. Une alerte a été transmise à l’équipe et l’accès peut être restreint.');
 
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
@@ -104,6 +142,11 @@ final class EnlistmentCandidatePortalController
 
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
+        if ($this->isPortalAccessBlocked($request, $row)) {
+            Session::flash('error', 'L’accès à ce suivi en ligne est suspendu pour cette communauté.');
+
+            return Response::redirect(url('enlistment/error'));
+        }
         $tenantId = (int) ($row['tenant_id'] ?? 0);
         $enlistmentId = (int) ($row['id'] ?? 0);
         if (!$this->enlistmentRepository->candidatePortalUploadsReady()) {
@@ -119,6 +162,21 @@ final class EnlistmentCandidatePortalController
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
         $file = isset($_FILES['portal_upload']) && is_array($_FILES['portal_upload']) ? $_FILES['portal_upload'] : null;
+        $origNameProbe = isset($file['name']) ? trim((string) $file['name']) : '';
+        if ($origNameProbe !== '') {
+            $hitName = $this->portalAutoModerationCoordinator->scan($origNameProbe);
+            if ($hitName !== null) {
+                $tenantRow = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
+                $tenantName = trim((string) (is_array($tenantRow) ? ($tenantRow['name'] ?? '') : ''));
+                if ($tenantName === '') {
+                    $tenantName = 'Communauté';
+                }
+                $this->portalAutoModerationCoordinator->enforceAfterCandidateViolation($tenantId, $tenantName, $row, trim($request->ip()), $hitName, $origNameProbe);
+                Session::flash('error', 'Le nom du fichier est refusé par le filtre automatique du portail. Une alerte a été transmise à l’équipe et l’accès peut être restreint.');
+
+                return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+            }
+        }
         $result = $this->portalAttachmentService->storeCandidateUpload($tenantId, $enlistmentId, $allowFiles, $allowAudio, $file);
         if (!($result['ok'] ?? false)) {
             Session::flash('error', (string) ($result['error'] ?? 'Envoi impossible.'));
@@ -150,6 +208,12 @@ final class EnlistmentCandidatePortalController
         $row = $this->enlistmentRepository->findByCandidatePortalToken($token);
         if (!$row || $attachmentId < 1) {
             return Response::view('enlistment.error', ['message' => 'Lien invalide ou expiré.', 'enlistmentRetryUrl' => url('enlistment/error')]);
+        }
+        if ($this->isPortalAccessBlocked($request, $row)) {
+            return Response::view('enlistment.error', [
+                'message' => 'L’accès à ce suivi en ligne est suspendu pour cette communauté.',
+                'enlistmentRetryUrl' => url('enlistment/error'),
+            ]);
         }
         $tenantId = (int) ($row['tenant_id'] ?? 0);
         $enlistmentId = (int) ($row['id'] ?? 0);

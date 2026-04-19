@@ -44,6 +44,30 @@ $expiresFmt = $expiresAt !== '' ? date('d/m/Y à H:i', strtotime($expiresAt) ?: 
 $platform = trim((string) ($enlistment['platform'] ?? ''));
 $country = trim((string) ($enlistment['country'] ?? ''));
 $openingId = (int) ($enlistment['recruitment_opening_id'] ?? 0);
+$attachments = is_array($attachments ?? null) ? $attachments : [];
+$portalUploadsReady = !empty($portalUploadsReady);
+$allowPortalFiles = !empty($allowPortalFiles);
+$allowPortalAudio = !empty($allowPortalAudio);
+$canUploadSomething = $portalUploadsReady && ($allowPortalFiles || $allowPortalAudio);
+$attachmentCount = count($attachments);
+$fmtBytes = static function (int $b): string {
+    if ($b >= 1048576) {
+        return round($b / 1048576, 1) . ' Mo';
+    }
+    if ($b >= 1024) {
+        return round($b / 1024, 1) . ' ko';
+    }
+
+    return (string) max(0, $b) . ' o';
+};
+$uploadAccept = '';
+if ($allowPortalFiles && $allowPortalAudio) {
+    $uploadAccept = '.pdf,.png,.jpg,.jpeg,.webp,.txt,audio/*';
+} elseif ($allowPortalFiles) {
+    $uploadAccept = '.pdf,.png,.jpg,.jpeg,.webp,.txt';
+} elseif ($allowPortalAudio) {
+    $uploadAccept = 'audio/*';
+}
 $msgCount = count($messages);
 $lastActivity = $createdAt;
 foreach ($messages as $m) {
@@ -85,7 +109,7 @@ $tailwindHead = (string) ob_get_clean();
     <title>Suivi de candidature — <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <?= $tailwindHead ?>
     <style>
       body { font-family: Inter, system-ui, sans-serif; }
@@ -101,7 +125,7 @@ $tailwindHead = (string) ob_get_clean();
       }
     </style>
 </head>
-<body class="relative min-h-screen overflow-x-hidden bg-slate-100 text-slate-900 antialiased">
+<body class="relative min-h-screen overflow-x-hidden bg-slate-100 font-sans text-slate-900 antialiased">
 <div class="portal-grain" aria-hidden="true"></div>
 <nav class="relative z-20 sticky top-0 border-b border-slate-800/80 bg-slate-950 text-white">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
@@ -119,7 +143,7 @@ $tailwindHead = (string) ob_get_clean();
 <main class="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
     <header class="mb-8">
         <p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">Portail candidature</p>
-        <h1 class="mt-2 font-serif text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Votre dossier</h1>
+        <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Votre dossier</h1>
         <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Échanges avec l’équipe recrutement, statut du dossier et rappels utiles. Gardez ce lien précieux : il permet de reprendre la conversation sans compte sur le portail.</p>
     </header>
 
@@ -162,6 +186,16 @@ $tailwindHead = (string) ob_get_clean();
                         <dt class="text-slate-500">Messages</dt>
                         <dd class="text-right text-xs font-semibold text-slate-800"><?= (int) $msgCount ?></dd>
                     </div>
+                    <?php if ($portalUploadsReady): ?>
+                    <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
+                        <dt class="text-slate-500">Pièces transmises</dt>
+                        <dd class="text-right text-xs font-semibold text-slate-800"><?= (int) $attachmentCount ?></dd>
+                    </div>
+                    <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
+                        <dt class="text-slate-500">Envoi de pièces</dt>
+                        <dd class="text-right text-xs font-medium <?= $canUploadSomething ? 'text-emerald-800' : 'text-slate-500' ?>"><?= $canUploadSomething ? 'Autorisé par l’équipe' : 'Non activé sur ce dossier' ?></dd>
+                    </div>
+                    <?php endif; ?>
                     <?php if ($openingId > 0): ?>
                     <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
                         <dt class="text-slate-500">Offre publiée</dt>
@@ -216,7 +250,7 @@ $tailwindHead = (string) ob_get_clean();
                             $statLine = null;
                             $bodyDisplay = $bodyRaw;
                             if (!$isCandidate && preg_match('/^Statut\s*:\s*([^\r\n]+)/u', $bodyRaw, $mm)) {
-                                $statLine = trim((string) ($mm[1]);
+                                $statLine = trim((string) ($mm[1]));
                                 $bodyDisplay = trim(preg_replace('/^Statut\s*:\s*[^\r\n]+\s*/u', '', $bodyRaw) ?? $bodyRaw);
                             }
                             ?>
@@ -247,6 +281,62 @@ $tailwindHead = (string) ob_get_clean();
                     <?php endif; ?>
                 </div>
             </section>
+
+            <?php if ($portalUploadsReady && $attachments !== []): ?>
+            <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="liste-pieces">
+                <div class="border-b border-slate-100 bg-slate-50 px-5 py-4 sm:px-6">
+                    <h2 id="liste-pieces" class="text-xs font-black uppercase tracking-wider text-slate-700">Vos pièces jointes</h2>
+                    <p class="mt-1 text-sm text-slate-600">Fichiers déjà transmis. Vous pouvez les télécharger à tout moment tant que ce lien reste valide.</p>
+                </div>
+                <ul class="divide-y divide-slate-100">
+                    <?php foreach ($attachments as $att): ?>
+                        <?php
+                        $aid = (int) ($att['id'] ?? 0);
+                        $fn = trim((string) ($att['original_name'] ?? '—'));
+                        $k = (string) ($att['kind'] ?? 'file');
+                        $sz = (int) ($att['size_bytes'] ?? 0);
+                        $when = trim((string) ($att['created_at'] ?? ''));
+                        $whenFmt = $when !== '' ? date('d/m/Y à H:i', strtotime($when) ?: time()) : '—';
+                        ?>
+                        <li class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
+                            <div class="min-w-0">
+                                <p class="truncate font-semibold text-slate-900"><?= htmlspecialchars($fn, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="mt-0.5 text-xs text-slate-500"><?= $k === 'audio' ? 'Enregistrement audio' : 'Document' ?> · <?= htmlspecialchars($fmtBytes($sz), ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($whenFmt, ENT_QUOTES, 'UTF-8') ?></p>
+                            </div>
+                            <a href="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid), ENT_QUOTES, 'UTF-8') ?>" class="shrink-0 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 transition hover:bg-slate-50">Télécharger</a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+            <?php endif; ?>
+
+            <?php if ($canUploadSomething): ?>
+            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="envoi-piece">
+                <h2 id="envoi-piece" class="text-xs font-black uppercase tracking-wider text-slate-700">Envoyer une pièce jointe</h2>
+                <p class="mt-1 text-sm text-slate-600">
+                    <?php if ($allowPortalFiles && $allowPortalAudio): ?>
+                        Documents (PDF, images, texte, jusqu’à 15&nbsp;Mo) ou enregistrement audio (jusqu’à 25&nbsp;Mo).
+                    <?php elseif ($allowPortalFiles): ?>
+                        Documents uniquement : PDF, images JPEG/PNG/WebP ou fichier texte, jusqu’à 15&nbsp;Mo.
+                    <?php else: ?>
+                        Enregistrements audio uniquement (formats courants), jusqu’à 25&nbsp;Mo.
+                    <?php endif; ?>
+                </p>
+                <form method="post" action="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece'), ENT_QUOTES, 'UTF-8') ?>" enctype="multipart/form-data" class="mt-5 space-y-4">
+                    <?= \App\Core\Csrf::field() ?>
+                    <div>
+                        <label for="portal_upload" class="sr-only">Choisir un fichier</label>
+                        <input type="file" id="portal_upload" name="portal_upload" required class="block w-full cursor-pointer rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white" accept="<?= htmlspecialchars($uploadAccept, ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                    <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-emerald-600 px-6 text-xs font-black uppercase tracking-wide text-white shadow-md transition hover:bg-emerald-500">Transmettre le fichier</button>
+                    <p class="text-[11px] text-slate-500">Un e-mail d’alerte est envoyé à l’équipe recrutement, comme pour un message texte.</p>
+                </form>
+            </section>
+            <?php elseif ($portalUploadsReady): ?>
+            <section class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600">
+                L’équipe n’a pas activé l’envoi de pièces jointes pour votre dossier. Si vous devez transmettre un document ou un audio, écrivez-le dans le message ci-dessous : l’équipe pourra vous répondre ou activer l’envoi ici.
+            </section>
+            <?php endif; ?>
 
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="nouveau-message">
                 <h2 id="nouveau-message" class="text-xs font-black uppercase tracking-wider text-slate-700">Écrire à l’équipe</h2>

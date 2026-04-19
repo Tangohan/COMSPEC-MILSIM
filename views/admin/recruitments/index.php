@@ -55,16 +55,16 @@ $filterLink = static function (?string $key, ?string $current, string $label, in
     $active = ($key === null && $current === null) || ($key !== null && $current === $key);
     $href = $key === null ? $baseUrl : $baseUrl . '?status=' . rawurlencode($key);
     $cls = $active
-        ? 'border-sky-700 bg-sky-700 text-white shadow-md shadow-sky-900/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2'
-        : 'border-slate-200/90 bg-white text-slate-700 hover:border-sky-300/80 hover:bg-sky-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2';
+        ? 'border-stone-900 bg-stone-900 text-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2'
+        : 'border-stone-300 bg-white text-stone-800 hover:border-stone-400 hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2';
 
     return sprintf(
-        '<a href="%s" class="inline-flex min-h-[2.5rem] items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition %s">%s%s</a>',
+        '<a href="%s" class="inline-flex min-h-[2.5rem] items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold uppercase tracking-wide transition %s">%s%s</a>',
         htmlspecialchars($href, ENT_QUOTES, 'UTF-8'),
         $cls,
         htmlspecialchars($label, ENT_QUOTES, 'UTF-8'),
         $count > 0
-            ? '<span class="' . ($active ? 'bg-white/20' : 'bg-slate-100') . ' min-w-[1.5rem] rounded-lg px-2 py-0.5 text-center text-xs font-black tabular-nums">' . $count . '</span>'
+            ? '<span class="' . ($active ? 'bg-white/15 text-white' : 'bg-stone-100 text-stone-700') . ' min-w-[1.5rem] rounded-lg px-2 py-0.5 text-center text-[11px] font-black tabular-nums">' . $count . '</span>'
             : ''
     );
 };
@@ -112,62 +112,60 @@ $submittedViaLabel = static function (string $raw): string {
             <p><strong>File des dossiers.</strong> Utilisez la barre latérale pour le pilotage, les analyses et les offres. Les notifications de session s’affichent en haut de page.</p>
         </div>
 
-        <div class="lms-panel rounded-[2rem] overflow-hidden shadow-xl border border-slate-200/80">
-            <div class="relative bg-slate-900 px-5 py-6 sm:px-8 sm:py-8">
-                <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-sky-500/90 via-sky-500/30 to-transparent" aria-hidden="true"></div>
-                <div class="absolute inset-0 bg-[linear-gradient(105deg,rgba(14,165,233,0.12)_0%,transparent_50%)] pointer-events-none" aria-hidden="true"></div>
-                <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
+            <div class="border-b border-stone-200 bg-stone-50 px-5 py-6 sm:px-8 sm:py-7">
+                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <p class="text-[9px] font-black uppercase tracking-[0.4em] text-sky-400/95">Bureau recrutement</p>
-                        <h1 class="mt-2 text-3xl md:text-4xl font-black tracking-tight uppercase text-white leading-tight">Dossiers de candidature</h1>
-                        <p class="mt-3 max-w-xl text-sm leading-relaxed text-slate-300/95">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Bureau recrutement</p>
+                        <h1 class="mt-1 text-2xl font-black tracking-tight text-stone-900 sm:text-3xl md:text-4xl">Dossiers de candidature</h1>
+                        <p class="mt-3 max-w-xl text-sm leading-relaxed text-stone-600">
                             Classement et suivi des demandes d’adhésion. Chaque ligne correspond à un dossier à ouvrir, instruire et archiver selon votre procédure interne.
                         </p>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <a href="<?= htmlspecialchars(url('enlistment')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm transition hover:bg-white/20">
+                        <a href="<?= htmlspecialchars(url('enlistment')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-stone-300 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-800 shadow-sm transition hover:border-emerald-400/60 hover:bg-emerald-50/50">
                             Formulaire public
                         </a>
                         <?php if (can('invitations.send') || can('admin.organization') || can('admin.access')): ?>
-                        <a href="<?= htmlspecialchars(url('back-office/invitations')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-100 transition hover:bg-amber-400/20">
+                        <a href="<?= htmlspecialchars(url('back-office/invitations')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-950 shadow-sm transition hover:bg-amber-100">
                             Invitations
                         </a>
                         <?php endif; ?>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-200 transition hover:bg-black/35">
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-stone-300 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-800 shadow-sm transition hover:bg-stone-100">
                             Modèles de texte
                         </a>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-sky-400/40 bg-sky-500/15 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-sky-100 transition hover:bg-sky-500/25">
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-stone-900 bg-stone-900 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white shadow-sm transition hover:bg-stone-800">
                             Délais d’alerte
                         </a>
                     </div>
                 </div>
             </div>
 
-            <div class="border-b border-stone-200 bg-white/80 px-4 py-6 sm:px-8 sm:py-8">
+            <div class="border-b border-stone-200 bg-white px-4 py-6 sm:px-8 sm:py-8">
                 <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:gap-5">
-                    <div class="rounded-xl border border-stone-200/90 bg-white p-4 shadow-sm sm:p-5">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-stone-500">Total dossiers</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-[#1c2d41] tabular-nums"><?= $nTotal ?></p>
+                    <div class="rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500">Total dossiers</p>
+                        <p class="mt-2 text-2xl font-black tabular-nums tracking-tight text-stone-900"><?= $nTotal ?></p>
                     </div>
-                    <div class="rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 shadow-sm sm:p-5">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-amber-900/70">À traiter</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-amber-950 tabular-nums"><?= $nSubmitted ?></p>
+                    <div class="rounded-xl border border-amber-200/90 bg-amber-50/70 p-4 shadow-sm sm:p-5">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-900/75">À traiter</p>
+                        <p class="mt-2 text-2xl font-black tabular-nums tracking-tight text-amber-950"><?= $nSubmitted ?></p>
                     </div>
-                    <div class="rounded-xl border <?= $submittedOlderThanSla > 0 ? 'border-rose-300 bg-rose-50/60' : 'border-sky-200/80 bg-sky-50/40' ?> p-4 shadow-sm sm:p-5">
-                        <p class="text-[10px] font-bold uppercase tracking-wider leading-snug <?= $submittedOlderThanSla > 0 ? 'text-rose-900/75' : 'text-sky-900/75' ?>">Sans action depuis le délai</p>
-                        <p class="mt-2 font-serif text-2xl font-bold <?= $submittedOlderThanSla > 0 ? 'text-rose-950' : 'text-sky-950' ?> tabular-nums"><?= $submittedOlderThanSla ?></p>
+                    <div class="rounded-xl border <?= $submittedOlderThanSla > 0 ? 'border-rose-200 bg-rose-50/80' : 'border-sky-200 bg-sky-50/70' ?> p-4 shadow-sm sm:p-5">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] leading-snug <?= $submittedOlderThanSla > 0 ? 'text-rose-900/80' : 'text-sky-900/80' ?>">Sans action depuis le délai</p>
+                        <p class="mt-2 text-2xl font-black tabular-nums tracking-tight <?= $submittedOlderThanSla > 0 ? 'text-rose-950' : 'text-sky-950' ?>"><?= $submittedOlderThanSla ?></p>
                     </div>
-                    <div class="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4 shadow-sm sm:p-5">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-900/70">Acceptées</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-emerald-950 tabular-nums"><?= $nReviewed ?></p>
+                    <div class="rounded-xl border border-emerald-200/90 bg-emerald-50/60 p-4 shadow-sm sm:p-5">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-900/75">Acceptées</p>
+                        <p class="mt-2 text-2xl font-black tabular-nums tracking-tight text-emerald-950"><?= $nReviewed ?></p>
                     </div>
-                    <div class="rounded-xl border border-rose-200/80 bg-rose-50/40 p-4 shadow-sm sm:p-5">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-rose-900/70">Refusées</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-rose-950 tabular-nums"><?= $nRejected ?></p>
+                    <div class="rounded-xl border border-rose-200/90 bg-rose-50/60 p-4 shadow-sm sm:p-5">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-rose-900/75">Refusées</p>
+                        <p class="mt-2 text-2xl font-black tabular-nums tracking-tight text-rose-950"><?= $nRejected ?></p>
                     </div>
-                    <div class="col-span-2 rounded-xl border border-stone-300 bg-stone-100/80 p-4 shadow-sm sm:col-span-1 sm:p-5 lg:col-span-1">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-stone-600">Non admis</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-stone-900 tabular-nums"><?= $nBlocked ?></p>
+                    <div class="col-span-2 rounded-xl border border-stone-300 bg-stone-50 p-4 shadow-sm sm:col-span-1 sm:p-5 lg:col-span-1">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-600">Non admis</p>
+                        <p class="mt-2 text-2xl font-black tabular-nums tracking-tight text-stone-900"><?= $nBlocked ?></p>
                     </div>
                 </div>
 
@@ -196,8 +194,8 @@ $submittedViaLabel = static function (string $raw): string {
                                 class="mt-2 w-full max-w-[10rem] rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm font-semibold text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20"
                             >
                         </div>
-                        <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-[#1c2d41] bg-[#1c2d41] px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#152333] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a227] focus-visible:ring-offset-2">Enregistrer</button>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-stone-300 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-700 transition hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2">Page détaillée</a>
+                        <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-stone-900 bg-stone-900 px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-2">Enregistrer</button>
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-stone-300 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 transition hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2">Page détaillée</a>
                     </form>
                 </div>
             </div>
@@ -212,7 +210,7 @@ $submittedViaLabel = static function (string $raw): string {
                         <p class="mt-2 max-w-md mx-auto text-sm text-stone-600">
                             Les candidatures reçues depuis la page d’enrôlement apparaîtront ici. Vérifiez un autre filtre ou partagez le lien du formulaire aux candidats.
                         </p>
-                        <a href="<?= htmlspecialchars(url('enlistment')) ?>" class="mt-8 inline-flex items-center rounded-xl bg-[#1c2d41] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-[#1c2d41]/25 transition hover:bg-[#152433]">
+                        <a href="<?= htmlspecialchars(url('enlistment')) ?>" class="mt-8 inline-flex items-center rounded-xl border border-stone-900 bg-stone-900 px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-stone-800">
                             Voir le formulaire public
                         </a>
                     </div>
@@ -270,7 +268,7 @@ $submittedViaLabel = static function (string $raw): string {
                                             <span class="inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-bold ring-1 <?= htmlspecialchars($meta['class']) ?>"><?= htmlspecialchars($meta['label']) ?></span>
                                         </td>
                                         <td class="px-4 py-4 pr-5 text-right">
-                                            <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid)) ?>" class="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wider text-[#1c2d41] shadow-sm transition hover:border-[#c9a227]/50 hover:bg-[#fffef9]">
+                                            <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid)) ?>" class="inline-flex items-center gap-1 rounded-xl border border-stone-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-stone-900 shadow-sm transition hover:border-emerald-400/50 hover:bg-emerald-50/40">
                                                 Ouvrir
                                                 <span aria-hidden="true">→</span>
                                             </a>
@@ -309,7 +307,7 @@ $submittedViaLabel = static function (string $raw): string {
                                             <p class="mt-1 inline-flex items-center rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-900">Délai dépassé (<?= $ageHours ?> h)</p>
                                         <?php endif; ?>
                                         <p class="mt-2 truncate text-sm text-stone-600"><?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></p>
-                                        <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid)) ?>" class="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-[#1c2d41] py-2.5 text-xs font-bold uppercase tracking-wider text-white">Consulter le dossier</a>
+                                        <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid)) ?>" class="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-stone-900 bg-stone-900 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-stone-800">Consulter le dossier</a>
                                     </div>
                                 </div>
                             </li>

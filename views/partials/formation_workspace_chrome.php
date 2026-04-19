@@ -1,5 +1,9 @@
 <?php
 declare(strict_types=1);
+/**
+ * Ancienne barre horizontale « Pilotage des formations » (sans sidebar).
+ * Non utilisée : les pages /formation reprennent la coque portail + back_office_sidebar (voir views/layout/main.php).
+ */
 $formationHubUrl = function_exists('training_lms_admin_url') ? training_lms_admin_url() : url('formation');
 $portalDashboardUrl = url('dashboard');
 $backOfficeUrl = url('back-office');

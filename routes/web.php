@@ -338,6 +338,8 @@ return function (Router $router) {
     $router->get('/enlistment/success', [EnlistmentController::class, 'success']);
     $router->get('/enlistment/error', [EnlistmentController::class, 'error']);
     $router->get('/enlistment/suivi/{token}', [EnlistmentCandidatePortalController::class, 'show']);
+    $router->get('/enlistment/suivi/{token}/piece/{attachmentId}', [EnlistmentCandidatePortalController::class, 'downloadAttachment']);
+    $router->post('/enlistment/suivi/{token}/piece', [EnlistmentCandidatePortalController::class, 'uploadAttachment']);
     $router->post('/enlistment/suivi/{token}/message', [EnlistmentCandidatePortalController::class, 'message']);
     $router->get('/recrutement', [HomeController::class, 'recrutement']);
     $router->get('/equipement', [HomeController::class, 'equipement']);
@@ -625,6 +627,8 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/messages-prefaits/{id}/update', [AdminRecruitmentsController::class, 'cannedMessageUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/messages-prefaits/{id}/delete', [AdminRecruitmentsController::class, 'cannedMessageDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/{id}/portal-options', [AdminRecruitmentsController::class, 'portalOptionsSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/{id}/piece/{attachmentId}', [AdminRecruitmentsController::class, 'portalAttachmentDownload'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/decision', [AdminRecruitmentsController::class, 'decision'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/finalize-membership', [AdminRecruitmentsController::class, 'finalizeMembership'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/timeline-comment', [AdminRecruitmentsController::class, 'timelineComment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

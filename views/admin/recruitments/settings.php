@@ -6,47 +6,47 @@ $submittedCount = max(0, (int) ($submittedCount ?? 0));
 $submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
 ?>
 
-<div class="max-w-3xl mx-auto w-full space-y-8">
-        <nav class="flex flex-wrap items-center gap-2 text-xs font-semibold text-stone-600" aria-label="Fil d’Ariane">
-            <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg px-2 py-1 transition hover:bg-white/60 hover:text-[#1c2d41] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1c4d6e] focus-visible:ring-offset-2">Dossiers de candidature</a>
-            <span class="text-stone-400" aria-hidden="true">/</span>
-            <span class="rounded-lg bg-white/80 px-2 py-1 text-[#1c2d41] ring-1 ring-stone-200/80">Délais d’alerte</span>
+<div class="recruitment-bureau max-w-3xl mx-auto w-full space-y-8">
+        <nav class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white px-4 py-3 shadow-sm sm:px-5" aria-label="Fil d’Ariane">
+            <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-stone-600">
+                <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-transparent px-2 py-1.5 text-stone-700 transition hover:border-stone-200 hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2">Dossiers de candidature</a>
+                <span class="text-stone-300" aria-hidden="true">/</span>
+                <span class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 font-bold text-stone-900">Délais d’alerte</span>
+            </div>
         </nav>
 
-        <div class="lms-panel overflow-hidden rounded-[2rem] border border-slate-200/90 shadow-xl">
-            <div class="relative bg-slate-900 px-6 py-8 sm:px-8 sm:pb-10 sm:pt-10">
-                <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-sky-500/90 via-sky-500/30 to-transparent" aria-hidden="true"></div>
-                <div class="absolute inset-0 bg-[linear-gradient(105deg,rgba(14,165,233,0.12)_0%,transparent_45%)] pointer-events-none" aria-hidden="true"></div>
-                <div class="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+        <div class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
+            <div class="border-b border-stone-200 bg-stone-50 px-6 py-7 sm:px-8 sm:py-8">
+                <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <p class="text-[9px] font-black uppercase tracking-[0.4em] text-sky-400/95">Bureau recrutement</p>
-                        <h1 class="mt-2 text-3xl font-black tracking-tight uppercase text-white sm:text-4xl">Délais d’alerte</h1>
-                        <p class="mt-4 max-w-xl text-sm leading-relaxed text-slate-300/95">
-                            Définissez après combien d’heures sans traitement un dossier <strong class="font-semibold text-white">à traiter</strong> est considéré en retard dans la file et dans les compteurs.
+                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Bureau recrutement</p>
+                        <h1 class="mt-1 text-2xl font-black tracking-tight text-stone-900 sm:text-3xl">Délais d’alerte</h1>
+                        <p class="mt-3 max-w-xl text-sm leading-relaxed text-stone-600">
+                            Définissez après combien d’heures sans traitement un dossier <strong class="font-semibold text-stone-900">à traiter</strong> est considéré en retard dans la file et dans les compteurs.
                         </p>
                     </div>
-                    <div class="flex shrink-0 flex-wrap gap-3">
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] items-center rounded-xl border border-sky-300/40 bg-sky-300/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-sky-100 transition hover:bg-sky-300/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c2d41]">
+                    <div class="flex shrink-0 flex-wrap gap-2">
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-stone-300 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-800 shadow-sm transition hover:bg-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2">
                             Messages préfaits
                         </a>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm transition hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c2d41]">
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-stone-900 bg-stone-900 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-2">
                             ← File des dossiers
                         </a>
                     </div>
                 </div>
             </div>
 
-            <div class="border-b border-stone-200 bg-[#faf8f3] px-6 py-8 sm:px-8">
-                <h2 class="text-[10px] font-bold uppercase tracking-[0.25em] text-stone-500">Synthèse</h2>
-                <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <div class="rounded-xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-stone-500">Dossiers à traiter</p>
-                        <p class="mt-2 font-serif text-3xl font-bold text-[#1c2d41] tabular-nums"><?= $submittedCount ?></p>
+            <div class="border-b border-stone-200 bg-white px-6 py-8 sm:px-8">
+                <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Synthèse</p>
+                <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div class="rounded-xl border border-stone-200 bg-stone-50/50 p-5 shadow-sm sm:p-6">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500">Dossiers à traiter</p>
+                        <p class="mt-2 text-3xl font-black tabular-nums tracking-tight text-stone-900"><?= $submittedCount ?></p>
                         <p class="mt-3 text-xs leading-relaxed text-stone-600">En attente d’une décision de l’équipe.</p>
                     </div>
-                    <div class="rounded-xl border <?= $submittedOlderThanSla > 0 ? 'border-rose-300 bg-rose-50/60' : 'border-sky-200 bg-sky-50/50' ?> p-5 shadow-sm sm:p-6">
-                        <p class="text-[10px] font-bold uppercase tracking-wider <?= $submittedOlderThanSla > 0 ? 'text-rose-900/80' : 'text-sky-900/80' ?>">Sans action depuis le délai</p>
-                        <p class="mt-2 font-serif text-3xl font-bold <?= $submittedOlderThanSla > 0 ? 'text-rose-950' : 'text-sky-950' ?> tabular-nums"><?= $submittedOlderThanSla ?></p>
+                    <div class="rounded-xl border <?= $submittedOlderThanSla > 0 ? 'border-rose-200 bg-rose-50/80' : 'border-sky-200 bg-sky-50/70' ?> p-5 shadow-sm sm:p-6">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] <?= $submittedOlderThanSla > 0 ? 'text-rose-900/80' : 'text-sky-900/80' ?>">Sans action depuis le délai</p>
+                        <p class="mt-2 text-3xl font-black tabular-nums tracking-tight <?= $submittedOlderThanSla > 0 ? 'text-rose-950' : 'text-sky-950' ?>"><?= $submittedOlderThanSla ?></p>
                         <p class="mt-3 text-xs leading-relaxed <?= $submittedOlderThanSla > 0 ? 'text-rose-900/90' : 'text-sky-900/85' ?>">Comptabilisés parmi les dossiers à traiter, au-delà du seuil que vous fixez ci-dessous.</p>
                     </div>
                 </div>
@@ -68,18 +68,18 @@ $submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
                                     min="1"
                                     max="720"
                                     value="<?= $slaHours ?>"
-                                    class="w-full max-w-[11rem] rounded-xl border border-stone-300 bg-white px-4 py-3 text-base font-semibold text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20"
+                                    class="w-full max-w-[11rem] rounded-xl border border-stone-300 bg-white px-4 py-3 text-base font-semibold text-stone-900 shadow-inner focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/25"
                                     aria-describedby="sla-help sla-days-preview-wrap"
                                 >
                             </div>
                             <p id="sla-days-preview-wrap" class="text-sm text-stone-700">
-                                Soit environ <strong id="sla-days-preview" class="font-semibold text-[#1c2d41] tabular-nums"><?= number_format($slaHours / 24, 1, ',', ' ') ?></strong> jour(s) calendaire(s).
+                                Soit environ <strong id="sla-days-preview" class="font-bold text-stone-900 tabular-nums"><?= number_format($slaHours / 24, 1, ',', ' ') ?></strong> jour(s) calendaire(s).
                             </p>
                         </div>
                         <p id="sla-help" class="mt-6 text-xs leading-relaxed text-stone-500">Les dossiers concernés restent visibles : ils sont simplement mis en évidence pour l’équipe recrutement.</p>
                     </div>
                     <div class="flex flex-wrap gap-3">
-                        <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-[#1c2d41] px-8 py-2.5 text-sm font-bold text-white shadow-md shadow-[#1c2d41]/25 transition hover:bg-[#152333] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a227] focus-visible:ring-offset-2">
+                        <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-stone-900 bg-stone-900 px-8 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-2">
                             Enregistrer
                         </button>
                         <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-stone-300 bg-white px-8 py-2.5 text-sm font-semibold text-stone-800 transition hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2">

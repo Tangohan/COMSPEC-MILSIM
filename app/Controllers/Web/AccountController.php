@@ -639,6 +639,11 @@ class AccountController
                 'hint' => 'Lorsqu’un candidat écrit un message depuis son lien de suivi sécurisé (hors simple dépôt initial).',
             ],
             [
+                'key' => EmailEvents::ENLISTMENT_PORTAL_AUTOMOD_ALERT,
+                'label' => 'Modération automatique du portail recrutement',
+                'hint' => 'Lorsque le filtre refuse un message (candidat ou équipe) : alerte et synthèse masquée.',
+            ],
+            [
                 'key' => EmailEvents::ENLISTMENT_ACCEPTED_CANDIDATE,
                 'label' => 'Candidature acceptée (candidat)',
                 'hint' => 'Message de confirmation lorsque votre candidature est acceptée.',

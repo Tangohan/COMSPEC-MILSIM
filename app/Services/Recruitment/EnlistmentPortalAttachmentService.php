@@ -73,6 +73,9 @@ final class EnlistmentPortalAttachmentService
         }
 
         $mime = $this->detectMime($tmp);
+        if ($mime === 'application/octet-stream' || $mime === '') {
+            $mime = $this->mimeFromFilename($original) ?: $mime;
+        }
         $isAudio = str_starts_with($mime, 'audio/');
         if ($isAudio) {
             if (!$allowAudio) {
@@ -136,6 +139,26 @@ final class EnlistmentPortalAttachmentService
         $storagePath = str_replace(['..', '\\'], ['', '/'], $storagePath);
 
         return base_path('storage/uploads/' . ltrim($storagePath, '/'));
+    }
+
+    private function mimeFromFilename(string $name): ?string
+    {
+        $ext = strtolower(pathinfo(trim($name), PATHINFO_EXTENSION));
+        $map = [
+            'mp3' => 'audio/mpeg',
+            'wav' => 'audio/wav',
+            'webm' => 'audio/webm',
+            'ogg' => 'audio/ogg',
+            'm4a' => 'audio/mp4',
+            'pdf' => 'application/pdf',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            'txt' => 'text/plain',
+        ];
+
+        return $map[$ext] ?? null;
     }
 
     private function detectMime(string $tmpPath): string

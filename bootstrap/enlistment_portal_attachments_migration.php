@@ -18,14 +18,14 @@ return function (PDO $pdo): void {
 
     if (!$hasCol($pdo, 'candidate_portal_allow_files')) {
         try {
-            $pdo->exec('ALTER TABLE enlistments ADD COLUMN candidate_portal_allow_files TINYINT(1) NOT NULL DEFAULT 0 AFTER updated_at');
+            $pdo->exec('ALTER TABLE enlistments ADD COLUMN candidate_portal_allow_files TINYINT(1) NOT NULL DEFAULT 0');
         } catch (Throwable $e) {
             echo '  [ATTENTION] candidate_portal_allow_files : ' . $e->getMessage() . "\n";
         }
     }
     if (!$hasCol($pdo, 'candidate_portal_allow_audio')) {
         try {
-            $pdo->exec('ALTER TABLE enlistments ADD COLUMN candidate_portal_allow_audio TINYINT(1) NOT NULL DEFAULT 0 AFTER candidate_portal_allow_files');
+            $pdo->exec('ALTER TABLE enlistments ADD COLUMN candidate_portal_allow_audio TINYINT(1) NOT NULL DEFAULT 0');
         } catch (Throwable $e) {
             echo '  [ATTENTION] candidate_portal_allow_audio : ' . $e->getMessage() . "\n";
         }

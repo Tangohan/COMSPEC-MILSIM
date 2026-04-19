@@ -5,12 +5,14 @@ $baseUrl = url('');
 $communityShowcasePage = !empty($communityShowcasePage);
 $communityRecruitmentOpeningPage = !empty($communityRecruitmentOpeningPage);
 $isFormationWorkspace = function_exists('is_formation_workspace_request') && is_formation_workspace_request();
-$isBackOfficeShell = !$isFormationWorkspace && function_exists('is_back_office_request') && is_back_office_request();
+$isBackOfficeShell = function_exists('is_back_office_request') && is_back_office_request();
 $isPlatformAdminShell = function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request();
-$usesAdminSidebarShell = !empty($isBackOfficeShell) || !empty($isPlatformAdminShell);
+$usesAdminSidebarShell = !empty($isBackOfficeShell) || !empty($isPlatformAdminShell) || !empty($isFormationWorkspace);
 $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     ? 'Administration communauté'
-    : (!empty($isPlatformAdminShell) ? 'Administration plateforme' : '');
+    : (!empty($isPlatformAdminShell)
+        ? 'Administration plateforme'
+        : (!empty($isFormationWorkspace) ? 'Pilotage des formations' : ''));
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -80,11 +82,7 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
 </head>
 <body class="layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen">
     <div class="grain" aria-hidden="true"></div>
-    <?php if (!empty($isFormationWorkspace)): ?>
-        <?php require base_path('views/partials/formation_workspace_chrome.php'); ?>
-    <?php else: ?>
-        <?php require base_path('views/partials/header_portal.php'); ?>
-    <?php endif; ?>
+    <?php require base_path('views/partials/header_portal.php'); ?>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/portal-alerts.js"></script>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/ui_confirm_modal.js"></script>
@@ -130,7 +128,7 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
             <aside
                 class="fixed inset-y-0 left-0 z-[210] w-[min(100%,288px)] max-w-full border-r border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-64 lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:border-r lg:shadow-none xl:w-72"
                 :class="navOpen ? 'translate-x-0' : '-translate-x-full'"
-                id="<?= !empty($isBackOfficeShell) ? 'back-office-sidebar' : 'platform-admin-sidebar' ?>"
+                id="<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? 'back-office-sidebar' : 'platform-admin-sidebar' ?>"
                 aria-label="Menu latéral"
                 @click.capture="if ($event.target.closest('a')) navOpen = false"
             >
@@ -144,7 +142,7 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
                             Fermer
                         </button>
                     </div>
-                    <?php if (!empty($isBackOfficeShell)): ?>
+                    <?php if (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)): ?>
                         <?php require base_path('views/partials/back_office_sidebar.php'); ?>
                     <?php else: ?>
                         <?php require base_path('views/partials/platform_admin_sidebar.php'); ?>

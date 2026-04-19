@@ -71,10 +71,11 @@ class AdminTrainingController
             }
         }
         $expiring = $this->assignmentService->listOverdueOrExpiring($tenantId, 30);
-        return Response::view('layout.main', [
-            'content' => 'admin.training.dashboard',
+        return Response::view('layout.training_lms_staff_shell', [
+            'content' => 'admin.training.dashboard_body',
             'title' => 'Pilotage des formations',
             'trainingAdminNav' => 'dashboard',
+            'totalModules' => count($courses),
             'stats' => [
                 'courses' => count($courses),
                 'enrollments' => $totalEnrollments,

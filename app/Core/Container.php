@@ -957,6 +957,16 @@ class Container
                 self::get(\App\Services\Admin\AdminAuditService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
             ),
+            \App\Services\Recruitment\EnlistmentPortalAttachmentService::class => new \App\Services\Recruitment\EnlistmentPortalAttachmentService(
+                self::get(\App\Repositories\EnlistmentRepository::class)
+            ),
+            \App\Services\Recruitment\EnlistmentPortalTextModerationScanner::class => new \App\Services\Recruitment\EnlistmentPortalTextModerationScanner(),
+            \App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator::class => new \App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator(
+                self::get(\App\Services\Recruitment\EnlistmentPortalTextModerationScanner::class),
+                self::get(\App\Repositories\BlockedIndicatorRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Services\EmailService::class)
+            ),
             \App\Controllers\Admin\AdminRecruitmentsController::class => new \App\Controllers\Admin\AdminRecruitmentsController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(\App\Repositories\EnlistmentCannedMessageRepository::class),
@@ -965,7 +975,9 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\RecruitmentOpeningRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Services\EmailService::class)
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Services\Recruitment\EnlistmentPortalAttachmentService::class),
+                self::get(\App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator::class)
             ),
             \App\Services\Recruitment\EnlistmentPortalMessagingNotificationService::class => new \App\Services\Recruitment\EnlistmentPortalMessagingNotificationService(
                 self::get(UserRepository::class),
@@ -975,7 +987,9 @@ class Container
             \App\Controllers\Web\EnlistmentCandidatePortalController::class => new \App\Controllers\Web\EnlistmentCandidatePortalController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(TenantRepository::class),
-                self::get(\App\Services\Recruitment\EnlistmentPortalMessagingNotificationService::class)
+                self::get(\App\Services\Recruitment\EnlistmentPortalMessagingNotificationService::class),
+                self::get(\App\Services\Recruitment\EnlistmentPortalAttachmentService::class),
+                self::get(\App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator::class)
             ),
             \App\Controllers\Admin\RecruitmentWorkspaceController::class => new \App\Controllers\Admin\RecruitmentWorkspaceController(
                 self::get(\App\Repositories\EnlistmentRepository::class),

@@ -317,7 +317,9 @@ if (!function_exists('is_back_office_request')) {
 
 if (!function_exists('is_formation_workspace_request')) {
     /**
-     * Pilotage LMS communauté sous /formation (sans navbar portail ni coque back-office).
+     * Pilotage LMS communauté : chemins /formation et /formation/*.
+     * La racine /formation s’affiche dans la coque catalogue (même bandeau latéral que /formations, sans navbar portail).
+     * Les sous-pages /formation/… conservent la coque portail + barre latérale back-office.
      * Ne pas confondre avec le catalogue apprenant /formations.
      */
     function is_formation_workspace_request(): bool

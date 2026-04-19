@@ -18,6 +18,7 @@ use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Recruitment\EnlistmentAcceptanceProvisioningService;
 use App\Services\Recruitment\EnlistmentPortalAttachmentService;
+use App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator;
 use App\Services\Recruitment\TenantRecruitmentSettings;
 
 class AdminRecruitmentsController
@@ -32,6 +33,7 @@ class AdminRecruitmentsController
         private UserRepository $userRepository,
         private EmailService $emailService,
         private EnlistmentPortalAttachmentService $enlistmentPortalAttachmentService,
+        private EnlistmentPortalAutoModerationCoordinator $portalAutoModerationCoordinator,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -177,8 +179,8 @@ class AdminRecruitmentsController
 
             return Response::redirect(url('back-office/recruitments/' . $id));
         }
-        $allowFiles = $request->input('candidate_portal_allow_files') === '1' || $request->input('candidate_portal_allow_files') === 'on';
-        $allowAudio = $request->input('candidate_portal_allow_audio') === '1' || $request->input('candidate_portal_allow_audio') === 'on';
+        $allowFiles = (string) $request->input('candidate_portal_allow_files', '0') === '1';
+        $allowAudio = (string) $request->input('candidate_portal_allow_audio', '0') === '1';
         $ok = $this->enlistmentRepository->updateCandidatePortalOptions((int) $tenantId, $id, $allowFiles, $allowAudio);
         Session::flash($ok ? 'success' : 'error', $ok ? 'Options du portail candidat enregistrées.' : 'Impossible d’enregistrer les options.');
 
@@ -545,6 +547,17 @@ class AdminRecruitmentsController
 
             return Response::redirect(url('back-office/recruitments'));
         }
+        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+        if (!$row) {
+            Session::flash('error', 'Dossier introuvable.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $trow = $this->tenantRepository->findById((int) $tenantId);
+        $tenantName = trim((string) ((is_array($trow) ? $trow : [])['name'] ?? ''));
+        if ($tenantName === '') {
+            $tenantName = 'Communauté';
+        }
         $action = (string) $request->input('decision', '');
         $map = [
             'accept' => 'reviewed',
@@ -580,6 +593,15 @@ class AdminRecruitmentsController
                     ? 'Entretien à planifier avec le candidat.'
                     : 'Dossier conservé en file d’instruction.';
             }
+            $followupModerated = false;
+            if ($detail !== null && $detail !== '') {
+                $hitFollow = $this->portalAutoModerationCoordinator->scan($detail);
+                if ($hitFollow !== null) {
+                    $this->portalAutoModerationCoordinator->enforceAfterStaffViolation((int) $tenantId, $tenantName, $row, $userId, $hitFollow, $detail);
+                    $detail = 'Message non conservé : le filtre automatique du portail a refusé une formulation.';
+                    $followupModerated = true;
+                }
+            }
             $fullNote = $linePrefix . "\n" . $detail;
 
             $okFollowup = $this->enlistmentRepository->appendInstructionFollowup((int) $tenantId, $id, $userId, $fullNote);
@@ -606,11 +628,22 @@ class AdminRecruitmentsController
             if (is_array($fresh)) {
                 $this->notifyCandidate((int) $tenantId, $fresh, $action, $detail);
             }
-            Session::flash('success', $action === 'interview'
+            $suffix = $followupModerated ? ' Une partie du texte n’a pas été conservée (filtre portail) et une alerte a été envoyée.' : '';
+            Session::flash('success', ($action === 'interview'
                 ? 'Demande d’entretien enregistrée. Le dossier reste en instruction.'
-                : 'Mise en attente enregistrée. Le dossier reste en instruction.');
+                : 'Mise en attente enregistrée. Le dossier reste en instruction.') . $suffix);
 
             return Response::redirect(url('back-office/recruitments/' . $id));
+        }
+
+        $decisionCommentModerated = false;
+        if ($comment !== null && $comment !== '') {
+            $hitDecision = $this->portalAutoModerationCoordinator->scan($comment);
+            if ($hitDecision !== null) {
+                $this->portalAutoModerationCoordinator->enforceAfterStaffViolation((int) $tenantId, $tenantName, $row, $userId, $hitDecision, $comment);
+                $comment = null;
+                $decisionCommentModerated = true;
+            }
         }
 
         if ($action === 'accept') {
@@ -633,7 +666,11 @@ class AdminRecruitmentsController
             'rejected' => 'Candidature refusée.',
             'blocked' => 'Candidature refusée — personne marquée comme non admise (interdit).',
         ];
-        Session::flash('success', $messages[$map[$action]]);
+        $decisionFlash = $messages[$map[$action]];
+        if ($decisionCommentModerated) {
+            $decisionFlash .= ' Le commentaire n’a pas été conservé (filtre portail) et une alerte a été envoyée.';
+        }
+        Session::flash('success', $decisionFlash);
 
         $this->enlistmentTimelineRepository->logDecision((int) $tenantId, $id, $userId, $map[$action], $comment);
         $fresh = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
@@ -658,7 +695,8 @@ class AdminRecruitmentsController
                     (string) $provision['message']
                 );
             } elseif ($provision['message'] !== null && $provision['message'] !== '') {
-                Session::flash('success', 'Candidature acceptée. ' . $provision['message']);
+                $modSuffix = $decisionCommentModerated ? ' Le commentaire n’a pas été conservé (filtre portail).' : '';
+                Session::flash('success', 'Candidature acceptée. ' . (string) $provision['message'] . $modSuffix);
                 $this->enlistmentTimelineRepository->logAdhesionStep(
                     (int) $tenantId,
                     $id,

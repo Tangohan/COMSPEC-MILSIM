@@ -38,4 +38,23 @@ final class TrainingCertificatePdfEngine
 
         return class_exists(\TCPDF::class, false);
     }
+
+    /**
+     * Exécute du code qui utilise TCPDF sans laisser les avertissements E_DEPRECATED
+     * polluer la sortie (PHP 8+ : anciennes signatures TCPDF 6.3 si le déploiement n’a pas les fichiers corrigés).
+     *
+     * @template T
+     * @param callable(): T $callback
+     * @return T
+     */
+    public static function suppressTcpdfPhpDeprecationsWhile(callable $callback): mixed
+    {
+        $level = error_reporting();
+        error_reporting($level & ~E_DEPRECATED);
+        try {
+            return $callback();
+        } finally {
+            error_reporting($level);
+        }
+    }
 }

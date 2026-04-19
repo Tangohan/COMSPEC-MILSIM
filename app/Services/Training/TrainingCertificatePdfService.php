@@ -217,7 +217,9 @@ class TrainingCertificatePdfService
         }
 
         try {
-            return $this->renderWithTcpdfInner($tpl, $payload);
+            return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(
+                fn (): ?string => $this->renderWithTcpdfInner($tpl, $payload)
+            );
         } catch (\Throwable) {
             return null;
         }

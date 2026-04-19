@@ -811,48 +811,68 @@ body.layout-light::before {
     }
 }
 
-/* Back-office candidatures : boutons décision (fonds explicites — évite fond transparent si classes utilitaires absentes du build Tailwind) */
-body.layout-light .enlist-decision-actions .enlist-decision-btn {
+/* Back-office candidatures : boutons décision (fonds explicites — hors dépendance body.layout-light pour builds / coques variées) */
+.enlist-decision-actions .enlist-decision-btn {
   text-decoration: none;
   -webkit-appearance: none;
   appearance: none;
 }
-body.layout-light .enlist-decision-actions .enlist-decision-btn--accept {
+.enlist-decision-actions .enlist-decision-btn--accept {
   background-color: #047857 !important;
   color: #ffffff !important;
   border-color: rgba(6, 95, 70, 0.45) !important;
   -webkit-text-fill-color: #ffffff;
 }
-body.layout-light .enlist-decision-actions .enlist-decision-btn--accept:hover {
+.enlist-decision-actions .enlist-decision-btn--accept:hover {
   background-color: #065f46 !important;
   color: #ffffff !important;
 }
-body.layout-light .enlist-decision-actions .enlist-decision-btn--accept:focus-visible {
+.enlist-decision-actions .enlist-decision-btn--accept:focus-visible {
   --tw-ring-color: rgb(5 150 105 / 0.55);
 }
-body.layout-light .enlist-decision-actions .enlist-decision-btn--reject {
+.enlist-decision-actions .enlist-decision-btn--reject {
   background-color: #e2e8f0 !important;
   color: #0f172a !important;
   border-color: rgba(148, 163, 184, 0.9) !important;
   -webkit-text-fill-color: #0f172a;
 }
-body.layout-light .enlist-decision-actions .enlist-decision-btn--reject:hover {
+.enlist-decision-actions .enlist-decision-btn--reject:hover {
   background-color: #cbd5e1 !important;
   color: #0f172a !important;
 }
-body.layout-light .enlist-decision-actions .enlist-decision-btn--block {
+.enlist-decision-actions .enlist-decision-btn--block {
   background-color: #7f1d1d !important;
   color: #ffffff !important;
   border-color: rgba(69, 10, 10, 0.5) !important;
   -webkit-text-fill-color: #ffffff;
 }
-body.layout-light .enlist-decision-actions .enlist-decision-btn--block:hover {
+.enlist-decision-actions .enlist-decision-btn--block:hover {
   background-color: #450a0a !important;
   color: #ffffff !important;
 }
+.enlist-decision-actions .enlist-decision-btn--pending {
+  background-color: #e0f2fe !important;
+  color: #0c4a6e !important;
+  border-color: rgba(14, 165, 233, 0.45) !important;
+  -webkit-text-fill-color: #0c4a6e;
+}
+.enlist-decision-actions .enlist-decision-btn--pending:hover {
+  background-color: #bae6fd !important;
+  color: #082f49 !important;
+}
+.enlist-decision-actions .enlist-decision-btn--interview {
+  background-color: #ede9fe !important;
+  color: #4c1d95 !important;
+  border-color: rgba(139, 92, 246, 0.45) !important;
+  -webkit-text-fill-color: #4c1d95;
+}
+.enlist-decision-actions .enlist-decision-btn--interview:hover {
+  background-color: #ddd6fe !important;
+  color: #2e1065 !important;
+}
 
 /* Fiche candidature — rattachement membre (même cause : utilitaires Tailwind arbitraires parfois absents du build) */
-body.layout-light .enlist-membership-repair-btn {
+.enlist-membership-repair-btn {
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
@@ -861,11 +881,11 @@ body.layout-light .enlist-membership-repair-btn {
   border: 1px solid #0a3d5c !important;
   -webkit-text-fill-color: #ffffff;
 }
-body.layout-light .enlist-membership-repair-btn:hover {
+.enlist-membership-repair-btn:hover {
   background-color: #0a3d5c !important;
   color: #ffffff !important;
 }
-body.layout-light .enlist-membership-repair-btn:focus-visible {
+.enlist-membership-repair-btn:focus-visible {
   outline: 2px solid #0369a1;
   outline-offset: 2px;
 }
