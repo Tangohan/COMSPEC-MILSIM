@@ -12,6 +12,7 @@ $timezoneSuggestions = $timezoneSuggestions ?? [];
 $steamWebConfigured = !empty($steamWebConfigured ?? false);
 $steamSyncReport = is_array($steamSyncReport ?? null) ? $steamSyncReport : null;
 $loginOtpMandatory = !empty($loginOtpMandatory ?? false);
+$loginOtpVoluntaryActive = !empty($loginOtpVoluntaryActive ?? false);
 $loginOtpTtlMinutes = isset($loginOtpTtlMinutes) ? (int) $loginOtpTtlMinutes : 10;
 
 $quickLinks = [
@@ -159,12 +160,17 @@ foreach ($notifEmailCatalog as $item) {
                         <?php if ($loginOtpMandatory): ?>
                         <p class="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-100/90 px-3 py-1.5 text-xs font-bold text-emerald-950">
                             <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden="true"></span>
-                            Double vérification active sur votre compte
+                            Double vérification imposée pour votre rôle
+                        </p>
+                        <?php elseif ($loginOtpVoluntaryActive): ?>
+                        <p class="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-900">
+                            <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                            Double vérification activée par vous
                         </p>
                         <?php else: ?>
                         <p class="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 px-3 py-1.5 text-xs font-bold text-slate-800">
                             <span class="h-2 w-2 shrink-0 rounded-full bg-slate-400" aria-hidden="true"></span>
-                            Non exigée pour vos connexions habituelles
+                            Non activée (connexion par mot de passe seul)
                         </p>
                         <?php endif; ?>
                     </div>
@@ -177,9 +183,16 @@ foreach ($notifEmailCatalog as $item) {
                     <p class="mt-3 text-xs leading-relaxed text-slate-600">
                         Le code reste valable environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>. Si rien n’arrive, regardez aussi les courriers indésirables. Le bouton ci-dessous envoie un <strong>message d’essai</strong> (indépendant d’une connexion en cours).
                     </p>
+                    <?php elseif ($loginOtpVoluntaryActive): ?>
+                    <p class="text-sm leading-relaxed text-slate-800">
+                        Vous avez choisi d’ajouter une <strong>étape de sécurité</strong> : après le mot de passe, un <strong>code à six chiffres</strong> est envoyé sur votre adresse de connexion. Vous pouvez modifier ce réglage dans <a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2">Adresse e-mail</a>.
+                    </p>
+                    <p class="mt-3 text-xs leading-relaxed text-slate-600">
+                        Validité d’environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>. Le bouton ci-dessous sert à un <strong>envoi d’essai</strong> pour vérifier votre boîte de réception.
+                    </p>
                     <?php else: ?>
                     <p class="text-sm leading-relaxed text-slate-800">
-                        Vous n’avez pas besoin de ce code pour vous connecter au quotidien. Vous pouvez tout de même demander un <strong>envoi d’essai</strong> pour confirmer que les messages du portail arrivent bien (changement d’adresse, filtre anti-spam, etc.).
+                        Vous pouvez activer une double vérification sur la page <a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2">Adresse e-mail</a>. Sinon, demandez un <strong>envoi d’essai</strong> ci-dessous pour confirmer que nos messages arrivent bien (filtre anti-spam, etc.).
                     </p>
                     <?php endif; ?>
                 </div>

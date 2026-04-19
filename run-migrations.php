@@ -1773,6 +1773,13 @@ $personnelJobRolesMigrate($pdo);
 $enlistmentCannedMessagesMigrate = require $root . '/bootstrap/enlistment_canned_messages_migration.php';
 $enlistmentCannedMessagesMigrate($pdo);
 
+$enlistmentPortalAttachmentsMigrate = require $root . '/bootstrap/enlistment_portal_attachments_migration.php';
+try {
+    $enlistmentPortalAttachmentsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] enlistment_portal_attachments : ' . $e->getMessage() . "\n";
+}
+
 $recruitmentOpeningsMigrate = require $root . '/bootstrap/recruitment_openings_migration.php';
 try {
     $recruitmentOpeningsMigrate($pdo);

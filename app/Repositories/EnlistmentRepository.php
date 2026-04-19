@@ -16,6 +16,10 @@ class EnlistmentRepository
     private static ?bool $hasRecruitmentOpeningIdColumn = null;
     private static ?bool $hasCandidatePortalTables = null;
 
+    private static ?bool $hasPortalAllowColumns = null;
+
+    private static ?bool $hasPortalAttachmentsTable = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -50,6 +54,101 @@ class EnlistmentRepository
         }
 
         return self::$hasCandidatePortalTables;
+    }
+
+    private function hasPortalAllowColumns(): bool
+    {
+        if (self::$hasPortalAllowColumns === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistments' AND COLUMN_NAME = 'candidate_portal_allow_files' LIMIT 1");
+            self::$hasPortalAllowColumns = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasPortalAllowColumns;
+    }
+
+    public function hasPortalAttachmentsTable(): bool
+    {
+        if (self::$hasPortalAttachmentsTable === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistment_candidate_attachments' LIMIT 1");
+            self::$hasPortalAttachmentsTable = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasPortalAttachmentsTable;
+    }
+
+    public function updateCandidatePortalOptions(int $tenantId, int $enlistmentId, bool $allowFiles, bool $allowAudio): bool
+    {
+        if (!$this->hasPortalAllowColumns()) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE enlistments SET candidate_portal_allow_files = ?, candidate_portal_allow_audio = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ? LIMIT 1'
+        );
+        $stmt->execute([$allowFiles ? 1 : 0, $allowAudio ? 1 : 0, $tenantId, $enlistmentId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listCandidatePortalAttachments(int $tenantId, int $enlistmentId): array
+    {
+        if (!$this->hasPortalAttachmentsTable()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT id, kind, original_name, mime, size_bytes, created_at FROM enlistment_candidate_attachments WHERE tenant_id = ? AND enlistment_id = ? ORDER BY created_at ASC, id ASC LIMIT 80'
+        );
+        $stmt->execute([$tenantId, $enlistmentId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findCandidatePortalAttachment(int $tenantId, int $enlistmentId, int $attachmentId): ?array
+    {
+        if (!$this->hasPortalAttachmentsTable() || $attachmentId < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM enlistment_candidate_attachments WHERE tenant_id = ? AND enlistment_id = ? AND id = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $enlistmentId, $attachmentId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function insertCandidatePortalAttachment(
+        int $tenantId,
+        int $enlistmentId,
+        string $kind,
+        string $originalName,
+        string $mime,
+        int $sizeBytes,
+        string $storagePath
+    ): int {
+        if (!$this->hasPortalAttachmentsTable()) {
+            return 0;
+        }
+        $k = $kind === 'audio' ? 'audio' : 'file';
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO enlistment_candidate_attachments (tenant_id, enlistment_id, kind, original_name, mime, size_bytes, storage_path, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())'
+        );
+        $stmt->execute([
+            $tenantId,
+            $enlistmentId,
+            $k,
+            mb_substr($originalName, 0, 255),
+            mb_substr($mime, 0, 160),
+            max(0, $sizeBytes),
+            mb_substr($storagePath, 0, 512),
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
     }
 
     public function create(int $tenantId, array $data): int

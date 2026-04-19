@@ -255,6 +255,10 @@ class AccountController
         }
 
         $accountSnapshot = $this->buildAccountSnapshot($user, $profile);
+        $freshForOtp = $this->userRepository->findById($uid, $tenantId);
+        $loginOtpVoluntaryActive = $this->userRepository->hasEmailLoginOtpEnabledColumn()
+            && $freshForOtp !== null
+            && (int) ($freshForOtp['email_login_otp_enabled'] ?? 0) === 1;
 
         return Response::view('layout.main', [
             'content' => 'account.preferences',
@@ -272,6 +276,7 @@ class AccountController
             'steamWebConfigured' => $this->steamWebApiService->isConfigured(),
             'steamSyncReport' => is_array($steamSyncReport) ? $steamSyncReport : null,
             'loginOtpMandatory' => $this->loginSecurityOtpService->isMandatoryForUserId($uid),
+            'loginOtpVoluntaryActive' => $loginOtpVoluntaryActive,
             'loginOtpTtlMinutes' => LoginSecurityOtpService::TTL_MINUTES,
         ]);
     }
@@ -766,51 +771,89 @@ class AccountController
         if (!$user) {
             return Response::redirect(url('login'));
         }
+        $uid = (int) ($user['id'] ?? 0);
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        $fresh = $this->userRepository->findById($uid, $tenantId);
+        $user = $fresh !== null ? array_merge($user, $fresh) : $user;
+
         $errors = [];
+        $otpErrors = [];
         $success = Session::getFlash('success');
         $error = Session::getFlash('error');
+        $hasOtpColumn = $this->userRepository->hasEmailLoginOtpEnabledColumn();
+        $loginOtpForcedByRole = $this->loginSecurityOtpService->isMandatoryForUserId($uid);
+        $emailLoginOtpEnabled = $hasOtpColumn && (int) ($user['email_login_otp_enabled'] ?? 0) === 1;
 
         if ($request->isPost()) {
             if (!Csrf::validate($request->input('_csrf_token'))) {
                 Session::flash('error', 'Session expirée.');
+
                 return Response::redirect(url('account/mail'));
             }
-            $email = trim((string) $request->input('email'));
-            $email_confirmation = trim((string) $request->input('email_confirmation'));
-            $password = $request->input('password');
 
-            $v = new Validator([
-                'email' => $email,
-                'email_confirmation' => $email_confirmation,
-                'password' => $password,
-            ], [
-                'email' => 'required|email',
-                'email_confirmation' => 'required',
-                'password' => 'required',
-            ]);
-            if (!$v->validate()) {
-                $errors = $v->errors();
-            } elseif ($email !== $email_confirmation) {
-                $errors['email_confirmation'] = ['Les deux adresses doivent être identiques.'];
-            } elseif (!password_verify($password, $user['password_hash'])) {
-                $errors['password'] = ['Mot de passe actuel incorrect.'];
-            } elseif ($this->userRepository->emailExistsInTenant((int) $user['tenant_id'], $email, (int) $user['id'])) {
-                $errors['email'] = ['Cette adresse est déjà utilisée par un autre compte.'];
+            if ($hasOtpColumn && (string) $request->input('account_mail_section') === 'email_login_otp') {
+                $otpPassword = (string) $request->input('otp_toggle_password');
+                if ($otpPassword === '' || !password_verify($otpPassword, (string) ($user['password_hash'] ?? ''))) {
+                    $otpErrors['otp_toggle_password'] = ['Mot de passe actuel incorrect.'];
+                } else {
+                    $want = (string) $request->input('email_login_otp_enabled') === '1';
+                    if ($loginOtpForcedByRole && !$want) {
+                        $otpErrors['email_login_otp_enabled'] = ['Votre rôle impose déjà cette protection : elle ne peut pas être désactivée.'];
+                    } else {
+                        $this->userRepository->update($uid, $tenantId, ['email_login_otp_enabled' => $want ? 1 : 0]);
+                        Session::flash(
+                            'success',
+                            $want
+                                ? 'Double vérification par e-mail activée. Un code vous sera demandé à chaque connexion.'
+                                : 'Double vérification par e-mail désactivée.'
+                        );
+
+                        return Response::redirect(url('account/mail'));
+                    }
+                }
             } else {
-                $this->userRepository->update((int) $user['id'], (int) $user['tenant_id'], ['email' => $email]);
-                Session::set('email', $email);
-                Session::flash('success', 'Adresse email mise à jour.');
-                return Response::redirect(url('account/mail'));
+                $email = trim((string) $request->input('email'));
+                $email_confirmation = trim((string) $request->input('email_confirmation'));
+                $password = $request->input('password');
+
+                $v = new Validator([
+                    'email' => $email,
+                    'email_confirmation' => $email_confirmation,
+                    'password' => $password,
+                ], [
+                    'email' => 'required|email',
+                    'email_confirmation' => 'required',
+                    'password' => 'required',
+                ]);
+                if (!$v->validate()) {
+                    $errors = $v->errors();
+                } elseif ($email !== $email_confirmation) {
+                    $errors['email_confirmation'] = ['Les deux adresses doivent être identiques.'];
+                } elseif (!password_verify((string) $password, (string) ($user['password_hash'] ?? ''))) {
+                    $errors['password'] = ['Mot de passe actuel incorrect.'];
+                } elseif ($this->userRepository->emailExistsInTenant($tenantId, $email, $uid)) {
+                    $errors['email'] = ['Cette adresse est déjà utilisée par un autre compte.'];
+                } else {
+                    $this->userRepository->update($uid, $tenantId, ['email' => $email]);
+                    Session::set('email', $email);
+                    Session::flash('success', 'Adresse e-mail mise à jour.');
+
+                    return Response::redirect(url('account/mail'));
+                }
             }
         }
 
         return Response::view('layout.main', [
             'content' => 'account.mail',
-            'title' => 'Adresse email',
+            'title' => 'Adresse e-mail',
             'user' => $user,
             'errors' => $errors,
+            'otpErrors' => $otpErrors,
             'success' => $success,
             'error' => $error,
+            'hasOtpColumn' => $hasOtpColumn,
+            'loginOtpForcedByRole' => $loginOtpForcedByRole,
+            'emailLoginOtpEnabled' => $emailLoginOtpEnabled,
         ]);
     }
 
