@@ -497,8 +497,15 @@ final class EnlistmentPortalTextModerationScanner
     private static function harassmentTokenSet(): array
     {
         $w = [
-            'fdp', 'ptn', 'ntm', 'ntm2', 'tg', 'tgl', 'tglpt', 'pd', 'pds', 'pd2', 'pd3',
-            'pt1', 'pt1n', 'n1k', 'n1que', 'n1quer',
+            // Abréviations / argot écrit (le texte est normalisé en minuscules : FDP → fdp).
+            'fdp', 'ftg', 'slp', 'ptg', 'tgm', 'tml', 'tmr', 'ntg', 'ntm', 'ntm2', 'nt1', 'nt1m',
+            'ptn', 'pt1', 'pt1n', 'pd', 'pds', 'pd2', 'pd3', 'tg', 'tgl', 'tglpt',
+            'n1k', 'n1que', 'n1quer', 'n1k1', 'n1k3', 'n1k3r',
+            'nazi', 'nazis', 'nazl', 'nazo', 'ns', 'ss',
+            'juif', 'juifs', 'juive', 'juives',
+            'arabe', 'arabes', 'bic', 'bng', 'bngl', 'rebeu', 'rebeus', 'rebeue', 'rebeues',
+            'neg', 'negs', 'n3gr', 'n3gre',
+            'youp', 'youps', 'feuj', 'feujs',
             'connard', 'connards', 'connasse', 'connasses', 'conasse', 'conard', 'conards',
             'salope', 'salopes', 'pute', 'putes', 'putain', 'put1', 'put2', 'put3',
             'merde', 'merdes', 'emmerde', 'emmerder', 'emmerdeur', 'emmerdeuse',

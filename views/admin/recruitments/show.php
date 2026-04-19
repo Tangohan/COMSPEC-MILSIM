@@ -174,38 +174,13 @@ $recapMeta = match ($statusRaw) {
                 <span class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 font-bold text-stone-900">Dossier n°<?= $id ?></span>
                 <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="ml-auto inline-flex min-h-[2.25rem] items-center rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-900 shadow-sm transition hover:bg-slate-200">Délais d’alerte</a>
             </div>
+            <div class="border-t border-stone-200 bg-stone-50 px-4 py-3 text-[11px] text-stone-600 space-y-1.5">
+                <p><span class="font-bold text-stone-800">Statut</span> — <?= htmlspecialchars($statusLabel ?: '—', ENT_QUOTES, 'UTF-8') ?></p>
+                <p><span class="font-bold text-stone-800">Attribué</span> — <?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p>
+            </div>
         </nav>
 
-        <div class="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)]">
-            <aside class="lg:sticky lg:top-6 lg:z-20 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:overscroll-contain w-full min-w-0">
-                <div class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm lg:shadow-md">
-                    <div class="border-b border-stone-200 bg-stone-50 px-4 py-3">
-                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Dans ce dossier</p>
-                    </div>
-                    <nav class="space-y-2 p-3" aria-label="Sections du dossier">
-                        <a href="#recap-dossier" class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-900 shadow-sm transition hover:border-emerald-300/60 hover:bg-emerald-50/50">
-                            <span>Récapitulatif</span>
-                            <span class="text-[10px] font-black text-slate-500">01</span>
-                        </a>
-                        <?php if ($statusRaw === 'submitted'): ?>
-                        <a href="#instruction-dossier" class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-900 shadow-sm transition hover:border-emerald-300/60 hover:bg-emerald-50/50">
-                            <span>Décision</span>
-                            <span class="text-[10px] font-black text-slate-500">02</span>
-                        </a>
-                        <?php endif; ?>
-                        <a href="#journal-dossier" class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-900 shadow-sm transition hover:border-emerald-300/60 hover:bg-emerald-50/50">
-                            <span>Journal</span>
-                            <span class="text-[10px] font-black text-slate-500">03</span>
-                        </a>
-                    </nav>
-                    <div class="border-t border-stone-200 bg-stone-50 px-4 py-3 text-[11px] text-stone-600 space-y-1.5">
-                        <p><span class="font-bold text-stone-800">Statut</span> — <?= htmlspecialchars($statusLabel ?: '—') ?></p>
-                        <p><span class="font-bold text-stone-800">Attribué</span> — <?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p>
-                    </div>
-                </div>
-            </aside>
-
-            <div class="space-y-6 min-w-0">
+        <div class="space-y-6 min-w-0">
                 <section id="recap-dossier" class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                     <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                         <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500"><?= htmlspecialchars($recapMeta['step'], ENT_QUOTES, 'UTF-8') ?></p>
@@ -1011,8 +986,6 @@ $recapMeta = match ($statusRaw) {
                     <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="text-sm font-semibold text-stone-600 underline decoration-stone-300 underline-offset-4 transition hover:text-emerald-800">← Retour aux dossiers</a>
                 </p>
             </div>
-            </div>
-        </div>
 </div>
 <?php if ($statusRaw === 'submitted'): ?>
 <script>
