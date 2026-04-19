@@ -33,6 +33,7 @@ Le bootstrap charge **`app/Config/*.php`** (app, database, auth, maintenance, un
 4. Appliquer les migrations et vérifier les droits d’écriture sur **`storage/`** et chemins d’upload configurés.
 5. Construire les assets front si nécessaire (`npm ci` / `npm run build` selon `package.json`).
 6. Vérifier **HTTPS**, cookies sécurisés, et sauvegardes planifiées.
+7. Lancer les smoke tests post-déploiement (`php scripts/post-deploy-smoke-tests.php --base-url=https://votre-domaine.tld`).
 
 ## Santé et maintenance
 
@@ -43,3 +44,4 @@ Le bootstrap charge **`app/Config/*.php`** (app, database, auth, maintenance, un
 
 - [Sécurité et permissions](securite-et-permissions.md)
 - [Intégrations externes](integrations.md)
+- [Pilotage mensuel & fiabilisation déploiements](pilotage-mensuel-fiabilisation-deploiements.md)

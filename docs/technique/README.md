@@ -9,6 +9,7 @@ Ce sommaire s’adresse aux **développeurs** et à l’**exploitation** : archi
 | [Architecture applicative](architecture.md) | Point d’entrée HTTP, routage, middlewares, multi-tenant |
 | [Structure du dépôt](structure-du-depot.md) | Arborescence et rôles des répertoires |
 | [Configuration et déploiement](configuration-et-deploiement.md) | Variables d’environnement, migrations, production |
+| [Pilotage mensuel & fiabilisation déploiements](pilotage-mensuel-fiabilisation-deploiements.md) | KPI mensuels, workflow idempotent pré-prod → prod, smoke tests et rollback minimal |
 | [Modules fonctionnels](modules-fonctionnels.md) | Cartographie fonctionnalités ↔ zones du code |
 | [Sécurité et permissions](securite-et-permissions.md) | Auth, RBAC, API tactiques, en-têtes |
 | [Intégrations externes](integrations.md) | Courriel, Stripe, clients tactiques |

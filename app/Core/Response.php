@@ -37,6 +37,16 @@ class Response
         return $this;
     }
 
+
+    public function statusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    public function headerValue(string $name): ?string
+    {
+        return $this->headers[$name] ?? null;
+    }
     public function send(): void
     {
         http_response_code($this->statusCode);
