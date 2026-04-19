@@ -43,7 +43,34 @@
 - `APP_DEBUG=false`, journaux dans `storage/logs`, sauvegardes chiffrées du stockage relationnel.
 - Secrets rotatifs (JWT, clés API, webhooks).
 
+## Politique opérationnelle (API tactique Node.js)
+
+### Sessions et cookies
+
+- Cookie de session durci : `HttpOnly`, `SameSite=Strict`, `Path=/`, `Secure` activé automatiquement quand la requête est en TLS (`x-forwarded-proto=https`), durée configurable via `SESSION_COOKIE_MAX_AGE_MS`.
+- Nom de cookie dédié (`SESSION_COOKIE_NAME`, défaut `__Host-comspec.sid`) pour éviter les collisions inter-applications.
+- CORS autorise les credentials pour garder un comportement prévisible des clients web contrôlés.
+
+### Rotation et stockage des secrets
+
+- Les secrets d’API tactique ne doivent pas être commités ; stockage exclusivement via variables d’environnement.
+- Rotation sans downtime supportée via `ATAK_INTEL_SECRETS` (liste CSV des secrets actifs) ; compatibilité conservée avec `ATAK_INTEL_SECRET` et `X_COMSPEC_KEY`.
+- Recommandation: garder un chevauchement court (ancien + nouveau secret) puis retirer l’ancien après validation clients.
+
+### Headers de sécurité standardisés
+
+- En-têtes imposés côté API : `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, `Strict-Transport-Security`, `Content-Security-Policy`.
+- Objectif : réduire clickjacking, MIME sniffing, exfiltration passive et surface d’attaque navigateur.
+
+### Stratégie anti-abus
+
+- Rate limiting global et sur routes sensibles (auth/ATAK) via fenêtre glissante configurable (`RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`, `AUTH_RATE_LIMIT_MAX_REQUESTS`).
+- Réponse normalisée `429` avec `retryAfterSeconds`.
+- Audit trail sécurité en base (`security_audit_log`) : refus d’authentification, blocage rate-limit, événements sensibles (ex: uploads intel, update position).
+- Consultation d’audit dédiée via `GET /api/security/audit` (protégée par clé API tactique).
+
 ## Voir aussi
 
 - [Configuration et déploiement](configuration-et-deploiement.md)
 - [Intégrations externes](integrations.md)
+- [Checklist de sécurité release](checklist-securite-release.md)
