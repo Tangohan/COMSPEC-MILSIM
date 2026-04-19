@@ -219,7 +219,7 @@ $submittedViaLabel = static function (string $raw): string {
                         <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-stone-300 bg-white shadow-inner">
                             <svg class="h-8 w-8 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         </div>
-                        <p class="mt-6 font-serif text-xl font-bold text-stone-900">Aucun dossier<?= $statusFilter ? ' pour ce filtre' : '' ?></p>
+                        <p class="mt-6 text-xl font-extrabold text-stone-900">Aucun dossier<?= $statusFilter ? ' pour ce filtre' : '' ?></p>
                         <p class="mt-2 max-w-md mx-auto text-sm text-stone-600">
                             Les candidatures reçues depuis la page d’enrôlement apparaîtront ici. Vérifiez un autre filtre ou partagez le lien du formulaire aux candidats.
                         </p>
