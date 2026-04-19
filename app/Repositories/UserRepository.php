@@ -24,6 +24,8 @@ class UserRepository
 
     private static ?bool $hasUserRolesTable = null;
 
+    private static ?bool $hasEmailLoginOtpEnabledColumn = null;
+
     /** @var array{join: string, grade_short: string, order_grade: string}|null */
     private static ?array $gradesConfigPublicRoster = null;
 
@@ -63,6 +65,16 @@ class UserRepository
         }
 
         return self::$hasAthenaIdentifierColumn;
+    }
+
+    public function hasEmailLoginOtpEnabledColumn(): bool
+    {
+        if (self::$hasEmailLoginOtpEnabledColumn === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'email_login_otp_enabled' LIMIT 1");
+            self::$hasEmailLoginOtpEnabledColumn = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasEmailLoginOtpEnabledColumn;
     }
 
     private function generateAthenaIdentifier(): string
@@ -905,6 +917,9 @@ class UserRepository
         $allowed = ['email', 'password_hash', 'display_name', 'callsign', 'avatar_url', 'steam_id', 'role_id', 'grade_id', 'status', 'nationality_code', 'preferred_grade_format', 'professional_category_code'];
         if ($this->hasProfileSlugColumn()) {
             $allowed[] = 'profile_slug';
+        }
+        if ($this->hasEmailLoginOtpEnabledColumn()) {
+            $allowed[] = 'email_login_otp_enabled';
         }
         $set = [];
         $params = [];

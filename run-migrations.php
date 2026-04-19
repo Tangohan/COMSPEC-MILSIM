@@ -1787,6 +1787,13 @@ try {
     echo '  [ATTENTION] tenant_dashboard_pins : ' . $e->getMessage() . "\n";
 }
 
+$userEmailLoginOtpMigrate = require $root . '/bootstrap/user_email_login_otp_migration.php';
+try {
+    $userEmailLoginOtpMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] user_email_login_otp : ' . $e->getMessage() . "\n";
+}
+
 $tenantCommunityFeedMigrate = require $root . '/bootstrap/tenant_community_feed_migration.php';
 try {
     $tenantCommunityFeedMigrate($pdo);

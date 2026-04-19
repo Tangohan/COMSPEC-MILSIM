@@ -39,6 +39,24 @@ final class LoginSecurityOtpService
     }
 
     /**
+     * Code e-mail après mot de passe : rôles sensibles ou option activée sur le compte.
+     *
+     * @param array<string, mixed> $user Ligne ou session utilisateur (id, email_login_otp_enabled si présent)
+     */
+    public function isLoginEmailOtpRequired(array $user): bool
+    {
+        $uid = (int) ($user['id'] ?? 0);
+        if ($this->isMandatoryForUserId($uid)) {
+            return true;
+        }
+        if (!$this->userRepository->hasEmailLoginOtpEnabledColumn()) {
+            return false;
+        }
+
+        return (int) ($user['email_login_otp_enabled'] ?? 0) === 1;
+    }
+
+    /**
      * @param array<string, mixed> $user Ligne utilisateur (id, tenant_id, email, display_name, …)
      */
     public function beginLoginChallenge(array $user): Response

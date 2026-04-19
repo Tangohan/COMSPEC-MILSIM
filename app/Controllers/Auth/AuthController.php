@@ -195,7 +195,7 @@ class AuthController
                 Session::flash('error', 'Compte introuvable.');
                 return Response::redirect(url('login'));
             }
-            if ($this->loginSecurityOtpService->isMandatoryForUserId((int) ($user['id'] ?? 0))) {
+            if ($this->loginSecurityOtpService->isLoginEmailOtpRequired($user)) {
                 return $this->loginSecurityOtpService->beginLoginChallenge($user);
             }
             return $this->redirectToDashboardAfterLogin($user, $request);
@@ -232,7 +232,7 @@ class AuthController
                 Session::flash('error', 'Compte indisponible.');
                 return Response::redirect(url('login'));
             }
-            if (($user['status'] ?? '') === 'active' && $this->loginSecurityOtpService->isMandatoryForUserId((int) ($user['id'] ?? 0))) {
+            if (($user['status'] ?? '') === 'active' && $this->loginSecurityOtpService->isLoginEmailOtpRequired($user)) {
                 return $this->loginSecurityOtpService->beginLoginChallenge($user);
             }
 
@@ -345,7 +345,7 @@ class AuthController
 
         Session::forget('pending_community_selection');
         Session::forget('pending_verification_email');
-        if ($this->loginSecurityOtpService->isMandatoryForUserId((int) ($user['id'] ?? 0))) {
+        if ($this->loginSecurityOtpService->isLoginEmailOtpRequired($user)) {
             return $this->loginSecurityOtpService->beginLoginChallenge($user);
         }
 
