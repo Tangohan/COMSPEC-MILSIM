@@ -45,6 +45,7 @@ use App\Controllers\Api\LogisticsController;
 use App\Controllers\Api\IntelController;
 use App\Controllers\Api\ReplayController;
 use App\Controllers\Api\IffController;
+use App\Controllers\Api\OperationsApiController;
 use App\Controllers\Api\HealthController;
 use App\Controllers\Api\StripeWebhookController;
 use App\Controllers\Web\CommunityController;
@@ -1011,6 +1012,23 @@ return function (Router $router) {
     $router->get('/api/replay/events/{missionId}', [ReplayController::class, 'events']);
     $router->get('/api/replay/aar/{missionId}', [ReplayController::class, 'aar']);
     $router->get('/api/replay/aar/{missionId}/export.pdf', [ReplayController::class, 'aarExportPdf']);
+
+    // API Operations (contrats unifiés /api/operations/*)
+    $router->get('/api/operations/missions/{missionId}', [OperationsApiController::class, 'missionsTimeline']);
+    $router->get('/api/operations/missions/{missionId}/events', [OperationsApiController::class, 'missionsEvents']);
+    $router->post('/api/operations/sitrep/report', [OperationsApiController::class, 'sitrepReport']);
+    $router->get('/api/operations/sitrep/fused', [OperationsApiController::class, 'sitrepFused']);
+    $router->get('/api/operations/aar/{missionId}', [OperationsApiController::class, 'aar']);
+    $router->get('/api/operations/aar/{missionId}/export.json', [OperationsApiController::class, 'aarExportJson']);
+    $router->get('/api/operations/aar/{missionId}/export.pdf', [OperationsApiController::class, 'aarExportPdf']);
+    $router->get('/api/operations/retex/{missionId}/export.json', [OperationsApiController::class, 'aarExportJson']);
+    $router->get('/api/operations/retex/{missionId}/export.pdf', [OperationsApiController::class, 'aarExportPdf']);
+    $router->get('/api/operations/readiness/{missionId}', [OperationsApiController::class, 'readiness']);
+    $router->get('/api/operations/medical/{missionId}', [OperationsApiController::class, 'medical']);
+    $router->get('/api/operations/logistics/assets', [OperationsApiController::class, 'logisticsAssets']);
+    $router->post('/api/operations/logistics/update', [OperationsApiController::class, 'logisticsUpdate']);
+    $router->get('/api/operations/comms/{missionId}', [OperationsApiController::class, 'comms']);
+    $router->get('/api/operations/doctrine', [OperationsApiController::class, 'doctrine']);
 
     // API C2 — IFF
     $router->post('/api/iff/respond', [IffController::class, 'respond']);

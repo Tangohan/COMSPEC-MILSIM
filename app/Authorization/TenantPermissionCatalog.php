@@ -32,6 +32,7 @@ final class TenantPermissionCatalog
         return array_merge(
             self::adminDefinitions(),
             self::operationalBoardDefinitions(),
+            self::operationsDomainDefinitions(),
             self::dashboardDefinitions(),
             self::forumDefinitions(),
             self::interteamDefinitions(),
@@ -101,6 +102,33 @@ final class TenantPermissionCatalog
         return [
             ['slug' => 'operational.board.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter le tableau opérationnel (portail)'],
             ['slug' => 'operational.board.edit', 'module' => 'operations', 'action' => 'manage', 'name' => 'Créer et modifier les entrées du tableau opérationnel'],
+        ];
+    }
+
+    /**
+     * Familles cohérentes d’habilitations par domaines opérationnels.
+     *
+     * @return list<array{slug: string, module: string, action: string|null, name: string}>
+     */
+    private static function operationsDomainDefinitions(): array
+    {
+        return [
+            ['slug' => 'operations.missions.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter les missions opérationnelles'],
+            ['slug' => 'operations.missions.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Piloter les missions opérationnelles'],
+            ['slug' => 'operations.sitrep.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter les SITREP fusionnés'],
+            ['slug' => 'operations.sitrep.create', 'module' => 'operations', 'action' => 'create', 'name' => 'Publier des SITREP'],
+            ['slug' => 'operations.aar.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter les AAR / RETEX'],
+            ['slug' => 'operations.aar.export', 'module' => 'operations', 'action' => 'export', 'name' => 'Exporter les AAR / RETEX (JSON/PDF)'],
+            ['slug' => 'operations.readiness.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter la préparation opérationnelle'],
+            ['slug' => 'operations.readiness.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Piloter la préparation opérationnelle'],
+            ['slug' => 'operations.medical.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter les signaux médicaux opérationnels'],
+            ['slug' => 'operations.medical.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Piloter les indicateurs médicaux opérationnels'],
+            ['slug' => 'operations.logistics.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter la logistique opérationnelle'],
+            ['slug' => 'operations.logistics.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Mettre à jour la logistique opérationnelle'],
+            ['slug' => 'operations.comms.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter les communications opérationnelles'],
+            ['slug' => 'operations.comms.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Piloter les communications opérationnelles'],
+            ['slug' => 'operations.doctrine.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter la doctrine opérationnelle'],
+            ['slug' => 'operations.doctrine.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Gérer la doctrine opérationnelle'],
         ];
     }
 

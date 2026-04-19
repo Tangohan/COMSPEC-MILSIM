@@ -1398,6 +1398,12 @@ class Container
             \App\Controllers\Api\ReplayController::class => new \App\Controllers\Api\ReplayController(
                 self::get(\App\Services\Replay\ReplayService::class)
             ),
+            \App\Controllers\Api\OperationsApiController::class => new \App\Controllers\Api\OperationsApiController(
+                self::get(\App\Services\Replay\ReplayService::class),
+                self::get(\App\Services\Intel\IntelFusionService::class),
+                self::get(\App\Repositories\AssetLogisticsRepository::class),
+                self::get(\App\Services\Logistics\AssetLogisticsEvaluator::class)
+            ),
             \App\Repositories\IffChallengeRepository::class => new \App\Repositories\IffChallengeRepository(),
             \App\Repositories\IffAssetStatusRepository::class => new \App\Repositories\IffAssetStatusRepository(),
             \App\Services\Iff\IffChallengeService::class => new \App\Services\Iff\IffChallengeService(

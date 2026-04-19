@@ -6,13 +6,18 @@ namespace Tests\Contract\Api;
 
 use App\Controllers\Api\IntegrationsPublicEventsController;
 use App\Controllers\Api\MePreferencesApiController;
+use App\Controllers\Api\OperationsApiController;
 use App\Core\Request;
+use App\Repositories\AssetLogisticsRepository;
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserUiPreferencesRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Intel\IntelFusionService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Profile\UserUiPreferencesValidationService;
+use App\Services\Replay\ReplayService;
+use App\Services\Logistics\AssetLogisticsEvaluator;
 use PHPUnit\Framework\TestCase;
 
 final class CriticalApiContractTest extends TestCase
@@ -99,5 +104,46 @@ final class CriticalApiContractTest extends TestCase
         $this->assertFalse($payload['success']);
         $this->assertSame('unauthorized', $payload['error']['code']);
         $this->assertSame('Non autorisé.', $payload['error']['message']);
+    }
+
+    public function testOperationsMedicalErrorEnvelopeContainsBusinessCodeMessageAndContext(): void
+    {
+        $replay = $this->createMock(ReplayService::class);
+        $intel = $this->createMock(IntelFusionService::class);
+        $logisticsRepo = $this->createMock(AssetLogisticsRepository::class);
+        $logisticsEval = $this->createMock(AssetLogisticsEvaluator::class);
+
+        $controller = new OperationsApiController($replay, $intel, $logisticsRepo, $logisticsEval);
+        $response = $controller->medical(new Request(), []);
+        $payload = json_decode($response->body(), true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame(400, $response->statusCode());
+        $this->assertFalse($payload['success']);
+        $this->assertSame('operations.medical.mission_id_required', $payload['error']['code']);
+        $this->assertSame('missionId requis.', $payload['error']['message']);
+        $this->assertSame('operations.medical', $payload['error']['context']['domain'] ?? null);
+    }
+
+    public function testOperationsDoctrineExposesRequestedPermissionFamilies(): void
+    {
+        $replay = $this->createMock(ReplayService::class);
+        $intel = $this->createMock(IntelFusionService::class);
+        $logisticsRepo = $this->createMock(AssetLogisticsRepository::class);
+        $logisticsEval = $this->createMock(AssetLogisticsEvaluator::class);
+
+        $controller = new OperationsApiController($replay, $intel, $logisticsRepo, $logisticsEval);
+        $response = $controller->doctrine(new Request(), []);
+        $payload = json_decode($response->body(), true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame(200, $response->statusCode());
+        $this->assertTrue($payload['success']);
+        $this->assertContains('operations.missions.*', $payload['permissionFamilies']);
+        $this->assertContains('operations.sitrep.*', $payload['permissionFamilies']);
+        $this->assertContains('operations.aar.*', $payload['permissionFamilies']);
+        $this->assertContains('operations.readiness.*', $payload['permissionFamilies']);
+        $this->assertContains('operations.medical.*', $payload['permissionFamilies']);
+        $this->assertContains('operations.logistics.*', $payload['permissionFamilies']);
+        $this->assertContains('operations.comms.*', $payload['permissionFamilies']);
+        $this->assertContains('operations.doctrine.*', $payload['permissionFamilies']);
     }
 }
