@@ -168,6 +168,18 @@ final class TenantCommunityProfileService
         return array_keys(self::registryTagLabels());
     }
 
+    /** @return list<string> */
+    public static function allowedNavAccents(): array
+    {
+        return ['sky', 'amber', 'emerald', 'violet', 'rose', 'slate'];
+    }
+
+    /** @return list<string> */
+    public static function allowedNavSubmenuStyles(): array
+    {
+        return ['standard', 'cards', 'minimal'];
+    }
+
     /**
      * @param array<string, mixed> $existing bloc community existant (ou [])
      * @return array<string, mixed> bloc community complet à fusionner dans settings
@@ -219,6 +231,7 @@ final class TenantCommunityProfileService
         $c['contact_email'] = $this->sanitizeEmail((string) $request->input('contact_email', ''));
         $c['contact_form_enabled'] = (string) $request->input('contact_form_enabled', '0') === '1';
         $c['contact_intro'] = $this->clip((string) $request->input('contact_intro', ''), 500);
+        $c['portal_nav'] = $this->parsePortalNav($request, is_array($existing['portal_nav'] ?? null) ? $existing['portal_nav'] : []);
 
         $c['enlistment_milsim'] = EnlistmentMilsimPackService::buildFromRequest($request);
 
@@ -263,6 +276,34 @@ final class TenantCommunityProfileService
         }
 
         return $c;
+    }
+
+    /**
+     * @param array<string, mixed> $existing
+     * @return array<string, mixed>
+     */
+    private function parsePortalNav(Request $request, array $existing): array
+    {
+        $out = $existing;
+        foreach (['operations', 'resources'] as $slot) {
+            $acc = strtolower(trim((string) $request->input('nav_' . $slot . '_accent', '')));
+            if (!in_array($acc, self::allowedNavAccents(), true)) {
+                $acc = ($slot === 'operations') ? 'sky' : 'amber';
+            }
+
+            $style = strtolower(trim((string) $request->input('nav_' . $slot . '_submenu_style', '')));
+            if (!in_array($style, self::allowedNavSubmenuStyles(), true)) {
+                $style = 'standard';
+            }
+
+            $out[$slot] = [
+                'accent' => $acc,
+                'image_enabled' => (string) $request->input('nav_' . $slot . '_image_enabled', '1') === '1',
+                'submenu_style' => $style,
+            ];
+        }
+
+        return $out;
     }
 
     /**

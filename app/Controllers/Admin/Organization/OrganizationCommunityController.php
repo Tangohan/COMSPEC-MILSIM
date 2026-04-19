@@ -59,6 +59,16 @@ final class OrganizationCommunityController
         if ($coverFs !== '' && is_file($coverFs)) {
             $registryCoverUrl = url('assets/img/communities/' . $slug . '-cover.jpg') . '?v=' . (int) filemtime($coverFs);
         }
+        $navOpsImageUrl = null;
+        $navResImageUrl = null;
+        $opsFs = $slug !== '' ? base_path('public/assets/img/communities/' . $slug . '-nav-operations.jpg') : '';
+        if ($opsFs !== '' && is_file($opsFs)) {
+            $navOpsImageUrl = url('assets/img/communities/' . $slug . '-nav-operations.jpg') . '?v=' . (int) filemtime($opsFs);
+        }
+        $resFs = $slug !== '' ? base_path('public/assets/img/communities/' . $slug . '-nav-resources.jpg') : '';
+        if ($resFs !== '' && is_file($resFs)) {
+            $navResImageUrl = url('assets/img/communities/' . $slug . '-nav-resources.jpg') . '?v=' . (int) filemtime($resFs);
+        }
 
         return Response::view('layout.main', [
             'title' => 'Fiche registre & contact',
@@ -66,6 +76,8 @@ final class OrganizationCommunityController
             'tenant' => $tenant,
             'community' => $community,
             'registryCoverUrl' => $registryCoverUrl,
+            'navOpsImageUrl' => $navOpsImageUrl,
+            'navResImageUrl' => $navResImageUrl,
         ]);
     }
 
@@ -90,16 +102,35 @@ final class OrganizationCommunityController
         $this->tenantRepository->mergeSettings($tenantId, ['community' => $built]);
 
         $coverOutcome = $this->processRegistryCoverUpload($tenant, $request);
+        $navOpsOutcome = $this->processNavigationImageUpload($tenant, $request, 'operations');
+        $navResOutcome = $this->processNavigationImageUpload($tenant, $request, 'resources');
         if (is_string($coverOutcome) && str_starts_with($coverOutcome, '!!')) {
             Session::flash('error', 'Les réglages ont été enregistrés. ' . trim(substr($coverOutcome, 2)));
 
             return Response::redirect(url('back-office/community/presentation'));
+        }
+        foreach ([$navOpsOutcome, $navResOutcome] as $navOutcome) {
+            if (is_string($navOutcome) && str_starts_with($navOutcome, '!!')) {
+                Session::flash('error', 'Les réglages ont été enregistrés. ' . trim(substr($navOutcome, 2)));
+
+                return Response::redirect(url('back-office/community/presentation'));
+            }
         }
         $msg = 'Fiche registre et contact enregistrées.';
         if ($coverOutcome === 'uploaded') {
             $msg .= ' Image de carte du registre mise à jour.';
         } elseif ($coverOutcome === 'removed') {
             $msg .= ' Image de carte du registre retirée.';
+        }
+        if ($navOpsOutcome === 'uploaded') {
+            $msg .= ' Image du menu Opérations mise à jour.';
+        } elseif ($navOpsOutcome === 'removed') {
+            $msg .= ' Image du menu Opérations retirée.';
+        }
+        if ($navResOutcome === 'uploaded') {
+            $msg .= ' Image du menu Ressources mise à jour.';
+        } elseif ($navResOutcome === 'removed') {
+            $msg .= ' Image du menu Ressources retirée.';
         }
         Session::flash('success', $msg);
 
@@ -149,6 +180,60 @@ final class OrganizationCommunityController
         }
 
         if ($request->input('remove_registry_cover') === '1' && $slug !== '' && is_file($dest)) {
+            @unlink($dest);
+
+            return 'removed';
+        }
+
+        return '';
+    }
+
+    /**
+     * @return ''|'uploaded'|'removed'|string préfixée par « !! » (erreur utilisateur)
+     */
+    private function processNavigationImageUpload(array $tenant, Request $request, string $slot): string
+    {
+        if (!in_array($slot, ['operations', 'resources'], true)) {
+            return '';
+        }
+        $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
+        $dir = base_path('public/assets/img/communities');
+        $dest = $dir . '/' . $slug . '-nav-' . $slot . '.jpg';
+
+        $file = $_FILES['nav_' . $slot . '_image'] ?? null;
+        if (is_array($file)) {
+            $fe = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($fe !== UPLOAD_ERR_NO_FILE && $fe !== UPLOAD_ERR_OK) {
+                return '!!Envoi du fichier impossible (' . $slot . '). Vérifiez la taille (maximum 3 Mo) et le format, puis réessayez.';
+            }
+        }
+        if (is_array($file) && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+            if ($slug === '' || !preg_match('/^[a-z0-9-]{1,50}$/', $slug)) {
+                return '!!Définissez d’abord l’identifiant public de votre communauté avant d’ajouter une image de navigation.';
+            }
+            $tmp = (string) ($file['tmp_name'] ?? '');
+            if ($tmp === '' || !is_uploaded_file($tmp)) {
+                return '!!Fichier reçu invalide pour l’image de navigation.';
+            }
+            if ((int) ($file['size'] ?? 0) > 3 * 1024 * 1024) {
+                return '!!Image de navigation trop volumineuse : limite de 3 Mo.';
+            }
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $mime = $finfo->file($tmp) ?: '';
+            if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+                return '!!Format non pris en charge pour l’image de navigation. Utilisez JPG, PNG ou WebP.';
+            }
+            if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                return '!!Le stockage des images de navigation n’est pas disponible sur le serveur pour le moment.';
+            }
+            if (!$this->writeRegistryCoverAsJpeg($tmp, $dest)) {
+                return '!!Impossible de traiter cette image de navigation. Essayez avec un autre fichier.';
+            }
+
+            return 'uploaded';
+        }
+
+        if ($request->input('remove_nav_' . $slot . '_image') === '1' && $slug !== '' && is_file($dest)) {
             @unlink($dest);
 
             return 'removed';

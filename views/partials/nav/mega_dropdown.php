@@ -12,6 +12,10 @@ if (!isset($currentPath)) {
 
 $variant = (string) ($item['variant'] ?? 'operations');
 $layoutClass = 'nav-mega-layout nav-mega-layout--' . preg_replace('/[^a-z0-9_-]/', '', $variant);
+$submenuStyle = preg_replace('/[^a-z0-9_-]/', '', (string) ($item['submenu_style'] ?? 'standard'));
+if ($submenuStyle === '') {
+    $submenuStyle = 'standard';
+}
 $slots = navigation_group_sections_by_slot($item['sections'] ?? []);
 $orderedSections = array_merge($slots['primary'], $slots['center'], $slots['secondary']);
 $feat = is_array($item['featured'] ?? null) ? $item['featured'] : null;
@@ -137,7 +141,7 @@ $renderFeatured = static function (?array $f): void {
     <?php else: ?>
         <div class="<?= htmlspecialchars($layoutClass) ?> nav-mega-layout--drill<?= $hasFeatured ? '' : ' nav-mega-layout--drill-solo' ?>">
             <div class="nav-mega-col nav-mega-col--muted border-b border-slate-200/80 lg:border-b-0 lg:border-r">
-                <div class="nav-mega-drill" data-nav-drill>
+                <div class="nav-mega-drill nav-mega-drill--<?= htmlspecialchars($submenuStyle) ?>" data-nav-drill>
                     <div class="nav-mega-drill__viewport">
                         <div class="nav-mega-drill__pane nav-mega-drill__pane--root">
                             <div class="p-4 sm:p-5">
