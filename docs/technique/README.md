@@ -16,6 +16,7 @@ Ce sommaire s’adresse aux **développeurs** et à l’**exploitation** : archi
 | [Plan amélioration administration site](plan-amelioration-administration-site-mod-admin-support.md) | Diagnostic et axes d'amélioration modération/support/admin |
 | [Plan exécution administration site](plan-execution-administration-site-mod-admin-support.md) | Roadmap exécutable par lots, RACI, DoD, KPI et run |
 | [Plan amélioration interactif/UI-UX/features](plan-amelioration-interactif-ui-ux-feature.md) | Analyse et plan exécutable pour interactions, UX/UI et fonctionnalités transverses |
+| [Analyse projet & propositions (avril 2026)](analyse-ajouts-ameliorations-2026-04.md) | Diagnostic global et feuille de route d'amélioration priorisée |
 
 ## Liens utiles
 
