@@ -97,7 +97,8 @@ function navPathToRoutePath(string $navPath): string
         return '/';
     }
 
-    $trimmed = trim(explode('#', $navPath)[0]);
+    $fragmentStripped = explode('#', $navPath, 2)[0];
+    $trimmed = trim((string) parse_url($fragmentStripped, PHP_URL_PATH));
     if ($trimmed === '') {
         return '/';
     }
