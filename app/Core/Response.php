@@ -43,17 +43,10 @@ class Response
         return $this->statusCode;
     }
 
-    /** @return array<string,string> */
-    public function headers(): array
+    public function headerValue(string $name): ?string
     {
-        return $this->headers;
+        return $this->headers[$name] ?? null;
     }
-
-    public function body(): string
-    {
-        return $this->body;
-    }
-
     public function send(): void
     {
         http_response_code($this->statusCode);
