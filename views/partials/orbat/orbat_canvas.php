@@ -186,7 +186,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 <p class="mt-2 max-w-2xl text-xs font-semibold leading-relaxed text-emerald-900">Vous gérez cette communauté : clic droit ou bouton « ⋯ » sur une carte pour créer, rattacher, régler la confidentialité ou supprimer une unité. Les champs à droite servent à la fiche détaillée ; l’enregistrement est automatique après une courte pause, et l’organigramme se met à jour sans recharger la page.</p>
                 <?php endif; ?>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 min-w-[320px]">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 min-w-[320px]">
                 <div class="orbat-panel rounded-2xl p-4">
                     <p class="text-[9px] font-black tracking-[0.22em] uppercase text-slate-400">Unités</p>
                     <p id="stat-units" class="text-2xl font-black tracking-tight mt-1">0</p>
@@ -202,6 +202,10 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 <div class="orbat-panel rounded-2xl p-4">
                     <p class="text-[9px] font-black tracking-[0.22em] uppercase text-slate-400">Partielles / Inactives</p>
                     <p id="stat-other" class="text-2xl font-black tracking-tight mt-1">0</p>
+                </div>
+                <div class="orbat-panel rounded-2xl p-4">
+                    <p class="text-[9px] font-black tracking-[0.22em] uppercase text-slate-400">Readiness ORBAT</p>
+                    <p id="stat-readiness" class="text-2xl font-black tracking-tight mt-1">—</p>
                 </div>
             </div>
         </div>
@@ -269,6 +273,10 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                         <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                             <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Chef d’unité</p>
                             <p id="detail-lead" class="text-sm font-black uppercase mt-2">—</p>
+                        </div>
+                        <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                            <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Readiness</p>
+                            <p id="detail-readiness" class="text-sm font-black uppercase mt-2">—</p>
                         </div>
                     </div>
                     <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
@@ -621,14 +629,21 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
 
     function countStats(node) {
         if (node.isOrbatPlaceholder) {
-            return { units: 0, personnel: 0, active: 0, other: 0 };
+            return { units: 0, personnel: 0, active: 0, other: 0, readinessSum: 0, readinessCount: 0 };
         }
         let units = 1, personnel = node.strength || 0, active = node.status === "active" ? 1 : 0, other = node.status !== "active" ? 1 : 0;
+        let readinessSum = 0, readinessCount = 0;
+        if (typeof node.readinessScore === "number" && (node.readinessPopulation || 0) > 0) {
+            readinessSum += node.readinessScore * (node.readinessPopulation || 0);
+            readinessCount += (node.readinessPopulation || 0);
+        }
         for (const child of (node.children || [])) {
             const c = countStats(child);
             units += c.units; personnel += c.personnel; active += c.active; other += c.other;
+            readinessSum += c.readinessSum || 0;
+            readinessCount += c.readinessCount || 0;
         }
-        return { units, personnel, active, other };
+        return { units, personnel, active, other, readinessSum, readinessCount };
     }
 
     function flattenNodes(node, arr) {
@@ -770,7 +785,8 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         sub.textContent = node.role || "—";
         const meta = document.createElement("div");
         meta.className = "orbat-node-meta";
-        meta.innerHTML = "<span>" + getChartDisplayLabel(node.type) + "</span><span>" + (node.strength || 0) + " pax</span>";
+        var readTxt = (typeof node.readinessScore === "number") ? (node.readinessScore + "% ready") : "n/d";
+        meta.innerHTML = "<span>" + getChartDisplayLabel(node.type) + "</span><span>" + (node.strength || 0) + " pax · " + readTxt + "</span>";
         card.appendChild(top);
         card.appendChild(label);
         card.appendChild(sub);
@@ -881,10 +897,12 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         var sp = document.getElementById("stat-personnel");
         var sa = document.getElementById("stat-active");
         var so = document.getElementById("stat-other");
+        var sr = document.getElementById("stat-readiness");
         if (su) su.textContent = stats.units;
         if (sp) sp.textContent = stats.personnel;
         if (sa) sa.textContent = stats.active;
         if (so) so.textContent = stats.other;
+        if (sr) sr.textContent = stats.readinessCount > 0 ? Math.round(stats.readinessSum / stats.readinessCount) + "%" : "—";
     }
 
     function selectNode(node) {
@@ -906,6 +924,9 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         if (el = document.getElementById("detail-status")) el.textContent = getStatusLabel(node.status || "active");
         if (el = document.getElementById("detail-strength")) el.textContent = (node.strength || 0) + " personnels";
         if (el = document.getElementById("detail-lead")) el.textContent = node.leader || "—";
+        if (el = document.getElementById("detail-readiness")) el.textContent = typeof node.readinessScore === "number"
+            ? (node.readinessScore + "% (unité + sous-unités)")
+            : "Non calculé";
         if (el = document.getElementById("detail-mission")) el.textContent = node.mission || "—";
         var exWrap = document.getElementById("detail-orbat-extras-wrap");
         var exDet = document.getElementById("detail-orbat-details");
@@ -966,6 +987,12 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                     sp.className = "truncate";
                     sp.textContent = mem.label || "";
                     row.appendChild(sp);
+                    if (typeof mem.readiness === "number") {
+                        var rd = document.createElement("span");
+                        rd.className = "text-[10px] font-black uppercase text-emerald-700 shrink-0";
+                        rd.textContent = mem.readiness + "%";
+                        row.appendChild(rd);
+                    }
                     if (uidMem > 0) {
                         var ar = document.createElement("span");
                         ar.className = "text-[10px] text-slate-400 shrink-0";
@@ -987,7 +1014,8 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 node.children.forEach(function(child) {
                     const row = document.createElement("div");
                     row.className = "flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 cursor-pointer hover:bg-slate-50";
-                    row.innerHTML = "<div><p class=\"font-black uppercase text-[11px] tracking-[0.14em]\">" + (child.label || "—") + "</p><p class=\"text-xs text-slate-500 font-medium\">" + (child.role || "—") + "</p></div><div class=\"text-right\"><p class=\"text-[10px] font-black uppercase\">" + (child.strength || 0) + " pax</p><p class=\"text-[10px] text-slate-500 font-bold uppercase\">" + getStatusLabel(child.status || "active") + "</p></div>";
+                    var childRead = (typeof child.readinessScore === "number") ? (child.readinessScore + "% ready") : "n/d";
+                    row.innerHTML = "<div><p class=\"font-black uppercase text-[11px] tracking-[0.14em]\">" + (child.label || "—") + "</p><p class=\"text-xs text-slate-500 font-medium\">" + (child.role || "—") + "</p></div><div class=\"text-right\"><p class=\"text-[10px] font-black uppercase\">" + (child.strength || 0) + " pax</p><p class=\"text-[10px] text-slate-500 font-bold uppercase\">" + childRead + " · " + getStatusLabel(child.status || "active") + "</p></div>";
                     row.addEventListener("click", function() { selectNode(child); });
                     childrenBox.appendChild(row);
                 });
@@ -1011,6 +1039,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 maskHintLabel: node.maskHintLabel,
                 orbatDetails: node.orbatDetails, chartIconUrl: node.chartIconUrl, chartImageUrl: node.chartImageUrl,
                 members: node.members || [], children: children,
+                readinessScore: node.readinessScore, localReadinessScore: node.localReadinessScore, readinessPopulation: node.readinessPopulation,
                 isOrbatPlaceholder: node.isOrbatPlaceholder, placeholderReason: node.placeholderReason,
                 viewerNamesRedacted: node.viewerNamesRedacted
             };

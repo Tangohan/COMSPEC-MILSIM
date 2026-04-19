@@ -19,7 +19,7 @@ final class OrbatRosterPayload
     /**
      * @param array<int, int> $unitMemberCounts
      * @param array<int, string> $unitCommanderLabels
-     * @param array<int, list<array{user_id: int, label: string}>> $unitRosterByUnit
+     * @param array<int, list<array{user_id: int, label: string, readiness?: int, readinessComponents?: array<string, mixed>}>> $unitRosterByUnit
      * @return array<string, mixed>
      */
     public static function normalizeNode(
@@ -119,6 +119,31 @@ final class OrbatRosterPayload
         $memberCounts = $unitRepository->countDistinctMembersByUnitForTenant($tenantId);
         $commanderLabels = $unitRepository->commanderLabelByUnitForTenant($tenantId, $flat);
         $rosterByUnit = $unitRepository->rosterMembersByUnitForTenant($tenantId);
+        $allUserIds = [];
+        foreach ($rosterByUnit as $rows) {
+            foreach ($rows as $mem) {
+                $mid = (int) ($mem['user_id'] ?? 0);
+                if ($mid > 0) {
+                    $allUserIds[$mid] = true;
+                }
+            }
+        }
+        $readinessByUser = $unitRepository->readinessByUsersForTenant($tenantId, array_map('intval', array_keys($allUserIds)));
+        foreach ($rosterByUnit as $unitId => $rows) {
+            $enrichedRows = [];
+            foreach ($rows as $row) {
+                $uid = (int) ($row['user_id'] ?? 0);
+                $entry = $row;
+                if ($uid > 0 && isset($readinessByUser[$uid])) {
+                    $entry['readiness'] = (int) ($readinessByUser[$uid]['readiness'] ?? 0);
+                    $entry['readinessComponents'] = is_array($readinessByUser[$uid]['components'] ?? null)
+                        ? $readinessByUser[$uid]['components']
+                        : [];
+                }
+                $enrichedRows[] = $entry;
+            }
+            $rosterByUnit[(int) $unitId] = $enrichedRows;
+        }
 
         $viewerUnitIds = $viewerUserId > 0
             ? $unitRepository->unitIdsForUser($tenantId, $viewerUserId)
@@ -154,8 +179,72 @@ final class OrbatRosterPayload
         }
 
         $root = self::applyViewerPolicies($root, $viewerUnitIds, $canBypassMasks);
+        if ($root !== null) {
+            [$root] = self::annotateReadinessAggregation($root);
+        }
 
         return $root;
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     * @return array{0: array<string, mixed>, 1: int, 2: int}
+     */
+    private static function annotateReadinessAggregation(array $node): array
+    {
+        $children = [];
+        $subtreeScoreTotal = 0;
+        $subtreeMemberCount = 0;
+        foreach ($node['children'] ?? [] as $child) {
+            if (!is_array($child)) {
+                continue;
+            }
+            [$annotatedChild, $childReadiness, $childCount] = self::annotateReadinessAggregation($child);
+            $children[] = $annotatedChild;
+            $subtreeScoreTotal += $childReadiness;
+            $subtreeMemberCount += $childCount;
+        }
+        $node['children'] = $children;
+
+        $localScoreTotal = 0;
+        $localCount = 0;
+        foreach ($node['members'] ?? [] as $member) {
+            if (!is_array($member)) {
+                continue;
+            }
+            $score = (int) ($member['readiness'] ?? 0);
+            if ($score <= 0) {
+                continue;
+            }
+            $localScoreTotal += $score;
+            ++$localCount;
+        }
+
+        $totalScore = $localScoreTotal + $subtreeScoreTotal;
+        $totalCount = $localCount + $subtreeMemberCount;
+        $node['localReadinessScore'] = $localCount > 0 ? (int) round($localScoreTotal / $localCount) : null;
+        $node['readinessScore'] = $totalCount > 0 ? (int) round($totalScore / $totalCount) : null;
+        $node['readinessPopulation'] = $totalCount;
+        $node['readinessState'] = self::readinessStateFromScore($node['readinessScore']);
+        if (($node['status'] ?? 'active') === 'active' && $node['readinessState'] !== null) {
+            $node['status'] = $node['readinessState'];
+        }
+        return [$node, $totalScore, $totalCount];
+    }
+
+    private static function readinessStateFromScore(?int $score): ?string
+    {
+        if ($score === null) {
+            return null;
+        }
+        if ($score >= 70) {
+            return 'active';
+        }
+        if ($score >= 40) {
+            return 'partial';
+        }
+
+        return 'inactive';
     }
 
     /**
