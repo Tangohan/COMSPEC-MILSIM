@@ -1,36 +1,26 @@
 <?php
 declare(strict_types=1);
 
-$flashOk = \App\Core\Session::getFlash('success');
-$flashErr = \App\Core\Session::getFlash('error');
 $slaHours = max(1, (int) ($enlistmentSlaHours ?? 72));
 $submittedCount = max(0, (int) ($submittedCount ?? 0));
 $submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
-require base_path('views/admin/recruitment_workspace/partials/command_shell_open.php');
 ?>
 
-<div class="min-h-[calc(100vh-3.5rem)] bg-gradient-to-b from-[#ebe6dc] via-[#f5f2eb] to-[#e8e4db]">
-    <div class="mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+<div class="max-w-3xl mx-auto w-full space-y-8">
         <nav class="flex flex-wrap items-center gap-2 text-xs font-semibold text-stone-600" aria-label="Fil d’Ariane">
             <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg px-2 py-1 transition hover:bg-white/60 hover:text-[#1c2d41] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1c4d6e] focus-visible:ring-offset-2">Dossiers de candidature</a>
             <span class="text-stone-400" aria-hidden="true">/</span>
             <span class="rounded-lg bg-white/80 px-2 py-1 text-[#1c2d41] ring-1 ring-stone-200/80">Délais d’alerte</span>
         </nav>
 
-        <?php if ($flashOk): ?>
-            <div class="rounded-xl border border-emerald-200 bg-emerald-50/95 px-4 py-3 text-sm font-medium text-emerald-950 shadow-sm sm:px-5" role="status"><?= htmlspecialchars((string) $flashOk, ENT_QUOTES, 'UTF-8') ?></div>
-        <?php endif; ?>
-        <?php if ($flashErr): ?>
-            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 shadow-sm sm:px-5" role="alert"><?= htmlspecialchars((string) $flashErr, ENT_QUOTES, 'UTF-8') ?></div>
-        <?php endif; ?>
-
-        <div class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-[0_25px_60px_-20px_rgba(28,45,65,0.35)] ring-1 ring-black/[0.03]">
-            <div class="relative bg-[#1c2d41] px-6 py-8 sm:px-8 sm:pb-10 sm:pt-10">
-                <div class="absolute inset-0 bg-[linear-gradient(105deg,rgba(201,162,39,0.12)_0%,transparent_45%)] pointer-events-none" aria-hidden="true"></div>
+        <div class="lms-panel overflow-hidden rounded-[2rem] border border-slate-200/90 shadow-xl">
+            <div class="relative bg-slate-900 px-6 py-8 sm:px-8 sm:pb-10 sm:pt-10">
+                <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-sky-500/90 via-sky-500/30 to-transparent" aria-hidden="true"></div>
+                <div class="absolute inset-0 bg-[linear-gradient(105deg,rgba(14,165,233,0.12)_0%,transparent_45%)] pointer-events-none" aria-hidden="true"></div>
                 <div class="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <p class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#c9a227]/90">Service recrutement</p>
-                        <h1 class="mt-2 font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl">Délais d’alerte</h1>
+                        <p class="text-[9px] font-black uppercase tracking-[0.4em] text-sky-400/95">Bureau recrutement</p>
+                        <h1 class="mt-2 text-3xl font-black tracking-tight uppercase text-white sm:text-4xl">Délais d’alerte</h1>
                         <p class="mt-4 max-w-xl text-sm leading-relaxed text-slate-300/95">
                             Définissez après combien d’heures sans traitement un dossier <strong class="font-semibold text-white">à traiter</strong> est considéré en retard dans la file et dans les compteurs.
                         </p>
@@ -99,9 +89,7 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
                 </form>
             </div>
         </div>
-    </div>
 </div>
-<?php require base_path('views/admin/recruitment_workspace/partials/command_shell_close.php'); ?>
 <script>
 (function () {
     var input = document.getElementById('enlistment_sla_hours');

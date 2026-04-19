@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\EnlistmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\TenantRepository;
@@ -32,8 +33,11 @@ class RecruitmentOffersController
         private UserRepository $userRepository,
         private EmailService $emailService,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
+        private ?EnlistmentRepository $enlistmentRepository = null,
         private RecruitmentOpeningReferenceService $referenceService = new RecruitmentOpeningReferenceService()
-    ) {}
+    ) {
+        $this->enlistmentRepository ??= new EnlistmentRepository();
+    }
 
     public function index(Request $request, array $params = []): Response
     {
@@ -48,12 +52,16 @@ class RecruitmentOffersController
         }
         $st = trim((string) $request->query('status', 'all'));
 
-        return Response::view('layout.main', [
+        return Response::view('layout.recruitment_lms', [
             'title' => 'Offres publiées',
+            'recruitmentLmsTitle' => 'Offres publiées',
             'content' => 'admin.organization.recruitment_offers.index',
             'openings' => $this->openings->listForTenantAdmin($tenantId, $st === 'all' ? null : $st),
             'statusFilter' => $st,
             'statusLabels' => RecruitmentOpeningPresentation::statusLabels(),
+            'recruitmentSidebarCounts' => $this->recruitmentSidebarCounts(),
+            'recruitmentAdminNav' => 'offers',
+            'showPortalFooter' => false,
         ]);
     }
 
@@ -230,8 +238,9 @@ class RecruitmentOffersController
         $previewSeq = $lastSeq < 1 ? 1 : $lastSeq + 1;
         $previewRef = $this->referenceService->buildReference($fmt, $tenantRow, $previewUnit, $year, $previewSeq);
 
-        return Response::view('layout.main', [
+        return Response::view('layout.recruitment_lms', [
             'title' => 'Format des références des offres',
+            'recruitmentLmsTitle' => 'Références des offres',
             'content' => 'admin.organization.recruitment_offers.reference_format',
             'format' => $fmt,
             'prospectionDocumentRef' => $docRef,
@@ -242,6 +251,9 @@ class RecruitmentOffersController
             'previewUnitLabel' => $previewUnitLabel,
             'previewTenantName' => trim((string) ($tenantRow['name'] ?? '')),
             'previewHasUnits' => $units !== [],
+            'recruitmentSidebarCounts' => $this->recruitmentSidebarCounts(),
+            'recruitmentAdminNav' => 'reference',
+            'showPortalFooter' => false,
         ]);
     }
 
@@ -346,8 +358,9 @@ class RecruitmentOffersController
         $roles = $this->jobRoleRepository->listRolesWithCategory($tenantId);
         $decoded = $opening ? $this->decodeOpeningJson($opening) : null;
 
-        return Response::view('layout.main', [
+        return Response::view('layout.recruitment_lms', [
             'title' => $opening ? 'Modifier une offre' : 'Nouvelle offre',
+            'recruitmentLmsTitle' => $opening ? 'Modifier une offre' : 'Nouvelle offre',
             'content' => 'admin.organization.recruitment_offers.form',
             'opening' => $opening,
             'openingDecoded' => $decoded,
@@ -356,7 +369,24 @@ class RecruitmentOffersController
             'personnelCategories' => RecruitmentOpeningPresentation::personnelCategories(),
             'armDomains' => RecruitmentOpeningPresentation::armDomains(),
             'clearanceLevels' => RecruitmentOpeningPresentation::clearanceLevels(),
+            'recruitmentSidebarCounts' => $this->recruitmentSidebarCounts(),
+            'recruitmentAdminNav' => 'offers',
+            'showPortalFooter' => false,
         ]);
+    }
+
+    /** @return array<string, int> */
+    private function recruitmentSidebarCounts(): array
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return [];
+        }
+        try {
+            return $this->enlistmentRepository->countsByStatusForTenant($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**

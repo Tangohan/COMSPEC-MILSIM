@@ -55,12 +55,14 @@ class AdminRecruitmentsController
         }
         unset($row);
 
-        return Response::view('layout.main', [
+        return Response::view('layout.recruitment_lms', [
             'content' => 'admin.recruitments.index',
             'title' => 'Candidatures',
+            'recruitmentLmsTitle' => 'File des candidatures',
             'enlistments' => $enlistments,
             'statusFilter' => $statusFilter,
             'enlistmentCounts' => $enlistmentCounts,
+            'recruitmentSidebarCounts' => $enlistmentCounts,
             'enlistmentSlaHours' => $slaHours,
             'submittedOlderThanSla' => $submittedOlderThanSla,
             'recruitmentAdminNav' => 'queue',
@@ -125,9 +127,12 @@ class AdminRecruitmentsController
             $timelineActorLabels[(int) $uid] = $lab !== '' ? $lab : ('Compte n°' . (int) $uid);
         }
 
-        return Response::view('layout.main', [
+        $navCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
+
+        return Response::view('layout.recruitment_lms', [
             'content' => 'admin.recruitments.show',
             'title' => 'Candidature #' . $id,
+            'recruitmentLmsTitle' => 'Dossier #' . $id,
             'enlistment' => $row,
             'enlistmentCannedMessages' => $canned,
             'enlistmentTimeline' => $timelineRows,
@@ -137,6 +142,7 @@ class AdminRecruitmentsController
             'linkedRecruitmentOpening' => $linkedOpening,
             'communitySlug' => $communitySlug,
             'enlistmentSlaHours' => $slaHours,
+            'recruitmentSidebarCounts' => $navCounts,
             'recruitmentAdminNav' => 'queue',
             'showPortalFooter' => false,
         ]);
@@ -241,12 +247,16 @@ class AdminRecruitmentsController
             }
         }
 
-        return Response::view('layout.main', [
+        $navCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
+
+        return Response::view('layout.recruitment_lms', [
             'content' => 'admin.recruitments.settings',
             'title' => 'Délais d’alerte recrutement',
+            'recruitmentLmsTitle' => 'Délais (SLA)',
             'enlistmentSlaHours' => $slaHours,
             'submittedCount' => count($submitted),
             'submittedOlderThanSla' => $breached,
+            'recruitmentSidebarCounts' => $navCounts,
             'recruitmentAdminNav' => 'sla',
             'showPortalFooter' => false,
         ]);
@@ -304,11 +314,15 @@ class AdminRecruitmentsController
             ? $this->cannedMessageRepository->listForTenant((int) $tenantId)
             : [];
 
-        return Response::view('layout.main', [
+        $navCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
+
+        return Response::view('layout.recruitment_lms', [
             'content' => 'admin.recruitments.canned_messages',
             'title' => 'Messages préfaits — recrutement',
+            'recruitmentLmsTitle' => 'Messages préfaits',
             'cannedMessages' => $rows,
             'cannedMessagesTableMissing' => !$this->cannedMessageRepository->tableExists(),
+            'recruitmentSidebarCounts' => $navCounts,
             'recruitmentAdminNav' => 'messages',
             'showPortalFooter' => false,
         ]);

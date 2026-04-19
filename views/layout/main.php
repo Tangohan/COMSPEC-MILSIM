@@ -4,7 +4,8 @@ $content = $content ?? 'home';
 $baseUrl = url('');
 $communityShowcasePage = !empty($communityShowcasePage);
 $communityRecruitmentOpeningPage = !empty($communityRecruitmentOpeningPage);
-$isBackOfficeShell = function_exists('is_back_office_request') && is_back_office_request();
+$isFormationWorkspace = function_exists('is_formation_workspace_request') && is_formation_workspace_request();
+$isBackOfficeShell = !$isFormationWorkspace && function_exists('is_back_office_request') && is_back_office_request();
 $isPlatformAdminShell = function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request();
 $usesAdminSidebarShell = !empty($isBackOfficeShell) || !empty($isPlatformAdminShell);
 $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
@@ -79,7 +80,11 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
 </head>
 <body class="layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen">
     <div class="grain" aria-hidden="true"></div>
-    <?php require base_path('views/partials/header_portal.php'); ?>
+    <?php if (!empty($isFormationWorkspace)): ?>
+        <?php require base_path('views/partials/formation_workspace_chrome.php'); ?>
+    <?php else: ?>
+        <?php require base_path('views/partials/header_portal.php'); ?>
+    <?php endif; ?>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/portal-alerts.js"></script>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/ui_confirm_modal.js"></script>
@@ -171,7 +176,7 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
         ?>
         <?php endif; ?>
     </main>
-    <?php if (empty($trainingAdminNav) && ($showPortalFooter ?? true) && empty($usesAdminSidebarShell)): ?>
+    <?php if (empty($trainingAdminNav) && ($showPortalFooter ?? true) && empty($usesAdminSidebarShell) && empty($isFormationWorkspace)): ?>
     <footer class="mt-14 border-t border-slate-200 bg-gradient-to-b from-white to-slate-50/80">
         <div class="mx-auto grid max-w-6xl gap-10 px-6 py-12 md:grid-cols-12 md:py-14">
             <div class="md:col-span-5">

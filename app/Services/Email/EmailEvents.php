@@ -65,6 +65,8 @@ final class EmailEvents
     public const INTERTEAM_COOPERATION_OTP = 'INTERTEAM_COOPERATION_OTP';
     /** Code OTP — seconde étape de connexion pour comptes sécurité. */
     public const LOGIN_SECURITY_OTP = 'LOGIN_SECURITY_OTP';
+    /** Code de test — préférences compte (réception e-mail). */
+    public const LOGIN_OTP_MAILBOX_SELF_TEST = 'LOGIN_OTP_MAILBOX_SELF_TEST';
 
     /** Demande d’accès transmise aux gestionnaires de la communauté (rôles / habilitations). */
     public const TENANT_ACCESS_REQUEST = 'TENANT_ACCESS_REQUEST';
@@ -134,6 +136,7 @@ final class EmailEvents
         self::ATTENDANCE_RSVP_ORGANIZER,
         self::INTERTEAM_COOPERATION_OTP,
         self::LOGIN_SECURITY_OTP,
+        self::LOGIN_OTP_MAILBOX_SELF_TEST,
         self::TENANT_ACCESS_REQUEST,
         self::TENANT_INTERNAL_MESSAGE_THREAD,
         self::COOPERATION_ANNOUNCEMENT,

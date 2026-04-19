@@ -332,10 +332,37 @@ final class EmailService
                 'tenantName' => $tenantName,
                 'code' => $code,
                 'ttlMinutes' => $ttlMinutes,
+                'isMailboxSelfTest' => false,
             ],
             $tenantId,
             null,
             ['purpose' => 'login_security_otp']
+        );
+    }
+
+    public function sendLoginOtpMailboxSelfTest(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $code,
+        int $ttlMinutes,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::LOGIN_OTP_MAILBOX_SELF_TEST,
+            'login_security_otp',
+            $to,
+            'Test de réception — code à six chiffres — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'code' => $code,
+                'ttlMinutes' => $ttlMinutes,
+                'isMailboxSelfTest' => true,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'login_otp_mailbox_self_test']
         );
     }
 

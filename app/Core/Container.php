@@ -184,6 +184,12 @@ class Container
                 self::get(\App\Services\Email\GeoIpLookupService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
             ),
+            \App\Services\Auth\LoginSecurityOtpService::class => new \App\Services\Auth\LoginSecurityOtpService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\EmailTokenRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\EmailService::class)
+            ),
             \App\Services\Email\SecurityAlertService::class => new \App\Services\Email\SecurityAlertService(
                 self::get(\App\Services\EmailService::class)
             ),
@@ -197,7 +203,8 @@ class Container
                 self::get(\App\Services\Audit\AuditService::class),
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Services\Auth\LoginSecurityNotificationService::class),
-                self::get(\App\Services\Moderation\IndicatorBlocklistService::class)
+                self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
+                self::get(\App\Services\Auth\LoginSecurityOtpService::class)
             ),
             \App\Controllers\Web\RegisterController::class => new \App\Controllers\Web\RegisterController(
                 self::get(AuthService::class),
@@ -362,7 +369,8 @@ class Container
                 self::get(\App\Repositories\UserUiPreferencesRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Services\Profile\UserUiPreferencesValidationService::class),
-                self::get(\App\Services\Steam\SteamWebApiService::class)
+                self::get(\App\Services\Steam\SteamWebApiService::class),
+                self::get(\App\Services\Auth\LoginSecurityOtpService::class)
             ),
             \App\Controllers\Web\HrCharterController::class => new \App\Controllers\Web\HrCharterController(
                 self::get(AuthService::class),
@@ -579,7 +587,8 @@ class Container
                 self::get(\App\Services\Recruitment\RecruitmentOpeningForumPublisher::class),
                 self::get(UserRepository::class),
                 self::get(\App\Services\EmailService::class),
-                self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Repositories\EnlistmentRepository::class)
             ),
             \App\Controllers\Admin\Organization\RolesFunctionsAdminController::class => new \App\Controllers\Admin\Organization\RolesFunctionsAdminController(
                 self::get(\App\Repositories\RoleRepository::class),

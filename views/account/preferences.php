@@ -11,6 +11,8 @@ $accountSnapshot = $accountSnapshot ?? ['email_masked' => '—', 'email_verified
 $timezoneSuggestions = $timezoneSuggestions ?? [];
 $steamWebConfigured = !empty($steamWebConfigured ?? false);
 $steamSyncReport = is_array($steamSyncReport ?? null) ? $steamSyncReport : null;
+$loginOtpMandatory = !empty($loginOtpMandatory ?? false);
+$loginOtpTtlMinutes = isset($loginOtpTtlMinutes) ? (int) $loginOtpTtlMinutes : 10;
 
 $quickLinks = [
     ['href' => url('account'), 'label' => 'Vue d’ensemble compte', 'sub' => 'Tableau des réglages'],
@@ -141,6 +143,28 @@ foreach ($notifEmailCatalog as $item) {
                 <dd class="mt-1 text-sm text-slate-800"><?= $accountSnapshot['last_login_label'] !== null ? htmlspecialchars($accountSnapshot['last_login_label']) : '— (première session ou non enregistrée)' ?></dd>
             </div>
         </dl>
+    </section>
+
+    <!-- Vérification à la connexion (code par e-mail) -->
+    <section class="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="login-otp-heading">
+        <h2 id="login-otp-heading" class="text-xs font-black uppercase tracking-wider text-slate-500">Vérification à la connexion</h2>
+        <?php if ($loginOtpMandatory): ?>
+        <p class="mt-3 text-sm text-slate-800">
+            En raison de vos <strong>responsabilités sur la communauté</strong>, une <strong>deuxième étape</strong> est demandée après le mot de passe&nbsp;: un <strong>code à six chiffres</strong> est envoyé sur votre adresse e-mail de connexion. Cela limite l’usage abusif d’un mot de passe volé.
+        </p>
+        <p class="mt-2 text-xs text-slate-600">Durée habituelle du code&nbsp;: environ <?= (int) $loginOtpTtlMinutes ?> minute(s). Si vous ne recevez rien, vérifiez les courriers indésirables puis utilisez le bouton ci-dessous pour un envoi de contrôle.</p>
+        <?php else: ?>
+        <p class="mt-3 text-sm text-slate-800">
+            Votre profil <strong>ne demande pas</strong> automatiquement ce type de code à la connexion. Vous pouvez tout de même envoyer un <strong>message de test</strong> pour vérifier que notre e-mail arrive bien dans votre boîte (utile avant un changement d’adresse ou en cas de filtres agressifs).
+        </p>
+        <?php endif; ?>
+        <form method="post" action="<?= htmlspecialchars(url('account/preferences/login-otp-mailbox-test'), ENT_QUOTES, 'UTF-8') ?>" class="mt-5 flex flex-wrap items-center gap-3">
+            <?= \App\Core\Csrf::field() ?>
+            <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2">
+                Recevoir un code de test par e-mail
+            </button>
+            <span class="text-xs text-slate-500">Un envoi au plus toutes les 60&nbsp;secondes.</span>
+        </form>
     </section>
 
     <form method="post" action="<?= url('account/preferences') ?>" class="space-y-8">

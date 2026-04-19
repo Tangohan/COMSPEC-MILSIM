@@ -16,8 +16,6 @@ $statusLabels = [
 $statusLabel = $statusLabels[$statusRaw] ?? $statusRaw;
 $reviewedById = (int) ($e['reviewed_by'] ?? 0);
 $assigneeLabel = $reviewedById > 0 ? ('Compte interne #' . $reviewedById) : 'Non attribué';
-$flashOk = \App\Core\Session::getFlash('success');
-$flashErr = \App\Core\Session::getFlash('error');
 $membershipRepairHint = $membershipRepairHint ?? null;
 $enlistmentSlaHours = max(1, (int) ($enlistmentSlaHours ?? 72));
 $submittedAgeHours = isset($e['submitted_age_hours']) ? (int) $e['submitted_age_hours'] : null;
@@ -93,10 +91,8 @@ $statusBand = match ($statusRaw) {
     'blocked' => 'from-slate-600 to-slate-800',
     default => 'from-stone-400 to-stone-600',
 };
-require base_path('views/admin/recruitment_workspace/partials/command_shell_open.php');
 ?>
-<div class="recruitment-bureau min-h-[calc(100vh-3.5rem)] bg-gradient-to-b from-[#ebe6dc] via-[#f5f2eb] to-[#e8e4db]">
-    <div class="mx-auto max-w-[94rem] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+<div class="recruitment-bureau space-y-6 max-w-[94rem] mx-auto w-full">
 
         <nav class="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold text-stone-600" aria-label="Fil d’Ariane">
             <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="rounded-lg px-2 py-1 transition hover:bg-white/60 hover:text-[#1c2d41]">Dossiers de candidature</a>
@@ -104,13 +100,6 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
             <span class="rounded-lg bg-white/80 px-2 py-1 text-[#1c2d41] ring-1 ring-stone-200/80">Dossier n°<?= $id ?></span>
             <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="ml-auto rounded-lg border border-stone-300 bg-white px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-stone-700 transition hover:bg-stone-50">Délais d’alerte</a>
         </nav>
-
-        <?php if ($flashOk): ?>
-            <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/95 px-4 py-3 text-sm font-medium text-emerald-950 shadow-sm" role="status"><?= htmlspecialchars((string) $flashOk) ?></div>
-        <?php endif; ?>
-        <?php if ($flashErr): ?>
-            <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 shadow-sm" role="alert"><?= htmlspecialchars((string) $flashErr) ?></div>
-        <?php endif; ?>
 
         <div class="grid gap-6 xl:grid-cols-[15rem_minmax(0,1fr)]">
             <aside class="xl:sticky xl:top-24 xl:self-start">
@@ -624,16 +613,12 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
             </section>
             <?php endif; ?>
 
-        </div>
-
                 <p class="mt-10 text-center">
-                    <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="text-sm font-semibold text-stone-600 underline decoration-stone-300 underline-offset-4 hover:text-[#1c2d41]">← Retour aux dossiers</a>
+                    <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="text-sm font-semibold text-slate-600 underline decoration-slate-300 underline-offset-4 hover:text-sky-800">← Retour aux dossiers</a>
                 </p>
             </div>
         </div>
-    </div>
 </div>
-<?php require base_path('views/admin/recruitment_workspace/partials/command_shell_close.php'); ?>
 <?php if ($statusRaw === 'submitted'): ?>
 <script>
 (function () {

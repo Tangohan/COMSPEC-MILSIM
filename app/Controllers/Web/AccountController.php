@@ -25,6 +25,7 @@ use App\Services\Profile\UserUiPreferencesValidationService;
 use App\Services\User\UserProfileSlugService;
 use App\Services\Steam\SteamWebApiService;
 use App\Services\Community\MemberOnboardingService;
+use App\Services\Auth\LoginSecurityOtpService;
 use PDO;
 
 class AccountController
@@ -41,6 +42,7 @@ class AccountController
         private UserNotificationPreferencesRepository $userNotificationPreferencesRepository,
         private UserUiPreferencesValidationService $userUiPreferencesValidationService,
         private SteamWebApiService $steamWebApiService,
+        private LoginSecurityOtpService $loginSecurityOtpService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -269,7 +271,29 @@ class AccountController
             'error' => $error,
             'steamWebConfigured' => $this->steamWebApiService->isConfigured(),
             'steamSyncReport' => is_array($steamSyncReport) ? $steamSyncReport : null,
+            'loginOtpMandatory' => $this->loginSecurityOtpService->isMandatoryForUserId($uid),
+            'loginOtpTtlMinutes' => LoginSecurityOtpService::TTL_MINUTES,
         ]);
+    }
+
+    public function sendLoginOtpMailboxTest(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée ou accès refusé.');
+
+            return Response::redirect(url('account/preferences'));
+        }
+        $uid = (int) ($user['id'] ?? 0);
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        $result = $this->loginSecurityOtpService->sendMailboxSelfTest($uid, $tenantId);
+        if ($result['ok']) {
+            Session::flash('success', $result['message']);
+        } else {
+            Session::flash('error', $result['message']);
+        }
+
+        return Response::redirect(url('account/preferences'));
     }
 
     public function syncSteamProfile(Request $request, array $params = []): Response

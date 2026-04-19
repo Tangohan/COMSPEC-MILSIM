@@ -12,4 +12,6 @@ final class EmailTokenPurpose
     public const INTERTEAM_CONSENT_OTP = 'interteam_consent_otp';
     /** Code OTP de connexion pour les comptes sécurité. */
     public const LOGIN_SECURITY_OTP = 'login_security_otp';
+    /** Code de test depuis les préférences (ne valide pas une connexion). */
+    public const LOGIN_OTP_MAILBOX_SELF_TEST = 'login_otp_mailbox_self_test';
 }

@@ -315,6 +315,19 @@ if (!function_exists('is_back_office_request')) {
     }
 }
 
+if (!function_exists('is_formation_workspace_request')) {
+    /**
+     * Pilotage LMS communauté sous /formation (sans navbar portail ni coque back-office).
+     * Ne pas confondre avec le catalogue apprenant /formations.
+     */
+    function is_formation_workspace_request(): bool
+    {
+        $p = back_office_path_suffix();
+
+        return $p === 'formation' || str_starts_with($p, 'formation/');
+    }
+}
+
 if (!function_exists('is_platform_site_admin_shell_request')) {
     /**
      * Pages d’administration « site entier » (pilotage / infra) avec barre latérale dédiée.
@@ -478,17 +491,17 @@ if (!function_exists('cooperation_missions_url')) {
 
 if (!function_exists('training_studio_path')) {
     /**
-     * Chemin URL du Studio LMS (back-office ressources), sans slash initial.
+     * Chemin URL du Studio LMS, sans slash initial.
      */
     function training_studio_path(): string
     {
-        return 'back-office/ressources/training/studio';
+        return 'formation/studio';
     }
 }
 
 if (!function_exists('training_studio_url')) {
     /**
-     * Lien vers le Studio LMS (création / édition des parcours) — toujours sous le back-office communauté.
+     * Lien vers le Studio LMS (création / édition des parcours).
      *
      * @param string|int $suffix ex. '', 'versions', 12, '12/fiche', '12/preview'
      */
@@ -510,13 +523,13 @@ if (!function_exists('training_lms_admin_path')) {
      */
     function training_lms_admin_path(): string
     {
-        return 'back-office/ressources/training';
+        return 'formation';
     }
 }
 
 if (!function_exists('training_lms_admin_url')) {
     /**
-     * Lien vers le tableau de bord LMS, catalogue, inscriptions, etc. (back-office ressources).
+     * Lien vers le tableau de bord LMS, catalogue, inscriptions, etc.
      *
      * @param string $suffix ex. '', 'courses', 'enrollments', 'courses/12/showcase'
      */
@@ -532,9 +545,47 @@ if (!function_exists('training_lms_admin_url')) {
     }
 }
 
+if (!function_exists('training_lms_legacy_bo_training_path_prefix')) {
+    /**
+     * Ancien préfixe URL du pilotage LMS (redirections de compatibilité).
+     */
+    function training_lms_legacy_bo_training_path_prefix(): string
+    {
+        return 'back-office/ressources/training';
+    }
+}
+
+if (!function_exists('training_lms_redirect_legacy_bo_training_to_formation')) {
+    /**
+     * Redirige une URL historique /back-office/ressources/training/… vers /formation/… (query conservée).
+     * POST → 307 pour conserver la méthode et le corps selon les clients HTTP.
+     */
+    function training_lms_redirect_legacy_bo_training_to_formation(\App\Core\Request $request): \App\Core\Response
+    {
+        $p = back_office_path_suffix();
+        $legacy = training_lms_legacy_bo_training_path_prefix();
+        if ($p === $legacy) {
+            $rel = '';
+        } elseif (str_starts_with($p, $legacy . '/')) {
+            $rel = substr($p, strlen($legacy) + 1);
+        } else {
+            $rel = '';
+        }
+        $target = $rel === '' ? url('formation') : url('formation/' . $rel);
+        $params = $request->queryParams();
+        $qs = http_build_query($params);
+        if ($qs !== '') {
+            $target .= (str_contains($target, '?') ? '&' : '?') . $qs;
+        }
+        $code = strtoupper($request->method()) === 'POST' ? 307 : 302;
+
+        return \App\Core\Response::redirect($target, $code);
+    }
+}
+
 if (!function_exists('training_lms_admin_redirect_from_legacy')) {
     /**
-     * Redirige une ancienne URL /admin/training/... vers le back-office en conservant les paramètres de requête (ex. course_id).
+     * Redirige une ancienne URL /admin/training/... vers l’espace /formation en conservant les paramètres de requête (ex. course_id).
      */
     function training_lms_admin_redirect_from_legacy(\App\Core\Request $request, string $suffix = ''): \App\Core\Response
     {
@@ -670,6 +721,7 @@ if (!function_exists('detect_current_module')) {
         }
         if (
             str_starts_with($path, '/formations')
+            || ($path === '/formation' || str_starts_with($path, '/formation/'))
             || str_starts_with($path, '/api/training')
             || str_starts_with($path, '/admin/training')
             || str_starts_with($path, '/back-office/ressources/training')

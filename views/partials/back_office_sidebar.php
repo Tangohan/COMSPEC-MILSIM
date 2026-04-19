@@ -144,17 +144,20 @@ $boNavOpsBoard = str_starts_with($p, 'back-office/tableau-operationnel');
 $boNavOpsAdmin = str_starts_with($p, 'back-office/centre-operations') || str_starts_with($p, 'back-office/operations-admin');
 $boNavPositions = str_starts_with($p, 'back-office/positions');
 $boNavConformite = str_starts_with($p, 'back-office/conformite');
-$studioPath = function_exists('training_studio_path') ? training_studio_path() : 'back-office/ressources/training/studio';
-$boNavStudioActive = str_starts_with($p, $studioPath . '/') || $p === $studioPath;
-$lmsResPath = function_exists('training_lms_admin_path') ? training_lms_admin_path() : 'back-office/ressources/training';
-$boNavLmsRes = $p === $lmsResPath || str_starts_with($p, $lmsResPath . '/');
-$boNavHrCharter = str_starts_with($p, 'back-office/ressources/training/charte-rh');
-$boNavLmsFeedback = str_starts_with($p, 'back-office/ressources/training/feedback');
-$boNavLmsEnrollments = str_starts_with($p, 'back-office/ressources/training/enrollments');
-$boNavLmsReports = str_starts_with($p, 'back-office/ressources/training/reports');
-$boNavLmsCertificates = str_starts_with($p, 'back-office/ressources/training/certificates');
-$boNavLmsAuditTrail = str_starts_with($p, 'back-office/ressources/training/audit');
-$boNavLmsCompetences = str_starts_with($p, 'back-office/ressources/training/competences');
+$legacyLmsBo = 'back-office/ressources/training';
+$studioPath = function_exists('training_studio_path') ? training_studio_path() : 'formation/studio';
+$legacyStudioPath = $legacyLmsBo . '/studio';
+$boNavStudioActive = str_starts_with($p, $studioPath . '/') || $p === $studioPath
+    || str_starts_with($p, $legacyStudioPath . '/') || $p === $legacyStudioPath;
+$lmsResPath = function_exists('training_lms_admin_path') ? training_lms_admin_path() : 'formation';
+$boNavLmsRes = $p === $lmsResPath || str_starts_with($p, $lmsResPath . '/') || $p === $legacyLmsBo || str_starts_with($p, $legacyLmsBo . '/');
+$boNavHrCharter = str_starts_with($p, $lmsResPath . '/charte-rh') || str_starts_with($p, $legacyLmsBo . '/charte-rh');
+$boNavLmsFeedback = str_starts_with($p, $lmsResPath . '/feedback') || str_starts_with($p, $legacyLmsBo . '/feedback');
+$boNavLmsEnrollments = str_starts_with($p, $lmsResPath . '/enrollments') || str_starts_with($p, $legacyLmsBo . '/enrollments');
+$boNavLmsReports = str_starts_with($p, $lmsResPath . '/reports') || str_starts_with($p, $legacyLmsBo . '/reports');
+$boNavLmsCertificates = str_starts_with($p, $lmsResPath . '/certificates') || str_starts_with($p, $legacyLmsBo . '/certificates');
+$boNavLmsAuditTrail = str_starts_with($p, $lmsResPath . '/audit') || str_starts_with($p, $legacyLmsBo . '/audit');
+$boNavLmsCompetences = str_starts_with($p, $lmsResPath . '/competences') || str_starts_with($p, $legacyLmsBo . '/competences');
 $boNavPjrAssignments = str_starts_with($p, 'back-office/personnel-job-roles/assignments');
 $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request();
 $canMurOperationnel = $gate->allows('operational.board.view')
@@ -272,13 +275,13 @@ $canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.a
             <?php endif; ?>
             <?php if ($canTraining): ?>
                 <?php $boLink($lmsResPath, 'Formations (tableau de bord)', $boNavLmsRes && !$boNavLmsSubPage); ?>
-                <?php $boLink('back-office/ressources/training/enrollments', 'Inscriptions & validations', $boNavLmsEnrollments); ?>
-                <?php $boLink('back-office/ressources/training/reports', 'Rapports & suivis', $boNavLmsReports); ?>
-                <?php $boLink('back-office/ressources/training/certificates', 'Certificats & attestations', $boNavLmsCertificates); ?>
-                <?php $boLink('back-office/ressources/training/audit', 'Journal pédagogique (audit)', $boNavLmsAuditTrail); ?>
-                <?php $boLink('back-office/ressources/training/competences/bureau-personnel', 'Compétences (LMS)', $boNavLmsCompetences); ?>
-                <?php $boLink('back-office/ressources/training/charte-rh', 'Charte RH (formations)', $boNavHrCharter); ?>
-                <?php $boLink('back-office/ressources/training/feedback', 'Feedback post-leçon', $boNavLmsFeedback); ?>
+                <?php $boLink($lmsResPath . '/enrollments', 'Inscriptions & validations', $boNavLmsEnrollments); ?>
+                <?php $boLink($lmsResPath . '/reports', 'Rapports & suivis', $boNavLmsReports); ?>
+                <?php $boLink($lmsResPath . '/certificates', 'Certificats & attestations', $boNavLmsCertificates); ?>
+                <?php $boLink($lmsResPath . '/audit', 'Journal pédagogique (audit)', $boNavLmsAuditTrail); ?>
+                <?php $boLink($lmsResPath . '/competences/bureau-personnel', 'Compétences (LMS)', $boNavLmsCompetences); ?>
+                <?php $boLink($lmsResPath . '/charte-rh', 'Charte RH (formations)', $boNavHrCharter); ?>
+                <?php $boLink($lmsResPath . '/feedback', 'Feedback post-leçon', $boNavLmsFeedback); ?>
                 <?php $boLink(training_studio_path(), 'Studio des parcours', $boNavStudioActive); ?>
             <?php endif; ?>
             <?php if ($canTenantModules): ?>

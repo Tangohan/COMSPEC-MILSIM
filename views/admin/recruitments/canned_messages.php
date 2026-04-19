@@ -2,8 +2,6 @@
 /** @var list<array<string,mixed>> $cannedMessages */
 $rows = $cannedMessages ?? [];
 $tableMissing = !empty($cannedMessagesTableMissing);
-$flashOk = \App\Core\Session::getFlash('success');
-$flashErr = \App\Core\Session::getFlash('error');
 $listUrl = url('back-office/recruitments');
 $formAction = url('back-office/recruitments/messages-prefaits');
 $contextLabels = [
@@ -13,18 +11,16 @@ $contextLabels = [
     'reject' => 'Refus / non admission',
     'redirect' => 'Redirection',
 ];
-require base_path('views/admin/recruitment_workspace/partials/command_shell_open.php');
 ?>
-<div class="recruitment-bureau min-h-[calc(100vh-3.5rem)] bg-gradient-to-b from-[#ebe6dc] via-[#f5f2eb] to-[#e8e4db]">
-    <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-
-        <div class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-[0_25px_60px_-20px_rgba(28,45,65,0.35)] ring-1 ring-black/[0.03]">
-            <div class="relative bg-[#1c2d41] px-5 py-6 sm:px-8 sm:py-8">
-                <div class="absolute inset-0 bg-[linear-gradient(105deg,rgba(201,162,39,0.12)_0%,transparent_45%)] pointer-events-none" aria-hidden="true"></div>
+<div class="max-w-4xl mx-auto w-full space-y-6">
+        <div class="lms-panel overflow-hidden rounded-[2rem] border border-slate-200/90 shadow-xl">
+            <div class="relative bg-slate-900 px-5 py-6 sm:px-8 sm:py-8">
+                <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-sky-500/90 via-sky-500/30 to-transparent" aria-hidden="true"></div>
+                <div class="absolute inset-0 bg-[linear-gradient(105deg,rgba(14,165,233,0.12)_0%,transparent_45%)] pointer-events-none" aria-hidden="true"></div>
                 <div class="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#c9a227]/90">Service recrutement</p>
-                        <h1 class="mt-2 font-serif text-2xl font-bold tracking-tight text-white sm:text-3xl">Modèles de texte</h1>
+                        <p class="text-[9px] font-black uppercase tracking-[0.4em] text-sky-400/95">Bureau recrutement</p>
+                        <h1 class="mt-2 text-2xl font-black tracking-tight uppercase text-white sm:text-3xl">Modèles de texte</h1>
                         <p class="mt-3 max-w-xl text-sm leading-relaxed text-slate-300/95">
                             Phrases toutes prêtes à insérer dans le <strong class="text-white/95">commentaire interne</strong> lors du traitement d’une candidature (accueil, refus, non-admission). Chaque communauté gère sa propre liste.
                         </p>
@@ -40,13 +36,7 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
                 </div>
             </div>
 
-            <div class="border-b border-stone-200 bg-[#faf8f3] px-4 py-5 sm:px-8">
-                <?php if ($flashOk): ?>
-                    <p class="rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-950 shadow-sm"><?= htmlspecialchars((string) $flashOk) ?></p>
-                <?php endif; ?>
-                <?php if ($flashErr): ?>
-                    <p class="rounded-xl border border-rose-200/80 bg-rose-50/90 px-4 py-3 text-sm text-rose-950 shadow-sm"><?= htmlspecialchars((string) $flashErr) ?></p>
-                <?php endif; ?>
+            <div class="border-b border-stone-200 bg-slate-50/90 px-4 py-5 sm:px-8">
                 <?php if ($tableMissing): ?>
                     <p class="rounded-xl border border-amber-200/90 bg-amber-50/80 px-4 py-3 text-sm text-amber-950 shadow-sm">
                         Ce module n’est pas encore disponible sur cet environnement. Un administrateur technique doit finaliser la mise à jour de la plateforme ; rechargez ensuite cette page.
@@ -164,9 +154,7 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
 
             </div>
         </div>
-    </div>
 </div>
-<?php require base_path('views/admin/recruitment_workspace/partials/command_shell_close.php'); ?>
 <script>
 (function () {
     var searchInput = document.getElementById('canned-search');

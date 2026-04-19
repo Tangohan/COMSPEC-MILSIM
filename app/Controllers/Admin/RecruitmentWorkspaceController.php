@@ -37,11 +37,13 @@ class RecruitmentWorkspaceController
             ? $this->enlistmentRepository->topLinkedOpeningsByVolume($tenantId, 8)
             : [];
 
-        return Response::view('layout.main', [
+        return Response::view('layout.recruitment_lms', [
             'content' => 'admin.recruitment_workspace.dashboard',
             'title' => 'Bureau recrutement',
+            'recruitmentLmsTitle' => 'Vue d’ensemble recrutement',
             'recruitmentAdminNav' => 'dashboard',
             'enlistmentCounts' => $counts,
+            'recruitmentSidebarCounts' => $counts,
             'enlistmentSlaHours' => $slaHours,
             'submittedOlderThanSla' => $submittedOlderThanSla,
             'submittedViaCounts' => $via,
@@ -64,13 +66,15 @@ class RecruitmentWorkspaceController
             ? $this->enlistmentRepository->topLinkedOpeningsByVolume($tenantId, 15)
             : [];
 
-        return Response::view('layout.main', [
+        return Response::view('layout.recruitment_lms', [
             'content' => 'admin.recruitment_workspace.analytics',
             'title' => 'Analyses candidatures',
+            'recruitmentLmsTitle' => 'Analyses candidatures',
             'recruitmentAdminNav' => 'analytics',
             'weeklyCreated' => $weeks,
             'submittedViaCounts' => $via,
             'enlistmentCounts' => $statusCounts,
+            'recruitmentSidebarCounts' => $statusCounts,
             'topOpenings' => $topOpenings,
             'showPortalFooter' => false,
         ]);

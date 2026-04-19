@@ -1,0 +1,24 @@
+---
+description: Thème visuel unifié (accueil, tableau de bord, enrôlement, inscription formations, LMS)
+globs: "views/layout/**/*.php","views/home.php","views/dashboard.php","views/enlistment.php","views/training/**/*.php","views/admin/recruitment_workspace/**/*.php","public/assets/css/training_lms.css","public/assets/css/recruitment_lms_overrides.css"
+alwaysApply: false
+---
+
+# Thème portail unifié (COMSPEC-MILSIM)
+
+Les parcours suivants doivent **sembler la même famille visuelle** que le reste du site Athena : pas de « sous-produit » avec une autre charte, une autre typographie de base ou un fond / contraste qui casse l’ensemble.
+
+## Référence
+
+- Coquille et fondations : **`views/layout/main.php`** (fonds clairs type `slate-50` / `slate-100`, texte `slate-800`–`slate-900`, police **Inter** + titrage **Source Serif 4**, Tailwind via `views/partials/tailwind_cdn_or_build.php`).
+- Pages **accueil** (`views/home.php`), **tableau de bord** (`views/dashboard.php`), **enrôlement / candidature** (`views/enlistment.php` et vues communauté associées dans `layout.main`), **inscription et parcours formation** (`views/training/**`), **LMS recrutement / bureau recrutement** (`views/layout/recruitment_lms.php` + partials + CSS listés dans les globs).
+
+## Règles
+
+1. **Ne pas introduire** un second jeu de polices web (hors cas déjà prévus dans `main.php`, ex. vitrine communauté) pour ces parcours.
+2. **Palette** : rester sur l’échelle **slate** + accents déjà utilisés sur le portail (bleu / émeraude / ambre discrets). Éviter les thèmes sombres « full page » ou les fonds très saturés qui ne sont pas utilisés sur l’accueil ou le tableau de bord.
+3. **LMS** (`recruitment_lms`, `training_lms.css`, overrides) : les panneaux, cartes et barres latérales doivent **réutiliser les mêmes principes** que `main.php` (coins arrondis cohérents, ombres légères, hiérarchie typographique identique). Ajuster le CSS d’override pour **rapprocher** du portail, pas pour diverger.
+4. **Accents** : si des variables CSS (`--lms-accent`, etc.) existent, les choisir **compatibles** avec les CTA et liens du site public (même température de couleur, même contraste sur fond clair).
+5. Avant de valider une modification UI sur une de ces zones : comparer mentalement avec **accueil + tableau de bord** (même « luminosité » globale, même densité de gris).
+
+Complète *ui-espacement-pages* (respiration) et *ui-sans-jargon-technique* (libellés) ; cette règle ne traite que de la **cohérence chromatique et typographique**.

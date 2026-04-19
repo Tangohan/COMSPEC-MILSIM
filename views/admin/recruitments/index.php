@@ -11,9 +11,6 @@ $nTotal = array_sum($counts);
 $enlistmentSlaHours = max(1, (int) ($enlistmentSlaHours ?? 72));
 $submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
 
-$flashOk = \App\Core\Session::getFlash('success');
-$flashErr = \App\Core\Session::getFlash('error');
-
 $initials = static function (string $first, string $last): string {
     $a = mb_strtoupper(mb_substr(trim($first), 0, 1));
     $b = mb_strtoupper(mb_substr(trim($last), 0, 1));
@@ -58,8 +55,8 @@ $filterLink = static function (?string $key, ?string $current, string $label, in
     $active = ($key === null && $current === null) || ($key !== null && $current === $key);
     $href = $key === null ? $baseUrl : $baseUrl . '?status=' . rawurlencode($key);
     $cls = $active
-        ? 'border-[#1c2d41] bg-[#1c2d41] text-white shadow-md shadow-[#1c2d41]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a227] focus-visible:ring-offset-2'
-        : 'border-stone-200/90 bg-white text-stone-700 hover:border-[#c9a227]/60 hover:bg-[#faf8f3] focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2';
+        ? 'border-sky-700 bg-sky-700 text-white shadow-md shadow-sky-900/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2'
+        : 'border-slate-200/90 bg-white text-slate-700 hover:border-sky-300/80 hover:bg-sky-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2';
 
     return sprintf(
         '<a href="%s" class="inline-flex min-h-[2.5rem] items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition %s">%s%s</a>',
@@ -67,7 +64,7 @@ $filterLink = static function (?string $key, ?string $current, string $label, in
         $cls,
         htmlspecialchars($label, ENT_QUOTES, 'UTF-8'),
         $count > 0
-            ? '<span class="' . ($active ? 'bg-white/15' : 'bg-stone-100') . ' min-w-[1.5rem] rounded-lg px-2 py-0.5 text-center text-xs font-black tabular-nums">' . $count . '</span>'
+            ? '<span class="' . ($active ? 'bg-white/20' : 'bg-slate-100') . ' min-w-[1.5rem] rounded-lg px-2 py-0.5 text-center text-xs font-black tabular-nums">' . $count . '</span>'
             : ''
     );
 };
@@ -86,7 +83,6 @@ $submittedViaLabel = static function (string $raw): string {
     };
 };
 
-require base_path('views/admin/recruitment_workspace/partials/command_shell_open.php');
 ?>
 <style>
     /* Affichage exclusif tableau / cartes (filet si utilitaires Tailwind absents ou surchargés par le layout admin). */
@@ -108,45 +104,40 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
         }
     }
 </style>
-<div class="recruitment-bureau min-h-[calc(100vh-3.5rem)]">
-    <div class="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+<div class="recruitment-bureau space-y-8 max-w-6xl mx-auto w-full">
+        <div class="lms-infobanner" role="note">
+            <span class="lms-infobanner__icon" aria-hidden="true">
+                <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
+            <p><strong>File des dossiers.</strong> Utilisez la barre latérale pour le pilotage, les analyses et les offres. Les notifications de session s’affichent en haut de page.</p>
+        </div>
 
-        <?php if ($flashOk): ?>
-            <div class="rounded-xl border border-emerald-200 bg-emerald-50/95 px-4 py-3 text-sm font-medium text-emerald-950 shadow-sm sm:px-5" role="status"><?= htmlspecialchars((string) $flashOk) ?></div>
-        <?php endif; ?>
-        <?php if ($flashErr): ?>
-            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 shadow-sm sm:px-5" role="alert"><?= htmlspecialchars((string) $flashErr) ?></div>
-        <?php endif; ?>
-
-        <div class="overflow-hidden rounded-2xl border border-stone-300/80 bg-[#f8f6f1] shadow-[0_25px_60px_-20px_rgba(28,45,65,0.25)] ring-1 ring-black/[0.03]">
-            <!-- Bandeau type « dossier service » -->
-            <div class="relative bg-[#1c2d41] px-5 py-6 sm:px-8 sm:py-8">
-                <div class="absolute inset-0 bg-[linear-gradient(105deg,rgba(201,162,39,0.12)_0%,transparent_45%)] pointer-events-none" aria-hidden="true"></div>
+        <div class="lms-panel rounded-[2rem] overflow-hidden shadow-xl border border-slate-200/80">
+            <div class="relative bg-slate-900 px-5 py-6 sm:px-8 sm:py-8">
+                <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-sky-500/90 via-sky-500/30 to-transparent" aria-hidden="true"></div>
+                <div class="absolute inset-0 bg-[linear-gradient(105deg,rgba(14,165,233,0.12)_0%,transparent_50%)] pointer-events-none" aria-hidden="true"></div>
                 <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <p class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#c9a227]/90">Service recrutement</p>
-                        <h1 class="mt-2 font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl">Dossiers de candidature</h1>
+                        <p class="text-[9px] font-black uppercase tracking-[0.4em] text-sky-400/95">Bureau recrutement</p>
+                        <h1 class="mt-2 text-3xl md:text-4xl font-black tracking-tight uppercase text-white leading-tight">Dossiers de candidature</h1>
                         <p class="mt-3 max-w-xl text-sm leading-relaxed text-slate-300/95">
                             Classement et suivi des demandes d’adhésion. Chaque ligne correspond à un dossier à ouvrir, instruire et archiver selon votre procédure interne.
                         </p>
                     </div>
-                    <div class="flex flex-wrap gap-3">
-                        <a href="<?= htmlspecialchars(url('enlistment')) ?>" class="inline-flex min-h-[2.75rem] items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm transition hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c2d41]">
+                    <div class="flex flex-wrap gap-2">
+                        <a href="<?= htmlspecialchars(url('enlistment')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm transition hover:bg-white/20">
                             Formulaire public
                         </a>
                         <?php if (can('invitations.send') || can('admin.organization') || can('admin.access')): ?>
-                        <a href="<?= htmlspecialchars(url('back-office/invitations')) ?>" class="inline-flex min-h-[2.75rem] items-center rounded-xl border border-[#c9a227]/50 bg-[#c9a227]/15 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[#fde68a] transition hover:bg-[#c9a227]/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fde68a]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c2d41]">
+                        <a href="<?= htmlspecialchars(url('back-office/invitations')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-100 transition hover:bg-amber-400/20">
                             Invitations
                         </a>
                         <?php endif; ?>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits')) ?>" class="inline-flex min-h-[2.75rem] items-center rounded-xl border border-white/15 bg-black/20 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:bg-black/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c2d41]">
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-200 transition hover:bg-black/35">
                             Modèles de texte
                         </a>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="inline-flex min-h-[2.75rem] items-center rounded-xl border border-sky-300/30 bg-sky-300/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-sky-100 transition hover:bg-sky-300/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c2d41]">
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="inline-flex min-h-[2.5rem] items-center rounded-xl border border-sky-400/40 bg-sky-500/15 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-sky-100 transition hover:bg-sky-500/25">
                             Délais d’alerte
-                        </a>
-                        <a href="<?= htmlspecialchars(url('back-office')) ?>" class="inline-flex min-h-[2.75rem] items-center rounded-xl border border-white/10 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-400 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c2d41]">
-                            ← Tableau de bord
                         </a>
                     </div>
                 </div>
@@ -328,9 +319,4 @@ require base_path('views/admin/recruitment_workspace/partials/command_shell_open
             </div>
         </div>
 
-        <p class="mt-10 text-center text-sm text-stone-600">
-            <a href="<?= htmlspecialchars(url('back-office')) ?>" class="font-semibold text-[#1c2d41] underline decoration-stone-300 underline-offset-4 transition hover:decoration-[#1c2d41] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1c4d6e] focus-visible:ring-offset-2">Retour au tableau de bord communauté</a>
-        </p>
-    </div>
 </div>
-<?php require base_path('views/admin/recruitment_workspace/partials/command_shell_close.php'); ?>
