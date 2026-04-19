@@ -131,6 +131,21 @@
   margin: 1rem;
 }
 
+.lms-course-open-loader__slide-media {
+  margin: -1.2rem -1.2rem 1rem;
+  border-radius: 0.85rem 0.85rem 0.35rem 0.35rem;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: #0f172a;
+}
+
+.lms-course-open-loader__slide-img {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
 .lms-course-open-loader__icon {
   display: inline-flex;
   align-items: center;
@@ -160,10 +175,24 @@
 }
 
 .lms-course-open-loader__text {
-  margin: 0;
+  margin: 0.2rem 0 0;
   font-size: 0.875rem;
   font-weight: 600;
   color: #475569;
+}
+
+.lms-course-open-loader__title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.lms-course-open-loader__body {
+  margin: 0.45rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #64748b;
 }
 
 .lms-course-open-intro {

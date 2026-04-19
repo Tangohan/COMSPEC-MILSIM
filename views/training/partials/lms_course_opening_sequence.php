@@ -5,12 +5,18 @@ declare(strict_types=1);
 /** @var string $lmsOpeningBannerSrc */
 /** @var string $lmsOpeningCtaMode lesson|scroll_inscription */
 /** @var string $lmsOpeningLessonUrl */
+/** @var string $lmsOpeningLoaderImageSrc */
+/** @var string $lmsOpeningLoaderTitle */
+/** @var string $lmsOpeningLoaderBody */
 
 $lmsOpeningCourseId = (int) ($lmsOpeningCourseId ?? 0);
 $lmsOpeningTitle = (string) ($lmsOpeningTitle ?? '');
 $lmsOpeningBannerSrc = (string) ($lmsOpeningBannerSrc ?? '');
 $lmsOpeningCtaMode = (string) ($lmsOpeningCtaMode ?? 'scroll_inscription');
 $lmsOpeningLessonUrl = (string) ($lmsOpeningLessonUrl ?? '');
+$lmsOpeningLoaderImageSrc = (string) ($lmsOpeningLoaderImageSrc ?? '');
+$lmsOpeningLoaderTitle = trim((string) ($lmsOpeningLoaderTitle ?? ''));
+$lmsOpeningLoaderBody = trim((string) ($lmsOpeningLoaderBody ?? ''));
 if ($lmsOpeningCourseId < 1) {
     return;
 }
@@ -25,10 +31,21 @@ $bannerUrlCss = json_encode($lmsOpeningBannerSrc, JSON_HEX_TAG | JSON_HEX_APOS |
 <div id="lms-course-opening-root" class="lms-course-open-root" hidden>
     <div id="lms-course-opening-loader" class="lms-course-open-loader" role="status" aria-live="polite" aria-busy="true">
         <div class="lms-course-open-loader__panel">
+            <?php if ($lmsOpeningLoaderImageSrc !== ''): ?>
+            <div class="lms-course-open-loader__slide-media">
+                <img src="<?= htmlspecialchars($lmsOpeningLoaderImageSrc, ENT_QUOTES, 'UTF-8') ?>" alt="" class="lms-course-open-loader__slide-img" loading="eager" decoding="async">
+            </div>
+            <?php endif; ?>
             <div class="lms-course-open-loader__icon" aria-hidden="true">
                 <svg class="lms-course-open-loader__svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
+            <?php if ($lmsOpeningLoaderTitle !== ''): ?>
+            <p class="lms-course-open-loader__title"><?= htmlspecialchars($lmsOpeningLoaderTitle, ENT_QUOTES, 'UTF-8') ?></p>
+            <?php endif; ?>
             <p class="lms-course-open-loader__text">Préparation du parcours…</p>
+            <?php if ($lmsOpeningLoaderBody !== ''): ?>
+            <p class="lms-course-open-loader__body"><?= nl2br(htmlspecialchars($lmsOpeningLoaderBody, ENT_QUOTES, 'UTF-8')) ?></p>
+            <?php endif; ?>
         </div>
     </div>
     <div id="lms-course-opening-intro" class="lms-course-open-intro" role="dialog" aria-modal="true" aria-labelledby="lms-course-opening-title" aria-hidden="true" hidden>
