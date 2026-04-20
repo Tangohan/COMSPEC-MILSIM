@@ -1034,7 +1034,19 @@ if (!function_exists('personnel_file_render_admin_value')) {
                     $rpBlood = trim((string) ($personnelProfile['blood_type'] ?? ''));
                     $rpLangs = trim((string) ($personnelProfile['languages'] ?? ''));
                     $rpNat = trim((string) ($personnelProfile['nationality'] ?? ''));
+                    $birthPlace = trim((string) ($personnelProfile['birth_place'] ?? ''));
+                    $serviceBranch = trim((string) ($personnelProfile['service_branch'] ?? ''));
+                    $serviceStatus = trim((string) ($personnelProfile['service_status'] ?? ''));
+                    $gendarmerieStatus = trim((string) ($personnelProfile['gendarmerie_status'] ?? ''));
+                    $administrativePosition = trim((string) ($personnelProfile['administrative_position'] ?? ''));
+                    $bureauSn = trim((string) ($personnelProfile['bureau_sn'] ?? ''));
+                    $militaryOrigin = trim((string) ($personnelProfile['military_origin'] ?? ''));
+                    $statutoryLimitRaw = trim((string) ($personnelProfile['statutory_limit_date'] ?? ''));
+                    $managementLimitRaw = trim((string) ($personnelProfile['management_service_limit_date'] ?? ''));
+                    $statutoryLimitDisplay = ($statutoryLimitRaw !== '' && strtotime($statutoryLimitRaw)) ? date('d/m/Y', strtotime($statutoryLimitRaw)) : $statutoryLimitRaw;
+                    $managementLimitDisplay = ($managementLimitRaw !== '' && strtotime($managementLimitRaw)) ? date('d/m/Y', strtotime($managementLimitRaw)) : $managementLimitRaw;
                     $rpExtra = $rpMotto !== '' || $rpBlood !== '' || $rpLangs !== '' || $rpNat !== '';
+                    $dossierExtra = $birthPlace !== '' || $serviceBranch !== '' || $serviceStatus !== '' || $gendarmerieStatus !== '' || $administrativePosition !== '' || $bureauSn !== '' || $militaryOrigin !== '' || $statutoryLimitDisplay !== '' || $managementLimitDisplay !== '';
                     ?>
                     <?php if ($rpExtra): ?>
                     <div class="mt-8 border-t border-slate-100 pt-6">
@@ -1051,6 +1063,40 @@ if (!function_exists('personnel_file_render_admin_value')) {
                             <?php endif; ?>
                             <?php if ($rpNat !== ''): ?>
                             <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nationalité (RP)</p><p class="text-sm text-slate-800"><?= htmlspecialchars($rpNat) ?></p></div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($dossierExtra): ?>
+                    <div class="mt-8 border-t border-slate-100 pt-6">
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mb-4">Détails de fiche militaire</h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <?php if ($birthPlace !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Lieu de naissance</p><p class="text-sm text-slate-800"><?= htmlspecialchars($birthPlace) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($serviceBranch !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Corps / filière</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($serviceBranch) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($serviceStatus !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut de service</p><p class="text-sm text-slate-800"><?= htmlspecialchars($serviceStatus) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($gendarmerieStatus !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut gendarmerie</p><p class="text-sm text-slate-800"><?= htmlspecialchars($gendarmerieStatus) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($administrativePosition !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Position administrative</p><p class="text-sm text-slate-800"><?= htmlspecialchars($administrativePosition) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($bureauSn !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Bureau du SN</p><p class="text-sm text-slate-800"><?= htmlspecialchars($bureauSn) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($militaryOrigin !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Origine recrutement</p><p class="text-sm text-slate-800"><?= htmlspecialchars($militaryOrigin) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($statutoryLimitDisplay !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date limite d'âge statutaire</p><p class="text-sm text-slate-800"><?= htmlspecialchars($statutoryLimitDisplay) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($managementLimitDisplay !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date limite des services en gestion</p><p class="text-sm text-slate-800"><?= htmlspecialchars($managementLimitDisplay) ?></p></div>
                             <?php endif; ?>
                         </div>
                     </div>
