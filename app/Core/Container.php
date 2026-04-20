@@ -1396,7 +1396,8 @@ class Container
             \App\Controllers\Api\OrbatApiController::class => new \App\Controllers\Api\OrbatApiController(
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\OrbatChartTypeRepository::class)
+                self::get(\App\Repositories\OrbatChartTypeRepository::class),
+                self::get(\App\Repositories\PersonnelOrgHistoryRepository::class)
             ),
             \App\Controllers\Api\ForumModerationApiController::class => new \App\Controllers\Api\ForumModerationApiController(
                 self::get(\App\Repositories\ForumTopicRepository::class),
