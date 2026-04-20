@@ -177,4 +177,66 @@ final class EnlistmentPortalMessagingNotificationService
         $body = $label . ' : ' . $originalName;
         $this->notifyStaffOfCandidatePortalMessage($tenantId, $tenantName, $enlistment, $body, $tenantRow);
     }
+
+    /**
+     * Signalement (contenu ou message) depuis le portail de suivi — courriel aux personnes habilitées au recrutement.
+     * Aucune entrée timeline ici : le contrôleur enregistre déjà le détail côté dossier.
+     *
+     * @param array<string, mixed> $enlistment
+     * @param array<string, mixed>|null $tenantRow
+     */
+    public function notifyStaffOfCandidatePortalContentReport(
+        int $tenantId,
+        string $tenantName,
+        array $enlistment,
+        string $reportSummaryForEmail,
+        ?array $tenantRow = null
+    ): void {
+        $recipients = $this->resolveStaffRecipientEmails($tenantId, $enlistment, $tenantRow);
+        if ($recipients === []) {
+            return;
+        }
+
+        $tenantName = trim($tenantName) !== '' ? trim($tenantName) : 'Communauté';
+
+        $eid = (int) ($enlistment['id'] ?? 0);
+        if ($eid < 1) {
+            return;
+        }
+
+        $first = trim((string) ($enlistment['first_name'] ?? ''));
+        $last = trim((string) ($enlistment['last_name'] ?? ''));
+        $callsign = trim((string) ($enlistment['callsign'] ?? ''));
+        $full = trim($first . ' ' . $last);
+        if ($full === '') {
+            $full = $callsign !== '' ? $callsign : 'Candidat';
+        } elseif ($callsign !== '') {
+            $full .= ' (« ' . $callsign . ' »)';
+        }
+
+        $candidateEmail = strtolower(trim((string) ($enlistment['email'] ?? '')));
+        $reviewUrl = url('back-office/recruitments/' . $eid);
+        $excerpt = mb_strlen($reportSummaryForEmail) > 1800 ? mb_substr($reportSummaryForEmail, 0, 1797) . '…' : $reportSummaryForEmail;
+
+        foreach ($recipients as $to) {
+            try {
+                $em = strtolower(trim((string) $to));
+                $u = $em !== '' ? $this->userRepository->findByEmail($tenantId, $em) : null;
+                if ($u && !$this->notificationPreferencesRepository->isEmailEventEnabled((int) ($u['id'] ?? 0), EmailEvents::ENLISTMENT_PORTAL_CANDIDATE_REPLY_STAFF)) {
+                    continue;
+                }
+                $this->emailService->sendEnlistmentPortalCandidateReplyStaffNotify(
+                    $to,
+                    $tenantName,
+                    $eid,
+                    $full,
+                    $candidateEmail,
+                    $excerpt,
+                    $reviewUrl,
+                    $tenantId
+                );
+            } catch (\Throwable) {
+            }
+        }
+    }
 }

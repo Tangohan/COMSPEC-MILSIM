@@ -242,7 +242,7 @@ return function (Router $router) {
     $router->post('/deploiement/{id}/anomalie', [PersonnelDeploymentController::class, 'reportAnomaly'], [AuthMiddleware::class]);
     $router->get('/activite', [ActivityHubController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/activite/forum/lu', [ActivityHubController::class, 'markForumRead'], $mwForum);
-    $router->post('/activite/courrier/lu', [ActivityHubController::class, 'markCourrierRead'], $mwCourrier);
+    $router->post('/activite/courrier/lu', [ActivityHubController::class, 'markCourrierRead'], [AuthMiddleware::class]);
     $router->post('/activite/messages/lu', [ActivityHubController::class, 'markTenantMessagesRead'], [AuthMiddleware::class]);
     $router->get('/calendrier/abonnement/{token}', [CommunityCalendarFeedController::class, 'ics']);
     $router->get('/operateur/terrain', [OperateurTerrainController::class, 'index'], [AuthMiddleware::class]);
@@ -345,6 +345,7 @@ return function (Router $router) {
     $router->post('/enlistment/suivi/{token}/piece', [EnlistmentCandidatePortalController::class, 'uploadAttachment']);
     $router->post('/enlistment/suivi/{token}/message', [EnlistmentCandidatePortalController::class, 'message']);
     $router->post('/enlistment/suivi/{token}/bilan-candidat', [EnlistmentCandidatePortalController::class, 'candidateRetroSave']);
+    $router->post('/enlistment/suivi/{token}/signaler', [EnlistmentCandidatePortalController::class, 'reportPortalContent']);
     $router->get('/recrutement', [HomeController::class, 'recrutement']);
     $router->get('/equipement', [HomeController::class, 'equipement']);
     $router->get('/documents', [DocumentsController::class, 'index'], $mwDocuments);
@@ -644,6 +645,7 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/messages-prefaits/{id}/delete', [AdminRecruitmentsController::class, 'cannedMessageDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/portal-options', [AdminRecruitmentsController::class, 'portalOptionsSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/{id}/fil-portail-message', [AdminRecruitmentsController::class, 'portalFilMessage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/piece/{attachmentId}', [AdminRecruitmentsController::class, 'portalAttachmentDownload'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/decision', [AdminRecruitmentsController::class, 'decision'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/finalize-membership', [AdminRecruitmentsController::class, 'finalizeMembership'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

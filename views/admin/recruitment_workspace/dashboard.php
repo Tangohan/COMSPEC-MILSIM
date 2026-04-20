@@ -28,6 +28,24 @@ $viaLabel = static function (string $k): string {
         default => $k !== '' ? $k : 'Autre',
     };
 };
+$fmtDateTime = static function (?string $raw): string {
+    $raw = trim((string) $raw);
+    if ($raw === '') {
+        return '—';
+    }
+    $t = strtotime($raw);
+
+    return $t !== false ? date('d/m/Y à H:i', $t) : '—';
+};
+$enlistmentStatusLabel = static function (string $st): string {
+    return match ($st) {
+        'submitted' => 'À traiter',
+        'reviewed' => 'Acceptée',
+        'rejected' => 'Refusée',
+        'blocked' => 'Non admis',
+        default => $st !== '' ? 'Statut à vérifier' : '—',
+    };
+};
 ?>
 <div class="max-w-6xl w-full space-y-8">
         <div class="lms-infobanner" role="note">
@@ -70,8 +88,8 @@ $viaLabel = static function (string $k): string {
                             <p class="text-[9px] font-black tracking-[0.35em] text-amber-800 uppercase">Modération automatique</p>
                             <h2 id="automod-heading" class="mt-2 text-lg font-black text-slate-900 tracking-tight">Dossiers concernés par le filtre du portail</h2>
                             <p class="mt-2 text-sm text-stone-700 max-w-3xl leading-relaxed">
-                                Lorsqu’un texte est refusé sur le portail candidat ou par un membre de l’équipe, des blocages peuvent s’appliquer et un courriel d’alerte part aux contacts de la communauté.
-                                Ici vous voyez les dossiers ayant déclenché cette protection, vous pouvez <strong>rétablir l’accès</strong> sur votre communauté ou <strong>solliciter l’équipe du site</strong> pour un arbitrage plus large.
+                                Lorsqu’un texte est refusé sur le portail candidat ou par un membre de l’équipe, un blocage sur l’adresse concernée peut s’appliquer et un courriel d’alerte est envoyé aux contacts de la communauté.
+                                Cette liste ne montre que les dossiers pour lesquels un <strong>blocage e-mail est encore actif</strong> (l’adresse du candidat ou celle du membre visé). Vous pouvez <strong>rétablir l’accès</strong> sur votre communauté ou <strong>solliciter l’équipe du site</strong> pour un arbitrage plus large.
                             </p>
                         </div>
                         <?php if ($canOpenSystemRecruitmentTools): ?>
@@ -84,41 +102,32 @@ $viaLabel = static function (string $k): string {
                     </p>
                     <?php endif; ?>
                     <?php if ($automodDossiers === []): ?>
-                    <p class="text-sm text-stone-600">Aucun dossier avec modération automatique enregistrée pour le moment.</p>
+                    <p class="text-sm text-stone-600">Aucun blocage e-mail actif sur une adresse liée à un dossier ayant déclenché le filtre du portail. Les dossiers déjà débloqués n’apparaissent plus ici.</p>
                     <?php else: ?>
                     <div class="overflow-x-auto rounded-xl border border-stone-200 bg-white">
                         <table class="min-w-full text-sm text-left">
                             <thead>
                                 <tr class="text-[10px] font-black uppercase tracking-wider text-stone-500 border-b border-stone-200 bg-stone-50/80">
                                     <th class="py-3 px-4">Dernière alerte</th>
+                                    <th class="py-3 px-4">Création du dossier</th>
                                     <th class="py-3 px-4">Dossier</th>
                                     <th class="py-3 px-4">Contact</th>
                                     <th class="py-3 px-4">Origine</th>
-                                    <th class="py-3 px-4">Blocage e-mail dossier</th>
                                     <th class="py-3 px-4 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($automodDossiers as $d): ?>
-                                <?php
-                                $eid = (int) ($d['enlistment_id'] ?? 0);
-                                $blocked = !empty($d['portal_email_blocked']);
-                                ?>
+                                <?php $eid = (int) ($d['enlistment_id'] ?? 0); ?>
                                 <tr class="border-b border-stone-100 last:border-0 align-top">
-                                    <td class="py-3 px-4 text-stone-800 whitespace-nowrap"><?= htmlspecialchars((string) ($d['mod_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="py-3 px-4 text-stone-800 whitespace-nowrap"><?= htmlspecialchars($fmtDateTime(isset($d['mod_at']) ? (string) $d['mod_at'] : null), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="py-3 px-4 text-stone-800 whitespace-nowrap"><?= htmlspecialchars($fmtDateTime(isset($d['enlistment_created_at']) ? (string) $d['enlistment_created_at'] : null), ENT_QUOTES, 'UTF-8') ?></td>
                                     <td class="py-3 px-4">
                                         <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $eid), ENT_QUOTES, 'UTF-8') ?>" class="font-bold text-sky-800 hover:underline">Dossier n°<?= $eid ?></a>
-                                        <p class="text-[11px] text-stone-500 mt-0.5">Statut : <?= htmlspecialchars((string) ($d['enlistment_status'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                        <p class="text-[11px] text-stone-500 mt-0.5">Statut : <?= htmlspecialchars($enlistmentStatusLabel((string) ($d['enlistment_status'] ?? '')), ENT_QUOTES, 'UTF-8') ?></p>
                                     </td>
-                                    <td class="py-3 px-4 text-stone-700"><?= htmlspecialchars($maskEmail((string) ($d['email'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="py-3 px-4 text-stone-700"><?= htmlspecialchars($maskEmail((string) ($d['display_contact_email'] ?? $d['email'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
                                     <td class="py-3 px-4 text-stone-700"><?= htmlspecialchars((string) ($d['moderation_side_fr'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td class="py-3 px-4">
-                                        <?php if ($blocked): ?>
-                                        <span class="inline-flex rounded-full bg-rose-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-rose-900">Oui</span>
-                                        <?php else: ?>
-                                        <span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-900">Non</span>
-                                        <?php endif; ?>
-                                    </td>
                                     <td class="py-3 px-4 text-right space-y-2">
                                         <form method="post" action="<?= htmlspecialchars(url('back-office/ressources/recrutement/automod/restore-access'), ENT_QUOTES, 'UTF-8') ?>" class="inline-block text-left space-y-1" onsubmit="return confirm('Rétablir l’accès pour ce dossier sur votre communauté ?');">
                                             <?= \App\Core\Csrf::field() ?>

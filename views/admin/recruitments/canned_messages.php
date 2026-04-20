@@ -6,6 +6,7 @@ $listUrl = url('back-office/recruitments');
 $formAction = url('back-office/recruitments/messages-prefaits');
 $contextLabels = [
     'generic' => 'Tous contextes',
+    'portal' => 'Fil portail candidat',
     'accept' => 'Acceptation',
     'pending' => 'Mise en attente',
     'reject' => 'Refus / non admission',
@@ -22,7 +23,7 @@ $contextLabels = [
                         <p class="text-[9px] font-black uppercase tracking-[0.4em] text-sky-400/95">Bureau recrutement</p>
                         <h1 class="mt-2 text-2xl font-black tracking-tight uppercase text-white sm:text-3xl">Modèles de texte</h1>
                         <p class="mt-3 max-w-xl text-sm leading-relaxed text-slate-300/95">
-                            Phrases toutes prêtes à insérer dans le <strong class="text-white/95">commentaire interne</strong> lors du traitement d’une candidature (accueil, refus, non-admission). Chaque communauté gère sa propre liste.
+                            Phrases toutes prêtes : <strong class="text-white/95">décision sur une candidature</strong> (commentaire associé au courriel) et <strong class="text-white/95">fil du portail de suivi</strong> (messages visibles par le candidat sur son lien sécurisé). Chaque communauté gère sa propre liste.
                         </p>
                     </div>
                     <div class="flex flex-wrap gap-2">

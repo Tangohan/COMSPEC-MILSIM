@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Container;
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\Courrier\CourrierDocumentNotificationRepository;
 use App\Repositories\ForumNotificationRepository;
 use App\Repositories\TenantMessageRepository;
+use App\Services\Moderation\ModerationRestrictionResolver;
+use App\Services\Moderation\ModerationRestrictionsCatalog;
 use App\Services\Notifications\ActivityHubPresentationService;
+use App\Services\Notifications\PersonalMessageUnreadCounter;
 
 final class ActivityHubController
 {
@@ -30,16 +35,26 @@ final class ActivityHubController
             return Response::redirect(url('login'));
         }
 
-        $forumRows = $this->forumNotifications->listRecentForUser($tenantId, $userId, 40);
+        $gate = Gate::getInstance();
+        $resolver = Container::get(ModerationRestrictionResolver::class);
+        $activity_forum_available = $resolver->canReadForum($tenantId, $userId);
+        $activity_courrier_available = $gate->allows('courrier.view')
+            && $resolver->isModuleAllowed($tenantId, $userId, ModerationRestrictionsCatalog::KEY_COURRIER);
+
         $forumItems = [];
-        foreach ($forumRows as $r) {
-            $forumItems[] = $this->presentation->formatForumRow($r);
+        if ($activity_forum_available) {
+            $forumRows = $this->forumNotifications->listRecentForUser($tenantId, $userId, 40);
+            foreach ($forumRows as $r) {
+                $forumItems[] = $this->presentation->formatForumRow($r);
+            }
         }
 
-        $courrierRows = $this->courrierNotifications->listRecentForUser($tenantId, $userId, 40);
         $courrierItems = [];
-        foreach ($courrierRows as $r) {
-            $courrierItems[] = $this->presentation->formatCourrierRow($r);
+        if ($activity_courrier_available) {
+            $courrierRows = $this->courrierNotifications->listRecentForUser($tenantId, $userId, 40);
+            foreach ($courrierRows as $r) {
+                $courrierItems[] = $this->presentation->formatCourrierRow($r);
+            }
         }
 
         $messageRows = $this->tenantMessages->listActivityThreadsForUser($tenantId, $userId, 40);
@@ -48,12 +63,18 @@ final class ActivityHubController
             $messageItems[] = $this->presentation->formatTenantMessageThreadRow($r, $userId);
         }
 
+        $unreadCounts = Container::get(PersonalMessageUnreadCounter::class)
+            ->countsForUser($tenantId, $userId, $gate);
+
         return Response::view('layout.main', [
             'title' => 'Mon activité',
             'content' => 'notifications.hub',
             'activity_forum_items' => $forumItems,
             'activity_courrier_items' => $courrierItems,
             'activity_message_items' => $messageItems,
+            'activity_forum_available' => $activity_forum_available,
+            'activity_courrier_available' => $activity_courrier_available,
+            'activity_unread_counts' => $unreadCounts,
         ]);
     }
 

@@ -6,10 +6,12 @@ namespace App\Middleware;
 
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\Session;
 use App\Services\Security\FileRateLimiter;
 
 /**
- * Throttling par IP sur routes sensibles (auth, recrutement, reset mdp).
+ * Throttling par IP (invité) ou par compte connecté (uid) sur routes sensibles :
+ * authentification, recrutement public, forum, hub « Mon activité », modération auto recrutement.
  */
 final class RateLimitMiddleware
 {
@@ -52,6 +54,20 @@ final class RateLimitMiddleware
         if (!in_array($method, ['POST', 'PATCH', 'PUT', 'DELETE'], true)) {
             return null;
         }
+
+        $uid = (int) (Session::get('user_id') ?? 0);
+        $actorKey = $uid > 0 ? ('uid:' . $uid) : ('ip:' . $ip);
+
+        if ($path === '/back-office/ressources/recrutement/automod/restore-access') {
+            return [25, 600, 'rl:rw_automod_restore:' . $actorKey];
+        }
+        if ($path === '/back-office/ressources/recrutement/automod/escalate') {
+            return [10, 3600, 'rl:rw_automod_escalate:' . $actorKey];
+        }
+        if (in_array($path, ['/activite/forum/lu', '/activite/courrier/lu', '/activite/messages/lu'], true)) {
+            return [45, 300, 'rl:activite_mark:' . $path . ':' . $actorKey];
+        }
+
         $routes = [
             '/login' => [30, 300],
             '/login/select-community' => [40, 300],

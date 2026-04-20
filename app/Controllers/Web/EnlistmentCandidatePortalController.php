@@ -20,12 +20,17 @@ use App\Services\Recruitment\EnlistmentCandidatePortalJourneyService;
 use App\Services\Recruitment\EnlistmentPortalAttachmentService;
 use App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator;
 use App\Services\Recruitment\EnlistmentPortalMessagingNotificationService;
+use App\Support\ForumReportReason;
 
 final class EnlistmentCandidatePortalController
 {
     private const PORTAL_PIECE_DOWNLOAD_DELAY_SECONDS = 10;
 
     private const PORTAL_PIECE_DOWNLOAD_SESSION_KEY = '_comspec_portal_piece_download_gates';
+
+    private const PORTAL_REPORT_RATE_SESSION_PREFIX = '_comspec_portal_report_rate_';
+
+    private const PORTAL_REPORT_MAX_PER_HOUR = 8;
 
     public function __construct(
         private EnlistmentRepository $enlistmentRepository,
@@ -385,6 +390,163 @@ final class EnlistmentCandidatePortalController
         return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
     }
 
+    public function reportPortalContent(Request $request, array $params = []): Response
+    {
+        $token = (string) ($params['token'] ?? '');
+        $row = $this->enlistmentRepository->findByCandidatePortalToken($token);
+        if (!$row || !$request->isPost()) {
+            return Response::redirect(url('enlistment/error'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Rechargez la page puis réessayez.');
+
+            return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+        }
+        if ($this->isPortalAccessBlocked($request, $row)) {
+            $v = $this->portalAccessSuspendedErrorView();
+            Session::flash('enlistment_error', (string) ($v['message'] ?? ''));
+            Session::flash('enlistment_error_context', (string) ($v['errorContext'] ?? ''));
+            Session::flash('enlistment_retry_url', (string) ($v['enlistmentRetryUrl'] ?? url('enlistment')));
+
+            return Response::redirect(url('enlistment/error'));
+        }
+
+        $kind = strtolower(trim((string) $request->input('portal_report_kind', '')));
+        $targetId = (int) $request->input('portal_report_id', 0);
+        $category = trim((string) $request->input('portal_report_category', 'other'));
+        $details = trim((string) $request->input('portal_report_details', ''));
+        if ($details !== '') {
+            $details = mb_substr($details, 0, 2000);
+        }
+
+        if ($kind !== 'piece' && $kind !== 'message') {
+            Session::flash('error', 'Signalement incomplet. Réessayez depuis le bouton sur le fil ou la liste des pièces.');
+
+            return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+        }
+        if ($targetId < 1) {
+            Session::flash('error', 'Signalement incomplet.');
+
+            return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+        }
+
+        if (!$this->portalReportRateAllows($token)) {
+            Session::flash('error', 'Vous avez déjà envoyé plusieurs signalements récemment. Réessayez dans un moment ou écrivez un message à l’équipe.');
+
+            return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+        }
+
+        $tenantId = (int) ($row['tenant_id'] ?? 0);
+        $enlistmentId = (int) ($row['id'] ?? 0);
+        if ($tenantId < 1 || $enlistmentId < 1) {
+            Session::flash('error', 'Impossible d’enregistrer le signalement pour le moment.');
+
+            return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+        }
+
+        $normalized = ForumReportReason::fromCategory($category !== '' ? $category : 'other', $details);
+        $reasonLabel = (string) ($normalized['reason'] ?? 'Autre');
+
+        $pieceRow = null;
+        $messageRow = null;
+        $timelineBodyLines = ['Signalement transmis depuis le portail de suivi du candidat.', 'Motif : ' . $reasonLabel];
+
+        if ($kind === 'piece') {
+            $pieceRow = $this->enlistmentRepository->findCandidatePortalAttachment($tenantId, $enlistmentId, $targetId);
+            if ($pieceRow === null) {
+                Session::flash('error', 'Ce contenu ne correspond plus à votre dossier ou n’est plus disponible.');
+
+                return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+            }
+            $fn = trim((string) ($pieceRow['original_name'] ?? ''));
+            $pk = (string) ($pieceRow['kind'] ?? 'file');
+            $kindFr = $pk === 'audio' ? 'message vocal / enregistrement audio' : 'document transmis';
+            $timelineBodyLines[] = 'Objet du signalement : ' . $kindFr . ($fn !== '' ? ' (« ' . $fn . ' »).' : '.');
+        } else {
+            $messageRow = $this->enlistmentRepository->findCandidatePortalMessage($tenantId, $enlistmentId, $targetId);
+            if ($messageRow === null) {
+                Session::flash('error', 'Ce message ne correspond plus à votre dossier ou n’est plus disponible.');
+
+                return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+            }
+            if (((string) ($messageRow['entry_kind'] ?? '')) !== 'staff') {
+                Session::flash('error', 'Seuls les messages de l’équipe recrutement peuvent être signalés de cette façon. Pour un autre sujet, utilisez le formulaire « Écrire à l’équipe ».');
+
+                return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+            }
+            $timelineBodyLines[] = 'Objet du signalement : message de l’équipe recrutement sur le fil de suivi.';
+        }
+
+        if ($details !== '') {
+            $timelineBodyLines[] = 'Précisions du candidat : ' . $details;
+        }
+
+        $timelineBody = implode("\n\n", $timelineBodyLines);
+        $emailExcerptLines = [
+            'Signalement sur le portail de suivi',
+            'Motif : ' . $reasonLabel,
+        ];
+        if ($kind === 'piece' && is_array($pieceRow)) {
+            $fn2 = trim((string) ($pieceRow['original_name'] ?? ''));
+            $emailExcerptLines[] = ($pieceRow['kind'] ?? '') === 'audio'
+                ? 'Cible : message vocal ou audio joint' . ($fn2 !== '' ? ' (« ' . $fn2 . ' »).' : '.')
+                : 'Cible : document joint' . ($fn2 !== '' ? ' (« ' . $fn2 . ' »).' : '.');
+        } else {
+            $emailExcerptLines[] = 'Cible : message écrit de l’équipe sur le fil de suivi.';
+        }
+        if ($details !== '') {
+            $emailExcerptLines[] = 'Précisions : ' . $details;
+        }
+        $emailExcerpt = implode("\n", $emailExcerptLines);
+
+        if ($this->enlistmentTimelineRepository->tableExists()) {
+            $meta = [
+                'timeline_family' => 'portal_candidate_report',
+                'report_kind' => $kind,
+                'report_type' => (string) ($normalized['report_type'] ?? 'other'),
+                'category' => $category,
+            ];
+            if ($kind === 'piece') {
+                $meta['attachment_id'] = $targetId;
+            } else {
+                $meta['message_id'] = $targetId;
+            }
+            $this->enlistmentTimelineRepository->append(
+                $tenantId,
+                $enlistmentId,
+                'system',
+                'communication',
+                'Signalement depuis le portail de suivi',
+                $timelineBody,
+                null,
+                $meta,
+                null
+            );
+        }
+
+        $this->portalReportRateRecord($token);
+
+        $tenantRow = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
+        $tenantName = trim((string) (is_array($tenantRow) ? ($tenantRow['name'] ?? '') : ''));
+        if ($tenantName === '') {
+            $tenantName = 'Communauté';
+        }
+        try {
+            $this->portalMessagingNotificationService->notifyStaffOfCandidatePortalContentReport(
+                $tenantId,
+                $tenantName,
+                $row,
+                $emailExcerpt,
+                is_array($tenantRow) ? $tenantRow : null
+            );
+        } catch (\Throwable) {
+        }
+
+        Session::flash('success', 'Votre signalement a bien été transmis. L’équipe recrutement en est informée.');
+
+        return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+    }
+
     /**
      * @param array<string, mixed> $enlistmentRow
      */
@@ -490,6 +652,49 @@ final class EnlistmentCandidatePortalController
             });
 
         return $response;
+    }
+
+    private function portalReportRateSessionKey(string $token): string
+    {
+        return self::PORTAL_REPORT_RATE_SESSION_PREFIX . hash('sha256', $token);
+    }
+
+    /**
+     * Fenêtre glissante d’1 h, persistance du tableau élagué.
+     *
+     * @return list<int>
+     */
+    private function portalReportRateTimestamps(string $token): array
+    {
+        Session::start();
+        $k = $this->portalReportRateSessionKey($token);
+        $raw = Session::get($k);
+        $list = is_array($raw) ? $raw : [];
+        $cut = time() - 3600;
+        $out = [];
+        foreach ($list as $t) {
+            if ((int) $t >= $cut) {
+                $out[] = (int) $t;
+            }
+        }
+        $out = array_values($out);
+        Session::set($k, $out);
+
+        return $out;
+    }
+
+    private function portalReportRateAllows(string $token): bool
+    {
+        return count($this->portalReportRateTimestamps($token)) < self::PORTAL_REPORT_MAX_PER_HOUR;
+    }
+
+    private function portalReportRateRecord(string $token): void
+    {
+        Session::start();
+        $k = $this->portalReportRateSessionKey($token);
+        $list = $this->portalReportRateTimestamps($token);
+        $list[] = time();
+        Session::set($k, $list);
     }
 
     private function portalPieceDownloadGateKey(string $token, int $attachmentId): string

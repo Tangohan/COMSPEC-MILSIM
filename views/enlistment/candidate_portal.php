@@ -45,6 +45,8 @@ $platform = trim((string) ($enlistment['platform'] ?? ''));
 $country = trim((string) ($enlistment['country'] ?? ''));
 $openingId = (int) ($enlistment['recruitment_opening_id'] ?? 0);
 $attachments = is_array($attachments ?? null) ? $attachments : [];
+$tokenStr = trim((string) ($token ?? ''));
+$portalReportPostUrl = $tokenStr !== '' ? url('enlistment/suivi/' . rawurlencode($tokenStr) . '/signaler') : '';
 $portalAttachmentsById = [];
 foreach ($attachments as $a) {
     $aidMap = (int) ($a['id'] ?? 0);
@@ -66,6 +68,28 @@ $fmtBytes = static function (int $b): string {
     }
 
     return (string) max(0, $b) . ' o';
+};
+/** Retire la ligne technique « … transmis : fichier.ext » en tête du corps. */
+$stripTransmissionHeadline = static function (string $body): string {
+    return trim((string) preg_replace('/^(Enregistrement audio transmis|Document transmis)\s*:\s*[^\r\n]+\s*/u', '', $body));
+};
+/** Extrait le nom de fichier de la ligne de transmission si présent. */
+$transmissionFilename = static function (string $body): ?string {
+    if (preg_match('/^(Enregistrement audio transmis|Document transmis)\s*:\s*(.+)$/u', trim($body), $m)) {
+        $fn = trim((string) ($m[2] ?? ''));
+
+        return $fn !== '' ? $fn : null;
+    }
+
+    return null;
+};
+/** Sous-titre lisible à partir d’un nom de fichier auto (ex. message-vocal-20260419-2230.webm). */
+$portalAudioCaptionFromFilename = static function (string $filename, string $fallbackLabel): string {
+    if (preg_match('/(\d{4})(\d{2})(\d{2})[-_]?(\d{2})(\d{2})/', $filename, $m)) {
+        return 'Enregistré le ' . $m[3] . '/' . $m[2] . '/' . $m[1] . ' à ' . $m[4] . ':' . $m[5];
+    }
+
+    return $fallbackLabel;
 };
 $uploadAccept = '';
 if ($allowPortalFiles && $allowPortalAudio) {
@@ -154,10 +178,25 @@ $tailwindHead = (string) ob_get_clean();
         border-color: rgba(255,255,255,0.55);
         box-shadow: 0 0 0 10px rgba(239, 68, 68, 0.25);
       }
-      .snap-audio-pill audio {
+      .portal-audio-player audio {
         width: 100%;
-        max-width: 18rem;
-        height: 2.5rem;
+        height: 2.75rem;
+        border-radius: 0.75rem;
+      }
+      .portal-audio-player audio::-webkit-media-controls-panel {
+        border-radius: 0.75rem;
+      }
+      .portal-audio-player--liste audio {
+        height: 2.125rem;
+        max-width: 100%;
+      }
+      .portal-audio-player--fil audio {
+        height: 2.125rem;
+        max-width: 100%;
+      }
+      .portal-fil-texte {
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
     </style>
 </head>
@@ -353,19 +392,21 @@ $tailwindHead = (string) ob_get_clean();
             </section>
             <?php endif; ?>
 
-            <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="fil-messages">
-                <div class="border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4 sm:px-6">
+            <section class="overflow-hidden rounded-[1.35rem] border border-slate-200/90 bg-white shadow-md ring-1 ring-slate-900/[0.04]" aria-labelledby="fil-messages">
+                <div class="border-b border-slate-100 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-5 py-5 sm:px-6">
                     <h2 id="fil-messages" class="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-400/95">Fil de messages</h2>
-                    <p class="mt-1 text-sm text-slate-300">Seuls vous et l’équipe recrutement de la communauté voyez ces échanges sur ce lien.</p>
+                    <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-300/95">Seuls vous et l’équipe recrutement de la communauté voyez ces échanges sur ce lien.</p>
                 </div>
-                <div class="max-h-[min(28rem,70vh)] space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
+                <div class="max-h-[min(32rem,72vh)] space-y-5 overflow-x-hidden overflow-y-auto overscroll-contain px-4 py-6 sm:px-6">
                     <?php if ($messages === []): ?>
-                        <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                            Aucun message pour l’instant. Lorsque l’équipe mettra à jour votre dossier, la réponse apparaîtra ici et un e-mail vous sera envoyé si votre adresse est valide.
+                        <div class="rounded-2xl border border-dashed border-slate-200/90 bg-gradient-to-b from-slate-50 to-white px-5 py-10 text-center shadow-inner">
+                            <p class="text-sm font-semibold text-slate-700">Aucun message pour l’instant</p>
+                            <p class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">Lorsque l’équipe mettra à jour votre dossier, la réponse apparaîtra ici. Si votre adresse e-mail est valide, vous recevrez aussi une notification.</p>
                         </div>
                     <?php else: ?>
                         <?php foreach ($messages as $i => $m): ?>
                             <?php
+                            $msgId = (int) ($m['id'] ?? 0);
                             $isCandidate = ((string) ($m['entry_kind'] ?? '')) === 'candidate';
                             $created = trim((string) ($m['created_at'] ?? ''));
                             $dt = $created !== '' ? date('d/m/Y à H:i', strtotime($created) ?: time()) : '—';
@@ -386,34 +427,84 @@ $tailwindHead = (string) ob_get_clean();
                             $audioSrc = ($linkedIsAudio && $linkedPieceId > 0)
                                 ? htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $linkedPieceId . '?inline=1'), ENT_QUOTES, 'UTF-8')
                                 : '';
+                            $txFilename = $transmissionFilename($bodyDisplay);
+                            $bodyForText = $stripTransmissionHeadline($bodyDisplay);
+                            $audioCaption = $txFilename !== null
+                                ? $portalAudioCaptionFromFilename($txFilename, 'Message vocal sur ce fil')
+                                : ('Reçu le ' . $dt);
+                            $isModerationTone = !$isCandidate && (
+                                preg_match('/^Statut\s*:\s*Mise à jour — lien de suivi/ui', $bodyRaw) === 1
+                                || preg_match('/Mise à jour — lien de suivi/ui', (string) ($statLine ?? '')) === 1
+                                || preg_match('/Accès au suivi en ligne rétabli/ui', $bodyRaw) === 1
+                                || preg_match('/rétabli.*assistance/ui', $bodyRaw) === 1
+                            );
                             ?>
                             <div class="flex <?= $isCandidate ? 'justify-end' : 'justify-start' ?>">
-                                <div class="flex max-w-[min(100%,34rem)] gap-3 <?= $isCandidate ? 'flex-row-reverse' : 'flex-row' ?>">
-                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-black <?= $isCandidate ? 'bg-sky-600 text-white' : 'bg-emerald-600 text-white' ?>" aria-hidden="true">
+                                <div class="flex max-w-[min(100%,36rem)] gap-3 <?= $isCandidate ? 'flex-row-reverse' : 'flex-row' ?>">
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-black shadow-sm ring-2 ring-white <?= $isCandidate ? 'bg-sky-600 text-white ring-sky-100' : ($isModerationTone ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white ring-amber-100' : 'bg-emerald-600 text-white ring-emerald-100') ?>" aria-hidden="true">
                                         <?= $isCandidate ? htmlspecialchars(mb_substr($initials, 0, 2), ENT_QUOTES, 'UTF-8') : 'RH' ?>
                                     </div>
                                     <div class="min-w-0">
                                         <div class="flex flex-wrap items-center gap-2 <?= $isCandidate ? 'justify-end' : 'justify-start' ?>">
-                                            <span class="text-[10px] font-black uppercase tracking-wider <?= $isCandidate ? 'text-sky-800' : 'text-emerald-900' ?>"><?= $isCandidate ? 'Vous' : 'Recrutement' ?></span>
-                                            <span class="text-[10px] font-semibold tabular-nums text-slate-400"><?= htmlspecialchars($dt, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php if ($isModerationTone): ?>
+                                                <span class="text-[10px] font-black uppercase tracking-wider text-amber-900">Modération</span>
+                                                <span class="text-[10px] font-semibold tabular-nums text-slate-400"><?= htmlspecialchars($dt, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php else: ?>
+                                                <span class="text-[10px] font-black uppercase tracking-wider <?= $isCandidate ? 'text-sky-800' : 'text-emerald-900' ?>"><?= $isCandidate ? 'Vous' : 'Recrutement' ?></span>
+                                                <span class="text-[10px] font-semibold tabular-nums text-slate-400"><?= htmlspecialchars($dt, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
                                             <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-500">#<?= (int) $i + 1 ?></span>
+                                            <?php if (!$isCandidate && !$linkedIsAudio && $msgId > 0 && ($bodyForText !== '' || (($statLine ?? null) !== null && $statLine !== ''))): ?>
+                                                <button type="button" class="portal-report-open text-[10px] font-bold uppercase tracking-wide text-rose-700 underline decoration-rose-300 underline-offset-2 hover:text-rose-900" data-pr-kind="message" data-pr-id="<?= $msgId ?>" data-pr-summary="<?= htmlspecialchars('Message de l’équipe sur ce fil (nº ' . ((int) $i + 1) . ')', ENT_QUOTES, 'UTF-8') ?>">Signaler</button>
+                                            <?php endif; ?>
                                         </div>
-                                        <div class="mt-1.5 rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm <?= $isCandidate ? 'rounded-tr-sm border-sky-200 bg-sky-50 text-slate-900' : 'rounded-tl-sm border-emerald-200 bg-emerald-50/90 text-slate-900' ?>">
+                                        <div class="mt-2 flex min-w-0 flex-col gap-3 rounded-2xl border px-4 py-3.5 text-sm leading-relaxed shadow-md ring-1 ring-slate-900/[0.04] <?= $isCandidate ? 'rounded-tr-md border-sky-200/90 bg-gradient-to-b from-sky-50 to-white text-slate-900' : ($isModerationTone ? 'rounded-tl-md border-amber-300/90 bg-gradient-to-b from-amber-50/95 to-white text-slate-900 ring-amber-900/[0.06]' : 'rounded-tl-md border-emerald-200/90 bg-gradient-to-b from-emerald-50/95 to-white text-slate-900') ?>">
                                             <?php if ($statLine !== null && $statLine !== ''): ?>
-                                                <p class="mb-2 inline-flex flex-wrap items-center gap-2 text-xs font-bold text-emerald-950">
-                                                    <span class="rounded-full bg-emerald-600/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-900">Mise à jour</span>
-                                                    <span><?= htmlspecialchars($statLine, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <p class="mb-2 inline-flex max-w-full flex-wrap items-center gap-2 text-xs font-bold <?= $isModerationTone ? 'text-amber-950' : 'text-emerald-950' ?>">
+                                                    <span class="rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide <?= $isModerationTone ? 'bg-amber-500/20 text-amber-950' : 'bg-emerald-600/15 text-emerald-900' ?>"><?= $isModerationTone ? 'Information sécurité' : 'Mise à jour' ?></span>
+                                                    <span class="portal-fil-texte min-w-0"><?= htmlspecialchars($statLine, ENT_QUOTES, 'UTF-8') ?></span>
                                                 </p>
                                             <?php endif; ?>
-                                            <div class="whitespace-pre-wrap text-[15px] text-slate-800"><?= $bodyDisplay !== '' ? nl2br(htmlspecialchars($bodyDisplay, ENT_QUOTES, 'UTF-8')) : '—' ?></div>
+                                            <?php if ($bodyForText !== ''): ?>
+                                                <div class="portal-fil-texte whitespace-pre-wrap text-[15px] leading-relaxed text-slate-800"><?= nl2br(htmlspecialchars($bodyForText, ENT_QUOTES, 'UTF-8')) ?></div>
+                                            <?php elseif (!$linkedIsAudio): ?>
+                                                <p class="text-sm text-slate-500">—</p>
+                                            <?php endif; ?>
                                             <?php if ($linkedIsAudio && $audioSrc !== ''): ?>
-                                                <div class="snap-audio-pill mt-3 rounded-2xl border border-white/30 bg-white/15 p-3 backdrop-blur-sm">
-                                                    <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-white/90">Lecture</p>
-                                                    <audio controls preload="metadata" src="<?= $audioSrc ?>" class="rounded-lg opacity-95"></audio>
+                                                <div class="portal-audio-player portal-audio-player--fil <?= ($bodyForText !== '' || ($statLine !== null && $statLine !== '')) ? 'mt-3' : 'mt-0' ?> w-full max-w-[min(100%,16rem)] self-start overflow-hidden rounded-xl border border-slate-200/90 bg-white p-2.5 shadow-sm sm:max-w-[17rem]">
+                                                    <div class="flex items-start gap-2">
+                                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 text-white shadow-sm" aria-hidden="true">
+                                                            <svg class="h-4 w-4 opacity-95" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 14h2.5v6H5V14zm5.75-10h2.5v20h-2.5V4zm5.75 6h2.5v14h-2.5V10z"/></svg>
+                                                        </div>
+                                                        <div class="min-w-0 flex-1">
+                                                            <p class="text-[10px] font-bold uppercase tracking-wide text-slate-600">Lecture</p>
+                                                            <p class="mt-0.5 text-[10px] font-medium leading-snug text-slate-500"><?= htmlspecialchars($audioCaption, ENT_QUOTES, 'UTF-8') ?></p>
+                                                            <div class="mt-1.5 rounded-lg border border-slate-200 bg-slate-50/90 px-1.5 py-0.5">
+                                                                <audio controls preload="metadata" src="<?= $audioSrc ?>" class="w-full accent-emerald-600"></audio>
+                                                            </div>
+                                                            <p class="mt-1.5 text-[9px] font-semibold uppercase tracking-wider text-slate-400">Lecture sécurisée</p>
+                                                            <?php if ($linkedPieceId !== null && $linkedPieceId > 0 && $portalReportPostUrl !== ''): ?>
+                                                                <?php
+                                                                $prSumAudio = 'Message vocal sur ce fil' . ($txFilename !== null ? ' (« ' . $txFilename . ' »)' : '');
+                                                                ?>
+                                                                <p class="mt-2"><button type="button" class="portal-report-open text-xs font-semibold text-rose-700 underline decoration-rose-300 underline-offset-2 hover:text-rose-900" data-pr-kind="piece" data-pr-id="<?= (int) $linkedPieceId ?>" data-pr-summary="<?= htmlspecialchars($prSumAudio, ENT_QUOTES, 'UTF-8') ?>">Signaler ce contenu</button></p>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             <?php elseif ($linkedPieceId !== null && $linkedPieceId > 0 && is_array($linkedAtt)): ?>
-                                                <div class="mt-3">
-                                                    <a href="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $linkedPieceId . '/preparation'), ENT_QUOTES, 'UTF-8') ?>" class="text-xs font-bold text-sky-800 underline decoration-sky-300 underline-offset-2 hover:text-sky-950">Préparer le téléchargement</a>
+                                                <div class="mt-3 flex flex-wrap items-center gap-3">
+                                                    <a href="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $linkedPieceId . '/preparation'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+                                                        <span>Télécharger la pièce</span>
+                                                        <span class="text-slate-400" aria-hidden="true">→</span>
+                                                    </a>
+                                                    <?php if ($portalReportPostUrl !== ''): ?>
+                                                        <?php
+                                                        $fnDoc = trim((string) ($linkedAtt['original_name'] ?? ''));
+                                                        $prSumDoc = 'Pièce jointe sur ce fil' . ($fnDoc !== '' ? ' (« ' . $fnDoc . ' »)' : '');
+                                                        ?>
+                                                        <button type="button" class="portal-report-open text-xs font-semibold text-rose-700 underline decoration-rose-300 underline-offset-2 hover:text-rose-900" data-pr-kind="piece" data-pr-id="<?= (int) $linkedPieceId ?>" data-pr-summary="<?= htmlspecialchars($prSumDoc, ENT_QUOTES, 'UTF-8') ?>">Signaler</button>
+                                                    <?php endif; ?>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
@@ -463,18 +554,40 @@ $tailwindHead = (string) ob_get_clean();
                         $when = trim((string) ($att['created_at'] ?? ''));
                         $whenFmt = $when !== '' ? date('d/m/Y à H:i', strtotime($when) ?: time()) : '—';
                         ?>
-                        <li class="flex flex-col gap-3 px-5 py-4 sm:px-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate font-semibold text-slate-900"><?= htmlspecialchars($fn, ENT_QUOTES, 'UTF-8') ?></p>
-                                <p class="mt-0.5 text-xs text-slate-500"><?= $k === 'audio' ? 'Enregistrement audio' : 'Document' ?> · <?= htmlspecialchars($fmtBytes($sz), ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($whenFmt, ENT_QUOTES, 'UTF-8') ?></p>
+                        <li class="flex flex-col gap-3 px-5 py-5 sm:px-6">
+                            <div class="min-w-0 w-full max-w-full">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500"><?= $k === 'audio' ? 'Message vocal' : 'Document' ?></p>
+                                <p class="mt-1 truncate text-sm font-bold text-slate-900"><?= htmlspecialchars($fn, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="mt-0.5 text-xs text-slate-500"><?= htmlspecialchars($fmtBytes($sz), ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($whenFmt, ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php if ($k === 'audio'): ?>
-                                    <div class="snap-shell mt-3 max-w-md rounded-2xl p-4">
-                                        <p class="text-[10px] font-black uppercase tracking-wider text-white/90">Écoute rapide</p>
-                                        <audio controls preload="metadata" src="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid . '?inline=1'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 w-full rounded-lg"></audio>
+                                    <?php
+                                    $attAudioCaption = $portalAudioCaptionFromFilename($fn, 'Envoyé le ' . $whenFmt);
+                                    ?>
+                                    <div class="portal-audio-player portal-audio-player--liste mt-3 w-full max-w-[min(100%,15rem)] overflow-hidden rounded-xl border border-slate-200/90 bg-white p-2.5 shadow-sm sm:max-w-[16rem]">
+                                        <div class="flex items-start gap-2">
+                                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 text-white shadow-sm" aria-hidden="true">
+                                                <svg class="h-4 w-4 opacity-95" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 14h2.5v6H5V14zm5.75-10h2.5v20h-2.5V4zm5.75 6h2.5v14h-2.5V10z"/></svg>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <p class="text-[10px] font-bold uppercase tracking-wide text-slate-700">Écoute rapide</p>
+                                                <p class="mt-0.5 text-[10px] leading-snug text-slate-500"><?= htmlspecialchars($attAudioCaption, ENT_QUOTES, 'UTF-8') ?></p>
+                                                <div class="mt-1.5 rounded-lg border border-slate-200 bg-slate-50/90 px-1.5 py-0.5">
+                                                    <audio controls preload="metadata" src="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid . '?inline=1'), ENT_QUOTES, 'UTF-8') ?>" class="w-full max-w-full accent-emerald-600"></audio>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 <?php endif; ?>
                             </div>
-                            <a href="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid . '/preparation'), ENT_QUOTES, 'UTF-8') ?>" class="shrink-0 self-start rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 transition hover:bg-slate-50"><?= $k === 'audio' ? 'Télécharger l’audio' : 'Télécharger' ?></a>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <a href="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid . '/preparation'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"><?= $k === 'audio' ? 'Télécharger l’audio' : 'Télécharger' ?></a>
+                                <?php if ($portalReportPostUrl !== ''): ?>
+                                    <?php
+                                    $prSumList = ($k === 'audio' ? 'Votre message vocal' : 'Votre document') . ($fn !== '' ? ' (« ' . $fn . ' »)' : '');
+                                    ?>
+                                    <button type="button" class="portal-report-open text-xs font-semibold text-rose-700 underline decoration-rose-300 underline-offset-2 hover:text-rose-900" data-pr-kind="piece" data-pr-id="<?= $aid ?>" data-pr-summary="<?= htmlspecialchars($prSumList, ENT_QUOTES, 'UTF-8') ?>">Signaler</button>
+                                <?php endif; ?>
+                            </div>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -528,6 +641,104 @@ $tailwindHead = (string) ob_get_clean();
         </div>
     </div>
 </main>
+<?php if ($portalReportPostUrl !== ''): ?>
+<div id="portal-report-modal" class="fixed inset-0 z-[480] hidden flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="portal-report-title" aria-describedby="portal-report-desc">
+    <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20">
+        <div class="border-b border-slate-100 bg-slate-50/90 px-5 py-4">
+            <h2 id="portal-report-title" class="text-sm font-black uppercase tracking-wide text-slate-900">Signaler un contenu</h2>
+            <p id="portal-report-desc" class="mt-1 text-xs leading-relaxed text-slate-600">Ce signalement est confidentiel. Il est transmis à l’équipe recrutement avec le motif que vous indiquez.</p>
+            <p id="portal-report-summary" class="mt-2 text-xs font-semibold text-slate-800"></p>
+        </div>
+        <form id="portal-report-form" method="post" action="<?= htmlspecialchars($portalReportPostUrl, ENT_QUOTES, 'UTF-8') ?>" class="space-y-4 p-5">
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="portal_report_kind" id="pr-kind" value="piece">
+            <input type="hidden" name="portal_report_id" id="pr-id" value="0">
+            <div>
+                <label for="pr-category" class="mb-1.5 block text-xs font-bold text-slate-700">Motif</label>
+                <select id="pr-category" name="portal_report_category" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900">
+                    <option value="inappropriate">Contenu inapproprié</option>
+                    <option value="harassment">Harcèlement</option>
+                    <option value="spam">Spam ou publicité abusive</option>
+                    <option value="suspicious_link">Lien ou pièce douteuse</option>
+                    <option value="illegal">Contenu illégal</option>
+                    <option value="other">Autre</option>
+                </select>
+            </div>
+            <div>
+                <label for="pr-details" class="mb-1.5 block text-xs font-bold text-slate-700">Précisions (facultatif)</label>
+                <textarea id="pr-details" name="portal_report_details" rows="4" maxlength="2000" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400" placeholder="Expliquez brièvement ce qui pose problème."></textarea>
+            </div>
+            <div class="flex flex-wrap justify-end gap-2 pt-1">
+                <button type="button" id="pr-cancel" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-700 hover:bg-slate-50">Annuler</button>
+                <button type="submit" class="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white hover:bg-rose-500">Envoyer le signalement</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+(function () {
+    if (document.documentElement.getAttribute('data-portal-report-modal-init') === '1') {
+        return;
+    }
+    document.documentElement.setAttribute('data-portal-report-modal-init', '1');
+    var modal = document.getElementById('portal-report-modal');
+    var form = document.getElementById('portal-report-form');
+    var kindEl = document.getElementById('pr-kind');
+    var idEl = document.getElementById('pr-id');
+    var sumEl = document.getElementById('portal-report-summary');
+    var cancel = document.getElementById('pr-cancel');
+    if (!modal || !form || !kindEl || !idEl || !sumEl) {
+        return;
+    }
+    function closeM() {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    function openM(kind, id, summary) {
+        kindEl.value = kind === 'message' ? 'message' : 'piece';
+        idEl.value = String(id > 0 ? id : 0);
+        sumEl.textContent = summary || '';
+        var det = document.getElementById('pr-details');
+        if (det) {
+            det.value = '';
+        }
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(function () {
+            try {
+                modal.focus({ preventScroll: true });
+            } catch (e) {}
+        });
+    }
+    document.addEventListener('click', function (ev) {
+        var btn = ev.target.closest('.portal-report-open');
+        if (!btn) {
+            return;
+        }
+        var kind = btn.getAttribute('data-pr-kind') || 'piece';
+        var id = parseInt(btn.getAttribute('data-pr-id') || '0', 10);
+        var summary = btn.getAttribute('data-pr-summary') || '';
+        if (id < 1) {
+            return;
+        }
+        openM(kind, id, summary);
+    });
+    if (cancel) {
+        cancel.addEventListener('click', closeM);
+    }
+    modal.addEventListener('click', function (ev) {
+        if (ev.target === modal) {
+            closeM();
+        }
+    });
+    document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closeM();
+        }
+    });
+})();
+</script>
+<?php endif; ?>
 <?php if ($canUploadSomething && $allowPortalAudio): ?>
 <script>
 (function () {

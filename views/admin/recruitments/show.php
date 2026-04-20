@@ -69,6 +69,8 @@ $portalAllowFiles = !empty($e['candidate_portal_allow_files']);
 $portalAllowAudio = !empty($e['candidate_portal_allow_audio']);
 $candidatePortalSuiviUrl = isset($candidatePortalSuiviUrl) && is_string($candidatePortalSuiviUrl) && $candidatePortalSuiviUrl !== '' ? $candidatePortalSuiviUrl : null;
 $candidatePortalSuiviExpiresFmt = isset($candidatePortalSuiviExpiresFmt) && is_string($candidatePortalSuiviExpiresFmt) && $candidatePortalSuiviExpiresFmt !== '' ? $candidatePortalSuiviExpiresFmt : null;
+$candidatePortalThreadReady = !empty($candidatePortalThreadReady);
+$enlistmentPortalToolboxCanned = is_array($enlistmentPortalToolboxCanned ?? null) ? $enlistmentPortalToolboxCanned : [];
 
 $sharedFields = [];
 $sfRaw = $e['shared_fields'] ?? null;
@@ -410,6 +412,123 @@ $recapMeta = match ($statusRaw) {
                             </div>
                             <button type="submit" class="recruitment-lms-submit-primary inline-flex min-h-[2.75rem] items-center justify-center rounded-xl px-6 text-sm font-bold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:ring-offset-2">Enregistrer les options</button>
                         </form>
+                    <?php endif; ?>
+                    <?php if ($candidatePortalThreadReady): ?>
+                        <div class="mt-8 border-t border-stone-200 pt-6">
+                            <h3 class="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">Message sur le fil du candidat</h3>
+                            <p class="mt-2 max-w-3xl text-sm leading-relaxed text-stone-600">Texte visible sur la page de suivi (même fil que le candidat). Vous pouvez préparer le message avec les modèles ci-dessous, puis l’envoyer.</p>
+                            <details class="mt-4 rounded-xl border border-amber-200/90 bg-gradient-to-b from-amber-50/80 to-orange-50/40 px-4 py-3 shadow-sm open:shadow-md">
+                                <summary class="cursor-pointer text-sm font-black uppercase tracking-wide text-amber-950">Boîte à outils — modèles et raccourcis</summary>
+                                <div class="mt-4 space-y-4 border-t border-amber-200/60 pt-4">
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase tracking-wide text-amber-900/90">Raccourcis fréquents</p>
+                                        <?php
+                                        $portalSnippets = [
+                                            ['label' => 'Bonjour,', 'text' => "Bonjour,\n\n"],
+                                            ['label' => 'Accusé de lecture', 'text' => "Nous avons bien pris connaissance de votre message.\n\n"],
+                                            ['label' => 'Demande de précision', 'text' => "Pour avancer sur votre dossier, pourriez-vous préciser :\n\n— \n\nMerci d’avance."],
+                                            ['label' => 'Pièces demandées', 'text' => "Merci de déposer sur ce fil les documents demandés (formats habituels : PDF ou image), dans la limite indiquée sur la page.\n\n"],
+                                            ['label' => 'Entretien / créneau', 'text' => "Nous vous proposons un échange vocal ou écrit. Indiquez vos disponibilités sur les prochains jours.\n\n"],
+                                            ['label' => 'Relance polie', 'text' => "Petit rappel amical : dès que vous pourrez répondre, cela nous aidera à traiter votre dossier dans les meilleurs délais.\n\n"],
+                                            ['label' => 'Clôture de fil', 'text' => "Nous clôturons ici cet échange côté suivi en ligne. Pour toute question ultérieure, repassez par les canaux habituels de la communauté.\n\n"],
+                                            ['label' => 'Formules de politesse', 'text' => "Cordialement,\nL’équipe recrutement"],
+                                        ];
+                                        ?>
+                                        <script type="application/json" id="portal-snippets-json"><?= json_encode($portalSnippets, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?></script>
+                                        <div class="mt-2 flex flex-wrap gap-2">
+                                            <?php foreach ($portalSnippets as $psi => $ps): ?>
+                                                <button type="button" class="portal-fil-snippet rounded-lg border border-amber-300/80 bg-white px-2.5 py-1.5 text-[11px] font-bold text-amber-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-50" data-snippet-idx="<?= (int) $psi ?>"><?= htmlspecialchars((string) ($ps['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></button>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                    <?php if ($enlistmentPortalToolboxCanned !== []): ?>
+                                        <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                            <label class="min-w-0 flex-1">
+                                                <span class="text-[10px] font-bold uppercase tracking-wide text-amber-900/90">Modèles enregistrés (tous contextes + fil portail)</span>
+                                                <select id="portal-canned-select" class="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-inner">
+                                                    <option value="">— Choisir un modèle —</option>
+                                                    <?php foreach ($enlistmentPortalToolboxCanned as $cm): ?>
+                                                        <?php $cmid = (int) ($cm['id'] ?? 0); ?>
+                                                        <option value="<?= $cmid ?>"><?= htmlspecialchars((string) ($cm['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </label>
+                                            <button type="button" id="portal-canned-insert" class="inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-700 bg-amber-700 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-800">Insérer</button>
+                                        </div>
+                                        <script type="application/json" id="portal-canned-json"><?= json_encode(array_values(array_map(static function (array $r): array {
+                                            return [
+                                                'id' => (int) ($r['id'] ?? 0),
+                                                'body' => (string) ($r['body'] ?? ''),
+                                            ];
+                                        }, $enlistmentPortalToolboxCanned)), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?></script>
+                                    <?php else: ?>
+                                        <p class="text-xs text-amber-950/90">Aucun modèle pour l’instant. Créez-en sous <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits'), ENT_QUOTES, 'UTF-8') ?>" class="font-bold underline decoration-amber-600">Messages préfaits</a> (contexte « Fil portail candidat » ou « Tous contextes »).</p>
+                                    <?php endif; ?>
+                                </div>
+                            </details>
+                            <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/fil-portail-message'), ENT_QUOTES, 'UTF-8') ?>" class="mt-5 space-y-4">
+                                <?= \App\Core\Csrf::field() ?>
+                                <label class="block">
+                                    <span class="text-xs font-bold uppercase tracking-wide text-stone-600">Message</span>
+                                    <textarea id="portal_staff_message" name="portal_staff_message" rows="6" maxlength="4000" required class="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20" placeholder="Ce texte apparaît sur le fil du portail de suivi du candidat…"></textarea>
+                                </label>
+                                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-[#faf8f3] p-3">
+                                    <input type="checkbox" name="portal_staff_notify_email" value="1" checked class="mt-1 h-4 w-4 rounded border-stone-400 text-amber-700">
+                                    <span class="text-sm text-stone-800"><strong class="text-stone-900">Notifier le candidat par courriel</strong> avec le lien de suivi (si l’adresse du dossier est valide).</span>
+                                </label>
+                                <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 px-6 text-sm font-bold text-white shadow-md transition hover:from-amber-700 hover:to-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2">Publier sur le fil</button>
+                            </form>
+                        </div>
+                        <script>
+                        (function () {
+                            var ta = document.getElementById('portal_staff_message');
+                            if (!ta) return;
+                            function appendSnippet(t) {
+                                t = t || '';
+                                if (!t) return;
+                                if (ta.value.trim() !== '') ta.value += '\n\n';
+                                ta.value += t;
+                                ta.focus();
+                            }
+                            var snRaw = document.getElementById('portal-snippets-json');
+                            var snList = [];
+                            if (snRaw && snRaw.textContent) {
+                                try {
+                                    var parsed = JSON.parse(snRaw.textContent || '[]');
+                                    if (Array.isArray(parsed)) snList = parsed;
+                                } catch (e) {}
+                            }
+                            document.querySelectorAll('.portal-fil-snippet').forEach(function (btn) {
+                                btn.addEventListener('click', function () {
+                                    var ix = parseInt(btn.getAttribute('data-snippet-idx') || '-1', 10);
+                                    var row = snList[ix];
+                                    appendSnippet(row && row.text ? row.text : '');
+                                });
+                            });
+                            var sel = document.getElementById('portal-canned-select');
+                            var raw = document.getElementById('portal-canned-json');
+                            var ins = document.getElementById('portal-canned-insert');
+                            var byId = {};
+                            if (raw && raw.textContent) {
+                                try {
+                                    var list = JSON.parse(raw.textContent || '[]');
+                                    if (Array.isArray(list)) {
+                                        list.forEach(function (row) {
+                                            if (row && row.id) byId[String(row.id)] = row.body || '';
+                                        });
+                                    }
+                                } catch (e) {}
+                            }
+                            if (sel && ins) {
+                                ins.addEventListener('click', function () {
+                                    var id = sel.value;
+                                    if (!id || !byId[id]) { sel.selectedIndex = 0; return; }
+                                    appendSnippet(byId[id]);
+                                    sel.selectedIndex = 0;
+                                });
+                            }
+                        })();
+                        </script>
                     <?php endif; ?>
                     <?php if ($candidatePortalUploadsReady && $candidatePortalAttachments !== []): ?>
                         <div class="mt-8 border-t border-stone-200 pt-6">

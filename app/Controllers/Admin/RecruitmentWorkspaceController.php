@@ -49,7 +49,7 @@ class RecruitmentWorkspaceController
             : [];
 
         $portalRecruitmentBlocks = $this->blockedIndicatorRepository->listActiveTenantPortalRecruitmentRelated($tenantId, 200);
-        $automodDossiers = $this->buildAutomodDossierSummaries($tenantId, $portalRecruitmentBlocks);
+        $automodDossiers = $this->buildAutomodDossierSummaries($tenantId);
 
         return Response::view('layout.recruitment_lms', [
             'content' => 'admin.recruitment_workspace.dashboard',
@@ -71,10 +71,9 @@ class RecruitmentWorkspaceController
     }
 
     /**
-     * @param list<array<string, mixed>> $portalRecruitmentBlocks
      * @return list<array<string, mixed>>
      */
-    private function buildAutomodDossierSummaries(int $tenantId, array $portalRecruitmentBlocks): array
+    private function buildAutomodDossierSummaries(int $tenantId): array
     {
         $raw = $this->enlistmentTimelineRepository->listRecentPortalAutomodForTenant($tenantId, 100);
         $byEid = [];
@@ -92,20 +91,24 @@ class RecruitmentWorkspaceController
             return strcmp((string) ($b['mod_at'] ?? ''), (string) ($a['mod_at'] ?? ''));
         });
         $rows = array_slice($rows, 0, 45);
-        $emailHashes = [];
-        foreach ($portalRecruitmentBlocks as $b) {
-            if (($b['indicator_type'] ?? '') === 'email' && ($b['value_hash'] ?? '') !== '') {
-                $emailHashes[(string) $b['value_hash']] = true;
-            }
-        }
         foreach ($rows as &$row) {
-            $email = strtolower(trim((string) ($row['email'] ?? '')));
-            $h = $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)
-                ? BlockedIndicatorRepository::hashEmail($email)
-                : '';
-            $row['portal_email_blocked'] = $h !== '' && isset($emailHashes[$h]);
             $meta = $row['metadata'] ?? null;
-            $row['moderation_side_fr'] = match ((string) (is_array($meta) ? ($meta['moderation_side'] ?? '') : '')) {
+            $side = (string) (is_array($meta) ? ($meta['moderation_side'] ?? '') : '');
+            $actorId = (int) ($row['timeline_actor_id'] ?? 0);
+            $emailForBlock = strtolower(trim((string) ($row['email'] ?? '')));
+            if ($side === 'equipe' && $actorId > 0) {
+                $u = $this->userRepository->findById($actorId, $tenantId);
+                if (is_array($u)) {
+                    $staffMail = strtolower(trim((string) ($u['email'] ?? '')));
+                    if ($staffMail !== '' && filter_var($staffMail, FILTER_VALIDATE_EMAIL)) {
+                        $emailForBlock = $staffMail;
+                    }
+                }
+            }
+            $row['portal_email_blocked'] = $emailForBlock !== '' && filter_var($emailForBlock, FILTER_VALIDATE_EMAIL)
+                && $this->blockedIndicatorRepository->isEmailBlockedForTenant($tenantId, $emailForBlock);
+            $row['display_contact_email'] = $emailForBlock;
+            $row['moderation_side_fr'] = match ($side) {
                 'equipe' => 'Équipe recrutement',
                 'candidat' => 'Candidat',
                 default => '—',
@@ -113,6 +116,8 @@ class RecruitmentWorkspaceController
             $row['moderation_code'] = is_array($meta) ? trim((string) ($meta['moderation_code'] ?? '')) : '';
         }
         unset($row);
+
+        $rows = array_values(array_filter($rows, static fn (array $r): bool => !empty($r['portal_email_blocked'])));
 
         return $rows;
     }

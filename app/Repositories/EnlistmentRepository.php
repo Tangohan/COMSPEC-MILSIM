@@ -56,6 +56,12 @@ class EnlistmentRepository
         return self::$hasCandidatePortalTables;
     }
 
+    /** Fil de messages portail candidat (jeton + messages) disponible. */
+    public function candidatePortalThreadReady(): bool
+    {
+        return $this->hasCandidatePortalTables();
+    }
+
     private function hasPortalAllowColumns(): bool
     {
         if (self::$hasPortalAllowColumns === null) {
@@ -123,6 +129,23 @@ class EnlistmentRepository
             'SELECT * FROM enlistment_candidate_attachments WHERE tenant_id = ? AND enlistment_id = ? AND id = ? LIMIT 1'
         );
         $stmt->execute([$tenantId, $enlistmentId, $attachmentId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findCandidatePortalMessage(int $tenantId, int $enlistmentId, int $messageId): ?array
+    {
+        if (!$this->hasCandidatePortalTables() || $messageId < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM enlistment_candidate_messages WHERE tenant_id = ? AND enlistment_id = ? AND id = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $enlistmentId, $messageId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;

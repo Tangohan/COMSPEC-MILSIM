@@ -133,7 +133,7 @@ final class EnlistmentTimelineRepository
         $lim = max(1, min(120, $limit));
         $stmt = $this->pdo->prepare(
             "SELECT e.id AS enlistment_id, e.email, e.status AS enlistment_status, e.created_at AS enlistment_created_at,
-                    t.id AS timeline_entry_id, t.created_at AS mod_at, t.body, t.metadata
+                    t.id AS timeline_entry_id, t.created_at AS mod_at, t.body, t.metadata, t.actor_user_id AS timeline_actor_id
              FROM enlistment_timeline_entries t
              INNER JOIN enlistments e ON e.id = t.enlistment_id AND e.tenant_id = t.tenant_id
              WHERE t.tenant_id = ? AND t.summary = 'Modération automatique du portail'
