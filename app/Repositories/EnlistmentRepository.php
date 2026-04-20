@@ -18,6 +18,8 @@ class EnlistmentRepository
 
     private static ?bool $hasPortalAllowColumns = null;
 
+    private static ?bool $hasPortalStatusDisplayColumns = null;
+
     private static ?bool $hasPortalAttachmentsTable = null;
 
     private static ?bool $hasPortalMessageActorColumn = null;
@@ -94,17 +96,59 @@ class EnlistmentRepository
         return $this->hasPortalAllowColumns() && $this->hasPortalAttachmentsTable();
     }
 
-    public function updateCandidatePortalOptions(int $tenantId, int $enlistmentId, bool $allowFiles, bool $allowAudio): bool
+    public function hasPortalStatusDisplayColumns(): bool
     {
+        if (self::$hasPortalStatusDisplayColumns === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistments' AND COLUMN_NAME = 'candidate_portal_status_mode' LIMIT 1");
+            self::$hasPortalStatusDisplayColumns = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasPortalStatusDisplayColumns;
+    }
+
+    public function updateCandidatePortalOptions(
+        int $tenantId,
+        int $enlistmentId,
+        bool $allowFiles,
+        bool $allowAudio,
+        string $statusMode = 'steps',
+        string $manualText = '',
+        string $manualBand = 'amber',
+    ): bool {
         if (!$this->hasPortalAllowColumns()) {
             return false;
         }
+        $mode = $statusMode === 'manual' ? 'manual' : 'steps';
+        $allowedBands = ['amber', 'emerald', 'rose', 'slate', 'sky'];
+        $bandIn = strtolower(trim($manualBand));
+        $band = in_array($bandIn, $allowedBands, true) ? $bandIn : 'amber';
+        $manualDb = null;
+        if ($mode === 'manual') {
+            $t = trim($manualText);
+            $manualDb = $t !== '' ? mb_substr($t, 0, 280) : null;
+        }
+
+        if ($this->hasPortalStatusDisplayColumns()) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE enlistments SET candidate_portal_allow_files = ?, candidate_portal_allow_audio = ?, candidate_portal_status_mode = ?, candidate_portal_status_manual_text = ?, candidate_portal_status_manual_band = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ? LIMIT 1'
+            );
+
+            return $stmt->execute([
+                $allowFiles ? 1 : 0,
+                $allowAudio ? 1 : 0,
+                $mode,
+                $manualDb,
+                $band,
+                $tenantId,
+                $enlistmentId,
+            ]);
+        }
+
         $stmt = $this->pdo->prepare(
             'UPDATE enlistments SET candidate_portal_allow_files = ?, candidate_portal_allow_audio = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ? LIMIT 1'
         );
-        $stmt->execute([$allowFiles ? 1 : 0, $allowAudio ? 1 : 0, $tenantId, $enlistmentId]);
 
-        return $stmt->rowCount() > 0;
+        return $stmt->execute([$allowFiles ? 1 : 0, $allowAudio ? 1 : 0, $tenantId, $enlistmentId]);
     }
 
     /**

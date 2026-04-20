@@ -988,6 +988,7 @@ class Container
                 self::get(\App\Repositories\PlatformSettingsRepository::class)
             ),
             \App\Repositories\RecruitmentTeamWallRepository::class => new \App\Repositories\RecruitmentTeamWallRepository(),
+            \App\Services\Recruitment\EnlistmentCandidatePortalJourneyService::class => new \App\Services\Recruitment\EnlistmentCandidatePortalJourneyService(),
             \App\Controllers\Admin\AdminRecruitmentsController::class => new \App\Controllers\Admin\AdminRecruitmentsController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(\App\Repositories\EnlistmentCannedMessageRepository::class),
@@ -1001,7 +1002,8 @@ class Container
                 self::get(\App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator::class),
                 self::get(\App\Repositories\EnlistmentRecruitmentEngagementRepository::class),
                 self::get(\App\Services\Analytics\AnalyticsEventService::class),
-                self::get(\App\Repositories\RecruitmentTeamWallRepository::class)
+                self::get(\App\Repositories\RecruitmentTeamWallRepository::class),
+                self::get(\App\Services\Recruitment\EnlistmentCandidatePortalJourneyService::class)
             ),
             \App\Services\Recruitment\EnlistmentPortalMessagingNotificationService::class => new \App\Services\Recruitment\EnlistmentPortalMessagingNotificationService(
                 self::get(UserRepository::class),
@@ -1010,7 +1012,6 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\EnlistmentTimelineRepository::class)
             ),
-            \App\Services\Recruitment\EnlistmentCandidatePortalJourneyService::class => new \App\Services\Recruitment\EnlistmentCandidatePortalJourneyService(),
             \App\Controllers\Web\EnlistmentCandidatePortalController::class => new \App\Controllers\Web\EnlistmentCandidatePortalController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(TenantRepository::class),

@@ -17,6 +17,7 @@ final class EnlistmentCandidatePortalJourneyService
      * @param list<array<string, mixed>> $attachments
      *
      * @return list<array{id: string, label: string, hint: string, state: string, tooltip?: string}>
+     *         ids : reception, portal_moderation_filter, portal_moderation_incident, instruction, suivi, decision, adhesion
      */
     public function buildSteps(
         array $enlistment,
@@ -35,11 +36,16 @@ final class EnlistmentCandidatePortalJourneyService
             }
         }
 
+        $hasPortalActivity = $messages !== [] || $attachments !== [];
+        $hasModerationTimeline = $this->timelineHasModerationMarker($timelineRows);
+
         $stReception = 'done';
         $stInstruction = 'upcoming';
         $stSuivi = 'upcoming';
         $stDecision = 'upcoming';
         $stAdhesion = 'upcoming';
+        $stModFilter = $hasPortalActivity ? 'done' : 'upcoming';
+        $stModIncident = $hasModerationTimeline ? 'done' : 'upcoming';
 
         if ($status === 'submitted') {
             if (!$hasRecruiterMessage) {
@@ -67,6 +73,18 @@ final class EnlistmentCandidatePortalJourneyService
                 'label' => 'Réception du dossier',
                 'hint' => 'Votre candidature est enregistrée et prise en compte.',
                 'state' => $stReception,
+            ],
+            [
+                'id' => 'portal_moderation_filter',
+                'label' => 'Contrôle automatique (portail)',
+                'hint' => 'Chaque message ou pièce transmis sur le fil est vérifié selon les règles de sécurité de la communauté.',
+                'state' => $stModFilter,
+            ],
+            [
+                'id' => 'portal_moderation_incident',
+                'label' => 'Modération et suites d’incident',
+                'hint' => 'En cas de contenu refusé ou d’accès restreint, l’équipe est informée et peut rétablir le suivi.',
+                'state' => $stModIncident,
             ],
             [
                 'id' => 'instruction',
@@ -111,6 +129,54 @@ final class EnlistmentCandidatePortalJourneyService
         }
 
         return $steps;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $timelineRows
+     */
+    private function timelineHasModerationMarker(array $timelineRows): bool
+    {
+        foreach ($timelineRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $meta = $row['metadata'] ?? null;
+            $meta = is_array($meta) ? $meta : [];
+            $fam = (string) ($meta['timeline_family'] ?? '');
+            if ($fam === 'moderation' || $fam === 'moderation_override') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $timelineRows
+     */
+    private function firstModerationTimelineTs(array $timelineRows): ?int
+    {
+        $min = null;
+        foreach ($timelineRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $meta = $row['metadata'] ?? null;
+            $meta = is_array($meta) ? $meta : [];
+            $fam = (string) ($meta['timeline_family'] ?? '');
+            if ($fam !== 'moderation' && $fam !== 'moderation_override') {
+                continue;
+            }
+            $ts = $this->parseTs((string) ($row['created_at'] ?? ''));
+            if ($ts === null) {
+                continue;
+            }
+            if ($min === null || $ts < $min) {
+                $min = $ts;
+            }
+        }
+
+        return $min;
     }
 
     /**
@@ -211,6 +277,19 @@ final class EnlistmentCandidatePortalJourneyService
         $out['reception'] = $receptionTs !== null
             ? 'Dossier reçu le ' . $this->formatFr($receptionTs) . '.'
             : 'Date de réception non disponible.';
+
+        $firstActivityTs = $this->minTs($firstAnyMsgTs, $firstAttachmentTs);
+        $modTs = $this->firstModerationTimelineTs($timelineRows);
+        if ($firstActivityTs !== null) {
+            $out['portal_moderation_filter'] = 'Premier élément passé par le contrôle automatique le ' . $this->formatFr($firstActivityTs) . ' (message ou pièce).';
+        } else {
+            $out['portal_moderation_filter'] = 'Aucun message ni pièce encore reçu sur le fil — le filtre s’appliquera dès votre premier envoi.';
+        }
+        if ($modTs !== null) {
+            $out['portal_moderation_incident'] = 'Incident ou rétablissement lié à la modération enregistré le ' . $this->formatFr($modTs) . '.';
+        } else {
+            $out['portal_moderation_incident'] = 'Aucun incident de modération automatique signalé sur ce dossier pour l’instant.';
+        }
 
         if ($instructionTs !== null) {
             $out['instruction'] = 'Premier retour côté recrutement le ' . $this->formatFr($instructionTs) . ' (message ou entrée du journal).';

@@ -5,13 +5,13 @@ $messages = is_array($messages ?? null) ? $messages : [];
 $tenant = is_array($tenant ?? null) ? $tenant : [];
 $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
 $status = (string) ($enlistment['status'] ?? 'submitted');
-$statusFr = [
+$dossierStatusLabel = [
     'submitted' => 'En cours d’instruction',
     'reviewed' => 'Accepté',
     'rejected' => 'Refusé',
     'blocked' => 'Non admis',
 ][$status] ?? 'En cours de traitement';
-$statusBand = match ($status) {
+$dossierStatusBand = match ($status) {
     'submitted' => 'bg-amber-500',
     'reviewed' => 'bg-emerald-500',
     'rejected' => 'bg-rose-500',
@@ -79,9 +79,16 @@ $portalRetroEligible = !empty($portalRetroEligible);
 $portalRetroTableReady = !empty($portalRetroTableReady);
 $candidateRetroFeedback = is_array($candidateRetroFeedback ?? null) ? $candidateRetroFeedback : null;
 $candidateRetroLabels = [5 => 'Très satisfaisant', 4 => 'Bon', 3 => 'Correct', 2 => 'En-dessous des attentes', 1 => 'À améliorer'];
-$portalViewer = is_array($portalViewer ?? null) ? $portalViewer : ['mode' => 'anonymous', 'label' => '', 'initials' => ''];
+$portalViewer = is_array($portalViewer ?? null) ? $portalViewer : ['mode' => 'anonymous', 'label' => '', 'initials' => '', 'user_id' => 0];
 $pvMode = (string) ($portalViewer['mode'] ?? 'anonymous');
 $pvLabel = trim((string) ($portalViewer['label'] ?? ''));
+$pvUserId = (int) ($portalViewer['user_id'] ?? 0);
+$pvStaffInitials = trim((string) ($portalViewer['initials'] ?? ''));
+if ($pvStaffInitials === '') {
+    $pvStaffInitials = 'RH';
+}
+/** Lecteur « côté candidat » (lien seul ou compte du déposant) : les bulles candidat sont « les vôtres ». Sinon, le fil est lu comme recruteur / tiers. */
+$viewerIsCandidateParty = ($pvMode === 'candidate' || $pvMode === 'anonymous');
 $msgCount = count($messages);
 $lastActivity = $createdAt;
 foreach ($messages as $m) {
@@ -95,6 +102,49 @@ if ($updatedAt !== '' && ($lastActivity === '' || strtotime($updatedAt) > strtot
 }
 $lastActivityFmt = $lastActivity !== '' ? date('d/m/Y à H:i', strtotime($lastActivity) ?: time()) : '—';
 $portalSteps = is_array($portalSteps ?? null) ? $portalSteps : [];
+$portalReferentLabel = trim((string) ($portalReferentLabel ?? ''));
+$portalRecruitmentSlaHours = max(1, (int) ($portalRecruitmentSlaHours ?? 72));
+$portalStatusMode = strtolower(trim((string) ($enlistment['candidate_portal_status_mode'] ?? 'steps')));
+if ($portalStatusMode !== 'manual') {
+    $portalStatusMode = 'steps';
+}
+$manualPortalStatus = trim((string) ($enlistment['candidate_portal_status_manual_text'] ?? ''));
+$manualPortalBandKey = strtolower(trim((string) ($enlistment['candidate_portal_status_manual_band'] ?? 'amber')));
+$manualBandClasses = [
+    'amber' => 'bg-amber-500',
+    'emerald' => 'bg-emerald-500',
+    'rose' => 'bg-rose-500',
+    'slate' => 'bg-slate-500',
+    'sky' => 'bg-sky-500',
+];
+if (!isset($manualBandClasses[$manualPortalBandKey])) {
+    $manualPortalBandKey = 'amber';
+}
+$currentPortalStepLabel = '';
+foreach ($portalSteps as $st) {
+    if (is_array($st) && (($st['state'] ?? '') === 'current')) {
+        $currentPortalStepLabel = trim((string) ($st['label'] ?? ''));
+        break;
+    }
+}
+$useManualPortalStatus = $portalStatusMode === 'manual' && $manualPortalStatus !== '';
+if ($useManualPortalStatus) {
+    $portalCardTitle = $manualPortalStatus;
+    $portalCardSubtitle = '';
+    $portalCardBand = $manualBandClasses[$manualPortalBandKey];
+} else {
+    $portalCardTitle = $currentPortalStepLabel !== '' ? $currentPortalStepLabel : $dossierStatusLabel;
+    $portalCardSubtitle = $currentPortalStepLabel !== '' ? ('Statut dossier : ' . $dossierStatusLabel) : '';
+    $portalCardBand = $dossierStatusBand;
+}
+$slaHuman = '';
+$h = $portalRecruitmentSlaHours;
+if ($h % 24 === 0) {
+    $d = intdiv($h, 24);
+    $slaHuman = $d === 1 ? '24 h (environ 1 jour)' : $h . ' h (environ ' . $d . ' jours)';
+} else {
+    $slaHuman = 'environ ' . $h . ' h';
+}
 $initials = '';
 if ($fullName !== '') {
     $parts = preg_split('/\s+/u', $fullName, -1, PREG_SPLIT_NO_EMPTY);
@@ -162,6 +212,18 @@ $tailwindHead = (string) ob_get_clean();
         max-width: 18rem;
         height: 2.5rem;
       }
+      details.portal-pj summary {
+        list-style: none;
+      }
+      details.portal-pj summary::-webkit-details-marker {
+        display: none;
+      }
+      details.portal-pj .portal-pj-chevron {
+        transition: transform 0.2s ease;
+      }
+      details.portal-pj[open] .portal-pj-chevron {
+        transform: rotate(180deg);
+      }
     </style>
 </head>
 <body class="relative min-h-screen overflow-x-hidden bg-slate-100 font-sans text-slate-900 antialiased">
@@ -189,12 +251,23 @@ $tailwindHead = (string) ob_get_clean();
     <div class="grid gap-8 lg:grid-cols-12">
         <aside class="space-y-5 lg:col-span-4">
             <div class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
-                <div class="h-1.5 <?= htmlspecialchars($statusBand, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></div>
+                <div class="h-1.5 <?= htmlspecialchars($portalCardBand, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></div>
                 <div class="border-b border-slate-100 px-5 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Statut du dossier</p>
-                    <p class="mt-1 text-lg font-bold text-slate-900"><?= htmlspecialchars($statusFr, ENT_QUOTES, 'UTF-8') ?></p>
+                    <p class="mt-1 text-lg font-bold text-slate-900"><?= htmlspecialchars($portalCardTitle, ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php if ($portalCardSubtitle !== ''): ?>
+                        <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= htmlspecialchars($portalCardSubtitle, ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endif; ?>
                 </div>
                 <dl class="space-y-3 px-5 py-4 text-sm">
+                    <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
+                        <dt class="text-slate-500">Référent du dossier</dt>
+                        <dd class="max-w-[58%] text-right text-xs font-medium text-slate-800"><?= $portalReferentLabel !== '' ? htmlspecialchars($portalReferentLabel, ENT_QUOTES, 'UTF-8') : 'Non précisé pour l’instant par l’équipe.' ?></dd>
+                    </div>
+                    <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
+                        <dt class="text-slate-500">Délai de réponse visé</dt>
+                        <dd class="max-w-[58%] text-right text-xs text-slate-700"><?= htmlspecialchars($slaHuman, ENT_QUOTES, 'UTF-8') ?> (réglage de la communauté, indicatif).</dd>
+                    </div>
                     <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
                         <dt class="text-slate-500">Référence</dt>
                         <dd class="font-mono text-xs font-semibold text-slate-800">#<?= (int) ($enlistment['id'] ?? 0) ?></dd>
@@ -304,6 +377,50 @@ $tailwindHead = (string) ob_get_clean();
                     <?php endforeach; ?>
                 </ol>
             </div>
+
+            <?php if ($portalUploadsReady && $attachments !== []): ?>
+            <details class="portal-pj overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
+                <summary class="flex cursor-pointer items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-5 py-4 transition hover:bg-slate-100/90">
+                    <div class="min-w-0 text-left">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pièces jointes</p>
+                        <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= (int) $attachmentCount ?> fichier<?= (int) $attachmentCount > 1 ? 's' : '' ?> transmis · ouvrez pour voir la liste et télécharger.</p>
+                    </div>
+                    <svg class="portal-pj-chevron h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                </summary>
+                <ul class="max-h-[min(24rem,55vh)] divide-y divide-slate-100 overflow-y-auto overscroll-contain">
+                    <?php foreach ($attachments as $att): ?>
+                        <?php
+                        $aid = (int) ($att['id'] ?? 0);
+                        $fn = trim((string) ($att['original_name'] ?? '—'));
+                        $k = (string) ($att['kind'] ?? 'file');
+                        $sz = (int) ($att['size_bytes'] ?? 0);
+                        $when = trim((string) ($att['created_at'] ?? ''));
+                        $whenFmt = $when !== '' ? date('d/m/Y à H:i', strtotime($when) ?: time()) : '—';
+                        ?>
+                        <li class="flex gap-3 px-5 py-4">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600" aria-hidden="true" title="<?= $k === 'audio' ? 'Audio' : 'Document' ?>">
+                                <?php if ($k === 'audio'): ?>
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                                <?php else: ?>
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                <?php endif; ?>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="break-words font-semibold leading-snug text-slate-900"><?= htmlspecialchars($fn, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="mt-0.5 text-xs text-slate-500"><?= $k === 'audio' ? 'Enregistrement audio' : 'Document' ?> · <?= htmlspecialchars($fmtBytes($sz), ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($whenFmt, ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php if ($k === 'audio'): ?>
+                                    <div class="snap-shell mt-3 max-w-full rounded-2xl p-3 sm:max-w-md">
+                                        <p class="text-[10px] font-black uppercase tracking-wider text-white/90">Écoute rapide</p>
+                                        <audio controls preload="metadata" src="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid . '?inline=1'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 w-full rounded-lg"></audio>
+                                    </div>
+                                <?php endif; ?>
+                                <a href="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid . '/preparation'), ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 transition hover:bg-slate-50"><?= $k === 'audio' ? 'Télécharger l’audio' : 'Télécharger' ?></a>
+                            </div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </details>
+            <?php endif; ?>
         </aside>
 
         <div class="space-y-6 lg:col-span-8">
@@ -354,7 +471,13 @@ $tailwindHead = (string) ob_get_clean();
             <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="fil-messages">
                 <div class="border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4 sm:px-6">
                     <h2 id="fil-messages" class="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-400/95">Fil de messages</h2>
-                    <p class="mt-1 text-sm text-slate-300">Seuls vous et l’équipe recrutement de la communauté voyez ces échanges sur ce lien.</p>
+                    <p class="mt-1 text-sm text-slate-300"><?php if ($viewerIsCandidateParty): ?>
+                        Seuls vous et l’équipe recrutement de la communauté voyez ces échanges sur ce lien.
+                    <?php elseif ($pvMode === 'staff'): ?>
+                        Vue recruteur : à gauche, le <span class="font-semibold text-white">candidat</span> ; à droite, les messages <span class="font-semibold text-white">recrutement</span>. Rien n’est étiqueté « Vous » pour le candidat.
+                    <?php else: ?>
+                        Fil visible avec ce lien : le candidat à gauche, l’équipe recrutement à droite.
+                    <?php endif; ?></p>
                 </div>
                 <?php if ($pvMode === 'staff' && $pvLabel !== ''): ?>
                     <div class="border-b border-amber-100 bg-amber-50/95 px-5 py-3 sm:px-6">
@@ -370,7 +493,14 @@ $tailwindHead = (string) ob_get_clean();
                     <?php else: ?>
                         <?php foreach ($messages as $i => $m): ?>
                             <?php
-                            $isCandidate = ((string) ($m['entry_kind'] ?? '')) === 'candidate';
+                            $entryKind = (string) ($m['entry_kind'] ?? '');
+                            $msgIsStaff = ($entryKind === 'staff');
+                            $msgIsCandidate = !$msgIsStaff;
+                            if ($viewerIsCandidateParty) {
+                                $bubbleIsViewerSide = $msgIsCandidate;
+                            } else {
+                                $bubbleIsViewerSide = $msgIsStaff;
+                            }
                             $created = trim((string) ($m['created_at'] ?? ''));
                             $dt = $created !== '' ? date('d/m/Y à H:i', strtotime($created) ?: time()) : '—';
                             $bodyRaw = (string) ($m['body'] ?? '');
@@ -381,7 +511,7 @@ $tailwindHead = (string) ob_get_clean();
                             }
                             $statLine = null;
                             $bodyDisplay = $bodyRaw;
-                            if (!$isCandidate && preg_match('/^Statut\s*:\s*([^\r\n]+)/u', $bodyRaw, $mm)) {
+                            if (!$msgIsCandidate && preg_match('/^Statut\s*:\s*([^\r\n]+)/u', $bodyRaw, $mm)) {
                                 $statLine = trim((string) ($mm[1]));
                                 $bodyDisplay = trim(preg_replace('/^Statut\s*:\s*[^\r\n]+\s*/u', '', $bodyRaw) ?? $bodyRaw);
                             }
@@ -396,7 +526,7 @@ $tailwindHead = (string) ob_get_clean();
                             $hasAudioPlayer = $linkedIsAudio && $audioSrc !== '';
                             $actorName = '';
                             $actorInitials = 'RH';
-                            if (!$isCandidate) {
+                            if ($msgIsStaff) {
                                 $actorName = trim((string) ($m['actor_display_name'] ?? ''));
                                 if ($actorName === '') {
                                     $actorName = trim((string) ($m['actor_callsign'] ?? ''));
@@ -416,19 +546,47 @@ $tailwindHead = (string) ob_get_clean();
                                     }
                                 }
                             }
+                            $actorUserId = (int) ($m['actor_user_id'] ?? 0);
+                            $avatarLetters = $msgIsCandidate
+                                ? mb_substr($initials, 0, 2)
+                                : (($bubbleIsViewerSide && $pvUserId > 0 && $actorUserId === $pvUserId) ? $pvStaffInitials : $actorInitials);
                             ?>
-                            <div class="flex <?= $isCandidate ? 'justify-end' : 'justify-start' ?>">
-                                <div class="flex min-w-0 max-w-[min(100%,34rem)] gap-3 <?= $isCandidate ? 'flex-row-reverse' : 'flex-row' ?>">
-                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-black <?= $isCandidate ? 'bg-sky-600 text-white' : 'bg-emerald-600 text-white' ?>" aria-hidden="true">
-                                        <?= $isCandidate ? htmlspecialchars(mb_substr($initials, 0, 2), ENT_QUOTES, 'UTF-8') : htmlspecialchars(mb_substr($actorInitials, 0, 2), ENT_QUOTES, 'UTF-8') ?>
+                            <div class="flex <?= $bubbleIsViewerSide ? 'justify-end' : 'justify-start' ?>">
+                                <div class="flex min-w-0 max-w-[min(100%,34rem)] gap-3 <?= $bubbleIsViewerSide ? 'flex-row-reverse' : 'flex-row' ?>">
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-black <?= $bubbleIsViewerSide ? 'bg-sky-600 text-white' : 'bg-emerald-600 text-white' ?>" aria-hidden="true">
+                                        <?= htmlspecialchars(mb_substr($avatarLetters, 0, 2), ENT_QUOTES, 'UTF-8') ?>
                                     </div>
                                     <div class="min-w-0">
-                                        <div class="flex flex-wrap items-center gap-2 <?= $isCandidate ? 'justify-end' : 'justify-start' ?>">
-                                            <span class="text-[10px] font-black uppercase tracking-wider <?= $isCandidate ? 'text-sky-800' : 'text-emerald-900' ?>"><?php if ($isCandidate): ?>Vous<?php elseif ($actorName !== ''): ?>Recrutement<span class="ml-1 font-semibold normal-case text-slate-600">· <?= htmlspecialchars($actorName, ENT_QUOTES, 'UTF-8') ?></span><?php else: ?>Recrutement<?php endif; ?></span>
+                                        <div class="flex flex-wrap items-center gap-2 <?= $bubbleIsViewerSide ? 'justify-end' : 'justify-start' ?>">
+                                            <span class="text-[10px] font-black uppercase tracking-wider <?= $bubbleIsViewerSide ? 'text-sky-800' : 'text-emerald-900' ?>"><?php
+                                            if ($bubbleIsViewerSide) {
+                                                if ($viewerIsCandidateParty) {
+                                                    echo 'Vous';
+                                                } elseif ($pvUserId > 0 && $actorUserId === $pvUserId) {
+                                                    echo 'Vous';
+                                                    if ($pvLabel !== '') {
+                                                        echo '<span class="ml-1 font-semibold normal-case text-slate-600">· ' . htmlspecialchars($pvLabel, ENT_QUOTES, 'UTF-8') . '</span>';
+                                                    }
+                                                } elseif ($actorName !== '') {
+                                                    echo 'Recrutement<span class="ml-1 font-semibold normal-case text-slate-600">· ' . htmlspecialchars($actorName, ENT_QUOTES, 'UTF-8') . '</span>';
+                                                } else {
+                                                    echo 'Recrutement';
+                                                }
+                                            } elseif ($msgIsCandidate) {
+                                                echo 'Candidat';
+                                                if ($displayName !== '') {
+                                                    echo '<span class="ml-1 font-semibold normal-case text-slate-600">· ' . htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') . '</span>';
+                                                }
+                                            } elseif ($actorName !== '') {
+                                                echo 'Recrutement<span class="ml-1 font-semibold normal-case text-slate-600">· ' . htmlspecialchars($actorName, ENT_QUOTES, 'UTF-8') . '</span>';
+                                            } else {
+                                                echo 'Recrutement';
+                                            }
+                                            ?></span>
                                             <span class="text-[10px] font-semibold tabular-nums text-slate-400"><?= htmlspecialchars($dt, ENT_QUOTES, 'UTF-8') ?></span>
                                             <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-500">#<?= (int) $i + 1 ?></span>
                                         </div>
-                                        <div class="mt-1.5 max-w-full min-w-0 rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm <?= $isCandidate ? 'rounded-tr-sm border-sky-200 bg-sky-50 text-slate-900' : 'rounded-tl-sm border-emerald-200 bg-emerald-50/90 text-slate-900' ?>">
+                                        <div class="mt-1.5 max-w-full min-w-0 rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm <?= $bubbleIsViewerSide ? 'rounded-tr-sm border-sky-200 bg-sky-50 text-slate-900' : 'rounded-tl-sm border-emerald-200 bg-emerald-50/90 text-slate-900' ?>">
                                             <?php if ($statLine !== null && $statLine !== ''): ?>
                                                 <p class="mb-2 inline-flex flex-wrap items-center gap-2 text-xs font-bold text-emerald-950">
                                                     <span class="rounded-full bg-emerald-600/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-900">Mise à jour</span>
@@ -441,8 +599,8 @@ $tailwindHead = (string) ob_get_clean();
                                                 <div class="max-w-full whitespace-pre-wrap break-words text-[15px] text-slate-800 [overflow-wrap:anywhere]">—</div>
                                             <?php endif; ?>
                                             <?php if ($hasAudioPlayer): ?>
-                                                <div class="mt-3 max-w-full rounded-2xl border <?= $isCandidate ? 'border-sky-300/80 bg-sky-100/90' : 'border-emerald-300/80 bg-emerald-100/80' ?> p-3">
-                                                    <p class="mb-2 text-[10px] font-black uppercase tracking-wider <?= $isCandidate ? 'text-sky-900/90' : 'text-emerald-950/90' ?>">Lecture</p>
+                                                <div class="mt-3 max-w-full rounded-2xl border <?= $bubbleIsViewerSide ? 'border-sky-300/80 bg-sky-100/90' : 'border-emerald-300/80 bg-emerald-100/80' ?> p-3">
+                                                    <p class="mb-2 text-[10px] font-black uppercase tracking-wider <?= $bubbleIsViewerSide ? 'text-sky-900/90' : 'text-emerald-950/90' ?>">Lecture</p>
                                                     <audio controls preload="metadata" src="<?= $audioSrc ?>" class="w-full max-w-full rounded-lg"></audio>
                                                 </div>
                                             <?php elseif ($linkedPieceId !== null && $linkedPieceId > 0 && is_array($linkedAtt)): ?>
@@ -499,47 +657,6 @@ $tailwindHead = (string) ob_get_clean();
                 <div class="border-t border-white/25 bg-slate-950 px-4 py-3.5 text-center">
                     <p class="text-xs font-medium leading-relaxed text-slate-100">Après l’envoi, l’équipe reçoit la même alerte e-mail que pour un message écrit.</p>
                 </div>
-            </section>
-            <?php endif; ?>
-
-            <?php if ($portalUploadsReady && $attachments !== []): ?>
-            <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="liste-pieces">
-                <div class="border-b border-slate-100 bg-slate-50 px-5 py-4 sm:px-6">
-                    <h2 id="liste-pieces" class="text-xs font-black uppercase tracking-wider text-slate-700">Vos pièces jointes</h2>
-                    <p class="mt-1 text-sm text-slate-600">Fichiers déjà transmis. Vous pouvez les télécharger à tout moment tant que ce lien reste valide.</p>
-                </div>
-                <ul class="divide-y divide-slate-100">
-                    <?php foreach ($attachments as $att): ?>
-                        <?php
-                        $aid = (int) ($att['id'] ?? 0);
-                        $fn = trim((string) ($att['original_name'] ?? '—'));
-                        $k = (string) ($att['kind'] ?? 'file');
-                        $sz = (int) ($att['size_bytes'] ?? 0);
-                        $when = trim((string) ($att['created_at'] ?? ''));
-                        $whenFmt = $when !== '' ? date('d/m/Y à H:i', strtotime($when) ?: time()) : '—';
-                        ?>
-                        <li class="flex gap-3 px-5 py-4 sm:px-6">
-                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600" aria-hidden="true" title="<?= $k === 'audio' ? 'Audio' : 'Document' ?>">
-                                <?php if ($k === 'audio'): ?>
-                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                                <?php else: ?>
-                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                <?php endif; ?>
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="font-semibold leading-snug text-slate-900 break-words"><?= htmlspecialchars($fn, ENT_QUOTES, 'UTF-8') ?></p>
-                                <p class="mt-0.5 text-xs text-slate-500"><?= $k === 'audio' ? 'Enregistrement audio' : 'Document' ?> · <?= htmlspecialchars($fmtBytes($sz), ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($whenFmt, ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php if ($k === 'audio'): ?>
-                                    <div class="snap-shell mt-3 max-w-md rounded-2xl p-4">
-                                        <p class="text-[10px] font-black uppercase tracking-wider text-white/90">Écoute rapide</p>
-                                        <audio controls preload="metadata" src="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid . '?inline=1'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 w-full rounded-lg"></audio>
-                                    </div>
-                                <?php endif; ?>
-                                <a href="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid . '/preparation'), ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 transition hover:bg-slate-50"><?= $k === 'audio' ? 'Télécharger l’audio' : 'Télécharger' ?></a>
-                            </div>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
             </section>
             <?php endif; ?>
 

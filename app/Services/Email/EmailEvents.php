@@ -34,6 +34,8 @@ final class EmailEvents
     public const RECRUITMENT_OPENING_PUBLISHED_STAFF = 'RECRUITMENT_OPENING_PUBLISHED_STAFF';
     /** Message envoyé par le candidat depuis le portail de suivi — alerte recrutement / RH. */
     public const ENLISTMENT_PORTAL_CANDIDATE_REPLY_STAFF = 'ENLISTMENT_PORTAL_CANDIDATE_REPLY_STAFF';
+    /** Réponse ou activité recrutement sur le portail de suivi — information au candidat (adresse du dossier). */
+    public const ENLISTMENT_PORTAL_UPDATE_CANDIDATE = 'ENLISTMENT_PORTAL_UPDATE_CANDIDATE';
     /** Modération automatique sur le portail candidat / recrutement — alerte aux parties concernées. */
     public const ENLISTMENT_PORTAL_AUTOMOD_ALERT = 'ENLISTMENT_PORTAL_AUTOMOD_ALERT';
 
@@ -126,6 +128,7 @@ final class EmailEvents
         self::ENLISTMENT_ACCEPTED_STAFF,
         self::RECRUITMENT_OPENING_PUBLISHED_STAFF,
         self::ENLISTMENT_PORTAL_CANDIDATE_REPLY_STAFF,
+        self::ENLISTMENT_PORTAL_UPDATE_CANDIDATE,
         self::ENLISTMENT_PORTAL_AUTOMOD_ALERT,
         self::TRAINING_ENROLLMENT_ASSIGNED,
         self::TRAINING_COURSE_COMPLETED,

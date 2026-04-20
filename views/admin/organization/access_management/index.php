@@ -22,7 +22,7 @@ $activeTab = $activeTab ?? 'roles';
         <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 class="text-lg font-bold text-slate-900">Créer / éditer rôle</h2>
             <form method="post" action="<?= url('back-office/access-management/roles/save') ?>" class="mt-4 space-y-3">
-                <?= csrf_field() ?>
+                <?= \App\Core\Csrf::field() ?>
                 <input name="name" class="w-full rounded border border-slate-300 px-3 py-2" placeholder="Nom" required>
                 <input name="slug" class="w-full rounded border border-slate-300 px-3 py-2" placeholder="Slug" required>
                 <input name="level" type="number" class="w-full rounded border border-slate-300 px-3 py-2" placeholder="Niveau hiérarchique">
@@ -52,7 +52,7 @@ $activeTab = $activeTab ?? 'roles';
         <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 class="text-lg font-bold text-slate-900">Builder “Si → Alors”</h2>
             <form method="post" action="<?= url('back-office/access-management/rules/save') ?>" class="mt-4 grid gap-3">
-                <?= csrf_field() ?>
+                <?= \App\Core\Csrf::field() ?>
                 <input name="name" class="rounded border border-slate-300 px-3 py-2" placeholder="Nom de règle" required>
                 <textarea name="description" class="rounded border border-slate-300 px-3 py-2" placeholder="Description"></textarea>
                 <div class="grid grid-cols-2 gap-2">

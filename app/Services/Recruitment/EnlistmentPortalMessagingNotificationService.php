@@ -173,6 +173,48 @@ final class EnlistmentPortalMessagingNotificationService
      * @param array<string, mixed> $enlistment
      * @param array<string, mixed>|null $tenantRow
      */
+    /**
+     * Courriel au candidat : réponse ou pièce déposée par le recrutement sur le portail de suivi.
+     *
+     * @param 'message'|'upload_file'|'upload_audio' $activityKind
+     */
+    public function notifyCandidateOfStaffPortalUpdate(
+        int $tenantId,
+        string $tenantName,
+        string $candidateEmail,
+        string $portalUrl,
+        string $activityKind,
+        string $excerpt,
+        ?string $stepBeforeLabel,
+        ?string $stepAfterLabel,
+        int $enlistmentId,
+    ): void {
+        $to = strtolower(trim($candidateEmail));
+        if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+        $activityKind = in_array($activityKind, ['message', 'upload_file', 'upload_audio'], true) ? $activityKind : 'message';
+        $excerpt = trim($excerpt);
+        if (mb_strlen($excerpt) > 900) {
+            $excerpt = mb_substr($excerpt, 0, 897) . '…';
+        }
+        $tenantName = trim($tenantName) !== '' ? trim($tenantName) : 'Communauté';
+        try {
+            $this->emailService->sendEnlistmentPortalUpdateCandidate(
+                $to,
+                $tenantName,
+                $portalUrl,
+                $activityKind,
+                $excerpt,
+                $stepBeforeLabel,
+                $stepAfterLabel,
+                $tenantId,
+                $enlistmentId
+            );
+        } catch (\Throwable) {
+        }
+    }
+
     public function notifyStaffOfCandidatePortalUpload(int $tenantId, string $tenantName, array $enlistment, string $kind, string $originalName, ?array $tenantRow = null, bool $fromStaffViewer = false): void
     {
         $isAudio = $kind === 'audio';

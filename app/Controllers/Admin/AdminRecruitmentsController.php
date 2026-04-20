@@ -264,6 +264,7 @@ class AdminRecruitmentsController
             'showPortalFooter' => false,
             'candidatePortalAttachments' => $candidatePortalAttachments,
             'candidatePortalUploadsReady' => $this->enlistmentRepository->candidatePortalUploadsReady(),
+            'portalStatusDisplayReady' => $this->enlistmentRepository->hasPortalStatusDisplayColumns(),
             'assigneeDisplayName' => $assigneeDisplayName,
             'recruiterPicksDisplay' => $recruiterPicksDisplay,
             'userHasRecruiterPick' => $userHasRecruiterPick,
@@ -476,10 +477,53 @@ class AdminRecruitmentsController
         $allowAudio = (string) $request->input('candidate_portal_allow_audio', '0') === '1';
         $prevFiles = !empty($row['candidate_portal_allow_files']);
         $prevAudio = !empty($row['candidate_portal_allow_audio']);
-        $ok = $this->enlistmentRepository->updateCandidatePortalOptions((int) $tenantId, $id, $allowFiles, $allowAudio);
+        $hasStatusCols = $this->enlistmentRepository->hasPortalStatusDisplayColumns();
+        $statusMode = 'steps';
+        $manualText = '';
+        $manualBand = 'amber';
+        if ($hasStatusCols) {
+            $statusMode = (string) $request->input('candidate_portal_status_mode', 'steps') === 'manual' ? 'manual' : 'steps';
+            $manualText = trim((string) $request->input('candidate_portal_status_manual_text', ''));
+            $bandRaw = strtolower(trim((string) $request->input('candidate_portal_status_manual_band', 'amber')));
+            $manualBand = in_array($bandRaw, ['amber', 'emerald', 'rose', 'slate', 'sky'], true) ? $bandRaw : 'amber';
+            if ($statusMode === 'manual') {
+                if ($manualText === '') {
+                    Session::flash('error', 'En mode libellé personnalisé, saisissez le texte affiché sur le portail candidat.');
+
+                    return Response::redirect($this->recruitmentDossierShowUrl($id));
+                }
+                if (mb_strlen($manualText) > 280) {
+                    Session::flash('error', 'Texte du statut trop long (280 caractères maximum).');
+
+                    return Response::redirect($this->recruitmentDossierShowUrl($id));
+                }
+            }
+        }
+        $prevMode = $hasStatusCols ? trim((string) ($row['candidate_portal_status_mode'] ?? 'steps')) : 'steps';
+        if ($prevMode !== 'manual') {
+            $prevMode = 'steps';
+        }
+        $prevManual = $hasStatusCols ? trim((string) ($row['candidate_portal_status_manual_text'] ?? '')) : '';
+        $prevBand = $hasStatusCols ? strtolower(trim((string) ($row['candidate_portal_status_manual_band'] ?? 'amber'))) : 'amber';
+        if (!in_array($prevBand, ['amber', 'emerald', 'rose', 'slate', 'sky'], true)) {
+            $prevBand = 'amber';
+        }
+        $statusUiChanged = $hasStatusCols && (
+            $prevMode !== $statusMode
+            || ($statusMode === 'manual' && ($prevManual !== $manualText || $prevBand !== $manualBand))
+        );
+        $ok = $this->enlistmentRepository->updateCandidatePortalOptions(
+            (int) $tenantId,
+            $id,
+            $allowFiles,
+            $allowAudio,
+            $statusMode,
+            $statusMode === 'manual' ? $manualText : '',
+            $manualBand,
+        );
+        $actorId = (int) Session::get('user_id');
         if ($ok && $this->enlistmentTimelineRepository->tableExists()
             && ($prevFiles !== $allowFiles || $prevAudio !== $allowAudio)) {
-            $actorId = (int) Session::get('user_id');
             $lines = [
                 'Pièces jointes (envoi depuis le portail) : ' . ($allowFiles ? 'autorisées' : 'désactivées') . '.',
                 'Messages audio : ' . ($allowAudio ? 'autorisés' : 'désactivés') . '.',
@@ -493,6 +537,34 @@ class AdminRecruitmentsController
                 implode("\n", $lines),
                 $actorId > 0 ? $actorId : null,
                 ['timeline_family' => 'portal_options'],
+                null
+            );
+        }
+        if ($ok && $this->enlistmentTimelineRepository->tableExists() && $statusUiChanged) {
+            $bandFr = [
+                'amber' => 'ambre',
+                'emerald' => 'vert',
+                'rose' => 'rose',
+                'slate' => 'gris ardoise',
+                'sky' => 'bleu ciel',
+            ];
+            $lines = [
+                'Affichage du statut sur le portail : ' . ($statusMode === 'manual' ? 'libellé personnalisé' : 'aligné sur l’étape du parcours') . '.',
+            ];
+            if ($statusMode === 'manual') {
+                $preview = mb_strlen($manualText) > 220 ? mb_substr($manualText, 0, 217) . '…' : $manualText;
+                $lines[] = 'Texte : « ' . $preview . ' ».';
+                $lines[] = 'Bande de couleur : ' . ($bandFr[$manualBand] ?? $manualBand) . '.';
+            }
+            $this->enlistmentTimelineRepository->append(
+                (int) $tenantId,
+                $id,
+                'system',
+                'portal',
+                'Statut affiché sur le portail candidat',
+                implode("\n", $lines),
+                $actorId > 0 ? $actorId : null,
+                ['timeline_family' => 'portal_status_display'],
                 null
             );
         }
@@ -582,7 +654,7 @@ class AdminRecruitmentsController
             return Response::redirect(url('back-office/recruitments'));
         }
         $step = trim((string) $request->input('timeline_step', 'general'));
-        $allowedSteps = ['reception', 'instruction', 'suivi', 'decision', 'adhesion', 'portal', 'communication', 'general'];
+        $allowedSteps = ['reception', 'portal_moderation_filter', 'portal_moderation_incident', 'instruction', 'suivi', 'decision', 'adhesion', 'portal', 'communication', 'general'];
         if (!in_array($step, $allowedSteps, true)) {
             $step = 'general';
         }
@@ -1292,9 +1364,14 @@ class AdminRecruitmentsController
         return Response::redirect($this->recruitmentDossierShowUrl($id));
     }
 
-    private function recruitmentDossierShowUrl(int $enlistmentId): string
+    private function recruitmentDossierShowUrl(int $enlistmentId, ?string $fragment = null): string
     {
-        return url('back-office/recruitments/' . $enlistmentId . '?dossier=1');
+        $base = url('back-office/recruitments/' . $enlistmentId . '?dossier=1');
+        if ($fragment !== null && $fragment !== '') {
+            return $base . '#' . ltrim($fragment, '#');
+        }
+
+        return $base;
     }
 
     /**

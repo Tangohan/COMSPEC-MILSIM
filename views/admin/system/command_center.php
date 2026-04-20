@@ -72,7 +72,7 @@ $pages = max(1, (int) ceil($total / $perPage));
                             <p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars((string) ($row['action_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?> — #<?= (int) ($row['id'] ?? 0) ?></p>
                             <p class="text-xs text-slate-500 mt-1"><?= htmlspecialchars((string) ($row['created_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars((string) ($row['actor_email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                             <form method="post" action="<?= url('admin/undo/' . (int) ($row['id'] ?? 0)) ?>" class="mt-2 flex gap-2">
-                                <?= csrf_field() ?>
+                                <?= \App\Core\Csrf::field() ?>
                                 <input type="text" name="reason" required maxlength="255" placeholder="Motif d'annulation" class="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
                                 <button type="submit" class="rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-bold text-white">Annuler</button>
                             </form>

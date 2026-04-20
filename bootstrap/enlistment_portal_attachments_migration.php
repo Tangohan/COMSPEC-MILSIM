@@ -31,6 +31,28 @@ return function (PDO $pdo): void {
         }
     }
 
+    if (!$hasCol($pdo, 'candidate_portal_status_mode')) {
+        try {
+            $pdo->exec("ALTER TABLE enlistments ADD COLUMN candidate_portal_status_mode VARCHAR(16) NOT NULL DEFAULT 'steps'");
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] candidate_portal_status_mode : ' . $e->getMessage() . "\n";
+        }
+    }
+    if (!$hasCol($pdo, 'candidate_portal_status_manual_text')) {
+        try {
+            $pdo->exec('ALTER TABLE enlistments ADD COLUMN candidate_portal_status_manual_text VARCHAR(280) NULL DEFAULT NULL');
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] candidate_portal_status_manual_text : ' . $e->getMessage() . "\n";
+        }
+    }
+    if (!$hasCol($pdo, 'candidate_portal_status_manual_band')) {
+        try {
+            $pdo->exec("ALTER TABLE enlistments ADD COLUMN candidate_portal_status_manual_band VARCHAR(16) NOT NULL DEFAULT 'amber'");
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] candidate_portal_status_manual_band : ' . $e->getMessage() . "\n";
+        }
+    }
+
     $st = $pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistment_candidate_attachments' LIMIT 1");
     if ($st && (bool) $st->fetchColumn()) {
         return;

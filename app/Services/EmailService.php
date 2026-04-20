@@ -516,6 +516,43 @@ final class EmailService
     /**
      * Réponse du candidat sur le portail de suivi — notification équipe recrutement.
      */
+    /**
+     * @param 'message'|'upload_file'|'upload_audio' $activityKind
+     */
+    public function sendEnlistmentPortalUpdateCandidate(
+        string $to,
+        string $tenantName,
+        string $portalUrl,
+        string $activityKind,
+        string $excerpt,
+        ?string $stepBeforeLabel,
+        ?string $stepAfterLabel,
+        int $tenantId,
+        int $enlistmentId
+    ): bool {
+        $stepBeforeLabel = $stepBeforeLabel !== null ? trim($stepBeforeLabel) : '';
+        $stepAfterLabel = $stepAfterLabel !== null ? trim($stepAfterLabel) : '';
+
+        return $this->sendTemplated(
+            EmailEvents::ENLISTMENT_PORTAL_UPDATE_CANDIDATE,
+            'enlistment_portal_update_candidate',
+            $to,
+            'Nouvelle activité sur votre candidature — ' . $tenantName,
+            [
+                'tenantName' => $tenantName,
+                'portalUrl' => $portalUrl,
+                'activityKind' => $activityKind,
+                'excerpt' => $excerpt,
+                'stepBeforeLabel' => $stepBeforeLabel,
+                'stepAfterLabel' => $stepAfterLabel,
+                'enlistmentId' => $enlistmentId,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'enlistment_portal_candidate_update', 'enlistment_id' => $enlistmentId, 'kind' => $activityKind]
+        );
+    }
+
     public function sendEnlistmentPortalCandidateReplyStaffNotify(
         string $to,
         string $tenantName,

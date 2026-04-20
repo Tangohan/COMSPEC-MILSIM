@@ -99,14 +99,23 @@ $timelineActorLabels = is_array($enlistmentTimelineActorLabels ?? null) ? $enlis
 $timelineTableMissing = !empty($enlistmentTimelineTableMissing);
 $timelineStepLabels = [
     'reception' => 'Réception du dossier',
+    'portal_moderation_filter' => 'Contrôle automatique (portail)',
+    'portal_moderation_incident' => 'Modération et suites d’incident',
     'instruction' => 'Instruction et arbitrage',
     'suivi' => 'Suivi, pièces et messages',
     'decision' => 'Décision',
     'adhesion' => 'Rattachement au compte membre',
-    'general' => 'Commentaire général',
-    'portal' => 'Portail candidat',
-    'communication' => 'Échanges avec le candidat',
+    'general' => 'Commentaire général (aucune étape précise)',
+    'portal' => 'Portail candidat (technique, pièces, paramètres)',
+    'communication' => 'Échanges avec le candidat (fil de messagerie)',
 ];
+
+$portalJourneyStepsForNotes = is_array($portalJourneyStepsForNotes ?? null) ? $portalJourneyStepsForNotes : [];
+$timelineNoteSuggestedStep = trim((string) ($timelineNoteSuggestedStep ?? 'general'));
+$allowedNoteSteps = ['reception', 'portal_moderation_filter', 'portal_moderation_incident', 'instruction', 'suivi', 'decision', 'adhesion', 'portal', 'communication', 'general'];
+if ($timelineNoteSuggestedStep === '' || !in_array($timelineNoteSuggestedStep, $allowedNoteSteps, true)) {
+    $timelineNoteSuggestedStep = 'general';
+}
 
 $linkedRo = is_array($linkedRecruitmentOpening ?? null) ? $linkedRecruitmentOpening : null;
 $submitterId = (int) ($e['submitter_user_id'] ?? 0);
@@ -120,8 +129,13 @@ foreach ($candidatePortalAttachments as $pa) {
     }
 }
 $candidatePortalUploadsReady = !empty($candidatePortalUploadsReady);
+$portalStatusDisplayReady = !empty($portalStatusDisplayReady);
 $portalAllowFiles = !empty($e['candidate_portal_allow_files']);
 $portalAllowAudio = !empty($e['candidate_portal_allow_audio']);
+$portalStatusModeForm = ((string) ($e['candidate_portal_status_mode'] ?? 'steps')) === 'manual' ? 'manual' : 'steps';
+$portalStatusManualText = trim((string) ($e['candidate_portal_status_manual_text'] ?? ''));
+$portalStatusBandRaw = strtolower(trim((string) ($e['candidate_portal_status_manual_band'] ?? 'amber')));
+$portalStatusManualBandForm = in_array($portalStatusBandRaw, ['amber', 'emerald', 'rose', 'slate', 'sky'], true) ? $portalStatusBandRaw : 'amber';
 $candidatePortalSuiviUrl = isset($candidatePortalSuiviUrl) && is_string($candidatePortalSuiviUrl) && $candidatePortalSuiviUrl !== '' ? $candidatePortalSuiviUrl : null;
 $candidatePortalSuiviExpiresFmt = isset($candidatePortalSuiviExpiresFmt) && is_string($candidatePortalSuiviExpiresFmt) && $candidatePortalSuiviExpiresFmt !== '' ? $candidatePortalSuiviExpiresFmt : null;
 $dossierPortalEmailBlocked = !empty($dossierPortalEmailBlocked);
@@ -545,6 +559,52 @@ $recapMeta = match ($statusRaw) {
                                     </span>
                                 </label>
                             </div>
+                            <?php if ($portalStatusDisplayReady): ?>
+                                <div class="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
+                                    <p class="text-sm font-bold text-stone-900">Statut visible sur le portail candidat</p>
+                                    <p class="mt-2 text-xs leading-relaxed text-stone-600">Choisissez si le bandeau reprend automatiquement l’étape du parcours (colonne de gauche du suivi) ou un libellé fixe de votre choix. Le référent du dossier et le délai de réponse visé s’affichent aussi côté candidat.</p>
+                                    <div class="mt-4 space-y-3">
+                                        <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-stone-200 bg-[#faf8f3] p-3 transition hover:border-stone-300">
+                                            <input type="radio" name="candidate_portal_status_mode" value="steps" class="mt-1 h-4 w-4 border-stone-400 text-[#1c2d41]" <?= $portalStatusModeForm === 'steps' ? 'checked' : '' ?>>
+                                            <span>
+                                                <span class="block text-sm font-bold text-stone-900">Aligné sur les étapes</span>
+                                                <span class="mt-0.5 block text-xs leading-relaxed text-stone-600">Le titre principal reprend l’étape en cours ; le statut métier du dossier apparaît en sous-texte.</span>
+                                            </span>
+                                        </label>
+                                        <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-stone-200 bg-[#faf8f3] p-3 transition hover:border-stone-300">
+                                            <input type="radio" name="candidate_portal_status_mode" value="manual" class="mt-1 h-4 w-4 border-stone-400 text-[#1c2d41]" <?= $portalStatusModeForm === 'manual' ? 'checked' : '' ?>>
+                                            <span>
+                                                <span class="block text-sm font-bold text-stone-900">Libellé personnalisé</span>
+                                                <span class="mt-0.5 block text-xs leading-relaxed text-stone-600">Vous rédigez le message principal et choisissez la couleur du bandeau (utile pour une consigne locale).</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <div class="mt-4 space-y-2">
+                                        <label for="candidate_portal_status_manual_text" class="block text-[11px] font-bold uppercase tracking-wide text-stone-500">Texte affiché (mode personnalisé)</label>
+                                        <textarea id="candidate_portal_status_manual_text" name="candidate_portal_status_manual_text" rows="2" maxlength="280" class="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"><?= htmlspecialchars($portalStatusManualText, ENT_QUOTES, 'UTF-8') ?></textarea>
+                                        <p class="text-[11px] text-stone-500">Obligatoire uniquement si « Libellé personnalisé » est coché. 280 caractères maximum.</p>
+                                    </div>
+                                    <div class="mt-4">
+                                        <label for="candidate_portal_status_manual_band" class="block text-[11px] font-bold uppercase tracking-wide text-stone-500">Couleur du bandeau</label>
+                                        <select id="candidate_portal_status_manual_band" name="candidate_portal_status_manual_band" class="mt-1 w-full max-w-md rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500">
+                                            <?php
+                                            $bandOpts = [
+                                                'amber' => 'Ambre — en cours / attention modérée',
+                                                'emerald' => 'Vert — message plutôt positif',
+                                                'rose' => 'Rose — refus ou point bloquant',
+                                                'slate' => 'Gris — neutre',
+                                                'sky' => 'Bleu ciel — information',
+                                            ];
+                                            foreach ($bandOpts as $val => $lab):
+                                                ?>
+                                            <option value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>" <?= $portalStatusManualBandForm === $val ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <p class="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Le choix entre statut automatique et libellé personnalisé n’est pas encore disponible sur cette installation. Une mise à jour technique côté serveur est nécessaire.</p>
+                            <?php endif; ?>
                             <button type="submit" class="recruitment-lms-submit-primary inline-flex min-h-[2.75rem] items-center justify-center rounded-xl px-6 text-sm font-bold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:ring-offset-2">Enregistrer les options</button>
                         </form>
                     <?php endif; ?>
@@ -965,7 +1025,7 @@ $recapMeta = match ($statusRaw) {
                         <p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Traçabilité</p>
                         <h2 id="journal-dossier-heading" class="mt-2 text-xl font-black tracking-tight">Chronologie d’instruction</h2>
                         <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
-                            Événements du dossier, messages laissés depuis le suivi candidat, pièces déposées, notifications à l’équipe et notes internes. Le formulaire en bas de page n’envoie rien au candidat.
+                            Événements du dossier, messages laissés depuis le suivi candidat, pièces déposées, notifications à l’équipe et notes internes. La liste va de la plus ancienne à la plus récente : faites défiler jusqu’en bas pour voir les derniers ajouts. Le formulaire en bas de page n’envoie rien au candidat.
                         </p>
                     </div>
                     <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left">
@@ -1087,25 +1147,51 @@ $recapMeta = match ($statusRaw) {
                         <div class="mb-5 border-b border-slate-200 pb-4">
                             <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">Saisie interne</p>
                             <h3 class="mt-1 text-lg font-black tracking-tight text-slate-950">Ajouter une note sur une étape</h3>
-                            <p class="mt-1 text-sm text-slate-600">Visible uniquement dans ce dossier (pas envoyée au candidat).</p>
+                            <p class="mt-1 text-sm text-slate-600">
+                                Les options du groupe « Parcours » reprennent <strong class="font-semibold text-slate-800">exactement les titres du portail candidat</strong> (colonne de gauche sur le lien de suivi, y compris les étapes de modération). Le second groupe sert à classer une remarque transverse dans le journal.
+                            </p>
+                            <ul class="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-600">
+                                <li><strong class="font-semibold text-slate-800">Où c’est visible :</strong> dans la zone « Chronologie d’instruction » sur <strong class="font-semibold text-slate-800">cette page</strong>, avec le badge « Note interne » et le nom de l’étape ; la note se place en <strong class="font-semibold text-slate-800">bas de liste</strong> (ordre chronologique du plus ancien au plus récent).</li>
+                                <li><strong class="font-semibold text-slate-800">Où ce n’est pas visible :</strong> jamais sur le lien de suivi candidat, jamais par e-mail automatique au candidat.</li>
+                            </ul>
                         </div>
                         <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/timeline-comment'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-5">
                             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
-                            <div class="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
+                            <div class="grid gap-5 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
                                 <div>
                                     <label for="timeline_step" class="mb-2 block text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Étape concernée</label>
-                                    <select id="timeline_step" name="timeline_step" class="<?= htmlspecialchars(bo_select_class('w-full rounded-2xl border-slate-300 text-sm font-semibold text-slate-900'), ENT_QUOTES, 'UTF-8') ?>">
-                                        <?php foreach (['reception', 'instruction', 'suivi', 'decision', 'adhesion', 'portal', 'communication', 'general'] as $code): ?>
-                                            <?php if (!isset($timelineStepLabels[$code])) {
-                                                continue;
-                                            } ?>
-                                            <option value="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $timelineStepLabels[$code], ENT_QUOTES, 'UTF-8') ?></option>
-                                        <?php endforeach; ?>
+                                    <select id="timeline_step" name="timeline_step" size="14" class="<?= htmlspecialchars(bo_select_class('w-full rounded-2xl border-slate-300 text-sm font-semibold text-slate-900 min-h-[14rem] py-1'), ENT_QUOTES, 'UTF-8') ?>">
+                                        <optgroup label="Parcours (comme sur le portail candidat)">
+                                            <?php foreach ($portalJourneyStepsForNotes as $idx => $st): ?>
+                                                <?php
+                                                if (!is_array($st)) {
+                                                    continue;
+                                                }
+                                                $sid = trim((string) ($st['id'] ?? ''));
+                                                if ($sid === '' || !isset($timelineStepLabels[$sid])) {
+                                                    continue;
+                                                }
+                                                $ord = (int) $idx + 1;
+                                                $hintOpt = trim((string) ($st['hint'] ?? ''));
+                                                $titleOpt = $hintOpt !== '' ? $ord . ' · ' . (string) $timelineStepLabels[$sid] . ' — ' . $hintOpt : $ord . ' · ' . (string) $timelineStepLabels[$sid];
+                                                ?>
+                                                <option value="<?= htmlspecialchars($sid, ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($titleOpt, ENT_QUOTES, 'UTF-8') ?>"<?= $timelineNoteSuggestedStep === $sid ? ' selected' : '' ?>><?= (int) $ord ?> · <?= htmlspecialchars((string) $timelineStepLabels[$sid], ENT_QUOTES, 'UTF-8') ?></option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                        <optgroup label="Autres étiquettes (journal interne)">
+                                            <?php foreach (['portal', 'communication', 'general'] as $code): ?>
+                                                <?php if (!isset($timelineStepLabels[$code])) {
+                                                    continue;
+                                                } ?>
+                                                <option value="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars((string) $timelineStepLabels[$code], ENT_QUOTES, 'UTF-8') ?>"<?= $timelineNoteSuggestedStep === $code ? ' selected' : '' ?>><?= htmlspecialchars((string) $timelineStepLabels[$code], ENT_QUOTES, 'UTF-8') ?></option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
                                     </select>
+                                    <p class="mt-2 text-xs leading-relaxed text-slate-500">Astuce : la ligne pré-sélectionnée correspond à l’<strong class="font-semibold text-slate-700">étape en cours</strong> sur le portail candidat (selon l’état du dossier et les échanges).</p>
                                 </div>
                                 <div>
                                     <label for="timeline_body" class="mb-2 block text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Commentaire</label>
-                                    <textarea id="timeline_body" name="timeline_body" rows="5" required maxlength="8000" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10" placeholder="Consignes, rappel d’échange, point de vigilance…"></textarea>
+                                    <textarea id="timeline_body" name="timeline_body" rows="5" required maxlength="8000" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 min-h-[11.5rem]" placeholder="Consignes, rappel d’échange, point de vigilance…"></textarea>
                                 </div>
                             </div>
                             <div class="flex justify-end pt-2">
