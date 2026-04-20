@@ -255,6 +255,7 @@ return [
                     'links' => [
                         ['label' => 'Organisation des effectifs', 'path' => 'back-office/organisation-effectifs', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Vue d’ensemble : rôles communauté, grades, structure, rôles métier.'],
                         ['label' => 'Rôles et droits (communauté)', 'path' => 'back-office/roles', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Gestion des accès (RBAC+ABAC)', 'path' => 'back-office/access-management', 'any_permissions' => ['admin.organization', 'admin.access', 'admin.access.manage']],
                         ['label' => 'Grades', 'path' => 'back-office/referentiels/grades', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Rôles métier (référentiel)', 'path' => 'back-office/personnel-job-roles', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Attributions rôles métier', 'path' => 'back-office/personnel-job-roles/assignments', 'any_permissions' => ['admin.organization', 'admin.access']],
@@ -420,6 +421,7 @@ return [
                         ['label' => 'Utilisateurs', 'path' => 'back-office/users', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Organisation des effectifs', 'path' => 'back-office/organisation-effectifs', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Rôles et droits (communauté)', 'path' => 'back-office/roles', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        ['label' => 'Gestion des accès (RBAC+ABAC)', 'path' => 'back-office/access-management', 'any_permissions' => ['admin.organization', 'admin.access', 'admin.access.manage']],
                         ['label' => 'Raccourcis dashboard', 'path' => 'back-office/dashboard-pins', 'any_permissions' => ['dashboard.pins.manage']],
                         ['label' => 'Profils permissions (rôles)', 'path' => 'back-office/roles/presets', 'any_permissions' => ['admin.organization', 'admin.roles.manage', 'admin.permissions.manage']],
                         ['label' => 'Rôles & fonctions (toile)', 'path' => 'back-office/roles-functions', 'any_permissions' => ['admin.organization', 'admin.roles.manage', 'admin.permissions.manage']],
