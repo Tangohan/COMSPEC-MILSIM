@@ -56,6 +56,17 @@
           <li><a class="font-semibold text-emerald-800 underline" href="<?= htmlspecialchars(url('personnel/me/edit')) ?>">Éditer le dossier</a> — bloc Forum &amp; visibilité.</li>
         </ul>
       </section>
+
+      <section class="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-6 shadow-sm">
+        <h2 class="mt-0 text-lg font-black uppercase tracking-wide text-emerald-950">7. Check-list de validation (rapide)</h2>
+        <ol class="mb-0 list-decimal space-y-2 pl-5">
+          <li>Je renseigne mon identité RP (nom personnage) et mon matricule.</li>
+          <li>Je sélectionne mon unité ORBAT et je complète mon rôle principal.</li>
+          <li>Je vérifie mes options <strong>Forum &amp; visibilité</strong> selon ce que je veux afficher.</li>
+          <li>Je termine les champs de sécurité (clearance, disponibilité, statut) pour éviter les alertes de complétude.</li>
+          <li>Je valide puis je relis ma fiche publique dans <a class="font-semibold text-emerald-900 underline" href="<?= htmlspecialchars(url('personnel/me')) ?>">Ma fiche</a>.</li>
+        </ol>
+      </section>
     </article>
   </div>
 </div>
