@@ -167,8 +167,18 @@ class TrainingController
         $category = $request->query('category');
         $search = $request->query('search');
         $filterParcours = trim((string) $request->query('parcours', ''));
+        $filterLevel = trim((string) $request->query('niveau', ''));
+        $filterDuration = trim((string) $request->query('duree', ''));
+        $filterModality = trim((string) $request->query('modalite', ''));
+        $filterAvailability = trim((string) $request->query('disponibilite', ''));
         if (!in_array($filterParcours, ['', 'communaute', 'plateforme'], true)) {
             $filterParcours = '';
+        }
+        if (!in_array($filterDuration, ['', 'court', 'moyen', 'long'], true)) {
+            $filterDuration = '';
+        }
+        if (!in_array($filterAvailability, ['', 'ouvert', 'non_commence', 'en_cours', 'termine'], true)) {
+            $filterAvailability = '';
         }
         $courses = $this->trainingService->getCatalogue($tenantId, $userId ? (int) $userId : null, $category, $search);
         if ($filterParcours === 'communaute') {
@@ -182,6 +192,52 @@ class TrainingController
                 static fn (array $c): bool => (string) ($c['lms_scope'] ?? '') === TrainingCourseRepository::LMS_SCOPE_PLATFORM
             ));
         }
+        $courseLevelValue = static fn (array $c): string => strtolower(trim((string) ($c['level'] ?? '')));
+        if ($filterLevel !== '') {
+            $courses = array_values(array_filter($courses, static function (array $c) use ($filterLevel, $courseLevelValue): bool {
+                return $courseLevelValue($c) === $filterLevel;
+            }));
+        }
+        $courseDurationBucket = static function (array $c): string {
+            $mins = max(0, (int) ($c['estimated_minutes'] ?? 0));
+            if ($mins <= 30) {
+                return 'court';
+            }
+            if ($mins <= 90) {
+                return 'moyen';
+            }
+
+            return 'long';
+        };
+        if ($filterDuration !== '') {
+            $courses = array_values(array_filter($courses, static function (array $c) use ($filterDuration, $courseDurationBucket): bool {
+                return $courseDurationBucket($c) === $filterDuration;
+            }));
+        }
+        $courseModalityValue = static function (array $c): string {
+            $raw = strtolower(trim((string) ($c['learning_format'] ?? $c['modality'] ?? $c['delivery_mode'] ?? 'mixte')));
+            return $raw !== '' ? $raw : 'mixte';
+        };
+        if ($filterModality !== '') {
+            $courses = array_values(array_filter($courses, static function (array $c) use ($filterModality, $courseModalityValue): bool {
+                return $courseModalityValue($c) === $filterModality;
+            }));
+        }
+        if ($filterAvailability !== '') {
+            $courses = array_values(array_filter($courses, static function (array $c) use ($filterAvailability): bool {
+                $enr = $c['enrollment'] ?? null;
+                $status = is_array($enr) ? (string) ($enr['status'] ?? '') : '';
+                $pct = max(0, min(100, (int) ($c['progress_percent'] ?? 0)));
+                $state = match (true) {
+                    $status === 'completed' || $pct >= 100 => 'termine',
+                    $status === 'in_progress' || ($pct > 0 && $pct < 100) => 'en_cours',
+                    is_array($enr) && in_array($status, ['assigned', 'pending_approval'], true) && $pct === 0 => 'non_commence',
+                    default => 'ouvert',
+                };
+
+                return $state === $filterAvailability;
+            }));
+        }
         $coursesForCategories = $this->trainingService->getCatalogue($tenantId, $userId ? (int) $userId : null, null, null);
         $legacyEnabled = training_legacy_enabled();
         $legacyModules = $legacyEnabled ? $this->trainingRepository->listPublishedForTenant($tenantId) : [];
@@ -189,6 +245,10 @@ class TrainingController
             return isset($c['category']) && (string) $c['category'] !== '' ? (string) $c['category'] : null;
         }, $coursesForCategories))));
         sort($categories, SORT_NATURAL | SORT_FLAG_CASE);
+        $levelOptions = array_values(array_unique(array_filter(array_map(static fn (array $c): string => $courseLevelValue($c), $coursesForCategories))));
+        sort($levelOptions, SORT_NATURAL | SORT_FLAG_CASE);
+        $modalityOptions = array_values(array_unique(array_filter(array_map(static fn (array $c): string => $courseModalityValue($c), $coursesForCategories))));
+        sort($modalityOptions, SORT_NATURAL | SORT_FLAG_CASE);
 
         $catalogueSidebarEnrollments = [];
         if ($userId) {
@@ -243,6 +303,12 @@ class TrainingController
             'filterSearch' => $search !== null && $search !== '' ? (string) $search : null,
             'filterCategories' => $categories,
             'filterParcours' => $filterParcours,
+            'filterLevel' => $filterLevel,
+            'filterDuration' => $filterDuration,
+            'filterModality' => $filterModality,
+            'filterAvailability' => $filterAvailability,
+            'filterLevelOptions' => $levelOptions,
+            'filterModalityOptions' => $modalityOptions,
             'catalogueSidebarEnrollments' => $catalogueSidebarEnrollments,
         ]);
     }

@@ -101,6 +101,16 @@ if (isset($policy['enrollment_approver_user_ids']) && is_array($policy['enrollme
 }
 $policyApproverIds = array_values(array_unique(array_filter($policyApproverIds, static fn (int $x): bool => $x > 0)));
 $shareCodeDisplay = trim((string) ($course['enrollment_share_code'] ?? ''));
+$studioReadinessChecks = [
+    'slug' => trim((string) ($course['slug'] ?? '')) !== '',
+    'objectifs' => trim((string) ($course['learning_objectives'] ?? '')) !== '',
+    'visibilite' => in_array((string) ($course['visibility'] ?? ''), ['private', 'published'], true),
+    'ressources' => $studioLessonTotal > 0,
+    'quiz' => !empty($studioQuestions),
+];
+$studioReadinessDone = count(array_filter($studioReadinessChecks, static fn (bool $ok): bool => $ok));
+$studioReadinessTotal = count($studioReadinessChecks);
+$studioReadinessScore = $studioReadinessTotal > 0 ? (int) round(($studioReadinessDone * 100) / $studioReadinessTotal) : 0;
 
 $courseObjectiveLines = function_exists('training_lms_objectives_list_from_storage')
     ? training_lms_objectives_list_from_storage((string) ($course['learning_objectives'] ?? ''))
@@ -205,10 +215,10 @@ $defaultCanvasJson = json_encode([
             </div>
             <div class="flex flex-wrap gap-2 shrink-0">
                 <?php if ($studioEditCanVitrine): ?>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/showcase')) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm">Vitrine</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('courses/' . $cid . '/showcase')) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm">Vitrine</a>
                 <?php endif; ?>
-                <a href="<?= training_studio_url($cid . '/preview') ?>" class="px-3 py-2 border border-amber-200 bg-amber-50 text-amber-950 text-xs font-bold rounded-xl hover:bg-amber-100 shadow-sm">Aperçu caviardé</a>
-                <a href="<?= url('formations/' . rawurlencode($slug)) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm" target="_blank" rel="noopener">Aperçu public</a>
+                <a href="<?= training_studio_url($cid . '/preview') ?>" class="px-3 py-2 border border-emerald-200 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-500 shadow-sm">Aperçu caviardé</a>
+                <a href="<?= url('formations/' . rawurlencode($slug)) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm" target="_blank" rel="noopener">Aperçu public</a>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments') . '?course_id=' . (int) $cid) ?>" class="px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-sm">Assignations</a>
             </div>
         </div>
@@ -226,6 +236,31 @@ $defaultCanvasJson = json_encode([
         <a href="<?= htmlspecialchars($studioU('presentation')) ?>" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'presentation' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Présentation apprenant</a>
         <a href="<?= htmlspecialchars($studioU('structure')) ?>#studio-ressources-aide" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'structure' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Modules, leçons &amp; ressources</a>
     </nav>
+    <section class="mb-8 rounded-2xl border border-violet-200/80 bg-violet-50/70 p-4 md:p-5">
+        <h2 class="text-xs font-black uppercase tracking-[0.18em] text-violet-900 mb-3">Assistant de mise en ligne</h2>
+        <ol class="grid gap-2 text-sm md:grid-cols-2">
+            <li class="rounded-xl border border-violet-200 bg-white px-3 py-2"><strong>Étape 1.</strong> Fiche minimale (titre, slug, visibilité).</li>
+            <li class="rounded-xl border border-violet-200 bg-white px-3 py-2"><strong>Étape 2.</strong> Premier module + première leçon.</li>
+            <li class="rounded-xl border border-violet-200 bg-white px-3 py-2"><strong>Étape 3.</strong> Présentation apprenant.</li>
+            <li class="rounded-xl border border-violet-200 bg-white px-3 py-2"><strong>Étape 4.</strong> Vérification publication et aperçu.</li>
+        </ol>
+    </section>
+    <section class="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 md:p-5">
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="text-xs font-black uppercase tracking-[0.18em] text-emerald-900">Checklist prêt-à-publier</h2>
+            <span class="text-sm font-black text-emerald-900"><?= $studioReadinessScore ?>%</span>
+        </div>
+        <div class="mt-2 h-2 rounded-full bg-emerald-100">
+            <div class="h-2 rounded-full bg-emerald-500" style="width: <?= $studioReadinessScore ?>%"></div>
+        </div>
+        <ul class="mt-3 grid gap-2 text-sm md:grid-cols-2">
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['slug'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Slug renseigné</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['objectifs'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Objectifs saisis</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['visibilite'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Visibilité prête à publier</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['ressources'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Modules/leçons présents</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['quiz'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Quiz/questionnaire prévu</li>
+        </ul>
+    </section>
 
     <?php if ($trainingStudioSection === 'fiche'): ?>
     <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-10 mb-12" id="studio-fiche-form">
@@ -236,10 +271,10 @@ $defaultCanvasJson = json_encode([
         <section id="studio-fiche" class="training-studio-panel scroll-mt-28 p-6 md:p-8 space-y-4 shadow-sm">
             <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Fiche formation</h2>
             <p class="text-xs text-slate-500">Les formations <strong>publiées</strong> apparaissent dans le catalogue apprenant. Les brouillons restent réservés au Studio.</p>
-            <div class="rounded-xl border border-sky-200 bg-sky-50/90 p-4 text-sm text-sky-950 shadow-sm">
-                <p class="font-bold text-sky-950">Pièces jointes et liens par leçon</p>
-                <p class="mt-1 text-xs leading-relaxed text-sky-900/90">Pour ajouter des <strong class="font-semibold">liens web</strong>, des <strong class="font-semibold">fichiers</strong> ou des <strong class="font-semibold">documents du centre documentaire</strong> visibles sous chaque leçon, ouvrez l’onglet <a href="<?= htmlspecialchars($studioU('structure')) ?>#studio-ressources-aide" class="font-bold text-sky-900 underline decoration-sky-400 hover:decoration-sky-700">Modules, leçons &amp; ressources</a> : le panneau bleu <strong class="font-semibold">Ressources</strong> se trouve à droite de chaque leçon (sur grand écran).</p>
-            </div>
+            <details class="rounded-xl border border-sky-200 bg-sky-50/90 p-4 text-sm text-sky-950 shadow-sm">
+                <summary class="cursor-pointer font-bold text-sky-950">Aide : pièces jointes et liens par leçon</summary>
+                <p class="mt-2 text-xs leading-relaxed text-sky-900/90">Pour ajouter des <strong class="font-semibold">liens web</strong>, des <strong class="font-semibold">fichiers</strong> ou des <strong class="font-semibold">documents du centre documentaire</strong> visibles sous chaque leçon, ouvrez l’onglet <a href="<?= htmlspecialchars($studioU('structure')) ?>#studio-ressources-aide" class="font-bold text-sky-900 underline decoration-sky-400 hover:decoration-sky-700">Modules, leçons &amp; ressources</a>.</p>
+            </details>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
                     <label class="block text-xs font-bold text-slate-600 mb-1">Titre</label>

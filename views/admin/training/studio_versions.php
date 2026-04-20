@@ -26,9 +26,9 @@ $lmsPlatformLabel = (string) ($lmsPlatformLabel ?? '');
             <div class="training-studio-panel p-4 md:p-5 mt-5 border border-emerald-100 bg-emerald-50/40 text-sm text-slate-700 leading-relaxed">
                 <p class="font-bold text-slate-900 mb-2">Dernière montée notable (v<?= htmlspecialchars($lmsPlatformVersion) ?>)</p>
                 <ul class="list-disc pl-5 space-y-1.5">
-                    <li><strong>Apprenants</strong> : questionnaires avec limite de temps plus lisible, vérifications avant envoi, propositions mélangées à l’affichage.</li>
-                    <li><strong>Parcours d’accueil « portail »</strong> : si votre communauté utilisait la graine par défaut, le passage des <strong>migrations</strong> peut ajouter le bilan de mi-parcours et des fiches de synthèse — sans action dans le Studio pour cela.</li>
-                    <li><strong>Auteurs</strong> : pour actualiser la mention de version sur une formation existante, ouvrez-la dans le Studio et enregistrez une modification mineure si besoin.</li>
+                    <li><strong>Catalogue apprenant</strong> : filtres utilitaires décisionnels, métadonnées enrichies sur les cartes et badges de progression.</li>
+                    <li><strong>Pilotage admin</strong> : section « Actions du jour », KPIs actionnables et lecture synthétique de la santé opérationnelle.</li>
+                    <li><strong>Studio auteurs</strong> : assistant de mise en ligne en 4 étapes, checklist de publication avec score et aides contextuelles repliables.</li>
                 </ul>
             </div>
             <p class="text-sm text-slate-500 mt-3">
