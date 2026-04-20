@@ -71,6 +71,11 @@ $candidatePortalSuiviUrl = isset($candidatePortalSuiviUrl) && is_string($candida
 $candidatePortalSuiviExpiresFmt = isset($candidatePortalSuiviExpiresFmt) && is_string($candidatePortalSuiviExpiresFmt) && $candidatePortalSuiviExpiresFmt !== '' ? $candidatePortalSuiviExpiresFmt : null;
 $candidatePortalThreadReady = !empty($candidatePortalThreadReady);
 $enlistmentPortalToolboxCanned = is_array($enlistmentPortalToolboxCanned ?? null) ? $enlistmentPortalToolboxCanned : [];
+$recruitmentWorkflowMode = (string) ($recruitmentWorkflowMode ?? 'simple');
+if (!in_array($recruitmentWorkflowMode, ['simple', 'milsim'], true)) {
+    $recruitmentWorkflowMode = 'simple';
+}
+$recruitmentStaffSignature = trim((string) ($recruitmentStaffSignature ?? ''));
 
 $sharedFields = [];
 $sfRaw = $e['shared_fields'] ?? null;
@@ -305,26 +310,58 @@ $recapMeta = match ($statusRaw) {
                 <?php endif; ?>
 
                 <?php if ($enlistmentAnalyticsRecent !== []): ?>
+                <?php
+                $analyticsGroupedByMinute = [];
+                foreach ($enlistmentAnalyticsRecent as $ev) {
+                    $caRaw = trim((string) ($ev['created_at'] ?? ''));
+                    $ts = $caRaw !== '' ? (strtotime($caRaw) ?: time()) : time();
+                    $groupKey = date('Y-m-d H:i', $ts);
+                    if (!isset($analyticsGroupedByMinute[$groupKey])) {
+                        $analyticsGroupedByMinute[$groupKey] = [
+                            'label' => date('d/m/Y H:i', $ts),
+                            'items' => [],
+                        ];
+                    }
+                    $analyticsGroupedByMinute[$groupKey]['items'][] = $ev;
+                }
+                ?>
                 <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                     <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                         <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Indicateurs</p>
                         <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Activité récente sur cette fiche</h2>
-                        <p class="mt-2 max-w-3xl text-sm text-stone-600">Historique interne des consultations et actions enregistrées automatiquement sur ce dossier.</p>
+                        <p class="mt-2 max-w-3xl text-sm text-stone-600">Historique interne des consultations et actions enregistrées automatiquement sur ce dossier. Les actions au même horaire sont regroupées pour une lecture plus rapide.</p>
                     </div>
-                    <ul class="divide-y divide-stone-100 px-6 sm:px-8">
-                        <?php foreach ($enlistmentAnalyticsRecent as $ev): ?>
+                    <div class="divide-y divide-stone-100 px-6 sm:px-8">
+                        <?php $grpIndex = 0; ?>
+                        <?php foreach ($analyticsGroupedByMinute as $group): ?>
                             <?php
-                            $nm = (string) ($ev['name'] ?? '');
-                            $labEv = $analyticsEventLabels[$nm] ?? 'Action enregistrée';
-                            $ca = trim((string) ($ev['created_at'] ?? ''));
-                            $caFmt = $ca !== '' ? date('d/m/Y H:i', strtotime($ca) ?: time()) : '—';
+                            $grpIndex++;
+                            $items = $group['items'] ?? [];
+                            $isOpen = $grpIndex <= 2;
+                            $itemCount = count($items);
                             ?>
-                            <li class="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm">
-                                <span class="font-semibold text-stone-900"><?= htmlspecialchars($labEv, ENT_QUOTES, 'UTF-8') ?></span>
-                                <span class="text-xs text-stone-500 tabular-nums"><?= htmlspecialchars($caFmt, ENT_QUOTES, 'UTF-8') ?></span>
-                            </li>
+                            <details class="py-3"<?= $isOpen ? ' open' : '' ?>>
+                                <summary class="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-stone-50 [&::-webkit-details-marker]:hidden">
+                                    <span class="inline-flex items-center gap-2">
+                                        <span class="rounded-full border border-stone-300 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stone-700"><?= $itemCount ?> action<?= $itemCount > 1 ? 's' : '' ?></span>
+                                        <span class="text-sm font-semibold text-stone-900">Horaire : <?= htmlspecialchars((string) ($group['label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></span>
+                                    </span>
+                                    <span class="text-[11px] font-semibold text-stone-500">Afficher / masquer</span>
+                                </summary>
+                                <ul class="mt-2 space-y-2 pl-2">
+                                    <?php foreach ($items as $ev): ?>
+                                        <?php
+                                        $nm = (string) ($ev['name'] ?? '');
+                                        $labEv = $analyticsEventLabels[$nm] ?? 'Action enregistrée';
+                                        ?>
+                                        <li class="rounded-lg border border-stone-200/80 bg-stone-50/70 px-3 py-2 text-sm text-stone-800">
+                                            <?= htmlspecialchars($labEv, ENT_QUOTES, 'UTF-8') ?>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </details>
                         <?php endforeach; ?>
-                    </ul>
+                    </div>
                 </section>
                 <?php endif; ?>
 
@@ -423,16 +460,26 @@ $recapMeta = match ($statusRaw) {
                                     <div>
                                         <p class="text-[10px] font-bold uppercase tracking-wide text-amber-900/90">Raccourcis fréquents</p>
                                         <?php
-                                        $portalSnippets = [
-                                            ['label' => 'Bonjour,', 'text' => "Bonjour,\n\n"],
-                                            ['label' => 'Accusé de lecture', 'text' => "Nous avons bien pris connaissance de votre message.\n\n"],
-                                            ['label' => 'Demande de précision', 'text' => "Pour avancer sur votre dossier, pourriez-vous préciser :\n\n— \n\nMerci d’avance."],
-                                            ['label' => 'Pièces demandées', 'text' => "Merci de déposer sur ce fil les documents demandés (formats habituels : PDF ou image), dans la limite indiquée sur la page.\n\n"],
-                                            ['label' => 'Entretien / créneau', 'text' => "Nous vous proposons un échange vocal ou écrit. Indiquez vos disponibilités sur les prochains jours.\n\n"],
-                                            ['label' => 'Relance polie', 'text' => "Petit rappel amical : dès que vous pourrez répondre, cela nous aidera à traiter votre dossier dans les meilleurs délais.\n\n"],
-                                            ['label' => 'Clôture de fil', 'text' => "Nous clôturons ici cet échange côté suivi en ligne. Pour toute question ultérieure, repassez par les canaux habituels de la communauté.\n\n"],
-                                            ['label' => 'Formules de politesse', 'text' => "Cordialement,\nL’équipe recrutement"],
-                                        ];
+                                        $sig = $recruitmentStaffSignature !== '' ? $recruitmentStaffSignature : 'L’équipe recrutement';
+                                        $portalSnippets = $recruitmentWorkflowMode === 'milsim'
+                                            ? [
+                                                ['label' => 'Ouverture (MilSim)', 'text' => "Bonjour,\n\nVotre candidature est bien enregistrée. Nous lançons la phase de pré-qualification MilSim.\n\n"],
+                                                ['label' => 'Check technique', 'text' => "Merci de confirmer les points suivants :\n\n• Disponibilités opérationnelles (jours + créneaux)\n• Micro fonctionnel + push-to-talk\n• Niveau ACE/ACRE et expérience de jeu coordonné\n\n"],
+                                                ['label' => 'Entretien section', 'text' => "Nous vous proposons un échange de cadrage (15-20 min) pour valider votre intégration en section.\n\nMerci d’indiquer 2 à 3 créneaux avec votre fuseau horaire.\n\n"],
+                                                ['label' => 'Relance discipline', 'text' => "Relance de suivi : sans réponse de votre part, le dossier restera en attente.\n\nUn retour, même bref, permet de reprendre l’instruction rapidement.\n\n"],
+                                                ['label' => 'Clôture temporaire', 'text' => "Nous clôturons temporairement ce fil de candidature.\n\nVous pourrez relancer la procédure ultérieurement en reprenant contact via les canaux habituels.\n\n"],
+                                                ['label' => 'Signature', 'text' => "Respectueusement,\n" . $sig],
+                                            ]
+                                            : [
+                                                ['label' => 'Bonjour,', 'text' => "Bonjour,\n\nMerci pour votre message et pour l’intérêt porté à notre unité. Votre dossier est bien suivi par l’équipe recrutement.\n\n"],
+                                                ['label' => 'Accusé de lecture', 'text' => "Nous avons bien pris connaissance de votre dernier message.\n\nVotre candidature reste active et nous revenons vers vous dès qu’une étape nécessite votre action.\n\n"],
+                                                ['label' => 'Demande de précision', 'text' => "Pour avancer sur votre dossier, pouvez-vous nous préciser les points suivants :\n\n• Disponibilités hebdomadaires (jours/heures)\n• Niveau d’expérience en simulation tactique\n• Préférences de rôle (infanterie, appui, logistique, etc.)\n\nMerci d’avance pour ces informations.\n\n"],
+                                                ['label' => 'Pièces demandées', 'text' => "Afin de finaliser l’étude de votre dossier, merci de déposer sur ce fil :\n\n• Une courte présentation écrite (motivations, attentes)\n• Les éléments demandés par le recruteur référent\n\nFormats acceptés : PDF, image, texte ou audio selon les options activées.\n\n"],
+                                                ['label' => 'Entretien / créneau', 'text' => "Nous vous proposons un entretien court (15 à 20 minutes) pour finaliser cette phase.\n\nMerci d’indiquer 2 à 3 créneaux possibles sur les prochains jours, avec votre fuseau horaire.\n\n"],
+                                                ['label' => 'Relance polie', 'text' => "Petit rappel amical concernant notre précédent message.\n\nDès que vous aurez un moment pour répondre, nous pourrons reprendre le traitement de votre candidature sans délai.\n\n"],
+                                                ['label' => 'Clôture de fil', 'text' => "Nous clôturons ce fil de suivi pour le moment.\n\nSi votre situation évolue ou si vous souhaitez relancer votre candidature, vous pouvez nous écrire à nouveau via les canaux habituels de la communauté.\n\n"],
+                                                ['label' => 'Formules de politesse', 'text' => "Merci pour votre temps et votre retour.\n\nBien cordialement,\n" . $sig],
+                                            ];
                                         ?>
                                         <script type="application/json" id="portal-snippets-json"><?= json_encode($portalSnippets, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?></script>
                                         <div class="mt-2 flex flex-wrap gap-2">
@@ -787,24 +834,37 @@ $recapMeta = match ($statusRaw) {
             <?php endif; ?>
 
             <?php if ($statusRaw === 'submitted'): ?>
+            <?php
+            $decisionTracks = $recruitmentWorkflowMode === 'milsim'
+                ? [
+                    ['title' => 'Pré-qualification technique', 'tone' => 'sky', 'body' => 'Validez en priorité matériel, micro, disponibilité régulière et posture opérationnelle avant d’ouvrir la suite.'],
+                    ['title' => 'Entretien de cadrage', 'tone' => 'violet', 'body' => 'L’issue « Demander un entretien » permet de confirmer discipline, autonomie radio/procédures et compatibilité avec le rythme de section.'],
+                    ['title' => 'Décision de section', 'tone' => 'emerald', 'body' => 'Accepter, refuser ou non admettre formalise la décision finale et synchronise l’état côté candidat.'],
+                ]
+                : [
+                    ['title' => 'Pré-qualification', 'tone' => 'sky', 'body' => 'Choisissez « Mettre en attente » pour garder le dossier ouvert le temps de compléter les informations importantes.'],
+                    ['title' => 'Entretien', 'tone' => 'violet', 'body' => 'L’issue « Demander un entretien » consigne le besoin d’échange ; proposez ensuite un créneau directement au candidat.'],
+                    ['title' => 'Décision finale', 'tone' => 'emerald', 'body' => 'Accepter, refuser ou marquer non admis clôture l’instruction et met à jour le statut visible sur le portail candidat.'],
+                ];
+            $trackToneClasses = [
+                'sky' => ['article' => 'border-sky-200 bg-sky-50/70', 'title' => 'text-sky-900', 'body' => 'text-sky-900/90'],
+                'violet' => ['article' => 'border-violet-200 bg-violet-50/70', 'title' => 'text-violet-900', 'body' => 'text-violet-900/90'],
+                'emerald' => ['article' => 'border-emerald-200 bg-emerald-50/70', 'title' => 'text-emerald-900', 'body' => 'text-emerald-900/90'],
+            ];
+            ?>
             <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                 <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Aide à la décision</p>
-                    <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Parcours possibles</h2>
+                    <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Parcours possibles (mode <?= $recruitmentWorkflowMode === 'milsim' ? 'MilSim' : 'Simple' ?>)</h2>
                 </div>
                 <div class="grid gap-4 p-6 md:grid-cols-3">
-                    <article class="rounded-xl border border-sky-200 bg-sky-50/70 p-4">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-sky-900">Pré-qualification</h3>
-                        <p class="mt-2 text-sm text-sky-900/90">Choisissez « Mettre en attente » dans la fiche décision pour garder le dossier ouvert le temps de compléter le dossier.</p>
-                    </article>
-                    <article class="rounded-xl border border-violet-200 bg-violet-50/70 p-4">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-violet-900">Entretien</h3>
-                        <p class="mt-2 text-sm text-violet-900/90">L’issue « Demander un entretien » consigne le besoin d’échange ; vous pouvez proposer un créneau dans le même écran.</p>
-                    </article>
-                    <article class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-emerald-900">Décision finale</h3>
-                        <p class="mt-2 text-sm text-emerald-900/90">Accepter, refuser ou marquer non admis conclut l’instruction et met à jour l’état visible par le candidat.</p>
-                    </article>
+                    <?php foreach ($decisionTracks as $track): ?>
+                        <?php $tc = $trackToneClasses[(string) ($track['tone'] ?? 'sky')] ?? $trackToneClasses['sky']; ?>
+                        <article class="rounded-xl border p-4 <?= htmlspecialchars((string) $tc['article'], ENT_QUOTES, 'UTF-8') ?>">
+                            <h3 class="text-xs font-bold uppercase tracking-wide <?= htmlspecialchars((string) $tc['title'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($track['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
+                            <p class="mt-2 text-sm <?= htmlspecialchars((string) $tc['body'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($track['body'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                        </article>
+                    <?php endforeach; ?>
                 </div>
             </section>
             <?php endif; ?>
@@ -836,7 +896,7 @@ $recapMeta = match ($statusRaw) {
             <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                 <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Rubrique 2</p>
-                    <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Questionnaire MilSim</h2>
+                    <h2 class="mt-1 text-base font-black tracking-tight text-stone-900"><?= $recruitmentWorkflowMode === 'milsim' ? 'Questionnaire MilSim' : 'Questionnaire complémentaire' ?></h2>
                 </div>
                 <div class="divide-y divide-stone-100 px-6 py-2">
                     <?php foreach ($olympus as $col => $label): ?>

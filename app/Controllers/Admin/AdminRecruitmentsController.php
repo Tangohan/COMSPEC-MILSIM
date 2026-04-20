@@ -251,6 +251,8 @@ class AdminRecruitmentsController
             'candidatePortalSuiviExpiresFmt' => $candidatePortalSuiviExpiresFmt,
             'enlistmentPortalToolboxCanned' => $portalToolboxCanned,
             'candidatePortalThreadReady' => $this->enlistmentRepository->candidatePortalThreadReady(),
+            'recruitmentWorkflowMode' => TenantRecruitmentSettings::workflowModeFromSettings($tenantSettings),
+            'recruitmentStaffSignature' => trim((string) (TenantRecruitmentSettings::getRecruitmentBlock($tenantSettings)['staff_signature'] ?? '')),
         ]);
     }
 
@@ -700,12 +702,19 @@ class AdminRecruitmentsController
         }
         $slaHours = (int) $request->input('enlistment_sla_hours', TenantRecruitmentSettings::defaultEnlistmentSlaHours());
         $slaHours = max(1, min(720, $slaHours));
+        $workflowModeRaw = strtolower(trim((string) $request->input('recruitment_workflow_mode', TenantRecruitmentSettings::defaultWorkflowMode())));
+        $workflowMode = in_array($workflowModeRaw, ['simple', 'milsim'], true)
+            ? $workflowModeRaw
+            : TenantRecruitmentSettings::defaultWorkflowMode();
+        $staffSignature = mb_substr(trim((string) $request->input('recruitment_staff_signature', '')), 0, 180);
         $this->tenantRepository->updateSettings((int) $tenantId, [
             'recruitment' => [
                 'enlistment_sla_hours' => $slaHours,
+                'workflow_mode' => $workflowMode,
+                'staff_signature' => $staffSignature,
             ],
         ]);
-        Session::flash('success', 'Délai d’alerte enregistré : ' . $slaHours . ' h sans traitement.');
+        Session::flash('success', 'Paramètres recrutement enregistrés (SLA ' . $slaHours . ' h, mode ' . ($workflowMode === 'milsim' ? 'MilSim' : 'Simple') . ').');
 
         return Response::redirect(url('back-office/recruitments'));
     }
@@ -718,6 +727,9 @@ class AdminRecruitmentsController
         }
         $tenantSettings = $this->tenantRepository->getSettings((int) $tenantId);
         $slaHours = TenantRecruitmentSettings::enlistmentSlaHoursFromSettings($tenantSettings);
+        $workflowMode = TenantRecruitmentSettings::workflowModeFromSettings($tenantSettings);
+        $recruitmentBlock = TenantRecruitmentSettings::getRecruitmentBlock($tenantSettings);
+        $staffSignature = trim((string) ($recruitmentBlock['staff_signature'] ?? ''));
         $submitted = $this->enlistmentRepository->allForTenant((int) $tenantId, 'submitted');
         $breached = 0;
         foreach ($submitted as $row) {
@@ -739,6 +751,8 @@ class AdminRecruitmentsController
             'recruitmentSidebarCounts' => $navCounts,
             'recruitmentAdminNav' => 'sla',
             'showPortalFooter' => false,
+            'recruitmentWorkflowMode' => $workflowMode,
+            'recruitmentStaffSignature' => $staffSignature,
         ]);
     }
 

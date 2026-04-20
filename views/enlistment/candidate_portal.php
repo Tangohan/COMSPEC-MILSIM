@@ -314,6 +314,7 @@ $tailwindHead = (string) ob_get_clean();
                                 ? 'border-emerald-600 bg-emerald-500 text-white'
                                 : ($isCurrent ? 'border-amber-500 bg-amber-500 text-white ring-4 ring-amber-200' : 'border-slate-200 bg-white text-slate-300'));
                         $lineClass = $si < count($portalSteps) - 1 ? ($isDone ? 'bg-emerald-200' : 'bg-slate-200') : '';
+                        $marker = (string) ($si + 1);
                         $sid = (string) ($st['id'] ?? '');
                         $currentNote = match ($sid) {
                             'suivi' => 'Étape en cours — continuez à échanger sur ce fil si besoin.',
