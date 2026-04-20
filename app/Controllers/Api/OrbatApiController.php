@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\OrbatChartTypeRepository;
+use App\Repositories\PersonnelOrgHistoryRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Support\OrbatChartDisplay;
@@ -24,7 +25,8 @@ final class OrbatApiController
     public function __construct(
         private UnitRepository $unitRepository,
         private UserRepository $userRepository,
-        private OrbatChartTypeRepository $orbatChartTypeRepository
+        private OrbatChartTypeRepository $orbatChartTypeRepository,
+        private PersonnelOrgHistoryRepository $personnelOrgHistoryRepository
     ) {}
 
     public function roster(Request $request, array $params = []): Response
@@ -350,7 +352,8 @@ final class OrbatApiController
             'show_on_public_page' => 1,
         ];
 
-        $this->unitRepository->create($tenantId, $data);
+        $created = $this->unitRepository->create($tenantId, $data);
+        $this->recordUnitCreationHistory($tenantId, $created, $parentId);
 
         return $this->rosterSuccess($tenantId, (int) Session::get('user_id'));
     }
@@ -375,6 +378,7 @@ final class OrbatApiController
         if (!$this->unitRepository->delete($unitId, $tenantId)) {
             return Response::json(['success' => false, 'message' => 'Suppression impossible.'], 400);
         }
+        $this->recordUnitDeletionHistory($tenantId, $unit);
 
         return $this->rosterSuccess($tenantId, (int) Session::get('user_id'));
     }
@@ -584,6 +588,7 @@ final class OrbatApiController
         }
 
         $this->unitRepository->update($unitId, $tenantId, $data);
+        $this->recordUnitRenameHistory($tenantId, $unit, $data);
 
         $canBypass = $gate->allows('admin.organization') || $gate->allows('admin.access')
             || $gate->allows('organization.orbat.manage');
@@ -592,5 +597,123 @@ final class OrbatApiController
             'success' => true,
             'roster' => OrbatRosterPayload::buildForTenant($this->unitRepository, $tenantId, $userId, $canBypass),
         ]);
+    }
+
+    /**
+     * @param array<string, mixed> $unit
+     */
+    private function recordUnitCreationHistory(int $tenantId, array $unit, ?int $parentId): void
+    {
+        if (!$this->personnelOrgHistoryRepository->schemaReady()) {
+            return;
+        }
+        $unitName = trim((string) ($unit['name'] ?? ''));
+        if ($unitName === '') {
+            return;
+        }
+        $actorId = (int) Session::get('user_id');
+        $actorLabel = $this->actorDisplayName($tenantId, $actorId);
+
+        $parentLabel = 'aucun rattachement parent';
+        if ($parentId !== null && $parentId > 0) {
+            $parent = $this->unitRepository->findById($parentId, $tenantId);
+            $parentName = trim((string) ($parent['name'] ?? ''));
+            $parentLabel = $parentName !== '' ? $parentName : ('unité #' . $parentId);
+        }
+
+        $summary = 'Structure ORBAT : unité ajoutée « ' . $unitName . ' »'
+            . ' (rattachement : ' . $parentLabel . ')'
+            . ' — par ' . $actorLabel;
+        foreach ($this->collectConcernedUserIds($tenantId, $unit) as $uid) {
+            $this->personnelOrgHistoryRepository->append($tenantId, $uid, $actorId > 0 ? $actorId : null, $summary);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $unit
+     */
+    private function recordUnitDeletionHistory(int $tenantId, array $unit): void
+    {
+        if (!$this->personnelOrgHistoryRepository->schemaReady()) {
+            return;
+        }
+        $unitName = trim((string) ($unit['name'] ?? ''));
+        if ($unitName === '') {
+            $unitName = 'unité #' . (int) ($unit['id'] ?? 0);
+        }
+        $actorId = (int) Session::get('user_id');
+        $actorLabel = $this->actorDisplayName($tenantId, $actorId);
+        $summary = 'Structure ORBAT : unité supprimée « ' . $unitName . ' » — par ' . $actorLabel;
+        foreach ($this->collectConcernedUserIds($tenantId, $unit) as $uid) {
+            $this->personnelOrgHistoryRepository->append($tenantId, $uid, $actorId > 0 ? $actorId : null, $summary);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $beforeUnit
+     * @param array<string, mixed> $newData
+     */
+    private function recordUnitRenameHistory(int $tenantId, array $beforeUnit, array $newData): void
+    {
+        $newName = trim((string) ($newData['name'] ?? ''));
+        $oldName = trim((string) ($beforeUnit['name'] ?? ''));
+        if ($newName === '' || $oldName === '' || $newName === $oldName) {
+            return;
+        }
+        if (!$this->personnelOrgHistoryRepository->schemaReady()) {
+            return;
+        }
+        $actorId = (int) Session::get('user_id');
+        $actorLabel = $this->actorDisplayName($tenantId, $actorId);
+        $summary = 'Structure ORBAT : renommage unité « ' . $oldName . ' » → « ' . $newName . ' » — par ' . $actorLabel;
+        foreach ($this->collectConcernedUserIds($tenantId, $beforeUnit) as $uid) {
+            $this->personnelOrgHistoryRepository->append($tenantId, $uid, $actorId > 0 ? $actorId : null, $summary);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $unit
+     * @return list<int>
+     */
+    private function collectConcernedUserIds(int $tenantId, array $unit): array
+    {
+        $unitId = (int) ($unit['id'] ?? 0);
+        $ids = [];
+        if ($unitId > 0) {
+            foreach ($this->unitRepository->listActiveUserIdsForUnits($tenantId, [$unitId]) as $uid) {
+                $uid = (int) $uid;
+                if ($uid > 0) {
+                    $ids[$uid] = true;
+                }
+            }
+        }
+        $commanderId = (int) ($unit['commander_user_id'] ?? 0);
+        if ($commanderId > 0) {
+            $ids[$commanderId] = true;
+        }
+
+        return array_map('intval', array_keys($ids));
+    }
+
+    private function actorDisplayName(int $tenantId, int $actorId): string
+    {
+        if ($actorId < 1) {
+            return 'Encadrement';
+        }
+        $actor = $this->userRepository->findById($actorId, $tenantId);
+        if (!$actor) {
+            return 'Encadrement';
+        }
+        $label = trim((string) ($actor['display_name'] ?? ''));
+        if ($label !== '') {
+            return $label;
+        }
+        $callsign = trim((string) ($actor['callsign'] ?? ''));
+        if ($callsign !== '') {
+            return $callsign;
+        }
+        $email = trim((string) ($actor['email'] ?? ''));
+
+        return $email !== '' ? $email : 'Encadrement';
     }
 }
