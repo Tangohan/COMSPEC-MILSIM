@@ -4,6 +4,11 @@ declare(strict_types=1);
 $slaHours = max(1, (int) ($enlistmentSlaHours ?? 72));
 $submittedCount = max(0, (int) ($submittedCount ?? 0));
 $submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
+$workflowMode = (string) ($recruitmentWorkflowMode ?? 'simple');
+if (!in_array($workflowMode, ['simple', 'milsim'], true)) {
+    $workflowMode = 'simple';
+}
+$staffSignature = trim((string) ($recruitmentStaffSignature ?? ''));
 ?>
 
 <div class="recruitment-bureau max-w-3xl mx-auto w-full space-y-8">
@@ -77,6 +82,39 @@ $submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
                             </p>
                         </div>
                         <p id="sla-help" class="mt-6 text-xs leading-relaxed text-stone-500">Les dossiers concernés restent visibles : ils sont simplement mis en évidence pour l’équipe recrutement.</p>
+                    </div>
+
+                    <div class="rounded-2xl border border-stone-200 bg-white p-5 sm:p-8">
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">Personnalisation</p>
+                        <h2 class="mt-1 text-lg font-black tracking-tight text-stone-900">Style de recrutement</h2>
+                        <p class="mt-2 max-w-2xl text-sm text-stone-600">Adaptez l’interface équipe selon votre fonctionnement : rapide (simple) ou plus cadré (MilSim).</p>
+                        <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/60 p-4">
+                                <input type="radio" name="recruitment_workflow_mode" value="simple" class="mt-1 h-4 w-4 border-stone-300 text-emerald-700" <?= $workflowMode === 'simple' ? 'checked' : '' ?>>
+                                <span>
+                                    <span class="block text-sm font-bold text-stone-900">Mode simple</span>
+                                    <span class="mt-1 block text-xs text-stone-600">Messages plus directs, tri rapide des candidatures, vocabulaire généraliste.</span>
+                                </span>
+                            </label>
+                            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/60 p-4">
+                                <input type="radio" name="recruitment_workflow_mode" value="milsim" class="mt-1 h-4 w-4 border-stone-300 text-emerald-700" <?= $workflowMode === 'milsim' ? 'checked' : '' ?>>
+                                <span>
+                                    <span class="block text-sm font-bold text-stone-900">Mode MilSim</span>
+                                    <span class="mt-1 block text-xs text-stone-600">Ton plus opérationnel, rappels de discipline de jeu et exigences de préparation.</span>
+                                </span>
+                            </label>
+                        </div>
+                        <label for="recruitment_staff_signature" class="mt-5 block text-sm font-bold text-stone-900">Signature équipe par défaut (optionnel)</label>
+                        <input
+                            type="text"
+                            id="recruitment_staff_signature"
+                            name="recruitment_staff_signature"
+                            maxlength="180"
+                            value="<?= htmlspecialchars($staffSignature, ENT_QUOTES, 'UTF-8') ?>"
+                            class="mt-2 w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 shadow-inner focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/25"
+                            placeholder="Ex. Cellule recrutement — Task Force Orion"
+                        >
+                        <p class="mt-2 text-xs text-stone-500">Cette signature est proposée automatiquement dans les messages pré-remplis du fil candidat.</p>
                     </div>
                     <div class="flex flex-wrap gap-3">
                         <button type="submit" class="recruitment-lms-submit-primary inline-flex min-h-[2.75rem] items-center justify-center rounded-xl px-8 py-2.5 text-sm font-bold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-2">

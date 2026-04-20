@@ -61,6 +61,19 @@ final class TenantRecruitmentSettings
         return 72;
     }
 
+    public static function defaultWorkflowMode(): string
+    {
+        return 'simple';
+    }
+
+    public static function workflowModeFromSettings(array $tenantSettings): string
+    {
+        $b = self::getRecruitmentBlock($tenantSettings);
+        $raw = strtolower(trim((string) ($b['workflow_mode'] ?? self::defaultWorkflowMode())));
+
+        return in_array($raw, ['simple', 'milsim'], true) ? $raw : self::defaultWorkflowMode();
+    }
+
     /**
      * SLA interne recrutement (heures max sans action sur un dossier soumis).
      */
