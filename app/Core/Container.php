@@ -552,6 +552,7 @@ class Container
                 self::get(\App\Repositories\PersonnelProfileRepository::class)
             ),
             \App\Services\Audit\AuditService::class => new \App\Services\Audit\AuditService(),
+            \App\Services\Security\AccessControlService::class => new \App\Services\Security\AccessControlService(),
             \App\Repositories\RoleRepository::class => new \App\Repositories\RoleRepository(),
             \App\Repositories\PositionRepository::class => new \App\Repositories\PositionRepository(),
             \App\Repositories\RoleSetRepository::class => new \App\Repositories\RoleSetRepository(),
@@ -573,6 +574,14 @@ class Container
             \App\Controllers\Admin\System\SystemSiteRoleAssignmentController::class => new \App\Controllers\Admin\System\SystemSiteRoleAssignmentController(
                 self::get(\App\Repositories\SiteRoleAssignmentRepository::class),
                 self::get(\App\Services\Audit\AuditService::class)
+            ),
+            \App\Controllers\Admin\Organization\AccessManagementController::class => new \App\Controllers\Admin\Organization\AccessManagementController(
+                self::get(\App\Services\Security\AccessControlService::class),
+                self::get(UserRepository::class)
+            ),
+            \App\Controllers\Api\AccessControlApiController::class => new \App\Controllers\Api\AccessControlApiController(
+                self::get(\App\Services\Security\AccessControlService::class),
+                self::get(UserRepository::class)
             ),
             \App\Controllers\Admin\Organization\RoleAdminController::class => new \App\Controllers\Admin\Organization\RoleAdminController(
                 self::get(\App\Services\Admin\RolePermissionService::class),

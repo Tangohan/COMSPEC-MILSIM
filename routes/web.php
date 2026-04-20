@@ -129,6 +129,9 @@ use App\Controllers\Admin\Organization\OrganizationCommunityController;
 use App\Controllers\Admin\Organization\OrganizationSeniorityAdminController;
 use App\Controllers\Admin\Organization\RoleplayFollowupAdminController;
 use App\Controllers\Admin\Organization\CommunityEventsAdminController;
+use App\Controllers\Admin\Organization\AccessManagementController;
+use App\Controllers\Api\AccessControlApiController;
+use App\Middleware\AccessControlMiddleware;
 use App\Controllers\Api\TrainingApiController;
 use App\Core\Router;
 use App\Middleware\AuthMiddleware;
@@ -554,6 +557,24 @@ return function (Router $router) {
     $router->post('/back-office/roles-functions/relations/store', [RolesFunctionsAdminController::class, 'storeRoleRelation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/required/save', [RolesFunctionsAdminController::class, 'saveRequiredDefinitions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/quick-assign-role', [RolesFunctionsAdminController::class, 'quickAssignRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    
+    $router->get('/back-office/access-management', [AccessManagementController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->post('/back-office/access-management/roles/save', [AccessManagementController::class, 'saveRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->post('/back-office/access-management/rules/save', [AccessManagementController::class, 'saveRule'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->get('/back-office/access-management/simulate', [AccessManagementController::class, 'simulate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+
+    $router->get('/api/access-control/roles', [AccessControlApiController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->post('/api/access-control/roles', [AccessControlApiController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->get('/api/access-control/permissions', [AccessControlApiController::class, 'permissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->post('/api/access-control/permissions', [AccessControlApiController::class, 'permissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->post('/api/access-control/role-permissions', [AccessControlApiController::class, 'rolePermissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->get('/api/access-control/rules', [AccessControlApiController::class, 'rules'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->post('/api/access-control/rules', [AccessControlApiController::class, 'rules'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->get('/api/access-control/scopes', [AccessControlApiController::class, 'scopes'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->post('/api/access-control/scopes', [AccessControlApiController::class, 'scopes'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->get('/api/access-control/simulation', [AccessControlApiController::class, 'simulation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+    $router->post('/api/access-control/simulation', [AccessControlApiController::class, 'simulation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
+
     $router->get('/back-office/roles', [RoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets', [RoleAdminController::class, 'presets'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets/preview', [RoleAdminController::class, 'presetsPreview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
