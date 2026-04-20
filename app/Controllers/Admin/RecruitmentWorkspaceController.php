@@ -184,7 +184,7 @@ class RecruitmentWorkspaceController
         Session::flash('success', implode(' ', $lines));
 
         if ((string) $request->input('return_to_dossier', '0') === '1') {
-            return Response::redirect(url('back-office/recruitments/' . $enlistmentId));
+            return Response::redirect(url('back-office/recruitments/' . $enlistmentId . '?dossier=1'));
         }
 
         return Response::redirect(recruitment_workspace_url());

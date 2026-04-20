@@ -10,44 +10,52 @@ $presetsPreviewUrl = isset($presetsPreviewUrl) ? (string) $presetsPreviewUrl : u
 $err = \App\Core\Session::getFlash('error');
 $ok = \App\Core\Session::getFlash('success');
 ?>
-<div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
-        <div>
-            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-2">Rôles communauté</p>
-            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Profils de permissions</h1>
-            <p class="mt-2 text-slate-600 text-sm leading-relaxed max-w-2xl">
-                Choisissez un rôle et un profil, puis consultez le <strong class="font-semibold text-slate-800">récapitulatif des changements</strong> avant d’appliquer.
-                Les profils ne contiennent jamais les habilitations réservées à l’administration de <strong class="font-semibold text-slate-800">l’ensemble du site</strong>.
-            </p>
+<div class="mx-auto w-full min-w-0 max-w-6xl space-y-6 px-4 pb-10 pt-8 sm:px-6 lg:pb-12 lg:pt-10">
+    <header class="relative overflow-hidden rounded-[2rem] border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/[0.04] md:p-8">
+        <div class="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-600/85 via-sky-500/35 to-transparent" aria-hidden="true"></div>
+        <div class="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div class="min-w-0">
+                <p class="text-[10px] font-black uppercase tracking-[0.32em] text-slate-500">Rôles communauté</p>
+                <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">Profils de permissions</h1>
+                <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">
+                    Choisissez un rôle et un profil, puis consultez le <strong class="font-semibold text-slate-800">récapitulatif des changements</strong> avant d’appliquer.
+                    Les profils ne contiennent jamais les habilitations réservées à l’administration de <strong class="font-semibold text-slate-800">l’ensemble du site</strong>.
+                </p>
+            </div>
+            <div class="flex shrink-0 flex-wrap gap-2">
+                <a href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50">← Liste des rôles</a>
+                <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800">Back-office</a>
+            </div>
         </div>
-        <a href="<?= url('back-office/roles') ?>" class="shrink-0 text-sm font-semibold text-slate-600 hover:text-slate-900">← Liste des rôles</a>
-    </div>
+    </header>
 
     <?php if ($err): ?>
-        <p class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></p>
+        <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 shadow-sm" role="alert"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></div>
     <?php endif; ?>
     <?php if ($ok): ?>
-        <p class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 leading-relaxed"><?= htmlspecialchars($ok, ENT_QUOTES, 'UTF-8') ?></p>
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-950 shadow-sm" role="status"><?= htmlspecialchars($ok, ENT_QUOTES, 'UTF-8') ?></div>
     <?php endif; ?>
 
-    <div class="rounded-2xl border border-amber-200 bg-amber-50/80 p-5 mb-8">
-        <h2 class="text-sm font-bold text-amber-950">Toujours exclus des profils automatiques</h2>
-        <p class="mt-1 text-sm text-amber-950/90">Aucun profil ci-dessous n’accorde les habilitations réservées à la maintenance de la plateforme pour toutes les communautés, ni la modération forum au niveau global.</p>
+    <div class="rounded-2xl border border-amber-200/90 bg-amber-50/95 px-5 py-4 shadow-sm sm:px-6">
+        <h2 class="text-sm font-black uppercase tracking-wide text-amber-950">Toujours exclus des profils automatiques</h2>
+        <p class="mt-2 text-sm leading-relaxed text-amber-950/90">Aucun profil ci-dessous n’accorde les habilitations réservées à la maintenance de la plateforme pour toutes les communautés, ni la modération forum au niveau global.</p>
     </div>
 
     <?php if (empty($roles)): ?>
-        <p class="text-slate-500">Aucun rôle communauté ou opérationnel. Créez d’abord des rôles (ou exécutez les migrations).</p>
+        <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-5 py-8 text-center text-sm text-slate-600">
+            Aucun rôle communauté ou opérationnel. Créez d’abord des rôles (ou exécutez les migrations).
+        </div>
     <?php else: ?>
-        <form method="post" action="<?= url('back-office/roles/presets/apply') ?>" id="preset-apply-form" class="space-y-8">
+        <form method="post" action="<?= htmlspecialchars(url('back-office/roles/presets/apply'), ENT_QUOTES, 'UTF-8') ?>" id="preset-apply-form" class="space-y-6">
             <?= \App\Core\Csrf::field() ?>
 
-            <ol class="grid gap-4 lg:gap-6 lg:grid-cols-3 mb-2">
-                <li class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white mb-3">1</span>
-                    <h2 class="text-sm font-bold text-slate-900">Rôle à configurer</h2>
-                    <p class="text-xs text-slate-500 mt-1 mb-3">Rôles de votre communauté ou opérationnels (hors plateforme).</p>
+            <div class="grid gap-6 lg:grid-cols-12 lg:items-stretch">
+                <div class="flex flex-col rounded-[1.75rem] border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/[0.03] sm:p-6 lg:col-span-4">
+                    <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white">1</span>
+                    <h2 class="mt-3 text-sm font-black uppercase tracking-wide text-slate-900">Rôle à configurer</h2>
+                    <p class="mt-2 text-xs leading-relaxed text-slate-600">Rôles de votre communauté ou opérationnels (hors plateforme).</p>
                     <label for="role_id" class="sr-only">Rôle</label>
-                    <select name="role_id" id="role_id" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    <select name="role_id" id="role_id" required class="<?= htmlspecialchars(bo_select_class('mt-4 w-full rounded-xl border-slate-300 bg-white text-sm font-semibold text-slate-900'), ENT_QUOTES, 'UTF-8') ?>">
                         <option value="">— Choisir un rôle —</option>
                         <?php foreach ($roles as $r):
                             $rid = (int) $r['id'];
@@ -58,13 +66,14 @@ $ok = \App\Core\Session::getFlash('success');
                             <option value="<?= $rid ?>" <?= $locked ? 'disabled' : '' ?>><?= htmlspecialchars($r['name'] ?? '', ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars($layerFr, ENT_QUOTES, 'UTF-8') ?>)<?= $locked ? ' — verrouillé' : '' ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <p class="mt-2 text-[11px] text-slate-500">Les rôles verrouillés ne sont pas modifiables ici.</p>
-                </li>
-                <li class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
-                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white mb-3">2</span>
-                    <h2 class="text-sm font-bold text-slate-900">Profil à appliquer</h2>
-                    <p class="text-xs text-slate-500 mt-1 mb-4">Chaque carte remplace <strong class="font-semibold text-slate-700">intégralement</strong> les habilitations du rôle (pas de fusion avec l’existant).</p>
-                    <div class="grid gap-3 sm:grid-cols-2">
+                    <p class="mt-3 text-[11px] leading-snug text-slate-500">Les rôles verrouillés ne sont pas modifiables ici.</p>
+                </div>
+
+                <div class="flex min-w-0 flex-col rounded-[1.75rem] border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/[0.03] sm:p-6 lg:col-span-8">
+                    <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white">2</span>
+                    <h2 class="mt-3 text-sm font-black uppercase tracking-wide text-slate-900">Profil à appliquer</h2>
+                    <p class="mt-2 text-xs leading-relaxed text-slate-600">Chaque carte remplace <strong class="font-semibold text-slate-800">intégralement</strong> les habilitations du rôle (pas de fusion avec l’existant).</p>
+                    <div class="mt-5 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         <?php foreach ($presetMeta as $meta):
                             $pid = (string) ($meta['id'] ?? '');
                             if ($pid === '') {
@@ -73,11 +82,11 @@ $ok = \App\Core\Session::getFlash('success');
                             $plab = (string) ($meta['label'] ?? $pid);
                             $pdesc = (string) ($meta['description'] ?? '');
                             ?>
-                            <label class="flex cursor-pointer gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition hover:border-blue-400 hover:bg-blue-50/30 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/50 has-[:checked]:ring-2 has-[:checked]:ring-blue-200">
-                                <input type="radio" name="preset_id" value="<?= htmlspecialchars($pid, ENT_QUOTES, 'UTF-8') ?>" required class="mt-1 h-4 w-4 shrink-0 text-blue-600 border-slate-300 focus:ring-blue-500">
+                            <label class="flex min-w-0 cursor-pointer gap-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 transition hover:border-sky-400/80 hover:bg-sky-50/40 has-[:checked]:border-sky-600 has-[:checked]:bg-sky-50/70 has-[:checked]:ring-2 has-[:checked]:ring-sky-200">
+                                <input type="radio" name="preset_id" value="<?= htmlspecialchars($pid, ENT_QUOTES, 'UTF-8') ?>" required class="mt-1 h-4 w-4 shrink-0 border-slate-300 text-sky-600 focus:ring-sky-500">
                                 <span class="min-w-0 flex-1">
-                                    <span class="block font-bold text-slate-900 text-sm"><?= htmlspecialchars($plab, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="mt-1 block text-xs text-slate-600 leading-snug"><?= htmlspecialchars($pdesc, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="block text-sm font-bold text-slate-900"><?= htmlspecialchars($plab, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="mt-1 block text-xs leading-snug text-slate-600"><?= htmlspecialchars($pdesc, ENT_QUOTES, 'UTF-8') ?></span>
                                 </span>
                             </label>
                         <?php endforeach; ?>
@@ -90,99 +99,123 @@ $ok = \App\Core\Session::getFlash('success');
                             $kDesc = (string) ($kit['description'] ?? '');
                             $kCount = is_array($kit['permission_ids'] ?? null) ? count($kit['permission_ids']) : 0;
                             ?>
-                            <label class="flex cursor-pointer gap-3 rounded-xl border border-purple-200 bg-purple-50/40 p-4 transition hover:border-purple-400 hover:bg-purple-50/60 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-50/70 has-[:checked]:ring-2 has-[:checked]:ring-purple-200">
-                                <input type="radio" name="preset_id" value="<?= htmlspecialchars('custom:' . $kid, ENT_QUOTES, 'UTF-8') ?>" required class="mt-1 h-4 w-4 shrink-0 text-purple-600 border-slate-300 focus:ring-purple-500">
+                            <label class="flex min-w-0 cursor-pointer gap-3 rounded-2xl border border-violet-200 bg-violet-50/50 p-4 transition hover:border-violet-400 hover:bg-violet-50/80 has-[:checked]:border-violet-600 has-[:checked]:bg-violet-50 has-[:checked]:ring-2 has-[:checked]:ring-violet-200">
+                                <input type="radio" name="preset_id" value="<?= htmlspecialchars('custom:' . $kid, ENT_QUOTES, 'UTF-8') ?>" required class="mt-1 h-4 w-4 shrink-0 border-slate-300 text-violet-600 focus:ring-violet-500">
                                 <span class="min-w-0 flex-1">
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-purple-800">Kit perso</span>
-                                    <span class="mt-1 block font-bold text-slate-900 text-sm"><?= htmlspecialchars($kLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="mt-1 block text-xs text-slate-600 leading-snug"><?= htmlspecialchars($kDesc !== '' ? $kDesc : 'Kit personnalisé de permissions.', ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="mt-1 block text-[11px] font-semibold text-purple-800"><?= (int) $kCount ?> droits inclus</span>
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-violet-900">Kit perso</span>
+                                    <span class="mt-1 block text-sm font-bold text-slate-900"><?= htmlspecialchars($kLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="mt-1 block text-xs leading-snug text-slate-600"><?= htmlspecialchars($kDesc !== '' ? $kDesc : 'Kit personnalisé de permissions.', ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="mt-1.5 block text-[11px] font-semibold text-violet-800"><?= (int) $kCount ?> droits inclus</span>
                                 </span>
                             </label>
                         <?php endforeach; ?>
                     </div>
-                    <div class="mt-4 rounded-xl border border-purple-200 bg-purple-50/30 p-4">
-                        <div class="mb-2 flex items-center justify-between gap-2">
-                            <p class="text-xs font-bold uppercase tracking-wide text-purple-900">Créer un kit perso</p>
-                            <span class="text-[11px] text-purple-900/70"><?= count($customPresetKits) ?>/24</span>
-                        </div>
-                        <form method="post" action="<?= url('back-office/roles/presets/kits/save') ?>" class="space-y-3">
-                            <?= \App\Core\Csrf::field() ?>
-                            <div class="grid gap-2 sm:grid-cols-2">
-                                <input type="text" name="kit_label" maxlength="90" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs" placeholder="Nom du kit (ex: Cellule OPS)">
-                                <input type="text" name="kit_description" maxlength="180" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs" placeholder="Description courte">
-                            </div>
-                            <details class="rounded-lg border border-slate-200 bg-white p-3">
-                                <summary class="cursor-pointer text-xs font-semibold text-slate-700">Sélectionner les droits (<?= count($allPermissions) ?> disponibles)</summary>
-                                <div class="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
-                                    <?php foreach ($allPermissions as $perm): ?>
-                                        <label class="flex items-start gap-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700">
-                                            <input type="checkbox" name="kit_permission_ids[]" value="<?= (int) ($perm['id'] ?? 0) ?>" class="mt-0.5 rounded border-slate-300 text-purple-600">
-                                            <span><span class="font-semibold text-slate-900"><?= htmlspecialchars((string) ($perm['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span><span class="block text-[11px] text-slate-500"><?= htmlspecialchars((string) ($perm['module'] ?? ''), ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars((string) ($perm['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span></span>
-                                        </label>
-                                    <?php endforeach; ?>
-                                </div>
-                            </details>
-                            <button type="submit" class="rounded-lg bg-purple-700 px-3 py-2 text-xs font-bold text-white hover:bg-purple-800">Enregistrer le kit</button>
-                        </form>
-                        <?php if (!empty($customPresetKits)): ?>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <?php foreach ($customPresetKits as $kit): ?>
-                                    <?php $kid = (string) ($kit['id'] ?? ''); if ($kid === '') { continue; } ?>
-                                    <form method="post" action="<?= url('back-office/roles/presets/kits/delete') ?>" onsubmit="return confirm('Supprimer ce kit personnalisé ?');">
-                                        <?= \App\Core\Csrf::field() ?>
-                                        <input type="hidden" name="kit_id" value="<?= htmlspecialchars($kid, ENT_QUOTES, 'UTF-8') ?>">
-                                        <button type="submit" class="rounded-md border border-rose-200 bg-white px-2 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">Supprimer « <?= htmlspecialchars((string) ($kit['label'] ?? $kid), ENT_QUOTES, 'UTF-8') ?> »</button>
-                                    </form>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </li>
-            </ol>
+                </div>
+            </div>
 
-            <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 p-6">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-900 text-sm font-black text-white mb-2">3</span>
-                        <h2 class="text-sm font-bold text-slate-900">Récapitulatif avant application</h2>
-                        <p class="text-xs text-slate-600 mt-1 max-w-xl">Calculez les <strong class="font-semibold text-slate-800">ajouts</strong> et <strong class="font-semibold text-slate-800">retraits</strong> par rapport à l’état actuel du rôle. Vous pourrez confirmer à l’étape suivante.</p>
+            <section class="overflow-hidden rounded-[1.75rem] border border-dashed border-slate-300/90 bg-slate-50/80 p-5 shadow-inner sm:p-6 md:p-8" aria-labelledby="preset-preview-heading">
+                <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="min-w-0">
+                        <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-900 text-sm font-black text-white">3</span>
+                        <h2 id="preset-preview-heading" class="mt-3 text-sm font-black uppercase tracking-wide text-slate-900">Récapitulatif avant application</h2>
+                        <p class="mt-2 max-w-xl text-xs leading-relaxed text-slate-600">Calculez les <strong class="font-semibold text-slate-800">ajouts</strong> et <strong class="font-semibold text-slate-800">retraits</strong> par rapport à l’état actuel du rôle. Vous pourrez confirmer à l’étape suivante.</p>
                     </div>
-                    <button type="button" id="btn-load-preview" class="inline-flex items-center justify-center rounded-xl bg-indigo-700 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-indigo-800 disabled:opacity-45 disabled:pointer-events-none">
+                    <button type="button" id="btn-load-preview" class="inline-flex min-h-[2.75rem] w-full shrink-0 items-center justify-center rounded-xl bg-indigo-700 px-6 text-sm font-black text-white shadow-sm transition hover:bg-indigo-800 disabled:pointer-events-none disabled:opacity-45 lg:w-auto">
                         Afficher le récapitulatif
                     </button>
                 </div>
 
-                <div id="preview-status" class="mt-4 hidden text-sm font-medium" role="status"></div>
-                <div id="preview-panel" class="mt-5 hidden space-y-5"></div>
+                <div id="preview-status" class="mt-4 hidden text-sm font-semibold" role="status"></div>
+                <div id="preview-panel" class="mt-5 hidden min-w-0 space-y-5"></div>
+            </section>
+
+            <div class="rounded-2xl border border-rose-200/90 bg-rose-50/90 px-5 py-4 shadow-sm sm:px-6">
+                <p class="text-sm font-black uppercase tracking-wide text-rose-950">Rappel important</p>
+                <p class="mt-2 text-sm leading-relaxed text-rose-900/95">Après confirmation, les membres qui ont ce rôle disposent immédiatement du nouveau jeu de droits. Vérifiez la fiche du rôle après application.</p>
             </div>
 
-            <div class="rounded-2xl border border-rose-200 bg-rose-50/60 p-5">
-                <p class="text-sm font-semibold text-rose-950">Rappel important</p>
-                <p class="mt-1 text-sm text-rose-900/90">Après confirmation, les membres qui ont ce rôle disposent immédiatement du nouveau jeu de droits. Vérifiez la fiche du rôle après application.</p>
-            </div>
-
-            <div class="sticky bottom-3 z-10 rounded-2xl border border-slate-200/80 bg-white/95 p-3 shadow-lg backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
-                <div class="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-                <button type="button" id="btn-open-confirm" disabled class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none">
-                    Continuer vers la confirmation…
-                </button>
-                <a href="<?= url('back-office/roles') ?>" class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Annuler</a>
+            <div class="sticky bottom-0 z-10 -mx-4 border-t border-slate-200/80 bg-white/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-white/80 sm:static sm:mx-0 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
+                <div class="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                    <button type="button" id="btn-open-confirm" disabled class="inline-flex min-h-[2.75rem] w-full items-center justify-center rounded-xl bg-slate-900 px-6 text-sm font-black text-white shadow-md transition hover:bg-slate-800 disabled:pointer-events-none disabled:opacity-40 sm:w-auto">
+                        Continuer vers la confirmation…
+                    </button>
+                    <a href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-6 text-sm font-bold text-slate-700 transition hover:bg-slate-50 sm:w-auto">Annuler</a>
                 </div>
             </div>
 
-            <dialog id="preset-confirm-dialog" class="max-w-lg w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl backdrop:bg-slate-900/40">
-                <div class="border-b border-slate-100 px-6 py-4">
+            <dialog id="preset-confirm-dialog" class="max-h-[min(90dvh,42rem)] w-[calc(100%-1.5rem)] max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl backdrop:bg-slate-900/50 sm:w-full">
+                <div class="border-b border-slate-100 bg-slate-50/80 px-5 py-4 sm:px-6">
                     <h2 class="text-lg font-black text-slate-900">Confirmer l’application du profil</h2>
-                    <p class="text-xs text-slate-500 mt-1">Cette action remplace toutes les habilitations du rôle sélectionné.</p>
+                    <p class="mt-1 text-xs text-slate-600">Cette action remplace toutes les habilitations du rôle sélectionné.</p>
                 </div>
-                <div class="px-6 py-4 text-sm text-slate-700 leading-relaxed space-y-3" id="dialog-summary-body"></div>
-                <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 px-6 py-4 bg-slate-50/80 rounded-b-2xl">
-                    <button type="button" id="dialog-cancel" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Retour</button>
-                    <button type="submit" id="dialog-confirm-submit" class="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-800">Confirmer et appliquer</button>
+                <div id="dialog-summary-body" class="max-h-[min(50vh,22rem)] space-y-3 overflow-y-auto px-5 py-4 text-sm leading-relaxed text-slate-700 sm:px-6"></div>
+                <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 bg-slate-50/90 px-5 py-4 sm:px-6">
+                    <button type="button" id="dialog-cancel" class="inline-flex min-h-[2.5rem] items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">Retour</button>
+                    <button type="submit" id="dialog-confirm-submit" class="inline-flex min-h-[2.5rem] items-center justify-center rounded-xl bg-emerald-700 px-5 text-sm font-black text-white transition hover:bg-emerald-800">Confirmer et appliquer</button>
                 </div>
             </dialog>
         </form>
+
+        <section class="overflow-hidden rounded-[1.75rem] border border-violet-200/90 bg-gradient-to-br from-violet-50/90 via-white to-white p-5 shadow-sm ring-1 ring-violet-900/[0.05] sm:p-6 md:p-8" aria-labelledby="kits-perso-heading">
+            <div class="flex flex-col gap-3 border-b border-violet-200/60 pb-5 sm:flex-row sm:items-end sm:justify-between">
+                <div class="min-w-0">
+                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-violet-800/90">Hors application directe</p>
+                    <h2 id="kits-perso-heading" class="mt-1 text-lg font-black tracking-tight text-slate-900">Kits personnalisés</h2>
+                    <p class="mt-2 max-w-2xl text-sm text-slate-600">Créez des jeux de droits réutilisables (jusqu’à 24), puis sélectionnez-les comme un profil à l’étape 2.</p>
+                </div>
+                <p class="shrink-0 rounded-xl border border-violet-200 bg-white/80 px-3 py-2 text-center text-xs font-bold text-violet-900"><?= count($customPresetKits) ?> / 24 kits</p>
+            </div>
+
+            <form method="post" action="<?= htmlspecialchars(url('back-office/roles/presets/kits/save'), ENT_QUOTES, 'UTF-8') ?>" class="mt-6 space-y-4">
+                <?= \App\Core\Csrf::field() ?>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div>
+                        <label for="kit_label" class="mb-1.5 block text-[11px] font-black uppercase tracking-wide text-slate-600">Nom du kit</label>
+                        <input type="text" id="kit_label" name="kit_label" maxlength="90" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/15" placeholder="Ex. : Cellule OPS">
+                    </div>
+                    <div>
+                        <label for="kit_description" class="mb-1.5 block text-[11px] font-black uppercase tracking-wide text-slate-600">Description</label>
+                        <input type="text" id="kit_description" name="kit_description" maxlength="180" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/15" placeholder="Courte phrase explicative">
+                    </div>
+                </div>
+                <details class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <summary class="cursor-pointer text-sm font-bold text-slate-800">Sélectionner les droits <span class="font-normal text-slate-500">(<?= count($allPermissions) ?> disponibles)</span></summary>
+                    <div class="mt-4 max-h-64 space-y-1.5 overflow-y-auto overscroll-contain pr-1">
+                        <?php foreach ($allPermissions as $perm): ?>
+                            <label class="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-xs text-slate-700 transition hover:border-violet-200 hover:bg-violet-50/30">
+                                <input type="checkbox" name="kit_permission_ids[]" value="<?= (int) ($perm['id'] ?? 0) ?>" class="mt-0.5 rounded border-slate-300 text-violet-600 focus:ring-violet-500">
+                                <span class="min-w-0">
+                                    <span class="font-semibold text-slate-900"><?= htmlspecialchars((string) ($perm['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="mt-0.5 block text-[11px] text-slate-500"><?= htmlspecialchars((string) ($perm['module'] ?? ''), ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars((string) ($perm['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                </span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </details>
+                <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-violet-700 px-6 text-sm font-black text-white shadow-sm transition hover:bg-violet-800">Enregistrer le kit</button>
+            </form>
+
+            <?php if (!empty($customPresetKits)): ?>
+                <div class="mt-8 border-t border-violet-200/60 pt-6">
+                    <p class="text-[11px] font-black uppercase tracking-wide text-violet-900">Supprimer un kit</p>
+                    <ul class="mt-3 flex flex-wrap gap-2">
+                        <?php foreach ($customPresetKits as $kit): ?>
+                            <?php $kid = (string) ($kit['id'] ?? '');
+                            if ($kid === '') {
+                                continue;
+                            } ?>
+                            <li>
+                                <form method="post" action="<?= htmlspecialchars(url('back-office/roles/presets/kits/delete'), ENT_QUOTES, 'UTF-8') ?>" class="inline" onsubmit="return confirm('Supprimer ce kit personnalisé ?');">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <input type="hidden" name="kit_id" value="<?= htmlspecialchars($kid, ENT_QUOTES, 'UTF-8') ?>">
+                                    <button type="submit" class="rounded-xl border border-rose-200 bg-white px-3 py-2 text-left text-xs font-bold text-rose-800 transition hover:bg-rose-50">Supprimer « <?= htmlspecialchars((string) ($kit['label'] ?? $kid), ENT_QUOTES, 'UTF-8') ?> »</button>
+                                </form>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+        </section>
 
         <script>
 (function () {
@@ -217,10 +250,10 @@ $ok = \App\Core\Session::getFlash('success');
         keys.forEach(function (mod) {
             var label = moduleLabel(moduleLabels, mod);
             var items = byModule[mod];
-            html += '<details class="group rounded-xl border border-slate-200 bg-white overflow-hidden mb-2">';
-            html += '<summary class="cursor-pointer select-none px-4 py-3 text-sm font-bold text-slate-800 bg-slate-50/90 hover:bg-slate-100 flex justify-between items-center">';
+            html += '<details class="group mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white">';
+            html += '<summary class="flex cursor-pointer select-none items-center justify-between bg-slate-50/90 px-4 py-3 text-sm font-bold text-slate-800 hover:bg-slate-100">';
             html += '<span>' + escapeHtml(label) + ' <span class="font-normal text-slate-500">(' + items.length + ')</span></span>';
-            html += '<span class="text-slate-400 text-xs group-open:rotate-180 transition-transform">▼</span>';
+            html += '<span class="text-xs text-slate-400 transition-transform group-open:rotate-180">▼</span>';
             html += '</summary>';
             html += '<ul class="divide-y divide-slate-100 px-4 py-2 text-sm text-slate-700">';
             items.forEach(function (it) {
@@ -228,7 +261,7 @@ $ok = \App\Core\Session::getFlash('success');
                 html += '<span class="font-medium text-slate-900">' + escapeHtml(it.name) + '</span>';
                 if (it.slug) {
                     html += '<details class="mt-1"><summary class="cursor-pointer text-[11px] text-slate-500 hover:text-slate-700">Référence technique</summary>';
-                    html += '<code class="mt-1 block text-[11px] text-slate-600 bg-slate-100 rounded px-2 py-1 break-all">' + escapeHtml(it.slug) + '</code></details>';
+                    html += '<code class="mt-1 block break-all rounded bg-slate-100 px-2 py-1 text-[11px] text-slate-600">' + escapeHtml(it.slug) + '</code></details>';
                 }
                 html += '</li>';
             });
@@ -261,13 +294,13 @@ $ok = \App\Core\Session::getFlash('success');
         var rid = parseInt(roleEl.value, 10);
         var pid = getPresetId();
         if (!rid || !pid) {
-            statusEl.className = 'mt-4 text-sm font-medium text-amber-800';
+            statusEl.className = 'mt-4 text-sm font-semibold text-amber-800';
             statusEl.classList.remove('hidden');
             statusEl.textContent = 'Choisissez d’abord un rôle et un profil.';
             return;
         }
         statusEl.classList.remove('hidden');
-        statusEl.className = 'mt-4 text-sm font-medium text-slate-600';
+        statusEl.className = 'mt-4 text-sm font-semibold text-slate-600';
         statusEl.textContent = 'Calcul du récapitulatif…';
         btnPreview.disabled = true;
 
@@ -286,37 +319,37 @@ $ok = \App\Core\Session::getFlash('success');
                 btnPreview.disabled = false;
                 var j = pack.j;
                 if (!j || !j.ok) {
-                    statusEl.className = 'mt-4 text-sm font-medium text-red-800';
+                    statusEl.className = 'mt-4 text-sm font-semibold text-rose-800';
                     statusEl.textContent = j.error || 'Impossible de charger le récapitulatif.';
                     panel.classList.add('hidden');
                     btnConfirm.disabled = true;
                     return;
                 }
                 lastPreview = { roleId: rid, presetId: pid, payload: j };
-                statusEl.className = 'mt-4 text-sm font-medium text-emerald-800';
+                statusEl.className = 'mt-4 text-sm font-semibold text-emerald-800';
                 statusEl.textContent = 'Récapitulatif à jour pour « ' + j.role_name + ' » et le profil « ' + j.preset_label + ' ».';
 
                 var d = j.diff;
                 var ml = j.module_labels || {};
 
-                var stats = '<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">';
-                stats += '<div class="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm"><p class="text-2xl font-black text-slate-900">' + d.current_total + '</p><p class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold mt-1">Avant</p></div>';
-                stats += '<div class="rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 text-center shadow-sm"><p class="text-2xl font-black text-emerald-800">' + d.added_count + '</p><p class="text-[11px] uppercase tracking-wide text-emerald-800/80 font-semibold mt-1">Ajouts</p></div>';
-                stats += '<div class="rounded-xl border border-rose-200 bg-rose-50/80 p-4 text-center shadow-sm"><p class="text-2xl font-black text-rose-800">' + d.removed_count + '</p><p class="text-[11px] uppercase tracking-wide text-rose-800/80 font-semibold mt-1">Retraits</p></div>';
-                stats += '<div class="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm"><p class="text-2xl font-black text-indigo-900">' + d.preset_total + '</p><p class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold mt-1">Après</p></div>';
+                var stats = '<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">';
+                stats += '<div class="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm"><p class="text-2xl font-black text-slate-900">' + d.current_total + '</p><p class="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">Avant</p></div>';
+                stats += '<div class="rounded-xl border border-emerald-200 bg-emerald-50/90 p-4 text-center shadow-sm"><p class="text-2xl font-black text-emerald-800">' + d.added_count + '</p><p class="mt-1 text-[11px] font-bold uppercase tracking-wide text-emerald-800/80">Ajouts</p></div>';
+                stats += '<div class="rounded-xl border border-rose-200 bg-rose-50/90 p-4 text-center shadow-sm"><p class="text-2xl font-black text-rose-800">' + d.removed_count + '</p><p class="mt-1 text-[11px] font-bold uppercase tracking-wide text-rose-800/80">Retraits</p></div>';
+                stats += '<div class="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm"><p class="text-2xl font-black text-indigo-900">' + d.preset_total + '</p><p class="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">Après</p></div>';
                 stats += '</div>';
 
                 if (j.preset_description) {
-                    stats += '<p class="text-xs text-slate-600 mt-4 p-3 rounded-xl bg-slate-100/80 border border-slate-200/80"><span class="font-semibold text-slate-800">Contenu du profil :</span> ' + escapeHtml(j.preset_description) + '</p>';
+                    stats += '<p class="mt-4 rounded-xl border border-slate-200/80 bg-slate-100/60 p-3 text-xs text-slate-600"><span class="font-bold text-slate-800">Contenu du profil :</span> ' + escapeHtml(j.preset_description) + '</p>';
                 }
 
-                var detail = '<div class="grid gap-6 lg:grid-cols-2">';
-                detail += '<div><h3 class="text-xs font-black uppercase tracking-widest text-emerald-800 mb-2">Habilitations ajoutées</h3>' + renderListGrouped(d.added_by_module, ml) + '</div>';
-                detail += '<div><h3 class="text-xs font-black uppercase tracking-widest text-rose-800 mb-2">Habilitations retirées</h3>' + renderListGrouped(d.removed_by_module, ml) + '</div>';
+                var detail = '<div class="grid min-w-0 gap-6 lg:grid-cols-2">';
+                detail += '<div class="min-w-0"><h3 class="mb-2 text-[11px] font-black uppercase tracking-widest text-emerald-800">Habilitations ajoutées</h3>' + renderListGrouped(d.added_by_module, ml) + '</div>';
+                detail += '<div class="min-w-0"><h3 class="mb-2 text-[11px] font-black uppercase tracking-widest text-rose-800">Habilitations retirées</h3>' + renderListGrouped(d.removed_by_module, ml) + '</div>';
                 detail += '</div>';
 
                 if (d.unchanged_count > 0) {
-                    detail += '<p class="text-xs text-slate-500 mt-4 text-center">' + d.unchanged_count + ' habilitation(s) déjà présente(s) et conservée(s) sans changement.</p>';
+                    detail += '<p class="mt-4 text-center text-xs text-slate-500">' + d.unchanged_count + ' habilitation(s) déjà présente(s) et conservée(s) sans changement.</p>';
                 }
 
                 panel.innerHTML = stats + detail;
@@ -325,7 +358,7 @@ $ok = \App\Core\Session::getFlash('success');
             })
             .catch(function () {
                 btnPreview.disabled = false;
-                statusEl.className = 'mt-4 text-sm font-medium text-red-800';
+                statusEl.className = 'mt-4 text-sm font-semibold text-rose-800';
                 statusEl.textContent = 'Erreur réseau. Réessayez.';
                 btnConfirm.disabled = true;
             });
@@ -336,22 +369,22 @@ $ok = \App\Core\Session::getFlash('success');
         var pid = getPresetId();
         if (!lastPreview || lastPreview.roleId !== rid || lastPreview.presetId !== pid) {
             statusEl.classList.remove('hidden');
-            statusEl.className = 'mt-4 text-sm font-medium text-amber-800';
+            statusEl.className = 'mt-4 text-sm font-semibold text-amber-800';
             statusEl.textContent = 'Le rôle ou le profil a changé : affichez à nouveau le récapitulatif.';
             return;
         }
         var j = lastPreview.payload;
         var d = j.diff;
         var html = '';
-        html += '<p><span class="font-semibold text-slate-900">Rôle :</span> ' + escapeHtml(j.role_name) + '</p>';
-        html += '<p><span class="font-semibold text-slate-900">Profil :</span> ' + escapeHtml(j.preset_label) + '</p>';
-        html += '<ul class="list-disc list-inside space-y-1 text-slate-700 mt-2">';
-        html += '<li><strong class="font-semibold text-emerald-800">' + d.added_count + '</strong> habilitation(s) seront <strong>ajoutées</strong></li>';
-        html += '<li><strong class="font-semibold text-rose-800">' + d.removed_count + '</strong> habilitation(s) seront <strong>retirées</strong></li>';
-        html += '<li><strong class="font-semibold text-slate-800">' + d.unchanged_count + '</strong> resteront inchangées</li>';
-        html += '<li>Total après application : <strong class="font-semibold text-slate-900">' + d.preset_total + '</strong></li>';
+        html += '<p><span class="font-bold text-slate-900">Rôle :</span> ' + escapeHtml(j.role_name) + '</p>';
+        html += '<p><span class="font-bold text-slate-900">Profil :</span> ' + escapeHtml(j.preset_label) + '</p>';
+        html += '<ul class="mt-2 list-inside list-disc space-y-1 text-slate-700">';
+        html += '<li><strong class="text-emerald-800">' + d.added_count + '</strong> habilitation(s) seront <strong>ajoutées</strong></li>';
+        html += '<li><strong class="text-rose-800">' + d.removed_count + '</strong> habilitation(s) seront <strong>retirées</strong></li>';
+        html += '<li><strong class="text-slate-800">' + d.unchanged_count + '</strong> resteront inchangées</li>';
+        html += '<li>Total après application : <strong class="text-slate-900">' + d.preset_total + '</strong></li>';
         html += '</ul>';
-        html += '<p class="text-xs text-slate-500 mt-3">En confirmant, vous acceptez de remplacer l’ensemble des droits actuels de ce rôle.</p>';
+        html += '<p class="mt-3 text-xs text-slate-500">En confirmant, vous acceptez de remplacer l’ensemble des droits actuels de ce rôle.</p>';
         dialogBody.innerHTML = html;
         if (typeof dialog.showModal === 'function') {
             dialog.showModal();

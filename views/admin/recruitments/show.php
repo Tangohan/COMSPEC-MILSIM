@@ -100,6 +100,7 @@ $timelineTableMissing = !empty($enlistmentTimelineTableMissing);
 $timelineStepLabels = [
     'reception' => 'Réception du dossier',
     'instruction' => 'Instruction et arbitrage',
+    'suivi' => 'Suivi, pièces et messages',
     'decision' => 'Décision',
     'adhesion' => 'Rattachement au compte membre',
     'general' => 'Commentaire général',
@@ -460,6 +461,11 @@ $recapMeta = match ($statusRaw) {
                             <span class="text-stone-400"> · </span>
                             <span class="tabular-nums">Réception le <?= htmlspecialchars(date('d/m/Y à H:i', strtotime((string) $e['created_at']))) ?></span>
                         <?php endif; ?>
+                    </p>
+                    <p class="mt-2 text-xs text-stone-500">
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $id), ENT_QUOTES, 'UTF-8') ?>" class="font-bold text-sky-800 underline decoration-sky-300 underline-offset-2 hover:text-sky-950">Ouvrir le fil de suivi avec le candidat</a>
+                        <span class="text-stone-400"> · </span>
+                        cette page affiche la fiche instructeur complète (décisions, pièces).
                     </p>
                 </div>
                 <div class="flex shrink-0 flex-col items-start sm:items-end gap-2">
@@ -1089,7 +1095,7 @@ $recapMeta = match ($statusRaw) {
                                 <div>
                                     <label for="timeline_step" class="mb-2 block text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Étape concernée</label>
                                     <select id="timeline_step" name="timeline_step" class="<?= htmlspecialchars(bo_select_class('w-full rounded-2xl border-slate-300 text-sm font-semibold text-slate-900'), ENT_QUOTES, 'UTF-8') ?>">
-                                        <?php foreach (['instruction', 'decision', 'adhesion', 'reception', 'general'] as $code): ?>
+                                        <?php foreach (['reception', 'instruction', 'suivi', 'decision', 'adhesion', 'portal', 'communication', 'general'] as $code): ?>
                                             <?php if (!isset($timelineStepLabels[$code])) {
                                                 continue;
                                             } ?>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Web;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -12,6 +13,7 @@ use App\Repositories\EnlistmentRecruitmentEngagementRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\EnlistmentTimelineRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserRepository;
 use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
 use App\Services\Analytics\AnalyticsEventService;
@@ -35,6 +37,7 @@ final class EnlistmentCandidatePortalController
     public function __construct(
         private EnlistmentRepository $enlistmentRepository,
         private TenantRepository $tenantRepository,
+        private UserRepository $userRepository,
         private EnlistmentPortalMessagingNotificationService $portalMessagingNotificationService,
         private EnlistmentPortalAttachmentService $portalAttachmentService,
         private EnlistmentPortalAutoModerationCoordinator $portalAutoModerationCoordinator,
@@ -53,6 +56,133 @@ final class EnlistmentCandidatePortalController
         $email = strtolower(trim((string) ($row['email'] ?? '')));
 
         return $this->portalAutoModerationCoordinator->isPortalAccessBlocked($tenantId, $email, trim($request->ip()));
+    }
+
+    /**
+     * @param array<string, mixed> $row Ligne enlistment (+ jointures token).
+     */
+    private function currentUserIsCandidateForEnlistment(array $row, int $userId, int $tenantId): bool
+    {
+        if ($userId < 1 || $tenantId !== (int) ($row['tenant_id'] ?? 0)) {
+            return false;
+        }
+        $submitter = (int) ($row['submitter_user_id'] ?? 0);
+        if ($submitter > 0 && $submitter === $userId) {
+            return true;
+        }
+        $u = $this->userRepository->findById($userId, $tenantId);
+        if ($u === null) {
+            return false;
+        }
+        $ue = strtolower(trim((string) ($u['email'] ?? '')));
+        $ee = strtolower(trim((string) ($row['email'] ?? '')));
+
+        return $ue !== '' && $ee !== '' && $ue === $ee;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function currentUserIsRecruitmentStaffForPortal(array $row, int $userId, int $tenantId): bool
+    {
+        if ($userId < 1 || $tenantId !== (int) ($row['tenant_id'] ?? 0)) {
+            return false;
+        }
+        if ($this->currentUserIsCandidateForEnlistment($row, $userId, $tenantId)) {
+            return false;
+        }
+        $gate = Gate::getInstance();
+
+        return $gate->allows('organization.recruitment.manage')
+            || $gate->allows('organization.recruitment.openings.manage')
+            || $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('site.support');
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     *
+     * @return array{kind: string, actor_user_id: ?int, notify_staff: bool}
+     */
+    private function resolvePortalMessageAuthor(array $row): array
+    {
+        $uid = (int) Session::get('user_id');
+        $tid = (int) Session::get('tenant_id');
+        $eTid = (int) ($row['tenant_id'] ?? 0);
+        if ($uid < 1 || $tid !== $eTid) {
+            return ['kind' => 'candidate', 'actor_user_id' => null, 'notify_staff' => true];
+        }
+        if ($this->currentUserIsCandidateForEnlistment($row, $uid, $tid)) {
+            return ['kind' => 'candidate', 'actor_user_id' => null, 'notify_staff' => true];
+        }
+        if ($this->currentUserIsRecruitmentStaffForPortal($row, $uid, $tid)) {
+            return ['kind' => 'staff', 'actor_user_id' => $uid, 'notify_staff' => false];
+        }
+
+        return ['kind' => 'candidate', 'actor_user_id' => null, 'notify_staff' => true];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     *
+     * @return array{mode: string, label: string, initials: string}
+     */
+    private function buildPortalViewerContext(array $row): array
+    {
+        $uid = (int) Session::get('user_id');
+        $tid = (int) Session::get('tenant_id');
+        $eTid = (int) ($row['tenant_id'] ?? 0);
+        if ($uid < 1) {
+            return ['mode' => 'anonymous', 'label' => '', 'initials' => ''];
+        }
+        if ($tid !== $eTid) {
+            return ['mode' => 'other_tenant', 'label' => '', 'initials' => ''];
+        }
+        if ($this->currentUserIsCandidateForEnlistment($row, $uid, $tid)) {
+            return ['mode' => 'candidate', 'label' => '', 'initials' => ''];
+        }
+        if ($this->currentUserIsRecruitmentStaffForPortal($row, $uid, $tid)) {
+            $u = $this->userRepository->findById($uid, $tid);
+            $label = $this->formatPortalStaffShortLabel(is_array($u) ? $u : []);
+
+            return ['mode' => 'staff', 'label' => $label, 'initials' => $this->portalStaffInitials($label)];
+        }
+
+        return ['mode' => 'member', 'label' => '', 'initials' => ''];
+    }
+
+    /** @param array<string, mixed> $u */
+    private function formatPortalStaffShortLabel(array $u): string
+    {
+        $dn = trim((string) ($u['display_name'] ?? ''));
+        if ($dn !== '') {
+            return $dn;
+        }
+        $cs = trim((string) ($u['callsign'] ?? ''));
+        if ($cs !== '') {
+            return $cs;
+        }
+        $em = trim((string) ($u['email'] ?? ''));
+
+        return $em !== '' ? $em : 'Équipe';
+    }
+
+    private function portalStaffInitials(string $label): string
+    {
+        $label = trim($label);
+        if ($label === '') {
+            return 'RH';
+        }
+        $parts = preg_split('/\s+/u', $label, -1, PREG_SPLIT_NO_EMPTY);
+        if (is_array($parts) && isset($parts[0])) {
+            $a = mb_strtoupper(mb_substr((string) $parts[0], 0, 1));
+            $b = isset($parts[1]) ? mb_strtoupper(mb_substr((string) $parts[1], 0, 1)) : '';
+
+            return $a . $b;
+        }
+
+        return mb_strtoupper(mb_substr($label, 0, 2));
     }
 
     /**
@@ -87,7 +217,7 @@ final class EnlistmentCandidatePortalController
             $this->enlistmentTimelineRepository->seedLegacyIfEmpty($tenantId, $enlistmentId, $row);
             $timelineRows = $this->enlistmentTimelineRepository->listForEnlistment($tenantId, $enlistmentId);
         }
-        $portalSteps = $this->candidatePortalJourneyService->buildSteps($row, $timelineRows, count($messages), count($attachments));
+        $portalSteps = $this->candidatePortalJourneyService->buildSteps($row, $timelineRows, $messages, $attachments);
         $ageDays = $this->enlistmentAgeDaysPortal($row);
         $retroEligible = $ageDays !== null && $ageDays >= 30;
         $retroTable = $this->recruitmentEngagementRepository->retroTableExists();
@@ -110,6 +240,7 @@ final class EnlistmentCandidatePortalController
             'candidateRetroFeedback' => $candidateRetroRow,
             'portalRetroTableReady' => $retroTable,
             'portalSteps' => $portalSteps,
+            'portalViewer' => $this->buildPortalViewerContext($row),
         ]);
     }
 
@@ -155,26 +286,32 @@ final class EnlistmentCandidatePortalController
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
 
+        $author = $this->resolvePortalMessageAuthor($row);
+        $entryKind = $author['kind'];
+        $actorUserId = $author['actor_user_id'];
+        $notifyStaff = $author['notify_staff'];
         $ok = $this->enlistmentRepository->appendCandidatePortalMessage(
             (int) ($row['tenant_id'] ?? 0),
             (int) ($row['id'] ?? 0),
-            'candidate',
-            $body
+            $entryKind,
+            $body,
+            $actorUserId
         );
         if ($ok) {
             $tenantId = (int) ($row['tenant_id'] ?? 0);
             $eid = (int) ($row['id'] ?? 0);
             if ($this->enlistmentTimelineRepository->tableExists() && $tenantId > 0 && $eid > 0) {
                 $preview = mb_strlen($body) > 500 ? mb_substr($body, 0, 497) . '…' : $body;
+                $isStaff = $entryKind === 'staff';
                 $this->enlistmentTimelineRepository->append(
                     $tenantId,
                     $eid,
                     'system',
                     'communication',
-                    'Message du candidat sur le portail',
+                    $isStaff ? 'Message de l’équipe sur le portail candidat' : 'Message du candidat sur le portail',
                     $preview,
-                    null,
-                    ['timeline_family' => 'portal_message', 'origin' => 'candidate'],
+                    $isStaff ? $actorUserId : null,
+                    ['timeline_family' => 'portal_message', 'origin' => $isStaff ? 'staff_portal' : 'candidate'],
                     null
                 );
             }
@@ -183,18 +320,26 @@ final class EnlistmentCandidatePortalController
             if ($tenantName === '') {
                 $tenantName = 'Communauté';
             }
-            try {
-                $this->portalMessagingNotificationService->notifyStaffOfCandidatePortalMessage(
-                    $tenantId,
-                    $tenantName,
-                    $row,
-                    $body,
-                    is_array($tenantRow) ? $tenantRow : null
-                );
-            } catch (\Throwable) {
+            if ($notifyStaff) {
+                try {
+                    $this->portalMessagingNotificationService->notifyStaffOfCandidatePortalMessage(
+                        $tenantId,
+                        $tenantName,
+                        $row,
+                        $body,
+                        is_array($tenantRow) ? $tenantRow : null,
+                        false
+                    );
+                } catch (\Throwable) {
+                }
             }
         }
-        Session::flash($ok ? 'success' : 'error', $ok ? 'Votre message a été transmis.' : 'Impossible d’enregistrer le message.');
+        $flashOk = $ok
+            ? ($entryKind === 'staff'
+                ? 'Votre message a été ajouté au fil (côté recrutement, visible du candidat).'
+                : 'Votre message a été transmis.')
+            : 'Impossible d’enregistrer le message.';
+        Session::flash($ok ? 'success' : 'error', $flashOk);
 
         return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
     }
@@ -258,21 +403,33 @@ final class EnlistmentCandidatePortalController
         $kind = (string) ($result['kind'] ?? 'file');
         $orig = (string) ($result['original_name'] ?? 'fichier');
         $pieceId = (int) ($result['id'] ?? 0);
-        $line = ($kind === 'audio' ? 'Enregistrement audio transmis' : 'Document transmis') . ' : ' . $orig;
-        if ($pieceId > 0) {
-            $line .= "\n\n[piece:#" . $pieceId . ']';
+        // Portail : le corps n’affiche plus le nom de fichier pour l’audio (lecteur seul) ; le nom reste en pièce jointe / notifications.
+        if ($kind === 'audio') {
+            $line = $pieceId > 0 ? "\n\n[piece:#" . $pieceId . ']' : 'Message vocal';
+        } else {
+            $line = 'Document transmis : ' . $orig;
+            if ($pieceId > 0) {
+                $line .= "\n\n[piece:#" . $pieceId . ']';
+            }
         }
-        $this->enlistmentRepository->appendCandidatePortalMessage($tenantId, $enlistmentId, 'candidate', $line);
+        $author = $this->resolvePortalMessageAuthor($row);
+        $entryKind = $author['kind'];
+        $actorUserId = $author['actor_user_id'];
+        $notifyStaff = $author['notify_staff'];
+        $this->enlistmentRepository->appendCandidatePortalMessage($tenantId, $enlistmentId, $entryKind, $line, $actorUserId);
         if ($this->enlistmentTimelineRepository->tableExists()) {
+            $isStaff = $entryKind === 'staff';
             $this->enlistmentTimelineRepository->append(
                 $tenantId,
                 $enlistmentId,
                 'system',
                 'portal',
-                $kind === 'audio' ? 'Enregistrement audio déposé sur le portail' : 'Document déposé sur le portail',
+                $kind === 'audio'
+                    ? ($isStaff ? 'Enregistrement audio déposé sur le portail (équipe)' : 'Enregistrement audio déposé sur le portail')
+                    : ($isStaff ? 'Document déposé sur le portail (équipe)' : 'Document déposé sur le portail'),
                 $line,
-                null,
-                ['timeline_family' => 'portal_upload', 'kind' => $kind],
+                $isStaff ? $actorUserId : null,
+                ['timeline_family' => 'portal_upload', 'kind' => $kind, 'origin' => $isStaff ? 'staff_portal' : 'candidate'],
                 null
             );
         }
@@ -281,18 +438,26 @@ final class EnlistmentCandidatePortalController
         if ($tenantName === '') {
             $tenantName = 'Communauté';
         }
-        try {
-            $this->portalMessagingNotificationService->notifyStaffOfCandidatePortalUpload(
-                $tenantId,
-                $tenantName,
-                $row,
-                $kind,
-                $orig,
-                is_array($tenantRow) ? $tenantRow : null
-            );
-        } catch (\Throwable) {
+        if ($notifyStaff) {
+            try {
+                $this->portalMessagingNotificationService->notifyStaffOfCandidatePortalUpload(
+                    $tenantId,
+                    $tenantName,
+                    $row,
+                    $kind,
+                    $orig,
+                    is_array($tenantRow) ? $tenantRow : null,
+                    false
+                );
+            } catch (\Throwable) {
+            }
         }
-        Session::flash('success', 'Votre pièce jointe a bien été transmise.');
+        Session::flash(
+            'success',
+            $entryKind === 'staff'
+                ? 'La pièce a été ajoutée au dossier (visible du candidat sur ce fil).'
+                : 'Votre pièce jointe a bien été transmise.'
+        );
 
         return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
     }

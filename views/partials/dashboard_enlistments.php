@@ -39,7 +39,7 @@ $fmtRow = static function (array $e): string {
             <?php foreach ($my as $e): ?>
                 <?php
                 $id = (int) ($e['id'] ?? 0);
-                $detailUrl = url('back-office/recruitments/' . $id);
+                $detailUrl = url('back-office/recruitments/' . $id . '?dossier=1');
                 ?>
                 <li class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-sky-950">
                     <?php if ($canOpenBo): ?>
@@ -66,7 +66,7 @@ $fmtRow = static function (array $e): string {
             <?php foreach ($staff as $e): ?>
                 <?php
                 $id = (int) ($e['id'] ?? 0);
-                $detailUrl = url('back-office/recruitments/' . $id);
+                $detailUrl = url('back-office/recruitments/' . $id . '?dossier=1');
                 ?>
                 <li>
                     <a href="<?= htmlspecialchars($detailUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-medium text-amber-950 hover:underline"><?= htmlspecialchars($fmtRow($e), ENT_QUOTES, 'UTF-8') ?></a>

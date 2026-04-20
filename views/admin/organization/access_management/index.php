@@ -101,7 +101,14 @@ $activeTab = $activeTab ?? 'roles';
     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">Simulation d’accès</h2>
         <form id="sim-form" class="mt-4 grid gap-3 md:grid-cols-4">
-            <select name="user_id" class="rounded border border-slate-300 px-3 py-2"><?php foreach ($users as $u): ?><option value="<?= (int) $u['id'] ?>"><?= htmlspecialchars((string) ($u['username'] ?: $u['email'])) ?></option><?php endforeach; ?></select>
+            <select name="user_id" class="rounded border border-slate-300 px-3 py-2"><?php foreach ($users as $u): ?>
+                <?php
+                $dn = trim((string) ($u['display_name'] ?? ''));
+                $cs = trim((string) ($u['callsign'] ?? ''));
+                $em = trim((string) ($u['email'] ?? ''));
+                $uLabel = $dn !== '' ? $dn : ($cs !== '' ? $cs : $em);
+                ?>
+                <option value="<?= (int) $u['id'] ?>"><?= htmlspecialchars($uLabel !== '' ? $uLabel : ('#' . (int) $u['id']), ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select>
             <input name="resource" value="documents" class="rounded border border-slate-300 px-3 py-2">
             <select name="action" class="rounded border border-slate-300 px-3 py-2"><option>READ</option><option>CREATE</option><option>UPDATE</option><option>DELETE</option><option>EXPORT</option></select>
             <button class="rounded bg-slate-900 px-4 py-2 text-sm font-bold text-white">Simuler</button>

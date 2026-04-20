@@ -562,7 +562,7 @@ $modActionLabelFr = static function (string $t): string {
                                     ?>
                                     <li class="px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 hover:bg-slate-50/80">
                                         <div class="min-w-0">
-                                            <a href="<?= url('back-office/recruitments/' . $eid) ?>" class="font-semibold text-slate-900 hover:text-blue-800 hover:underline truncate block"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
+                                            <a href="<?= url('back-office/recruitments/' . $eid . '?dossier=1') ?>" class="font-semibold text-slate-900 hover:text-blue-800 hover:underline truncate block"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
                                             <span class="text-xs text-slate-500 truncate block"><?= htmlspecialchars((string) ($erow['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
                                         </div>
                                         <div class="flex shrink-0 items-center gap-2">

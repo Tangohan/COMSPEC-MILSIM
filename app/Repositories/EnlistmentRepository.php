@@ -20,6 +20,8 @@ class EnlistmentRepository
 
     private static ?bool $hasPortalAttachmentsTable = null;
 
+    private static ?bool $hasPortalMessageActorColumn = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -54,6 +56,16 @@ class EnlistmentRepository
         }
 
         return self::$hasCandidatePortalTables;
+    }
+
+    private function hasPortalMessageActorColumn(): bool
+    {
+        if (self::$hasPortalMessageActorColumn === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistment_candidate_messages' AND COLUMN_NAME = 'actor_user_id' LIMIT 1");
+            self::$hasPortalMessageActorColumn = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasPortalMessageActorColumn;
     }
 
     private function hasPortalAllowColumns(): bool
@@ -737,7 +749,7 @@ class EnlistmentRepository
         return $row ?: null;
     }
 
-    public function appendCandidatePortalMessage(int $tenantId, int $enlistmentId, string $entryKind, string $body): bool
+    public function appendCandidatePortalMessage(int $tenantId, int $enlistmentId, string $entryKind, string $body, ?int $actorUserId = null): bool
     {
         if (!$this->hasCandidatePortalTables()) {
             return false;
@@ -747,10 +759,18 @@ class EnlistmentRepository
         if ($payload === '') {
             return false;
         }
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO enlistment_candidate_messages (tenant_id, enlistment_id, entry_kind, body, created_at) VALUES (?, ?, ?, ?, NOW())'
-        );
-        $stmt->execute([$tenantId, $enlistmentId, $kind, mb_substr($payload, 0, 4000)]);
+        $actor = ($actorUserId !== null && $actorUserId > 0) ? $actorUserId : null;
+        if ($this->hasPortalMessageActorColumn()) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO enlistment_candidate_messages (tenant_id, enlistment_id, entry_kind, actor_user_id, body, created_at) VALUES (?, ?, ?, ?, ?, NOW())'
+            );
+            $stmt->execute([$tenantId, $enlistmentId, $kind, $actor, mb_substr($payload, 0, 4000)]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO enlistment_candidate_messages (tenant_id, enlistment_id, entry_kind, body, created_at) VALUES (?, ?, ?, ?, NOW())'
+            );
+            $stmt->execute([$tenantId, $enlistmentId, $kind, mb_substr($payload, 0, 4000)]);
+        }
 
         return $stmt->rowCount() > 0;
     }
@@ -760,9 +780,20 @@ class EnlistmentRepository
         if (!$this->hasCandidatePortalTables()) {
             return [];
         }
-        $stmt = $this->pdo->prepare(
-            'SELECT * FROM enlistment_candidate_messages WHERE tenant_id = ? AND enlistment_id = ? ORDER BY created_at ASC, id ASC LIMIT 100'
-        );
+        if ($this->hasPortalMessageActorColumn()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT m.*, u.display_name AS actor_display_name, u.callsign AS actor_callsign, u.email AS actor_email
+                 FROM enlistment_candidate_messages m
+                 LEFT JOIN users u ON u.tenant_id = m.tenant_id AND u.id = m.actor_user_id
+                 WHERE m.tenant_id = ? AND m.enlistment_id = ?
+                 ORDER BY m.created_at ASC, m.id ASC
+                 LIMIT 100'
+            );
+        } else {
+            $stmt = $this->pdo->prepare(
+                'SELECT * FROM enlistment_candidate_messages WHERE tenant_id = ? AND enlistment_id = ? ORDER BY created_at ASC, id ASC LIMIT 100'
+            );
+        }
         $stmt->execute([$tenantId, $enlistmentId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

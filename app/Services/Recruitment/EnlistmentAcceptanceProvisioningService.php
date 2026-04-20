@@ -161,7 +161,7 @@ final class EnlistmentAcceptanceProvisioningService
     ): array {
         $tenantRow = $this->tenantRepository->findById($tenantId);
         $tenantName = trim((string) ($tenantRow['name'] ?? 'Communauté'));
-        $reviewUrl = url('back-office/recruitments/' . $enlistmentId);
+        $reviewUrl = url('back-office/recruitments/' . $enlistmentId . '?dossier=1');
         $dashboardUrl = url('dashboard');
 
         $first = trim((string) ($row['first_name'] ?? ''));

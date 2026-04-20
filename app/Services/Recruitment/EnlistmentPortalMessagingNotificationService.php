@@ -100,8 +100,11 @@ final class EnlistmentPortalMessagingNotificationService
      * @param array<string, mixed> $enlistment
      * @param array<string, mixed>|null $tenantRow
      */
-    public function notifyStaffOfCandidatePortalMessage(int $tenantId, string $tenantName, array $enlistment, string $messageBody, ?array $tenantRow = null): void
+    public function notifyStaffOfCandidatePortalMessage(int $tenantId, string $tenantName, array $enlistment, string $messageBody, ?array $tenantRow = null, bool $fromStaffViewer = false): void
     {
+        if ($fromStaffViewer) {
+            return;
+        }
         $recipients = $this->resolveStaffRecipientEmails($tenantId, $enlistment, $tenantRow);
         if ($recipients === []) {
             return;
@@ -125,7 +128,7 @@ final class EnlistmentPortalMessagingNotificationService
         }
 
         $candidateEmail = strtolower(trim((string) ($enlistment['email'] ?? '')));
-        $reviewUrl = url('back-office/recruitments/' . $eid);
+        $reviewUrl = url('back-office/recruitments/' . $eid . '?dossier=1');
 
         $sent = 0;
         foreach ($recipients as $to) {
@@ -170,12 +173,12 @@ final class EnlistmentPortalMessagingNotificationService
      * @param array<string, mixed> $enlistment
      * @param array<string, mixed>|null $tenantRow
      */
-    public function notifyStaffOfCandidatePortalUpload(int $tenantId, string $tenantName, array $enlistment, string $kind, string $originalName, ?array $tenantRow = null): void
+    public function notifyStaffOfCandidatePortalUpload(int $tenantId, string $tenantName, array $enlistment, string $kind, string $originalName, ?array $tenantRow = null, bool $fromStaffViewer = false): void
     {
         $isAudio = $kind === 'audio';
         $label = $isAudio ? 'Enregistrement audio transmis' : 'Document transmis';
         $body = $label . ' : ' . $originalName;
-        $this->notifyStaffOfCandidatePortalMessage($tenantId, $tenantName, $enlistment, $body, $tenantRow);
+        $this->notifyStaffOfCandidatePortalMessage($tenantId, $tenantName, $enlistment, $body, $tenantRow, $fromStaffViewer);
     }
 
     /**
@@ -215,7 +218,7 @@ final class EnlistmentPortalMessagingNotificationService
         }
 
         $candidateEmail = strtolower(trim((string) ($enlistment['email'] ?? '')));
-        $reviewUrl = url('back-office/recruitments/' . $eid);
+        $reviewUrl = url('back-office/recruitments/' . $eid . '?dossier=1');
         $excerpt = mb_strlen($reportSummaryForEmail) > 1800 ? mb_substr($reportSummaryForEmail, 0, 1797) . '…' : $reportSummaryForEmail;
 
         foreach ($recipients as $to) {

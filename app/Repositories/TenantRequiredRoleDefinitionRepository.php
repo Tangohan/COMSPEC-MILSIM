@@ -25,7 +25,7 @@ final class TenantRequiredRoleDefinitionRepository
             $st = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_required_role_definitions' LIMIT 1");
 
             return (bool) $st && (bool) $st->fetchColumn();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             return false;
         }
     }
@@ -66,9 +66,9 @@ final class TenantRequiredRoleDefinitionRepository
                 }
             }
             $this->pdo->commit();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             $this->pdo->rollBack();
-            throw;
+            throw $e;
         }
     }
 
@@ -185,7 +185,7 @@ final class TenantRequiredRoleDefinitionRepository
             $st = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_user_roles' LIMIT 1");
 
             return (bool) $st && (bool) $st->fetchColumn();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             return false;
         }
     }

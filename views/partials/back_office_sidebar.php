@@ -98,6 +98,7 @@ $boNavRecOfferNew = str_starts_with($p, 'back-office/recruitment/offers/create')
 $boNavRecOffers = (str_starts_with($p, 'back-office/recruitment/offers') && !$boNavRecOfferNew) || str_starts_with($p, 'back-office/recruitment/reference-format');
 $canRecOffers = $gate->allows('organization.recruitment.openings.manage') || $gate->allows('organization.recruitment.manage');
 $boNavRolesPresets = str_starts_with($p, 'back-office/roles/presets');
+$boNavAccessMgmt = str_starts_with($p, 'back-office/access-management');
 $boNavRoles = ($p === 'back-office/roles' || str_starts_with($p, 'back-office/roles/')) && !$boNavRolesPresets;
 $boNavRolesFx = $p === 'back-office/roles-functions' || str_starts_with($p, 'back-office/roles-functions/');
 $boNavPjr = str_starts_with($p, 'back-office/personnel-job-roles');
@@ -149,6 +150,7 @@ $boNavOpsBoard = str_starts_with($p, 'back-office/tableau-operationnel');
 $boNavOpsAdmin = str_starts_with($p, 'back-office/centre-operations') || str_starts_with($p, 'back-office/operations-admin');
 $boNavPositions = str_starts_with($p, 'back-office/positions');
 $boNavConformite = str_starts_with($p, 'back-office/conformite');
+$boNavDoctrine = str_starts_with($p, 'back-office/doctrine');
 $legacyLmsBo = 'back-office/ressources/training';
 $studioPath = function_exists('training_studio_path') ? training_studio_path() : 'formation/studio';
 $legacyStudioPath = $legacyLmsBo . '/studio';
@@ -173,6 +175,8 @@ $canMurOperationnel = $gate->allows('operational.board.view')
 $boNavLmsSubPage = $boNavHrCharter || $boNavLmsFeedback || $boNavStudioActive
     || $boNavLmsEnrollments || $boNavLmsReports || $boNavLmsCertificates || $boNavLmsAuditTrail || $boNavLmsCompetences;
 $canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support');
+$canAccessManagementBo = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('admin.access.manage');
+$canDoctrineBo = $gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access');
 ?>
 <div class="flex h-full min-h-0 flex-col border-r border-slate-800/80 bg-slate-950">
     <div class="border-b border-slate-800/80 px-4 py-5">
@@ -209,6 +213,9 @@ $canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.a
             <?php $boLink('back-office/recruitment/offers/create', 'Nouvelle offre', $boNavRecOfferNew); ?>
         <?php endif; ?>
         <?php $boLink('back-office/roles', 'Rôles communautaires', $boNavRoles); ?>
+        <?php if ($canAccessManagementBo): ?>
+            <?php $boLink('back-office/access-management', 'Gestion des accès (RBAC+ABAC)', $boNavAccessMgmt); ?>
+        <?php endif; ?>
         <?php $boLink('back-office/roles/presets', 'Profils & kits de rôles', $boNavRolesPresets); ?>
         <?php $boLink('back-office/roles-functions', 'Cellule S1 — doctrine des fonctions', $boNavRolesFx); ?>
         <?php $boLink('back-office/personnel-job-roles', 'Emplois & missions', $boNavPjr && !$boNavPjrAssignments); ?>
@@ -263,6 +270,9 @@ $canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.a
         <?php $boLink('back-office/centre-operations', 'Centre d’opérations admin', $boNavOpsAdmin); ?>
         <?php $boLink('back-office/tableau-operationnel', 'Pilotage du mur opérationnel', $boNavOpsBoard); ?>
         <?php $boLink('back-office/courrier/traceabilite', 'Traçabilité courrier', $boNavCourrierTrace); ?>
+        <?php if ($canDoctrineBo): ?>
+            <?php $boLink('back-office/doctrine', 'Doctrine & SOP', $boNavDoctrine); ?>
+        <?php endif; ?>
         <?php if ($canOrgStructure): ?>
             <?php $boLink('back-office/conformite/export-dossier', 'Export dossier conformité', $boNavConformite); ?>
         <?php endif; ?>

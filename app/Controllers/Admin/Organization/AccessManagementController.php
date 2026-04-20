@@ -172,7 +172,13 @@ final class AccessManagementController
     /** @return list<array<string,mixed>> */
     private function listUsers(int $tenantId): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, username, email, status FROM users WHERE tenant_id = ? ORDER BY username ASC LIMIT 200');
+        $stmt = $this->pdo->prepare(
+            'SELECT id, email, status, display_name, callsign
+             FROM users
+             WHERE tenant_id = ?
+             ORDER BY LOWER(COALESCE(NULLIF(TRIM(display_name), \'\'), NULLIF(TRIM(callsign), \'\'), email)) ASC
+             LIMIT 200'
+        );
         $stmt->execute([$tenantId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

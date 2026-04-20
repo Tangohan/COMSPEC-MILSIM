@@ -23,6 +23,7 @@ use App\Services\Analytics\AnalyticsSubjectType;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Recruitment\EnlistmentAcceptanceProvisioningService;
+use App\Services\Recruitment\EnlistmentCandidatePortalJourneyService;
 use App\Services\Recruitment\EnlistmentPortalAttachmentService;
 use App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator;
 use App\Services\Recruitment\TenantRecruitmentSettings;
@@ -43,6 +44,7 @@ class AdminRecruitmentsController
         private EnlistmentRecruitmentEngagementRepository $recruitmentEngagementRepository,
         private AnalyticsEventService $analyticsEventService,
         private RecruitmentTeamWallRepository $recruitmentTeamWallRepository,
+        private EnlistmentCandidatePortalJourneyService $candidatePortalJourneyService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -96,6 +98,14 @@ class AdminRecruitmentsController
         $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
         if (!$row) {
             return Response::redirect(url('back-office/recruitments'));
+        }
+
+        // Pas de messagerie dans le BO : l’URL courte du dossier ouvre le fil de suivi sécurisé.
+        if (trim((string) $request->query('dossier', '')) !== '1') {
+            $portalRedirect = $this->tryRedirectToCandidatePortalSuivi((int) $tenantId, $id);
+            if ($portalRedirect !== null) {
+                return $portalRedirect;
+            }
         }
 
         $canned = $this->cannedMessageRepository->listForTenant((int) $tenantId);
@@ -203,6 +213,25 @@ class AdminRecruitmentsController
             (string) ($row['email'] ?? '')
         );
 
+        $candidatePortalMessages = $this->enlistmentRepository->listCandidatePortalMessages((int) $tenantId, $id);
+        $portalJourneyStepsForNotes = $this->candidatePortalJourneyService->buildSteps(
+            $row,
+            $timelineRows,
+            $candidatePortalMessages,
+            $candidatePortalAttachments
+        );
+        $timelineNoteSuggestedStep = 'general';
+        foreach ($portalJourneyStepsForNotes as $st) {
+            if (!is_array($st) || (($st['state'] ?? '') !== 'current')) {
+                continue;
+            }
+            $sid = trim((string) ($st['id'] ?? ''));
+            if ($sid !== '') {
+                $timelineNoteSuggestedStep = $sid;
+            }
+            break;
+        }
+
         try {
             $this->analyticsEventService->record(
                 (int) $tenantId,
@@ -249,6 +278,8 @@ class AdminRecruitmentsController
             'candidatePortalSuiviUrl' => $candidatePortalSuiviUrl,
             'candidatePortalSuiviExpiresFmt' => $candidatePortalSuiviExpiresFmt,
             'dossierPortalEmailBlocked' => $dossierPortalEmailBlocked,
+            'portalJourneyStepsForNotes' => $portalJourneyStepsForNotes,
+            'timelineNoteSuggestedStep' => $timelineNoteSuggestedStep,
         ]);
     }
 
@@ -277,23 +308,23 @@ class AdminRecruitmentsController
         if ((string) ($row['status'] ?? '') !== 'submitted') {
             Session::flash('error', 'Ce dossier n’est plus en file d’instruction : le volontariat n’est plus proposé ici.');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         if (!$this->recruitmentEngagementRepository->picksTableExists()) {
             Session::flash('error', 'Cette fonctionnalité nécessite une mise à jour de la base de données (migration).');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         if ($this->recruitmentEngagementRepository->userHasPick((int) $tenantId, $id, $userId)) {
             Session::flash('success', 'Vous aviez déjà signalé votre intérêt pour ce dossier.');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         $added = $this->recruitmentEngagementRepository->addPick((int) $tenantId, $id, $userId);
         if (!$added) {
             Session::flash('error', 'Impossible d’enregistrer votre volontariat pour le moment.');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         if ($this->enlistmentTimelineRepository->tableExists()) {
             $this->enlistmentTimelineRepository->append(
@@ -322,7 +353,7 @@ class AdminRecruitmentsController
         }
         Session::flash('success', 'Votre intérêt a été enregistré. L’équipe le voit sur la fiche du dossier.');
 
-        return Response::redirect(url('back-office/recruitments/' . $id));
+        return Response::redirect($this->recruitmentDossierShowUrl($id));
     }
 
     public function staffRetroSave(Request $request, array $params = []): Response
@@ -350,25 +381,25 @@ class AdminRecruitmentsController
         if (!$this->recruitmentEngagementRepository->retroTableExists()) {
             Session::flash('error', 'Cette fonctionnalité nécessite une mise à jour de la base de données (migration).');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         $ageDays = $this->enlistmentAgeDays($row);
         if ($ageDays === null || $ageDays < 30) {
             Session::flash('error', 'Le bilan équipe n’est proposé qu’à partir de 30 jours après la réception du dossier.');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         $rating = (int) $request->input('retro_staff_rating', 0);
         if ($rating < 1 || $rating > 5) {
             Session::flash('error', 'Choisissez une note de 1 à 5.');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         $comment = trim((string) $request->input('retro_staff_comment', ''));
         if ($comment === '') {
             Session::flash('error', 'Ajoutez un court commentaire pour expliquer votre note.');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         $trow = $this->tenantRepository->findById((int) $tenantId);
         $tenantName = trim((string) ((is_array($trow) ? $trow : [])['name'] ?? ''));
@@ -380,12 +411,12 @@ class AdminRecruitmentsController
             $this->portalAutoModerationCoordinator->enforceAfterStaffViolation((int) $tenantId, $tenantName, $row, $userId, $hit, $comment);
             Session::flash('error', 'Ce texte ne peut pas être enregistré : le filtre automatique du portail l’a refusé. Une alerte a été transmise.');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         if (!$this->recruitmentEngagementRepository->upsertStaffRetro((int) $tenantId, $id, $userId, $rating, $comment)) {
             Session::flash('error', 'Impossible d’enregistrer le bilan pour le moment.');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         if ($this->enlistmentTimelineRepository->tableExists()) {
             $this->enlistmentTimelineRepository->append(
@@ -414,7 +445,7 @@ class AdminRecruitmentsController
         }
         Session::flash('success', 'Bilan enregistré. Merci pour ce retour, il aide l’équipe à ajuster le processus.');
 
-        return Response::redirect(url('back-office/recruitments/' . $id));
+        return Response::redirect($this->recruitmentDossierShowUrl($id));
     }
 
     public function portalOptionsSave(Request $request, array $params = []): Response
@@ -439,7 +470,7 @@ class AdminRecruitmentsController
         if (!$this->enlistmentRepository->candidatePortalUploadsReady()) {
             Session::flash('error', 'Les options du portail candidat ne sont pas encore disponibles sur cette installation (migration à exécuter).');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         $allowFiles = (string) $request->input('candidate_portal_allow_files', '0') === '1';
         $allowAudio = (string) $request->input('candidate_portal_allow_audio', '0') === '1';
@@ -467,7 +498,7 @@ class AdminRecruitmentsController
         }
         Session::flash($ok ? 'success' : 'error', $ok ? 'Options du portail candidat enregistrées.' : 'Impossible d’enregistrer les options.');
 
-        return Response::redirect(url('back-office/recruitments/' . $id));
+        return Response::redirect($this->recruitmentDossierShowUrl($id));
     }
 
     public function portalAttachmentDownload(Request $request, array $params = []): Response
@@ -489,13 +520,13 @@ class AdminRecruitmentsController
         if (!$att) {
             Session::flash('error', 'Pièce jointe introuvable.');
 
-            return Response::redirect(url('back-office/recruitments/' . $enlistmentId));
+            return Response::redirect($this->recruitmentDossierShowUrl($enlistmentId));
         }
         $path = $this->enlistmentPortalAttachmentService->absolutePathForStorage((string) ($att['storage_path'] ?? ''));
         if ($path === '' || !is_file($path)) {
             Session::flash('error', 'Fichier introuvable sur le serveur.');
 
-            return Response::redirect(url('back-office/recruitments/' . $enlistmentId));
+            return Response::redirect($this->recruitmentDossierShowUrl($enlistmentId));
         }
         $mime = trim((string) ($att['mime'] ?? ''));
         if ($mime === '') {
@@ -544,14 +575,14 @@ class AdminRecruitmentsController
         if (!$this->enlistmentTimelineRepository->tableExists()) {
             Session::flash('error', 'Le journal des dossiers n’est pas encore disponible sur cette installation (migration à exécuter).');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
         if (!$row) {
             return Response::redirect(url('back-office/recruitments'));
         }
         $step = trim((string) $request->input('timeline_step', 'general'));
-        $allowedSteps = ['reception', 'instruction', 'decision', 'adhesion', 'general'];
+        $allowedSteps = ['reception', 'instruction', 'suivi', 'decision', 'adhesion', 'portal', 'communication', 'general'];
         if (!in_array($step, $allowedSteps, true)) {
             $step = 'general';
         }
@@ -559,12 +590,12 @@ class AdminRecruitmentsController
         if (mb_strlen($body) < 1) {
             Session::flash('error', 'Saisissez le texte du commentaire.');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         if (mb_strlen($body) > 8000) {
             Session::flash('error', 'Commentaire trop long (8 000 caractères maximum).');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         $this->enlistmentTimelineRepository->append(
             (int) $tenantId,
@@ -577,9 +608,9 @@ class AdminRecruitmentsController
             null,
             null
         );
-        Session::flash('success', 'Commentaire ajouté au journal du dossier.');
+        Session::flash('success', 'Note enregistrée : elle apparaît dans la chronologie ci-dessus (tout en bas de la liste), avec le libellé « Note interne » et l’étape choisie. Rien n’est envoyé au candidat.');
 
-        return Response::redirect(url('back-office/recruitments/' . $id));
+        return Response::redirect($this->recruitmentDossierShowUrl($id, 'journal-dossier'));
     }
 
     public function settingsSave(Request $request, array $params = []): Response
@@ -676,7 +707,7 @@ class AdminRecruitmentsController
             );
         }
 
-        return Response::redirect(url('back-office/recruitments/' . $id));
+        return Response::redirect($this->recruitmentDossierShowUrl($id));
     }
 
     public function cannedMessagesIndex(Request $request, array $params = []): Response
@@ -894,7 +925,7 @@ class AdminRecruitmentsController
         if (!isset($map[$action]) && !in_array($action, $followupActions, true)) {
             Session::flash('error', 'Décision inconnue.');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         $comment = trim((string) $request->input('reviewer_comment', ''));
         $comment = $comment !== '' ? mb_substr($comment, 0, 4000) : null;
@@ -934,7 +965,7 @@ class AdminRecruitmentsController
             if (!$okFollowup) {
                 Session::flash('error', 'Impossible d’ajouter le suivi sur ce dossier (introuvable ou déjà traité).');
 
-                return Response::redirect(url('back-office/recruitments/' . $id));
+                return Response::redirect($this->recruitmentDossierShowUrl($id));
             }
 
             $summary = $action === 'interview'
@@ -959,7 +990,7 @@ class AdminRecruitmentsController
                 ? 'Demande d’entretien enregistrée. Le dossier reste en instruction.'
                 : 'Mise en attente enregistrée. Le dossier reste en instruction.') . $suffix);
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
 
         $decisionCommentModerated = false;
@@ -977,7 +1008,7 @@ class AdminRecruitmentsController
             if ($blocked !== null) {
                 Session::flash('error', $blocked);
 
-                return Response::redirect(url('back-office/recruitments/' . $id));
+                return Response::redirect($this->recruitmentDossierShowUrl($id));
             }
         }
 
@@ -985,7 +1016,7 @@ class AdminRecruitmentsController
         if (!$ok) {
             Session::flash('error', 'Cette candidature ne peut pas être traitée (déjà traitée ou introuvable).');
 
-            return Response::redirect(url('back-office/recruitments/' . $id));
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         $messages = [
             'reviewed' => 'Candidature acceptée.',
@@ -1041,7 +1072,7 @@ class AdminRecruitmentsController
             }
         }
 
-        return Response::redirect(url('back-office/recruitments/' . $id));
+        return Response::redirect($this->recruitmentDossierShowUrl($id));
     }
 
     /**
@@ -1071,7 +1102,7 @@ class AdminRecruitmentsController
         };
         $commentStr = trim((string) $comment);
         $msgBody = 'Statut : ' . $statusLabel . ($commentStr !== '' ? ("\n\n" . $commentStr) : '');
-        $this->enlistmentRepository->appendCandidatePortalMessage($tenantId, $eid, 'staff', $msgBody);
+        $this->enlistmentRepository->appendCandidatePortalMessage($tenantId, $eid, 'staff', $msgBody, $actorUserId > 0 ? $actorUserId : null);
 
         $sent = $this->emailService->sendEnlistmentRecruitmentStatusCandidate(
             $email,
@@ -1236,5 +1267,54 @@ class AdminRecruitmentsController
         Session::flash($ok ? 'success' : 'error', $ok ? 'Message publié.' : 'Publication impossible.');
 
         return Response::redirect($returnWallUrl());
+    }
+
+    public function redirectCandidatePortalSuivi(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+        if (!$row) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $portalRedirect = $this->tryRedirectToCandidatePortalSuivi((int) $tenantId, $id);
+        if ($portalRedirect !== null) {
+            return $portalRedirect;
+        }
+        Session::flash('error', 'Ouverture du fil de suivi impossible pour ce dossier (fonction non activée ou erreur technique).');
+
+        return Response::redirect($this->recruitmentDossierShowUrl($id));
+    }
+
+    private function recruitmentDossierShowUrl(int $enlistmentId): string
+    {
+        return url('back-office/recruitments/' . $enlistmentId . '?dossier=1');
+    }
+
+    /**
+     * Redirige vers le portail messagerie candidat si les tables et un jeton sont disponibles.
+     */
+    private function tryRedirectToCandidatePortalSuivi(int $tenantId, int $enlistmentId): ?Response
+    {
+        $portal = $this->enlistmentRepository->findActiveCandidatePortalAccessRow($tenantId, $enlistmentId);
+        if ($portal === null) {
+            $this->enlistmentRepository->ensureCandidatePortalToken($tenantId, $enlistmentId);
+            $portal = $this->enlistmentRepository->findActiveCandidatePortalAccessRow($tenantId, $enlistmentId);
+        }
+        if ($portal === null) {
+            return null;
+        }
+        $tok = trim((string) ($portal['access_token'] ?? ''));
+        if ($tok === '') {
+            return null;
+        }
+
+        return Response::redirect(url('enlistment/suivi/' . rawurlencode($tok)));
     }
 }

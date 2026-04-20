@@ -582,6 +582,11 @@ class Container
                 self::get(\App\Repositories\TenantRepository::class),
                 self::get(\App\Services\Audit\AuditService::class)
             ),
+            \App\Services\Security\AccessControlService::class => new \App\Services\Security\AccessControlService(),
+            \App\Controllers\Admin\Organization\AccessManagementController::class => new \App\Controllers\Admin\Organization\AccessManagementController(
+                self::get(\App\Services\Security\AccessControlService::class),
+                self::get(UserRepository::class)
+            ),
             \App\Controllers\Admin\Organization\OrganizationPositionsController::class => new \App\Controllers\Admin\Organization\OrganizationPositionsController(
                 self::get(\App\Repositories\PositionRepository::class)
             ),
@@ -1009,6 +1014,7 @@ class Container
             \App\Controllers\Web\EnlistmentCandidatePortalController::class => new \App\Controllers\Web\EnlistmentCandidatePortalController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(TenantRepository::class),
+                self::get(UserRepository::class),
                 self::get(\App\Services\Recruitment\EnlistmentPortalMessagingNotificationService::class),
                 self::get(\App\Services\Recruitment\EnlistmentPortalAttachmentService::class),
                 self::get(\App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator::class),

@@ -123,7 +123,7 @@ $enlistmentStatusLabel = static function (string $st): string {
                                     <td class="py-3 px-4 text-stone-800 whitespace-nowrap"><?= htmlspecialchars($fmtDateTime(isset($d['mod_at']) ? (string) $d['mod_at'] : null), ENT_QUOTES, 'UTF-8') ?></td>
                                     <td class="py-3 px-4 text-stone-800 whitespace-nowrap"><?= htmlspecialchars($fmtDateTime(isset($d['enlistment_created_at']) ? (string) $d['enlistment_created_at'] : null), ENT_QUOTES, 'UTF-8') ?></td>
                                     <td class="py-3 px-4">
-                                        <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $eid), ENT_QUOTES, 'UTF-8') ?>" class="font-bold text-sky-800 hover:underline">Dossier n°<?= $eid ?></a>
+                                        <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $eid . '?dossier=1'), ENT_QUOTES, 'UTF-8') ?>" class="font-bold text-sky-800 hover:underline">Dossier n°<?= $eid ?></a>
                                         <p class="text-[11px] text-stone-500 mt-0.5">Statut : <?= htmlspecialchars($enlistmentStatusLabel((string) ($d['enlistment_status'] ?? '')), ENT_QUOTES, 'UTF-8') ?></p>
                                     </td>
                                     <td class="py-3 px-4 text-stone-700"><?= htmlspecialchars($maskEmail((string) ($d['display_contact_email'] ?? $d['email'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>

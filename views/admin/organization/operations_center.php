@@ -373,7 +373,7 @@ $renderPriorityBadge = static function (array $item) use ($priorityClasses, $pri
                 <ul class="mt-3 space-y-2 text-sm">
                     <?php foreach ($pendingRecruitments as $row): ?>
                         <li class="rounded-lg border border-slate-100 px-3 py-2">
-                            <a class="font-semibold text-blue-700 hover:underline" href="<?= url('back-office/recruitments/' . (int) ($row['id'] ?? 0)) ?>">
+                            <a class="font-semibold text-blue-700 hover:underline" href="<?= url('back-office/recruitments/' . (int) ($row['id'] ?? 0) . '?dossier=1') ?>">
                                 <?= htmlspecialchars((string) ($row['display_name'] ?? $row['email'] ?? 'Dossier'), ENT_QUOTES, 'UTF-8') ?>
                             </a>
                             <p class="text-xs text-slate-500">Soumis le <?= htmlspecialchars($formatDate((string) ($row['created_at'] ?? '')), ENT_QUOTES, 'UTF-8') ?></p>

@@ -540,7 +540,7 @@ class EnlistmentController
         $candidateEmail = trim((string) ($payload['email'] ?? ''));
         $availability = trim((string) ($payload['availability'] ?? ''));
         $motivation = trim((string) ($payload['motivation_why_join'] ?? ''));
-        $reviewUrl = url('back-office/recruitments/' . $enlistmentId);
+        $reviewUrl = url('back-office/recruitments/' . $enlistmentId . '?dossier=1');
 
         foreach ($recipients as $to) {
             try {

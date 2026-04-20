@@ -281,7 +281,7 @@ $submittedViaLabel = static function (string $raw): string {
                                             <span class="inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-bold ring-1 <?= htmlspecialchars($meta['class']) ?>"><?= htmlspecialchars($meta['label']) ?></span>
                                         </td>
                                         <td class="px-4 py-4 pr-5 text-right">
-                                            <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid)) ?>" class="inline-flex items-center gap-1 rounded-xl border border-stone-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-stone-900 shadow-sm transition hover:border-emerald-400/50 hover:bg-emerald-50/40">
+                                            <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid . '?dossier=1'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1 rounded-xl border border-stone-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-stone-900 shadow-sm transition hover:border-emerald-400/50 hover:bg-emerald-50/40">
                                                 Ouvrir
                                                 <span aria-hidden="true">→</span>
                                             </a>
@@ -320,7 +320,7 @@ $submittedViaLabel = static function (string $raw): string {
                                             <p class="mt-1 inline-flex items-center rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-900">Délai dépassé (<?= $ageHours ?> h)</p>
                                         <?php endif; ?>
                                         <p class="mt-2 truncate text-sm text-stone-600"><?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></p>
-                                        <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid)) ?>" class="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-stone-900 bg-stone-900 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-stone-800">Consulter le dossier</a>
+                                        <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid . '?dossier=1'), ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-stone-900 bg-stone-900 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-stone-800">Consulter le dossier</a>
                                     </div>
                                 </div>
                             </li>

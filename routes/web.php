@@ -96,6 +96,7 @@ use App\Controllers\Admin\Organization\OrganizationDashboardController;
 use App\Controllers\Admin\Organization\OrganizationAuditController;
 use App\Controllers\Admin\Organization\UserAdminController;
 use App\Controllers\Admin\Organization\RoleAdminController;
+use App\Controllers\Admin\Organization\AccessManagementController;
 use App\Controllers\Admin\Organization\OrganizationPositionsController;
 use App\Controllers\Admin\Organization\RolesFunctionsAdminController;
 use App\Controllers\Admin\Organization\CategoryAdminController;
@@ -561,6 +562,10 @@ return function (Router $router) {
     $router->get('/back-office/roles/{id}/permissions', [RoleAdminController::class, 'editPermissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles/{id}/permissions', [RoleAdminController::class, 'updatePermissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/{id}', [RoleAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/access-management', [AccessManagementController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/access-management/roles/save', [AccessManagementController::class, 'saveRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/access-management/rules/save', [AccessManagementController::class, 'saveRule'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/access-management/simulate', [AccessManagementController::class, 'simulate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/positions', [OrganizationPositionsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/positions', [OrganizationPositionsController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/positions/{id}/delete', [OrganizationPositionsController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -642,6 +647,7 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/messages-prefaits', [AdminRecruitmentsController::class, 'cannedMessageStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/messages-prefaits/{id}/update', [AdminRecruitmentsController::class, 'cannedMessageUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/messages-prefaits/{id}/delete', [AdminRecruitmentsController::class, 'cannedMessageDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/{id}/suivi', [AdminRecruitmentsController::class, 'redirectCandidatePortalSuivi'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/portal-options', [AdminRecruitmentsController::class, 'portalOptionsSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/piece/{attachmentId}', [AdminRecruitmentsController::class, 'portalAttachmentDownload'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -959,6 +965,7 @@ return function (Router $router) {
     $router->post('/forum/topic/{id}/unsubscribe', [ForumTopicController::class, 'unsubscribe'], $mwForum);
     $router->get('/forum/new-topic', [ForumNewTopicController::class, 'form'], $mwForum);
     $router->post('/forum/new-topic', [ForumNewTopicController::class, 'store'], $mwForum);
+    $router->get('/back-office/forum/priorite-mission/nouveau', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('forum/new-topic?mission_priority_level=high')), $mwForum);
     $router->get('/back-office/forum-moderation', [ForumModerationDashboardController::class, 'index'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
     $router->get('/api/back-office/forum-report/{id}/insight', [ForumModerationReportInsightApiController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/api/back-office/forum-moderation/manual-scan', [ForumModerationReportInsightApiController::class, 'manualScan'], [AuthMiddleware::class]);

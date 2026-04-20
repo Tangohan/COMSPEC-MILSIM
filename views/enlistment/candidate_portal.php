@@ -79,6 +79,9 @@ $portalRetroEligible = !empty($portalRetroEligible);
 $portalRetroTableReady = !empty($portalRetroTableReady);
 $candidateRetroFeedback = is_array($candidateRetroFeedback ?? null) ? $candidateRetroFeedback : null;
 $candidateRetroLabels = [5 => 'Très satisfaisant', 4 => 'Bon', 3 => 'Correct', 2 => 'En-dessous des attentes', 1 => 'À améliorer'];
+$portalViewer = is_array($portalViewer ?? null) ? $portalViewer : ['mode' => 'anonymous', 'label' => '', 'initials' => ''];
+$pvMode = (string) ($portalViewer['mode'] ?? 'anonymous');
+$pvLabel = trim((string) ($portalViewer['label'] ?? ''));
 $msgCount = count($messages);
 $lastActivity = $createdAt;
 foreach ($messages as $m) {
@@ -91,31 +94,7 @@ if ($updatedAt !== '' && ($lastActivity === '' || strtotime($updatedAt) > strtot
     $lastActivity = $updatedAt;
 }
 $lastActivityFmt = $lastActivity !== '' ? date('d/m/Y à H:i', strtotime($lastActivity) ?: time()) : '—';
-$portalSteps = [
-    [
-        'id' => 'depot',
-        'label' => 'Dépôt reçu',
-        'hint' => 'Votre candidature est enregistrée.',
-        'state' => 'done',
-    ],
-    [
-        'id' => 'suivi',
-        'label' => 'Suivi & échanges',
-        'hint' => 'Messages, pièces et enregistrements vocaux avec l’équipe.',
-        'state' => in_array($status, ['reviewed', 'rejected', 'blocked'], true) ? 'done' : 'current',
-    ],
-    [
-        'id' => 'decision',
-        'label' => 'Décision',
-        'hint' => match ($status) {
-            'reviewed' => 'Dossier accepté par la communauté.',
-            'rejected' => 'Dossier refusé. Vous pouvez écrire à l’équipe pour des précisions.',
-            'blocked' => 'Dossier classé non admis.',
-            default => 'L’équipe rend sa décision sur ce dossier.',
-        },
-        'state' => in_array($status, ['reviewed', 'rejected', 'blocked'], true) ? 'done' : 'upcoming',
-    ],
-];
+$portalSteps = is_array($portalSteps ?? null) ? $portalSteps : [];
 $initials = '';
 if ($fullName !== '') {
     $parts = preg_split('/\s+/u', $fullName, -1, PREG_SPLIT_NO_EMPTY);
@@ -297,16 +276,28 @@ $tailwindHead = (string) ob_get_clean();
                             : ($isCurrent ? 'border-amber-500 bg-amber-500 text-white ring-4 ring-amber-200' : 'border-slate-200 bg-white text-slate-300');
                         $lineClass = $si < count($portalSteps) - 1 ? ($isDone ? 'bg-emerald-200' : 'bg-slate-200') : '';
                         ?>
-                        <li class="relative flex gap-4 pb-8 last:pb-0"<?= $isCurrent ? ' aria-current="step"' : '' ?>>
+                        <?php
+                        $stepTooltip = trim((string) ($st['tooltip'] ?? ''));
+                        ?>
+                        <li class="relative flex gap-4 pb-8 last:pb-0<?= $stepTooltip !== '' ? ' cursor-help' : '' ?>"<?= $isCurrent ? ' aria-current="step"' : '' ?><?= $stepTooltip !== '' ? ' title="' . htmlspecialchars($stepTooltip, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
                             <?php if ($si < count($portalSteps) - 1): ?>
                                 <span class="absolute left-[0.65rem] top-8 bottom-0 w-0.5 <?= htmlspecialchars($lineClass, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
                             <?php endif; ?>
                             <span class="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-black <?= $dotClass ?>" aria-hidden="true"><?= $isDone ? '✓' : (string) ($si + 1) ?></span>
                             <div class="min-w-0 pt-0.5">
-                                <p class="text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($st['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="flex flex-wrap items-center gap-1.5 text-sm font-bold text-slate-900">
+                                    <span><?= htmlspecialchars((string) ($st['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php if ($stepTooltip !== ''): ?>
+                                        <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-[10px] font-black leading-none text-slate-500" title="<?= htmlspecialchars($stepTooltip, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true">i</span>
+                                    <?php endif; ?>
+                                </p>
                                 <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= htmlspecialchars((string) ($st['hint'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php if ($isCurrent && (string) ($st['id'] ?? '') === 'suivi'): ?>
-                                    <p class="mt-2 text-[11px] font-semibold text-amber-800">Étape en cours — continuez à échanger sur ce fil si besoin.</p>
+                                <?php if ($isCurrent && (string) ($st['id'] ?? '') === 'instruction'): ?>
+                                    <p class="mt-2 text-[11px] font-semibold text-amber-800">Étape en cours — l’équipe étudie votre dossier. Les premières réponses apparaîtront dans le fil de messages.</p>
+                                <?php elseif ($isCurrent && (string) ($st['id'] ?? '') === 'suivi'): ?>
+                                    <p class="mt-2 text-[11px] font-semibold text-amber-800">Étape en cours — poursuivez l’échange sur le fil ci-dessous si vous avez des pièces ou des questions.</p>
+                                <?php elseif ($isCurrent && (string) ($st['id'] ?? '') === 'adhesion'): ?>
+                                    <p class="mt-2 text-[11px] font-semibold text-amber-800">Étape en cours — suivez les consignes reçues par e-mail ou sur le fil pour activer votre accès membre.</p>
                                 <?php endif; ?>
                             </div>
                         </li>
@@ -360,29 +351,18 @@ $tailwindHead = (string) ob_get_clean();
             </section>
             <?php endif; ?>
 
-            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="nouveau-message">
-                <h2 id="nouveau-message" class="text-xs font-black uppercase tracking-wider text-slate-700">Écrire à l’équipe</h2>
-                <p class="mt-1 text-sm text-slate-500">Précisions sur votre disponibilité, questions sur l’entretien ou documents demandés. Réponse par e-mail et dans ce fil.</p>
-                <form method="post" action="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/message'), ENT_QUOTES, 'UTF-8') ?>" class="mt-5 space-y-4">
-                    <?= \App\Core\Csrf::field() ?>
-                    <div>
-                        <label for="candidate_message" class="sr-only">Votre message</label>
-                        <textarea id="candidate_message" name="candidate_message" rows="5" maxlength="4000" required class="min-h-[8rem] w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-inner outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900/10" placeholder="Ex. : je confirme le créneau proposé, ma disponibilité change à partir de la semaine prochaine…"></textarea>
-                        <p class="mt-1.5 text-[11px] text-slate-500">4&nbsp;000 caractères maximum. Soyez factuel : cela aide l’équipe à traiter votre dossier plus vite.</p>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-slate-900 px-6 text-xs font-black uppercase tracking-wide text-white shadow-md transition hover:bg-slate-800">Transmettre le message</button>
-                        <p class="text-[11px] text-slate-500">Un e-mail d’alerte est envoyé aux personnes habilitées au recrutement.</p>
-                    </div>
-                </form>
-            </section>
-
             <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="fil-messages">
                 <div class="border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4 sm:px-6">
                     <h2 id="fil-messages" class="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-400/95">Fil de messages</h2>
                     <p class="mt-1 text-sm text-slate-300">Seuls vous et l’équipe recrutement de la communauté voyez ces échanges sur ce lien.</p>
                 </div>
-                <div class="max-h-[min(28rem,70vh)] space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
+                <?php if ($pvMode === 'staff' && $pvLabel !== ''): ?>
+                    <div class="border-b border-amber-100 bg-amber-50/95 px-5 py-3 sm:px-6">
+                        <p class="text-xs font-bold text-amber-950">Consultation recrutement</p>
+                        <p class="mt-1 text-sm text-amber-950/95">Vous êtes connecté en tant que <span class="font-black"><?= htmlspecialchars($pvLabel, ENT_QUOTES, 'UTF-8') ?></span>. Les messages que vous envoyez depuis cette page sont enregistrés côté <span class="font-semibold">recrutement</span> (pas au nom du candidat) et restent visibles sur ce fil.</p>
+                    </div>
+                <?php endif; ?>
+                <div class="max-h-[min(28rem,70vh)] space-y-4 overflow-x-hidden overflow-y-auto px-4 py-5 sm:px-6">
                     <?php if ($messages === []): ?>
                         <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
                             Aucun message pour l’instant. Lorsque l’équipe mettra à jour votre dossier, la réponse apparaîtra ici et un e-mail vous sera envoyé si votre adresse est valide.
@@ -410,30 +390,60 @@ $tailwindHead = (string) ob_get_clean();
                             $audioSrc = ($linkedIsAudio && $linkedPieceId > 0)
                                 ? htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $linkedPieceId . '?inline=1'), ENT_QUOTES, 'UTF-8')
                                 : '';
+                            if ($linkedIsAudio) {
+                                $bodyDisplay = trim((string) preg_replace('/^\s*Enregistrement audio transmis\s*:\s*.+$/mu', '', $bodyDisplay));
+                            }
+                            $hasAudioPlayer = $linkedIsAudio && $audioSrc !== '';
+                            $actorName = '';
+                            $actorInitials = 'RH';
+                            if (!$isCandidate) {
+                                $actorName = trim((string) ($m['actor_display_name'] ?? ''));
+                                if ($actorName === '') {
+                                    $actorName = trim((string) ($m['actor_callsign'] ?? ''));
+                                }
+                                if ($actorName === '') {
+                                    $actorName = trim((string) ($m['actor_email'] ?? ''));
+                                }
+                                if ($actorName !== '') {
+                                    $ap = preg_split('/\s+/u', $actorName, -1, PREG_SPLIT_NO_EMPTY);
+                                    if (is_array($ap) && isset($ap[0])) {
+                                        $actorInitials = mb_strtoupper(mb_substr((string) $ap[0], 0, 1));
+                                        if (isset($ap[1])) {
+                                            $actorInitials .= mb_strtoupper(mb_substr((string) $ap[1], 0, 1));
+                                        } else {
+                                            $actorInitials = mb_strtoupper(mb_substr($actorName, 0, 2));
+                                        }
+                                    }
+                                }
+                            }
                             ?>
                             <div class="flex <?= $isCandidate ? 'justify-end' : 'justify-start' ?>">
-                                <div class="flex max-w-[min(100%,34rem)] gap-3 <?= $isCandidate ? 'flex-row-reverse' : 'flex-row' ?>">
+                                <div class="flex min-w-0 max-w-[min(100%,34rem)] gap-3 <?= $isCandidate ? 'flex-row-reverse' : 'flex-row' ?>">
                                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-black <?= $isCandidate ? 'bg-sky-600 text-white' : 'bg-emerald-600 text-white' ?>" aria-hidden="true">
-                                        <?= $isCandidate ? htmlspecialchars(mb_substr($initials, 0, 2), ENT_QUOTES, 'UTF-8') : 'RH' ?>
+                                        <?= $isCandidate ? htmlspecialchars(mb_substr($initials, 0, 2), ENT_QUOTES, 'UTF-8') : htmlspecialchars(mb_substr($actorInitials, 0, 2), ENT_QUOTES, 'UTF-8') ?>
                                     </div>
                                     <div class="min-w-0">
                                         <div class="flex flex-wrap items-center gap-2 <?= $isCandidate ? 'justify-end' : 'justify-start' ?>">
-                                            <span class="text-[10px] font-black uppercase tracking-wider <?= $isCandidate ? 'text-sky-800' : 'text-emerald-900' ?>"><?= $isCandidate ? 'Vous' : 'Recrutement' ?></span>
+                                            <span class="text-[10px] font-black uppercase tracking-wider <?= $isCandidate ? 'text-sky-800' : 'text-emerald-900' ?>"><?php if ($isCandidate): ?>Vous<?php elseif ($actorName !== ''): ?>Recrutement<span class="ml-1 font-semibold normal-case text-slate-600">· <?= htmlspecialchars($actorName, ENT_QUOTES, 'UTF-8') ?></span><?php else: ?>Recrutement<?php endif; ?></span>
                                             <span class="text-[10px] font-semibold tabular-nums text-slate-400"><?= htmlspecialchars($dt, ENT_QUOTES, 'UTF-8') ?></span>
                                             <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-500">#<?= (int) $i + 1 ?></span>
                                         </div>
-                                        <div class="mt-1.5 rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm <?= $isCandidate ? 'rounded-tr-sm border-sky-200 bg-sky-50 text-slate-900' : 'rounded-tl-sm border-emerald-200 bg-emerald-50/90 text-slate-900' ?>">
+                                        <div class="mt-1.5 max-w-full min-w-0 rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm <?= $isCandidate ? 'rounded-tr-sm border-sky-200 bg-sky-50 text-slate-900' : 'rounded-tl-sm border-emerald-200 bg-emerald-50/90 text-slate-900' ?>">
                                             <?php if ($statLine !== null && $statLine !== ''): ?>
                                                 <p class="mb-2 inline-flex flex-wrap items-center gap-2 text-xs font-bold text-emerald-950">
                                                     <span class="rounded-full bg-emerald-600/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-900">Mise à jour</span>
-                                                    <span><?= htmlspecialchars($statLine, ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <span class="min-w-0 max-w-full break-words [overflow-wrap:anywhere]"><?= htmlspecialchars($statLine, ENT_QUOTES, 'UTF-8') ?></span>
                                                 </p>
                                             <?php endif; ?>
-                                            <div class="whitespace-pre-wrap text-[15px] text-slate-800"><?= $bodyDisplay !== '' ? nl2br(htmlspecialchars($bodyDisplay, ENT_QUOTES, 'UTF-8')) : '—' ?></div>
-                                            <?php if ($linkedIsAudio && $audioSrc !== ''): ?>
-                                                <div class="snap-audio-pill mt-3 rounded-2xl border border-white/30 bg-white/15 p-3 backdrop-blur-sm">
-                                                    <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-white/90">Lecture</p>
-                                                    <audio controls preload="metadata" src="<?= $audioSrc ?>" class="rounded-lg opacity-95"></audio>
+                                            <?php if ($bodyDisplay !== ''): ?>
+                                                <div class="max-w-full whitespace-pre-wrap break-words text-[15px] text-slate-800 [overflow-wrap:anywhere]"><?= nl2br(htmlspecialchars($bodyDisplay, ENT_QUOTES, 'UTF-8')) ?></div>
+                                            <?php elseif (!$hasAudioPlayer): ?>
+                                                <div class="max-w-full whitespace-pre-wrap break-words text-[15px] text-slate-800 [overflow-wrap:anywhere]">—</div>
+                                            <?php endif; ?>
+                                            <?php if ($hasAudioPlayer): ?>
+                                                <div class="mt-3 max-w-full rounded-2xl border <?= $isCandidate ? 'border-sky-300/80 bg-sky-100/90' : 'border-emerald-300/80 bg-emerald-100/80' ?> p-3">
+                                                    <p class="mb-2 text-[10px] font-black uppercase tracking-wider <?= $isCandidate ? 'text-sky-900/90' : 'text-emerald-950/90' ?>">Lecture</p>
+                                                    <audio controls preload="metadata" src="<?= $audioSrc ?>" class="w-full max-w-full rounded-lg"></audio>
                                                 </div>
                                             <?php elseif ($linkedPieceId !== null && $linkedPieceId > 0 && is_array($linkedAtt)): ?>
                                                 <div class="mt-3">
@@ -446,6 +456,27 @@ $tailwindHead = (string) ob_get_clean();
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
+
+                    <div class="border-t border-slate-200 pt-4">
+                        <h3 id="nouveau-message" class="text-xs font-black uppercase tracking-wider text-slate-700"><?= $pvMode === 'staff' ? 'Message recrutement (visible du candidat)' : 'Écrire à l’équipe' ?></h3>
+                        <p class="mt-1 text-sm text-slate-500"><?php if ($pvMode === 'staff' && $pvLabel !== ''): ?>
+                            Vous répondez en tant que <span class="font-semibold text-slate-800"><?= htmlspecialchars($pvLabel, ENT_QUOTES, 'UTF-8') ?></span> : le message apparaît sur ce fil comme un message de l’équipe (pas une alerte « candidat » aux autres recruteurs).
+                        <?php else: ?>
+                            Précisions sur votre disponibilité, questions sur l’entretien ou documents demandés. Réponse par e-mail et dans ce fil.
+                        <?php endif; ?></p>
+                        <form method="post" action="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/message'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 space-y-4">
+                            <?= \App\Core\Csrf::field() ?>
+                            <div>
+                                <label for="candidate_message" class="sr-only">Votre message</label>
+                                <textarea id="candidate_message" name="candidate_message" rows="5" maxlength="4000" required class="min-h-[8rem] w-full min-w-0 max-w-full resize-y rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-inner outline-none transition [overflow-wrap:anywhere] placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900/10" placeholder="Ex. : je confirme le créneau proposé, ma disponibilité change à partir de la semaine prochaine…"></textarea>
+                                <p class="mt-1.5 text-[11px] text-slate-500">4&nbsp;000 caractères maximum. Soyez factuel : cela aide l’équipe à traiter votre dossier plus vite.</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-slate-900 px-6 text-xs font-black uppercase tracking-wide text-white shadow-md transition hover:bg-slate-800">Transmettre le message</button>
+                                <p class="text-[11px] text-slate-500">Un e-mail d’alerte est envoyé aux personnes habilitées au recrutement.</p>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </section>
 
@@ -487,9 +518,16 @@ $tailwindHead = (string) ob_get_clean();
                         $when = trim((string) ($att['created_at'] ?? ''));
                         $whenFmt = $when !== '' ? date('d/m/Y à H:i', strtotime($when) ?: time()) : '—';
                         ?>
-                        <li class="flex flex-col gap-3 px-5 py-4 sm:px-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                        <li class="flex gap-3 px-5 py-4 sm:px-6">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600" aria-hidden="true" title="<?= $k === 'audio' ? 'Audio' : 'Document' ?>">
+                                <?php if ($k === 'audio'): ?>
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                                <?php else: ?>
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                <?php endif; ?>
+                            </div>
                             <div class="min-w-0 flex-1">
-                                <p class="truncate font-semibold text-slate-900"><?= htmlspecialchars($fn, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="font-semibold leading-snug text-slate-900 break-words"><?= htmlspecialchars($fn, ENT_QUOTES, 'UTF-8') ?></p>
                                 <p class="mt-0.5 text-xs text-slate-500"><?= $k === 'audio' ? 'Enregistrement audio' : 'Document' ?> · <?= htmlspecialchars($fmtBytes($sz), ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($whenFmt, ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php if ($k === 'audio'): ?>
                                     <div class="snap-shell mt-3 max-w-md rounded-2xl p-4">
@@ -497,8 +535,8 @@ $tailwindHead = (string) ob_get_clean();
                                         <audio controls preload="metadata" src="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid . '?inline=1'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 w-full rounded-lg"></audio>
                                     </div>
                                 <?php endif; ?>
+                                <a href="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid . '/preparation'), ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 transition hover:bg-slate-50"><?= $k === 'audio' ? 'Télécharger l’audio' : 'Télécharger' ?></a>
                             </div>
-                            <a href="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/piece/' . $aid . '/preparation'), ENT_QUOTES, 'UTF-8') ?>" class="shrink-0 self-start rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 transition hover:bg-slate-50"><?= $k === 'audio' ? 'Télécharger l’audio' : 'Télécharger' ?></a>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -529,7 +567,7 @@ $tailwindHead = (string) ob_get_clean();
             </section>
             <?php elseif ($portalUploadsReady): ?>
             <section class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600">
-                L’équipe n’a pas activé l’envoi de pièces jointes pour votre dossier. Si vous devez transmettre un document ou un audio, indiquez-le dans le bloc <span class="font-semibold text-slate-800">Écrire à l’équipe</span> (au-dessus du fil de messages) : l’équipe pourra vous répondre ou activer l’envoi ici.
+                L’équipe n’a pas activé l’envoi de pièces jointes pour votre dossier. Si vous devez transmettre un document ou un audio, indiquez-le dans le bloc <span class="font-semibold text-slate-800">Écrire à l’équipe</span> en bas du fil de messages : l’équipe pourra vous répondre ou activer l’envoi ici.
             </section>
             <?php endif; ?>
 
