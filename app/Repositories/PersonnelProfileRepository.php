@@ -45,6 +45,8 @@ class PersonnelProfileRepository
             'personnel_job_role_id', 'role_sub_label',
             'primary_unit_id', 'clearance_level', 'character_portrait_path', 'character_banner_path',
             'blood_type', 'nationality', 'languages', 'enlistment_date', 'motto',
+            'service_branch', 'birth_place', 'service_status', 'gendarmerie_status', 'administrative_position',
+            'bureau_sn', 'military_origin', 'statutory_limit_date', 'management_service_limit_date',
             'readiness_score', 'command_notes', 'matricule_internal', 'clearance_reviewed_at',
             'equipment_class', 'kit_assigned', 'radio_assigned', 'vehicle_authorized', 'weapon_specialty',
             'deployable',
