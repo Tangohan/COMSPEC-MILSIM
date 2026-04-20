@@ -116,14 +116,14 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
     <?php require base_path('views/training/partials/lms_course_opening_sequence.php'); ?>
     <div class="lms-grain"></div>
     <div class="min-h-screen relative z-10">
-        <div class="grid lg:grid-cols-[300px_1fr] min-h-screen">
+        <div class="grid min-h-screen min-w-0 lg:grid-cols-[300px_minmax(0,1fr)]">
             <?php
             $lmsBase = $base;
             $currentLessonId = null;
             require base_path('views/training/partials/lms_course_sidebar.php');
             ?>
 
-            <main class="p-5 md:p-8 lg:p-10 space-y-8">
+            <main class="min-w-0 p-5 md:p-8 lg:p-10 space-y-8">
                 <?php if ($flashOk): ?>
                 <div class="lms-panel rounded-2xl p-4 bg-emerald-50 border border-emerald-200 text-emerald-950 text-sm font-medium"><?= htmlspecialchars((string) $flashOk) ?></div>
                 <?php endif; ?>
@@ -169,13 +169,13 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
 
                 <header class="lms-panel relative overflow-hidden rounded-[2rem] p-6 md:p-8">
                     <div class="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-emerald-500/75 via-emerald-500/20 to-transparent" aria-hidden="true"></div>
-                    <div class="flex flex-col gap-8 <?= $courseHeaderAsideVisible ? 'lg:flex-row lg:items-start lg:justify-between lg:gap-10' : '' ?>">
-                        <div class="min-w-0 flex-1">
+                    <div class="w-full min-w-0 <?= $courseHeaderAsideVisible ? 'grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-x-10 lg:gap-y-8' : 'flex flex-col gap-8' ?>">
+                        <div class="min-w-0 <?= $courseHeaderAsideVisible ? '' : 'flex-1' ?>">
                             <div class="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                                 <p class="text-[9px] font-black uppercase tracking-[0.35em] text-slate-400">Fiche formation</p>
                                 <span class="inline-flex items-center rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-2.5 py-0.5 font-mono text-[11px] font-bold tracking-tight text-emerald-800" title="Référence du parcours"><?= htmlspecialchars($code) ?></span>
                             </div>
-                            <h1 id="lms-course-page-title" class="text-balance text-2xl font-black leading-[1.15] tracking-tight text-slate-900 md:text-4xl"><?= htmlspecialchars((string) $course['title']) ?></h1>
+                            <h1 id="lms-course-page-title" class="text-balance break-words text-2xl font-black leading-[1.15] tracking-tight text-slate-900 md:text-4xl"><?= htmlspecialchars((string) $course['title']) ?></h1>
                             <?php if ($courseMetaChips !== []): ?>
                             <ul class="mt-4 flex flex-wrap gap-2" aria-label="Caractéristiques du parcours">
                                 <?php foreach ($courseMetaChips as $chip): ?>
@@ -190,7 +190,7 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
                             <?php endif; ?>
                         </div>
                         <?php if ($courseHeaderAsideVisible): ?>
-                        <aside class="flex w-full shrink-0 flex-col gap-4 sm:max-lg:flex-row sm:max-lg:flex-wrap lg:w-[min(100%,19rem)] xl:w-[min(100%,21rem)]" aria-label="Actions et suivi">
+                        <aside class="flex w-full min-w-0 max-w-full flex-col gap-4 sm:max-lg:flex-row sm:max-lg:flex-wrap lg:max-w-[20rem] lg:justify-self-stretch" aria-label="Actions et suivi">
                             <?php if ($viewerLoggedIn): ?>
                             <div class="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3 shadow-sm sm:max-lg:flex-1 sm:max-lg:min-w-[12rem]">
                                 <p class="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Réactions</p>

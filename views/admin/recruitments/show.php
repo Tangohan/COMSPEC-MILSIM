@@ -35,6 +35,60 @@ $analyticsEventLabels = [
     'enlistment_staff_retro_submit' => 'Bilan équipe enregistré',
     'enlistment_candidate_retro_submit' => 'Retour candidat enregistré',
 ];
+$analyticsRecentInitialRows = 10;
+$analyticsMergedRows = [];
+foreach ($enlistmentAnalyticsRecent as $ev) {
+    $nm = (string) ($ev['name'] ?? '');
+    $labEv = $analyticsEventLabels[$nm] ?? 'Action enregistrée';
+    $ca = trim((string) ($ev['created_at'] ?? ''));
+    if ($ca === '') {
+        continue;
+    }
+    $ts = strtotime($ca) ?: time();
+    $minuteSlot = date('Y-m-d H:i', $ts);
+    $lastIdx = count($analyticsMergedRows) - 1;
+    if ($lastIdx >= 0
+        && $analyticsMergedRows[$lastIdx]['minute_slot'] === $minuteSlot
+        && $analyticsMergedRows[$lastIdx]['label'] === $labEv) {
+        $analyticsMergedRows[$lastIdx]['count']++;
+    } else {
+        $analyticsMergedRows[] = [
+            'minute_slot' => $minuteSlot,
+            'day_key' => date('Y-m-d', $ts),
+            'time' => date('H:i', $ts),
+            'label' => $labEv,
+            'count' => 1,
+        ];
+    }
+}
+$analyticsMergedVisible = array_slice($analyticsMergedRows, 0, $analyticsRecentInitialRows);
+$analyticsMergedMore = array_slice($analyticsMergedRows, $analyticsRecentInitialRows);
+$analyticsFrenchDayHeader = static function (string $dayKey): string {
+    $ts = strtotime($dayKey . ' 12:00:00') ?: time();
+    $mois = [1 => 'janvier', 2 => 'février', 3 => 'mars', 4 => 'avril', 5 => 'mai', 6 => 'juin', 7 => 'juillet', 8 => 'août', 9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'décembre'];
+    $j = (int) date('j', $ts);
+    $m = (int) date('n', $ts);
+    $y = (int) date('Y', $ts);
+
+    return $j . ' ' . ($mois[$m] ?? date('F', $ts)) . ' ' . $y;
+};
+$analyticsGroupByDayOrder = static function (array $mergedRows): array {
+    $dayOrder = [];
+    $byDay = [];
+    foreach ($mergedRows as $r) {
+        $dk = (string) ($r['day_key'] ?? '');
+        if ($dk === '') {
+            continue;
+        }
+        if (!isset($byDay[$dk])) {
+            $byDay[$dk] = [];
+            $dayOrder[] = $dk;
+        }
+        $byDay[$dk][] = $r;
+    }
+
+    return [$dayOrder, $byDay];
+};
 $membershipRepairHint = $membershipRepairHint ?? null;
 $enlistmentSlaHours = max(1, (int) ($enlistmentSlaHours ?? 72));
 $submittedAgeHours = isset($e['submitted_age_hours']) ? (int) $e['submitted_age_hours'] : null;
@@ -69,13 +123,7 @@ $portalAllowFiles = !empty($e['candidate_portal_allow_files']);
 $portalAllowAudio = !empty($e['candidate_portal_allow_audio']);
 $candidatePortalSuiviUrl = isset($candidatePortalSuiviUrl) && is_string($candidatePortalSuiviUrl) && $candidatePortalSuiviUrl !== '' ? $candidatePortalSuiviUrl : null;
 $candidatePortalSuiviExpiresFmt = isset($candidatePortalSuiviExpiresFmt) && is_string($candidatePortalSuiviExpiresFmt) && $candidatePortalSuiviExpiresFmt !== '' ? $candidatePortalSuiviExpiresFmt : null;
-$candidatePortalThreadReady = !empty($candidatePortalThreadReady);
-$enlistmentPortalToolboxCanned = is_array($enlistmentPortalToolboxCanned ?? null) ? $enlistmentPortalToolboxCanned : [];
-$recruitmentWorkflowMode = (string) ($recruitmentWorkflowMode ?? 'simple');
-if (!in_array($recruitmentWorkflowMode, ['simple', 'milsim'], true)) {
-    $recruitmentWorkflowMode = 'simple';
-}
-$recruitmentStaffSignature = trim((string) ($recruitmentStaffSignature ?? ''));
+$dossierPortalEmailBlocked = !empty($dossierPortalEmailBlocked);
 
 $sharedFields = [];
 $sfRaw = $e['shared_fields'] ?? null;
@@ -181,14 +229,39 @@ $recapMeta = match ($statusRaw) {
                 <span class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 font-bold text-stone-900">Dossier n°<?= $id ?></span>
                 <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="ml-auto inline-flex min-h-[2.25rem] items-center rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-900 shadow-sm transition hover:bg-slate-200">Délais d’alerte</a>
             </div>
-            <div class="border-t border-stone-200 bg-stone-50 px-4 py-3 text-[11px] text-stone-600 space-y-1.5">
-                <p><span class="font-bold text-stone-800">Statut</span> — <?= htmlspecialchars($statusLabel ?: '—', ENT_QUOTES, 'UTF-8') ?></p>
-                <p><span class="font-bold text-stone-800">Attribué</span> — <?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p>
-            </div>
         </nav>
 
-        <div class="space-y-6 min-w-0">
-                <section id="recap-dossier" class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
+        <div class="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)]">
+            <aside class="w-full min-w-0">
+                <div class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm lg:shadow-md">
+                    <div class="border-b border-stone-200 bg-stone-50 px-4 py-3">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Dans ce dossier</p>
+                    </div>
+                    <nav class="space-y-2 p-3" aria-label="Sections du dossier">
+                        <a href="#recap-dossier" class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-900 shadow-sm transition hover:border-emerald-300/60 hover:bg-emerald-50/50">
+                            <span>Récapitulatif</span>
+                            <span class="text-[10px] font-black text-slate-500">01</span>
+                        </a>
+                        <?php if ($statusRaw === 'submitted'): ?>
+                        <a href="#instruction-dossier" class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-900 shadow-sm transition hover:border-emerald-300/60 hover:bg-emerald-50/50">
+                            <span>Décision</span>
+                            <span class="text-[10px] font-black text-slate-500">02</span>
+                        </a>
+                        <?php endif; ?>
+                        <a href="#journal-dossier" class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-900 shadow-sm transition hover:border-emerald-300/60 hover:bg-emerald-50/50">
+                            <span>Journal</span>
+                            <span class="text-[10px] font-black text-slate-500">03</span>
+                        </a>
+                    </nav>
+                    <div class="border-t border-stone-200 bg-stone-50 px-4 py-3 text-[11px] text-stone-600 space-y-1.5">
+                        <p><span class="font-bold text-stone-800">Statut</span> — <?= htmlspecialchars($statusLabel ?: '—') ?></p>
+                        <p><span class="font-bold text-stone-800">Attribué</span> — <?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="space-y-6 min-w-0">
+                <section id="recap-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                     <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                         <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500"><?= htmlspecialchars($recapMeta['step'], ENT_QUOTES, 'UTF-8') ?></p>
                         <h2 class="mt-1 text-xl font-black tracking-tight text-stone-900"><?= htmlspecialchars($recapMeta['title'], ENT_QUOTES, 'UTF-8') ?></h2>
@@ -309,59 +382,68 @@ $recapMeta = match ($statusRaw) {
                 </section>
                 <?php endif; ?>
 
-                <?php if ($enlistmentAnalyticsRecent !== []): ?>
+                <?php if ($analyticsMergedRows !== []): ?>
                 <?php
-                $analyticsGroupedByMinute = [];
-                foreach ($enlistmentAnalyticsRecent as $ev) {
-                    $caRaw = trim((string) ($ev['created_at'] ?? ''));
-                    $ts = $caRaw !== '' ? (strtotime($caRaw) ?: time()) : time();
-                    $groupKey = date('Y-m-d H:i', $ts);
-                    if (!isset($analyticsGroupedByMinute[$groupKey])) {
-                        $analyticsGroupedByMinute[$groupKey] = [
-                            'label' => date('d/m/Y H:i', $ts),
-                            'items' => [],
-                        ];
+                $renderAnalyticsDayBlocks = static function (array $mergedRows) use ($analyticsGroupByDayOrder, $analyticsFrenchDayHeader): void {
+                    if ($mergedRows === []) {
+                        return;
                     }
-                    $analyticsGroupedByMinute[$groupKey]['items'][] = $ev;
-                }
+                    [$dayOrder, $byDay] = $analyticsGroupByDayOrder($mergedRows);
+                    foreach ($dayOrder as $dk) {
+                        $rows = $byDay[$dk] ?? [];
+                        if ($rows === []) {
+                            continue;
+                        }
+                        ?>
+                        <div class="border-b border-stone-100/80 pb-3 last:border-b-0 last:pb-0">
+                            <p class="mb-1.5 px-1 text-[10px] font-black uppercase tracking-wider text-stone-500"><?= htmlspecialchars($analyticsFrenchDayHeader($dk), ENT_QUOTES, 'UTF-8') ?></p>
+                            <ul class="overflow-hidden rounded-xl border border-stone-100 bg-stone-50/60">
+                                <?php foreach ($rows as $r): ?>
+                                    <?php
+                                    $labRow = (string) ($r['label'] ?? '');
+                                    $timeRow = (string) ($r['time'] ?? '');
+                                    $cntRow = max(1, (int) ($r['count'] ?? 1));
+                                    ?>
+                                    <li class="flex items-center justify-between gap-2 border-b border-stone-100/80 px-3 py-1.5 text-xs last:border-b-0">
+                                        <span class="min-w-0 font-semibold leading-snug text-stone-800">
+                                            <?= htmlspecialchars($labRow, ENT_QUOTES, 'UTF-8') ?>
+                                            <?php if ($cntRow > 1): ?>
+                                                <span class="ml-1 inline-flex align-middle text-[10px] font-black text-stone-500">×<?= $cntRow ?></span>
+                                            <?php endif; ?>
+                                        </span>
+                                        <span class="shrink-0 tabular-nums text-stone-500"><?= htmlspecialchars($timeRow, ENT_QUOTES, 'UTF-8') ?></span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <?php
+                    }
+                };
                 ?>
                 <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                     <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                         <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Indicateurs</p>
                         <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Activité récente sur cette fiche</h2>
-                        <p class="mt-2 max-w-3xl text-sm text-stone-600">Historique interne des consultations et actions enregistrées automatiquement sur ce dossier. Les actions au même horaire sont regroupées pour une lecture plus rapide.</p>
+                        <p class="mt-2 max-w-3xl text-sm text-stone-600">Historique interne des consultations et actions enregistrées automatiquement sur ce dossier.</p>
                     </div>
-                    <div class="divide-y divide-stone-100 px-6 sm:px-8">
-                        <?php $grpIndex = 0; ?>
-                        <?php foreach ($analyticsGroupedByMinute as $group): ?>
-                            <?php
-                            $grpIndex++;
-                            $items = $group['items'] ?? [];
-                            $isOpen = $grpIndex <= 2;
-                            $itemCount = count($items);
-                            ?>
-                            <details class="py-3"<?= $isOpen ? ' open' : '' ?>>
-                                <summary class="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-stone-50 [&::-webkit-details-marker]:hidden">
-                                    <span class="inline-flex items-center gap-2">
-                                        <span class="rounded-full border border-stone-300 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stone-700"><?= $itemCount ?> action<?= $itemCount > 1 ? 's' : '' ?></span>
-                                        <span class="text-sm font-semibold text-stone-900">Horaire : <?= htmlspecialchars((string) ($group['label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></span>
-                                    </span>
-                                    <span class="text-[11px] font-semibold text-stone-500">Afficher / masquer</span>
-                                </summary>
-                                <ul class="mt-2 space-y-2 pl-2">
-                                    <?php foreach ($items as $ev): ?>
-                                        <?php
-                                        $nm = (string) ($ev['name'] ?? '');
-                                        $labEv = $analyticsEventLabels[$nm] ?? 'Action enregistrée';
-                                        ?>
-                                        <li class="rounded-lg border border-stone-200/80 bg-stone-50/70 px-3 py-2 text-sm text-stone-800">
-                                            <?= htmlspecialchars($labEv, ENT_QUOTES, 'UTF-8') ?>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </details>
-                        <?php endforeach; ?>
+                    <div class="px-4 py-3 sm:px-6 sm:py-4">
+                        <?php $renderAnalyticsDayBlocks($analyticsMergedVisible); ?>
                     </div>
+                    <?php if ($analyticsMergedMore !== []): ?>
+                        <?php $moreCount = count($analyticsMergedMore); ?>
+                        <details class="group border-t border-stone-200 bg-white">
+                            <summary class="cursor-pointer list-none px-4 py-2.5 text-xs font-bold text-sky-800 outline-none transition hover:bg-sky-50 sm:px-6 [&::-webkit-details-marker]:hidden">
+                                <span class="inline-flex items-center gap-1.5">
+                                    Voir plus
+                                    <span class="font-semibold text-stone-400">·</span>
+                                    <span class="font-medium text-stone-500"><?= $moreCount ?> ligne<?= $moreCount > 1 ? 's' : '' ?></span>
+                                </span>
+                            </summary>
+                            <div class="border-t border-stone-100 bg-stone-50/40 px-4 py-3 sm:px-6">
+                                <?php $renderAnalyticsDayBlocks($analyticsMergedMore); ?>
+                            </div>
+                        </details>
+                    <?php endif; ?>
                 </section>
                 <?php endif; ?>
 
@@ -409,12 +491,22 @@ $recapMeta = match ($statusRaw) {
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Suivi en ligne</p>
                     <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Portail candidat</h2>
                     <p class="mt-2 max-w-3xl text-sm leading-relaxed text-stone-600">Autorisez ou non l’envoi de pièces depuis le lien de suivi sécurisé envoyé au candidat. Ces réglages valent uniquement pour ce dossier.</p>
-                    <?php if (\App\Core\Gate::getInstance()->allows('admin.system')): ?>
-                    <p class="mt-3 max-w-3xl rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-2 text-xs text-sky-950">
-                        <strong>Assistance site :</strong> après un message bloqué par la modération automatique, en cas de blocage persistant, les opérateurs plateforme peuvent utiliser
-                        <a href="<?= htmlspecialchars(url('admin/system/recruitment-portal-tools?' . http_build_query(['tenant_id' => (int) ($e['tenant_id'] ?? 0), 'enlistment_id' => $id])), ENT_QUOTES, 'UTF-8') ?>" class="font-bold underline decoration-sky-400 hover:text-sky-900">Portail recrutement — automod &amp; réouverture</a>
-                        (IDs préremplis).
-                    </p>
+                    <?php if ($dossierPortalEmailBlocked): ?>
+                        <div class="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-4 text-sm text-amber-950">
+                            <p class="font-bold text-amber-950">Accès au suivi bloqué pour l’adresse e-mail de ce dossier</p>
+                            <p class="mt-2 text-amber-950/90">Souvent suite à la modération automatique (contenu refusé). Le candidat voit un message d’indisponibilité. Vous pouvez rétablir l’accès ci-dessous sans passer par l’assistance site.</p>
+                            <form method="post" action="<?= htmlspecialchars(url('back-office/ressources/recrutement/automod/restore-access'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 space-y-3" onsubmit="return confirm('Rétablir l’accès au portail pour ce dossier (déblocage e-mail sur la communauté) ?');">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="enlistment_id" value="<?= $id ?>">
+                                <input type="hidden" name="return_to_dossier" value="1">
+                                <label class="flex cursor-pointer items-start gap-3 text-xs text-amber-950/95">
+                                    <input type="checkbox" name="also_revoke_ip" value="1" class="mt-0.5 h-4 w-4 rounded border-amber-400 text-amber-800">
+                                    <span><strong>Lever aussi</strong> les blocages réseau marqués « portail candidat » sur toute la communauté (utile si le candidat reste bloqué depuis le même lieu).</span>
+                                </label>
+                                <button type="submit" class="inline-flex min-h-[2.5rem] items-center justify-center rounded-xl bg-emerald-700 px-5 text-xs font-black uppercase tracking-wide text-white shadow-sm hover:bg-emerald-800">Rétablir l’accès au portail</button>
+                            </form>
+                            <p class="mt-3 text-xs text-amber-900/85">Vue d’ensemble des dossiers concernés : <a class="font-bold underline hover:no-underline" href="<?= htmlspecialchars(url('back-office/ressources/recrutement'), ENT_QUOTES, 'UTF-8') ?>">Bureau recrutement</a>. Blocages manuels : <a class="font-bold underline hover:no-underline" href="<?= htmlspecialchars(url('back-office/security-indicators'), ENT_QUOTES, 'UTF-8') ?>">Blocages portail &amp; sécurité</a>.</p>
+                        </div>
                     <?php endif; ?>
                     <?php if ($candidatePortalSuiviUrl !== null): ?>
                         <div class="mt-4 flex flex-wrap items-center gap-3">
@@ -449,133 +541,6 @@ $recapMeta = match ($statusRaw) {
                             </div>
                             <button type="submit" class="recruitment-lms-submit-primary inline-flex min-h-[2.75rem] items-center justify-center rounded-xl px-6 text-sm font-bold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:ring-offset-2">Enregistrer les options</button>
                         </form>
-                    <?php endif; ?>
-                    <?php if ($candidatePortalThreadReady): ?>
-                        <div class="mt-8 border-t border-stone-200 pt-6">
-                            <h3 class="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">Message sur le fil du candidat</h3>
-                            <p class="mt-2 max-w-3xl text-sm leading-relaxed text-stone-600">Texte visible sur la page de suivi (même fil que le candidat). Vous pouvez préparer le message avec les modèles ci-dessous, puis l’envoyer.</p>
-                            <details class="mt-4 rounded-xl border border-amber-200/90 bg-gradient-to-b from-amber-50/80 to-orange-50/40 px-4 py-3 shadow-sm open:shadow-md">
-                                <summary class="cursor-pointer text-sm font-black uppercase tracking-wide text-amber-950">Boîte à outils — modèles et raccourcis</summary>
-                                <div class="mt-4 space-y-4 border-t border-amber-200/60 pt-4">
-                                    <div>
-                                        <p class="text-[10px] font-bold uppercase tracking-wide text-amber-900/90">Raccourcis fréquents</p>
-                                        <?php
-                                        $sig = $recruitmentStaffSignature !== '' ? $recruitmentStaffSignature : 'L’équipe recrutement';
-                                        $portalSnippets = $recruitmentWorkflowMode === 'milsim'
-                                            ? [
-                                                ['label' => 'Ouverture (MilSim)', 'text' => "Bonjour,\n\nVotre candidature est bien enregistrée. Nous lançons la phase de pré-qualification MilSim.\n\n"],
-                                                ['label' => 'Check technique', 'text' => "Merci de confirmer les points suivants :\n\n• Disponibilités opérationnelles (jours + créneaux)\n• Micro fonctionnel + push-to-talk\n• Niveau ACE/ACRE et expérience de jeu coordonné\n\n"],
-                                                ['label' => 'Entretien section', 'text' => "Nous vous proposons un échange de cadrage (15-20 min) pour valider votre intégration en section.\n\nMerci d’indiquer 2 à 3 créneaux avec votre fuseau horaire.\n\n"],
-                                                ['label' => 'Relance discipline', 'text' => "Relance de suivi : sans réponse de votre part, le dossier restera en attente.\n\nUn retour, même bref, permet de reprendre l’instruction rapidement.\n\n"],
-                                                ['label' => 'Clôture temporaire', 'text' => "Nous clôturons temporairement ce fil de candidature.\n\nVous pourrez relancer la procédure ultérieurement en reprenant contact via les canaux habituels.\n\n"],
-                                                ['label' => 'Signature', 'text' => "Respectueusement,\n" . $sig],
-                                            ]
-                                            : [
-                                                ['label' => 'Bonjour,', 'text' => "Bonjour,\n\nMerci pour votre message et pour l’intérêt porté à notre unité. Votre dossier est bien suivi par l’équipe recrutement.\n\n"],
-                                                ['label' => 'Accusé de lecture', 'text' => "Nous avons bien pris connaissance de votre dernier message.\n\nVotre candidature reste active et nous revenons vers vous dès qu’une étape nécessite votre action.\n\n"],
-                                                ['label' => 'Demande de précision', 'text' => "Pour avancer sur votre dossier, pouvez-vous nous préciser les points suivants :\n\n• Disponibilités hebdomadaires (jours/heures)\n• Niveau d’expérience en simulation tactique\n• Préférences de rôle (infanterie, appui, logistique, etc.)\n\nMerci d’avance pour ces informations.\n\n"],
-                                                ['label' => 'Pièces demandées', 'text' => "Afin de finaliser l’étude de votre dossier, merci de déposer sur ce fil :\n\n• Une courte présentation écrite (motivations, attentes)\n• Les éléments demandés par le recruteur référent\n\nFormats acceptés : PDF, image, texte ou audio selon les options activées.\n\n"],
-                                                ['label' => 'Entretien / créneau', 'text' => "Nous vous proposons un entretien court (15 à 20 minutes) pour finaliser cette phase.\n\nMerci d’indiquer 2 à 3 créneaux possibles sur les prochains jours, avec votre fuseau horaire.\n\n"],
-                                                ['label' => 'Relance polie', 'text' => "Petit rappel amical concernant notre précédent message.\n\nDès que vous aurez un moment pour répondre, nous pourrons reprendre le traitement de votre candidature sans délai.\n\n"],
-                                                ['label' => 'Clôture de fil', 'text' => "Nous clôturons ce fil de suivi pour le moment.\n\nSi votre situation évolue ou si vous souhaitez relancer votre candidature, vous pouvez nous écrire à nouveau via les canaux habituels de la communauté.\n\n"],
-                                                ['label' => 'Formules de politesse', 'text' => "Merci pour votre temps et votre retour.\n\nBien cordialement,\n" . $sig],
-                                            ];
-                                        ?>
-                                        <script type="application/json" id="portal-snippets-json"><?= json_encode($portalSnippets, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?></script>
-                                        <div class="mt-2 flex flex-wrap gap-2">
-                                            <?php foreach ($portalSnippets as $psi => $ps): ?>
-                                                <button type="button" class="portal-fil-snippet rounded-lg border border-amber-300/80 bg-white px-2.5 py-1.5 text-[11px] font-bold text-amber-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-50" data-snippet-idx="<?= (int) $psi ?>"><?= htmlspecialchars((string) ($ps['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></button>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    </div>
-                                    <?php if ($enlistmentPortalToolboxCanned !== []): ?>
-                                        <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
-                                            <label class="min-w-0 flex-1">
-                                                <span class="text-[10px] font-bold uppercase tracking-wide text-amber-900/90">Modèles enregistrés (tous contextes + fil portail)</span>
-                                                <select id="portal-canned-select" class="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-inner">
-                                                    <option value="">— Choisir un modèle —</option>
-                                                    <?php foreach ($enlistmentPortalToolboxCanned as $cm): ?>
-                                                        <?php $cmid = (int) ($cm['id'] ?? 0); ?>
-                                                        <option value="<?= $cmid ?>"><?= htmlspecialchars((string) ($cm['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </label>
-                                            <button type="button" id="portal-canned-insert" class="inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-700 bg-amber-700 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-800">Insérer</button>
-                                        </div>
-                                        <script type="application/json" id="portal-canned-json"><?= json_encode(array_values(array_map(static function (array $r): array {
-                                            return [
-                                                'id' => (int) ($r['id'] ?? 0),
-                                                'body' => (string) ($r['body'] ?? ''),
-                                            ];
-                                        }, $enlistmentPortalToolboxCanned)), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?></script>
-                                    <?php else: ?>
-                                        <p class="text-xs text-amber-950/90">Aucun modèle pour l’instant. Créez-en sous <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits'), ENT_QUOTES, 'UTF-8') ?>" class="font-bold underline decoration-amber-600">Messages préfaits</a> (contexte « Fil portail candidat » ou « Tous contextes »).</p>
-                                    <?php endif; ?>
-                                </div>
-                            </details>
-                            <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/fil-portail-message'), ENT_QUOTES, 'UTF-8') ?>" class="mt-5 space-y-4">
-                                <?= \App\Core\Csrf::field() ?>
-                                <label class="block">
-                                    <span class="text-xs font-bold uppercase tracking-wide text-stone-600">Message</span>
-                                    <textarea id="portal_staff_message" name="portal_staff_message" rows="6" maxlength="4000" required class="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20" placeholder="Ce texte apparaît sur le fil du portail de suivi du candidat…"></textarea>
-                                </label>
-                                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-[#faf8f3] p-3">
-                                    <input type="checkbox" name="portal_staff_notify_email" value="1" checked class="mt-1 h-4 w-4 rounded border-stone-400 text-amber-700">
-                                    <span class="text-sm text-stone-800"><strong class="text-stone-900">Notifier le candidat par courriel</strong> avec le lien de suivi (si l’adresse du dossier est valide).</span>
-                                </label>
-                                <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 px-6 text-sm font-bold text-white shadow-md transition hover:from-amber-700 hover:to-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2">Publier sur le fil</button>
-                            </form>
-                        </div>
-                        <script>
-                        (function () {
-                            var ta = document.getElementById('portal_staff_message');
-                            if (!ta) return;
-                            function appendSnippet(t) {
-                                t = t || '';
-                                if (!t) return;
-                                if (ta.value.trim() !== '') ta.value += '\n\n';
-                                ta.value += t;
-                                ta.focus();
-                            }
-                            var snRaw = document.getElementById('portal-snippets-json');
-                            var snList = [];
-                            if (snRaw && snRaw.textContent) {
-                                try {
-                                    var parsed = JSON.parse(snRaw.textContent || '[]');
-                                    if (Array.isArray(parsed)) snList = parsed;
-                                } catch (e) {}
-                            }
-                            document.querySelectorAll('.portal-fil-snippet').forEach(function (btn) {
-                                btn.addEventListener('click', function () {
-                                    var ix = parseInt(btn.getAttribute('data-snippet-idx') || '-1', 10);
-                                    var row = snList[ix];
-                                    appendSnippet(row && row.text ? row.text : '');
-                                });
-                            });
-                            var sel = document.getElementById('portal-canned-select');
-                            var raw = document.getElementById('portal-canned-json');
-                            var ins = document.getElementById('portal-canned-insert');
-                            var byId = {};
-                            if (raw && raw.textContent) {
-                                try {
-                                    var list = JSON.parse(raw.textContent || '[]');
-                                    if (Array.isArray(list)) {
-                                        list.forEach(function (row) {
-                                            if (row && row.id) byId[String(row.id)] = row.body || '';
-                                        });
-                                    }
-                                } catch (e) {}
-                            }
-                            if (sel && ins) {
-                                ins.addEventListener('click', function () {
-                                    var id = sel.value;
-                                    if (!id || !byId[id]) { sel.selectedIndex = 0; return; }
-                                    appendSnippet(byId[id]);
-                                    sel.selectedIndex = 0;
-                                });
-                            }
-                        })();
-                        </script>
                     <?php endif; ?>
                     <?php if ($candidatePortalUploadsReady && $candidatePortalAttachments !== []): ?>
                         <div class="mt-8 border-t border-stone-200 pt-6">
@@ -741,7 +706,7 @@ $recapMeta = match ($statusRaw) {
                 ['value' => 'block', 'title' => 'Marquer non admis', 'hint' => 'Clôt définitivement cette candidature pour l’organisation.', 'card' => 'enlist-decision-card enlist-decision-card--block'],
             ];
             ?>
-            <section id="instruction-dossier" class="overflow-hidden rounded-2xl border border-amber-200/90 bg-white shadow-sm">
+            <section id="instruction-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-amber-200/90 bg-white shadow-sm">
                 <div class="border-b border-amber-100 bg-amber-50 px-6 py-4 sm:px-8">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-amber-900/70">Instruction</p>
                     <h2 class="mt-1 text-lg font-black tracking-tight text-amber-950 sm:text-xl">Décision à enregistrer</h2>
@@ -834,37 +799,24 @@ $recapMeta = match ($statusRaw) {
             <?php endif; ?>
 
             <?php if ($statusRaw === 'submitted'): ?>
-            <?php
-            $decisionTracks = $recruitmentWorkflowMode === 'milsim'
-                ? [
-                    ['title' => 'Pré-qualification technique', 'tone' => 'sky', 'body' => 'Validez en priorité matériel, micro, disponibilité régulière et posture opérationnelle avant d’ouvrir la suite.'],
-                    ['title' => 'Entretien de cadrage', 'tone' => 'violet', 'body' => 'L’issue « Demander un entretien » permet de confirmer discipline, autonomie radio/procédures et compatibilité avec le rythme de section.'],
-                    ['title' => 'Décision de section', 'tone' => 'emerald', 'body' => 'Accepter, refuser ou non admettre formalise la décision finale et synchronise l’état côté candidat.'],
-                ]
-                : [
-                    ['title' => 'Pré-qualification', 'tone' => 'sky', 'body' => 'Choisissez « Mettre en attente » pour garder le dossier ouvert le temps de compléter les informations importantes.'],
-                    ['title' => 'Entretien', 'tone' => 'violet', 'body' => 'L’issue « Demander un entretien » consigne le besoin d’échange ; proposez ensuite un créneau directement au candidat.'],
-                    ['title' => 'Décision finale', 'tone' => 'emerald', 'body' => 'Accepter, refuser ou marquer non admis clôture l’instruction et met à jour le statut visible sur le portail candidat.'],
-                ];
-            $trackToneClasses = [
-                'sky' => ['article' => 'border-sky-200 bg-sky-50/70', 'title' => 'text-sky-900', 'body' => 'text-sky-900/90'],
-                'violet' => ['article' => 'border-violet-200 bg-violet-50/70', 'title' => 'text-violet-900', 'body' => 'text-violet-900/90'],
-                'emerald' => ['article' => 'border-emerald-200 bg-emerald-50/70', 'title' => 'text-emerald-900', 'body' => 'text-emerald-900/90'],
-            ];
-            ?>
             <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                 <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Aide à la décision</p>
-                    <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Parcours possibles (mode <?= $recruitmentWorkflowMode === 'milsim' ? 'MilSim' : 'Simple' ?>)</h2>
+                    <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Parcours possibles</h2>
                 </div>
                 <div class="grid gap-4 p-6 md:grid-cols-3">
-                    <?php foreach ($decisionTracks as $track): ?>
-                        <?php $tc = $trackToneClasses[(string) ($track['tone'] ?? 'sky')] ?? $trackToneClasses['sky']; ?>
-                        <article class="rounded-xl border p-4 <?= htmlspecialchars((string) $tc['article'], ENT_QUOTES, 'UTF-8') ?>">
-                            <h3 class="text-xs font-bold uppercase tracking-wide <?= htmlspecialchars((string) $tc['title'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($track['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
-                            <p class="mt-2 text-sm <?= htmlspecialchars((string) $tc['body'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($track['body'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                        </article>
-                    <?php endforeach; ?>
+                    <article class="rounded-xl border border-sky-200 bg-sky-50/70 p-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-sky-900">Pré-qualification</h3>
+                        <p class="mt-2 text-sm text-sky-900/90">Choisissez « Mettre en attente » dans la fiche décision pour garder le dossier ouvert le temps de compléter le dossier.</p>
+                    </article>
+                    <article class="rounded-xl border border-violet-200 bg-violet-50/70 p-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-violet-900">Entretien</h3>
+                        <p class="mt-2 text-sm text-violet-900/90">L’issue « Demander un entretien » consigne le besoin d’échange ; vous pouvez proposer un créneau dans le même écran.</p>
+                    </article>
+                    <article class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-emerald-900">Décision finale</h3>
+                        <p class="mt-2 text-sm text-emerald-900/90">Accepter, refuser ou marquer non admis conclut l’instruction et met à jour l’état visible par le candidat.</p>
+                    </article>
                 </div>
             </section>
             <?php endif; ?>
@@ -896,7 +848,7 @@ $recapMeta = match ($statusRaw) {
             <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                 <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Rubrique 2</p>
-                    <h2 class="mt-1 text-base font-black tracking-tight text-stone-900"><?= $recruitmentWorkflowMode === 'milsim' ? 'Questionnaire MilSim' : 'Questionnaire complémentaire' ?></h2>
+                    <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Questionnaire MilSim</h2>
                 </div>
                 <div class="divide-y divide-stone-100 px-6 py-2">
                     <?php foreach ($olympus as $col => $label): ?>
@@ -1000,7 +952,7 @@ $recapMeta = match ($statusRaw) {
             </section>
             <?php endif; ?>
 
-        <section id="journal-dossier" class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm" aria-labelledby="journal-dossier-heading">
+        <section id="journal-dossier" class="scroll-mt-28 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm" aria-labelledby="journal-dossier-heading">
             <div class="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 px-6 py-6 text-white sm:px-8">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
@@ -1165,6 +1117,8 @@ $recapMeta = match ($statusRaw) {
                     <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="text-sm font-semibold text-stone-600 underline decoration-stone-300 underline-offset-4 transition hover:text-emerald-800">← Retour aux dossiers</a>
                 </p>
             </div>
+            </div>
+        </div>
 </div>
 <?php if ($statusRaw === 'submitted'): ?>
 <script>

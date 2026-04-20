@@ -71,7 +71,6 @@ use App\Controllers\Courrier\CourrierSnippetController;
 use App\Controllers\Courrier\CourrierSignatureController;
 use App\Controllers\Courrier\CourrierNotificationController;
 use App\Controllers\Admin\System\SystemDashboardController;
-use App\Controllers\Admin\System\SystemCommandCenterController;
 use App\Controllers\Admin\System\SystemTenantsController;
 use App\Controllers\Admin\System\SystemAnalyticsController;
 use App\Controllers\Admin\System\SystemNewsletterAdminController;
@@ -90,8 +89,8 @@ use App\Controllers\Admin\System\SystemAuditController;
 use App\Controllers\Admin\System\SystemSiteRoleAssignmentController;
 use App\Controllers\Admin\System\SystemMaintenanceController;
 use App\Controllers\Admin\System\SystemIndicatorBlocklistController;
-use App\Controllers\Admin\System\SystemRecruitmentPortalToolsController;
 use App\Controllers\Admin\System\SystemMemberSanctionsController;
+use App\Controllers\Admin\System\SystemRecruitmentPortalToolsController;
 use App\Controllers\Admin\System\SystemUserLookupApiController;
 use App\Controllers\Admin\Organization\OrganizationDashboardController;
 use App\Controllers\Admin\Organization\OrganizationAuditController;
@@ -129,9 +128,6 @@ use App\Controllers\Admin\Organization\OrganizationCommunityController;
 use App\Controllers\Admin\Organization\OrganizationSeniorityAdminController;
 use App\Controllers\Admin\Organization\RoleplayFollowupAdminController;
 use App\Controllers\Admin\Organization\CommunityEventsAdminController;
-use App\Controllers\Admin\Organization\AccessManagementController;
-use App\Controllers\Api\AccessControlApiController;
-use App\Middleware\AccessControlMiddleware;
 use App\Controllers\Api\TrainingApiController;
 use App\Core\Router;
 use App\Middleware\AuthMiddleware;
@@ -246,7 +242,7 @@ return function (Router $router) {
     $router->post('/deploiement/{id}/anomalie', [PersonnelDeploymentController::class, 'reportAnomaly'], [AuthMiddleware::class]);
     $router->get('/activite', [ActivityHubController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/activite/forum/lu', [ActivityHubController::class, 'markForumRead'], $mwForum);
-    $router->post('/activite/courrier/lu', [ActivityHubController::class, 'markCourrierRead'], [AuthMiddleware::class]);
+    $router->post('/activite/courrier/lu', [ActivityHubController::class, 'markCourrierRead'], $mwCourrier);
     $router->post('/activite/messages/lu', [ActivityHubController::class, 'markTenantMessagesRead'], [AuthMiddleware::class]);
     $router->get('/calendrier/abonnement/{token}', [CommunityCalendarFeedController::class, 'ics']);
     $router->get('/operateur/terrain', [OperateurTerrainController::class, 'index'], [AuthMiddleware::class]);
@@ -349,7 +345,6 @@ return function (Router $router) {
     $router->post('/enlistment/suivi/{token}/piece', [EnlistmentCandidatePortalController::class, 'uploadAttachment']);
     $router->post('/enlistment/suivi/{token}/message', [EnlistmentCandidatePortalController::class, 'message']);
     $router->post('/enlistment/suivi/{token}/bilan-candidat', [EnlistmentCandidatePortalController::class, 'candidateRetroSave']);
-    $router->post('/enlistment/suivi/{token}/signaler', [EnlistmentCandidatePortalController::class, 'reportPortalContent']);
     $router->get('/recrutement', [HomeController::class, 'recrutement']);
     $router->get('/equipement', [HomeController::class, 'equipement']);
     $router->get('/documents', [DocumentsController::class, 'index'], $mwDocuments);
@@ -481,8 +476,6 @@ return function (Router $router) {
     $router->get('/admin/analytics', [SystemAnalyticsController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     $router->get('/admin/newsletter', [SystemNewsletterAdminController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/ops-center', [SystemOpsCenterController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
-    $router->get('/admin/command-center', [SystemCommandCenterController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
-    $router->post('/admin/undo/{id}', [SystemCommandCenterController::class, 'undo'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Back-office communauté (tenant) — préfixe /back-office
     $router->get('/back-office', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/centre-operations', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -557,24 +550,6 @@ return function (Router $router) {
     $router->post('/back-office/roles-functions/relations/store', [RolesFunctionsAdminController::class, 'storeRoleRelation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/required/save', [RolesFunctionsAdminController::class, 'saveRequiredDefinitions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/quick-assign-role', [RolesFunctionsAdminController::class, 'quickAssignRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    
-    $router->get('/back-office/access-management', [AccessManagementController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->post('/back-office/access-management/roles/save', [AccessManagementController::class, 'saveRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->post('/back-office/access-management/rules/save', [AccessManagementController::class, 'saveRule'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->get('/back-office/access-management/simulate', [AccessManagementController::class, 'simulate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-
-    $router->get('/api/access-control/roles', [AccessControlApiController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->post('/api/access-control/roles', [AccessControlApiController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->get('/api/access-control/permissions', [AccessControlApiController::class, 'permissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->post('/api/access-control/permissions', [AccessControlApiController::class, 'permissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->post('/api/access-control/role-permissions', [AccessControlApiController::class, 'rolePermissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->get('/api/access-control/rules', [AccessControlApiController::class, 'rules'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->post('/api/access-control/rules', [AccessControlApiController::class, 'rules'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->get('/api/access-control/scopes', [AccessControlApiController::class, 'scopes'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->post('/api/access-control/scopes', [AccessControlApiController::class, 'scopes'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->get('/api/access-control/simulation', [AccessControlApiController::class, 'simulation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-    $router->post('/api/access-control/simulation', [AccessControlApiController::class, 'simulation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, AccessControlMiddleware::class]);
-
     $router->get('/back-office/roles', [RoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets', [RoleAdminController::class, 'presets'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets/preview', [RoleAdminController::class, 'presetsPreview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -669,7 +644,6 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/messages-prefaits/{id}/delete', [AdminRecruitmentsController::class, 'cannedMessageDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/portal-options', [AdminRecruitmentsController::class, 'portalOptionsSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->post('/back-office/recruitments/{id}/fil-portail-message', [AdminRecruitmentsController::class, 'portalFilMessage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/piece/{attachmentId}', [AdminRecruitmentsController::class, 'portalAttachmentDownload'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/decision', [AdminRecruitmentsController::class, 'decision'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/finalize-membership', [AdminRecruitmentsController::class, 'finalizeMembership'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

@@ -56,12 +56,6 @@ class EnlistmentRepository
         return self::$hasCandidatePortalTables;
     }
 
-    /** Fil de messages portail candidat (jeton + messages) disponible. */
-    public function candidatePortalThreadReady(): bool
-    {
-        return $this->hasCandidatePortalTables();
-    }
-
     private function hasPortalAllowColumns(): bool
     {
         if (self::$hasPortalAllowColumns === null) {
@@ -129,23 +123,6 @@ class EnlistmentRepository
             'SELECT * FROM enlistment_candidate_attachments WHERE tenant_id = ? AND enlistment_id = ? AND id = ? LIMIT 1'
         );
         $stmt->execute([$tenantId, $enlistmentId, $attachmentId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $row ?: null;
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    public function findCandidatePortalMessage(int $tenantId, int $enlistmentId, int $messageId): ?array
-    {
-        if (!$this->hasCandidatePortalTables() || $messageId < 1) {
-            return null;
-        }
-        $stmt = $this->pdo->prepare(
-            'SELECT * FROM enlistment_candidate_messages WHERE tenant_id = ? AND enlistment_id = ? AND id = ? LIMIT 1'
-        );
-        $stmt->execute([$tenantId, $enlistmentId, $messageId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
@@ -423,39 +400,6 @@ class EnlistmentRepository
     }
 
     /**
-     * Liste compacte des dossiers pour sélecteur assistance (portail / blocages).
-     *
-     * @return list<array{id: int, email: string, status: string, first_name: string, last_name: string}>
-     */
-    public function listPortalAssistSelectSummariesForTenant(int $tenantId, int $limit = 400): array
-    {
-        if ($tenantId < 1) {
-            return [];
-        }
-        $lim = max(1, min(800, $limit));
-        $stmt = $this->pdo->prepare(
-            "SELECT id, email, status, first_name, last_name
-             FROM enlistments WHERE tenant_id = ?
-             ORDER BY id DESC
-             LIMIT {$lim}"
-        );
-        $stmt->execute([$tenantId]);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $out = [];
-        foreach ($rows as $row) {
-            $out[] = [
-                'id' => (int) ($row['id'] ?? 0),
-                'email' => (string) ($row['email'] ?? ''),
-                'status' => (string) ($row['status'] ?? ''),
-                'first_name' => (string) ($row['first_name'] ?? ''),
-                'last_name' => (string) ($row['last_name'] ?? ''),
-            ];
-        }
-
-        return $out;
-    }
-
-    /**
      * Enregistre une décision sur une candidature encore « soumise » (statut submitted).
      *
      * @return bool true si une ligne a été mise à jour
@@ -705,6 +649,38 @@ class EnlistmentRepository
         }
 
         return ['access_token' => $tok, 'expires_at' => (string) ($row['expires_at'] ?? '')];
+    }
+
+    /**
+     * Liste compacte des dossiers pour l’outil assistance site (sélection par communauté).
+     *
+     * @return list<array{id: int, email: string, status: string, first_name: string, last_name: string}>
+     */
+    public function listPortalAssistSelectSummariesForTenant(int $tenantId, int $limit = 400): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $lim = max(1, min(800, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT id, email, status, first_name, last_name
+             FROM enlistments
+             WHERE tenant_id = ?
+             ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
+             LIMIT {$lim}"
+        );
+        $stmt->execute([$tenantId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return array_values(array_map(static function (array $r): array {
+            return [
+                'id' => (int) ($r['id'] ?? 0),
+                'email' => (string) ($r['email'] ?? ''),
+                'status' => (string) ($r['status'] ?? ''),
+                'first_name' => (string) ($r['first_name'] ?? ''),
+                'last_name' => (string) ($r['last_name'] ?? ''),
+            ];
+        }, $rows));
     }
 
     /**

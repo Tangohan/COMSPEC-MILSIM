@@ -17,8 +17,8 @@ final class EnlistmentPortalAutoModerationCoordinator
 {
     private const BLOCK_TTL_DAYS = 365;
 
-    /** Clé `platform_settings` : si désactivé (0), aucun courriel d’alerte automod n’est expédié (blocages inchangés). */
-    public const SETTING_AUTOMOD_ALERT_EMAILS_ENABLED = 'recruitment_portal_automod_alert_emails_enabled';
+    /** Clé `platform_settings` : envoi des courriels d’alerte lors d’un refus automatique sur le portail recrutement. */
+    public const SETTING_AUTOMOD_ALERT_EMAILS_ENABLED = 'enlistment_portal_automod_alert_emails_enabled';
 
     public function __construct(
         private EnlistmentPortalTextModerationScanner $textModerationScanner,
@@ -28,6 +28,14 @@ final class EnlistmentPortalAutoModerationCoordinator
         private EnlistmentTimelineRepository $enlistmentTimelineRepository,
         private PlatformSettingsRepository $platformSettingsRepository,
     ) {}
+
+    public function isPortalEmailBlockedForTenant(int $tenantId, string $email): bool
+    {
+        $e = strtolower(trim($email));
+
+        return $e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)
+            && $this->blockedIndicatorRepository->isEmailBlockedForTenant($tenantId, $e);
+    }
 
     /**
      * @return array{code: string, public_label: string}|null

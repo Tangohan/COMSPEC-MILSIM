@@ -151,7 +151,7 @@ $headHtml = ob_get_clean();
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen">
     <div class="lms-grain"></div>
-    <div class="min-h-screen relative z-10 grid lg:grid-cols-[300px_1fr]">
+    <div class="relative z-10 grid min-h-screen min-w-0 lg:grid-cols-[300px_minmax(0,1fr)]">
         <?php
         $lmsBase = $base;
         $progressPercent = (float) ($progress['percent'] ?? 0);

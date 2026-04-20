@@ -2,10 +2,19 @@
  * Bureau recrutement — légers compléments au gabarit LMS (training_lms.css).
  */
 
-/* Empêche le débordement horizontal sans casser position: sticky (éviter overflow-x sur body) */
+/* Empêche le débordement horizontal sur la plupart des écrans LMS recrutement */
 .recruitment-lms-main {
   overflow-x: clip;
   min-width: 0;
+}
+
+/*
+ * Fiche dossier (classe .recruitment-bureau) : pas de colonne « Dans ce dossier » en sticky —
+ * le sticky dans un ancêtre avec overflow-x: clip est peu fiable ; les ancres (#journal-dossier) gèrent mal le scroll.
+ * On autorise l’overflow horizontal visible uniquement sur cette page pour un défilement d’ancrage correct.
+ */
+.recruitment-lms-main:has(.recruitment-bureau) {
+  overflow-x: visible;
 }
 
 /* Cartes de choix d’issue (fiche dossier) — lisibles sans dépendre du purge Tailwind */

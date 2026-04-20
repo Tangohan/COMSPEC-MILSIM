@@ -99,11 +99,6 @@ class AdminRecruitmentsController
         }
 
         $canned = $this->cannedMessageRepository->listForTenant((int) $tenantId);
-        $portalToolboxCanned = array_values(array_filter($canned, static function (array $r): bool {
-            $c = (string) ($r['context'] ?? 'generic');
-
-            return $c === 'portal' || $c === 'generic';
-        }));
         $tenantSettings = $this->tenantRepository->getSettings((int) $tenantId);
         $slaHours = TenantRecruitmentSettings::enlistmentSlaHoursFromSettings($tenantSettings);
         $row['submitted_age_hours'] = $this->submittedAgeHours($row);
@@ -203,6 +198,10 @@ class AdminRecruitmentsController
                 $candidatePortalSuiviExpiresFmt = date('d/m/Y à H:i', strtotime($expRaw) ?: time());
             }
         }
+        $dossierPortalEmailBlocked = $this->portalAutoModerationCoordinator->isPortalEmailBlockedForTenant(
+            (int) $tenantId,
+            (string) ($row['email'] ?? '')
+        );
 
         try {
             $this->analyticsEventService->record(
@@ -249,10 +248,7 @@ class AdminRecruitmentsController
             'enlistmentAnalyticsRecent' => $enlistmentAnalyticsRecent,
             'candidatePortalSuiviUrl' => $candidatePortalSuiviUrl,
             'candidatePortalSuiviExpiresFmt' => $candidatePortalSuiviExpiresFmt,
-            'enlistmentPortalToolboxCanned' => $portalToolboxCanned,
-            'candidatePortalThreadReady' => $this->enlistmentRepository->candidatePortalThreadReady(),
-            'recruitmentWorkflowMode' => TenantRecruitmentSettings::workflowModeFromSettings($tenantSettings),
-            'recruitmentStaffSignature' => trim((string) (TenantRecruitmentSettings::getRecruitmentBlock($tenantSettings)['staff_signature'] ?? '')),
+            'dossierPortalEmailBlocked' => $dossierPortalEmailBlocked,
         ]);
     }
 
@@ -474,109 +470,6 @@ class AdminRecruitmentsController
         return Response::redirect(url('back-office/recruitments/' . $id));
     }
 
-    public function portalFilMessage(Request $request, array $params = []): Response
-    {
-        $tenantId = Session::get('tenant_id');
-        if (!$tenantId || !$request->isPost()) {
-            return Response::redirect(url('back-office/recruitments'));
-        }
-        if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-
-            return Response::redirect(url('back-office/recruitments'));
-        }
-        $id = (int) ($params['id'] ?? 0);
-        if ($id < 1) {
-            return Response::redirect(url('back-office/recruitments'));
-        }
-        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
-        if (!$row) {
-            return Response::redirect(url('back-office/recruitments'));
-        }
-        if (!$this->enlistmentRepository->candidatePortalThreadReady()) {
-            Session::flash('error', 'Le fil de suivi en ligne n’est pas disponible sur cette installation.');
-
-            return Response::redirect(url('back-office/recruitments/' . $id));
-        }
-
-        $body = trim((string) $request->input('portal_staff_message', ''));
-        if (mb_strlen($body) < 2) {
-            Session::flash('error', 'Le message est trop court.');
-
-            return Response::redirect(url('back-office/recruitments/' . $id));
-        }
-        if (mb_strlen($body) > 4000) {
-            Session::flash('error', 'Le message dépasse la limite autorisée (4 000 caractères).');
-
-            return Response::redirect(url('back-office/recruitments/' . $id));
-        }
-
-        $userId = (int) Session::get('user_id');
-        $tenantRow = $this->tenantRepository->findById((int) $tenantId);
-        $tenantName = trim((string) (is_array($tenantRow) ? ($tenantRow['name'] ?? '') : ''));
-        if ($tenantName === '') {
-            $tenantName = 'Communauté';
-        }
-        $hit = $this->portalAutoModerationCoordinator->scan($body);
-        if ($hit !== null) {
-            $this->portalAutoModerationCoordinator->enforceAfterStaffViolation((int) $tenantId, $tenantName, $row, $userId, $hit, $body);
-            Session::flash('error', 'Ce texte ne peut pas être envoyé : il contient des formulations refusées par le filtre du portail. Une alerte a été enregistrée.');
-
-            return Response::redirect(url('back-office/recruitments/' . $id));
-        }
-
-        $ok = $this->enlistmentRepository->appendCandidatePortalMessage((int) $tenantId, $id, 'staff', $body);
-        if (!$ok) {
-            Session::flash('error', 'Impossible d’enregistrer le message sur le fil pour le moment.');
-
-            return Response::redirect(url('back-office/recruitments/' . $id));
-        }
-
-        $preview = mb_strlen($body) > 500 ? mb_substr($body, 0, 497) . '…' : $body;
-        if ($this->enlistmentTimelineRepository->tableExists()) {
-            $this->enlistmentTimelineRepository->append(
-                (int) $tenantId,
-                $id,
-                'system',
-                'communication',
-                'Message de l’équipe sur le fil portail candidat',
-                $preview,
-                $userId > 0 ? $userId : null,
-                ['timeline_family' => 'portal_message', 'origin' => 'staff'],
-                null
-            );
-        }
-
-        $notify = $request->input('portal_staff_notify_email') !== null
-            && (string) $request->input('portal_staff_notify_email', '') === '1';
-        if ($notify) {
-            $email = strtolower(trim((string) ($row['email'] ?? '')));
-            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $token = $this->enlistmentRepository->ensureCandidatePortalToken((int) $tenantId, $id, 24 * 7);
-                $portalUrl = $token !== null ? url('enlistment/suivi/' . rawurlencode($token)) : url('enlistment');
-                try {
-                    $this->emailService->sendEnlistmentRecruitmentStatusCandidate(
-                        $email,
-                        $tenantName,
-                        'Nouveau message sur votre suivi',
-                        $body,
-                        $portalUrl,
-                        (int) $tenantId,
-                        'pending',
-                        $id
-                    );
-                } catch (\Throwable) {
-                }
-            }
-        }
-
-        Session::flash('success', $notify
-            ? 'Message publié sur le fil du candidat. Un courriel de notification a été envoyé si l’adresse du dossier est valide.'
-            : 'Message publié sur le fil du candidat (visible sur son lien de suivi).');
-
-        return Response::redirect(url('back-office/recruitments/' . $id));
-    }
-
     public function portalAttachmentDownload(Request $request, array $params = []): Response
     {
         $tenantId = Session::get('tenant_id');
@@ -702,19 +595,12 @@ class AdminRecruitmentsController
         }
         $slaHours = (int) $request->input('enlistment_sla_hours', TenantRecruitmentSettings::defaultEnlistmentSlaHours());
         $slaHours = max(1, min(720, $slaHours));
-        $workflowModeRaw = strtolower(trim((string) $request->input('recruitment_workflow_mode', TenantRecruitmentSettings::defaultWorkflowMode())));
-        $workflowMode = in_array($workflowModeRaw, ['simple', 'milsim'], true)
-            ? $workflowModeRaw
-            : TenantRecruitmentSettings::defaultWorkflowMode();
-        $staffSignature = mb_substr(trim((string) $request->input('recruitment_staff_signature', '')), 0, 180);
         $this->tenantRepository->updateSettings((int) $tenantId, [
             'recruitment' => [
                 'enlistment_sla_hours' => $slaHours,
-                'workflow_mode' => $workflowMode,
-                'staff_signature' => $staffSignature,
             ],
         ]);
-        Session::flash('success', 'Paramètres recrutement enregistrés (SLA ' . $slaHours . ' h, mode ' . ($workflowMode === 'milsim' ? 'MilSim' : 'Simple') . ').');
+        Session::flash('success', 'Délai d’alerte enregistré : ' . $slaHours . ' h sans traitement.');
 
         return Response::redirect(url('back-office/recruitments'));
     }
@@ -727,9 +613,6 @@ class AdminRecruitmentsController
         }
         $tenantSettings = $this->tenantRepository->getSettings((int) $tenantId);
         $slaHours = TenantRecruitmentSettings::enlistmentSlaHoursFromSettings($tenantSettings);
-        $workflowMode = TenantRecruitmentSettings::workflowModeFromSettings($tenantSettings);
-        $recruitmentBlock = TenantRecruitmentSettings::getRecruitmentBlock($tenantSettings);
-        $staffSignature = trim((string) ($recruitmentBlock['staff_signature'] ?? ''));
         $submitted = $this->enlistmentRepository->allForTenant((int) $tenantId, 'submitted');
         $breached = 0;
         foreach ($submitted as $row) {
@@ -751,8 +634,6 @@ class AdminRecruitmentsController
             'recruitmentSidebarCounts' => $navCounts,
             'recruitmentAdminNav' => 'sla',
             'showPortalFooter' => false,
-            'recruitmentWorkflowMode' => $workflowMode,
-            'recruitmentStaffSignature' => $staffSignature,
         ]);
     }
 
@@ -889,7 +770,7 @@ class AdminRecruitmentsController
         }
 
         $context = trim((string) $request->input('context', 'generic'));
-        $allowedContexts = ['generic', 'accept', 'pending', 'reject', 'redirect', 'portal'];
+        $allowedContexts = ['generic', 'accept', 'pending', 'reject', 'redirect'];
         if (!in_array($context, $allowedContexts, true)) {
             $context = 'generic';
         }

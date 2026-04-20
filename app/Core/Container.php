@@ -552,7 +552,6 @@ class Container
                 self::get(\App\Repositories\PersonnelProfileRepository::class)
             ),
             \App\Services\Audit\AuditService::class => new \App\Services\Audit\AuditService(),
-            \App\Services\Security\AccessControlService::class => new \App\Services\Security\AccessControlService(),
             \App\Repositories\RoleRepository::class => new \App\Repositories\RoleRepository(),
             \App\Repositories\PositionRepository::class => new \App\Repositories\PositionRepository(),
             \App\Repositories\RoleSetRepository::class => new \App\Repositories\RoleSetRepository(),
@@ -574,14 +573,6 @@ class Container
             \App\Controllers\Admin\System\SystemSiteRoleAssignmentController::class => new \App\Controllers\Admin\System\SystemSiteRoleAssignmentController(
                 self::get(\App\Repositories\SiteRoleAssignmentRepository::class),
                 self::get(\App\Services\Audit\AuditService::class)
-            ),
-            \App\Controllers\Admin\Organization\AccessManagementController::class => new \App\Controllers\Admin\Organization\AccessManagementController(
-                self::get(\App\Services\Security\AccessControlService::class),
-                self::get(UserRepository::class)
-            ),
-            \App\Controllers\Api\AccessControlApiController::class => new \App\Controllers\Api\AccessControlApiController(
-                self::get(\App\Services\Security\AccessControlService::class),
-                self::get(UserRepository::class)
             ),
             \App\Controllers\Admin\Organization\RoleAdminController::class => new \App\Controllers\Admin\Organization\RoleAdminController(
                 self::get(\App\Services\Admin\RolePermissionService::class),
@@ -991,16 +982,6 @@ class Container
                 self::get(\App\Repositories\EnlistmentTimelineRepository::class),
                 self::get(\App\Repositories\PlatformSettingsRepository::class)
             ),
-            \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController::class => new \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController(
-                self::get(AuthService::class),
-                self::get(\App\Repositories\BlockedIndicatorRepository::class),
-                self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
-                self::get(\App\Repositories\EnlistmentRepository::class),
-                self::get(TenantRepository::class),
-                self::get(\App\Services\EmailService::class),
-                self::get(\App\Repositories\EnlistmentTimelineRepository::class),
-                self::get(\App\Repositories\PlatformSettingsRepository::class)
-            ),
             \App\Repositories\RecruitmentTeamWallRepository::class => new \App\Repositories\RecruitmentTeamWallRepository(),
             \App\Controllers\Admin\AdminRecruitmentsController::class => new \App\Controllers\Admin\AdminRecruitmentsController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
@@ -1042,9 +1023,19 @@ class Container
                 self::get(\App\Repositories\RecruitmentOpeningRepository::class),
                 self::get(\App\Repositories\EnlistmentTimelineRepository::class),
                 self::get(\App\Repositories\BlockedIndicatorRepository::class),
-                self::get(\App\Services\Auth\AuthService::class),
+                self::get(AuthService::class),
                 self::get(\App\Services\EmailService::class),
-                self::get(\App\Repositories\UserRepository::class)
+                self::get(UserRepository::class)
+            ),
+            \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController::class => new \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\BlockedIndicatorRepository::class),
+                self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
+                self::get(\App\Repositories\EnlistmentRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\EnlistmentTimelineRepository::class),
+                self::get(\App\Repositories\PlatformSettingsRepository::class)
             ),
             \App\Controllers\Admin\AdminTrainingController::class => new \App\Controllers\Admin\AdminTrainingController(
                 self::get(\App\Repositories\TrainingCourseRepository::class),
@@ -1396,8 +1387,7 @@ class Container
             \App\Controllers\Api\OrbatApiController::class => new \App\Controllers\Api\OrbatApiController(
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\OrbatChartTypeRepository::class),
-                self::get(\App\Repositories\PersonnelOrgHistoryRepository::class)
+                self::get(\App\Repositories\OrbatChartTypeRepository::class)
             ),
             \App\Controllers\Api\ForumModerationApiController::class => new \App\Controllers\Api\ForumModerationApiController(
                 self::get(\App\Repositories\ForumTopicRepository::class),

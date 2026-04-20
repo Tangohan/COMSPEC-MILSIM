@@ -500,13 +500,8 @@ class EnlistmentController
     {
         $message = Session::getFlash('enlistment_error', 'Une erreur est survenue lors de la soumission.');
         $retry = Session::getFlash('enlistment_retry_url', url('enlistment'));
-        $errorContext = trim((string) Session::getFlash('enlistment_error_context', ''));
 
-        return Response::view('enlistment.error', [
-            'message' => $message,
-            'enlistmentRetryUrl' => $retry,
-            'errorContext' => $errorContext !== '' ? $errorContext : null,
-        ]);
+        return Response::view('enlistment.error', ['message' => $message, 'enlistmentRetryUrl' => $retry]);
     }
 
     /**

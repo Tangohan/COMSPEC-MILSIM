@@ -44,7 +44,7 @@ $ficheUrl = url('formations/' . rawurlencode($slugForForms));
 <body class="bg-slate-100 text-slate-900 overflow-x-hidden">
     <div class="lms-grain"></div>
     <div class="min-h-screen relative z-10">
-        <div class="grid lg:grid-cols-[300px_1fr] min-h-screen">
+        <div class="grid min-h-screen min-w-0 lg:grid-cols-[300px_minmax(0,1fr)]">
             <?php
             $lmsBase = $base;
             $currentLessonId = null;
@@ -52,7 +52,7 @@ $ficheUrl = url('formations/' . rawurlencode($slugForForms));
             require base_path('views/training/partials/lms_course_sidebar.php');
             ?>
 
-            <main class="p-5 md:p-8 lg:p-10">
+            <main class="min-w-0 p-5 md:p-8 lg:p-10">
                 <div class="max-w-6xl mx-auto w-full space-y-8 lg:space-y-10">
                 <?php if ($flashOk): ?>
                 <div class="lms-panel rounded-2xl p-4 bg-emerald-50 border border-emerald-200 text-emerald-950 text-sm font-medium"><?= htmlspecialchars((string) $flashOk) ?></div>

@@ -261,42 +261,6 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
                 ?>
               </select>
             </div>
-            <div>
-              <label for="birth_place" class="mb-1 block text-xs font-bold text-slate-600">Lieu de naissance (dossier)</label>
-              <input type="text" name="birth_place" id="birth_place" value="<?= htmlspecialchars((string) ($p['birth_place'] ?? '')) ?>" placeholder="Ville / département" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="150">
-            </div>
-            <div>
-              <label for="service_branch" class="mb-1 block text-xs font-bold text-slate-600">Corps / filière</label>
-              <input type="text" name="service_branch" id="service_branch" value="<?= htmlspecialchars((string) ($p['service_branch'] ?? '')) ?>" placeholder="Sous-officier de gendarmerie…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="120">
-            </div>
-            <div>
-              <label for="service_status" class="mb-1 block text-xs font-bold text-slate-600">Statut de service</label>
-              <input type="text" name="service_status" id="service_status" value="<?= htmlspecialchars((string) ($p['service_status'] ?? '')) ?>" placeholder="Actif, réserve, etc." class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="120">
-            </div>
-            <div>
-              <label for="gendarmerie_status" class="mb-1 block text-xs font-bold text-slate-600">Statut gendarmerie</label>
-              <input type="text" name="gendarmerie_status" id="gendarmerie_status" value="<?= htmlspecialchars((string) ($p['gendarmerie_status'] ?? '')) ?>" placeholder="Carrière Gie, engagé Gie…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="120">
-            </div>
-            <div>
-              <label for="administrative_position" class="mb-1 block text-xs font-bold text-slate-600">Position administrative</label>
-              <input type="text" name="administrative_position" id="administrative_position" value="<?= htmlspecialchars((string) ($p['administrative_position'] ?? '')) ?>" placeholder="Présent dans l'emploi, détachement…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="120">
-            </div>
-            <div>
-              <label for="bureau_sn" class="mb-1 block text-xs font-bold text-slate-600">Bureau du SN</label>
-              <input type="text" name="bureau_sn" id="bureau_sn" value="<?= htmlspecialchars((string) ($p['bureau_sn'] ?? '')) ?>" placeholder="Marseille BSN…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="120">
-            </div>
-            <div>
-              <label for="military_origin" class="mb-1 block text-xs font-bold text-slate-600">Origine du recrutement militaire</label>
-              <input type="text" name="military_origin" id="military_origin" value="<?= htmlspecialchars((string) ($p['military_origin'] ?? '')) ?>" placeholder="CIV, réserve, ancien armée…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="120">
-            </div>
-            <div>
-              <label for="statutory_limit_date" class="mb-1 block text-xs font-bold text-slate-600">Date limite d'âge statutaire</label>
-              <input type="date" name="statutory_limit_date" id="statutory_limit_date" value="<?= htmlspecialchars(substr((string) ($p['statutory_limit_date'] ?? ''), 0, 10)) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-            </div>
-            <div>
-              <label for="management_service_limit_date" class="mb-1 block text-xs font-bold text-slate-600">Date limite des services en gestion</label>
-              <input type="date" name="management_service_limit_date" id="management_service_limit_date" value="<?= htmlspecialchars(substr((string) ($p['management_service_limit_date'] ?? ''), 0, 10)) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-            </div>
           </div>
         </section>
 
