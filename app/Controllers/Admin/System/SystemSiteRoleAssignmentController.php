@@ -11,14 +11,17 @@ use App\Core\Session;
 use App\Repositories\SiteRoleAssignmentRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Services\Admin\AdminActionService;
 
 final class SystemSiteRoleAssignmentController
 {
     public function __construct(
         private SiteRoleAssignmentRepository $siteRoleAssignments,
-        private ?AuditService $auditService = null
+        private ?AuditService $auditService = null,
+        private ?AdminActionService $adminActionService = null
     ) {
         $this->auditService ??= new AuditService();
+        $this->adminActionService ??= new AdminActionService();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -55,6 +58,8 @@ final class SystemSiteRoleAssignmentController
 
             return Response::redirect(url('admin/site-roles'));
         }
+        $assignment = $this->siteRoleAssignments->findActiveAssignmentByEmailAndRole($email, $roleId);
+
         $this->auditService->logChange(
             AuditAction::SITE_ROLE_ASSIGNED,
             $tenantId,
@@ -64,6 +69,24 @@ final class SystemSiteRoleAssignmentController
             [],
             ['email' => $email, 'role_id' => $roleId],
         );
+        $this->adminActionService->log($request, [
+            'tenant_id' => $tenantId,
+            'actor_user_id' => $actorId,
+            'action_type' => AuditAction::SITE_ROLE_ASSIGNED,
+            'target_type' => 'site_role_assignment',
+            'target_id' => isset($assignment['id']) ? (string) $assignment['id'] : null,
+            'scope' => 'platform',
+            'status' => 'applied',
+            'reason' => 'Affectation de rôle site',
+            'is_undoable' => 1,
+            'is_compensable' => 0,
+            'undo_strategy' => 'site_role.revoke',
+        ], [], [
+            'email' => $email,
+            'role_id' => $roleId,
+            'assignment_id' => (int) ($assignment['id'] ?? 0),
+        ]);
+
         Session::flash('success', 'Rôle site affecté.');
 
         return Response::redirect(url('admin/site-roles'));
@@ -104,6 +127,20 @@ final class SystemSiteRoleAssignmentController
             $old,
             [],
         );
+        $this->adminActionService->log($request, [
+            'tenant_id' => $tenantId,
+            'actor_user_id' => $actorId,
+            'action_type' => AuditAction::SITE_ROLE_REVOKED,
+            'target_type' => 'site_role_assignment',
+            'target_id' => (string) $id,
+            'scope' => 'platform',
+            'status' => 'applied',
+            'reason' => 'Révocation de rôle site',
+            'is_undoable' => 0,
+            'is_compensable' => 1,
+            'non_reversible_reason' => 'Nécessite une ré-affectation explicite validée.',
+        ], $old, []);
+
         Session::flash('success', 'Affectation révoquée.');
 
         return Response::redirect(url('admin/site-roles'));

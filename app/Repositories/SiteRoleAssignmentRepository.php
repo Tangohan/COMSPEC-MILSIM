@@ -81,6 +81,28 @@ final class SiteRoleAssignmentRepository
         return true;
     }
 
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findActiveAssignmentByEmailAndRole(string $email, int $roleId): ?array
+    {
+        $email = strtolower(trim($email));
+        if ($email === '' || $roleId < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT id, email_normalized, role_id, assigned_by_user_id, created_at
+             FROM site_role_assignments
+             WHERE email_normalized = ? AND role_id = ? AND revoked_at IS NULL
+             LIMIT 1'
+        );
+        $stmt->execute([$email, $roleId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
     public function revoke(int $assignmentId): bool
     {
         $st = $this->pdo->prepare('UPDATE site_role_assignments SET revoked_at = NOW() WHERE id = ? AND revoked_at IS NULL');

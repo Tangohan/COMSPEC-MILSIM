@@ -44,17 +44,40 @@ $lmsTitle = (string) $course['title'];
 $lmsBase = $base;
 $lmsThemeVars = function_exists('training_lms_theme_css_vars') ? training_lms_theme_css_vars($theme) : '';
 $courseMetaChips = [];
+$formatCourseMetaLabel = static function (string $raw): string {
+    $value = trim($raw);
+    if ($value === '') {
+        return '';
+    }
+
+    $normalized = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+    $dictionary = [
+        'debutant' => 'Débutant',
+        'débutant' => 'Débutant',
+        'intermediaire' => 'Intermédiaire',
+        'intermédiaire' => 'Intermédiaire',
+        'avance' => 'Avancé',
+        'avancé' => 'Avancé',
+        'expert' => 'Expert',
+    ];
+
+    if (isset($dictionary[$normalized])) {
+        return $dictionary[$normalized];
+    }
+
+    return ucfirst($value);
+};
 $estMin = (int) ($course['estimated_minutes'] ?? 0);
 if ($estMin > 0) {
     $courseMetaChips[] = ['text' => $estMin . ' min', 'hint' => 'Durée estimée'];
 }
 $catTrim = trim((string) ($course['category'] ?? ''));
 if ($catTrim !== '') {
-    $courseMetaChips[] = ['text' => $catTrim, 'hint' => 'Thème'];
+    $courseMetaChips[] = ['text' => $formatCourseMetaLabel($catTrim), 'hint' => 'Thème'];
 }
 $lvlTrim = trim((string) ($course['level'] ?? ''));
 if ($lvlTrim !== '') {
-    $courseMetaChips[] = ['text' => $lvlTrim, 'hint' => 'Niveau'];
+    $courseMetaChips[] = ['text' => $formatCourseMetaLabel($lvlTrim), 'hint' => 'Niveau'];
 }
 $courseHeaderAsideVisible = $viewerLoggedIn || $canPublishOperationalBoard || ($enrollment && $canAccessLearning);
 $lmsExtraHead = '';
@@ -152,7 +175,7 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
                                 <p class="text-[9px] font-black uppercase tracking-[0.35em] text-slate-400">Fiche formation</p>
                                 <span class="inline-flex items-center rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-2.5 py-0.5 font-mono text-[11px] font-bold tracking-tight text-emerald-800" title="Référence du parcours"><?= htmlspecialchars($code) ?></span>
                             </div>
-                            <h1 id="lms-course-page-title" class="text-balance text-2xl font-black uppercase leading-[1.15] tracking-tight text-slate-900 md:text-4xl"><?= htmlspecialchars((string) $course['title']) ?></h1>
+                            <h1 id="lms-course-page-title" class="text-balance text-2xl font-black leading-[1.15] tracking-tight text-slate-900 md:text-4xl"><?= htmlspecialchars((string) $course['title']) ?></h1>
                             <?php if ($courseMetaChips !== []): ?>
                             <ul class="mt-4 flex flex-wrap gap-2" aria-label="Caractéristiques du parcours">
                                 <?php foreach ($courseMetaChips as $chip): ?>
@@ -177,14 +200,14 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
                                         <input type="hidden" name="course_id" value="<?= $courseId ?>">
                                         <input type="hidden" name="course_slug" value="<?= htmlspecialchars($slugForForms) ?>">
                                         <input type="hidden" name="favorite" value="<?= $isFavorite ? '0' : '1' ?>">
-                                        <button type="submit" class="flex w-full min-h-[2.5rem] items-center justify-center rounded-xl border px-3 py-2 text-xs font-black uppercase tracking-wider transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 <?= $isFavorite ? 'border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50' ?>"><?= $isFavorite ? '★ Favori' : '☆ Favori' ?></button>
+                                        <button type="submit" class="flex w-full min-h-[2.5rem] items-center justify-center rounded-xl border px-3 py-2 text-center text-xs font-black uppercase tracking-wider transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 <?= $isFavorite ? 'border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50' ?>"><?= $isFavorite ? '★ Favori' : '☆ Favori' ?></button>
                                     </form>
                                     <form method="post" action="<?= url('formations/like') ?>" class="min-w-0 flex-1">
                                         <?= \App\Core\Csrf::field() ?>
                                         <input type="hidden" name="course_id" value="<?= $courseId ?>">
                                         <input type="hidden" name="course_slug" value="<?= htmlspecialchars($slugForForms) ?>">
                                         <input type="hidden" name="like" value="<?= $isLiked ? '0' : '1' ?>">
-                                        <button type="submit" class="flex w-full min-h-[2.5rem] items-center justify-center rounded-xl border px-3 py-2 text-xs font-black uppercase tracking-wider transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 <?= $isLiked ? 'border-rose-400 bg-rose-50 text-rose-900 hover:bg-rose-100' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50' ?>"><?= $isLiked ? '♥ J’aime' : '♡ J’aime' ?></button>
+                                        <button type="submit" class="flex w-full min-h-[2.5rem] items-center justify-center rounded-xl border px-3 py-2 text-center text-xs font-black uppercase tracking-wider transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 <?= $isLiked ? 'border-rose-400 bg-rose-50 text-rose-900 hover:bg-rose-100' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50' ?>"><?= $isLiked ? '♥ J’aime' : '♡ J’aime' ?></button>
                                     </form>
                                 </div>
                             </div>
