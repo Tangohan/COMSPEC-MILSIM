@@ -146,7 +146,7 @@ $categories = ['all' => 'Tous les modules', 'tactique' => 'tactique', 'technique
 
                     <nav class="flex flex-wrap gap-4 border-l border-slate-200 pl-8">
                         <button type="button" @click="activeCategory = 'all'" :class="activeCategory === 'all' ? 'text-slate-900 underline underline-offset-8' : 'text-slate-400 hover:text-slate-600'" class="text-[10px] font-black uppercase tracking-[0.3em] transition-all italic">
-                            All_Modules
+                            Tous les modules
                         </button>
                         <button type="button" @click="activeCategory = 'tactique'" :class="activeCategory === 'tactique' ? 'text-slate-900 underline underline-offset-8' : 'text-slate-400 hover:text-slate-600'" class="text-[10px] font-black uppercase tracking-[0.3em] transition-all italic">
                             Tactique
@@ -189,7 +189,7 @@ $categories = ['all' => 'Tous les modules', 'tactique' => 'tactique', 'technique
                             <span class="text-[10px] font-bold text-slate-900 uppercase <?= ($item['category'] ?? '') === 'technique' ? 'italic underline decoration-blue-500 underline-offset-4' : '' ?> <?= ($item['category'] ?? '') === 'médical' ? 'text-rose-600 italic' : '' ?>"><?= htmlspecialchars($item['duration_label'] ?? '—') ?></span>
                         </div>
                         <div class="h-8 w-[1px] bg-slate-200"></div>
-                        <span class="text-[9px] font-black italic text-slate-900 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">Details +</span>
+                        <span class="text-[9px] font-black italic text-slate-900 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">Détails</span>
                     </div>
                 </article>
                 <?php endforeach; ?>

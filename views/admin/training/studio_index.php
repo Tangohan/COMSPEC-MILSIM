@@ -31,8 +31,11 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
             <div class="min-w-0">
                 <p class="text-[0.65rem] font-black tracking-[0.35em] uppercase text-emerald-600 mb-3">Studio formation</p>
                 <h1 class="text-2xl md:text-4xl font-black text-slate-900 tracking-tight uppercase leading-tight">Tableau des formations</h1>
-                <p class="text-slate-600 text-sm mt-3 max-w-2xl leading-relaxed">Créez des parcours, ajoutez des modules et des leçons, puis publiez-les dans le catalogue apprenant — comme un espace créateur dédié.</p>
-                <p class="text-slate-500 text-sm mt-2 max-w-2xl leading-relaxed">Utilisez le bouton bleu <strong class="font-semibold text-slate-700">Structure &amp; ressources</strong> sur une formation, ou l’onglet <strong class="font-semibold text-slate-700">Modules, leçons &amp; ressources</strong> une fois dans l’édition : le panneau <strong class="font-semibold text-slate-700">Ressources</strong> (à droite de chaque leçon) permet d’ajouter liens web, fichiers et documents du centre documentaire.</p>
+                <p class="text-slate-600 text-sm mt-3 max-w-2xl leading-relaxed">Créez des parcours, ajoutez des modules et des leçons, puis publiez-les dans le catalogue apprenant.</p>
+                <details class="mt-2 max-w-2xl text-sm text-slate-500">
+                    <summary class="cursor-pointer font-semibold text-slate-700">En savoir plus sur les ressources par leçon</summary>
+                    <p class="mt-1 leading-relaxed">Utilisez le bouton <strong class="text-slate-700">Structure &amp; ressources</strong> sur une formation : le panneau <strong class="text-slate-700">Ressources</strong> permet d’ajouter liens web, fichiers et documents du centre documentaire.</p>
+                </details>
                 <p class="text-sm text-slate-500 mt-2">
                     <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:decoration-emerald-600 hover:text-emerald-800">← Tableau de bord formations</a>
                     <span class="text-slate-300 mx-2">·</span>
@@ -137,7 +140,8 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
 
             <section class="training-studio-panel p-6 md:p-8 border-t-4 border-t-violet-500 shadow-lg shadow-slate-900/5 w-full">
                 <h2 class="text-xs font-black uppercase tracking-[0.22em] text-violet-900/80 mb-1">Nouvelle formation</h2>
-                <p class="text-sm text-slate-600 mb-6 max-w-3xl">Créée en brouillon par défaut ; vous pourrez compléter la fiche ensuite.</p>
+                <p class="text-sm text-slate-600 mb-2 max-w-3xl">Créée en brouillon par défaut ; vous pourrez compléter la fiche ensuite.</p>
+                <p class="text-xs text-slate-500 mb-6 max-w-3xl">Après création, suivez le parcours guidé : <strong>fiche minimale</strong> → <strong>1er module + 1re leçon</strong> → <strong>présentation apprenant</strong> → <strong>vérification publication</strong>.</p>
                 <?php
                 $tcap = $trainingCourseCapacity ?? null;
                 $tcapBlocked = is_array($tcap) && empty($tcap['unlimited']) && empty($tcap['can_create']);

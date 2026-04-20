@@ -13,9 +13,22 @@ declare(strict_types=1);
  * }
  */
 return [
-    'version' => '1.3.0',
+    'version' => '1.4.0',
     'label' => 'Studio & parcours formation',
     'changelog' => [
+        [
+            'version' => '1.4.0',
+            'date' => '2026-04-20',
+            'title' => 'Décision d’inscription, pilotage admin et publication guidée',
+            'items' => [
+                'Catalogue apprenant : ajout d’une barre de filtres utilitaires (niveau, durée, modalité, disponibilité) avec réinitialisation rapide.',
+                'Cartes du catalogue : métadonnées décisionnelles visibles (niveau, charge hebdomadaire estimée, format) et badge de progression « non commencé / en cours / terminé ».',
+                'Pilotage admin : nouvelle section « Actions du jour » en tête, KPIs transformés en raccourcis actionnables vers les vues filtrées.',
+                'Pilotage admin : ajout d’un bloc « santé opérationnelle » pour suivre complétion, parcours inactifs et backlog de validation.',
+                'Studio : ajout d’un assistant de mise en ligne (4 étapes), checklist de publication avec score prêt-à-publier et aides contextuelles en accordéons.',
+                'UI : harmonisation de libellés FR (ex. « Tous les modules », « Détails »), amélioration de la lisibilité (tailles minimales de texte sur informations clés).',
+            ],
+        ],
         [
             'version' => '1.3.0',
             'date' => '2026-04-19',

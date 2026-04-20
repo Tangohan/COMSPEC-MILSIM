@@ -9,11 +9,25 @@ $filterCategory = $filterCategory ?? null;
 $filterSearch = $filterSearch ?? null;
 $filterCategories = $filterCategories ?? [];
 $filterParcours = $filterParcours ?? '';
+$filterLevel = $filterLevel ?? '';
+$filterDuration = $filterDuration ?? '';
+$filterModality = $filterModality ?? '';
+$filterAvailability = $filterAvailability ?? '';
+$filterLevelOptions = $filterLevelOptions ?? [];
+$filterModalityOptions = $filterModalityOptions ?? [];
 $catalogueSidebarEnrollments = $catalogueSidebarEnrollments ?? [];
 
 $totalModules = count($courses) + ($training_legacy_enabled ? count($legacyModules) : 0);
 $formationsUrl = rtrim($base, '/') . '/formations';
-$buildFormationsUrl = static function (?string $cat, ?string $q, string $parcours = '') use ($formationsUrl): string {
+$buildFormationsUrl = static function (
+    ?string $cat,
+    ?string $q,
+    string $parcours = '',
+    string $niveau = '',
+    string $duree = '',
+    string $modalite = '',
+    string $disponibilite = ''
+) use ($formationsUrl): string {
     $p = [];
     if ($cat !== null && $cat !== '') {
         $p['category'] = $cat;
@@ -23,6 +37,18 @@ $buildFormationsUrl = static function (?string $cat, ?string $q, string $parcour
     }
     if ($parcours !== '' && in_array($parcours, ['communaute', 'plateforme'], true)) {
         $p['parcours'] = $parcours;
+    }
+    if ($niveau !== '') {
+        $p['niveau'] = $niveau;
+    }
+    if ($duree !== '' && in_array($duree, ['court', 'moyen', 'long'], true)) {
+        $p['duree'] = $duree;
+    }
+    if ($modalite !== '') {
+        $p['modalite'] = $modalite;
+    }
+    if ($disponibilite !== '' && in_array($disponibilite, ['ouvert', 'non_commence', 'en_cours', 'termine'], true)) {
+        $p['disponibilite'] = $disponibilite;
     }
 
     return $formationsUrl . ($p !== [] ? '?' . http_build_query($p) : '');
@@ -115,6 +141,18 @@ $headHtml = ob_get_clean();
                             <?php if ($filterParcours !== '' && in_array($filterParcours, ['communaute', 'plateforme'], true)): ?>
                             <input type="hidden" name="parcours" value="<?= htmlspecialchars($filterParcours) ?>">
                             <?php endif; ?>
+                            <?php if ($filterLevel !== ''): ?>
+                            <input type="hidden" name="niveau" value="<?= htmlspecialchars($filterLevel) ?>">
+                            <?php endif; ?>
+                            <?php if ($filterDuration !== ''): ?>
+                            <input type="hidden" name="duree" value="<?= htmlspecialchars($filterDuration) ?>">
+                            <?php endif; ?>
+                            <?php if ($filterModality !== ''): ?>
+                            <input type="hidden" name="modalite" value="<?= htmlspecialchars($filterModality) ?>">
+                            <?php endif; ?>
+                            <?php if ($filterAvailability !== ''): ?>
+                            <input type="hidden" name="disponibilite" value="<?= htmlspecialchars($filterAvailability) ?>">
+                            <?php endif; ?>
                             <label class="sr-only" for="catalogue-search">Recherche</label>
                             <input type="search" id="catalogue-search" name="search" value="<?= htmlspecialchars((string) ($filterSearch ?? '')) ?>"
                                    placeholder="Rechercher un titre, un code…"
@@ -125,34 +163,85 @@ $headHtml = ob_get_clean();
                         </form>
                         <form method="get" action="<?= htmlspecialchars($formationsUrl) ?>" class="flex flex-wrap gap-2 mb-6 items-center">
                             <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mr-1">Origine :</span>
-                            <a href="<?= htmlspecialchars($buildFormationsUrl($filterCategory, $filterSearch, '')) ?>"
+                            <a href="<?= htmlspecialchars($buildFormationsUrl($filterCategory, $filterSearch, '', $filterLevel, $filterDuration, $filterModality, $filterAvailability)) ?>"
                                class="px-4 py-2 rounded-full border text-[10px] font-black tracking-[0.18em] uppercase transition-colors <?= $filterParcours === '' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-800' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200' ?>">
                                 Tous
                             </a>
-                            <a href="<?= htmlspecialchars($buildFormationsUrl($filterCategory, $filterSearch, 'communaute')) ?>"
+                            <a href="<?= htmlspecialchars($buildFormationsUrl($filterCategory, $filterSearch, 'communaute', $filterLevel, $filterDuration, $filterModality, $filterAvailability)) ?>"
                                class="px-4 py-2 rounded-full border text-[10px] font-black tracking-[0.18em] uppercase transition-colors <?= $filterParcours === 'communaute' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-800' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200' ?>">
                                 Communauté
                             </a>
-                            <a href="<?= htmlspecialchars($buildFormationsUrl($filterCategory, $filterSearch, 'plateforme')) ?>"
+                            <a href="<?= htmlspecialchars($buildFormationsUrl($filterCategory, $filterSearch, 'plateforme', $filterLevel, $filterDuration, $filterModality, $filterAvailability)) ?>"
                                class="px-4 py-2 rounded-full border text-[10px] font-black tracking-[0.18em] uppercase transition-colors <?= $filterParcours === 'plateforme' ? 'border-violet-500 bg-violet-500/10 text-violet-900' : 'border-slate-200 bg-white text-slate-700 hover:border-violet-200' ?>">
                                 Toute la plateforme
                             </a>
                         </form>
-                        <form method="get" action="<?= htmlspecialchars($formationsUrl) ?>" class="flex flex-wrap gap-2 mb-8 items-center">
+                        <form method="get" action="<?= htmlspecialchars($formationsUrl) ?>" class="flex flex-wrap gap-2 mb-4 items-center">
                             <?php if ($filterParcours !== '' && in_array($filterParcours, ['communaute', 'plateforme'], true)): ?>
                             <input type="hidden" name="parcours" value="<?= htmlspecialchars($filterParcours) ?>">
                             <?php endif; ?>
+                            <?php if ($filterLevel !== ''): ?>
+                            <input type="hidden" name="niveau" value="<?= htmlspecialchars($filterLevel) ?>">
+                            <?php endif; ?>
+                            <?php if ($filterDuration !== ''): ?>
+                            <input type="hidden" name="duree" value="<?= htmlspecialchars($filterDuration) ?>">
+                            <?php endif; ?>
+                            <?php if ($filterModality !== ''): ?>
+                            <input type="hidden" name="modalite" value="<?= htmlspecialchars($filterModality) ?>">
+                            <?php endif; ?>
+                            <?php if ($filterAvailability !== ''): ?>
+                            <input type="hidden" name="disponibilite" value="<?= htmlspecialchars($filterAvailability) ?>">
+                            <?php endif; ?>
                             <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mr-1">Thème :</span>
-                            <a href="<?= htmlspecialchars($buildFormationsUrl(null, $filterSearch, $filterParcours)) ?>"
+                            <a href="<?= htmlspecialchars($buildFormationsUrl(null, $filterSearch, $filterParcours, $filterLevel, $filterDuration, $filterModality, $filterAvailability)) ?>"
                                class="px-4 py-2 rounded-full border text-[10px] font-black tracking-[0.18em] uppercase transition-colors <?= $filterCategory === null ? 'border-emerald-500 bg-emerald-500/10 text-emerald-800' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200' ?>">
                                 Tous
                             </a>
                             <?php foreach ($filterCategories as $cat): ?>
-                            <a href="<?= htmlspecialchars($buildFormationsUrl($cat, $filterSearch, $filterParcours)) ?>"
+                            <a href="<?= htmlspecialchars($buildFormationsUrl($cat, $filterSearch, $filterParcours, $filterLevel, $filterDuration, $filterModality, $filterAvailability)) ?>"
                                class="px-4 py-2 rounded-full border text-[10px] font-black tracking-[0.18em] uppercase transition-colors <?= ($filterCategory === $cat) ? 'border-emerald-500 bg-emerald-500/10 text-emerald-800' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200' ?>">
                                 <?= htmlspecialchars($cat) ?>
                             </a>
                             <?php endforeach; ?>
+                        </form>
+                        <form method="get" action="<?= htmlspecialchars($formationsUrl) ?>" class="mb-8 rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 md:p-4">
+                            <?php if ($filterCategory): ?><input type="hidden" name="category" value="<?= htmlspecialchars($filterCategory) ?>"><?php endif; ?>
+                            <?php if ($filterSearch): ?><input type="hidden" name="search" value="<?= htmlspecialchars((string) $filterSearch) ?>"><?php endif; ?>
+                            <?php if ($filterParcours !== ''): ?><input type="hidden" name="parcours" value="<?= htmlspecialchars($filterParcours) ?>"><?php endif; ?>
+                            <div class="mb-3 flex items-center justify-between gap-3">
+                                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Filtres utilitaires</p>
+                                <a href="<?= htmlspecialchars($buildFormationsUrl($filterCategory, $filterSearch, $filterParcours)) ?>" class="text-[11px] font-bold text-emerald-700 underline decoration-emerald-200 hover:text-emerald-900">Réinitialiser</a>
+                            </div>
+                            <div class="grid gap-2.5 sm:grid-cols-2">
+                                <select name="niveau" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
+                                    <option value="">Niveau : tous</option>
+                                    <?php foreach ($filterLevelOptions as $levelOpt): ?>
+                                    <option value="<?= htmlspecialchars($levelOpt) ?>" <?= $filterLevel === $levelOpt ? 'selected' : '' ?>>Niveau : <?= htmlspecialchars(ucfirst($levelOpt)) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <select name="duree" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
+                                    <option value="">Durée : toutes</option>
+                                    <option value="court" <?= $filterDuration === 'court' ? 'selected' : '' ?>>Durée : courte (≤ 30 min)</option>
+                                    <option value="moyen" <?= $filterDuration === 'moyen' ? 'selected' : '' ?>>Durée : moyenne (31 à 90 min)</option>
+                                    <option value="long" <?= $filterDuration === 'long' ? 'selected' : '' ?>>Durée : longue (&gt; 90 min)</option>
+                                </select>
+                                <select name="modalite" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
+                                    <option value="">Modalité : toutes</option>
+                                    <?php foreach ($filterModalityOptions as $modalityOpt): ?>
+                                    <option value="<?= htmlspecialchars($modalityOpt) ?>" <?= $filterModality === $modalityOpt ? 'selected' : '' ?>>Modalité : <?= htmlspecialchars(ucfirst($modalityOpt)) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <select name="disponibilite" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
+                                    <option value="">Disponibilité : toutes</option>
+                                    <option value="ouvert" <?= $filterAvailability === 'ouvert' ? 'selected' : '' ?>>Ouvertes à l’inscription</option>
+                                    <option value="non_commence" <?= $filterAvailability === 'non_commence' ? 'selected' : '' ?>>Non commencées</option>
+                                    <option value="en_cours" <?= $filterAvailability === 'en_cours' ? 'selected' : '' ?>>En cours</option>
+                                    <option value="termine" <?= $filterAvailability === 'termine' ? 'selected' : '' ?>>Terminées</option>
+                                </select>
+                            </div>
+                            <div class="mt-3">
+                                <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-[11px] font-black uppercase tracking-[0.17em] text-white hover:bg-emerald-600 transition-colors">Appliquer les filtres</button>
+                            </div>
                         </form>
 
                         <?php if (empty($courses) && (!$training_legacy_enabled || empty($legacyModules))): ?>
@@ -232,23 +321,47 @@ $headHtml = ob_get_clean();
                                     </div>
                                     <div class="text-right space-y-1.5 max-w-[58%]">
                                         <?php if ($scopeBadge !== ''): ?>
-                                        <span class="inline-block px-2.5 py-1 rounded-full text-[8px] font-black tracking-[0.18em] uppercase leading-tight <?= $lmsScopeRow === 'platform'
+                                        <span class="inline-block px-2.5 py-1 rounded-full text-[10px] font-black tracking-[0.12em] uppercase leading-tight <?= $lmsScopeRow === 'platform'
                                             ? 'bg-violet-500/12 text-violet-900 border border-violet-400/30'
                                             : 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/25' ?>"><?= htmlspecialchars($scopeBadge) ?></span>
                                         <?php endif; ?>
-                                        <span class="block text-[8px] font-black tracking-[0.25em] uppercase text-slate-400"><?= htmlspecialchars($cat) ?></span>
+                                        <span class="block text-[10px] font-black tracking-[0.18em] uppercase text-slate-500"><?= htmlspecialchars($cat) ?></span>
                                     </div>
                                 </div>
                                 <h4 class="text-lg font-black tracking-tight uppercase mb-2 text-slate-900 transition-colors group-hover:text-emerald-800"><?= htmlspecialchars($c['title']) ?></h4>
                                 <p class="text-[11px] text-slate-600 font-medium leading-relaxed mb-4"><?= !empty($c['short_description']) ? htmlspecialchars($c['short_description']) : 'Parcours publié dans le catalogue.' ?></p>
+                                <?php
+                                $metaLevel = trim((string) ($c['level'] ?? ''));
+                                $metaWeekly = (int) ($c['estimated_weekly_minutes'] ?? 0);
+                                $metaFormat = trim((string) ($c['learning_format'] ?? $c['modality'] ?? 'mixte'));
+                                ?>
+                                <div class="mb-3 grid grid-cols-3 gap-2 text-[11px] font-semibold">
+                                    <span class="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-slate-700">Niveau: <?= htmlspecialchars($metaLevel !== '' ? ucfirst($metaLevel) : 'À définir') ?></span>
+                                    <span class="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-slate-700">Charge: <?= $metaWeekly > 0 ? $metaWeekly . ' min/sem.' : 'À définir' ?></span>
+                                    <span class="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-slate-700">Format: <?= htmlspecialchars($metaFormat !== '' ? ucfirst($metaFormat) : 'Mixte') ?></span>
+                                </div>
                                 <?php require base_path('views/training/partials/catalogue_card_status_overlay.php'); ?>
+                                <?php
+                                $progressBadgeLabel = 'Non commencé';
+                                $progressBadgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
+                                if ($cardState === 'en_cours') {
+                                    $progressBadgeLabel = 'En cours';
+                                    $progressBadgeClass = 'bg-sky-100 text-sky-900 border-sky-200';
+                                } elseif ($cardState === 'valide') {
+                                    $progressBadgeLabel = 'Terminé';
+                                    $progressBadgeClass = 'bg-emerald-100 text-emerald-900 border-emerald-200';
+                                }
+                                ?>
+                                <div class="mb-3">
+                                    <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.14em] <?= $progressBadgeClass ?>"><?= $progressBadgeLabel ?></span>
+                                </div>
                                 <?php if ($mins > 0): ?>
-                                <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.14em] pt-1 border-t border-slate-100">
+                                <div class="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.1em] pt-1 border-t border-slate-100">
                                     <span class="text-slate-400">Durée estimée</span>
                                     <span class="text-slate-800 tabular-nums"><?= $mins ?> min</span>
                                 </div>
                                 <?php endif; ?>
-                                <p class="mt-3 text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover:text-emerald-600 transition-colors">Consulter le parcours</p>
+                                <p class="mt-3 text-[11px] font-black uppercase tracking-[0.13em] text-slate-500 group-hover:text-emerald-700 transition-colors">Consulter le parcours</p>
                                 <?php if (!empty($c['enrollment']) && $cardState === null): ?>
                                 <div class="mt-2 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
                                     <span class="text-[10px] font-bold <?= ($c['enrollment']['status'] ?? '') === 'completed' ? 'text-emerald-700' : 'text-amber-700' ?>">
