@@ -1,5 +1,6 @@
 /**
- * Menu contextuel (clic droit) sur les catégories racine du forum — création de sous-catégorie.
+ * Menu contextuel (clic droit) sur les catégories du forum.
+ * Admin : configuration rapide complète (édition, scope, verrouillage, suppression, accès config).
  */
 (function () {
   const cfg = document.getElementById('forum-context-menu-config');
@@ -26,7 +27,7 @@
   }
 
   let menuEl = null;
-  /** @type {{ id: string, name: string, scope: string } | null} */
+  /** @type {{ id: string, name: string, scope: string, locked: boolean } | null} */
   let pendingParent = null;
 
   function closeMenu() {
@@ -42,6 +43,7 @@
       id: String(card.dataset.categoryId || ''),
       name: card.dataset.categoryName || '',
       scope: card.dataset.categoryScope || 'general',
+      locked: card.dataset.categoryLocked === '1',
     };
     if (!pendingParent.id) {
       return;
@@ -64,11 +66,25 @@
       return b;
     };
 
-    menuEl.appendChild(
-      mkBtn('Nouvelle sous-catégorie…', () => {
-        openModal();
-      })
-    );
+    menuEl.appendChild(mkBtn('Nouvelle sous-catégorie…', () => openModal()));
+
+    if (fullAdmin) {
+      menuEl.appendChild(
+        mkBtn('Renommer la catégorie…', () => {
+          void runQuickRename();
+        })
+      );
+      menuEl.appendChild(
+        mkBtn('Changer le scope…', () => {
+          void runQuickScopeChange();
+        })
+      );
+      menuEl.appendChild(
+        mkBtn(pendingParent.locked ? 'Déverrouiller la catégorie' : 'Verrouiller la catégorie', () => {
+          void runQuickLockToggle();
+        })
+      );
+    }
 
     if (deleteMenu) {
       menuEl.appendChild(
@@ -203,6 +219,105 @@
       window.location.reload();
     } catch (_err) {
       window.alert('Erreur réseau. Réessayez.');
+    }
+  }
+
+  async function runApi(body) {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        Accept: 'application/json',
+      },
+      body: body.toString(),
+      credentials: 'same-origin',
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Action impossible.');
+    }
+  }
+
+  async function runQuickRename() {
+    if (!pendingParent || !pendingParent.id) {
+      return;
+    }
+    const currentName = pendingParent.name || '';
+    const name = window.prompt('Nouveau nom de catégorie :', currentName);
+    if (name === null) {
+      return;
+    }
+    const clean = String(name).trim();
+    if (!clean) {
+      window.alert('Le nom ne peut pas être vide.');
+      return;
+    }
+    const body = new URLSearchParams();
+    body.set('_csrf_token', csrf);
+    body.set('action', 'update');
+    body.set('id', String(pendingParent.id));
+    body.set('name', clean);
+    if (contextTenantId) {
+      body.set('context_tenant_id', contextTenantId);
+    }
+    try {
+      await runApi(body);
+      window.location.reload();
+    } catch (err) {
+      window.alert(err && err.message ? err.message : 'Échec de renommage.');
+    }
+  }
+
+  async function runQuickScopeChange() {
+    if (!pendingParent || !pendingParent.id) {
+      return;
+    }
+    const hint = 'tenant | global | mission';
+    const next = window.prompt('Nouveau scope (' + hint + ') :', pendingParent.scope || 'tenant');
+    if (next === null) {
+      return;
+    }
+    const raw = String(next).trim().toLowerCase();
+    const mapped = raw === 'organization' || raw === 'general' || raw === 'platform' || raw === 'moderation' ? 'tenant' : raw;
+    if (!['tenant', 'global', 'mission'].includes(mapped)) {
+      window.alert('Scope invalide. Valeurs autorisées: ' + hint);
+      return;
+    }
+    const body = new URLSearchParams();
+    body.set('_csrf_token', csrf);
+    body.set('action', 'update');
+    body.set('id', String(pendingParent.id));
+    body.set('name', pendingParent.name || 'Catégorie');
+    body.set('scope', mapped);
+    if (contextTenantId) {
+      body.set('context_tenant_id', contextTenantId);
+    }
+    try {
+      await runApi(body);
+      window.location.reload();
+    } catch (err) {
+      window.alert(err && err.message ? err.message : 'Échec de mise à jour du scope.');
+    }
+  }
+
+  async function runQuickLockToggle() {
+    if (!pendingParent || !pendingParent.id) {
+      return;
+    }
+    const locked = !pendingParent.locked;
+    const body = new URLSearchParams();
+    body.set('_csrf_token', csrf);
+    body.set('action', 'lock');
+    body.set('id', String(pendingParent.id));
+    body.set('locked', locked ? '1' : '0');
+    if (contextTenantId) {
+      body.set('context_tenant_id', contextTenantId);
+    }
+    try {
+      await runApi(body);
+      window.location.reload();
+    } catch (err) {
+      window.alert(err && err.message ? err.message : 'Échec de verrouillage.');
     }
   }
 

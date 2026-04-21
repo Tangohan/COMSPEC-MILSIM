@@ -62,7 +62,12 @@ class ForumCategoriesApiController
             if ($parentId > 0 && function_exists('forum_user_is_tenant_org_stakeholder') && forum_user_is_tenant_org_stakeholder()) {
                 $parent = $this->forumCategoryRepository->findById($parentId, $tenantId);
 
-                return $parent !== null && (string) ($parent['scope'] ?? '') === 'organization';
+                if ($parent === null) {
+                    return false;
+                }
+                $scope = (string) ($parent['scope'] ?? '');
+
+                return in_array($scope, ['organization', 'tenant', 'mission', 'global'], true);
             }
         }
         if ($action === 'delete') {
@@ -94,7 +99,7 @@ class ForumCategoriesApiController
             return false;
         }
 
-        return (string) ($cat['scope'] ?? '') === 'organization';
+        return in_array((string) ($cat['scope'] ?? ''), ['organization', 'tenant', 'mission', 'global'], true);
     }
 
     private function moderatorMayDeleteCategory(int $categoryId, int $tenantId): bool
@@ -152,8 +157,12 @@ class ForumCategoriesApiController
         $parentRaw = $request->input('parent_id');
         $parentId = $parentRaw !== null && $parentRaw !== '' ? (int) $parentRaw : null;
         $scope = trim((string) $request->input('scope', 'general'));
-        if (!in_array($scope, ['general', 'organization', 'platform', 'moderation'], true)) {
-            $scope = 'general';
+        $scope = match ($scope) {
+            'general', 'organization', 'platform', 'moderation' => 'tenant',
+            default => $scope,
+        };
+        if (!in_array($scope, ['tenant', 'global', 'mission'], true)) {
+            $scope = 'tenant';
         }
         try {
             $id = $this->forumCategoryRepository->create($tenantId, [
@@ -200,7 +209,12 @@ class ForumCategoriesApiController
         }
         $scopeIn = $request->input('scope');
         if ($scopeIn !== null && $scopeIn !== '') {
-            $payload['scope'] = trim((string) $scopeIn);
+            $scopeNorm = trim((string) $scopeIn);
+            $scopeNorm = match ($scopeNorm) {
+                'general', 'organization', 'platform', 'moderation' => 'tenant',
+                default => $scopeNorm,
+            };
+            $payload['scope'] = $scopeNorm;
         }
         if ($request->input('owner_tenant_id') !== null) {
             $payload['owner_tenant_id'] = $request->input('owner_tenant_id') === '' ? null : (int) $request->input('owner_tenant_id');

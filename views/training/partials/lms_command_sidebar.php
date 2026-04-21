@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /** @var string $lmsBase */
 /** @var int $totalModules */
-/** @var string $activeNav one of overview|catalogue|mine|sessions|qualifications */
+/** @var string $activeNav one of overview|catalogue|mine|sessions|qualifications|publications */
 $lmsBase = $lmsBase ?? url('');
 $totalModules = (int) ($totalModules ?? 0);
 $activeNav = $activeNav ?? 'overview';
@@ -56,6 +56,14 @@ $navClass = static function (string $id) use ($activeNav): string {
                 <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Qualifications</span>
             </span>
             <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Grille</span>
+        </a>
+
+        <a href="<?= htmlspecialchars(training_lms_admin_url('publications')) ?>" class="<?= htmlspecialchars($navClass('publications')) ?>">
+            <span>
+                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $activeNav === 'publications' ? 'text-emerald-400' : 'text-white/25' ?>">06</span>
+                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Publications</span>
+            </span>
+            <span class="text-[10px] font-black tracking-widest uppercase text-white/25">BO</span>
         </a>
     </nav>
 

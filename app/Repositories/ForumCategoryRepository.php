@@ -25,7 +25,8 @@ class ForumCategoryRepository
                     (SELECT MAX(fp.created_at) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id) AS last_post_at,
                     (SELECT fp.user_id FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id
              FROM forum_categories fc
-             WHERE fc.tenant_id = ? AND fc.parent_id IS NULL
+             WHERE (fc.tenant_id = ? OR (COALESCE(fc.scope, \'tenant\') = \'global\' AND fc.tenant_id IS NULL))
+               AND fc.parent_id IS NULL
              ORDER BY fc.display_order ASC, fc.id ASC'
         );
         $stmt->execute([$tenantId]);
@@ -47,7 +48,8 @@ class ForumCategoryRepository
                     (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS topic_count,
                     (SELECT COUNT(*) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS post_count
              FROM forum_categories fc
-             WHERE fc.tenant_id = ? AND fc.slug = ?
+             WHERE (fc.tenant_id = ? OR (COALESCE(fc.scope, \'tenant\') = \'global\' AND fc.tenant_id IS NULL))
+               AND fc.slug = ?
              LIMIT 1'
         );
         $stmt->execute([$tenantId, $slug]);
@@ -57,7 +59,12 @@ class ForumCategoryRepository
 
     public function findById(int $id, int $tenantId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM forum_categories WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM forum_categories
+             WHERE id = ?
+               AND (tenant_id = ? OR (COALESCE(scope, 'tenant') = 'global' AND tenant_id IS NULL))
+             LIMIT 1"
+        );
         $stmt->execute([$id, $tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -70,7 +77,9 @@ class ForumCategoryRepository
             return null;
         }
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM forum_categories WHERE tenant_id = ? AND parent_id IS NULL AND slug = ? LIMIT 1'
+            "SELECT * FROM forum_categories
+             WHERE (tenant_id = ? OR (COALESCE(scope, 'tenant') = 'global' AND tenant_id IS NULL))
+               AND parent_id IS NULL AND slug = ? LIMIT 1"
         );
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -122,7 +131,9 @@ class ForumCategoryRepository
             return null;
         }
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM forum_categories WHERE tenant_id = ? AND parent_id = ? AND slug = ? LIMIT 1'
+            "SELECT * FROM forum_categories
+             WHERE (tenant_id = ? OR (COALESCE(scope, 'tenant') = 'global' AND tenant_id IS NULL))
+               AND parent_id = ? AND slug = ? LIMIT 1"
         );
         $stmt->execute([$tenantId, $parentId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -133,11 +144,12 @@ class ForumCategoryRepository
     public function getSubcategories(int $parentId, int $tenantId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT fc.*,
+            "SELECT fc.*,
                     (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS topic_count
              FROM forum_categories fc
-             WHERE fc.tenant_id = ? AND fc.parent_id = ?
-             ORDER BY fc.display_order ASC'
+             WHERE (fc.tenant_id = ? OR (COALESCE(fc.scope, 'tenant') = 'global' AND fc.tenant_id IS NULL))
+               AND fc.parent_id = ?
+             ORDER BY fc.display_order ASC"
         );
         $stmt->execute([$tenantId, $parentId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -176,7 +188,11 @@ class ForumCategoryRepository
 
     public function countChildren(int $categoryId, int $tenantId): int
     {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM forum_categories WHERE tenant_id = ? AND parent_id = ?');
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM forum_categories
+             WHERE (tenant_id = ? OR (COALESCE(scope, 'tenant') = 'global' AND tenant_id IS NULL))
+               AND parent_id = ?"
+        );
         $stmt->execute([$tenantId, $categoryId]);
 
         return (int) $stmt->fetchColumn();
@@ -184,8 +200,12 @@ class ForumCategoryRepository
 
     public function countTopicsInCategory(int $categoryId, int $tenantId): int
     {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM forum_topics WHERE tenant_id = ? AND category_id = ?');
-        $stmt->execute([$tenantId, $categoryId]);
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM forum_topics
+             WHERE category_id = ?
+               AND (tenant_id = ? OR (COALESCE(scope, 'tenant') = 'global' AND tenant_id IS NULL))"
+        );
+        $stmt->execute([$categoryId, $tenantId]);
 
         return (int) $stmt->fetchColumn();
     }
@@ -212,8 +232,12 @@ class ForumCategoryRepository
         $parentId = $parentId > 0 ? $parentId : null;
 
         $scope = isset($data['scope']) ? trim((string) $data['scope']) : 'general';
-        if (!in_array($scope, ['general', 'organization', 'platform', 'moderation'], true)) {
-            $scope = 'general';
+        $scope = match ($scope) {
+            'general', 'organization', 'platform', 'moderation' => 'tenant',
+            default => $scope,
+        };
+        if (!in_array($scope, ['tenant', 'global', 'mission'], true)) {
+            $scope = 'tenant';
         }
 
         $ownerTenantId = null;
@@ -227,10 +251,11 @@ class ForumCategoryRepository
                 $scope = 'general';
             }
         } else {
-            if ($scope === 'organization') {
+            if ($scope === 'tenant') {
                 $ownerTenantId = isset($data['owner_tenant_id']) ? (int) $data['owner_tenant_id'] : $tenantId;
             }
         }
+        $tenantFk = $scope === 'global' ? null : $tenantId;
 
         if ($this->hasScopeColumn()) {
             $stmt = $this->pdo->prepare(
@@ -238,7 +263,7 @@ class ForumCategoryRepository
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())'
             );
             $stmt->execute([
-                $tenantId,
+                $tenantFk,
                 $parentId,
                 $scope,
                 $ownerTenantId,
@@ -256,7 +281,7 @@ class ForumCategoryRepository
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())'
             );
             $stmt->execute([
-                $tenantId,
+                $tenantFk ?? $tenantId,
                 $parentId,
                 $name,
                 $slug,
@@ -282,8 +307,12 @@ class ForumCategoryRepository
 
         if ($this->hasScopeColumn()) {
             $scope = isset($data['scope']) ? trim((string) $data['scope']) : (string) ($cat['scope'] ?? 'general');
-            if (!in_array($scope, ['general', 'organization', 'platform', 'moderation'], true)) {
-                $scope = 'general';
+            $scope = match ($scope) {
+                'general', 'organization', 'platform', 'moderation' => 'tenant',
+                default => $scope,
+            };
+            if (!in_array($scope, ['tenant', 'global', 'mission'], true)) {
+                $scope = 'tenant';
             }
             $parentId = array_key_exists('parent_id', $data)
                 ? ((int) $data['parent_id'] > 0 ? (int) $data['parent_id'] : null)
@@ -299,17 +328,19 @@ class ForumCategoryRepository
                 $scope = (string) ($parent['scope'] ?? $scope);
             }
             $ownerTenantId = $cat['owner_tenant_id'] ?? null;
-            if ($parentId === null && $scope === 'organization') {
+            if ($parentId === null && $scope === 'tenant') {
                 $ownerTenantId = isset($data['owner_tenant_id']) ? (int) $data['owner_tenant_id'] : $ownerTenantId;
             }
             if ($parentId !== null) {
                 $ownerTenantId = null;
             }
+            $tenantFk = $scope === 'global' ? null : $tenantId;
             $stmt = $this->pdo->prepare(
-                'UPDATE forum_categories SET parent_id = ?, scope = ?, owner_tenant_id = ?, name = ?, slug = ?, description = ?, icon = ?, color_theme = ?, display_order = ?, updated_at = NOW()
-                 WHERE id = ? AND tenant_id = ?'
+                'UPDATE forum_categories SET tenant_id = ?, parent_id = ?, scope = ?, owner_tenant_id = ?, name = ?, slug = ?, description = ?, icon = ?, color_theme = ?, display_order = ?, updated_at = NOW()
+                 WHERE id = ? AND (tenant_id = ? OR (COALESCE(scope, \'tenant\') = \'global\' AND tenant_id IS NULL))'
             );
             $stmt->execute([
+                $tenantFk,
                 $parentId,
                 $scope,
                 $ownerTenantId,
@@ -345,14 +376,23 @@ class ForumCategoryRepository
 
     public function delete(int $id, int $tenantId): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM forum_categories WHERE id = ? AND tenant_id = ?');
+        $stmt = $this->pdo->prepare(
+            "DELETE FROM forum_categories
+             WHERE id = ?
+               AND (tenant_id = ? OR (COALESCE(scope, 'tenant') = 'global' AND tenant_id IS NULL))"
+        );
         $stmt->execute([$id, $tenantId]);
         return $stmt->rowCount() > 0;
     }
 
     public function setLocked(int $id, int $tenantId, bool $locked): bool
     {
-        $stmt = $this->pdo->prepare('UPDATE forum_categories SET is_locked = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?');
+        $stmt = $this->pdo->prepare(
+            "UPDATE forum_categories
+             SET is_locked = ?, updated_at = NOW()
+             WHERE id = ?
+               AND (tenant_id = ? OR (COALESCE(scope, 'tenant') = 'global' AND tenant_id IS NULL))"
+        );
         $stmt->execute([$locked ? 1 : 0, $id, $tenantId]);
         return $stmt->rowCount() > 0;
     }
@@ -363,7 +403,12 @@ class ForumCategoryRepository
     public function reorder(int $tenantId, array $idOrder): void
     {
         foreach ($idOrder as $order => $id) {
-            $stmt = $this->pdo->prepare('UPDATE forum_categories SET display_order = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ? AND parent_id IS NULL');
+            $stmt = $this->pdo->prepare(
+                "UPDATE forum_categories SET display_order = ?, updated_at = NOW()
+                 WHERE id = ?
+                   AND (tenant_id = ? OR (COALESCE(scope, 'tenant') = 'global' AND tenant_id IS NULL))
+                   AND parent_id IS NULL"
+            );
             $stmt->execute([$order, (int) $id, $tenantId]);
         }
     }
