@@ -11,7 +11,9 @@
       --muted: #475569;
       --primary: #08203f;
       --primary-2: #123f67;
-      --accent: #0ea5e9;
+      --surface: #fff;
+      --border: #cbd5e1;
+      --soft: #e2e8f0;
     }
     * { box-sizing: border-box; }
     body {
@@ -22,28 +24,31 @@
     }
     .layout {
       display: grid;
-      grid-template-columns: 320px minmax(0, 1fr) 340px;
+      grid-template-columns: 360px minmax(0, 1fr) 370px;
       gap: 1rem;
       padding: 1rem;
       min-height: 100vh;
     }
     .panel {
-      background: #fff;
+      background: var(--surface);
       border-radius: 14px;
       box-shadow: 0 6px 24px rgba(15, 23, 42, .08);
       padding: 1rem;
     }
-    h1, h2, h3 { margin: 0 0 .6rem; }
+    h1, h2, h3, h4 { margin: 0 0 .6rem; }
     .kicker { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
     label { display:block; font-size: .82rem; color: var(--muted); margin-top:.7rem; }
     input, select, textarea {
       width: 100%;
       margin-top: .35rem;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: .55rem .65rem;
       font-size: .9rem;
+      font-family: inherit;
+      background: #fff;
     }
+    textarea { resize: vertical; }
     button {
       border: none;
       border-radius: 10px;
@@ -52,13 +57,14 @@
       cursor: pointer;
     }
     .btn-primary { background: var(--primary); color: #fff; }
-    .btn-soft { background: #e2e8f0; color: #0f172a; }
+    .btn-soft { background: var(--soft); color: #0f172a; }
+    .btn-line { border: 1px solid var(--border); background: #fff; color: #0f172a; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .8rem; }
 
     .preview {
       background: linear-gradient(140deg, var(--primary) 0%, var(--primary-2) 50%, #dbeafe 50.5%, #dbeafe 100%);
       border-radius: 14px;
-      min-height: 520px;
+      min-height: 360px;
       position: relative;
       overflow: hidden;
       color: #fff;
@@ -70,7 +76,7 @@
       inset: 0;
       display: grid;
       place-items: center;
-      font-size: 3.2rem;
+      font-size: 3rem;
       font-weight: 900;
       color: rgba(255,255,255,.1);
       transform: rotate(-28deg);
@@ -78,7 +84,7 @@
       text-transform: uppercase;
       letter-spacing: .1em;
     }
-    .cover-sub { max-width: 60%; font-size: 1.15rem; line-height: 1.3; }
+    .cover-sub { max-width: 60%; font-size: 1.05rem; line-height: 1.3; }
     .badge {
       display:inline-block;
       border:1px solid rgba(255,255,255,.35);
@@ -117,6 +123,65 @@
       object-fit: contain;
       margin-top: .6rem;
     }
+    .editor-wrap {
+      margin-top: .9rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .editor-tabs {
+      display: flex;
+      gap: .45rem;
+      padding: .55rem;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    .tab-btn {
+      padding: .45rem .65rem;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      font-size: .82rem;
+      font-weight: 600;
+    }
+    .tab-btn.active { background: #dbeafe; border-color: #93c5fd; }
+    .toolbar {
+      display: flex;
+      gap: .45rem;
+      flex-wrap: wrap;
+      padding: .55rem;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    .toolbar button {
+      padding: .35rem .55rem;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      font-size: .82rem;
+      font-weight: 600;
+    }
+    .editor {
+      min-height: 220px;
+      padding: .9rem;
+      outline: none;
+      line-height: 1.45;
+      font-size: .92rem;
+    }
+    .editor h2, .editor h3, .editor h4 { margin-top: .85rem; }
+    .editor-source {
+      min-height: 220px;
+      border: 0;
+      border-top: 1px solid #e2e8f0;
+      border-radius: 0;
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .8rem;
+      display: none;
+    }
+    .editor-source.visible { display: block; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -125,11 +190,21 @@
       <p class="kicker">Configuration</p>
       <h2>Liaison Docs / Courrier / LMS</h2>
 
+      <label>Template intégré (Athena)</label>
+      <select id="template"></select>
+      <p class="muted" style="margin-top:.45rem">
+        Compatible avec le workflow de la page
+        <a href="https://athena.ttrd.fr/public/formation/pages-html/1/modifier" target="_blank" rel="noopener noreferrer">/public/formation/pages-html/1/modifier</a>.
+      </p>
+
+      <label>Nom du nouveau template</label>
+      <input id="newTemplateName" placeholder="Ex: Guide EVASAN niveau 2" />
+
       <label>Titre</label>
       <input id="title" value="Contrôle des flux sécurité routière" />
 
       <label>Sous-titre</label>
-      <textarea id="subtitle" rows="3">Constatation des accidents — Procès-verbal</textarea>
+      <textarea id="subtitle" rows="2">Constatation des accidents — Procès-verbal</textarea>
 
       <label>Filigrane</label>
       <select id="watermark">
@@ -150,30 +225,47 @@
 
       <div class="row">
         <button class="btn-primary" id="applyBtn">Appliquer</button>
-        <button class="btn-soft" id="publishBtn">Publier v3.4</button>
+        <button class="btn-line" id="saveTemplateBtn" type="button">Sauver template</button>
       </div>
 
-      <p class="muted" style="margin-top:.8rem">Ce prototype montre : thumb personnalisable, superposition texte, QR code, historique MàJ, sommaire, pages, descriptions, sécurité et filigrane.</p>
+      <div class="row">
+        <button class="btn-soft" id="newFromCurrentBtn" type="button">Nouveau depuis doc</button>
+        <button class="btn-soft" id="publishBtn">Publier v3.5</button>
+      </div>
+
+      <p class="muted" style="margin-top:.8rem">Objectif: sélectionner un template réel, l'éditer en visuel/HTML source, puis générer un document HTML publiable.</p>
     </aside>
 
     <main class="panel">
       <p class="kicker">Preview document</p>
       <div class="preview" id="cover" data-watermark="Diffusion limitée">
-        <span class="badge">Série 37 · Fiche 37-22</span>
+        <span class="badge" id="coverBadge">Série 37 · Fiche 37-22</span>
         <h1 id="coverTitle" style="font-size:2rem;max-width:65%;line-height:1.05;">Contrôle des flux sécurité routière</h1>
         <p id="coverSubtitle" class="cover-sub">Constatation des accidents — Procès-verbal</p>
       </div>
 
       <section class="doc-meta">
-        <h3>Sommaire (auto)</h3>
-        <ol class="toc">
-          <li>1) Avant-propos</li>
-          <li>2) Procédure</li>
-          <li>3) Communication des procès-verbaux</li>
-          <li>4) Fonds de garantie</li>
-          <li>5) Véhicules endommagés</li>
-        </ol>
-        <p class="muted">18 pages · Description : support de référence opérationnelle synchronisé avec les modules LMS.</p>
+        <h3>Sommaire auto (depuis H2/H3)</h3>
+        <ol class="toc" id="tocList"></ol>
+        <p class="muted" id="docDescription">18 pages · Description : support de référence opérationnelle synchronisé avec les modules LMS.</p>
+      </section>
+
+      <section class="editor-wrap">
+        <div class="editor-tabs">
+          <button id="tabVisual" class="tab-btn active" type="button">Éditeur visuel</button>
+          <button id="tabSource" class="tab-btn" type="button">Source HTML</button>
+        </div>
+        <div class="toolbar" id="toolbar">
+          <button type="button" data-cmd="bold"><strong>B</strong></button>
+          <button type="button" data-cmd="italic"><em>I</em></button>
+          <button type="button" data-cmd="insertUnorderedList">Liste</button>
+          <button type="button" data-cmd="formatBlock" data-value="H2">H2</button>
+          <button type="button" data-cmd="formatBlock" data-value="H3">H3</button>
+          <button type="button" data-cmd="createLink">Lien</button>
+          <button type="button" data-cmd="removeFormat">Nettoyer</button>
+        </div>
+        <div id="editor" class="editor" contenteditable="true"></div>
+        <textarea id="editorSource" class="editor-source"></textarea>
       </section>
     </main>
 
@@ -182,16 +274,12 @@
       <h3>Historique des MàJ</h3>
       <ul class="timeline">
         <li>
+          <strong>v3.5</strong> · 21/04/2026<br>
+          <span class="muted">Templates intégrables + édition visuelle/source + export HTML.</span>
+        </li>
+        <li>
           <strong>v3.4</strong> · 19/04/2026<br>
           <span class="muted">Ajout chapitre « Cas particuliers » + QR versionné.</span>
-        </li>
-        <li>
-          <strong>v3.3</strong> · 18/02/2026<br>
-          <span class="muted">Révision du sommaire et filigrane nominatif.</span>
-        </li>
-        <li>
-          <strong>v3.2</strong> · 02/01/2026<br>
-          <span class="muted">Publication initiale liée au parcours LMS.</span>
         </li>
       </ul>
 
@@ -203,11 +291,15 @@
       <p class="muted">Pied de page et version numérique</p>
       <img id="qr" class="qr" alt="QR code" src="https://api.qrserver.com/v1/create-qr-code/?size=108x108&data=https%3A%2F%2Fcomspec.local%2Fformations%2Fcontrole-des-flux" />
 
-      <p class="muted" style="margin-top:1rem">Actions : génération PDF, publication documentaire, audit sécurité.</p>
+      <h3 style="margin-top:1rem">HTML document généré</h3>
+      <textarea id="generatedHtml" rows="11" readonly></textarea>
+      <p class="muted" style="margin-top:1rem">À intégrer ensuite dans la publication DOCUMENTS / COURRIER / LMS.</p>
     </aside>
   </div>
 
   <script>
+    const templateEl = document.getElementById('template');
+    const newTemplateNameEl = document.getElementById('newTemplateName');
     const titleEl = document.getElementById('title');
     const subtitleEl = document.getElementById('subtitle');
     const watermarkEl = document.getElementById('watermark');
@@ -217,23 +309,238 @@
     const coverTitle = document.getElementById('coverTitle');
     const coverSubtitle = document.getElementById('coverSubtitle');
     const cover = document.getElementById('cover');
+    const coverBadge = document.getElementById('coverBadge');
     const securityChip = document.getElementById('securityChip');
     const qr = document.getElementById('qr');
+    const tocList = document.getElementById('tocList');
+    const editor = document.getElementById('editor');
+    const editorSource = document.getElementById('editorSource');
+    const docDescription = document.getElementById('docDescription');
+    const generatedHtml = document.getElementById('generatedHtml');
+    const toolbar = document.getElementById('toolbar');
+
+    const defaultTemplates = {
+      pv_routier: {
+        label: 'PV routier — constatation accidents',
+        badge: 'Série 37 · Fiche 37-22',
+        title: 'Contrôle des flux sécurité routière',
+        subtitle: 'Constatation des accidents — Procès-verbal',
+        description: '18 pages · Document opérationnel pour la constatation et la transmission des procès-verbaux.',
+        qrData: 'https://comspec.local/formations/controle-des-flux',
+        html: `
+<section>
+  <h2>Avant-propos</h2>
+  <p>Ce modèle standardise les rapports de constatation et la liaison avec les workflows courrier et LMS.</p>
+</section>
+<section>
+  <h2>Procédure de constatation</h2>
+  <h3>Collecte terrain</h3>
+  <ul>
+    <li>Heure et position GPS</li>
+    <li>Témoins et pièces associées</li>
+    <li>Photos et schémas de circulation</li>
+  </ul>
+  <h3>Validation</h3>
+  <p>Chaque fiche est signée, classifiée puis synchronisée avec le registre documentaire.</p>
+</section>
+<section>
+  <h2>Communication des procès-verbaux</h2>
+  <p>Exporter vers COURRIER pour accusé de réception puis publication contrôlée.</p>
+</section>`.trim()
+      },
+      note_service: {
+        label: 'Note de service — diffusion interne',
+        badge: 'NOTE · CENOPS',
+        title: 'Directive de coordination inter-unités',
+        subtitle: 'Consignes de communication et remontée incidents',
+        description: '6 pages · Diffusion interne, format synthétique et immédiatement publiable.',
+        qrData: 'https://comspec.local/notes/coordination-inter-unites',
+        html: `
+<section>
+  <h2>Objet</h2>
+  <p>Fixer un format de remontée unique pour les incidents opérationnels.</p>
+</section>
+<section>
+  <h2>Chaîne de remontée</h2>
+  <h3>Niveau unité</h3>
+  <p>Remplir la fiche d'évènement et joindre les éléments justificatifs.</p>
+  <h3>Niveau commandement</h3>
+  <p>Valider la priorité puis diffuser la note via Courrier.</p>
+</section>`.trim()
+      },
+      guide_lms: {
+        label: 'Guide LMS — publication module',
+        badge: 'LMS · GUIDE-12',
+        title: 'Guide animateur — Procédures LMS',
+        subtitle: 'Publication des modules et vérification des acquis',
+        description: '24 pages · Guide pédagogique complet avec versioning et audit.',
+        qrData: 'https://comspec.local/formations/guide-animateur-lms',
+        html: `
+<section>
+  <h2>Pré-requis</h2>
+  <p>Définir les objectifs pédagogiques, le public cible et les évaluations attendues.</p>
+</section>
+<section>
+  <h2>Création du module</h2>
+  <h3>Structure</h3>
+  <p>Découper en séquences, activités et quiz de validation.</p>
+  <h3>Publication</h3>
+  <p>Lancer une prévisualisation puis publier dans le canal LMS validé.</p>
+</section>
+<section>
+  <h2>Audit & versioning</h2>
+  <p>Conserver l'historique des modifications et des validations commandement.</p>
+</section>`.trim()
+      }
+    };
+
+    const templates = JSON.parse(JSON.stringify(defaultTemplates));
+
+    function sanitizeTemplateKey(value) {
+      return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || `template_${Date.now()}`;
+    }
+
+    function fillTemplateSelect() {
+      templateEl.innerHTML = '';
+      Object.entries(templates).forEach(([key, tpl]) => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = tpl.label;
+        templateEl.appendChild(opt);
+      });
+    }
+
+    function buildTocFromHtml(html) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const headings = Array.from(doc.querySelectorAll('h2, h3'));
+      tocList.innerHTML = '';
+      if (!headings.length) {
+        const li = document.createElement('li');
+        li.textContent = 'Aucun intertitre détecté (ajoute des H2/H3).';
+        tocList.appendChild(li);
+        return;
+      }
+      headings.forEach((heading, index) => {
+        const li = document.createElement('li');
+        const prefix = heading.tagName === 'H3' ? '↳ ' : '';
+        li.textContent = `${index + 1}) ${prefix}${heading.textContent.trim()}`;
+        tocList.appendChild(li);
+      });
+    }
+
+    function refreshGeneratedHtml() {
+      const bodyHtml = editor.innerHTML.trim();
+      const html = [
+        '<article class="doc-template">',
+        `  <header><h1>${coverTitle.textContent}</h1><p>${coverSubtitle.textContent}</p></header>`,
+        `  <section class="metadata"><p>Sécurité: ${securityChip.textContent} | Filigrane: ${cover.dataset.watermark}</p></section>`,
+        `  <section class="content">${bodyHtml}</section>`,
+        '</article>'
+      ].join('\n');
+      generatedHtml.value = html;
+      editorSource.value = bodyHtml;
+      buildTocFromHtml(bodyHtml);
+    }
 
     function updatePreview() {
       coverTitle.textContent = titleEl.value.trim() || 'Titre de documentation';
       coverSubtitle.textContent = subtitleEl.value.trim() || 'Description';
       cover.dataset.watermark = watermarkEl.value;
       securityChip.textContent = securityEl.value;
-
       const data = encodeURIComponent(qrDataEl.value.trim() || 'https://comspec.local/formations');
       qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=108x108&data=${data}`;
+      refreshGeneratedHtml();
+    }
+
+    function applyTemplate(templateKey) {
+      const template = templates[templateKey];
+      if (!template) {
+        return;
+      }
+      coverBadge.textContent = template.badge;
+      titleEl.value = template.title;
+      subtitleEl.value = template.subtitle;
+      docDescription.textContent = template.description;
+      qrDataEl.value = template.qrData;
+      editor.innerHTML = template.html;
+      updatePreview();
+    }
+
+    function saveCurrentTemplate() {
+      const explicitName = newTemplateNameEl.value.trim();
+      const baseName = explicitName || titleEl.value.trim() || 'Nouveau template';
+      const key = sanitizeTemplateKey(baseName);
+      templates[key] = {
+        label: baseName,
+        badge: coverBadge.textContent,
+        title: titleEl.value.trim(),
+        subtitle: subtitleEl.value.trim(),
+        description: docDescription.textContent,
+        qrData: qrDataEl.value.trim(),
+        html: editor.innerHTML.trim()
+      };
+      fillTemplateSelect();
+      templateEl.value = key;
+      newTemplateNameEl.value = '';
+      alert(`Template « ${baseName} » sauvegardé.`);
+    }
+
+    function switchEditorMode(isSourceMode) {
+      document.getElementById('tabVisual').classList.toggle('active', !isSourceMode);
+      document.getElementById('tabSource').classList.toggle('active', isSourceMode);
+      editor.classList.toggle('hidden', isSourceMode);
+      toolbar.classList.toggle('hidden', isSourceMode);
+      editorSource.classList.toggle('visible', isSourceMode);
+      if (isSourceMode) {
+        editorSource.value = editor.innerHTML.trim();
+      } else {
+        editor.innerHTML = editorSource.value.trim();
+        refreshGeneratedHtml();
+      }
     }
 
     document.getElementById('applyBtn').addEventListener('click', updatePreview);
     document.getElementById('publishBtn').addEventListener('click', () => {
-      alert('Publication simulée : v3.5 envoyée dans DOCUMENTS et liée au parcours LMS.');
+      alert('Publication simulée : document HTML validé et prêt pour /public/formation/pages-html/{id}/modifier.');
     });
+
+    document.getElementById('saveTemplateBtn').addEventListener('click', saveCurrentTemplate);
+    document.getElementById('newFromCurrentBtn').addEventListener('click', saveCurrentTemplate);
+
+    document.getElementById('tabVisual').addEventListener('click', () => switchEditorMode(false));
+    document.getElementById('tabSource').addEventListener('click', () => switchEditorMode(true));
+
+    templateEl.addEventListener('change', (event) => {
+      applyTemplate(event.target.value);
+    });
+
+    document.querySelectorAll('.toolbar button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd;
+        if (cmd === 'createLink') {
+          const link = window.prompt('URL du lien', 'https://');
+          if (link) {
+            document.execCommand('createLink', false, link);
+          }
+        } else {
+          document.execCommand(cmd, false, btn.dataset.value);
+        }
+        refreshGeneratedHtml();
+      });
+    });
+
+    editor.addEventListener('input', refreshGeneratedHtml);
+    editorSource.addEventListener('input', () => {
+      if (editorSource.classList.contains('visible')) {
+        editor.innerHTML = editorSource.value;
+        refreshGeneratedHtml();
+      }
+    });
+
+    fillTemplateSelect();
+    templateEl.value = 'pv_routier';
+    applyTemplate('pv_routier');
   </script>
 </body>
 </html>
