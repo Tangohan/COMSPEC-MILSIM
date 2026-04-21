@@ -45,6 +45,11 @@ $fcScopeLabel = static function ($cat) use ($fcScopeLabels): string {
 
 $forumIdentityName = trim((string) ($forumConfig['forum_name'] ?? $forumConfig['name'] ?? ''));
 
+/** JSON sûr dans un attribut HTML entouré de quotes simples (évite la coupure sur apostrophe dans les textes). */
+$fcJsonForAttr = static function (array $data): string {
+    return json_encode($data, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+};
+
 $forumSettingGroups = [
     [
         'id' => 'fc-essentiel',
@@ -312,8 +317,8 @@ $forumSettingGroups = [
     </div>
 
     <div x-show="banner" x-cloak x-transition class="mb-6 rounded-xl border px-4 py-3 text-sm"
-         :class="banner.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-rose-200 bg-rose-50 text-rose-900'"
-         x-text="banner.text"></div>
+         :class="banner && banner.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-rose-200 bg-rose-50 text-rose-900'"
+         x-text="banner ? banner.text : ''"></div>
 
     <?php if ($success): ?>
     <p class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><?= htmlspecialchars($success) ?></p>
@@ -373,7 +378,7 @@ $forumSettingGroups = [
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap justify-end gap-1.5">
                                     <button type="button" @click="fcOpenCreate(<?= (int)($cat['id']) ?>)" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Sous-canal</button>
-                                    <button type="button" @click='fcOpenEdit(<?= json_encode($cat) ?>)' class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
+                                    <button type="button" @click='fcOpenEdit(<?= $fcJsonForAttr($cat) ?>)' class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
                                     <button type="button" @click="fcLock(<?= (int)($cat['id']) ?>, <?= !empty($cat['is_locked']) ? 'false' : 'true' ?>)" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><?= !empty($cat['is_locked']) ? 'Rouvrir' : 'Fermer' ?></button>
                                     <button type="button" @click="fcDelete(<?= (int)($cat['id']) ?>)" class="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50">Supprimer</button>
                                 </div>
@@ -394,7 +399,7 @@ $forumSettingGroups = [
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap justify-end gap-1.5">
-                                    <button type="button" @click='fcOpenEdit(<?= json_encode($sub + ['_parent_name' => $cat['name'] ?? '']) ?>)' class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
+                                    <button type="button" @click='fcOpenEdit(<?= $fcJsonForAttr($sub + ['_parent_name' => $cat['name'] ?? '']) ?>)' class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
                                     <button type="button" @click="fcLock(<?= (int)($sub['id']) ?>, <?= !empty($sub['is_locked']) ? 'false' : 'true' ?>)" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><?= !empty($sub['is_locked']) ? 'Rouvrir' : 'Fermer' ?></button>
                                     <button type="button" @click="fcDelete(<?= (int)($sub['id']) ?>)" class="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50">Supprimer</button>
                                 </div>

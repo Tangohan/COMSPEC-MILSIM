@@ -95,8 +95,8 @@ class ForumCategoryRepository
         $roots = $this->listForTenant($tenantId);
         $fallback = null;
         foreach ($roots as $r) {
-            $scope = (string) ($r['scope'] ?? 'general');
-            if (in_array($scope, ['organization', 'moderation', 'platform'], true)) {
+            $scope = (string) ($r['scope'] ?? 'global');
+            if (in_array($scope, ['organization', 'tenant', 'moderation', 'platform', 'mission'], true)) {
                 continue;
             }
             if (($r['slug'] ?? '') === 'general') {
@@ -117,7 +117,7 @@ class ForumCategoryRepository
             return null;
         }
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM forum_categories WHERE tenant_id = ? AND parent_id IS NULL AND scope = 'organization' LIMIT 1"
+            "SELECT * FROM forum_categories WHERE tenant_id = ? AND parent_id IS NULL AND scope IN ('organization','tenant') ORDER BY display_order ASC, id ASC LIMIT 1"
         );
         $stmt->execute([$tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -231,13 +231,14 @@ class ForumCategoryRepository
         $parentId = isset($data['parent_id']) ? (int) $data['parent_id'] : 0;
         $parentId = $parentId > 0 ? $parentId : null;
 
-        $scope = isset($data['scope']) ? trim((string) $data['scope']) : 'general';
+        $scope = isset($data['scope']) ? trim((string) $data['scope']) : 'global';
         $scope = match ($scope) {
-            'general', 'organization', 'platform', 'moderation' => 'tenant',
+            'general', 'platform' => 'global',
+            'organization' => 'tenant',
             default => $scope,
         };
-        if (!in_array($scope, ['tenant', 'global', 'mission'], true)) {
-            $scope = 'tenant';
+        if (!in_array($scope, ['tenant', 'global', 'mission', 'moderation'], true)) {
+            $scope = 'global';
         }
 
         $ownerTenantId = null;
@@ -306,13 +307,14 @@ class ForumCategoryRepository
         $slug = $data['slug'] ?? $cat['slug'] ?? $this->slugify((string) $name);
 
         if ($this->hasScopeColumn()) {
-            $scope = isset($data['scope']) ? trim((string) $data['scope']) : (string) ($cat['scope'] ?? 'general');
+            $scope = isset($data['scope']) ? trim((string) $data['scope']) : (string) ($cat['scope'] ?? 'global');
             $scope = match ($scope) {
-                'general', 'organization', 'platform', 'moderation' => 'tenant',
+                'general', 'platform' => 'global',
+                'organization' => 'tenant',
                 default => $scope,
             };
-            if (!in_array($scope, ['tenant', 'global', 'mission'], true)) {
-                $scope = 'tenant';
+            if (!in_array($scope, ['tenant', 'global', 'mission', 'moderation'], true)) {
+                $scope = 'global';
             }
             $parentId = array_key_exists('parent_id', $data)
                 ? ((int) $data['parent_id'] > 0 ? (int) $data['parent_id'] : null)
