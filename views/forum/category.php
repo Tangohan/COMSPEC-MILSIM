@@ -34,7 +34,7 @@ $forumCtxEnabled = !empty($forumContextMenuEnabled);
   <?php endif; ?>
 
   <!-- En-tête catégorie (clic droit : sous-catégorie / modération, si autorisé) -->
-  <div class="forum-category-root rounded-xl border border-slate-200 bg-white shadow-sm p-5 sm:p-6 mb-10 header-anim transition hover:border-emerald-400/60 hover:shadow-md" style="animation-delay:40ms" data-forum-category-root="1" data-category-id="<?= $categoryId ?>" data-category-name="<?= htmlspecialchars($category['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= $categoryScope ?>">
+  <div class="forum-category-root rounded-xl border border-slate-200 bg-white shadow-sm p-5 sm:p-6 mb-10 header-anim transition hover:border-emerald-400/60 hover:shadow-md" style="animation-delay:40ms" data-forum-category-root="1" data-category-id="<?= $categoryId ?>" data-category-name="<?= htmlspecialchars($category['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= $categoryScope ?>" data-category-locked="<?= !empty($category['is_locked']) ? '1' : '0' ?>">
   <div class="flex items-start justify-between gap-6">
     <div class="flex items-start gap-5">
       <div class="shrink-0 w-14 h-14 flex items-center justify-center text-3xl bg-white border border-slate-200 rounded-lg shadow-sm">
@@ -201,7 +201,7 @@ $forumCtxEnabled = !empty($forumContextMenuEnabled);
             $subScope = htmlspecialchars((string) ($sub['scope'] ?? 'general'), ENT_QUOTES, 'UTF-8');
             $subNameEsc = htmlspecialchars((string) ($sub['name'] ?? ''), ENT_QUOTES, 'UTF-8');
           ?>
-          <a href="<?= htmlspecialchars(forum_build_category_url((string) ($sub['slug'] ?? ''), array_merge($forumTenantQuery, ['page' => 1])), ENT_QUOTES, 'UTF-8') ?>" class="forum-category-root border border-slate-200 bg-white p-4 hover:border-emerald-300 transition flex items-center justify-between group rounded-lg shadow-sm" data-forum-category-root="1" data-category-id="<?= $subId ?>" data-category-name="<?= $subNameEsc ?>" data-category-scope="<?= $subScope ?>">
+          <a href="<?= htmlspecialchars(forum_build_category_url((string) ($sub['slug'] ?? ''), array_merge($forumTenantQuery, ['page' => 1])), ENT_QUOTES, 'UTF-8') ?>" class="forum-category-root border border-slate-200 bg-white p-4 hover:border-emerald-300 transition flex items-center justify-between group rounded-lg shadow-sm" data-forum-category-root="1" data-category-id="<?= $subId ?>" data-category-name="<?= $subNameEsc ?>" data-category-scope="<?= $subScope ?>" data-category-locked="<?= !empty($sub['is_locked']) ? '1' : '0' ?>">
             <div class="flex items-center gap-3 min-w-0">
               <span class="w-10 h-10 bg-slate-100 border border-slate-200 flex items-center justify-center text-lg flex-shrink-0 rounded-md"><?= !empty($sub['icon']) ? htmlspecialchars($sub['icon']) : '📁' ?></span>
               <div class="min-w-0">

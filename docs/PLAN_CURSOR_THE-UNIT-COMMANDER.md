@@ -194,6 +194,34 @@ Limites majeures à traiter pour une offre « self-service communauté » :
 ## Sprint Prompt 5 — Premium & monétisation
 > Implémente FeatureGate par plan (free/standard/pro), quotas tenant, écran upgrade contextualisé, endpoints admin plans/subscriptions, et instrumentation analytics d’usage par feature.
 
+## Sprint Prompt 6 — Refonte forum stratifié (global / tenant / mission)
+> Analyse le module forum existant (schéma SQL + repositories + controllers) et corrige l’anomalie “forum global filtré tenant”. Implémente une architecture explicite par scope sans casser l’isolation multi-tenant:
+> 1) **Scopes stricts**
+>    - Introduire `scope` explicite pour catégories/topics/messages: `global`, `tenant`, `mission`.
+>    - Règles de cohérence: `scope=global => tenant_id NULL`; `scope=tenant|mission => tenant_id obligatoire`.
+>    - Interdiction des conventions implicites (ex: `tenant_id=1` pour global).
+> 2) **Filtrage lecture**
+>    - Requêtes de lecture: visibles si `scope='global'` OU `tenant_id=:current_tenant` (et pour mission selon droits mission).
+>    - Aucun bypass de filtre tenant sans clause de scope explicite.
+> 3) **Accès & RBAC**
+>    - `global`: visible aux utilisateurs authentifiés.
+>    - `tenant`: isolation stricte.
+>    - `mission`: visibilité hiérarchique via RBAC/ABAC existant (commandement vs exécutants).
+> 4) **Capacités opérationnelles**
+>    - Messages typés (`INFO`, `ORDRE`, `INTEL`, `ALERTE`) avec rendu visuel + filtres + priorisation.
+>    - Threads opérationnels liés à mission/dossier, avec archivage auto et verrouillage de fin.
+>    - Accusés de réception (`ACK`) pour messages sensibles: qui a lu + timestamp.
+>    - Journal de preuve: édition tracée, suppression loggée, export PDF.
+>    - Signalement interne: flag, workflow de modération rapide, escalade auto.
+>    - Liaison documentaire versionnée et références croisées.
+>    - Enrichissement ATAK (position, screenshot CTAB, marker) si payload disponible.
+>    - Mode canal persistant (`#commandement`, `#intel`, `#logistique`) hybride forum/chat.
+>    - Résumé automatique des longs threads (points clés + décisions).
+> 5) **Migration & compatibilité**
+>    - Migration SQL idempotente + backfill des données existantes (`general/platform/organization` vers nouveaux scopes).
+>    - Mise à jour repositories/services/controllers/API/UI + tests d’intégration multi-tenant.
+>    - Ajouter une checklist anti-régression: non-fuite inter-tenant, cohérence scopes, RBAC, perf index.
+
 ---
 
 ## 7) KPI de succès (go-to-market)
