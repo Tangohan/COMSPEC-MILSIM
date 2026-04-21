@@ -309,7 +309,7 @@ final class TenantSeedHelper
         $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
         $stmt->execute([$tenantId, 'training.view']);
         if (!$stmt->fetch()) {
-            foreach ([['training.view', 'Voir les formations', 'training'], ['training.manage', 'Gérer les formations', 'training'], ['training.assign', 'Assigner des formations', 'training']] as $p) {
+            foreach ([['training.view', 'Voir les formations', 'training'], ['training.manage', 'Gérer les formations', 'training'], ['training.assign', 'Assigner des formations', 'training'], ['training.publications.manage', 'Gérer les publications de formation', 'training']] as $p) {
                 $pdo->prepare('INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, ?, ?, ?, NOW())')->execute([$tenantId, $p[1], $p[0], $p[2]]);
             }
             foreach (['tenant_admin', 'community_owner'] as $roleSlug) {
@@ -317,7 +317,7 @@ final class TenantSeedHelper
                 $adminRole->execute([$tenantId, $roleSlug]);
                 $adminRoleId = $adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
                 if ($adminRoleId) {
-                    $trainPerms = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug IN (\'training.view\',\'training.manage\',\'training.assign\')');
+                    $trainPerms = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug IN (\'training.view\',\'training.manage\',\'training.assign\',\'training.publications.manage\')');
                     $trainPerms->execute([$tenantId]);
                     while ($row = $trainPerms->fetch(PDO::FETCH_ASSOC)) {
                         $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)')->execute([(int) $adminRoleId, $row['id']]);

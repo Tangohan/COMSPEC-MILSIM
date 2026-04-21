@@ -884,6 +884,8 @@ return function (Router $router) {
     $router->get('/formation/certificates/gabarit', [AdminTrainingController::class, 'certificateGabarit'], $trainingResMw);
     $router->post('/formation/certificates/gabarit', [AdminTrainingController::class, 'certificateGabaritSave'], $trainingResMw);
     $router->get('/formation/audit', [AdminTrainingController::class, 'audit'], $trainingResMw);
+    $router->get('/formation/publications', [\App\Controllers\Admin\AdminTrainingPublicationController::class, 'index'], $trainingResMw);
+    $router->get('/formation/publications/{id}/changelog', [\App\Controllers\Admin\AdminTrainingPublicationController::class, 'changelog'], $trainingResMw);
     $router->get('/formation', [AdminTrainingController::class, 'dashboard'], $trainingResMw);
 
     $router->get('/formation/competences/commandement', [TrainingCompetencyController::class, 'commandCenter'], $trainingResMw);
@@ -929,6 +931,8 @@ return function (Router $router) {
     $router->get('/back-office/ressources/training/certificates/gabarit', $lmsBoTrainingLegacyRedirect, $trainingResMw);
     $router->post('/back-office/ressources/training/certificates/gabarit', $lmsBoTrainingLegacyRedirect, $trainingResMw);
     $router->get('/back-office/ressources/training/audit', $lmsBoTrainingLegacyRedirect, $trainingResMw);
+    $router->get('/back-office/ressources/training/publications', $lmsBoTrainingLegacyRedirect, $trainingResMw);
+    $router->get('/back-office/ressources/training/publications/{id}/changelog', $lmsBoTrainingLegacyRedirect, $trainingResMw);
     $router->get('/back-office/ressources/training', $lmsBoTrainingLegacyRedirect, $trainingResMw);
 
     $router->get('/back-office/ressources/training/competences/commandement', $lmsBoTrainingLegacyRedirect, $trainingResMw);
@@ -1042,6 +1046,14 @@ return function (Router $router) {
     $router->post('/api/training/admin/courses', [TrainingApiController::class, 'adminCourseSave'], $mwTraining);
     $router->post('/api/training/admin/courses/{id}', [TrainingApiController::class, 'adminCourseSave'], $mwTraining);
     $router->post('/api/training/admin/assign', [TrainingApiController::class, 'adminAssign'], $mwTraining);
+    $router->post('/api/training/publications', [\App\Controllers\Api\TrainingPublicationApiController::class, 'create'], $mwTraining);
+    $router->post('/api/training/publications/{id}/compile', [\App\Controllers\Api\TrainingPublicationApiController::class, 'compile'], $mwTraining);
+    $router->post('/api/training/publications/{id}/validate', [\App\Controllers\Api\TrainingPublicationApiController::class, 'validatePublication'], $mwTraining);
+    $router->post('/api/training/publications/{id}/release', [\App\Controllers\Api\TrainingPublicationApiController::class, 'release'], $mwTraining);
+    $router->post('/api/training/publications/{id}/read-progress', [\App\Controllers\Api\TrainingPublicationApiController::class, 'addReadProgress'], $mwTraining);
+    $router->post('/api/training/publications/{id}/attest', [\App\Controllers\Api\TrainingPublicationApiController::class, 'attestRead'], $mwTraining);
+    $router->post('/api/training/publications/{id}/annexes', [\App\Controllers\Api\TrainingPublicationApiController::class, 'addAnnex'], $mwTraining);
+    $router->post('/api/training/publications/{id}/obsolete', [\App\Controllers\Api\TrainingPublicationApiController::class, 'obsolete'], $mwTraining);
 
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakApiController::class, 'ping']);
