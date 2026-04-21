@@ -251,7 +251,7 @@ $forumCanDeleteCategoryMenu = !empty($forumCanDeleteCategoryMenu);
         </div>
         <div class="grid sm:grid-cols-2 gap-4">
           <?php foreach ($forumOrganizationCategories as $ocat): ?>
-            <div class="forum-category-root rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-emerald-400/60 hover:shadow-md overflow-hidden" data-forum-category-root="1" data-category-id="<?= (int) ($ocat['id'] ?? 0) ?>" data-category-name="<?= htmlspecialchars($ocat['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= htmlspecialchars($ocat['scope'] ?? 'organization', ENT_QUOTES, 'UTF-8') ?>">
+            <div class="forum-category-root rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-emerald-400/60 hover:shadow-md overflow-hidden" data-forum-category-root="1" data-category-id="<?= (int) ($ocat['id'] ?? 0) ?>" data-category-name="<?= htmlspecialchars($ocat['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= htmlspecialchars($ocat['scope'] ?? 'organization', ENT_QUOTES, 'UTF-8') ?>" data-category-locked="<?= !empty($ocat['is_locked']) ? '1' : '0' ?>">
             <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($ocat['slug']) ?>" class="block p-5 hover:bg-slate-50/50 transition">
               <p class="text-[9px] font-black uppercase tracking-widest text-emerald-700 mb-1">Unité</p>
               <h3 class="text-lg font-black text-slate-900 uppercase italic"><?= htmlspecialchars($ocat['name']) ?></h3>
@@ -274,7 +274,7 @@ $forumCanDeleteCategoryMenu = !empty($forumCanDeleteCategoryMenu);
         <p class="text-xs text-slate-600 mb-4 max-w-2xl">Canaux visibles uniquement par l’équipe de modération (signalements internes, consignes, coordination).</p>
         <div class="grid sm:grid-cols-2 gap-4">
           <?php foreach ($forumModerationCategories as $mcat): ?>
-            <div class="forum-category-root rounded-xl border-2 border-rose-200 bg-rose-50/80 shadow-sm transition hover:border-rose-400 hover:shadow-md overflow-hidden" data-forum-category-root="1" data-category-id="<?= (int) ($mcat['id'] ?? 0) ?>" data-category-name="<?= htmlspecialchars($mcat['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= htmlspecialchars($mcat['scope'] ?? 'moderation', ENT_QUOTES, 'UTF-8') ?>">
+            <div class="forum-category-root rounded-xl border-2 border-rose-200 bg-rose-50/80 shadow-sm transition hover:border-rose-400 hover:shadow-md overflow-hidden" data-forum-category-root="1" data-category-id="<?= (int) ($mcat['id'] ?? 0) ?>" data-category-name="<?= htmlspecialchars($mcat['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= htmlspecialchars($mcat['scope'] ?? 'moderation', ENT_QUOTES, 'UTF-8') ?>" data-category-locked="<?= !empty($mcat['is_locked']) ? '1' : '0' ?>">
             <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($mcat['slug']) ?>" class="block p-5 hover:bg-rose-50 transition">
               <p class="text-[9px] font-black uppercase tracking-widest text-rose-800 mb-1">Staff</p>
               <h3 class="text-lg font-black text-slate-900 uppercase italic"><?= htmlspecialchars($mcat['name']) ?></h3>
@@ -308,7 +308,7 @@ $forumCanDeleteCategoryMenu = !empty($forumCanDeleteCategoryMenu);
             $theme = $colorThemes[$cat['color_theme'] ?? 'slate'] ?? $colorThemes['slate'];
             $num = str_pad((string) ($idx + 1), 2, '0', STR_PAD_LEFT);
           ?>
-            <div class="category-card forum-category-root group border <?= $theme['border'] ?> <?= $theme['hover'] ?> bg-white rounded-xl shadow-sm transition relative overflow-hidden hover:shadow-md" data-forum-category-root="1" data-category-id="<?= (int) ($cat['id'] ?? 0) ?>" data-category-name="<?= htmlspecialchars($cat['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= htmlspecialchars($cat['scope'] ?? 'general', ENT_QUOTES, 'UTF-8') ?>">
+            <div class="category-card forum-category-root group border <?= $theme['border'] ?> <?= $theme['hover'] ?> bg-white rounded-xl shadow-sm transition relative overflow-hidden hover:shadow-md" data-forum-category-root="1" data-category-id="<?= (int) ($cat['id'] ?? 0) ?>" data-category-name="<?= htmlspecialchars($cat['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-category-scope="<?= htmlspecialchars($cat['scope'] ?? 'general', ENT_QUOTES, 'UTF-8') ?>" data-category-locked="<?= !empty($cat['is_locked']) ? '1' : '0' ?>">
               <a href="<?= $baseUrl ?>/forum/category/<?= htmlspecialchars($cat['slug']) ?>" class="block">
               <div class="absolute -right-10 -top-10 w-52 h-52 <?= $theme['glow'] ?> blur-3xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none"></div>
               <div class="relative flex flex-col md:flex-row p-4 md:p-6">
