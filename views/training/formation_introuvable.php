@@ -33,6 +33,8 @@ $headHtml = ob_get_clean();
                 <p class="text-slate-600 text-sm leading-relaxed mb-6">
                     <?php if ($context === 'echanges'): ?>
                     Impossible d’afficher les avis et échanges : cette formation n’existe pas dans votre communauté, ou n’est plus publiée.
+                    <?php elseif ($context === 'documentation'): ?>
+                    Cette documentation HTML n’existe pas, n’est pas encore publiée, ou n’est plus disponible pour votre communauté.
                     <?php else: ?>
                     Cette formation n’existe pas dans votre communauté, ou n’est plus accessible.
                     <?php endif; ?>

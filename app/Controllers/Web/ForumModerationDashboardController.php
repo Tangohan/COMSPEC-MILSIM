@@ -33,11 +33,11 @@ final class ForumModerationDashboardController
         $onlyOrgMod = function_exists('can') && can('forum.moderate_organization') && !can('forum.moderate');
         if ($onlyOrgMod) {
             $pendingReports = array_values(array_filter($pendingReports, static function (array $r): bool {
-                return ($r['category_scope'] ?? '') === 'organization';
+                return in_array((string) ($r['category_scope'] ?? ''), ['organization', 'tenant'], true);
             }));
         } elseif ($scopeFilter === 'organization') {
             $pendingReports = array_values(array_filter($pendingReports, static function (array $r): bool {
-                return ($r['category_scope'] ?? '') === 'organization';
+                return in_array((string) ($r['category_scope'] ?? ''), ['organization', 'tenant'], true);
             }));
         }
 

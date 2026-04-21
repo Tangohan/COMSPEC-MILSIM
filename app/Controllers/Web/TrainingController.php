@@ -32,6 +32,7 @@ use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\HrCharterRepository;
+use App\Repositories\TrainingFormationCustomPageRepository;
 use App\Core\Csrf;
 use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
@@ -66,6 +67,7 @@ class TrainingController
         private UserRepository $userRepository,
         private AnalyticsEventService $analyticsEventService,
         private HrCharterRepository $hrCharterRepository,
+        private TrainingFormationCustomPageRepository $formationCustomPageRepository,
     ) {}
 
     /**
@@ -955,6 +957,59 @@ class TrainingController
             'slug' => (string) $slug,
             'context' => 'fiche',
         ])->setStatusCode(404);
+    }
+
+    /**
+     * Page HTML autonome publiée (pilotage : /formation/pages-html).
+     * URL publique : /formations/page/{slug}.
+     */
+    public function formationCustomPage(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) $tenantId;
+        $userId = (int) $userId;
+        if (!$this->featureGate->allows($tenantId, 'training')) {
+            return Response::view('layout.main', [
+                'title' => 'Formations',
+                'content' => 'platform.upgrade',
+                'feature' => 'training',
+                'planName' => 'standard',
+            ]);
+        }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
+        $slug = trim(rawurldecode((string) ($params['slug'] ?? '')));
+        if ($slug === '') {
+            return Response::redirect(url('formations'));
+        }
+        $row = $this->formationCustomPageRepository->findPublishedBySlug($tenantId, $slug);
+        if ($row === null) {
+            return Response::view('training.formation_introuvable', [
+                'slug' => $slug,
+                'context' => 'documentation',
+            ])->setStatusCode(404);
+        }
+        $html = trim((string) ($row['html_body'] ?? ''));
+        $isFullDoc = preg_match('/^\s*<!DOCTYPE\s+html/i', $html) === 1
+            || preg_match('/^\s*<html[\s>]/i', $html) === 1;
+        if ($isFullDoc) {
+            $full = $html;
+        } else {
+            $titleEsc = htmlspecialchars((string) ($row['title'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $full = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+                . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+                . '<title>' . $titleEsc . '</title></head><body>' . $html . '</body></html>';
+        }
+
+        return (new Response())
+            ->header('Content-Type', 'text/html; charset=utf-8')
+            ->setBody($full);
     }
 
     /** Lecture d'une leçon. */

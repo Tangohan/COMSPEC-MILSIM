@@ -117,7 +117,8 @@ class ForumNewTopicController
             $stripOrg = static function (array $nodes) use (&$stripOrg): array {
                 $out = [];
                 foreach ($nodes as $n) {
-                    if (!is_array($n) || (($n['scope'] ?? '') === 'organization')) {
+                    $ns = (string) ($n['scope'] ?? '');
+                    if (!is_array($n) || $ns === 'organization' || $ns === 'tenant') {
                         continue;
                     }
                     if (!empty($n['children']) && is_array($n['children'])) {
@@ -137,7 +138,7 @@ class ForumNewTopicController
             if ($cat && (!function_exists('forum_can_read') || forum_can_read($userId, $cat))) {
                 $orgClosed = function_exists('forum_community_section_open_for_current_viewer')
                     && !forum_community_section_open_for_current_viewer((int) $tenantId);
-                if (!$orgClosed || (($cat['scope'] ?? '') !== 'organization')) {
+                if (!$orgClosed || !in_array((string) ($cat['scope'] ?? ''), ['organization', 'tenant'], true)) {
                     $preselectedCategoryId = $categoryIdFromQuery;
                 }
             }

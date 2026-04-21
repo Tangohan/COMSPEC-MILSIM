@@ -157,25 +157,41 @@ final class TenantSeedHelper
         if (!$stmt || !$stmt->fetchColumn()) {
             return;
         }
-        $chk = $pdo->prepare("SELECT 1 FROM forum_categories WHERE tenant_id = ? AND scope = 'organization' LIMIT 1");
-        $chk->execute([$tenantId]);
-        if ($chk->fetch()) {
-            return;
-        }
         $st = $pdo->prepare('SELECT name, slug FROM tenants WHERE id = ? LIMIT 1');
         $st->execute([$tenantId]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
             return;
         }
-        $slug = 'org-' . preg_replace('/[^a-z0-9-]+/', '-', strtolower((string) $row['slug']));
+        $slug = 'org-' . preg_replace('/[^a-z0-9-]+/', '-', strtolower((string) ($row['slug'] ?? '')));
         $slug = trim($slug, '-');
         if ($slug === 'org') {
             $slug = 'org-' . $tenantId;
         }
+        if (strlen($slug) > 100) {
+            $slug = substr('org-' . $tenantId . '-' . md5((string) ($row['slug'] ?? '')), 0, 100);
+            $slug = rtrim($slug, '-');
+        }
+        $chkSlug = $pdo->prepare('SELECT 1 FROM forum_categories WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $chkSlug->execute([$tenantId, $slug]);
+        if ($chkSlug->fetch()) {
+            return;
+        }
+        $chk = $pdo->prepare("SELECT 1 FROM forum_categories WHERE tenant_id = ? AND scope = 'organization' LIMIT 1");
+        $chk->execute([$tenantId]);
+        if ($chk->fetch()) {
+            return;
+        }
         $name = trim((string) $row['name']) . ' — Espace dédié';
+        if (strlen($name) > 255) {
+            $name = substr($name, 0, 252) . '…';
+        }
         $ins = $pdo->prepare('INSERT INTO forum_categories (tenant_id, scope, owner_tenant_id, parent_id, name, slug, description, color_theme, display_order, is_locked, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, 0, NOW(), NOW())');
-        $ins->execute([$tenantId, 'organization', $tenantId, $name, $slug, 'Section forum de votre organisation.', 'slate', 15]);
+        try {
+            $ins->execute([$tenantId, 'organization', $tenantId, $name, $slug, 'Section forum de votre organisation.', 'slate', 15]);
+        } catch (\PDOException $e) {
+            // Idempotence / contraintes (slug, scope migré, etc.) — ne pas faire échouer le flux d’invitation.
+        }
     }
 
     public static function seedDocumentsEquipment(PDO $pdo, int $tenantId): void

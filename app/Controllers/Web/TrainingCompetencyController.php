@@ -13,6 +13,7 @@ use InvalidArgumentException;
 use App\Repositories\PedagogyRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TrainingCompetencyRepository;
+use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UserRepository;
 use App\Services\Training\CompetencyUserJourneyService;
 use App\Services\Training\PedagogyPathwayService;
@@ -31,7 +32,13 @@ final class TrainingCompetencyController
         private TenantPedagogyChainGuard $pedagogyChainGuard,
         private PedagogyPathwayService $pedagogyPathwayService,
         private TenantPedagogyStructureService $pedagogyStructureService,
+        private TrainingCourseRepository $trainingCourseRepository,
     ) {}
+
+    private function trainingShellTotalModules(int $tenantId): int
+    {
+        return count($this->trainingCourseRepository->listForTenant($tenantId, null));
+    }
 
     public function commandCenter(Request $request, array $params = []): Response
     {
@@ -213,10 +220,11 @@ final class TrainingCompetencyController
         $users = $this->trainingCompetencyRepository->listTenantUsers($tenantId);
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'title' => 'Commandement — Compétences',
             'content' => 'admin.training.competency_command',
             'trainingAdminNav' => 'dashboard',
+            'totalModules' => $this->trainingShellTotalModules($tenantId),
             'competencyMatrices' => $matrices,
             'competencyUsers' => $users,
             'competencyRoles' => $roles,
@@ -232,10 +240,11 @@ final class TrainingCompetencyController
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'title' => 'Instructeur — Validation',
             'content' => 'admin.training.competency_instructor',
             'trainingAdminNav' => 'dashboard',
+            'totalModules' => $this->trainingShellTotalModules($tenantId),
             'trainerValidationTail' => $this->pedagogyRepository->listTrainerValidationTail($tenantId, 25),
             'pedagogyPathwayCatalog' => PedagogyPathwayService::stageCatalog(),
             'pedagogyPathwayRows' => $this->pedagogyPathwayService->pathwayRowsForUser($tenantId, $userId),
@@ -305,10 +314,11 @@ final class TrainingCompetencyController
             return Response::redirect(training_lms_admin_url('competences/formateur'));
         }
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'title' => 'Espace formateur',
             'content' => 'admin.training.competency_trainer',
             'trainingAdminNav' => 'dashboard',
+            'totalModules' => $this->trainingShellTotalModules($tenantId),
             'trainerRoles' => $this->trainingCompetencyRepository->listTrainerRoles($tenantId),
             'deliveryInstructorRoles' => $this->trainingCompetencyRepository->listPedagogyRoleChecklist($tenantId, 'delivery_instructor'),
             'instructorCertifierRoles' => $this->trainingCompetencyRepository->listPedagogyRoleChecklist($tenantId, 'instructor_certifier'),
@@ -323,10 +333,11 @@ final class TrainingCompetencyController
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'title' => 'Bureau du personnel et des compétences',
             'content' => 'admin.training.competency_personnel',
             'trainingAdminNav' => 'dashboard',
+            'totalModules' => $this->trainingShellTotalModules($tenantId),
             'pedagogyAuditTail' => $this->pedagogyRepository->listRecentAudit($tenantId, 40),
             'pedagogyPathwayCatalog' => PedagogyPathwayService::stageCatalog(),
             'pedagogyPathwayRows' => $this->pedagogyPathwayService->pathwayRowsForUser($tenantId, $userId),
@@ -337,10 +348,11 @@ final class TrainingCompetencyController
     {
         $tenantId = (int) Session::get('tenant_id');
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'title' => 'Pôle formation',
             'content' => 'admin.training.competency_pole',
             'trainingAdminNav' => 'dashboard',
+            'totalModules' => $this->trainingShellTotalModules($tenantId),
             'pedagogyChainAssess' => $this->pedagogyChainGuard->assessTenantChain($tenantId),
         ]);
     }
@@ -349,10 +361,11 @@ final class TrainingCompetencyController
     {
         $tenantId = (int) Session::get('tenant_id');
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'title' => 'Validation et certification',
             'content' => 'admin.training.competency_validation',
             'trainingAdminNav' => 'dashboard',
+            'totalModules' => $this->trainingShellTotalModules($tenantId),
             'trainerValidationTail' => $this->pedagogyRepository->listTrainerValidationTail($tenantId, 40),
             'pedagogyChainAssess' => $this->pedagogyChainGuard->assessTenantChain($tenantId),
         ]);
@@ -362,10 +375,11 @@ final class TrainingCompetencyController
     {
         $tenantId = (int) Session::get('tenant_id');
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'title' => 'Sections organisationnelles',
             'content' => 'admin.training.competency_sections',
             'trainingAdminNav' => 'dashboard',
+            'totalModules' => $this->trainingShellTotalModules($tenantId),
             'pedagogyChainAssess' => $this->pedagogyChainGuard->assessTenantChain($tenantId),
         ]);
     }

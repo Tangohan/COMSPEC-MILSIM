@@ -61,6 +61,7 @@ use App\Controllers\Admin\AdminDocumentsController;
 use App\Controllers\Admin\AdminTrainingController;
 use App\Controllers\Admin\AdminTrainingStudioController;
 use App\Controllers\Admin\AdminTrainingStudioExchangeController;
+use App\Controllers\Admin\AdminTrainingCustomPageController;
 use App\Controllers\Courrier\CourrierDashboardController;
 use App\Controllers\Courrier\CourrierEditorController;
 use App\Controllers\Courrier\CourrierTemplateController;
@@ -386,6 +387,8 @@ return function (Router $router) {
     $router->post('/formations/comment', [TrainingController::class, 'postComment'], $mwTraining);
     $router->get('/formations/mes-formations', [TrainingController::class, 'myTraining'], $mwTraining);
     $router->get('/formations/competences', [TrainingCompetencyController::class, 'userJourney'], $mwTraining);
+    /** Avant /formations/{slug} : documentations HTML publiées (pilotage /formation/pages-html). */
+    $router->get('/formations/page/{slug}', [TrainingController::class, 'formationCustomPage'], $mwTraining);
     $router->get('/formations/code-acces', [TrainingController::class, 'accessCodeForm'], $mwTraining);
     $router->post('/formations/code-acces', [TrainingController::class, 'accessCodeSubmit'], $mwTraining);
     /** Doit rester avant /formations/{slug} pour que « …/echanges » ne soit pas confondu avec un slug. */
@@ -865,7 +868,14 @@ return function (Router $router) {
     $router->post('/formation/certificates/gabarit', [AdminTrainingController::class, 'certificateGabaritSave'], $trainingResMw);
     $router->get('/formation/audit', [AdminTrainingController::class, 'audit'], $trainingResMw);
     $router->get('/formation/publications', [\App\Controllers\Admin\AdminTrainingPublicationController::class, 'index'], $trainingResMw);
+    $router->post('/formation/publications/brouillon', [\App\Controllers\Admin\AdminTrainingPublicationController::class, 'storeDraft'], $trainingResMw);
     $router->get('/formation/publications/{id}/changelog', [\App\Controllers\Admin\AdminTrainingPublicationController::class, 'changelog'], $trainingResMw);
+    $router->get('/formation/pages-html', [AdminTrainingCustomPageController::class, 'index'], $trainingResMw);
+    $router->get('/formation/pages-html/nouvelle', [AdminTrainingCustomPageController::class, 'create'], $trainingResMw);
+    $router->post('/formation/pages-html', [AdminTrainingCustomPageController::class, 'store'], $trainingResMw);
+    $router->get('/formation/pages-html/{id}/modifier', [AdminTrainingCustomPageController::class, 'edit'], $trainingResMw);
+    $router->post('/formation/pages-html/{id}/supprimer', [AdminTrainingCustomPageController::class, 'destroy'], $trainingResMw);
+    $router->post('/formation/pages-html/{id}', [AdminTrainingCustomPageController::class, 'update'], $trainingResMw);
     $router->get('/formation', [AdminTrainingController::class, 'dashboard'], $trainingResMw);
 
     $router->get('/formation/competences/commandement', [TrainingCompetencyController::class, 'commandCenter'], $trainingResMw);
@@ -912,6 +922,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/training/certificates/gabarit', $lmsBoTrainingLegacyRedirect, $trainingResMw);
     $router->get('/back-office/ressources/training/audit', $lmsBoTrainingLegacyRedirect, $trainingResMw);
     $router->get('/back-office/ressources/training/publications', $lmsBoTrainingLegacyRedirect, $trainingResMw);
+    $router->post('/back-office/ressources/training/publications/brouillon', $lmsBoTrainingLegacyRedirect, $trainingResMw);
     $router->get('/back-office/ressources/training/publications/{id}/changelog', $lmsBoTrainingLegacyRedirect, $trainingResMw);
     $router->get('/back-office/ressources/training', $lmsBoTrainingLegacyRedirect, $trainingResMw);
 

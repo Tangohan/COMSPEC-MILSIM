@@ -44,7 +44,7 @@ $ficheUrl = url('formations/' . rawurlencode($slugForForms));
 <body class="bg-slate-100 text-slate-900 overflow-x-hidden">
     <div class="lms-grain"></div>
     <div class="min-h-screen relative z-10">
-        <div class="grid min-h-screen min-w-0 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <div class="grid min-h-screen min-w-0 grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)]">
             <?php
             $lmsBase = $base;
             $currentLessonId = null;

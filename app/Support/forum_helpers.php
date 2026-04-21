@@ -124,7 +124,10 @@ if (!function_exists('forum_can_read')) {
         if ($userId === null) {
             return false;
         }
-        $scope = $category['scope'] ?? 'general';
+        $scope = (string) ($category['scope'] ?? 'general');
+        if (in_array($scope, ['general', 'platform'], true)) {
+            $scope = 'global';
+        }
         if ($scope === 'moderation') {
             return function_exists('forum_user_can_moderate') && forum_user_can_moderate();
         }
@@ -275,7 +278,7 @@ if (!function_exists('forum_community_section_open_for_current_viewer')) {
 if (!function_exists('forum_organization_scope_accessible_for_current_viewer')) {
     function forum_organization_scope_accessible_for_current_viewer(int $tenantId, string $scope): bool
     {
-        if ($scope !== 'organization') {
+        if (!in_array($scope, ['organization', 'tenant'], true)) {
             return true;
         }
 

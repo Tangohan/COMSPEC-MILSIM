@@ -92,10 +92,11 @@ class AdminTrainingController
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
         $courses = $this->courseRepository->listForTenant($tenantId, null);
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.courses',
             'title' => 'Formations',
             'trainingAdminNav' => 'courses',
+            'totalModules' => count($courses),
             'courses' => $courses,
             'trainingCanExportFull' => $this->userCanExportFullCourse(),
             'trainingCanDeleteCourse' => $this->userCanDeleteTrainingCourse(),
@@ -248,10 +249,11 @@ class AdminTrainingController
             $approvalRights[$eid] = $this->canActorManagePendingEnrollment($courseById[$cid] ?? [], $actorId);
         }
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.enrollments',
             'title' => 'Assignations',
             'trainingAdminNav' => 'enrollments',
+            'totalModules' => count($courses),
             'enrollments' => $enrollments,
             'courses' => $courses,
             'selectedCourseId' => $courseId,
@@ -357,10 +359,11 @@ class AdminTrainingController
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
         $courses = $this->courseRepository->listForTenant($tenantId, null);
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.reports',
             'title' => 'Rapports',
             'trainingAdminNav' => 'reports',
+            'totalModules' => count($courses),
             'courses' => $courses,
         ]);
     }
@@ -374,10 +377,11 @@ class AdminTrainingController
         $feedbackRows = $this->lessonFeedbackRepository->listRecentForTenant($tenantId, $courseId > 0 ? $courseId : null, 200);
         $stats = $this->lessonFeedbackRepository->aggregateForTenant($tenantId, $courseId > 0 ? $courseId : null);
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.lesson_feedback',
             'title' => 'Feedback post-leçon',
             'trainingAdminNav' => 'lesson_feedback',
+            'totalModules' => count($courses),
             'courses' => $courses,
             'selectedCourseId' => $courseId,
             'lessonFeedbackRows' => $feedbackRows,
@@ -402,10 +406,11 @@ class AdminTrainingController
             }
         }
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.certificates',
             'title' => 'Certificats',
             'trainingAdminNav' => 'certificates',
+            'totalModules' => $this->trainingShellTotalModules($tenantId),
             'certificates' => $certificates,
             'trainingCertificatesPdfReady' => $pdfReady,
             'trainingCertificatesPendingPdf' => $pendingPdf,
@@ -430,11 +435,23 @@ class AdminTrainingController
 
             return $redirect;
         }
+        $pendingBefore = 0;
+        foreach ($this->certificateRepository->listForTenantAdmin($tenantId, 300) as $c) {
+            if (($c['status'] ?? '') !== 'valid') {
+                continue;
+            }
+            $rel = trim((string) ($c['pdf_path'] ?? ''));
+            if ($rel === '' || !is_file(base_path($rel))) {
+                $pendingBefore++;
+            }
+        }
         $n = $this->certificateService->backfillPendingPdfDocuments($tenantId, 80);
         if ($n > 0) {
             Session::flash('success', $n === 1
                 ? 'Un document PDF a été généré.'
                 : $n . ' documents PDF ont été générés.');
+        } elseif ($pendingBefore > 0) {
+            Session::flash('error', 'Aucun PDF n’a pu être généré alors que des attestations sont encore sans fichier. Vérifiez le gabarit PDF, l’espace disque et les journaux serveur (erreurs Dompdf / écriture).');
         } else {
             Session::flash('info', 'Aucun PDF en attente : la file est vide ou les attestations sont déjà à jour.');
         }
@@ -451,13 +468,20 @@ class AdminTrainingController
         $tenantId = (int) Session::get('tenant_id');
         $tpl = $this->certificateTemplateRepository->findByTenantId($tenantId) ?? [];
         $layoutFlags = $this->certificateTemplateLayoutFlags($tpl);
+        $logoRel = trim((string) ($tpl['logo_relative_path'] ?? ''));
+        $fondRel = trim((string) ($tpl['background_relative_path'] ?? ''));
+        $certGabaritLogoReadable = $logoRel !== '' && $this->certificateAssetStorage->absolutePath($logoRel) !== null;
+        $certGabaritFondReadable = $fondRel !== '' && $this->certificateAssetStorage->absolutePath($fondRel) !== null;
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.certificates_gabarit',
             'title' => 'Gabarit des attestations',
             'trainingAdminNav' => 'certificates_gabarit',
+            'totalModules' => $this->trainingShellTotalModules($tenantId),
             'tpl' => $tpl,
             'trainingCertificatePdfAvailable' => TrainingCertificatePdfEngine::isAvailable(),
+            'certGabaritLogoReadable' => $certGabaritLogoReadable,
+            'certGabaritFondReadable' => $certGabaritFondReadable,
             'certLayoutShowFinalScore' => $layoutFlags['show_final_score'],
             'certLayoutShowValidUntil' => $layoutFlags['show_valid_until'],
         ]);
@@ -544,7 +568,13 @@ class AdminTrainingController
         $tenantId = (int) Session::get('tenant_id');
         $binary = $this->certificatePdfService->generatePreviewBinary($tenantId);
         if ($binary === null || $binary === '') {
-            Session::flash('error', 'La génération d’un document d’exemple n’est pas disponible sur ce serveur.');
+            Session::flash(
+                'error',
+                'La génération PDF n’est pas disponible sur ce serveur. '
+                . 'Sur l’hébergement, exécutez « composer install » à la racine du projet (package dompdf/dompdf), '
+                . 'ou placez TCPDF dans le dossier tcpdf/ (fichier tcpdf/tcpdf.php). Sans l’un ou l’autre, aucun PDF d’attestation ne peut être produit.'
+            );
+
             return Response::redirect(training_lms_admin_url('certificates/gabarit'));
         }
 
@@ -608,10 +638,11 @@ class AdminTrainingController
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
         $logs = $this->auditService->listLogsForTenantDisplay($tenantId, 200);
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.audit',
             'title' => 'Journal des formations',
             'trainingAdminNav' => 'audit',
+            'totalModules' => $this->trainingShellTotalModules($tenantId),
             'logs' => $logs,
         ]);
     }
@@ -674,10 +705,11 @@ class AdminTrainingController
 
         $tenant = $this->tenantRepository->findById($tenantId);
 
-        return Response::view('layout.main', [
+        return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.course_showcase',
             'title' => 'Vitrine — ' . (string) $course['title'],
             'trainingAdminNav' => 'showcase',
+            'totalModules' => $this->trainingShellTotalModules($tenantId),
             'course' => $course,
             'tenant' => $tenant,
         ]);
@@ -697,6 +729,12 @@ class AdminTrainingController
         $gate = Gate::getInstance();
 
         return $gate->allows('admin.access') || $gate->allows('training.manage') || $gate->allows('training.delete');
+    }
+
+    /** Nombre de parcours tenant pour la sidebar du shell LMS (aligné sur le tableau de bord /formation). */
+    private function trainingShellTotalModules(int $tenantId): int
+    {
+        return count($this->courseRepository->listForTenant($tenantId, null));
     }
 
     /**

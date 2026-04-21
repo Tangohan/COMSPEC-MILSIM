@@ -78,6 +78,7 @@ $headHtml = ob_get_clean();
         <div class="grid lg:grid-cols-[290px_1fr] min-h-screen">
             <?php
             $activeNav = 'overview';
+            $lmsSidebarShowPilotageLinks = true;
             require base_path('views/training/partials/lms_command_sidebar.php');
             ?>
 
@@ -86,7 +87,7 @@ $headHtml = ob_get_clean();
                     <span class="lms-infobanner__icon" aria-hidden="true">
                         <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </span>
-                    <p><strong>Repère.</strong> Catalogue mêlant les parcours de votre communauté et, le cas échéant, des parcours proposés sur l’ensemble du site — recherche et filtres ci-dessous. Pour reprendre un parcours déjà commencé ou vos attestations, ouvrez <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="text-emerald-700 font-semibold hover:underline">Mes formations</a>. Pour signaler un problème sur un parcours, ouvrez sa fiche puis utilisez le lien en bas de page.</p>
+                    <p><strong>Repère.</strong> Catalogue mêlant les parcours de votre communauté et, le cas échéant, des parcours proposés sur l’ensemble du site — recherche et filtres ci-dessous. Pour reprendre un parcours déjà commencé ou vos attestations, ouvrez <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="text-emerald-700 font-semibold hover:underline">Mes formations</a>. Pour signaler un problème sur un parcours, ouvrez sa fiche puis utilisez le lien en bas de page.<?php if (\App\Support\TrainingLmsStaffAccess::allows(\App\Core\Gate::getInstance())): ?> <strong>Encadrement :</strong> accès directs au pilotage (studio, inscriptions, rapports, compétences…) dans la section <a href="#pilotage" class="text-emerald-700 font-semibold hover:underline">Pilotage de la communauté</a> ou via le menu sombre à gauche.<?php endif; ?></p>
                 </div>
 
                 <header id="overview" class="lms-panel rounded-[2rem] p-6 md:p-8 overflow-hidden relative">
@@ -124,6 +125,11 @@ $headHtml = ob_get_clean();
                         </div>
                     </div>
                 </header>
+
+                <?php
+                $mode = 'overview';
+                require base_path('views/training/partials/lms_pilotage_staff_nav.php');
+                ?>
 
                 <section class="grid xl:grid-cols-[1.2fr_0.8fr] gap-8">
                     <div id="catalogue" class="lms-panel min-w-0 rounded-[2rem] p-6 md:p-8">

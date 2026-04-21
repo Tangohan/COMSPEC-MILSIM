@@ -76,8 +76,8 @@ class ForumController
         $forumOrganizationCategories = [];
         $forumModerationCategories = [];
         foreach ($tree as $c) {
-            $scope = $c['scope'] ?? 'general';
-            if ($scope === 'organization') {
+            $scope = (string) ($c['scope'] ?? 'global');
+            if ($scope === 'organization' || $scope === 'tenant') {
                 $forumOrganizationCategories[] = $c;
             } elseif ($scope === 'moderation') {
                 $forumModerationCategories[] = $c;

@@ -156,13 +156,14 @@ class ForumCategoriesApiController
         }
         $parentRaw = $request->input('parent_id');
         $parentId = $parentRaw !== null && $parentRaw !== '' ? (int) $parentRaw : null;
-        $scope = trim((string) $request->input('scope', 'general'));
+        $scope = trim((string) $request->input('scope', 'global'));
         $scope = match ($scope) {
-            'general', 'organization', 'platform', 'moderation' => 'tenant',
+            'general', 'platform' => 'global',
+            'organization' => 'tenant',
             default => $scope,
         };
-        if (!in_array($scope, ['tenant', 'global', 'mission'], true)) {
-            $scope = 'tenant';
+        if (!in_array($scope, ['tenant', 'global', 'mission', 'moderation'], true)) {
+            $scope = 'global';
         }
         try {
             $id = $this->forumCategoryRepository->create($tenantId, [
@@ -211,7 +212,8 @@ class ForumCategoriesApiController
         if ($scopeIn !== null && $scopeIn !== '') {
             $scopeNorm = trim((string) $scopeIn);
             $scopeNorm = match ($scopeNorm) {
-                'general', 'organization', 'platform', 'moderation' => 'tenant',
+                'general', 'platform' => 'global',
+                'organization' => 'tenant',
                 default => $scopeNorm,
             };
             $payload['scope'] = $scopeNorm;

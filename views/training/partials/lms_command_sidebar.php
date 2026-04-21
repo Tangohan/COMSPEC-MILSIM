@@ -2,7 +2,8 @@
 declare(strict_types=1);
 /** @var string $lmsBase */
 /** @var int $totalModules */
-/** @var string $activeNav one of overview|catalogue|mine|sessions|qualifications|publications */
+/** @var string $activeNav one of overview|catalogue|mine|sessions|qualifications|publications|docs_html */
+/** @var bool $lmsSidebarShowPilotageLinks si true (ex. page catalogue), affiche les liens pilotage sous la nav */
 $lmsBase = $lmsBase ?? url('');
 $totalModules = (int) ($totalModules ?? 0);
 $activeNav = $activeNav ?? 'overview';
@@ -65,7 +66,19 @@ $navClass = static function (string $id) use ($activeNav): string {
             </span>
             <span class="text-[10px] font-black tracking-widest uppercase text-white/25">BO</span>
         </a>
+        <a href="<?= htmlspecialchars(training_lms_admin_url('pages-html')) ?>" class="<?= htmlspecialchars($navClass('docs_html')) ?>">
+            <span>
+                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $activeNav === 'docs_html' ? 'text-emerald-400' : 'text-white/25' ?>">07</span>
+                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Docs HTML</span>
+            </span>
+            <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Éditer</span>
+        </a>
     </nav>
+
+    <?php
+    $mode = 'sidebar';
+    require base_path('views/training/partials/lms_pilotage_staff_nav.php');
+    ?>
 
     <div class="mt-10 pt-8 border-t border-white/10 space-y-5">
         <div class="rounded-2xl bg-white/[0.03] border border-white/5 p-4">

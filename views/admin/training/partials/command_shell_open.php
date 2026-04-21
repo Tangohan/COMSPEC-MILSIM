@@ -29,6 +29,7 @@ $trainingCmdCanEditContent = $gateNav->allows('admin.access') || $gateNav->allow
                 <a href="<?= htmlspecialchars(training_lms_admin_url('certificates/gabarit')) ?>" class="<?= trim($is('certificates_gabarit')) ?>">Gabarit PDF</a>
                 <?php endif; ?>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('audit')) ?>" class="<?= trim($is('audit')) ?>">Audit</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('pages-html')) ?>" class="<?= trim($is('custom_pages')) ?>">Docs HTML</a>
                 <a href="<?= url('formations') ?>" target="_blank" rel="noopener" class="training-cmd-toolbar__ext">Catalogue public</a>
             </nav>
         </div>

@@ -47,6 +47,7 @@ class Container
                 self::get(\App\Services\Platform\ModuleReleaseAccessResolver::class),
             ),
             \App\Repositories\HrCharterRepository::class => new \App\Repositories\HrCharterRepository(),
+            \App\Repositories\DoctrineRepository::class => new \App\Repositories\DoctrineRepository(),
             \App\Repositories\SeniorityRepository::class => new \App\Repositories\SeniorityRepository(),
             \App\Services\Personnel\SenioritySummaryService::class => new \App\Services\Personnel\SenioritySummaryService(
                 self::get(\App\Repositories\SeniorityRepository::class),
@@ -418,6 +419,11 @@ class Container
             ),
             \App\Controllers\Admin\Organization\HrCharterDocumentAdminController::class => new \App\Controllers\Admin\Organization\HrCharterDocumentAdminController(
                 self::get(\App\Repositories\HrCharterRepository::class),
+                self::get(\App\Repositories\TrainingCourseRepository::class),
+            ),
+            \App\Controllers\Admin\Organization\DoctrineAdminController::class => new \App\Controllers\Admin\Organization\DoctrineAdminController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\DoctrineRepository::class),
             ),
             \App\Controllers\Web\PersonnelController::class => new \App\Controllers\Web\PersonnelController(
                 self::get(AuthService::class),
@@ -742,6 +748,7 @@ class Container
             ),
             \App\Repositories\TrainingRepository::class => new \App\Repositories\TrainingRepository(),
             \App\Repositories\TrainingCourseRepository::class => new \App\Repositories\TrainingCourseRepository(),
+            \App\Repositories\TrainingFormationCustomPageRepository::class => new \App\Repositories\TrainingFormationCustomPageRepository(),
             \App\Repositories\TenantCommunityFeedRepository::class => new \App\Repositories\TenantCommunityFeedRepository(),
             \App\Repositories\TrainingStaffPingRepository::class => new \App\Repositories\TrainingStaffPingRepository(),
             \App\Repositories\TrainingModuleRepository::class => new \App\Repositories\TrainingModuleRepository(),
@@ -878,6 +885,7 @@ class Container
                 self::get(\App\Services\Training\TenantPedagogyChainGuard::class),
                 self::get(\App\Services\Training\PedagogyPathwayService::class),
                 self::get(\App\Services\Training\TenantPedagogyStructureService::class),
+                self::get(\App\Repositories\TrainingCourseRepository::class),
             ),
             \App\Controllers\Web\TrainingController::class => new \App\Controllers\Web\TrainingController(
                 self::get(\App\Repositories\TrainingRepository::class),
@@ -905,6 +913,7 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Services\Analytics\AnalyticsEventService::class),
                 self::get(\App\Repositories\HrCharterRepository::class),
+                self::get(\App\Repositories\TrainingFormationCustomPageRepository::class),
             ),
             \App\Controllers\Web\EquipmentController::class => new \App\Controllers\Web\EquipmentController(
                 self::get(\App\Repositories\EquipmentClassRepository::class),
@@ -1119,6 +1128,12 @@ class Container
             \App\Controllers\Admin\AdminTrainingPublicationController::class => new \App\Controllers\Admin\AdminTrainingPublicationController(
                 self::get(\App\Repositories\TrainingPublicationRepository::class),
                 self::get(\App\Repositories\TrainingPublicationRevisionRepository::class),
+                self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(\App\Services\TrainingPublication\TrainingPublicationService::class),
+            ),
+            \App\Controllers\Admin\AdminTrainingCustomPageController::class => new \App\Controllers\Admin\AdminTrainingCustomPageController(
+                self::get(\App\Repositories\TrainingFormationCustomPageRepository::class),
+                self::get(\App\Repositories\TrainingCourseRepository::class),
             ),
             \App\Controllers\Api\TrainingApiController::class => new \App\Controllers\Api\TrainingApiController(
                 self::get(\App\Services\Training\TrainingService::class),

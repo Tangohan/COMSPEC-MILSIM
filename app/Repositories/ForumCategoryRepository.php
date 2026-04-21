@@ -96,7 +96,7 @@ class ForumCategoryRepository
         $fallback = null;
         foreach ($roots as $r) {
             $scope = (string) ($r['scope'] ?? 'global');
-            if (in_array($scope, ['organization', 'tenant', 'moderation', 'platform', 'mission'], true)) {
+            if (in_array($scope, ['organization', 'tenant', 'moderation', 'platform'], true)) {
                 continue;
             }
             if (($r['slug'] ?? '') === 'general') {
@@ -117,7 +117,7 @@ class ForumCategoryRepository
             return null;
         }
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM forum_categories WHERE tenant_id = ? AND parent_id IS NULL AND scope IN ('organization','tenant') ORDER BY display_order ASC, id ASC LIMIT 1"
+            "SELECT * FROM forum_categories WHERE tenant_id = ? AND parent_id IS NULL AND scope IN ('organization','tenant') ORDER BY (slug LIKE 'org-%') DESC, display_order ASC, id ASC LIMIT 1"
         );
         $stmt->execute([$tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);

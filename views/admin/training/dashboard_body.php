@@ -36,6 +36,11 @@ $trainingCanExportFull = !empty($trainingCanExportFull);
                             <p class="text-[9px] font-black tracking-[0.25em] uppercase text-slate-500 mb-1">Traçabilité</p>
                             <p class="text-sm font-black text-slate-900">Journal pédagogique</p>
                         </a>
+                        <a href="<?= htmlspecialchars(training_lms_admin_url('pages-html')) ?>" class="tc-course-card group block no-underline text-inherit p-4 !shadow-sm">
+                            <p class="text-[9px] font-black tracking-[0.25em] uppercase text-emerald-700 mb-1">Rédaction</p>
+                            <p class="text-sm font-black text-slate-900 group-hover:text-emerald-900">Docs HTML</p>
+                            <p class="text-[10px] text-slate-500 mt-1 leading-snug">Création &amp; édition de pages</p>
+                        </a>
                     </div>
                 </section>
                 <?php endif; ?>
@@ -116,6 +121,11 @@ $trainingCanExportFull = !empty($trainingCanExportFull);
                         <p class="text-[9px] font-black tracking-[0.3em] uppercase text-emerald-600 mb-2">Publier</p>
                         <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 group-hover:text-emerald-800">Studio LMS</h2>
                         <p class="text-xs text-slate-600 mt-2 leading-relaxed">Modules, leçons, présentation et publication du parcours.</p>
+                    </a>
+                    <a href="<?= htmlspecialchars(training_lms_admin_url('pages-html')) ?>" class="tc-course-card group block no-underline text-inherit ring-1 ring-transparent hover:ring-emerald-200/80">
+                        <p class="text-[9px] font-black tracking-[0.3em] uppercase text-emerald-600 mb-2">Rédiger</p>
+                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 group-hover:text-emerald-800">Documentations HTML</h2>
+                        <p class="text-xs text-slate-600 mt-2 leading-relaxed">Créer, modifier ou supprimer des pages autonomes ; lien public <code class="text-[10px] bg-slate-100 px-1 rounded">/formations/page/…</code> une fois publiées.</p>
                     </a>
                     <a href="<?= htmlspecialchars(training_lms_admin_url('courses')) ?>" class="tc-course-card group block no-underline text-inherit">
                         <p class="text-[9px] font-black tracking-[0.3em] uppercase text-slate-400 mb-2">Contrôler</p>

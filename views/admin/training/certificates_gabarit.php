@@ -2,6 +2,8 @@
 declare(strict_types=1);
 $tpl = is_array($tpl ?? null) ? $tpl : [];
 $trainingCertificatePdfAvailable = (bool) ($trainingCertificatePdfAvailable ?? false);
+$certGabaritLogoReadable = (bool) ($certGabaritLogoReadable ?? false);
+$certGabaritFondReadable = (bool) ($certGabaritFondReadable ?? false);
 $certLayoutShowFinalScore = (bool) ($certLayoutShowFinalScore ?? true);
 $certLayoutShowValidUntil = (bool) ($certLayoutShowValidUntil ?? true);
 require base_path('views/admin/training/partials/command_shell_open.php');
@@ -12,8 +14,12 @@ $subtitle = (string) ($tpl['subtitle'] ?? '');
 $footer = (string) ($tpl['footer_legal'] ?? '');
 $primary = (string) ($tpl['primary_hex'] ?? '#0f172a');
 $accent = (string) ($tpl['accent_hex'] ?? '#059669');
-$hasLogo = !empty($tpl['logo_relative_path']);
-$hasBg = !empty($tpl['background_relative_path']);
+$hasLogoPath = !empty($tpl['logo_relative_path']);
+$hasFondPath = !empty($tpl['background_relative_path']);
+$hasLogo = $hasLogoPath && $certGabaritLogoReadable;
+$hasBg = $hasFondPath && $certGabaritFondReadable;
+$orphanLogo = $hasLogoPath && !$certGabaritLogoReadable;
+$orphanFond = $hasFondPath && !$certGabaritFondReadable;
 $exemplePdfUrl = training_lms_admin_url('certificates/gabarit/exemple-pdf');
 $fichierLogoUrl = training_lms_admin_url('certificates/gabarit/fichier') . '?type=logo';
 $fichierFondUrl = training_lms_admin_url('certificates/gabarit/fichier') . '?type=fond';
@@ -31,8 +37,17 @@ $fichierFondUrl = training_lms_admin_url('certificates/gabarit/fichier') . '?typ
                         La génération des documents PDF est disponible sur ce serveur.
                     </p>
                     <?php else: ?>
-                    <p class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                        La génération des documents PDF n’est pas disponible sur ce serveur. Vous pouvez enregistrer le gabarit, mais les fichiers ne seront pas produits tant que l’environnement n’est pas corrigé.
+                    <p class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 leading-relaxed">
+                        La génération des documents PDF n’est pas disponible sur ce serveur (Dompdf ni TCPDF détectés). Vous pouvez enregistrer le gabarit, mais aucun PDF ne sera produit tant que l’environnement n’est pas corrigé.
+                        <span class="block mt-2 text-xs text-amber-900/90">À faire sur l’hébergement : lancer <code class="rounded bg-white/80 px-1">composer install</code> à la racine du dépôt (présence de <code class="rounded bg-white/80 px-1">vendor/dompdf</code>), ou déposer TCPDF dans <code class="rounded bg-white/80 px-1">tcpdf/tcpdf.php</code>.</span>
+                    </p>
+                    <?php endif; ?>
+                    <?php if ($orphanLogo || $orphanFond): ?>
+                    <p class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-950 leading-relaxed">
+                        <strong class="font-semibold">Fichier image manquant sur le disque.</strong>
+                        <?php if ($orphanLogo): ?>Le logo est encore référencé en base mais le fichier n’existe plus sur ce serveur (réimportez-le ou cochez « Retirer »). <?php endif; ?>
+                        <?php if ($orphanFond): ?>L’image de fond est dans le même cas. <?php endif; ?>
+                        Cela évite des erreurs 404 dans l’aperçu tant que vous n’avez pas réassocié un fichier valide.
                     </p>
                     <?php endif; ?>
                 </header>
@@ -91,9 +106,13 @@ $fichierFondUrl = training_lms_admin_url('certificates/gabarit/fichier') . '?typ
                             <div>
                                 <label class="block text-sm font-semibold text-slate-800 mb-1">Logo (optionnel)</label>
                                 <input type="file" name="logo" accept="image/jpeg,image/png,image/webp" class="block w-full text-sm text-slate-600">
-                                <?php if ($hasLogo): ?>
+                                <?php if ($hasLogoPath): ?>
                                 <div class="mt-3 flex flex-wrap items-center gap-4">
+                                    <?php if ($hasLogo): ?>
                                     <img src="<?= htmlspecialchars($fichierLogoUrl) ?>" alt="" class="max-h-16 max-w-[200px] rounded border border-slate-200 bg-white object-contain p-1">
+                                    <?php else: ?>
+                                    <span class="text-xs text-rose-700 font-medium">Aperçu indisponible (fichier absent) — choisissez une nouvelle image ou retirez la référence.</span>
+                                    <?php endif; ?>
                                     <label class="flex items-center gap-2 text-sm text-slate-600">
                                         <input type="checkbox" name="remove_logo" value="1"> Retirer le logo actuel
                                     </label>
@@ -104,9 +123,13 @@ $fichierFondUrl = training_lms_admin_url('certificates/gabarit/fichier') . '?typ
                             <div>
                                 <label class="block text-sm font-semibold text-slate-800 mb-1">Image de fond (optionnel)</label>
                                 <input type="file" name="background" accept="image/jpeg,image/png,image/webp" class="block w-full text-sm text-slate-600">
-                                <?php if ($hasBg): ?>
+                                <?php if ($hasFondPath): ?>
                                 <div class="mt-3 flex flex-wrap items-center gap-4">
+                                    <?php if ($hasBg): ?>
                                     <img src="<?= htmlspecialchars($fichierFondUrl) ?>" alt="" class="h-20 w-32 rounded border border-slate-200 object-cover">
+                                    <?php else: ?>
+                                    <span class="text-xs text-rose-700 font-medium">Aperçu indisponible (fichier absent) — importez à nouveau ou retirez la référence.</span>
+                                    <?php endif; ?>
                                     <label class="flex items-center gap-2 text-sm text-slate-600">
                                         <input type="checkbox" name="remove_background" value="1"> Retirer l’image de fond actuelle
                                     </label>

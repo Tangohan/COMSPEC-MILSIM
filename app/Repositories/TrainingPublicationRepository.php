@@ -61,7 +61,12 @@ class TrainingPublicationRepository
     public function listByTenant(int $tenantId, int $limit = 100): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM training_document_publications WHERE tenant_id = ? ORDER BY updated_at DESC LIMIT ' . (int) $limit
+            'SELECT p.*, c.title AS course_title, c.slug AS course_slug
+            FROM training_document_publications p
+            LEFT JOIN training_courses c ON c.id = p.course_id AND c.tenant_id = p.tenant_id
+            WHERE p.tenant_id = ?
+            ORDER BY p.updated_at DESC
+            LIMIT ' . (int) $limit
         );
         $stmt->execute([$tenantId]);
 
@@ -70,7 +75,13 @@ class TrainingPublicationRepository
 
     public function findById(int $id, int $tenantId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM training_document_publications WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $stmt = $this->pdo->prepare(
+            'SELECT p.*, c.title AS course_title, c.slug AS course_slug
+            FROM training_document_publications p
+            LEFT JOIN training_courses c ON c.id = p.course_id AND c.tenant_id = p.tenant_id
+            WHERE p.id = ? AND p.tenant_id = ?
+            LIMIT 1'
+        );
         $stmt->execute([$id, $tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 

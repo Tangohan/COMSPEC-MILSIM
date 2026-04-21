@@ -79,19 +79,36 @@ return function (PDO $pdo): void {
         $tenants = $pdo->query('SELECT id, name, slug FROM tenants')->fetchAll(PDO::FETCH_ASSOC);
         foreach ($tenants as $t) {
             $tid = (int) $t['id'];
-            $chk = $pdo->prepare("SELECT 1 FROM forum_categories WHERE tenant_id = ? AND scope = 'organization' LIMIT 1");
-            $chk->execute([$tid]);
-            if ($chk->fetch()) {
-                continue;
-            }
-            $slug = 'org-' . preg_replace('/[^a-z0-9-]+/', '-', strtolower((string) $t['slug']));
+            $slug = 'org-' . preg_replace('/[^a-z0-9-]+/', '-', strtolower((string) ($t['slug'] ?? '')));
             $slug = trim($slug, '-');
             if ($slug === 'org') {
                 $slug = 'org-' . $tid;
             }
+            if (strlen($slug) > 100) {
+                $slug = substr('org-' . $tid . '-' . md5((string) ($t['slug'] ?? '')), 0, 100);
+                $slug = rtrim($slug, '-');
+            }
+            // Déjà présente (scope organization ou section org migrée en scope « tenant » / stratifié)
+            $chk = $pdo->prepare("SELECT 1 FROM forum_categories WHERE tenant_id = ? AND slug = ? LIMIT 1");
+            $chk->execute([$tid, $slug]);
+            if ($chk->fetch()) {
+                continue;
+            }
+            $chkLegacy = $pdo->prepare("SELECT 1 FROM forum_categories WHERE tenant_id = ? AND scope = 'organization' LIMIT 1");
+            $chkLegacy->execute([$tid]);
+            if ($chkLegacy->fetch()) {
+                continue;
+            }
             $name = trim((string) $t['name']) . ' — Espace dédié';
+            if (strlen($name) > 255) {
+                $name = substr($name, 0, 252) . '…';
+            }
             $ins = $pdo->prepare('INSERT INTO forum_categories (tenant_id, scope, owner_tenant_id, parent_id, name, slug, description, color_theme, display_order, is_locked, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, 0, NOW(), NOW())');
-            $ins->execute([$tid, 'organization', $tid, $name, $slug, 'Section forum de votre organisation.', 'slate', 15]);
+            try {
+                $ins->execute([$tid, 'organization', $tid, $name, $slug, 'Section forum de votre organisation.', 'slate', 15]);
+            } catch (PDOException $e) {
+                echo '  [ATTENTION] Forum v2 section org (tenant ' . $tid . ') : ' . $e->getMessage() . "\n";
+            }
         }
     }
 };

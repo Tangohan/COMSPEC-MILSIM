@@ -150,7 +150,7 @@ class ForumCategoryController
         $catScopeRaw = (string) ($category['scope'] ?? 'general');
         $orgStakeholder = function_exists('forum_user_is_tenant_org_stakeholder') && forum_user_is_tenant_org_stakeholder();
         $forumCanCreateSubcategory = (function_exists('forum_user_can_moderate') && forum_user_can_moderate())
-            || ($orgStakeholder && $catScopeRaw === 'organization');
+            || ($orgStakeholder && in_array($catScopeRaw, ['organization', 'tenant'], true));
         $forumFullCategoryAdmin = $gate->allows('admin.access')
             || $gate->allows('admin.system')
             || (function_exists('can') && can('forum.categories.manage'));

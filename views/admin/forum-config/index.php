@@ -28,26 +28,34 @@ if (!function_exists('forum_admin_setting_bool')) {
 }
 
 $fcScopeLabels = [
-    'general' => 'Membres',
-    'platform' => 'Plateforme entière',
-    'organization' => 'Unité / organisation',
-    'moderation' => 'Modération',
+    'global' => 'Toute la plateforme',
+    'tenant' => 'Cette communauté uniquement',
+    'mission' => 'Mission / opération',
+    'moderation' => 'Modérateurs uniquement',
+    'general' => 'Toute la plateforme',
+    'platform' => 'Toute la plateforme',
+    'organization' => 'Cette communauté uniquement',
 ];
 
 /**
  * @param mixed $cat
  */
 $fcScopeLabel = static function ($cat) use ($fcScopeLabels): string {
-    $scope = is_array($cat) ? ($cat['scope'] ?? 'general') : 'general';
+    $scope = is_array($cat) ? (string) ($cat['scope'] ?? 'global') : 'global';
 
-    return $fcScopeLabels[$scope] ?? $fcScopeLabels['general'];
+    return $fcScopeLabels[$scope] ?? 'Toute la plateforme';
 };
 
 $forumIdentityName = trim((string) ($forumConfig['forum_name'] ?? $forumConfig['name'] ?? ''));
 
-/** JSON sûr dans un attribut HTML entouré de quotes simples (évite la coupure sur apostrophe dans les textes). */
-$fcJsonForAttr = static function (array $data): string {
-    return json_encode($data, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+/** Payload canal encodé en base64 (UTF-8) pour éviter toute casse Alpine / guillemets / apostrophes dans @click. */
+$fcCatPayloadB64 = static function (array $data): string {
+    $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    if (!is_string($json) || $json === '') {
+        return base64_encode('{}');
+    }
+
+    return base64_encode($json);
 };
 
 $forumSettingGroups = [
@@ -378,7 +386,7 @@ $forumSettingGroups = [
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap justify-end gap-1.5">
                                     <button type="button" @click="fcOpenCreate(<?= (int)($cat['id']) ?>)" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Sous-canal</button>
-                                    <button type="button" @click='fcOpenEdit(<?= $fcJsonForAttr($cat) ?>)' class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
+                                    <button type="button" data-fc-cat="<?= htmlspecialchars($fcCatPayloadB64($cat), ENT_QUOTES, 'UTF-8') ?>" @click="fcOpenEditFromDataset($event.currentTarget)" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
                                     <button type="button" @click="fcLock(<?= (int)($cat['id']) ?>, <?= !empty($cat['is_locked']) ? 'false' : 'true' ?>)" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><?= !empty($cat['is_locked']) ? 'Rouvrir' : 'Fermer' ?></button>
                                     <button type="button" @click="fcDelete(<?= (int)($cat['id']) ?>)" class="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50">Supprimer</button>
                                 </div>
@@ -399,7 +407,7 @@ $forumSettingGroups = [
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap justify-end gap-1.5">
-                                    <button type="button" @click='fcOpenEdit(<?= $fcJsonForAttr($sub + ['_parent_name' => $cat['name'] ?? '']) ?>)' class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
+                                    <button type="button" data-fc-cat="<?= htmlspecialchars($fcCatPayloadB64($sub + ['_parent_name' => $cat['name'] ?? '']), ENT_QUOTES, 'UTF-8') ?>" @click="fcOpenEditFromDataset($event.currentTarget)" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
                                     <button type="button" @click="fcLock(<?= (int)($sub['id']) ?>, <?= !empty($sub['is_locked']) ? 'false' : 'true' ?>)" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><?= !empty($sub['is_locked']) ? 'Rouvrir' : 'Fermer' ?></button>
                                     <button type="button" @click="fcDelete(<?= (int)($sub['id']) ?>)" class="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50">Supprimer</button>
                                 </div>
@@ -586,10 +594,10 @@ $forumSettingGroups = [
                 <div x-show="!fcForm.parent_id">
                     <label class="block text-sm font-semibold text-slate-800">Visibilité du canal</label>
                     <select class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" x-model="fcForm.scope">
-                        <option value="general">Tous les membres connectés</option>
-                        <option value="platform">Toute la plateforme</option>
-                        <option value="organization">Réservé à l’unité / organisation</option>
-                        <option value="moderation">Réservé à l’équipe de modération</option>
+                        <option value="global">Toute la plateforme (tous les tenants)</option>
+                        <option value="tenant">Espace réservé à cette communauté</option>
+                        <option value="mission">Mission / opération</option>
+                        <option value="moderation">Modérateurs uniquement</option>
                     </select>
                 </div>
                 <div class="flex flex-wrap gap-2 pt-2">
@@ -608,25 +616,48 @@ function forumConfigPage() {
     return {
         fcModalOpen: false,
         fcEditId: null,
-        fcForm: { name: '', slug: '', description: '', display_order: 0, parent_id: '', scope: 'general' },
+        fcForm: { name: '', slug: '', description: '', display_order: 0, parent_id: '', scope: 'global' },
         bannedWordInput: '',
         blacklistedDomainInput: '',
         banner: null,
         savingSettings: false,
         fcOpenCreate(parentId) {
             this.fcEditId = null;
-            this.fcForm = { name: '', slug: '', description: '', display_order: 0, parent_id: parentId ? String(parentId) : '', scope: 'general' };
+            this.fcForm = { name: '', slug: '', description: '', display_order: 0, parent_id: parentId ? String(parentId) : '', scope: 'global' };
             this.fcModalOpen = true;
+        },
+        fcOpenEditFromDataset(el) {
+            const b64 = el && el.getAttribute ? el.getAttribute('data-fc-cat') : '';
+            if (!b64) {
+                this.showBanner('error', 'Données du canal manquantes.');
+                return;
+            }
+            let cat;
+            try {
+                const bin = atob(b64);
+                const bytes = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) {
+                    bytes[i] = bin.charCodeAt(i);
+                }
+                cat = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+            } catch (e) {
+                this.showBanner('error', 'Impossible de lire ce canal. Rechargez la page.');
+                return;
+            }
+            this.fcOpenEdit(cat);
         },
         fcOpenEdit(cat) {
             this.fcEditId = cat.id;
+            let sc = cat.scope || 'global';
+            if (sc === 'general' || sc === 'platform') sc = 'global';
+            if (sc === 'organization') sc = 'tenant';
             this.fcForm = {
                 name: cat.name || '',
                 slug: cat.slug || '',
                 description: cat.description || '',
                 display_order: cat.display_order ?? 0,
                 parent_id: cat.parent_id ? String(cat.parent_id) : '',
-                scope: cat.scope || 'general',
+                scope: sc,
             };
             this.fcModalOpen = true;
         },
@@ -647,7 +678,7 @@ function forumConfigPage() {
             body.append('display_order', this.fcForm.display_order);
             body.append('parent_id', this.fcForm.parent_id || '');
             if (!this.fcForm.parent_id) {
-                body.append('scope', this.fcForm.scope || 'general');
+                body.append('scope', this.fcForm.scope || 'global');
             }
             try {
                 const r = await fetch(BASE + '/api/admin/forum-categories', { method: 'POST', body });

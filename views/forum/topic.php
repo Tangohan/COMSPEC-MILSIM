@@ -690,7 +690,7 @@ $isMandatoryRead = (int) ($topic['mandatory_read'] ?? 0) === 1;
     <h2 class="text-xs font-black uppercase tracking-widest text-slate-900 mb-0.5">Compte et affichage forum</h2>
     <p class="text-[10px] text-slate-600 mb-2 leading-snug">Plateforme (toutes communautés) vs <strong class="text-slate-800">cette communauté</strong> (étiquette, carte auteur).</p>
     <?php if (!empty($categoryScope)): ?>
-    <p class="text-[9px] text-slate-500 mb-2 rounded-md bg-slate-50 px-2 py-1 border border-slate-100">Sujet : <strong class="text-slate-700"><?= $categoryScope === 'platform' ? 'forum global' : ($categoryScope === 'organization' ? 'espace communauté' : 'standard') ?></strong></p>
+    <p class="text-[9px] text-slate-500 mb-2 rounded-md bg-slate-50 px-2 py-1 border border-slate-100">Sujet : <strong class="text-slate-700"><?= in_array($categoryScope, ['platform', 'global'], true) ? 'forum global' : (in_array($categoryScope, ['organization', 'tenant'], true) ? 'espace communauté' : 'standard') ?></strong></p>
     <?php endif; ?>
     <?php if (!empty($forumOrgRoleChoices)): ?>
     <div class="mb-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3">

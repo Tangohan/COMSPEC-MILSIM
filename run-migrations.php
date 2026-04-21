@@ -273,6 +273,12 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_competency_framework : ' . $e->getMessage() . "\n";
 }
+$trainingFormationCustomPagesMigrate = require $root . '/bootstrap/training_formation_custom_pages_migration.php';
+try {
+    $trainingFormationCustomPagesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_formation_custom_pages : ' . $e->getMessage() . "\n";
+}
 $competencyProgressionFrameworkMigrate = require $root . '/bootstrap/competency_progression_framework_migration.php';
 try {
     $competencyProgressionFrameworkMigrate($pdo);

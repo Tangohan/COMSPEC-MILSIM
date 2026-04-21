@@ -23,7 +23,7 @@ $forumCtxEnabled = !empty($forumContextMenuEnabled);
     <span class="text-slate-800"><?= htmlspecialchars($category['name'] ?? '') ?></span>
   </nav>
 
-  <?php if ($forumCtxEnabled && $categoryScopeRaw === 'organization'): ?>
+  <?php if ($forumCtxEnabled && in_array($categoryScopeRaw, ['organization', 'tenant'], true)): ?>
   <div class="mb-6 rounded-xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50/90 via-white to-slate-50 px-4 py-3 shadow-sm flex flex-wrap items-center gap-3 header-anim" style="animation-delay:20ms">
     <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white text-xs font-black" title="Encadrement">⌁</span>
     <div class="min-w-0 flex-1">

@@ -10,12 +10,14 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\HrCharterRepository;
+use App\Repositories\TrainingCourseRepository;
 use App\Support\TrainingLmsStaffAccess;
 
 final class HrCharterDocumentAdminController
 {
     public function __construct(
         private HrCharterRepository $hrCharterRepository,
+        private TrainingCourseRepository $trainingCourseRepository,
     ) {}
 
     public function edit(Request $request, array $params = []): Response
@@ -40,10 +42,13 @@ final class HrCharterDocumentAdminController
             return Response::redirect(url(training_lms_admin_path()));
         }
 
-        return Response::view('layout.main', [
+        $totalModules = count($this->trainingCourseRepository->listForTenant($tenantId, null));
+
+        return Response::view('layout.training_lms_staff_shell', [
             'title' => 'Charte liée aux formations',
             'content' => 'admin.training.hr_charter_edit',
             'trainingAdminNav' => 'charter',
+            'totalModules' => $totalModules,
             'hrCharterAdminDoc' => $doc,
             'hrCharterAdminCsrf' => Csrf::token(),
         ]);
