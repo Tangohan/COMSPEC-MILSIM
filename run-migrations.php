@@ -255,6 +255,12 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_courses_lms_scope : ' . $e->getMessage() . "\n";
 }
+$trainingPublicationEngineMigrate = require $root . '/bootstrap/training_publication_engine_migration.php';
+try {
+    $trainingPublicationEngineMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_publication_engine : ' . $e->getMessage() . "\n";
+}
 $trainingCertificateTemplatesMigrate = require $root . '/bootstrap/training_certificate_templates_migration.php';
 try {
     $trainingCertificateTemplatesMigrate($pdo);

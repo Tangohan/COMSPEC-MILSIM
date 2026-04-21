@@ -320,6 +320,7 @@ return [
                         ['label' => 'Studio LMS', 'path' => 'formation/studio', 'any_permissions' => ['admin.access', 'training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish', 'training.delete'], 'description' => 'Édition des parcours'],
                         ['label' => 'Pilotage des compétences', 'path' => 'formation/competences/commandement', 'any_permissions' => ['training.manage', 'training.assign'], 'description' => 'Vue encadrement'],
                         ['label' => 'Validation instructeur', 'path' => 'formation/competences/instructeur', 'any_permissions' => ['training.manage', 'training.assign', 'training.submissions.grade', 'training.results.view'], 'description' => 'Évaluations à traiter'],
+                        ['label' => 'Publications formation', 'path' => 'formation/publications', 'any_permissions' => ['training.publications.manage', 'training.manage', 'training.publish', 'admin.access'], 'description' => 'Versionning, change log et conformité documentaire'],
                     ],
                 ],
                 [
@@ -396,6 +397,7 @@ return [
                         ['label' => 'Mod ATAK', 'path' => 'back-office/ressources/atak-mod', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Configuration forum', 'path' => 'back-office/ressources/forum-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Formations (LMS)', 'path' => 'formation', 'any_permissions' => ['admin.access', 'training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish', 'training.delete']],
+                        ['label' => 'Publications formation', 'path' => 'formation/publications', 'any_permissions' => ['training.publications.manage', 'training.manage', 'training.publish', 'admin.access'], 'description' => 'Back-office publications, versionning et change log'],
                         ['label' => 'Gestion documentaire', 'path' => 'documents/gestion', 'any_permissions' => ['admin.system', 'documents.upload', 'admin.access']],
                         ['label' => 'Doctrine & SOP', 'path' => 'back-office/doctrine', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Coopérations inter-unités', 'path' => 'back-office/cooperation/missions', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'interteam.missions.manage', 'interteam.missions.respond', 'cooperation.missions.view', 'cooperation.missions.manage', 'cooperation.missions.respond']],
