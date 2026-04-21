@@ -6,8 +6,21 @@ if (!\App\Core\Session::get('user_id')) {
 $crEndpoint = url('api/community/report');
 $crCsrf = \App\Core\Csrf::token();
 ?>
-<div id="community-report-modal" class="fixed inset-0 z-[500] hidden flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="community-report-title" tabindex="-1">
-    <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 overflow-hidden">
+<style>
+  /* Hors Tailwind : z-index + calque voile / dialogue (évite flou sur le formulaire et sous-couche des .lms-panel). */
+  #community-report-modal {
+    z-index: 10000;
+    isolation: isolate;
+  }
+  #cr-modal-backdrop {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+</style>
+<div id="community-report-modal" class="fixed inset-0 hidden flex items-center justify-center overflow-y-auto p-4" role="dialog" aria-modal="true" aria-labelledby="community-report-title" tabindex="-1">
+    <div id="cr-modal-backdrop" class="absolute inset-0 bg-slate-900/55" aria-hidden="true"></div>
+    <div class="relative z-10 my-auto w-full max-w-md">
+    <div class="w-full rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/90">
             <h2 id="community-report-title" class="text-sm font-black uppercase tracking-wide text-slate-900">Signaler un contenu</h2>
             <p id="community-report-summary" class="mt-1 text-xs text-slate-600 leading-relaxed"></p>
@@ -40,6 +53,7 @@ $crCsrf = \App\Core\Csrf::token();
             </div>
         </form>
     </div>
+    </div>
 </div>
 <script>
 (function () {
@@ -59,6 +73,7 @@ $crCsrf = \App\Core\Csrf::token();
         }
         var summaryEl = document.getElementById('community-report-summary');
         var cancelBtn = document.getElementById('cr-cancel');
+        var backdropEl = document.getElementById('cr-modal-backdrop');
 
         function fillCr(opts) {
             opts = opts || {};
@@ -111,21 +126,14 @@ $crCsrf = \App\Core\Csrf::token();
                 pageUrl: btn.getAttribute('data-cr-page-url') || window.location.href,
                 summary: btn.getAttribute('data-cr-summary') || ''
             });
-            try {
-                btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } catch (e) {
-                try {
-                    btn.scrollIntoView();
-                } catch (e2) {}
-            }
-            window.setTimeout(showCr, 180);
+            showCr();
         }, false);
 
         if (cancelBtn) {
             cancelBtn.addEventListener('click', closeCr);
         }
         modal.addEventListener('click', function (e) {
-            if (e.target === modal) {
+            if (e.target === modal || (backdropEl && e.target === backdropEl)) {
                 closeCr();
             }
         });
