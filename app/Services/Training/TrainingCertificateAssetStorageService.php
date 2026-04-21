@@ -26,10 +26,20 @@ class TrainingCertificateAssetStorageService
 
     public function absolutePath(?string $relative): ?string
     {
-        if ($relative === null || trim($relative) === '') {
+        if ($relative === null) {
             return null;
         }
-        $rel = str_replace(['..', "\0"], '', $relative);
+        $rel = trim(str_replace(["\0", '\\'], ['', '/'], (string) $relative));
+        if ($rel === '') {
+            return null;
+        }
+        $rel = str_replace('..', '', $rel);
+        while (str_starts_with($rel, './')) {
+            $rel = substr($rel, 2);
+        }
+        if (str_starts_with($rel, '/')) {
+            $rel = ltrim($rel, '/');
+        }
         $full = base_path($rel);
 
         return is_file($full) ? $full : null;
@@ -44,8 +54,15 @@ class TrainingCertificateAssetStorageService
         if ($file === null || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             return null;
         }
-        if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'] ?? '')) {
+        if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
             throw new \InvalidArgumentException('Le fichier n’a pas pu être reçu. Réessayez ou choisissez un autre fichier.');
+        }
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            throw new \InvalidArgumentException('Le fichier n’a pas pu être reçu. Réessayez ou choisissez un autre fichier.');
+        }
+        if (($file['size'] ?? 0) < 1) {
+            throw new \InvalidArgumentException('Le fichier reçu est vide. Choisissez une image valide.');
         }
         if (($file['size'] ?? 0) > self::MAX_BYTES) {
             throw new \InvalidArgumentException('Le fichier est trop volumineux (maximum 4 Mo).');
@@ -54,7 +71,7 @@ class TrainingCertificateAssetStorageService
         if (!isset(self::ALLOWED[$ext])) {
             throw new \InvalidArgumentException('Format non pris en charge. Utilisez une image JPEG, PNG ou WebP.');
         }
-        $mime = $this->detectMime($file['tmp_name']);
+        $mime = $this->detectMime($tmpName);
         if ($mime === null || !in_array($mime, self::ALLOWED[$ext], true)) {
             throw new \InvalidArgumentException('Le type du fichier ne correspond pas à une image autorisée.');
         }
@@ -66,8 +83,11 @@ class TrainingCertificateAssetStorageService
 
         $safe = $prefix . '-' . bin2hex(random_bytes(8)) . '.' . $ext;
         $destAbs = $dir . DIRECTORY_SEPARATOR . $safe;
-        if (!move_uploaded_file($file['tmp_name'], $destAbs)) {
-            throw new \RuntimeException('Impossible d’enregistrer le fichier.');
+        if (!move_uploaded_file($tmpName, $destAbs)) {
+            throw new \RuntimeException('Impossible d’enregistrer le fichier sur le serveur (droits d’écriture ou quota).');
+        }
+        if (!is_file($destAbs)) {
+            throw new \RuntimeException('Le fichier n’a pas été trouvé après enregistrement.');
         }
 
         return $this->relativeDirForTenant($tenantId) . '/' . $safe;

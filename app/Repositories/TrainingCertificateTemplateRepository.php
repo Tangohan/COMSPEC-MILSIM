@@ -29,6 +29,19 @@ class TrainingCertificateTemplateRepository
     }
 
     /**
+     * Met à jour uniquement les chemins logo / fond (nettoyage des références fichiers manquants).
+     */
+    public function updateAssetRelativePaths(int $tenantId, ?string $logoRelative, ?string $backgroundRelative): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE training_certificate_templates
+             SET logo_relative_path = ?, background_relative_path = ?
+             WHERE tenant_id = ?'
+        );
+        $stmt->execute([$logoRelative, $backgroundRelative, $tenantId]);
+    }
+
+    /**
      * @param array<string, mixed> $data
      */
     public function upsertForTenant(int $tenantId, array $data): void

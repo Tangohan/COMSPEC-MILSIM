@@ -466,6 +466,12 @@ class AdminTrainingController
             throw new \RuntimeException('Accès refusé.', 403);
         }
         $tenantId = (int) Session::get('tenant_id');
+        if ($this->pruneBrokenCertificateTemplateAssets($tenantId)) {
+            Session::flash(
+                'info',
+                'Une image du gabarit était enregistrée mais absente du serveur ; la référence a été retirée. Réimportez le logo ou le fond si vous en avez besoin.'
+            );
+        }
         $tpl = $this->certificateTemplateRepository->findByTenantId($tenantId) ?? [];
         $layoutFlags = $this->certificateTemplateLayoutFlags($tpl);
         $logoRel = trim((string) ($tpl['logo_relative_path'] ?? ''));
@@ -503,35 +509,40 @@ class AdminTrainingController
             return $redirect;
         }
         $tenantId = (int) Session::get('tenant_id');
+        $this->pruneBrokenCertificateTemplateAssets($tenantId);
         $existing = $this->certificateTemplateRepository->findByTenantId($tenantId);
-        $logoRel = $existing['logo_relative_path'] ?? null;
-        $bgRel = $existing['background_relative_path'] ?? null;
+        $logoRel = is_array($existing) ? ($existing['logo_relative_path'] ?? null) : null;
+        $bgRel = is_array($existing) ? ($existing['background_relative_path'] ?? null) : null;
+        $logoRel = is_string($logoRel) && $logoRel !== '' ? $logoRel : null;
+        $bgRel = is_string($bgRel) && $bgRel !== '' ? $bgRel : null;
 
         try {
+            // D’abord retirer si demandé : évite d’effacer un nouveau fichier si « retirer » et « nouveau fichier » coexistent.
+            if (isset($_POST['remove_logo'])) {
+                $this->certificateAssetStorage->deleteRelative($logoRel);
+                $logoRel = null;
+            }
+            if (isset($_POST['remove_background'])) {
+                $this->certificateAssetStorage->deleteRelative($bgRel);
+                $bgRel = null;
+            }
+
             $logoFile = $_FILES['logo'] ?? null;
             if (is_array($logoFile) && ($logoFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
                 $stored = $this->certificateAssetStorage->storeUpload($tenantId, $logoFile, 'logo');
                 if ($stored !== null) {
-                    $this->certificateAssetStorage->deleteRelative(is_string($logoRel) ? $logoRel : null);
+                    $this->certificateAssetStorage->deleteRelative($logoRel);
                     $logoRel = $stored;
                 }
-            }
-            if ($request->input('remove_logo')) {
-                $this->certificateAssetStorage->deleteRelative(is_string($logoRel) ? $logoRel : null);
-                $logoRel = null;
             }
 
             $bgFile = $_FILES['background'] ?? null;
             if (is_array($bgFile) && ($bgFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
                 $stored = $this->certificateAssetStorage->storeUpload($tenantId, $bgFile, 'fond');
                 if ($stored !== null) {
-                    $this->certificateAssetStorage->deleteRelative(is_string($bgRel) ? $bgRel : null);
+                    $this->certificateAssetStorage->deleteRelative($bgRel);
                     $bgRel = $stored;
                 }
-            }
-            if ($request->input('remove_background')) {
-                $this->certificateAssetStorage->deleteRelative(is_string($bgRel) ? $bgRel : null);
-                $bgRel = null;
             }
 
             $layoutJson = json_encode([
@@ -843,6 +854,31 @@ class AdminTrainingController
             }
         } catch (\Throwable) {
         }
+    }
+
+    /**
+     * Retire des références en base les chemins vers des fichiers absents (copie de serveur, stockage non déployé, etc.).
+     */
+    private function pruneBrokenCertificateTemplateAssets(int $tenantId): bool
+    {
+        $row = $this->certificateTemplateRepository->findByTenantId($tenantId);
+        if (!$row) {
+            return false;
+        }
+        $logoP = trim((string) ($row['logo_relative_path'] ?? ''));
+        $bgP = trim((string) ($row['background_relative_path'] ?? ''));
+        $logoOk = $logoP === '' || $this->certificateAssetStorage->absolutePath($logoP) !== null;
+        $bgOk = $bgP === '' || $this->certificateAssetStorage->absolutePath($bgP) !== null;
+        if ($logoOk && $bgOk) {
+            return false;
+        }
+        $this->certificateTemplateRepository->updateAssetRelativePaths(
+            $tenantId,
+            $logoOk ? ($logoP !== '' ? $logoP : null) : null,
+            $bgOk ? ($bgP !== '' ? $bgP : null) : null,
+        );
+
+        return true;
     }
 
     /**

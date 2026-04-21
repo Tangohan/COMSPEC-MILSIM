@@ -151,14 +151,14 @@ $headHtml = ob_get_clean();
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen">
     <div class="lms-grain"></div>
-    <div class="relative z-10 grid min-h-screen min-w-0 grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)]">
+    <div class="relative z-10 lms-course-shell flex min-h-screen min-w-0 flex-col lg:flex-row">
         <?php
         $lmsBase = $base;
         $progressPercent = (float) ($progress['percent'] ?? 0);
         require base_path('views/training/partials/lms_course_sidebar.php');
         ?>
 
-        <div class="flex flex-col min-w-0">
+        <div class="flex min-w-0 flex-1 flex-col">
             <header class="topbar sticky top-0 z-50">
                 <div class="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
                     <a href="<?= url('formations/' . ($enrollment['course_slug'] ?? '')) ?>" class="flex items-center gap-3 group">

@@ -23,7 +23,7 @@ if ($code === '') {
     $code = 'F-' . (int) ($course['id'] ?? 0);
 }
 ?>
-<aside class="lms-dark-panel text-white p-6 lg:p-8 flex flex-col lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto">
+<aside class="lms-dark-panel w-full min-w-0 shrink-0 text-white p-6 lg:p-8 flex flex-col lg:sticky lg:top-0 lg:self-start lg:max-h-screen lg:overflow-y-auto">
     <div class="pb-6 border-b border-white/10">
         <a href="<?= htmlspecialchars($lmsBase) ?>/formations" class="text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-white">← Catalogue</a>
         <p class="text-[9px] font-black tracking-[0.35em] uppercase text-white/40 mt-4 mb-1">Parcours</p>
@@ -42,7 +42,7 @@ if ($code === '') {
         <?php endif; ?>
     </div>
 
-    <nav class="pt-6 space-y-6 flex-1">
+    <nav class="pt-6 space-y-6 flex-1 min-h-0">
         <?php foreach ($modules as $mod):
             $lessons = $mod['lessons'] ?? [];
             $quizzes = $mod['quizzes'] ?? [];

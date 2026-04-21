@@ -27,13 +27,13 @@ $currentLessonId = null;
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen overflow-x-hidden">
     <div class="lms-grain"></div>
-    <div class="relative z-10 grid min-h-screen min-w-0 grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)]">
+    <div class="relative z-10 lms-course-shell flex min-h-screen min-w-0 flex-col lg:flex-row">
         <?php
         $lmsBase = $base;
         require base_path('views/training/partials/lms_course_sidebar.php');
         ?>
 
-        <div class="flex flex-col min-w-0">
+        <div class="flex min-w-0 flex-1 flex-col">
             <header class="topbar sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
                 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-start justify-between gap-4">
                     <div>
