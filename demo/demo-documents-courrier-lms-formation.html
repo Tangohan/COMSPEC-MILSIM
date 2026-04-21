@@ -12,6 +12,8 @@
       --primary: #08203f;
       --primary-2: #123f67;
       --accent: #0ea5e9;
+      --surface: #fff;
+      --border: #cbd5e1;
     }
     * { box-sizing: border-box; }
     body {
@@ -22,27 +24,29 @@
     }
     .layout {
       display: grid;
-      grid-template-columns: 320px minmax(0, 1fr) 340px;
+      grid-template-columns: 340px minmax(0, 1fr) 360px;
       gap: 1rem;
       padding: 1rem;
       min-height: 100vh;
     }
     .panel {
-      background: #fff;
+      background: var(--surface);
       border-radius: 14px;
       box-shadow: 0 6px 24px rgba(15, 23, 42, .08);
       padding: 1rem;
     }
-    h1, h2, h3 { margin: 0 0 .6rem; }
+    h1, h2, h3, h4 { margin: 0 0 .6rem; }
     .kicker { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
     label { display:block; font-size: .82rem; color: var(--muted); margin-top:.7rem; }
     input, select, textarea {
       width: 100%;
       margin-top: .35rem;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: .55rem .65rem;
       font-size: .9rem;
+      font-family: inherit;
+      background: #fff;
     }
     button {
       border: none;
@@ -53,12 +57,13 @@
     }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-soft { background: #e2e8f0; color: #0f172a; }
+    .btn-line { border: 1px solid var(--border); background: #fff; color: #0f172a; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .8rem; }
 
     .preview {
       background: linear-gradient(140deg, var(--primary) 0%, var(--primary-2) 50%, #dbeafe 50.5%, #dbeafe 100%);
       border-radius: 14px;
-      min-height: 520px;
+      min-height: 420px;
       position: relative;
       overflow: hidden;
       color: #fff;
@@ -117,6 +122,45 @@
       object-fit: contain;
       margin-top: .6rem;
     }
+    .editor-wrap {
+      margin-top: .9rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .toolbar {
+      display: flex;
+      gap: .45rem;
+      flex-wrap: wrap;
+      padding: .55rem;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    .toolbar button {
+      padding: .35rem .55rem;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      font-size: .82rem;
+      font-weight: 600;
+    }
+    .editor {
+      min-height: 220px;
+      padding: .9rem;
+      outline: none;
+      line-height: 1.45;
+      font-size: .92rem;
+    }
+    .editor h4 { margin-top: .85rem; }
+    .chapter-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: .4rem;
+      align-items: center;
+      margin-top: .55rem;
+    }
+    .chapter-item button { padding: .4rem .5rem; }
   </style>
 </head>
 <body>
@@ -124,6 +168,13 @@
     <aside class="panel">
       <p class="kicker">Configuration</p>
       <h2>Liaison Docs / Courrier / LMS</h2>
+
+      <label>Template de document</label>
+      <select id="template">
+        <option value="pv" selected>Procès-verbal routier</option>
+        <option value="note">Note de service</option>
+        <option value="guide">Guide de formation LMS</option>
+      </select>
 
       <label>Titre</label>
       <input id="title" value="Contrôle des flux sécurité routière" />
@@ -148,32 +199,43 @@
       <label>Lien QR (fiche LMS)</label>
       <input id="qrData" value="https://comspec.local/formations/controle-des-flux" />
 
+      <label>Ajouter un chapitre au sommaire</label>
+      <div class="row" style="grid-template-columns: 1fr auto;">
+        <input id="chapterInput" placeholder="Ex: Annexes - cas complexes" style="margin-top:0;" />
+        <button class="btn-line" id="addChapterBtn" type="button">Ajouter</button>
+      </div>
+
       <div class="row">
         <button class="btn-primary" id="applyBtn">Appliquer</button>
         <button class="btn-soft" id="publishBtn">Publier v3.4</button>
       </div>
 
-      <p class="muted" style="margin-top:.8rem">Ce prototype montre : thumb personnalisable, superposition texte, QR code, historique MàJ, sommaire, pages, descriptions, sécurité et filigrane.</p>
+      <p class="muted" style="margin-top:.8rem">Templates métiers + éditeur riche + sommaire dynamique. Le HTML brut est généré automatiquement et non plus saisi manuellement.</p>
     </aside>
 
     <main class="panel">
       <p class="kicker">Preview document</p>
       <div class="preview" id="cover" data-watermark="Diffusion limitée">
-        <span class="badge">Série 37 · Fiche 37-22</span>
+        <span class="badge" id="coverBadge">Série 37 · Fiche 37-22</span>
         <h1 id="coverTitle" style="font-size:2rem;max-width:65%;line-height:1.05;">Contrôle des flux sécurité routière</h1>
         <p id="coverSubtitle" class="cover-sub">Constatation des accidents — Procès-verbal</p>
       </div>
 
       <section class="doc-meta">
         <h3>Sommaire (auto)</h3>
-        <ol class="toc">
-          <li>1) Avant-propos</li>
-          <li>2) Procédure</li>
-          <li>3) Communication des procès-verbaux</li>
-          <li>4) Fonds de garantie</li>
-          <li>5) Véhicules endommagés</li>
-        </ol>
-        <p class="muted">18 pages · Description : support de référence opérationnelle synchronisé avec les modules LMS.</p>
+        <ol class="toc" id="tocList"></ol>
+        <p class="muted" id="docDescription">18 pages · Description : support de référence opérationnelle synchronisé avec les modules LMS.</p>
+      </section>
+
+      <section class="editor-wrap">
+        <div class="toolbar">
+          <button type="button" data-cmd="bold"><strong>B</strong></button>
+          <button type="button" data-cmd="italic"><em>I</em></button>
+          <button type="button" data-cmd="insertUnorderedList">Liste</button>
+          <button type="button" data-cmd="formatBlock" data-value="h4">Titre section</button>
+          <button type="button" data-cmd="removeFormat">Nettoyer</button>
+        </div>
+        <div id="editor" class="editor" contenteditable="true"></div>
       </section>
     </main>
 
@@ -203,22 +265,87 @@
       <p class="muted">Pied de page et version numérique</p>
       <img id="qr" class="qr" alt="QR code" src="https://api.qrserver.com/v1/create-qr-code/?size=108x108&data=https%3A%2F%2Fcomspec.local%2Fformations%2Fcontrole-des-flux" />
 
+      <h3 style="margin-top:1rem">HTML généré</h3>
+      <textarea id="generatedHtml" rows="10" readonly></textarea>
       <p class="muted" style="margin-top:1rem">Actions : génération PDF, publication documentaire, audit sécurité.</p>
     </aside>
   </div>
 
   <script>
+    const templateEl = document.getElementById('template');
     const titleEl = document.getElementById('title');
     const subtitleEl = document.getElementById('subtitle');
     const watermarkEl = document.getElementById('watermark');
     const securityEl = document.getElementById('security');
     const qrDataEl = document.getElementById('qrData');
+    const chapterInputEl = document.getElementById('chapterInput');
 
     const coverTitle = document.getElementById('coverTitle');
     const coverSubtitle = document.getElementById('coverSubtitle');
     const cover = document.getElementById('cover');
+    const coverBadge = document.getElementById('coverBadge');
     const securityChip = document.getElementById('securityChip');
     const qr = document.getElementById('qr');
+    const tocList = document.getElementById('tocList');
+    const editor = document.getElementById('editor');
+    const docDescription = document.getElementById('docDescription');
+    const generatedHtml = document.getElementById('generatedHtml');
+
+    const templates = {
+      pv: {
+        badge: 'Série 37 · Fiche 37-22',
+        title: 'Contrôle des flux sécurité routière',
+        subtitle: 'Constatation des accidents — Procès-verbal',
+        description: '18 pages · Description : support de référence opérationnelle synchronisé avec les modules LMS.',
+        qrData: 'https://comspec.local/formations/controle-des-flux',
+        chapters: ['Avant-propos', 'Procédure', 'Communication des procès-verbaux', 'Fonds de garantie', 'Véhicules endommagés'],
+        content: '<h4>Contexte opérationnel</h4><p>Ce document formalise les étapes de constatation, de traçabilité et de synchronisation dans le LMS.</p><h4>Points de vigilance</h4><ul><li>Chaîne de validation commandement</li><li>Conservation des preuves documentaires</li></ul>'
+      },
+      note: {
+        badge: 'Note interne · CENOPS',
+        title: 'Directive de coordination inter-unités',
+        subtitle: 'Consignes de communication et remontée incidents',
+        description: '6 pages · Description : note courte pour circulation interne et diffusion documentaire.',
+        qrData: 'https://comspec.local/notes/coordination-inter-unites',
+        chapters: ['Objet', 'Consignes', 'Escalade', 'Suivi des actions'],
+        content: '<h4>Objet</h4><p>Uniformiser les pratiques de remontée d\'incidents et de partage des pièces jointes.</p><h4>Consignes</h4><p>Utiliser les modèles validés et respecter les niveaux de diffusion.</p>'
+      },
+      guide: {
+        badge: 'Parcours LMS · GUIDE-12',
+        title: 'Guide animateur — Procédures LMS',
+        subtitle: 'Publication des modules et vérification des acquis',
+        description: '24 pages · Description : guide pédagogique complet avec checklists de conformité.',
+        qrData: 'https://comspec.local/formations/guide-animateur-lms',
+        chapters: ['Pré-requis', 'Création du module', 'Évaluation', 'Audit & versioning', 'Annexes'],
+        content: '<h4>Pré-requis</h4><p>Vérifier la cible formation, les objectifs et les rôles d\'approbation.</p><h4>Évaluation</h4><ul><li>Quiz de validation</li><li>Mise en situation</li></ul>'
+      }
+    };
+
+    let chapters = [...templates.pv.chapters];
+
+    function renderToc() {
+      tocList.innerHTML = '';
+      chapters.forEach((chapter, index) => {
+        const li = document.createElement('li');
+        li.textContent = `${index + 1}) ${chapter}`;
+        tocList.appendChild(li);
+      });
+    }
+
+    function refreshGeneratedHtml() {
+      const safeTitle = coverTitle.textContent;
+      const safeSubtitle = coverSubtitle.textContent;
+      const html = [
+        '<article class="doc-template">',
+        `  <header><h1>${safeTitle}</h1><p>${safeSubtitle}</p></header>`,
+        '  <section class="toc">',
+        `    <ol>${chapters.map((chapter) => `<li>${chapter}</li>`).join('')}</ol>`,
+        '  </section>',
+        `  <section class="content">${editor.innerHTML}</section>`,
+        '</article>'
+      ].join('\n');
+      generatedHtml.value = html;
+    }
 
     function updatePreview() {
       coverTitle.textContent = titleEl.value.trim() || 'Titre de documentation';
@@ -228,12 +355,54 @@
 
       const data = encodeURIComponent(qrDataEl.value.trim() || 'https://comspec.local/formations');
       qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=108x108&data=${data}`;
+
+      renderToc();
+      refreshGeneratedHtml();
+    }
+
+    function applyTemplate(templateKey) {
+      const template = templates[templateKey];
+      chapters = [...template.chapters];
+      coverBadge.textContent = template.badge;
+      titleEl.value = template.title;
+      subtitleEl.value = template.subtitle;
+      docDescription.textContent = template.description;
+      qrDataEl.value = template.qrData;
+      editor.innerHTML = template.content;
+      updatePreview();
     }
 
     document.getElementById('applyBtn').addEventListener('click', updatePreview);
     document.getElementById('publishBtn').addEventListener('click', () => {
-      alert('Publication simulée : v3.5 envoyée dans DOCUMENTS et liée au parcours LMS.');
+      alert('Publication simulée : v3.5 envoyée dans DOCUMENTS, avec template verrouillé et contenu éditeur synchronisé LMS.');
     });
+
+    templateEl.addEventListener('change', (event) => {
+      applyTemplate(event.target.value);
+    });
+
+    document.getElementById('addChapterBtn').addEventListener('click', () => {
+      const value = chapterInputEl.value.trim();
+      if (!value) {
+        return;
+      }
+      chapters.push(value);
+      chapterInputEl.value = '';
+      updatePreview();
+    });
+
+    document.querySelectorAll('.toolbar button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd;
+        const value = btn.dataset.value;
+        document.execCommand(cmd, false, value);
+        refreshGeneratedHtml();
+      });
+    });
+
+    editor.addEventListener('input', refreshGeneratedHtml);
+
+    applyTemplate('pv');
   </script>
 </body>
 </html>
