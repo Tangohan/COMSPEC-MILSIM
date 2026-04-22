@@ -211,3 +211,29 @@
 .formation-doc-shell--single .formation-doc-main {
   margin-top: 0;
 }
+
+.formation-doc-subtitle {
+  margin: 0.5rem 0 0;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.formation-doc-summary {
+  margin: 0.6rem 0 0;
+  max-width: 58ch;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(203, 213, 225, 0.9);
+}
+
+.formation-doc-toc__list a {
+  color: var(--doc-accent, #0f766e);
+}
+
+.formation-doc-chapter__index {
+  color: var(--doc-accent, #0f766e);
+  font-weight: 900;
+}

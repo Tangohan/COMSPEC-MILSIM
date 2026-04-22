@@ -996,6 +996,7 @@ class TrainingController
                 'context' => 'documentation',
             ])->setStatusCode(404);
         }
+        $this->formationCustomPageRepository->incrementView((int) $row['id'], $tenantId, $userId);
         $base = rtrim(url(''), '/');
         $full = TrainingFormationCustomPageRenderer::render($row, $base);
 
