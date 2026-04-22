@@ -873,6 +873,7 @@ return function (Router $router) {
     $router->get('/formation/pages-html', [AdminTrainingCustomPageController::class, 'index'], $trainingResMw);
     $router->get('/formation/pages-html/nouvelle', [AdminTrainingCustomPageController::class, 'create'], $trainingResMw);
     $router->post('/formation/pages-html', [AdminTrainingCustomPageController::class, 'store'], $trainingResMw);
+    $router->get('/formation/pages-html/{id}/previsualiser', [AdminTrainingCustomPageController::class, 'preview'], $trainingResMw);
     $router->get('/formation/pages-html/{id}/modifier', [AdminTrainingCustomPageController::class, 'edit'], $trainingResMw);
     $router->post('/formation/pages-html/{id}/supprimer', [AdminTrainingCustomPageController::class, 'destroy'], $trainingResMw);
     $router->post('/formation/pages-html/{id}', [AdminTrainingCustomPageController::class, 'update'], $trainingResMw);

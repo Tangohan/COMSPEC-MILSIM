@@ -20,7 +20,7 @@ final class TrainingFormationCustomPageRepository
     public function listByTenant(int $tenantId, int $limit = 200): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, tenant_id, slug, title, is_published, created_at, updated_at
+            'SELECT id, tenant_id, slug, title, is_published, sections_json, created_at, updated_at
             FROM training_formation_custom_pages
             WHERE tenant_id = ?
             ORDER BY updated_at DESC
@@ -76,14 +76,15 @@ final class TrainingFormationCustomPageRepository
     {
         $stmt = $this->pdo->prepare(
             'INSERT INTO training_formation_custom_pages
-            (tenant_id, slug, title, html_body, is_published, created_by, updated_by, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+            (tenant_id, slug, title, html_body, sections_json, is_published, created_by, updated_by, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
         );
         $stmt->execute([
             $tenantId,
             $data['slug'],
             $data['title'],
             $data['html_body'],
+            array_key_exists('sections_json', $data) ? $data['sections_json'] : null,
             (int) ($data['is_published'] ?? 0),
             $data['created_by'] ?? null,
             $data['updated_by'] ?? null,
@@ -96,12 +97,16 @@ final class TrainingFormationCustomPageRepository
     {
         $fields = [];
         $params = [];
-        foreach (['slug', 'title', 'html_body', 'is_published', 'updated_by'] as $col) {
+        foreach (['slug', 'title', 'html_body', 'sections_json', 'is_published', 'updated_by'] as $col) {
             if (!array_key_exists($col, $data)) {
                 continue;
             }
             $fields[] = $col . ' = ?';
-            $params[] = $col === 'is_published' ? (int) (bool) $data[$col] : $data[$col];
+            if ($col === 'is_published') {
+                $params[] = (int) (bool) $data[$col];
+            } else {
+                $params[] = $data[$col];
+            }
         }
         if ($fields === []) {
             return true;

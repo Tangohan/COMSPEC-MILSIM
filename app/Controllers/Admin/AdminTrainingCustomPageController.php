@@ -11,10 +11,11 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingFormationCustomPageRepository;
+use App\Support\TrainingFormationCustomPageRenderer;
 use App\Support\TrainingLmsStaffAccess;
 
 /**
- * Documentations HTML autonomes (complément parcours LMS et module Documents).
+ * Documentations HTML autonomes (équivalent rédactionnel d’un parcours, style documentation, sans quiz).
  */
 final class AdminTrainingCustomPageController
 {
@@ -52,7 +53,7 @@ final class AdminTrainingCustomPageController
 
         return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.custom_pages_form',
-            'title' => 'Nouvelle documentation HTML',
+            'title' => 'Nouvelle documentation',
             'trainingAdminNav' => 'custom_pages',
             'activeNav' => 'docs_html',
             'customPage' => null,
@@ -76,8 +77,20 @@ final class AdminTrainingCustomPageController
         $title = trim((string) $request->input('title', ''));
         $slug = $this->normalizeSlug((string) $request->input('slug', ''));
         $html = (string) $request->input('html_body', '');
-        if ($title === '' || trim($html) === '' || $slug === '') {
-            Session::flash('error', 'Titre, identifiant d’URL et contenu HTML sont requis.');
+        $sectionsRes = $this->resolveSectionsPayload($request);
+        if (!$sectionsRes['ok']) {
+            Session::flash('error', $sectionsRes['error']);
+
+            return Response::redirect(training_lms_admin_url('pages-html/nouvelle'));
+        }
+        $sectionsJson = $sectionsRes['sections_json'];
+        if ($title === '' || $slug === '') {
+            Session::flash('error', 'Titre et identifiant d’URL sont requis.');
+
+            return Response::redirect(training_lms_admin_url('pages-html/nouvelle'));
+        }
+        if ($sectionsJson === null && trim($html) === '') {
+            Session::flash('error', 'Renseignez le corps HTML, ou passez en mode manuel avec au moins un chapitre.');
 
             return Response::redirect(training_lms_admin_url('pages-html/nouvelle'));
         }
@@ -90,6 +103,7 @@ final class AdminTrainingCustomPageController
             'slug' => $slug,
             'title' => $title,
             'html_body' => $html,
+            'sections_json' => $sectionsJson,
             'is_published' => (int) (bool) $request->input('is_published'),
             'created_by' => $userId > 0 ? $userId : null,
             'updated_by' => $userId > 0 ? $userId : null,
@@ -124,6 +138,25 @@ final class AdminTrainingCustomPageController
         ]);
     }
 
+    public function preview(Request $request, array $params = []): Response
+    {
+        if (!$this->canAccess()) {
+            return Response::redirect(url('formation'));
+        }
+        $tenantId = $this->tenantId();
+        $id = (int) ($params['id'] ?? 0);
+        $row = $this->pageRepository->findById($id, $tenantId);
+        if (!$row) {
+            return (new Response())->setStatusCode(404)->setBody('Documentation introuvable.');
+        }
+        $base = rtrim(url(''), '/');
+        $html = TrainingFormationCustomPageRenderer::render($row, $base);
+
+        return (new Response())
+            ->header('Content-Type', 'text/html; charset=utf-8')
+            ->setBody($html);
+    }
+
     public function update(Request $request, array $params = []): Response
     {
         if (!$this->canAccess()) {
@@ -147,8 +180,20 @@ final class AdminTrainingCustomPageController
         $title = trim((string) $request->input('title', ''));
         $slug = $this->normalizeSlug((string) $request->input('slug', ''));
         $html = (string) $request->input('html_body', '');
-        if ($title === '' || trim($html) === '' || $slug === '') {
-            Session::flash('error', 'Titre, identifiant d’URL et contenu HTML sont requis.');
+        $sectionsRes = $this->resolveSectionsPayload($request);
+        if (!$sectionsRes['ok']) {
+            Session::flash('error', $sectionsRes['error']);
+
+            return $redirect;
+        }
+        $sectionsJson = $sectionsRes['sections_json'];
+        if ($title === '' || $slug === '') {
+            Session::flash('error', 'Titre et identifiant d’URL sont requis.');
+
+            return $redirect;
+        }
+        if ($sectionsJson === null && trim($html) === '') {
+            Session::flash('error', 'Renseignez le corps HTML, ou passez en mode manuel avec au moins un chapitre.');
 
             return $redirect;
         }
@@ -161,6 +206,7 @@ final class AdminTrainingCustomPageController
             'slug' => $slug,
             'title' => $title,
             'html_body' => $html,
+            'sections_json' => $sectionsJson,
             'is_published' => (int) (bool) $request->input('is_published'),
             'updated_by' => $userId > 0 ? $userId : null,
         ]);
@@ -207,5 +253,43 @@ final class AdminTrainingCustomPageController
         $s = trim($s, '-');
 
         return $s !== '' ? substr($s, 0, 120) : '';
+    }
+
+    /**
+     * @return array{ok: bool, sections_json: ?string, error: ?string}
+     */
+    private function resolveSectionsPayload(Request $request): array
+    {
+        $mode = trim((string) $request->input('doc_structure', 'single'));
+        if ($mode !== 'handbook') {
+            return ['ok' => true, 'sections_json' => null, 'error' => null];
+        }
+        $raw = trim((string) $request->input('sections_json', ''));
+        $decoded = $raw === '' ? [] : json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return ['ok' => false, 'sections_json' => null, 'error' => 'Structure des chapitres invalide (JSON).'];
+        }
+        $normalized = [];
+        foreach ($decoded as $it) {
+            if (!is_array($it)) {
+                continue;
+            }
+            $t = trim((string) ($it['title'] ?? ''));
+            $h = (string) ($it['html'] ?? '');
+            $slug = trim((string) ($it['slug'] ?? ''));
+            if ($t === '' && trim(strip_tags($h)) === '') {
+                continue;
+            }
+            if ($t === '') {
+                $t = 'Chapitre ' . (count($normalized) + 1);
+            }
+            $normalized[] = ['title' => $t, 'slug' => $slug, 'html' => $h];
+        }
+        if ($normalized === []) {
+            return ['ok' => false, 'sections_json' => null, 'error' => 'En mode manuel, ajoutez au moins un chapitre avec du contenu.'];
+        }
+        $json = json_encode($normalized, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        return ['ok' => true, 'sections_json' => $json !== false ? $json : null, 'error' => null];
     }
 }

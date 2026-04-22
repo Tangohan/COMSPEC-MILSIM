@@ -158,7 +158,7 @@ $headHtml = ob_get_clean();
         require base_path('views/training/partials/lms_course_sidebar.php');
         ?>
 
-        <div class="flex min-w-0 flex-1 flex-col">
+        <div class="flex min-h-0 min-w-0 flex-1 flex-col">
             <header class="topbar sticky top-0 z-50">
                 <div class="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
                     <a href="<?= url('formations/' . ($enrollment['course_slug'] ?? '')) ?>" class="flex items-center gap-3 group">
@@ -177,7 +177,7 @@ $headHtml = ob_get_clean();
                 </div>
             </header>
 
-            <main class="section flex-1 py-8 px-4 sm:px-8">
+            <main class="section flex-1 min-w-0 overflow-x-hidden py-8 px-4 sm:px-8">
                 <?php if ($lessonType === 'canvas' && $canvasDeck && !empty($canvasDeck['slides'])): ?>
                 <div class="mx-auto max-w-6xl space-y-6">
                     <?php require base_path('views/training/partials/lms_canvas_mission_hero.php'); ?>

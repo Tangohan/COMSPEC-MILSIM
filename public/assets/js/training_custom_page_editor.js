@@ -102,8 +102,23 @@
   }
 
   function buildPreviewHtml() {
-    var raw = ta ? ta.value : '';
     var title = titleInput ? titleInput.value : '';
+    if (typeof window.cpHandbookIsActive === 'function' && window.cpHandbookIsActive()) {
+      if (typeof window.cpBuildHandbookPreviewHtml === 'function') {
+        var hb = window.cpBuildHandbookPreviewHtml();
+        if (livretCb && livretCb.checked) {
+          try {
+            var inner = '';
+            var p = new DOMParser();
+            var d = p.parseFromString(hb, 'text/html');
+            if (d && d.body) inner = d.body.innerHTML;
+            if (inner) return buildLivretPreviewHtml(inner, title);
+          } catch (e1) {}
+        }
+        return hb;
+      }
+    }
+    var raw = ta ? ta.value : '';
     if (livretCb && livretCb.checked) {
       return buildLivretPreviewHtml(raw, title);
     }
@@ -112,6 +127,12 @@
 
   function updateBadge() {
     if (!badge || !ta) return;
+    if (typeof window.cpHandbookIsActive === 'function' && window.cpHandbookIsActive()) {
+      badge.textContent = 'Manuel à chapitres';
+      badge.className =
+        'inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[11px] font-bold tracking-wide text-violet-900';
+      return;
+    }
     if (isFullDocument(ta.value)) {
       badge.textContent = 'Page complète (titre et styles inclus)';
       badge.className =

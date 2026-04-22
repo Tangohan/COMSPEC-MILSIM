@@ -23,8 +23,8 @@ if ($code === '') {
     $code = 'F-' . (int) ($course['id'] ?? 0);
 }
 ?>
-<aside class="lms-dark-panel w-full min-w-0 shrink-0 text-white p-6 lg:p-8 flex flex-col lg:sticky lg:top-0 lg:self-start lg:max-h-screen lg:overflow-y-auto">
-    <div class="pb-6 border-b border-white/10">
+<aside class="lms-dark-panel w-full min-w-0 shrink-0 text-white p-6 lg:p-8 flex flex-col lg:sticky lg:top-0 lg:self-start lg:max-h-screen lg:overflow-hidden">
+    <div class="shrink-0 pb-6 border-b border-white/10">
         <a href="<?= htmlspecialchars($lmsBase) ?>/formations" class="text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-white">← Catalogue</a>
         <p class="text-[9px] font-black tracking-[0.35em] uppercase text-white/40 mt-4 mb-1">Parcours</p>
         <h1 class="text-lg font-black tracking-tight uppercase leading-tight"><?= htmlspecialchars((string) ($course['title'] ?? '')) ?></h1>
@@ -42,7 +42,7 @@ if ($code === '') {
         <?php endif; ?>
     </div>
 
-    <nav class="pt-6 space-y-6 flex-1 min-h-0">
+    <nav class="lms-sidebar-scroll min-h-0 flex-1 overscroll-contain pt-6 space-y-6" aria-label="Modules et leçons du parcours">
         <?php foreach ($modules as $mod):
             $lessons = $mod['lessons'] ?? [];
             $quizzes = $mod['quizzes'] ?? [];
@@ -141,15 +141,16 @@ if ($code === '') {
         <?php endif; ?>
     </nav>
 
+    <div class="shrink-0 space-y-6 border-t border-white/10 pt-6 mt-6">
     <?php if ($enrollment && $courseSlug !== '' && !$lmsHideEchangesSidebarLink): ?>
-    <div class="mt-6 pt-4 border-t border-white/10">
+    <div>
         <a href="<?= htmlspecialchars($lmsBase) ?>/formations/<?= rawurlencode($courseSlug) ?>/echanges" class="block rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-emerald-300/95 border border-emerald-500/25 hover:bg-emerald-500/10">Avis &amp; échanges</a>
         <p class="text-[9px] text-white/35 mt-2 leading-snug">Note, questions et commentaires — fin de parcours</p>
     </div>
     <?php endif; ?>
 
     <?php if ($enrollment && $canWithdrawEnrollment && $courseSlug !== ''): ?>
-    <div class="mt-6 pt-4 border-t border-white/10">
+    <div>
         <form method="post" action="<?= htmlspecialchars($lmsBase) ?>/formations/inscription/annuler" class="space-y-2" data-ui-confirm="1" data-ui-confirm-title="Annuler l’inscription" data-ui-confirm-body="Annuler votre inscription à ce parcours ? Vous pourrez vous réinscrire depuis le catalogue si les conditions le permettent.">
             <?= \App\Core\Csrf::field() ?>
             <input type="hidden" name="enrollment_id" value="<?= (int) $enrollment['id'] ?>">
@@ -161,7 +162,8 @@ if ($code === '') {
     </div>
     <?php endif; ?>
 
-    <div class="mt-8 pt-6 border-t border-white/10">
+    <div class="pt-2 border-t border-white/10">
         <a href="<?= htmlspecialchars($lmsBase) ?>/dashboard" class="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white">Dashboard</a>
+    </div>
     </div>
 </aside>

@@ -44,7 +44,7 @@ $publicationDateMaj = static function (?string $raw): string {
             <ul class="space-y-2 text-sm">
                 <li><a href="<?= htmlspecialchars(training_studio_url()) ?>" class="font-semibold text-emerald-700 hover:underline">Studio LMS</a> — modules, leçons et structure du parcours.</li>
                 <li><a href="<?= htmlspecialchars(training_lms_admin_url('courses')) ?>" class="font-semibold text-emerald-700 hover:underline">Catalogue (édition)</a> — visibilité, vitrine et métadonnées.</li>
-                <li><a href="<?= htmlspecialchars(training_lms_admin_url('pages-html')) ?>" class="font-semibold text-emerald-700 hover:underline">Documentations HTML</a> — livrets ou guides autonomes (<code class="text-xs bg-white px-1 rounded">/formations/page/…</code>).</li>
+                <li><a href="<?= htmlspecialchars(training_lms_admin_url('pages-html')) ?>" class="font-semibold text-emerald-700 hover:underline">Documentations HTML</a> — manuels publiables (page unique ou chapitres, sans quiz) sur <code class="text-xs bg-white px-1 rounded">/formations/page/…</code>.</li>
                 <li><a href="<?= htmlspecialchars(url('documents/gestion/ajout')) ?>" class="font-semibold text-emerald-700 hover:underline">Ajouter un document</a> — bibliothèque communautaire (selon vos droits documents).</li>
                 <li><a href="<?= htmlspecialchars(url('documents/gestion')) ?>" class="font-semibold text-emerald-700 hover:underline">Gestion documentaire</a> — versions et cycle de vie.</li>
                 <li><a href="<?= htmlspecialchars(url('courrier/editor')) ?>" class="font-semibold text-emerald-700 hover:underline">Éditeur courrier</a> — gabarits institutionnels liés aux publications.</li>

@@ -33,6 +33,7 @@ use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\HrCharterRepository;
 use App\Repositories\TrainingFormationCustomPageRepository;
+use App\Support\TrainingFormationCustomPageRenderer;
 use App\Core\Csrf;
 use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
@@ -995,17 +996,8 @@ class TrainingController
                 'context' => 'documentation',
             ])->setStatusCode(404);
         }
-        $html = trim((string) ($row['html_body'] ?? ''));
-        $isFullDoc = preg_match('/^\s*<!DOCTYPE\s+html/i', $html) === 1
-            || preg_match('/^\s*<html[\s>]/i', $html) === 1;
-        if ($isFullDoc) {
-            $full = $html;
-        } else {
-            $titleEsc = htmlspecialchars((string) ($row['title'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $full = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
-                . '<meta name="viewport" content="width=device-width, initial-scale=1">'
-                . '<title>' . $titleEsc . '</title></head><body>' . $html . '</body></html>';
-        }
+        $base = rtrim(url(''), '/');
+        $full = TrainingFormationCustomPageRenderer::render($row, $base);
 
         return (new Response())
             ->header('Content-Type', 'text/html; charset=utf-8')

@@ -13,6 +13,7 @@ return static function (PDO $pdo): void {
             slug VARCHAR(120) NOT NULL,
             title VARCHAR(255) NOT NULL,
             html_body MEDIUMTEXT NOT NULL,
+            sections_json LONGTEXT NULL DEFAULT NULL,
             is_published TINYINT(1) NOT NULL DEFAULT 0,
             created_by INT UNSIGNED NULL,
             updated_by INT UNSIGNED NULL,
@@ -23,4 +24,13 @@ return static function (PDO $pdo): void {
             CONSTRAINT fk_training_custom_page_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
+    try {
+        $pdo->exec(
+            'ALTER TABLE training_formation_custom_pages ADD COLUMN sections_json LONGTEXT NULL DEFAULT NULL AFTER html_body'
+        );
+    } catch (\PDOException $e) {
+        if (!str_contains(strtolower($e->getMessage()), 'duplicate column')) {
+            throw $e;
+        }
+    }
 };
