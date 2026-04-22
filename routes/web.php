@@ -875,8 +875,10 @@ return function (Router $router) {
     $router->post('/formation/pages-html', [AdminTrainingCustomPageController::class, 'store'], $trainingResMw);
     $router->get('/formation/pages-html/{id}/previsualiser', [AdminTrainingCustomPageController::class, 'preview'], $trainingResMw);
     $router->get('/formation/pages-html/{id}/modifier', [AdminTrainingCustomPageController::class, 'edit'], $trainingResMw);
-    $router->post('/formation/pages-html/{id}/supprimer', [AdminTrainingCustomPageController::class, 'destroy'], $trainingResMw);
     $router->post('/formation/pages-html/{id}', [AdminTrainingCustomPageController::class, 'update'], $trainingResMw);
+    $router->post('/formation/pages-html/{id}/dupliquer', [AdminTrainingCustomPageController::class, 'duplicate'], $trainingResMw);
+    $router->post('/formation/pages-html/{id}/versions/{revisionId}/restaurer', [AdminTrainingCustomPageController::class, 'restoreRevision'], $trainingResMw);
+    $router->post('/formation/pages-html/{id}/supprimer', [AdminTrainingCustomPageController::class, 'destroy'], $trainingResMw);
     $router->get('/formation', [AdminTrainingController::class, 'dashboard'], $trainingResMw);
 
     $router->get('/formation/competences/commandement', [TrainingCompetencyController::class, 'commandCenter'], $trainingResMw);

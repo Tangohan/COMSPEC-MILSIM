@@ -749,6 +749,9 @@ class Container
             \App\Repositories\TrainingRepository::class => new \App\Repositories\TrainingRepository(),
             \App\Repositories\TrainingCourseRepository::class => new \App\Repositories\TrainingCourseRepository(),
             \App\Repositories\TrainingFormationCustomPageRepository::class => new \App\Repositories\TrainingFormationCustomPageRepository(),
+            \App\Services\Training\TrainingHtmlPageService::class => new \App\Services\Training\TrainingHtmlPageService(
+                self::get(\App\Repositories\TrainingFormationCustomPageRepository::class),
+            ),
             \App\Repositories\TenantCommunityFeedRepository::class => new \App\Repositories\TenantCommunityFeedRepository(),
             \App\Repositories\TrainingStaffPingRepository::class => new \App\Repositories\TrainingStaffPingRepository(),
             \App\Repositories\TrainingModuleRepository::class => new \App\Repositories\TrainingModuleRepository(),
@@ -1133,7 +1136,8 @@ class Container
             ),
             \App\Controllers\Admin\AdminTrainingCustomPageController::class => new \App\Controllers\Admin\AdminTrainingCustomPageController(
                 self::get(\App\Repositories\TrainingFormationCustomPageRepository::class),
-                self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(\App\Services\Training\TrainingHtmlPageService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
             ),
             \App\Controllers\Api\TrainingApiController::class => new \App\Controllers\Api\TrainingApiController(
                 self::get(\App\Services\Training\TrainingService::class),

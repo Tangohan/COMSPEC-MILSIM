@@ -288,3 +288,50 @@
   pushPreview();
 })();
 
+
+// DOC HTML studio: autosave local + indicateur non sauvegardé.
+(function(){
+  var form = document.getElementById('cp-main-form');
+  if(!form){ return; }
+  var pageKey = 'cp_draft_' + (window.location.pathname || 'new');
+  var fields = form.querySelectorAll('input[name], textarea[name], select[name]');
+  var dirty = false;
+  var bar = document.createElement('p');
+  bar.className = 'text-xs text-slate-500 mt-1';
+  bar.textContent = 'État: sauvegardé';
+  form.prepend(bar);
+
+  function serialize(){
+    var payload={};
+    fields.forEach(function(f){
+      if(f.type==='checkbox'){ payload[f.name]=f.checked ? '1' : '0'; return; }
+      if(f.type==='radio'){ if(f.checked){ payload[f.name]=f.value; } return; }
+      payload[f.name]=f.value;
+    });
+    return payload;
+  }
+  function restore(){
+    try {
+      var raw = localStorage.getItem(pageKey);
+      if(!raw){ return; }
+      var payload = JSON.parse(raw);
+      Object.keys(payload).forEach(function(name){
+        var list=form.querySelectorAll('[name="'+name+'"]');
+        list.forEach(function(f){
+          if(f.type==='checkbox'){ f.checked = payload[name] === '1'; }
+          else if(f.type==='radio'){ f.checked = f.value === payload[name]; }
+          else { f.value = payload[name]; }
+        });
+      });
+      bar.textContent = 'État: brouillon local récupéré';
+    } catch(e){}
+  }
+  function autosave(){
+    try{ localStorage.setItem(pageKey, JSON.stringify(serialize())); dirty=false; bar.textContent='État: brouillon local auto-sauvegardé'; }catch(e){}
+  }
+  restore();
+  fields.forEach(function(f){ f.addEventListener('input', function(){ dirty=true; bar.textContent='État: modifications non enregistrées'; }); });
+  setInterval(function(){ if(dirty){ autosave(); } }, 8000);
+  form.addEventListener('submit', function(){ try{ localStorage.removeItem(pageKey);}catch(e){} bar.textContent='État: envoi en cours…'; });
+  window.addEventListener('beforeunload', function(e){ if(!dirty){ return; } e.preventDefault(); e.returnValue=''; });
+})();
