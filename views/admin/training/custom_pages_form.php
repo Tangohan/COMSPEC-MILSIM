@@ -10,6 +10,7 @@ $isHandbook = $chaptersInit !== [];
 $sectionsJsonInitial = json_encode($chaptersInit, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_APOS);
 $docCssPublic = rtrim(url(''), '/') . '/assets/css/training_formation_doc.css';
 ?>
+<link rel="stylesheet" href="<?= htmlspecialchars(url('assets/css/training_custom_page_editor.css'), ENT_QUOTES, 'UTF-8') ?>">
 <div id="cp-editor-root" data-initial-handbook="<?= $isHandbook ? '1' : '0' ?>">
 <section class="tc-panel p-6 md:p-8">
     <p class="tc-kicker">Pilotage des formations</p>
@@ -95,8 +96,24 @@ $docCssPublic = rtrim(url(''), '/') . '/assets/css/training_formation_doc.css';
                                 </div>
                                 <input type="text" class="cp-chapter-title w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" maxlength="255" value="<?= $ct ?>" placeholder="Titre affiché dans le sommaire">
                                 <input type="hidden" class="cp-chapter-slug" value="<?= $csl ?>">
-                                <label class="text-[10px] font-black uppercase tracking-wide text-slate-500">Corps HTML du chapitre</label>
-                                <textarea class="cp-chapter-html w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm font-mono min-h-[10rem]" rows="10" placeholder="Balises HTML autorisées (titres, listes, tableaux, liens…)"><?= $chHtml ?></textarea>
+                                <div data-cp-snippet-context="chapter" class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase tracking-wide text-slate-500">Corps HTML du chapitre</label>
+                                    <p class="text-[11px] text-slate-500 leading-relaxed">Composants et éditeur visuel optionnel pour ce chapitre uniquement.</p>
+                                    <div class="cp-snippet-bar">
+                                        <span class="cp-snippet-bar__label">Insérer</span>
+                                        <button type="button" class="cp-snippet-btn" data-cp-snippet="encadre">Encadré</button>
+                                        <button type="button" class="cp-snippet-btn" data-cp-snippet="alerte">Alerte</button>
+                                        <button type="button" class="cp-snippet-btn" data-cp-snippet="deuxcolonnes">2 colonnes</button>
+                                        <button type="button" class="cp-snippet-btn" data-cp-snippet="liste">Liste num.</button>
+                                        <button type="button" class="cp-snippet-btn" data-cp-snippet="tableau">Tableau</button>
+                                        <button type="button" class="cp-snippet-btn" data-cp-snippet="lien">Lien</button>
+                                    </div>
+                                    <div class="cp-preset-row">
+                                        <button type="button" class="cp-snippet-btn" data-cp-wrap-prose>Envelopper la sélection</button>
+                                        <button type="button" class="cp-visual-toggle" data-cp-chapter-visual-toggle aria-pressed="false">Éditeur visuel</button>
+                                    </div>
+                                    <textarea class="cp-chapter-html w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm font-mono min-h-[10rem]" rows="10" placeholder="Balises HTML autorisées (titres, listes, tableaux, liens…)"><?= $chHtml ?></textarea>
+                                </div>
                             </div>
                             <?php endforeach; ?>
                         </div>
@@ -114,31 +131,61 @@ $docCssPublic = rtrim(url(''), '/') . '/assets/css/training_formation_doc.css';
                             <span class="font-medium">Aperçu façon feuillet</span>
                         </label>
                     </div>
-                <div id="cp-mobile-tablist" class="flex gap-2 md:hidden mb-1" role="tablist" aria-label="Mode d’affichage de l’éditeur">
-                    <button type="button" class="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-black uppercase tracking-wide transition-colors bg-white shadow-sm text-slate-900" data-cp-tab="code" role="tab" aria-selected="true">Code source</button>
-                    <button type="button" class="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-black uppercase tracking-wide transition-colors text-slate-500" data-cp-tab="preview" role="tab" aria-selected="false">Aperçu</button>
-                </div>
+                    <div id="cp-mobile-tablist" class="flex gap-2 md:hidden mb-1" role="tablist" aria-label="Mode d’affichage de l’éditeur">
+                        <button type="button" class="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-black uppercase tracking-wide transition-colors bg-white shadow-sm text-slate-900" data-cp-tab="code" role="tab" aria-selected="true">Code source</button>
+                        <button type="button" class="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-black uppercase tracking-wide transition-colors text-slate-500" data-cp-tab="preview" role="tab" aria-selected="false">Aperçu</button>
+                    </div>
                 </div>
 
-                <div class="grid gap-4 md:grid-cols-2 md:gap-5">
-                    <div id="cp-panel-code" class="min-w-0 space-y-2">
-                        <div class="flex items-center justify-between gap-2">
-                            <label class="text-xs font-black uppercase tracking-wide text-slate-700" for="cp-html" id="cp-html-label">Corps HTML</label>
+                <div id="cp-editor-workspace" class="cp-editor-workspace p-4 md:p-5">
+                    <div class="grid gap-4 md:grid-cols-2 md:gap-5 items-stretch">
+                        <div id="cp-panel-code" class="cp-editor-card min-w-0 flex flex-col gap-2">
+                            <div class="cp-editor-card__head">
+                                <p class="cp-editor-card__title">Source</p>
+                                <details class="text-[11px] text-slate-600 max-w-[15rem] text-right">
+                                    <summary class="cursor-pointer font-semibold text-slate-700 list-none [&::-webkit-details-marker]:hidden">Aide</summary>
+                                    <p class="mt-2 text-left leading-relaxed border-t border-slate-100 pt-2">Les boutons insèrent du HTML aligné sur le thème public. Activez l’éditeur visuel seulement si vous en avez besoin ; le HTML enregistré reste celui du champ.</p>
+                                </details>
+                            </div>
+                            <p class="text-[11px] text-slate-500 leading-relaxed" id="cp-html-hint">Mode une page : tout le contenu ici. Mode manuel : texte d’introduction optionnel avant les chapitres.</p>
+                            <div data-cp-snippet-context="intro" class="space-y-2 flex flex-col flex-1 min-h-0">
+                                <div class="cp-snippet-bar">
+                                    <span class="cp-snippet-bar__label">Insérer</span>
+                                    <button type="button" class="cp-snippet-btn" data-cp-snippet="encadre">Encadré</button>
+                                    <button type="button" class="cp-snippet-btn" data-cp-snippet="alerte">Alerte</button>
+                                    <button type="button" class="cp-snippet-btn" data-cp-snippet="deuxcolonnes">2 colonnes</button>
+                                    <button type="button" class="cp-snippet-btn" data-cp-snippet="liste">Liste num.</button>
+                                    <button type="button" class="cp-snippet-btn" data-cp-snippet="tableau">Tableau</button>
+                                    <button type="button" class="cp-snippet-btn" data-cp-snippet="lien">Lien</button>
+                                </div>
+                                <div class="cp-preset-row">
+                                    <label class="sr-only" for="cp-preset-select">Modèle à insérer</label>
+                                    <select id="cp-preset-select" class="min-w-[11rem]">
+                                        <option value="">— Insérer un modèle —</option>
+                                        <option value="page_theme">Page unique thémée</option>
+                                        <option value="chapitre_type">Chapitre type</option>
+                                        <option value="sommaire_static">Sommaire manuel (HTML)</option>
+                                    </select>
+                                    <button type="button" id="cp-preset-apply" class="cp-snippet-btn">Insérer le modèle</button>
+                                    <button type="button" class="cp-snippet-btn" data-cp-wrap-prose>Envelopper la sélection</button>
+                                    <button type="button" id="cp-intro-visual-toggle" class="cp-visual-toggle" aria-pressed="false">Éditeur visuel</button>
+                                </div>
+                                <label class="sr-only" for="cp-html" id="cp-html-label">Corps HTML</label>
+                                <textarea name="html_body" id="cp-html" rows="20" class="w-full min-h-[22rem] md:min-h-[28rem] flex-1 rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-3 text-sm font-mono leading-relaxed text-slate-900 shadow-inner focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400"><?= htmlspecialchars((string) ($page['html_body'] ?? '')) ?></textarea>
+                            </div>
                         </div>
-                        <p class="text-[11px] text-slate-500 leading-relaxed" id="cp-html-hint">Mode une page : tout le contenu ici. Mode manuel : texte d’introduction optionnel avant les chapitres.</p>
-                        <textarea name="html_body" id="cp-html" rows="20" class="w-full min-h-[22rem] md:min-h-[32rem] rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-3 text-sm font-mono leading-relaxed text-slate-900 shadow-inner focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400"><?= htmlspecialchars((string) ($page['html_body'] ?? '')) ?></textarea>
-                    </div>
-                    <div id="cp-panel-preview" class="min-w-0 flex flex-col gap-2 hidden md:flex">
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <span class="text-xs font-black uppercase tracking-wide text-slate-700">Aperçu</span>
-                            <button type="button" id="cp-open-preview-tab" class="text-xs font-bold text-emerald-700 hover:underline bg-transparent border-0 cursor-pointer p-0">
-                                Ouvrir l’aperçu dans un nouvel onglet
-                            </button>
+                        <div id="cp-panel-preview" class="cp-editor-card min-w-0 flex flex-col gap-2 hidden md:flex">
+                            <div class="cp-editor-card__head">
+                                <p class="cp-editor-card__title">Rendu</p>
+                                <button type="button" id="cp-open-preview-tab" class="text-xs font-bold text-emerald-700 hover:underline bg-transparent border-0 cursor-pointer p-0 shrink-0">
+                                    Ouvrir dans un nouvel onglet
+                                </button>
+                            </div>
+                            <div class="relative flex-1 min-h-[22rem] md:min-h-[28rem] rounded-xl border border-slate-200 bg-slate-100 overflow-hidden shadow-inner">
+                                <iframe id="cp-preview-frame" title="Aperçu du contenu" class="absolute inset-0 w-full h-full bg-white" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads"></iframe>
+                            </div>
+                            <p class="text-[11px] text-slate-500 leading-relaxed">Ne collez que du contenu de confiance : le HTML est enregistré tel quel. Prévisualisation complète (y compris brouillon) : lien « Prévisualiser » dans la liste.</p>
                         </div>
-                        <div class="relative flex-1 min-h-[22rem] md:min-h-[32rem] rounded-xl border border-slate-200 bg-slate-100 overflow-hidden shadow-inner">
-                            <iframe id="cp-preview-frame" title="Aperçu du contenu" class="absolute inset-0 w-full h-full bg-white" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads"></iframe>
-                        </div>
-                        <p class="text-[11px] text-slate-500 leading-relaxed">Ne collez que du contenu de confiance : le HTML est enregistré tel quel. Prévisualisation complète (y compris brouillon) : lien « Prévisualiser » dans la liste.</p>
                     </div>
                 </div>
             </div>
@@ -163,8 +210,24 @@ $docCssPublic = rtrim(url(''), '/') . '/assets/css/training_formation_doc.css';
         </div>
         <input type="text" class="cp-chapter-title w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" maxlength="255" value="" placeholder="Titre affiché dans le sommaire">
         <input type="hidden" class="cp-chapter-slug" value="">
-        <label class="text-[10px] font-black uppercase tracking-wide text-slate-500">Corps HTML du chapitre</label>
-        <textarea class="cp-chapter-html w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm font-mono min-h-[10rem]" rows="10" placeholder="Balises HTML autorisées (titres, listes, tableaux, liens…)"></textarea>
+        <div data-cp-snippet-context="chapter" class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-wide text-slate-500">Corps HTML du chapitre</label>
+            <p class="text-[11px] text-slate-500 leading-relaxed">Composants et éditeur visuel optionnel pour ce chapitre uniquement.</p>
+            <div class="cp-snippet-bar">
+                <span class="cp-snippet-bar__label">Insérer</span>
+                <button type="button" class="cp-snippet-btn" data-cp-snippet="encadre">Encadré</button>
+                <button type="button" class="cp-snippet-btn" data-cp-snippet="alerte">Alerte</button>
+                <button type="button" class="cp-snippet-btn" data-cp-snippet="deuxcolonnes">2 colonnes</button>
+                <button type="button" class="cp-snippet-btn" data-cp-snippet="liste">Liste num.</button>
+                <button type="button" class="cp-snippet-btn" data-cp-snippet="tableau">Tableau</button>
+                <button type="button" class="cp-snippet-btn" data-cp-snippet="lien">Lien</button>
+            </div>
+            <div class="cp-preset-row">
+                <button type="button" class="cp-snippet-btn" data-cp-wrap-prose>Envelopper la sélection</button>
+                <button type="button" class="cp-visual-toggle" data-cp-chapter-visual-toggle aria-pressed="false">Éditeur visuel</button>
+            </div>
+            <textarea class="cp-chapter-html w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm font-mono min-h-[10rem]" rows="10" placeholder="Balises HTML autorisées (titres, listes, tableaux, liens…)"></textarea>
+        </div>
     </div>
 </template>
 </div>
@@ -180,3 +243,4 @@ window.cpDocCssHref = <?= json_encode($docCssPublic, JSON_HEX_TAG | JSON_HEX_APO
 </script>
 <script src="<?= htmlspecialchars(url('assets/js/training_custom_page_handbook.js')) ?>" defer></script>
 <script src="<?= htmlspecialchars(url('assets/js/training_custom_page_editor.js')) ?>" defer></script>
+<script src="<?= htmlspecialchars(url('assets/js/training_custom_page_rich.js')) ?>" defer></script>

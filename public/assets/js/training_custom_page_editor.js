@@ -33,6 +33,38 @@
     return /^\s*<!DOCTYPE\s+html/i.test(t) || /^\s*<html[\s>]/i.test(t);
   }
 
+  function docThemeFontLink() {
+    return (
+      '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&amp;family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&amp;display=swap">'
+    );
+  }
+
+  function docThemeCssLink() {
+    var href = typeof window.cpDocCssHref === 'string' ? window.cpDocCssHref : '';
+    if (!href) return '';
+    var esc = href.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    return '<link rel="stylesheet" href="' + esc + '">';
+  }
+
+  function docThemeHead() {
+    return docThemeFontLink() + docThemeCssLink();
+  }
+
+  function wrapFragmentWithDocShell(innerHtml, title) {
+    var t = escapeTitle(title);
+    return (
+      '<div class="formation-doc-shell formation-doc-shell--single">' +
+      '<header class="formation-doc-header"><div class="formation-doc-header__inner">' +
+      '<p class="formation-doc-kicker">Documentation</p>' +
+      '<h1 class="formation-doc-title">' +
+      t +
+      '</h1></div></header>' +
+      '<main class="formation-doc-main"><article class="formation-doc-prose">' +
+      innerHtml +
+      '</article></main></div>'
+    );
+  }
+
   function livretHeadInjection() {
     return (
       '<style id="cp-livret-styles">' +
@@ -53,13 +85,16 @@
   }
 
   function wrapBodyFromFragment(innerHtml, title) {
+    var bodyInner = wrapFragmentWithDocShell(innerHtml, title);
     return (
       '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">' +
       '<meta name="viewport" content="width=device-width, initial-scale=1">' +
       '<title>' +
       escapeTitle(title) +
-      '</title></head><body>' +
-      innerHtml +
+      '</title>' +
+      docThemeHead() +
+      '</head><body class="formation-doc-body">' +
+      bodyInner +
       '</body></html>'
     );
   }
@@ -77,19 +112,22 @@
 
   function buildLivretPreviewHtml(source, title) {
     var inner = isFullDocument(source) ? extractBodyInner(source) : source;
+    var innerThemed =
+      isFullDocument(source) ? inner : '<div class="formation-doc-prose">' + inner + '</div>';
     var wrapped =
       '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">' +
       '<meta name="viewport" content="width=device-width, initial-scale=1">' +
       '<title>' +
       escapeTitle(title) +
       '</title>' +
+      docThemeHead() +
       livretHeadInjection() +
       '</head><body>' +
       '<div class="cp-livret-watermark" aria-hidden="true">Aperçu</div>' +
       '<div class="cp-livret-stage"><div class="cp-livret-sheet">' +
       '<div class="cp-livret-topbar">Documentation — lecture à l’écran</div>' +
       '<div class="cp-livret-body">' +
-      inner +
+      innerThemed +
       '</div></div></div></body></html>';
     return wrapped;
   }

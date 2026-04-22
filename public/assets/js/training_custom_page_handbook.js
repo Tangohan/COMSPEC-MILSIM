@@ -45,7 +45,11 @@
       out.push({
         title: ti ? ti.value : '',
         slug: sl ? sl.value : '',
-        html: ta ? ta.value : ''
+        html: ta
+          ? typeof window.cpGetTextareaValue === 'function'
+            ? window.cpGetTextareaValue(ta)
+            : ta.value
+          : ''
       });
     });
     return out;
@@ -93,6 +97,9 @@
     }
     chaptersRoot.appendChild(node);
     bindRow(node);
+    if (typeof window.cpBindChapterRow === 'function') {
+      window.cpBindChapterRow(node);
+    }
     syncHiddenJson();
     introTa && introTa.dispatchEvent(new Event('input', { bubbles: true }));
   }
@@ -100,6 +107,10 @@
   function bindRow(row) {
     row.querySelectorAll('[data-cp-chapter-remove]').forEach(function (btn) {
       btn.addEventListener('click', function () {
+        var taRm = row.querySelector('.cp-chapter-html');
+        if (taRm && typeof window.cpDestroyChapterEditor === 'function') {
+          window.cpDestroyChapterEditor(taRm);
+        }
         row.remove();
         syncHiddenJson();
         introTa && introTa.dispatchEvent(new Event('input', { bubbles: true }));
@@ -139,7 +150,12 @@
 
   window.cpBuildHandbookPreviewHtml = function () {
     var title = titleInput ? titleInput.value : '';
-    var intro = introTa ? introTa.value : '';
+    var intro =
+      introTa && typeof window.cpGetTextareaValue === 'function'
+        ? window.cpGetTextareaValue(introTa)
+        : introTa
+          ? introTa.value
+          : '';
     var chapters = collectChapters();
     var toc = '<nav class="formation-doc-toc" aria-label="Sommaire"><p class="formation-doc-toc__label">Sommaire</p><ol class="formation-doc-toc__list">';
     var main = '<main class="formation-doc-main formation-doc-main--book">';
@@ -200,7 +216,12 @@
   }
 
   if (chaptersRoot) {
-    chaptersRoot.querySelectorAll('.cp-chapter').forEach(bindRow);
+    chaptersRoot.querySelectorAll('.cp-chapter').forEach(function (row) {
+      bindRow(row);
+      if (typeof window.cpBindChapterRow === 'function') {
+        window.cpBindChapterRow(row);
+      }
+    });
   }
 
   radios.forEach(function (r) {
