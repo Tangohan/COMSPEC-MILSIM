@@ -36,6 +36,7 @@ class Application
             new \App\Middleware\SecurityHeadersMiddleware(),
             new \App\Middleware\RateLimitMiddleware(),
             new \App\Middleware\CsrfPostMiddleware(),
+            \App\Core\Container::get(\App\Middleware\DemoNdaGateMiddleware::class),
         ];
         foreach (array_reverse($global) as $mw) {
             $next = $runner;

@@ -30,7 +30,7 @@ $defaultAccent = 'slate';
                 <div class="flex min-w-0 shrink-0 items-center overflow-hidden" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
                     <a href="<?= htmlspecialchars($nav['brand']['href']) ?>"
                        class="text-xl font-black tracking-tight text-slate-900 transition-colors hover:text-sky-700 focus:outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:ring-offset-2">
-                        ATHENA <span class="text-sky-600">SI</span>
+                        Athena
                     </a>
                 </div>
 

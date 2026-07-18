@@ -3,6 +3,7 @@
 .env.local
 .env.*.local
 app/Config/database.local.php
+config/cdn_libraries.local.php
 /storage/logs/*
 !/storage/logs/.gitkeep
 /storage/cache/*

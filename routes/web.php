@@ -117,8 +117,20 @@ use App\Controllers\Web\CommunityEventsController;
 use App\Controllers\Web\PointageController;
 use App\Controllers\Web\PortalSearchController;
 use App\Controllers\Web\ActionCenterController;
+use App\Controllers\Web\InboxController;
+use App\Controllers\Web\OnboardingController;
+use App\Controllers\Web\C2Controller;
+use App\Controllers\Web\AtakFirstLinkController;
+use App\Controllers\Web\AssistantController;
+use App\Controllers\Web\GamificationController;
+use App\Controllers\Web\WarRoomController;
+use App\Controllers\Web\UnitTemplatesController;
+use App\Controllers\Web\FederationController;
+use App\Controllers\Web\TrainingWizardController;
 use App\Controllers\Web\DocumentationController;
 use App\Controllers\Web\LegalController;
+use App\Controllers\Web\DemoNdaController;
+use App\Controllers\Admin\System\SystemDemoNdaController;
 use App\Controllers\Web\DossierOperateurController;
 use App\Controllers\Web\TenantMessagesController;
 use App\Controllers\Admin\Organization\InvitationAdminController;
@@ -186,6 +198,8 @@ return function (Router $router) {
     $router->post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
     $router->get('/newsletter/confirm', [NewsletterController::class, 'confirm']);
     $router->get('/newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe']);
+    $router->get('/legal', [LegalController::class, 'site']);
+    $router->get('/legal/site', [LegalController::class, 'site']);
     $router->get('/donnees-personnelles', [LegalController::class, 'privacy']);
     $router->get('/cookies', [LegalController::class, 'cookies']);
     $router->get('/mentions-legales', [LegalController::class, 'legalNotice']);
@@ -193,6 +207,9 @@ return function (Router $router) {
     $router->get('/cgv', [LegalController::class, 'sales']);
     $router->get('/demande-donnees', [LegalController::class, 'gdprRequestForm']);
     $router->post('/demande-donnees', [LegalController::class, 'gdprRequestSubmit']);
+
+    $router->get('/acces-demonstration', [DemoNdaController::class, 'show']);
+    $router->post('/acces-demonstration', [DemoNdaController::class, 'submit']);
     // Communautés multi-tenant (slug) + Stripe (sans auth)
     $router->get('/c/{slug}/avis/{avis}', [CommunityController::class, 'recruitmentOpeningShow']);
     $router->get('/c/{slug}', [CommunityController::class, 'show']);
@@ -293,6 +310,19 @@ return function (Router $router) {
     $router->get('/pointage', [PointageController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/pointage/rsvp', [PointageController::class, 'rsvp'], [AuthMiddleware::class]);
     $router->post('/pointage/check-in', [PointageController::class, 'checkIn'], [AuthMiddleware::class]);
+    $router->get('/manoeuvres', [PointageController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/boite-reception', [InboxController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/onboarding', [OnboardingController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/onboarding/complete', [OnboardingController::class, 'complete'], [AuthMiddleware::class]);
+    $router->get('/c2', [C2Controller::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/atak/premiere-liaison', [AtakFirstLinkController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/assistant', [AssistantController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/api/assistant/ask', [AssistantController::class, 'ask'], [AuthMiddleware::class]);
+    $router->get('/distinctions', [GamificationController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/salle-de-guerre', [WarRoomController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/templates-unite', [UnitTemplatesController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/federation', [FederationController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/formations/creer', [TrainingWizardController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/rh/charte', [HrCharterController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/rh/charte/accepter', [HrCharterController::class, 'accept'], [AuthMiddleware::class]);
@@ -417,6 +447,12 @@ return function (Router $router) {
     $router->get('/admin/system/blocklist', [SystemIndicatorBlocklistController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/blocklist/add', [SystemIndicatorBlocklistController::class, 'add'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/blocklist/revoke', [SystemIndicatorBlocklistController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/demo-nda', [SystemDemoNdaController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/demo-nda/regenerate-code', [SystemDemoNdaController::class, 'regenerateCode'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/demo-nda/add-bypass', [SystemDemoNdaController::class, 'addBypassIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/demo-nda/remove-bypass', [SystemDemoNdaController::class, 'removeBypassIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/demo-nda/add-my-ip', [SystemDemoNdaController::class, 'addMyIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/demo-nda/reset-visit', [SystemDemoNdaController::class, 'resetVisit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/recruitment-portal-tools', [SystemRecruitmentPortalToolsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/recruitment-portal-tools/save-mail', [SystemRecruitmentPortalToolsController::class, 'saveAutomodMailSetting'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/recruitment-portal-tools/revoke-indicator', [SystemRecruitmentPortalToolsController::class, 'revokeIndicator'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -460,6 +496,10 @@ return function (Router $router) {
     $router->get('/admin/system/deployment/modules/{id}', [PlatformDeploymentAdminController::class, 'moduleShow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/deployment/modules/{id}', [PlatformDeploymentAdminController::class, 'moduleUpdate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/deployment', [PlatformDeploymentAdminController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/updates', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/updates/upload', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'upload'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/updates/{id}/deploy', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'deploy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/updates/{id}/rollback', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/tenants', [SystemTenantsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/audit', [SystemAuditController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     $router->get('/admin/audit/{id}', [SystemAuditController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1015,6 +1055,7 @@ return function (Router $router) {
 
     // API Health (BDD) — pour la page ATAK État de santé
     $router->get('/api/health', [HealthController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/api/system/version', [\App\Controllers\Api\SystemVersionController::class, 'index']);
     $router->get('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->patch('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);

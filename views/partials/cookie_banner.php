@@ -11,13 +11,13 @@ $b = url('');
                     Des cookies strictement nécessaires assurent la connexion et la sécurité. Avec votre accord, nous pourrons aussi mesurer la fréquentation et, le cas échéant, afficher des contenus ou annonces personnalisés fournis par des partenaires.
                 </p>
                 <p class="text-[11px] text-slate-500 flex flex-wrap gap-x-2 gap-y-1 items-center">
-                    <a href="<?= htmlspecialchars(url('donnees-personnelles')) ?>" class="font-semibold text-emerald-700 hover:underline">Données personnelles</a>
+                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#rgpd" class="font-semibold text-emerald-700 hover:underline">Données personnelles</a>
                     <span class="text-slate-300" aria-hidden="true">·</span>
-                    <a href="<?= htmlspecialchars(url('cookies')) ?>" class="font-semibold text-emerald-700 hover:underline">Cookies</a>
+                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#cookies" class="font-semibold text-emerald-700 hover:underline">Cookies</a>
                     <span class="text-slate-300" aria-hidden="true">·</span>
-                    <a href="<?= htmlspecialchars(url('mentions-legales')) ?>" class="font-semibold text-emerald-700 hover:underline">Mentions légales</a>
+                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#mentions" class="font-semibold text-emerald-700 hover:underline">Mentions légales</a>
                     <span class="text-slate-300" aria-hidden="true">·</span>
-                    <a href="<?= htmlspecialchars(url('cgu')) ?>" class="font-semibold text-emerald-700 hover:underline">CGU</a>
+                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#cgu" class="font-semibold text-emerald-700 hover:underline">CGU</a>
                 </p>
             </div>
             <div class="grid grid-cols-2 gap-2 w-full shrink-0 sm:flex sm:flex-row sm:flex-wrap sm:justify-end sm:gap-2 sm:w-auto">

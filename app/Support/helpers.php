@@ -17,6 +17,41 @@ if (!function_exists('base_path')) {
     }
 }
 
+if (!function_exists('platform_app_version')) {
+    /**
+     * Version applicative courante (fichier storage/app_version.json, sinon APP_VERSION / 1.0.0).
+     */
+    function platform_app_version(): string
+    {
+        $path = base_path('storage/app_version.json');
+        if (is_file($path)) {
+            $raw = json_decode((string) file_get_contents($path), true);
+            $v = is_array($raw) ? trim((string) ($raw['version'] ?? '')) : '';
+            if ($v !== '' && preg_match('/^\d+\.\d+\.\d+/', $v)) {
+                return $v;
+            }
+        }
+
+        $fromEnv = trim((string) (function_exists('env') ? env('APP_VERSION', '') : ''));
+
+        return $fromEnv !== '' ? $fromEnv : '1.0.0';
+    }
+}
+
+if (!function_exists('asset_url')) {
+    /**
+     * URL d’asset avec cache-busting ?v=version applicative.
+     */
+    function asset_url(string $path): string
+    {
+        $path = '/' . ltrim(str_replace('\\', '/', $path), '/');
+        $base = function_exists('url') ? rtrim(url(''), '/') : '';
+        $sep = str_contains($path, '?') ? '&' : '?';
+
+        return $base . $path . $sep . 'v=' . rawurlencode(platform_app_version());
+    }
+}
+
 if (!function_exists('config')) {
     function config(string $key, mixed $default = null): mixed
     {
@@ -776,6 +811,10 @@ if (is_file(base_path('app/Support/training_lms.php'))) {
 
 if (is_file(base_path('app/Support/lms_platform_version.php'))) {
     require_once base_path('app/Support/lms_platform_version.php');
+}
+
+if (is_file(base_path('app/Support/cdn_media.php'))) {
+    require_once base_path('app/Support/cdn_media.php');
 }
 
 if (!function_exists('training_legacy_enabled')) {

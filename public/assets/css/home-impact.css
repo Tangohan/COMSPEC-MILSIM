@@ -1,0 +1,156 @@
+/**
+ * Landing Athena — aura impact (inspiration typographique « grosses sections »)
+ * Palette militaire sobre : noir, slate, émeraude. Pas de violet marketing.
+ */
+.home-impact {
+  --hi-ink: #f4f4f0;
+  --hi-muted: rgba(244, 244, 240, 0.55);
+  --hi-dim: rgba(244, 244, 240, 0.28);
+  --hi-accent: #34d399;
+  --hi-field: #0b3d2e;
+  --hi-field-deep: #06261c;
+  --hi-void: #050505;
+  --hi-paper: #f7f7f4;
+  --hi-rule: rgba(15, 23, 42, 0.1);
+  font-feature-settings: "ss01" on, "kern" on;
+}
+
+.home-impact .hi-display {
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: -0.045em;
+  line-height: 0.88;
+}
+
+.home-impact .hi-display-xl {
+  font-size: clamp(3.25rem, 14vw, 9.5rem);
+}
+
+.home-impact .hi-display-lg {
+  font-size: clamp(2.5rem, 9vw, 6.5rem);
+}
+
+.home-impact .hi-display-md {
+  font-size: clamp(2rem, 6vw, 4.25rem);
+}
+
+.home-impact .hi-kicker {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.home-impact .hi-body {
+  font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+}
+
+.home-impact .hi-body-sm {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+}
+
+/* Alias rétrocompat : plus de monospace « code » */
+.home-impact .hi-mono {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+}
+
+.home-impact .hi-section {
+  padding-block: clamp(4.5rem, 12vh, 9rem);
+  padding-inline: clamp(1.25rem, 4vw, 4rem);
+}
+
+.home-impact .hi-hero-brand {
+  font-size: clamp(4.5rem, 18vw, 12rem);
+  letter-spacing: -0.06em;
+}
+
+.home-impact .hi-fade {
+  mask-image: linear-gradient(90deg, #000 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, #000 55%, transparent 100%);
+}
+
+.home-impact .hi-rule-row {
+  border-bottom: 1px solid var(--hi-rule);
+}
+
+.home-impact .hi-rule-row:last-child {
+  border-bottom: 0;
+}
+
+.home-impact .hi-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.85rem 1.75rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.home-impact .hi-cta-solid {
+  background: var(--hi-accent);
+  color: #052e1c;
+}
+
+.home-impact .hi-cta-solid:hover {
+  background: #6ee7b7;
+}
+
+.home-impact .hi-cta-ghost {
+  border: 1px solid rgba(244, 244, 240, 0.28);
+  color: var(--hi-ink);
+  background: transparent;
+}
+
+.home-impact .hi-cta-ghost:hover {
+  border-color: rgba(244, 244, 240, 0.55);
+  background: rgba(244, 244, 240, 0.06);
+}
+
+.home-impact .hi-cta-ink {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.home-impact .hi-cta-ink:hover {
+  background: #1e293b;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-impact .hi-reveal {
+    animation: hi-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .home-impact .hi-reveal-delay {
+    animation-delay: 0.12s;
+  }
+}
+
+@keyframes hi-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

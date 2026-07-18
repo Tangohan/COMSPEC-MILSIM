@@ -54,4 +54,9 @@ final class AuditAction
     public const DEPLOYMENT_CAMPAIGN_CREATED = 'deployment.campaign_created';
 
     public const DEPLOYMENT_CAMPAIGN_FAILED = 'deployment.campaign_failed';
+
+    public const APP_UPDATE_UPLOADED = 'app_update.uploaded';
+    public const APP_UPDATE_DEPLOYED = 'app_update.deployed';
+    public const APP_UPDATE_FAILED = 'app_update.failed';
+    public const APP_UPDATE_ROLLED_BACK = 'app_update.rolled_back';
 }

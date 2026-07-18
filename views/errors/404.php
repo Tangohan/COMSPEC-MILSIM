@@ -164,7 +164,7 @@ $heroImg = $base . '/assets/images/fog-team.jpg';
             <div class="max-w-5xl mx-auto flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 sm:gap-8 text-[10px] font-bold uppercase tracking-[0.2em]">
                 <a href="<?= htmlspecialchars(url('formations')) ?>" class="text-white/50 hover:text-white transition-colors">Formations</a>
                 <a href="<?= htmlspecialchars(url('login')) ?>" class="text-white/50 hover:text-white transition-colors">Connexion</a>
-                <a href="<?= htmlspecialchars(url('donnees-personnelles')) ?>" class="text-white/50 hover:text-white transition-colors">Données personnelles</a>
+                <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#rgpd" class="text-white/50 hover:text-white transition-colors">Données personnelles</a>
                 <button type="button" data-cookie-preferences class="text-white/50 hover:text-white transition-colors bg-transparent border-0 cursor-pointer font-bold uppercase tracking-[0.2em] text-[10px]">
                     Préférences cookies
                 </button>

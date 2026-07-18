@@ -24,6 +24,9 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     $seo_og_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . ' — Athena';
     require base_path('views/partials/seo_meta.php');
 ?>
+    <link rel="manifest" href="<?= htmlspecialchars($baseUrl) ?>/manifest.webmanifest">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($baseUrl) ?>/assets/icons/athena-192.png">
 <?php
     $tailwindBaseUrl = $baseUrl;
     require base_path('views/partials/tailwind_cdn_or_build.php');
@@ -31,6 +34,15 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+    <?php if (is_file(base_path('public/assets/css/design-system.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/design-system.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
+<?php
+    $cdnPhase = 'head';
+    $cdnPreset = 'portal';
+    // $cdnLibs : null = défauts (icons + animation) ; false/'none' = désactivé ; array = packs explicites
+    require base_path('views/partials/cdn_media_libs.php');
+?>
     <?php if ($communityShowcasePage || $communityRecruitmentOpeningPage): ?>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -51,19 +63,23 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     </style>
     <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
-    <link href="<?= $baseUrl ?>/assets/css/styles.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/styles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/portal-nav.css'))): ?>
-    <link href="<?= $baseUrl ?>/assets/css/portal-nav.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/portal-nav.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php if ((!empty($siteDocsPage) || !empty($siteDocsRefsPage)) && is_file(base_path('public/assets/css/site-docs.css'))): ?>
-    <link href="<?= $baseUrl ?>/assets/css/site-docs.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/site-docs.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php
     $alpineLocal = base_path('public/assets/js/alpine.min.js');
-    $alpineSrc = is_file($alpineLocal) ? $baseUrl . '/assets/js/alpine.min.js' : 'https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js';
+    $alpineSrc = is_file($alpineLocal) ? asset_url('assets/js/alpine.min.js') : 'https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js';
 ?>
     <script defer src="<?= htmlspecialchars($alpineSrc) ?>"></script>
+    <script>
+      window.APP_VERSION = <?= json_encode(platform_app_version(), JSON_UNESCAPED_UNICODE) ?>;
+      window.APP_BASE_URL = <?= json_encode(rtrim((string) url(''), '/'), JSON_UNESCAPED_UNICODE) ?>;
+    </script>
     <style>
       select.bo-select {
         appearance: none;
@@ -80,13 +96,24 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <style>[x-cloak]{display:none!important}</style>
     <?php endif; ?>
 </head>
-<body class="layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen">
+<?php
+$showBottomNav = (bool) \App\Core\Session::get('user_id')
+    && empty($usesAdminSidebarShell)
+    && empty($communityShowcasePage)
+    && empty($hide_bottom_nav);
+$bodyClasses = 'layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen';
+if ($showBottomNav) {
+    $bodyClasses .= ' athena-has-bottom-nav';
+}
+?>
+<body class="<?= htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8') ?>">
     <div class="grain" aria-hidden="true"></div>
     <?php require base_path('views/partials/header_portal.php'); ?>
-    <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/portal-alerts.js"></script>
-    <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>
-    <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/ui_confirm_modal.js"></script>
-    <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/portal_command_palette.js"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/navigation.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/ui_confirm_modal.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal_command_palette.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/app-version-check.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <main class="<?= !empty($usesAdminSidebarShell) ? 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]' : 'min-h-[80vh]' ?>">
@@ -234,9 +261,24 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
         </div>
     </footer>
     <?php endif; ?>
+    <?php if (!empty($showBottomNav)): ?>
+        <?php require base_path('views/partials/bottom_nav.php'); ?>
+    <?php endif; ?>
     <?php require base_path('views/partials/community_report_modal.php'); ?>
     <?php require base_path('views/partials/portal_help_modal.php'); ?>
     <?php require base_path('views/partials/analytics_beacon.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+<?php
+    $cdnPhase = 'body';
+    $cdnPreset = 'portal';
+    require base_path('views/partials/cdn_media_libs.php');
+?>
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/sw.js').catch(function () {});
+        });
+    }
+    </script>
 </body>
 </html>

@@ -43,7 +43,7 @@ $hubIconPaths = [
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12)_0.5px,transparent_0.6px)] bg-[length:20px_20px] opacity-50" aria-hidden="true"></div>
     <div class="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
         <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/90">Portail Athena</p>
-        <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Centre opérationnel</h1>
+        <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Centre de commandement</h1>
         <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">
             Tout est regroupé par thème : repérez d’abord la section qui vous concerne, puis ouvrez la tuile qui correspond à votre besoin du moment.
         </p>
@@ -64,7 +64,7 @@ $hubIconPaths = [
 
 <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
     <?php if ($hubSections !== []): ?>
-    <nav class="mb-10 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm" aria-label="Sections du centre opérationnel">
+    <nav class="mb-10 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm" aria-label="Sections du centre de commandement">
         <?php foreach ($hubSections as $nav): ?>
         <a
             href="#<?= htmlspecialchars((string)($nav['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"

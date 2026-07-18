@@ -451,6 +451,13 @@ if (!function_exists('personnel_file_render_admin_value')) {
         <?php endif; ?>
     </div>
     <?php endif; ?>
+    <div class="max-w-7xl mx-auto px-6 md:px-8 pt-6">
+        <?php
+        $active_tab = 'identity';
+        $base_path = 'personnel/me';
+        require base_path('views/partials/personnel/operator_tabs.php');
+        ?>
+    </div>
     <!-- Hero -->
     <section class="w-full bg-slate-900 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950/30 border-b border-slate-700/50">
         <div class="max-w-7xl mx-auto px-6 md:px-8 py-12 md:py-16">

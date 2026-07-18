@@ -8,8 +8,10 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\CommunityEventRepository;
 use App\Repositories\DocumentRepository;
 use App\Repositories\ForumTopicRepository;
+use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UserRepository;
 use App\Services\Documents\DocumentAccessService;
 
@@ -26,6 +28,8 @@ final class PortalSearchController
         private DocumentAccessService $documentAccessService,
         private ForumTopicRepository $forumTopicRepository,
         private UserRepository $userRepository,
+        private ?CommunityEventRepository $communityEventRepository = null,
+        private ?TrainingCourseRepository $trainingCourseRepository = null,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -63,6 +67,11 @@ final class PortalSearchController
         $wantDocs = $this->queryFlag($request, 'documents', true);
         $wantForum = $this->queryFlag($request, 'forum', true);
         $wantPersonnel = $this->queryFlag($request, 'personnel', true);
+        $wantEvents = $this->queryFlag($request, 'events', true);
+        $wantTraining = $this->queryFlag($request, 'training', true);
+        $wantCommands = $this->queryFlag($request, 'commands', true);
+
+        $commands = $wantCommands ? $this->filterCommands($raw) : [];
 
         if (mb_strlen($raw) < self::MIN_QUERY_LEN) {
             return Response::json([
@@ -72,6 +81,9 @@ final class PortalSearchController
                 'documents' => [],
                 'forum' => [],
                 'personnel' => [],
+                'events' => [],
+                'training' => [],
+                'commands' => $commands,
                 'meta' => [
                     'skipped' => $raw !== '' ? 'short_query' : null,
                 ],
@@ -147,6 +159,16 @@ final class PortalSearchController
             }
         }
 
+        $events = [];
+        if ($wantEvents && $this->communityEventRepository !== null) {
+            $events = $this->searchEvents($tenantId, $raw);
+        }
+
+        $training = [];
+        if ($wantTraining && $this->trainingCourseRepository !== null) {
+            $training = $this->searchTraining($tenantId, $raw);
+        }
+
         return Response::json([
             'success' => true,
             'query' => $raw,
@@ -154,7 +176,119 @@ final class PortalSearchController
             'documents' => $documents,
             'forum' => $forum,
             'personnel' => $personnel,
+            'events' => $events,
+            'training' => $training,
+            'commands' => $commands,
         ]);
+    }
+
+    /**
+     * @return list<array{title: string, subtitle?: string, href: string}>
+     */
+    private function searchEvents(int $tenantId, string $raw): array
+    {
+        if ($this->communityEventRepository === null) {
+            return [];
+        }
+        $needle = mb_strtolower($raw);
+        $rows = $this->communityEventRepository->upcomingForTenant($tenantId, 80);
+        $out = [];
+        foreach ($rows as $row) {
+            $title = (string) ($row['title'] ?? '');
+            $loc = (string) ($row['location'] ?? '');
+            $hay = mb_strtolower($title . ' ' . $loc);
+            if ($title === '' || !str_contains($hay, $needle)) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $out[] = [
+                'id' => $id,
+                'title' => $title,
+                'subtitle' => (string) ($row['starts_at'] ?? ''),
+                'href' => url('manoeuvres'),
+            ];
+            if (count($out) >= self::PER_SCOPE) {
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{title: string, subtitle?: string, href: string}>
+     */
+    private function searchTraining(int $tenantId, string $raw): array
+    {
+        if ($this->trainingCourseRepository === null) {
+            return [];
+        }
+        $rows = $this->trainingCourseRepository->listForTenant($tenantId, 'published', null, $raw, false);
+        $rows = array_slice($rows, 0, self::PER_SCOPE);
+        $out = [];
+        foreach ($rows as $row) {
+            $slug = trim((string) ($row['slug'] ?? ''));
+            if ($slug === '') {
+                continue;
+            }
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'title' => (string) ($row['title'] ?? 'Formation'),
+                'subtitle' => $this->excerpt((string) ($row['short_description'] ?? '')),
+                'href' => url('formations/' . rawurlencode($slug)),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{title: string, subtitle: string, href: string}>
+     */
+    private function filterCommands(string $raw): array
+    {
+        $all = [
+            ['title' => 'Centre de commandement', 'subtitle' => 'Hub et raccourcis', 'href' => url('hub'), 'keywords' => 'hub centre commandement'],
+            ['title' => 'Manœuvres', 'subtitle' => 'Présences et pointage', 'href' => url('manoeuvres'), 'keywords' => 'manoeuvres pointage présence'],
+            ['title' => 'Boîte de réception', 'subtitle' => 'Messages et actions', 'href' => url('boite-reception'), 'keywords' => 'boîte reception inbox messages'],
+            ['title' => 'Centre d’actions', 'subtitle' => 'Éléments à traiter', 'href' => url('centre-actions'), 'keywords' => 'actions centre'],
+            ['title' => 'Nouveau sujet forum', 'subtitle' => 'Démarrer une discussion', 'href' => url('forum/new-topic'), 'keywords' => 'forum sujet nouveau publier'],
+            ['title' => 'Forum', 'subtitle' => 'Briefings et discussions', 'href' => url('forum'), 'keywords' => 'forum briefing'],
+            ['title' => 'Assistant', 'subtitle' => 'Aide guidée', 'href' => url('assistant'), 'keywords' => 'assistant aide'],
+            ['title' => 'Recherche', 'subtitle' => 'Parcourir le portail', 'href' => url('search'), 'keywords' => 'recherche search'],
+            ['title' => 'Formations', 'subtitle' => 'Catalogue des parcours', 'href' => url('formations'), 'keywords' => 'formations catalogue'],
+            ['title' => 'Ma fiche', 'subtitle' => 'Profil personnel', 'href' => url('personnel/me'), 'keywords' => 'fiche personnel profil'],
+            ['title' => 'Poste de commandement', 'subtitle' => 'Modes ATAK et terrain', 'href' => url('c2'), 'keywords' => 'c2 poste commandement atak'],
+            ['title' => 'Salle de guerre', 'subtitle' => 'Briefing collectif', 'href' => url('salle-de-guerre'), 'keywords' => 'salle guerre'],
+        ];
+
+        $needle = mb_strtolower(trim($raw));
+        if ($needle === '') {
+            return array_map(static function (array $c): array {
+                return [
+                    'title' => $c['title'],
+                    'subtitle' => $c['subtitle'],
+                    'href' => $c['href'],
+                ];
+            }, array_slice($all, 0, 8));
+        }
+
+        $out = [];
+        foreach ($all as $c) {
+            $hay = mb_strtolower($c['title'] . ' ' . $c['subtitle'] . ' ' . $c['keywords']);
+            if (str_contains($hay, $needle)) {
+                $out[] = [
+                    'title' => $c['title'],
+                    'subtitle' => $c['subtitle'],
+                    'href' => $c['href'],
+                ];
+            }
+        }
+
+        return $out;
     }
 
     private function queryFlag(Request $request, string $key, bool $default): bool

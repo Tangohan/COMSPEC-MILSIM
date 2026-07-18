@@ -322,6 +322,20 @@ class Container
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Repositories\BlockedIndicatorRepository::class)
             ),
+            \App\Repositories\DemoNdaVisitRepository::class => new \App\Repositories\DemoNdaVisitRepository(),
+            \App\Services\DemoNda\DemoNdaGateService::class => new \App\Services\DemoNda\DemoNdaGateService(
+                self::get(\App\Repositories\DemoNdaVisitRepository::class),
+                self::get(\App\Repositories\PlatformSettingsRepository::class)
+            ),
+            \App\Middleware\DemoNdaGateMiddleware::class => new \App\Middleware\DemoNdaGateMiddleware(
+                self::get(\App\Services\DemoNda\DemoNdaGateService::class)
+            ),
+            \App\Controllers\Web\DemoNdaController::class => new \App\Controllers\Web\DemoNdaController(
+                self::get(\App\Services\DemoNda\DemoNdaGateService::class)
+            ),
+            \App\Controllers\Admin\System\SystemDemoNdaController::class => new \App\Controllers\Admin\System\SystemDemoNdaController(
+                self::get(\App\Services\DemoNda\DemoNdaGateService::class)
+            ),
             \App\Controllers\Admin\System\SystemMemberSanctionsController::class => new \App\Controllers\Admin\System\SystemMemberSanctionsController(
                 self::get(AuthService::class),
                 self::get(TenantRepository::class),
@@ -402,6 +416,28 @@ class Container
                 self::get(\App\Repositories\DeploymentCampaignRepository::class),
                 self::get(\App\Services\Platform\DeploymentCampaignProcessor::class),
                 self::get(\App\Services\Platform\DeploymentChannelReleaseService::class),
+            ),
+            \App\Repositories\PlatformAppReleaseRepository::class => new \App\Repositories\PlatformAppReleaseRepository(),
+            \App\Services\Deployment\PackageSignatureVerifier::class => new \App\Services\Deployment\PackageSignatureVerifier(),
+            \App\Services\Deployment\AppVersionStore::class => new \App\Services\Deployment\AppVersionStore(),
+            \App\Services\Deployment\HealthCheckService::class => new \App\Services\Deployment\HealthCheckService(),
+            \App\Services\Deployment\UpdatePackageService::class => new \App\Services\Deployment\UpdatePackageService(
+                self::get(\App\Repositories\PlatformAppReleaseRepository::class),
+                self::get(\App\Services\Deployment\PackageSignatureVerifier::class),
+                self::get(\App\Services\Deployment\AppVersionStore::class),
+            ),
+            \App\Services\Deployment\ReleaseManager::class => new \App\Services\Deployment\ReleaseManager(
+                self::get(\App\Repositories\PlatformAppReleaseRepository::class),
+                self::get(\App\Services\Deployment\UpdatePackageService::class),
+                self::get(\App\Services\Deployment\AppVersionStore::class),
+                self::get(\App\Services\Deployment\HealthCheckService::class),
+            ),
+            \App\Controllers\Admin\System\SystemUpdatesController::class => new \App\Controllers\Admin\System\SystemUpdatesController(
+                self::get(\App\Repositories\PlatformAppReleaseRepository::class),
+                self::get(\App\Services\Deployment\UpdatePackageService::class),
+                self::get(\App\Services\Deployment\ReleaseManager::class),
+                self::get(\App\Services\Deployment\AppVersionStore::class),
+                self::get(\App\Services\Deployment\HealthCheckService::class),
             ),
             \App\Controllers\Admin\System\SystemTenantsController::class => new \App\Controllers\Admin\System\SystemTenantsController(
                 self::get(TenantRepository::class),
@@ -703,7 +739,9 @@ class Container
                 self::get(\App\Repositories\DocumentRepository::class),
                 self::get(\App\Services\Documents\DocumentAccessService::class),
                 self::get(\App\Repositories\ForumTopicRepository::class),
-                self::get(UserRepository::class)
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Repositories\TrainingCourseRepository::class),
             ),
             \App\Services\Notifications\PersonalMessageUnreadCounter::class => new \App\Services\Notifications\PersonalMessageUnreadCounter(
                 self::get(\App\Repositories\ForumNotificationRepository::class),

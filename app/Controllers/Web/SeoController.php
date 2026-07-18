@@ -33,11 +33,7 @@ final class SeoController
             '/register',
             '/login',
             '/join',
-            '/mentions-legales',
-            '/donnees-personnelles',
-            '/cookies',
-            '/cgu',
-            '/cgv',
+            '/legal/site',
             '/demande-donnees',
         ];
 

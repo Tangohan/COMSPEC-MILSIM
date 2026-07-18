@@ -47,6 +47,6 @@ $sections = $action_center_digest['sections'] ?? [];
     </div>
 
     <p class="mt-12 text-center text-sm text-slate-500">
-        <a href="<?= htmlspecialchars(url('hub'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-800">Retour au centre opérationnel</a>
+        <a href="<?= htmlspecialchars(url('hub'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-800">Retour au centre de commandement</a>
     </p>
 </div>

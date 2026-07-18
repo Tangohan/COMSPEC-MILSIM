@@ -248,7 +248,7 @@ $active = 'register';
                     </label>
                     <label class="flex items-start gap-3 text-sm text-slate-700 leading-relaxed">
                         <input type="checkbox" name="accept_terms" value="1" required class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
-                        <span>J’accepte les <a href="<?= htmlspecialchars(url('cgu'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 hover:underline">conditions d’utilisation</a> et la <a href="<?= htmlspecialchars(url('donnees-personnelles'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 hover:underline">politique de données personnelles</a>.</span>
+                        <span>J’accepte les <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#cgu" class="font-semibold text-emerald-700 hover:underline">conditions d’utilisation</a> et la <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#rgpd" class="font-semibold text-emerald-700 hover:underline">politique de données personnelles</a>.</span>
                     </label>
                 </div>
 

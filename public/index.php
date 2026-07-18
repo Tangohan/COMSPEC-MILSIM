@@ -81,10 +81,12 @@ $requestPath = \App\Core\Request::normalizePathFromServer();
 $maintenanceSafelist = [
     '/api/stripe/webhook',
     '/api/health',
+    '/api/system/version',
     '/maintenance-toggle.php',
 ];
 $maintenancePrefixSafelist = [
     '/calendrier/abonnement/',
+    '/admin/system/updates',
 ];
 $maintenanceSkipped = in_array($requestPath, $maintenanceSafelist, true);
 if (!$maintenanceSkipped) {

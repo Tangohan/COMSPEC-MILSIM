@@ -48,6 +48,7 @@ $navBlocklist = str_starts_with($p, 'admin/system/blocklist');
 $navSanctions = str_starts_with($p, 'admin/system/member-sanctions');
 $navBrief = str_starts_with($p, 'admin/system/brief');
 $navDeployment = str_starts_with($p, 'admin/system/deployment');
+$navUpdates = str_starts_with($p, 'admin/system/updates');
 $navAlerts = str_starts_with($p, 'admin/system/alerts');
 $alertsCreateActive = $p === 'admin/system/alerts/create';
 $alertsListActive = $navAlerts && !$alertsCreateActive;
@@ -86,6 +87,7 @@ $alertsOpen = $navAlerts;
             <?php $paLink('admin/system/brief', 'Brief (accès membres)', $navBrief); ?>
 
             <?php $paSection('Déploiement et préqualification'); ?>
+            <?php $paLink('admin/system/updates', 'Mises à jour plateforme', $navUpdates); ?>
             <?php $paLink('admin/system/deployment', 'Publications & canaux', $navDeployment && !str_starts_with($p, 'admin/system/deployment/communities')); ?>
             <?php $paLink('admin/system/deployment/communities', 'Communautés de test', str_starts_with($p, 'admin/system/deployment/communities')); ?>
 

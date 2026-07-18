@@ -18,12 +18,35 @@ class HubController
         $sections = [];
 
         $sections[] = [
+            'id' => 'actions',
+            'title' => 'Actions du moment',
+            'subtitle' => 'Ce qu’il faut traiter ou consulter en priorité.',
+            'entries' => [
+                [
+                    'label' => 'Centre d’actions',
+                    'url' => url('centre-actions'),
+                    'description' => 'Synthèse des éléments à traiter et liens vers vos files.',
+                    'icon' => 'activity',
+                    'accent' => 'emerald',
+                    'featured' => true,
+                ],
+                [
+                    'label' => 'Boîte de réception',
+                    'url' => url('boite-reception'),
+                    'description' => 'Messages, activité et canaux d’échange.',
+                    'icon' => 'messages',
+                    'accent' => 'sky',
+                ],
+            ],
+        ];
+
+        $sections[] = [
             'id' => 'vue-ensemble',
             'title' => 'Vue d’ensemble',
             'subtitle' => 'Repères du jour et accès au tableau de bord principal.',
             'entries' => [
                 [
-                    'label' => 'Tableau de bord',
+                    'label' => 'Briefing',
                     'url' => url('dashboard'),
                     'description' => 'Synthèse personnelle, raccourcis et actualités de votre espace.',
                     'icon' => 'dashboard',
@@ -228,7 +251,7 @@ class HubController
 
         return Response::view('layout.main', [
             'content' => 'hub.index',
-            'title' => 'Centre opérationnel',
+            'title' => 'Centre de commandement',
             'hubSections' => $sections,
             'hub_next_steps' => PortalNextStepsService::forHub($gate),
         ]);

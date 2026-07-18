@@ -12,7 +12,7 @@ use App\Core\Session;
 use App\Services\EmailService;
 
 /**
- * Pages légales publiques (RGPD, cookies, CGU, CGV, mentions) et formulaire d’exercice des droits.
+ * Pages légales publiques (hub documentation, formulaire d’exercice des droits).
  */
 final class LegalController
 {
@@ -30,51 +30,47 @@ final class LegalController
         ];
     }
 
+    /** Hub unique : CGU, CGV, mentions, données personnelles, cookies. */
+    public function site(Request $request, array $params = []): Response
+    {
+        return Response::view('layout.legal', [
+            'content' => 'legal.site',
+            'title' => 'Politique et conditions',
+            'legalActivePage' => 'site',
+        ]);
+    }
+
     public function privacy(Request $request, array $params = []): Response
     {
-        return Response::view('layout.main', [
-            'content' => 'legal.privacy',
-            'title' => 'Données personnelles',
-        ]);
+        return Response::redirect(url('legal/site') . '#rgpd', 301);
     }
 
     public function cookies(Request $request, array $params = []): Response
     {
-        return Response::view('layout.main', [
-            'content' => 'legal.cookies',
-            'title' => 'Cookies',
-        ]);
+        return Response::redirect(url('legal/site') . '#cookies', 301);
     }
 
     public function legalNotice(Request $request, array $params = []): Response
     {
-        return Response::view('layout.main', [
-            'content' => 'legal.legal_notice',
-            'title' => 'Mentions légales',
-        ]);
+        return Response::redirect(url('legal/site') . '#mentions', 301);
     }
 
     public function terms(Request $request, array $params = []): Response
     {
-        return Response::view('layout.main', [
-            'content' => 'legal.terms',
-            'title' => 'Conditions générales d’utilisation',
-        ]);
+        return Response::redirect(url('legal/site') . '#cgu', 301);
     }
 
     public function sales(Request $request, array $params = []): Response
     {
-        return Response::view('layout.main', [
-            'content' => 'legal.sales',
-            'title' => 'Conditions générales de vente',
-        ]);
+        return Response::redirect(url('legal/site') . '#cgv', 301);
     }
 
     public function gdprRequestForm(Request $request, array $params = []): Response
     {
-        return Response::view('layout.main', [
+        return Response::view('layout.legal', [
             'content' => 'legal.gdpr_request',
             'title' => 'Exercer vos droits sur vos données',
+            'legalActivePage' => 'droits',
             'gdprRequestKinds' => self::gdprRequestKindLabels(),
             'privacyInboxConfigured' => privacy_request_inbox_email() !== null,
         ]);

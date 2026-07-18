@@ -44,10 +44,14 @@
         if (!resultsEl) {
             return;
         }
+        var commands = data.commands || [];
         var docs = data.documents || [];
         var forum = data.forum || [];
         var pers = data.personnel || [];
-        var total = docs.length + forum.length + pers.length;
+        var events = data.events || [];
+        var training = data.training || [];
+        var total =
+            commands.length + docs.length + forum.length + pers.length + events.length + training.length;
         if (total === 0) {
             resultsEl.innerHTML =
                 '<div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-600">' +
@@ -65,7 +69,9 @@
                 .map(function (it) {
                     var sub = it.subtitle
                         ? '<p class="mt-0.5 text-xs text-slate-500">' + esc(it.subtitle) + '</p>'
-                        : '';
+                        : it.excerpt
+                          ? '<p class="mt-0.5 text-xs text-slate-500">' + esc(it.excerpt) + '</p>'
+                          : '';
                     return (
                         '<li><a href="' +
                         esc(it.href) +
@@ -87,9 +93,12 @@
                 '</ul></section>'
             );
         }
+        blocks.push(rows(commands, 'Raccourcis'));
         blocks.push(rows(docs, 'Documents'));
         blocks.push(rows(forum, 'Forum'));
         blocks.push(rows(pers, 'Personnel'));
+        blocks.push(rows(events, 'Événements'));
+        blocks.push(rows(training, 'Formations'));
         resultsEl.innerHTML = blocks.join('');
     }
 
@@ -99,12 +108,53 @@
         }
         var q = input ? input.value.trim() : '';
         if (q.length < minLen) {
-            resultsEl.innerHTML =
-                q.length === 0
-                    ? ''
-                    : '<p class="px-2 py-6 text-center text-xs text-slate-500">Saisissez au moins ' +
-                      minLen +
-                      ' caractères.</p>';
+            if (q.length === 0) {
+                resultsEl.innerHTML = '';
+                return;
+            }
+            // Toujours proposer les raccourcis même avec une requête courte
+            seq += 1;
+            var mySeqShort = seq;
+            if (abortCtl) {
+                abortCtl.abort();
+            }
+            abortCtl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            var shortUrl =
+                apiUrl +
+                (apiUrl.indexOf('?') >= 0 ? '&' : '?') +
+                'q=' +
+                encodeURIComponent(q) +
+                '&commands=1&documents=0&forum=0&personnel=0&events=0&training=0';
+            fetch(shortUrl, {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' },
+                signal: abortCtl ? abortCtl.signal : undefined,
+            })
+                .then(function (res) {
+                    return res.ok ? res.json() : Promise.reject();
+                })
+                .then(function (data) {
+                    if (mySeqShort !== seq || !data || !data.success) {
+                        return;
+                    }
+                    if ((data.commands || []).length) {
+                        render(data);
+                    } else {
+                        resultsEl.innerHTML =
+                            '<p class="px-2 py-6 text-center text-xs text-slate-500">Saisissez au moins ' +
+                            minLen +
+                            ' caractères.</p>';
+                    }
+                })
+                .catch(function () {
+                    if (mySeqShort !== seq) {
+                        return;
+                    }
+                    resultsEl.innerHTML =
+                        '<p class="px-2 py-6 text-center text-xs text-slate-500">Saisissez au moins ' +
+                        minLen +
+                        ' caractères.</p>';
+                });
             return;
         }
         seq += 1;
@@ -119,7 +169,7 @@
             (apiUrl.indexOf('?') >= 0 ? '&' : '?') +
             'q=' +
             encodeURIComponent(q) +
-            '&documents=1&forum=1&personnel=1';
+            '&documents=1&forum=1&personnel=1&events=1&training=1&commands=1';
         fetch(url, {
             credentials: 'same-origin',
             headers: { Accept: 'application/json' },
@@ -203,6 +253,13 @@
     document.querySelectorAll('[data-portal-command-palette-close]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             dlg.close();
+        });
+    });
+
+    document.querySelectorAll('[data-portal-command-palette-open]').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.dispatchEvent(new Event('portal-command-palette-open'));
         });
     });
 })();

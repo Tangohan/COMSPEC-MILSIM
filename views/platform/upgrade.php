@@ -117,25 +117,34 @@ $planLabel = (string) ($planName ?? 'Standard ou Pro');
                 <?php endif; ?>
 
                 <div>
-                    <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Inclus dans les formules supérieures</p>
-                    <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-200 hover:shadow-md">
-                            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Premium</p>
-                            <p class="mt-2 text-xl font-black text-slate-900">Pro</p>
+                    <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Comparer les formules</p>
+                    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Essentiel</p>
+                            <p class="mt-2 text-xl font-black text-slate-900">Gratuit</p>
                             <ul class="mt-4 space-y-2.5 text-sm text-slate-600">
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Carte tactique ATAK</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Événements &amp; planning</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Statistiques essentielles</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Portail et forum</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Effectifs de base</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Quotas limités sur certains modules</li>
+                            </ul>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-sky-700/80">Équipe</p>
+                            <p class="mt-2 text-xl font-black text-slate-900">Standard</p>
+                            <ul class="mt-4 space-y-2.5 text-sm text-slate-600">
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500"></span> Tout le périmètre Gratuit</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500"></span> Événements &amp; planning élargis</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500"></span> Pilotage documentaire renforcé</li>
                             </ul>
                         </div>
                         <div class="relative rounded-2xl border border-emerald-200/80 bg-gradient-to-b from-white to-emerald-50/40 p-5 shadow-sm ring-1 ring-emerald-500/10">
-                            <span class="absolute right-4 top-4 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">Étendu</span>
-                            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700/80">Premium plus</p>
-                            <p class="mt-2 text-xl font-black text-slate-900">Pro +</p>
+                            <span class="absolute right-4 top-4 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">Recommandé</span>
+                            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700/80">Complet</p>
+                            <p class="mt-2 text-xl font-black text-slate-900">Pro</p>
                             <ul class="mt-4 space-y-2.5 text-sm text-slate-600">
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Tout le périmètre Pro</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Analytics &amp; pilotage avancé</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Limites relevées selon offre</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Carte tactique ATAK</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Événements &amp; analytics</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Limites relevées selon l’offre</li>
                             </ul>
                         </div>
                     </div>

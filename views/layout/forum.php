@@ -29,6 +29,12 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
     <?php if (is_file(base_path('public/assets/css/forum.css'))): ?>
     <link href="<?= $baseUrl ?>/assets/css/forum.css" rel="stylesheet">
     <?php endif; ?>
+<?php
+    $cdnPhase = 'head';
+    $cdnPreset = 'forum';
+    // Forum : icons, emoji, gif, flags, animation (voir config/cdn_libraries.php)
+    require base_path('views/partials/cdn_media_libs.php');
+?>
 </head>
 <body class="forum-mode-day bg-slate-50 text-slate-900 min-h-screen overflow-x-hidden font-sans antialiased" style="font-family: 'Inter', sans-serif;">
     <?php require base_path('views/partials/header_portal.php'); ?>
@@ -65,5 +71,10 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
     <?php endif; ?>
     <?php require base_path('views/partials/portal_help_modal.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+<?php
+    $cdnPhase = 'body';
+    $cdnPreset = 'forum';
+    require base_path('views/partials/cdn_media_libs.php');
+?>
 </body>
 </html>

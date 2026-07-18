@@ -7,11 +7,16 @@ declare(strict_types=1);
  * Point d’entrée utilisateur recommandé : **php setup-database.php** (un seul script documenté).
  * Ce fichier reste le moteur procédural ; ne pas le confondre avec les seuls bootstrap PHP isolés.
  *
- * Web : public/setup-database.php, public/run-migrations.php ou public/appliquer-ce-qui-manque-en-base.php
- * (préambule commun : bootstrap/migrations_web_stream.php — texte brut, flux immédiat).
+ * Web (UI sécurisée) : /run-migrations.php — mot de passe + tableau de bord + console live
+ * (bootstrap/migrations_web_ui.php). CLI : sortie texte inchangée.
  */
 
 $root = dirname(__FILE__);
+
+if (PHP_SAPI !== 'cli') {
+    require_once $root . '/bootstrap/migrations_web_ui.php';
+    migrations_web_gate();
+}
 
 // ----- Vérifications préalables -----
 $checks = [];
@@ -47,12 +52,20 @@ if ($checks['.env']) {
 
 /**
  * Affiche tout de suite en mode web (tampons / compression).
- * Le préambule global (en-têtes, padding proxy, erreur fatale navigateur) est dans migrations_web_begin_plain_response().
+ * En UI sécurisée, on conserve le tampon de journal (ob_start) : ob_flush seulement.
  */
 $migrationFlush = static function (): void {
     if (PHP_SAPI !== 'cli') {
         @ini_set('zlib.output_compression', '0');
         @ini_set('implicit_flush', '1');
+    }
+    if (!empty($GLOBALS['__migrations_web_run'])) {
+        if (ob_get_level() > 0) {
+            @ob_flush();
+        }
+        @flush();
+
+        return;
     }
     while (ob_get_level() > 0) {
         @ob_end_flush();
@@ -412,6 +425,35 @@ if ($stmtDj && $stmtDj->fetch()) {
         echo "  [OK] deployment_jobs colonnes campagne\n";
         $migrationFlush();
     }
+}
+
+$stmtAppUpd = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'platform_app_releases' LIMIT 1");
+if (!$stmtAppUpd || !$stmtAppUpd->fetch()) {
+    echo "Migration mises à jour applicatives (platform_app_releases, …)...\n";
+    $migrationFlush();
+    $appUpdPath = $root . '/migrations/20260718000001_platform_app_updates.sql';
+    if (is_file($appUpdPath)) {
+        $sql = file_get_contents($appUpdPath);
+        if ($sql !== false && $sql !== '') {
+            $sql = preg_replace('/--[^\r\n]*/s', '', $sql);
+            $sql = preg_replace('/SET NAMES utf8mb4;/', '', $sql);
+            $chunks = preg_split('/;\s*[\r\n]+/', trim($sql));
+            foreach ($chunks as $stmtSql) {
+                $stmtSql = trim($stmtSql);
+                if ($stmtSql !== '') {
+                    try {
+                        $pdo->exec($stmtSql . (str_ends_with($stmtSql, ';') ? '' : ';'));
+                    } catch (Throwable $e) {
+                        echo '  [ATTENTION] platform_app_updates : ' . $e->getMessage() . "\n";
+                    }
+                }
+            }
+            echo "  [OK] platform_app_updates\n";
+        }
+    } else {
+        echo "  [ATTENTION] Fichier absent : migrations/20260718000001_platform_app_updates.sql\n";
+    }
+    $migrationFlush();
 }
 
 $usageAnalyticsMigrate = require $root . '/bootstrap/usage_analytics_migration.php';
@@ -1822,6 +1864,13 @@ try {
     echo '  [ATTENTION] tenant_dashboard_pins : ' . $e->getMessage() . "\n";
 }
 
+$demoNdaGateMigrate = require $root . '/bootstrap/demo_nda_gate_migration.php';
+try {
+    $demoNdaGateMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] demo_nda_gate : ' . $e->getMessage() . "\n";
+}
+
 $userEmailLoginOtpMigrate = require $root . '/bootstrap/user_email_login_otp_migration.php';
 try {
     $userEmailLoginOtpMigrate($pdo);
@@ -2542,4 +2591,23 @@ if (defined('COMSPEC_MIGRATIONS_WEB_FULL') && COMSPEC_MIGRATIONS_WEB_FULL) {
     require_once $root . '/bootstrap/migrations_full_post.php';
     comspec_run_all_supplementary_sql_files($pdo, $root, $migrationFlush);
     comspec_print_post_migration_report($pdo, $root, $migrationFlush);
+}
+
+if (PHP_SAPI === 'cli' && function_exists('migrations_web_write_last_run') === false) {
+    // Journal CLI optionnel si l’UI web n’a pas chargé le helper
+    $cliLogPath = $root . '/bootstrap/migrations_web_ui.php';
+    if (is_file($cliLogPath)) {
+        require_once $cliLogPath;
+    }
+}
+if (PHP_SAPI === 'cli' && function_exists('migrations_web_write_last_run')) {
+    // Le journal détaillé est surtout alimenté en mode web (ob_start). En CLI on marque un passage OK sommaire.
+    migrations_web_write_last_run($root, [
+        'started_at' => date('c'),
+        'finished_at' => date('c'),
+        'duration_sec' => null,
+        'ok' => true,
+        'mode' => 'cli',
+        'summary_line' => 'Passage CLI terminé',
+    ], "Migrations terminées (CLI).\n");
 }

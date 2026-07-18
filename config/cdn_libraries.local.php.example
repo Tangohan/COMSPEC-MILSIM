@@ -1,0 +1,12 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Surcharges locales CDN (ne pas committer de secrets).
+ * Copier vers config/cdn_libraries.local.php
+ */
+return [
+    // Clé API Tenor (GIF) — https://developers.google.com/tenor
+    'tenor_api_key' => '',
+];

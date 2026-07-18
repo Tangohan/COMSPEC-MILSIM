@@ -1,0 +1,53 @@
+/**
+ * ORBAT — styles extraits (début refactor Phase 2).
+ * Brancher depuis views/personnel/orbat.php via <link> progressivement.
+ */
+.orbat-canvas-shell {
+  position: relative;
+  min-height: 24rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #f8fafc;
+  overflow: auto;
+}
+
+.orbat-canvas-shell__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.orbat-node {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 0.75rem 1rem;
+  min-width: 10rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.orbat-node--vacant {
+  border-style: dashed;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.orbat-node__title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0f172a;
+}
+
+.orbat-node__meta {
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  color: #64748b;
+}
