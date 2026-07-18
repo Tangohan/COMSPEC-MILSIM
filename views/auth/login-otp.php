@@ -5,82 +5,165 @@ $info = \App\Core\Session::getFlash('info');
 $emailMasked = $emailMasked ?? '—';
 $expiresAt = (int) ($expiresAt ?? 0);
 $title = $title ?? 'Double vérification';
+$brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
+$heroCandidates = ['fog-team.jpg', 'fog-banner.jpg', 'night-team.jpg'];
+$heroImg = '';
+foreach ($heroCandidates as $file) {
+    if (is_file(base_path('public/assets/images/' . $file))) {
+        $heroImg = $base . '/assets/images/' . $file;
+        break;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($title) ?> — Athena</title>
+    <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?></title>
+    <meta name="theme-color" content="#050505">
+    <meta name="robots" content="noindex,nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <?php $tailwindBaseUrl = $base; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/home-impact.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <style>
+        .otp-cell {
+            width: 2.75rem;
+            height: 3.25rem;
+            background: rgba(244, 244, 240, 0.04);
+            border: 1px solid rgba(244, 244, 240, 0.22);
+            color: #fff;
+            font-family: Inter, "Segoe UI", system-ui, sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-align: center;
+            caret-color: #34d399;
+        }
+        @media (min-width: 640px) {
+            .otp-cell {
+                width: 3.25rem;
+                height: 3.75rem;
+                font-size: 1.75rem;
+            }
+        }
+        .otp-cell:focus {
+            outline: none;
+            border-color: rgba(52, 211, 153, 0.75);
+            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18);
+            background: rgba(52, 211, 153, 0.06);
+        }
+        .otp-cell::placeholder { color: rgba(244, 244, 240, 0.2); }
+    </style>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
-<main class="mx-auto flex min-h-screen max-w-lg items-center px-4 py-10 sm:px-6 sm:py-14">
-    <div class="w-full overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-md ring-1 ring-slate-900/[0.04]">
-        <div class="border-l-[5px] border-l-emerald-600 bg-gradient-to-br from-emerald-50/70 via-white to-white px-6 pb-10 pt-10 sm:px-10 sm:pb-12 sm:pt-12">
-            <header class="space-y-3">
-                <p class="text-[11px] font-black uppercase tracking-[0.28em] text-emerald-800/90">Connexion</p>
-                <h1 class="text-2xl font-black tracking-tight text-slate-900 sm:text-[1.7rem] sm:leading-tight">Code reçu par e-mail</h1>
-                <p class="max-w-md text-sm leading-relaxed text-slate-600">Saisissez le <strong class="text-slate-800">code à six chiffres</strong> envoyé à <span class="break-all font-mono text-sm font-semibold text-slate-800"><?= htmlspecialchars($emailMasked, ENT_QUOTES, 'UTF-8') ?></span>.</p>
-            </header>
+<body class="home-impact bg-[var(--hi-void)] text-[var(--hi-ink)] antialiased selection:bg-emerald-500 selection:text-slate-950">
 
-            <div class="mt-8 space-y-4">
-                <?php if ($error): ?>
-                <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 text-sm font-medium leading-snug text-red-900" role="alert"><?= htmlspecialchars((string) $error) ?></div>
-                <?php endif; ?>
-                <?php if ($info): ?>
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50/95 px-4 py-3.5 text-sm font-medium leading-snug text-emerald-950" role="status"><?= htmlspecialchars((string) $info) ?></div>
-                <?php endif; ?>
-            </div>
+<section class="relative flex min-h-[100svh] flex-col overflow-hidden bg-black">
+    <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+        <?php if ($heroImg !== ''): ?>
+            <img
+                src="<?= htmlspecialchars($heroImg, ENT_QUOTES, 'UTF-8') ?>"
+                alt=""
+                class="h-full w-full object-cover opacity-40 grayscale brightness-[0.42]"
+                width="1920"
+                height="1080"
+                decoding="async"
+                fetchpriority="high"
+            >
+        <?php endif; ?>
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/65 to-black/40"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.55)_100%)]"></div>
+    </div>
 
-            <form method="post" action="<?= url('login/otp') ?>" id="login-otp-form" class="mt-10 space-y-8" novalidate>
-                <?= \App\Core\Csrf::field() ?>
-                <input type="hidden" name="otp_code" id="otp_code" value="">
+    <header class="relative z-10 border-b border-white/5 bg-black/50 backdrop-blur-md">
+        <div class="mx-auto flex h-14 max-w-[100rem] items-center justify-between px-5 md:px-8">
+            <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>" class="hi-kicker text-white/45 transition hover:text-white">Retour</a>
+            <span class="text-[11px] font-black uppercase tracking-[0.32em] text-white"><?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?></span>
+            <span class="hi-kicker text-emerald-400/85">Connexion</span>
+        </div>
+    </header>
 
-                <fieldset class="min-w-0 border-0 p-0">
-                    <legend class="mb-4 block text-sm font-semibold text-slate-800">Code à six chiffres</legend>
-                    <div
-                        id="otp-boxes"
-                        class="flex flex-wrap justify-center gap-2 sm:justify-start sm:gap-2.5"
-                        role="group"
-                        aria-describedby="otp-hint"
-                    >
-                        <?php for ($i = 0; $i < 6; $i++): ?>
-                        <input
-                            type="text"
-                            inputmode="numeric"
-                            pattern="[0-9]*"
-                            maxlength="1"
-                            data-otp-index="<?= (int) $i ?>"
-                            class="otp-cell h-12 w-11 shrink-0 rounded-xl border border-slate-300 bg-white text-center font-mono text-xl font-bold text-slate-900 shadow-sm transition placeholder:text-slate-300 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 sm:h-14 sm:w-12 sm:text-2xl"
-                            aria-label="Chiffre <?= (int) $i + 1 ?> sur 6"
-                            <?= $i === 0 ? 'autofocus autocomplete="one-time-code"' : '' ?>
-                        >
-                        <?php endfor; ?>
-                    </div>
-                    <p id="otp-hint" class="mt-4 text-center text-xs leading-relaxed text-slate-500 sm:text-left">Vous pouvez coller les six chiffres d’un coup. Touche Retour efface la case précédente.</p>
-                </fieldset>
+    <div class="relative z-10 flex flex-1 flex-col justify-center hi-section">
+        <p class="hi-kicker hi-reveal text-emerald-400/90">Double vérification</p>
+        <h1 class="hi-display hi-hero-brand hi-reveal hi-reveal-delay mt-6 text-white">
+            <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?><span class="text-emerald-400">.</span>
+        </h1>
+        <p class="hi-body hi-reveal hi-reveal-delay mt-8 max-w-xl text-white/70">
+            Un code à six chiffres a été envoyé à
+            <span class="font-semibold text-white"><?= htmlspecialchars($emailMasked, ENT_QUOTES, 'UTF-8') ?></span>.
+            Saisissez-le pour finaliser votre entrée.
+        </p>
 
-                <div class="space-y-3 pt-1">
-                    <button type="submit" class="w-full rounded-xl bg-emerald-700 px-4 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">Continuer</button>
-                </div>
-            </form>
-
-            <form method="post" action="<?= url('login/otp/resend') ?>" class="mt-6">
-                <?= \App\Core\Csrf::field() ?>
-                <button type="submit" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/60 hover:text-emerald-900">Renvoyer un code</button>
-            </form>
-
-            <?php if ($expiresAt > 0): ?>
-            <footer class="mt-10 border-t border-slate-200/90 pt-6">
-                <p class="text-center text-xs leading-relaxed text-slate-500 sm:text-left">
-                    Ce code n’est plus valable après le <time class="font-semibold text-slate-700" datetime="<?= htmlspecialchars(date('c', $expiresAt), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(date('d/m/Y \à H:i', $expiresAt), ENT_QUOTES, 'UTF-8') ?></time>.
-                </p>
-            </footer>
+        <div class="hi-reveal hi-reveal-delay mt-8 max-w-xl space-y-3">
+            <?php if ($error): ?>
+                <p class="hi-body-sm text-red-300" role="alert"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p>
+            <?php endif; ?>
+            <?php if ($info): ?>
+                <p class="hi-body-sm text-emerald-300/90" role="status"><?= htmlspecialchars((string) $info, ENT_QUOTES, 'UTF-8') ?></p>
             <?php endif; ?>
         </div>
+
+        <form method="post" action="<?= url('login/otp') ?>" id="login-otp-form" class="hi-reveal hi-reveal-delay mt-10 max-w-xl" novalidate>
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="otp_code" id="otp_code" value="">
+
+            <fieldset class="min-w-0 border-0 p-0">
+                <legend class="hi-kicker text-white/45">Code à six chiffres</legend>
+                <div
+                    id="otp-boxes"
+                    class="mt-5 flex flex-wrap gap-2 sm:gap-3"
+                    role="group"
+                    aria-describedby="otp-hint"
+                >
+                    <?php for ($i = 0; $i < 6; $i++): ?>
+                    <input
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        maxlength="1"
+                        data-otp-index="<?= (int) $i ?>"
+                        class="otp-cell"
+                        aria-label="Chiffre <?= (int) $i + 1 ?> sur 6"
+                        <?= $i === 0 ? 'autofocus autocomplete="one-time-code"' : '' ?>
+                    >
+                    <?php endfor; ?>
+                </div>
+                <p id="otp-hint" class="mt-4 hi-body-sm text-white/40">
+                    Collez les six chiffres d’un coup. Retour efface la case précédente.
+                </p>
+            </fieldset>
+
+            <div class="mt-10 flex flex-wrap gap-3">
+                <button type="submit" class="hi-cta hi-cta-solid">Continuer</button>
+            </div>
+        </form>
+
+        <form method="post" action="<?= url('login/otp/resend') ?>" class="hi-reveal hi-reveal-delay mt-4">
+            <?= \App\Core\Csrf::field() ?>
+            <button type="submit" class="hi-cta hi-cta-ghost">Renvoyer un code</button>
+        </form>
+
+        <?php if ($expiresAt > 0): ?>
+            <p class="hi-reveal hi-reveal-delay mt-8 hi-body-sm text-white/40">
+                Valable jusqu’au
+                <time class="text-white/70" datetime="<?= htmlspecialchars(date('c', $expiresAt), ENT_QUOTES, 'UTF-8') ?>">
+                    <?= htmlspecialchars(date('d/m/Y \à H:i', $expiresAt), ENT_QUOTES, 'UTF-8') ?>
+                </time>
+            </p>
+        <?php endif; ?>
     </div>
-</main>
+
+    <div class="relative z-10 border-t border-white/10 bg-black/40 backdrop-blur-sm">
+        <div class="mx-auto flex max-w-[100rem] items-center justify-between gap-4 px-5 py-4 md:px-8">
+            <p class="hi-body-sm text-[10px] uppercase tracking-[0.14em] text-white/45">Sécurité du compte</p>
+            <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" class="hi-body-sm text-[10px] uppercase tracking-[0.14em] text-emerald-400/80 transition hover:text-emerald-300">
+                Autre compte
+            </a>
+        </div>
+    </div>
+</section>
+
 <script>
 (function () {
     var form = document.getElementById('login-otp-form');
@@ -95,29 +178,19 @@ $title = $title ?? 'Double vérification';
     }
 
     function focusIndex(i) {
-        if (i < 0) {
-            i = 0;
-        }
-        if (i > 5) {
-            i = 5;
-        }
+        if (i < 0) i = 0;
+        if (i > 5) i = 5;
         cells[i].focus();
-        try {
-            cells[i].select();
-        } catch (e) {}
+        try { cells[i].select(); } catch (e) {}
     }
 
     cells.forEach(function (cell, idx) {
         cell.addEventListener('input', function () {
             var v = (cell.value || '').replace(/\D/g, '');
-            if (v.length > 1) {
-                v = v.slice(0, 1);
-            }
+            if (v.length > 1) v = v.slice(0, 1);
             cell.value = v;
             syncHidden();
-            if (v && idx < 5) {
-                focusIndex(idx + 1);
-            }
+            if (v && idx < 5) focusIndex(idx + 1);
         });
 
         cell.addEventListener('keydown', function (e) {

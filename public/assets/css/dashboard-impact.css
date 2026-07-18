@@ -1,0 +1,132 @@
+/**
+ * Tableau de bord Athena — sections à impact (noir, émeraude, Inter).
+ */
+.dash-impact {
+  --di-ink: #f4f4f0;
+  --di-muted: rgba(244, 244, 240, 0.55);
+  --di-dim: rgba(244, 244, 240, 0.32);
+  --di-accent: #34d399;
+  --di-void: #050505;
+  --di-field: #0a1f18;
+  font-feature-settings: "ss01" on, "kern" on;
+}
+
+.dash-impact .di-kicker {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.dash-impact .di-display {
+  font-weight: 900;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+}
+
+.dash-impact .di-display-lg {
+  font-size: clamp(2.25rem, 5.5vw, 3.75rem);
+}
+
+.dash-impact .di-display-md {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+}
+
+.dash-impact .di-body {
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.65;
+  color: var(--di-muted);
+}
+
+.dash-impact .di-panel {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.dash-impact .di-panel:hover {
+  border-color: rgba(52, 211, 153, 0.28);
+  background: linear-gradient(165deg, rgba(52, 211, 153, 0.06), rgba(255, 255, 255, 0.02));
+}
+
+.dash-impact .di-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.35rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #052e1c;
+  background: var(--di-accent);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.dash-impact .di-cta:hover {
+  background: #6ee7b7;
+}
+
+.dash-impact .di-cta-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(244, 244, 240, 0.55);
+  transition: color 0.2s ease;
+}
+
+.dash-impact .di-cta-ghost:hover {
+  color: var(--di-accent);
+}
+
+.dash-impact .di-progress {
+  height: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dash-impact .di-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--di-accent);
+  transition: width 0.7s ease;
+}
+
+@keyframes di-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dash-impact .di-rise {
+  animation: di-fade-up 0.55s ease both;
+}
+
+.dash-impact .di-rise-2 {
+  animation: di-fade-up 0.55s ease 0.08s both;
+}
+
+.dash-impact .di-rise-3 {
+  animation: di-fade-up 0.55s ease 0.16s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-impact .di-rise,
+  .dash-impact .di-rise-2,
+  .dash-impact .di-rise-3 {
+    animation: none;
+  }
+}

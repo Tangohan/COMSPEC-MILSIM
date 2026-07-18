@@ -46,7 +46,7 @@
 }
 
 .portal-nav {
-  --portal-bar-h: 4rem;
+  --portal-bar-h: 3.5rem;
 }
 
 /* Administration (rose) : actif / ouvert sans cadre criard — évite bordure rouge qui chevauche les icônes */
@@ -56,59 +56,90 @@
 
 [data-accent='rose'] .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner,
 [data-accent='rose'] .portal-nav__link--mega.nav-mega-is-open .portal-nav__trigger-inner {
-  background: rgba(244, 63, 94, 0.1);
+  background: rgba(244, 63, 94, 0.16);
   border-color: transparent;
   outline: none;
   box-shadow: none;
 }
 
+/* Barre principale — thème Athena (noir / émeraude) */
 .portal-nav__shell {
-  border-bottom: 1px solid rgb(226 232 240);
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(10px);
-  /* Évite que le contenu de la page ne se lise à travers la barre de statut */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(5, 5, 5, 0.92);
+  backdrop-filter: blur(14px);
   isolation: isolate;
 }
 
-@supports (backdrop-filter: blur(10px)) {
+@supports (backdrop-filter: blur(14px)) {
   .portal-nav__shell {
-    background: rgba(255, 255, 255, 0.88);
+    background: rgba(5, 5, 5, 0.82);
   }
 }
 
-/* Barre principale sombre (marque ATHENA SI) */
-.portal-nav__shell--dark {
-  border-bottom: 1px solid rgb(51 65 85);
-  background: rgb(15 23 42);
+.portal-nav__shell--light {
+  border-bottom: 1px solid rgb(226 232 240);
+  background: rgba(255, 255, 255, 0.94);
 }
 
 @supports (backdrop-filter: blur(10px)) {
-  .portal-nav__shell--dark {
-    background: rgba(15, 23, 42, 0.97);
-    backdrop-filter: blur(12px);
+  .portal-nav__shell--light {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(10px);
   }
 }
 
-.portal-nav__shell--dark .portal-nav__link--simple:hover,
-.portal-nav__shell--dark .portal-nav__link--mega:hover .portal-nav__trigger-inner {
-  background: rgba(255, 255, 255, 0.08);
+/* Alias rétrocompat */
+.portal-nav__shell--dark {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(5, 5, 5, 0.92);
 }
 
-.portal-nav__shell--dark .portal-nav__link--simple[data-active='1'],
-.portal-nav__shell--dark .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner {
-  color: rgb(255 255 255);
-  background: rgba(255, 255, 255, 0.1);
+@supports (backdrop-filter: blur(14px)) {
+  .portal-nav__shell--dark {
+    background: rgba(5, 5, 5, 0.82);
+    backdrop-filter: blur(14px);
+  }
 }
 
-.portal-nav__shell--dark .portal-nav__link--simple[data-active='1']::after,
-.portal-nav__shell--dark .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner::after {
-  background: rgb(96 165 250);
+.portal-nav__shell .portal-nav__link--simple,
+.portal-nav__shell .portal-nav__link--mega {
+  color: rgba(244, 244, 240, 0.72);
+}
+
+.portal-nav__shell .portal-nav__link--simple:hover,
+.portal-nav__shell .portal-nav__link--mega:hover {
+  color: #fff;
+}
+
+.portal-nav__shell .portal-nav__link--mega:hover .portal-nav__trigger-inner,
+.portal-nav__shell .portal-nav__link--simple:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.portal-nav__shell .portal-nav__link--simple[data-active='1'],
+.portal-nav__shell .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner {
+  color: #fff;
+  background: rgba(52, 211, 153, 0.12);
+}
+
+.portal-nav__shell .portal-nav__link--simple[data-active='1']::after,
+.portal-nav__shell .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner::after {
+  background: #34d399;
+}
+
+.portal-nav__shell .portal-nav__link--mega .portal-nav__trigger-inner svg {
+  color: rgba(244, 244, 240, 0.35);
+}
+
+.portal-nav__shell .portal-nav__link--mega:hover .portal-nav__trigger-inner svg,
+.portal-nav__shell .portal-nav__link--mega.nav-mega-is-open .portal-nav__trigger-inner svg {
+  color: rgba(244, 244, 240, 0.7);
 }
 
 .portal-nav__brand-mark {
   width: 4px;
   border-radius: 999px;
-  background: linear-gradient(180deg, var(--nav-accent, #0ea5e9) 0%, rgb(15 23 42) 100%);
+  background: linear-gradient(180deg, #34d399 0%, transparent 100%);
 }
 
 /* Bloc marque (carte + monogramme) */
@@ -142,7 +173,7 @@
 
 .portal-nav__link--mega[data-active="1"] .portal-nav__trigger-inner,
 .portal-nav__link--simple[data-active="1"] {
-  color: rgb(15 23 42);
+  color: inherit;
   background: var(--nav-accent-soft, rgba(71, 85, 105, 0.14));
 }
 
@@ -150,13 +181,13 @@
 .portal-nav__link--simple[data-active="1"]::after {
   content: '';
   position: absolute;
-  bottom: 0.2rem;
+  bottom: 0.15rem;
   left: 50%;
   transform: translateX(-50%);
-  width: 1.5rem;
-  height: 3px;
+  width: 1.25rem;
+  height: 2px;
   border-radius: 9999px;
-  background: var(--nav-accent, #64748b);
+  background: var(--nav-accent, #34d399);
 }
 
 /* Méga panneau */

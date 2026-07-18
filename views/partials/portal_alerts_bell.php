@@ -14,7 +14,7 @@ $dropdownId = isset($portal_alerts_dropdown_id) && is_string($portal_alerts_drop
 ?>
 <div class="relative" data-portal-alerts-wrap>
     <button type="button"
-            class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-600 bg-slate-800/90 text-slate-300 shadow-sm transition hover:bg-slate-700 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
+            class="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-white/65 transition hover:bg-white/[0.08] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
             data-portal-alerts-trigger
             aria-expanded="false"
             aria-controls="<?= htmlspecialchars($dropdownId, ENT_QUOTES, 'UTF-8') ?>"

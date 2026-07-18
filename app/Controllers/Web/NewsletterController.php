@@ -52,7 +52,7 @@ final class NewsletterController
             'NEWSLETTER_OPTIN_CONFIRM',
             'newsletter_optin_confirm',
             $email,
-            'Confirmez votre inscription à la newsletter Athena',
+            'Confirmez votre inscription aux communications Athena',
             [
                 'confirmUrl' => $confirmUrl,
                 'unsubscribeUrl' => $unsubscribeUrl,
@@ -91,7 +91,7 @@ final class NewsletterController
                 'NEWSLETTER_WELCOME',
                 'newsletter_welcome',
                 $email,
-                'Bienvenue dans la newsletter Athena',
+                'Bienvenue dans les communications Athena',
                 ['unsubscribeUrl' => $unsubscribeUrl],
                 null,
                 null,

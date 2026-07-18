@@ -17,7 +17,7 @@ if ($tailwindBuilt): ?>
           extend: {
             fontFamily: {
               sans: ['Inter', 'system-ui', 'sans-serif'],
-              serif: ['"Source Serif 4"', 'Georgia', 'serif'],
+              serif: ['Inter', 'Segoe UI', 'system-ui', 'sans-serif'],
             },
             letterSpacing: {
               architect: '0.3em',

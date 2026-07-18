@@ -23,7 +23,8 @@ final class SystemDemoNdaController
             'content' => 'admin.system.demo_nda',
             'gateEnabled' => $this->gate->isEnabled(),
             'ttlHours' => $this->gate->ttlHours(),
-            'accessCode' => $this->gate->getAccessCode(),
+            'accessCode' => $this->gate->peekAccessCode(),
+            'accessCodeFromEnv' => $this->gate->isAccessCodeFromEnv(),
             'envBypassIps' => $this->gate->envBypassIps(),
             'adminBypassIps' => $this->gate->adminBypassIps(),
             'clientIp' => $this->gate->clientIp(),
@@ -38,8 +39,12 @@ final class SystemDemoNdaController
 
             return Response::redirect(url('admin/system/demo-nda'));
         }
-        $code = $this->gate->regenerateAccessCode();
-        Session::flash('success', 'Nouveau code généré : ' . $code);
+        try {
+            $code = $this->gate->regenerateAccessCode();
+            Session::flash('success', 'Nouveau code généré : ' . $code);
+        } catch (\Throwable $e) {
+            Session::flash('error', $e->getMessage());
+        }
 
         return Response::redirect(url('admin/system/demo-nda'));
     }

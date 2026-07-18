@@ -9,7 +9,7 @@ $date = $date ?? date('d.m.Y');
         <?= htmlspecialchars($label) ?>
     </span>
     <?php if ($text !== ''): ?>
-    <p class="editorial-block__text text-lg text-slate-600 leading-relaxed font-serif italic">
+    <p class="editorial-block__text text-lg text-slate-600 leading-relaxed font-medium">
         «&nbsp;<?= htmlspecialchars($text) ?>&nbsp;»
     </p>
     <?php endif; ?>

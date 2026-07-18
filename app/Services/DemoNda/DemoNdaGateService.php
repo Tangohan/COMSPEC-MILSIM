@@ -27,7 +27,12 @@ final class DemoNdaGateService
 
     public function isEnabled(): bool
     {
-        return filter_var((string) env('DEMO_NDA_GATE_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
+        if (!filter_var((string) env('DEMO_NDA_GATE_ENABLED', false), FILTER_VALIDATE_BOOLEAN)) {
+            return false;
+        }
+
+        // Sans code configuré : ne jamais enfermer le site (évite le lock-out admin).
+        return $this->peekAccessCode() !== '';
     }
 
     public function ttlHours(): int
@@ -40,6 +45,35 @@ final class DemoNdaGateService
     public function clientIp(): string
     {
         return MaintenanceGuard::resolveClientIp();
+    }
+
+    /**
+     * Déblocage d’urgence via ?demo_nda_unlock=CLE (DEMO_NDA_GATE_UNLOCK_KEY).
+     * Réouvre la visite de l’IP courante même si la gate est active.
+     */
+    public function tryUnlockFromRequest(\App\Core\Request $request): bool
+    {
+        $key = trim((string) env('DEMO_NDA_GATE_UNLOCK_KEY', ''));
+        if ($key === '') {
+            return false;
+        }
+        $provided = trim((string) $request->query('demo_nda_unlock', ''));
+        if ($provided === '' || !hash_equals($key, $provided)) {
+            return false;
+        }
+
+        $ip = $this->clientIp();
+        if ($ip === '' || $ip === '0.0.0.0') {
+            return false;
+        }
+
+        $visit = $this->visits->findByIp($ip);
+        if ($visit !== null) {
+            $this->resetVisit((int) $visit['id']);
+        }
+        $this->clearSessionGrant();
+
+        return true;
     }
 
     public function isPublicAssetPath(string $path): bool
@@ -158,9 +192,32 @@ final class DemoNdaGateService
         $this->saveAdminBypassIps($list);
     }
 
+    public function envAccessCode(): string
+    {
+        return trim((string) env('DEMO_NDA_GATE_ACCESS_CODE', ''));
+    }
+
+    public function isAccessCodeFromEnv(): bool
+    {
+        return $this->envAccessCode() !== '';
+    }
+
+    /**
+     * Code effectif : .env en priorité, sinon code stocké côté admin.
+     */
+    public function peekAccessCode(): string
+    {
+        $fromEnv = $this->envAccessCode();
+        if ($fromEnv !== '') {
+            return $fromEnv;
+        }
+
+        return trim($this->settings->get(self::SETTING_ACCESS_CODE, ''));
+    }
+
     public function getAccessCode(): string
     {
-        $code = trim($this->settings->get(self::SETTING_ACCESS_CODE, ''));
+        $code = $this->peekAccessCode();
         if ($code !== '') {
             return $code;
         }
@@ -168,13 +225,17 @@ final class DemoNdaGateService
         return $this->regenerateAccessCode();
     }
 
-    public function peekAccessCode(): string
-    {
-        return trim($this->settings->get(self::SETTING_ACCESS_CODE, ''));
-    }
-
+    /**
+     * @throws \RuntimeException si le code est fixé dans le .env
+     */
     public function regenerateAccessCode(): string
     {
+        if ($this->isAccessCodeFromEnv()) {
+            throw new \RuntimeException(
+                'Le code est défini dans le fichier d’environnement (DEMO_NDA_GATE_ACCESS_CODE). Modifiez-le là-bas.'
+            );
+        }
+
         $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         $len = 8;
         $code = '';
@@ -351,6 +412,53 @@ final class DemoNdaGateService
     public function clearSessionGrant(): void
     {
         Session::forgetMany([self::SESSION_TOKEN, self::SESSION_EXPIRES]);
+    }
+
+    /**
+     * Fin de session démo active (null si pas de session / bypass / gate off).
+     */
+    public function activeSessionExpiresAt(): ?DateTimeImmutable
+    {
+        if (!$this->isEnabled()) {
+            return null;
+        }
+        $ip = $this->clientIp();
+        if ($this->isBypassIp($ip)) {
+            return null;
+        }
+        $expiresRaw = (string) Session::get(self::SESSION_EXPIRES, '');
+        $token = (string) Session::get(self::SESSION_TOKEN, '');
+        if ($expiresRaw === '' || $token === '') {
+            return null;
+        }
+        $expires = $this->parseDate($expiresRaw);
+        if ($expires === null || new DateTimeImmutable('now') >= $expires) {
+            return null;
+        }
+        $visit = $this->visits->findByIp($ip);
+        if ($visit === null) {
+            return null;
+        }
+        $visit = $this->refreshStatus($visit);
+        if (!$this->hasValidSession($visit)) {
+            return null;
+        }
+
+        return $expires;
+    }
+
+    /**
+     * Secondes restantes pour le widget (null si rien à afficher).
+     */
+    public function activeSessionRemainingSeconds(): ?int
+    {
+        $expires = $this->activeSessionExpiresAt();
+        if ($expires === null) {
+            return null;
+        }
+        $sec = $expires->getTimestamp() - time();
+
+        return $sec > 0 ? $sec : null;
     }
 
     public function rememberIntendedPath(string $path): void

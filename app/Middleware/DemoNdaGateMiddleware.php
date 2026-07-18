@@ -19,6 +19,11 @@ final class DemoNdaGateMiddleware
 
     public function __invoke(Request $request, callable $next): Response
     {
+        // Déblocage d’urgence : /?demo_nda_unlock=CLE (même clé dans le .env)
+        if ($this->gate->tryUnlockFromRequest($request)) {
+            return Response::redirect(url(''));
+        }
+
         if (!$this->gate->isEnabled()) {
             return $next($request);
         }

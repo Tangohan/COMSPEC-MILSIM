@@ -4,6 +4,7 @@ declare(strict_types=1);
 /** @var bool $gateEnabled */
 /** @var int $ttlHours */
 /** @var string $accessCode */
+/** @var bool $accessCodeFromEnv */
 /** @var list<string> $envBypassIps */
 /** @var list<string> $adminBypassIps */
 /** @var string $clientIp */
@@ -17,6 +18,7 @@ $statusLabel = static function (string $status): string {
         default => 'Inconnu',
     };
 };
+$accessCodeFromEnv = !empty($accessCodeFromEnv);
 ?>
 <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-10">
     <header>
@@ -41,8 +43,9 @@ $statusLabel = static function (string $status): string {
             </p>
         <?php else: ?>
             <p class="text-sm text-amber-900 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                Désactivé. Pour l’activer, définissez <span class="font-mono text-xs">DEMO_NDA_GATE_ENABLED=true</span> dans l’environnement, et placez votre adresse dans
-                <span class="font-mono text-xs">DEMO_NDA_GATE_BYPASS_IPS</span> avant d’activer (sinon vous serez aussi soumis au portail).
+                Désactivé. Pour l’activer, définissez <span class="font-mono text-xs">DEMO_NDA_GATE_ENABLED=true</span> et
+                <span class="font-mono text-xs">DEMO_NDA_GATE_ACCESS_CODE</span> dans l’environnement. Ajoutez votre adresse dans
+                <span class="font-mono text-xs">DEMO_NDA_GATE_BYPASS_IPS</span> pour garder l’admin sans passer par le portail.
             </p>
         <?php endif; ?>
         <p class="text-xs text-slate-500">Adresse observée pour cette session d’administration : <span class="font-mono"><?= htmlspecialchars($clientIp, ENT_QUOTES, 'UTF-8') ?></span></p>
@@ -50,14 +53,33 @@ $statusLabel = static function (string $status): string {
 
     <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 class="text-sm font-bold text-slate-800 mb-3">Code d’accès à communiquer</h2>
-        <p class="text-3xl font-black tracking-[0.2em] text-slate-900 font-mono"><?= htmlspecialchars($accessCode, ENT_QUOTES, 'UTF-8') ?></p>
-        <form method="post" action="<?= url('admin/system/demo-nda/regenerate-code') ?>" class="mt-4">
-            <?= \App\Core\Csrf::field() ?>
-            <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
-                Générer un nouveau code
-            </button>
-        </form>
-        <p class="mt-3 text-xs text-slate-500">Les personnes qui ont déjà un accès en cours ne sont pas déconnectées automatiquement ; le nouveau code sert aux prochaines validations.</p>
+        <?php if ($accessCode !== ''): ?>
+            <p class="text-3xl font-black tracking-[0.2em] text-slate-900 font-mono"><?= htmlspecialchars($accessCode, ENT_QUOTES, 'UTF-8') ?></p>
+            <?php if ($accessCodeFromEnv): ?>
+                <p class="mt-3 text-sm text-slate-600">
+                    Issu de <span class="font-mono text-xs">DEMO_NDA_GATE_ACCESS_CODE</span> dans le fichier d’environnement.
+                    Pour le changer, modifiez cette valeur puis rechargez l’application.
+                </p>
+            <?php else: ?>
+                <form method="post" action="<?= url('admin/system/demo-nda/regenerate-code') ?>" class="mt-4">
+                    <?= \App\Core\Csrf::field() ?>
+                    <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                        Générer un nouveau code
+                    </button>
+                </form>
+                <p class="mt-3 text-xs text-slate-500">Aucun code dans le .env : celui-ci est stocké côté plateforme. Préférez le définir dans <span class="font-mono">DEMO_NDA_GATE_ACCESS_CODE</span>.</p>
+            <?php endif; ?>
+        <?php else: ?>
+            <p class="text-sm text-amber-900 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                Aucun code défini. Ajoutez <span class="font-mono text-xs">DEMO_NDA_GATE_ACCESS_CODE=XXXX-XXXX</span> dans le fichier d’environnement.
+            </p>
+            <form method="post" action="<?= url('admin/system/demo-nda/regenerate-code') ?>" class="mt-4">
+                <?= \App\Core\Csrf::field() ?>
+                <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                    Générer un code (secours)
+                </button>
+            </form>
+        <?php endif; ?>
     </section>
 
     <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-6">

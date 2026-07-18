@@ -51,7 +51,7 @@
 
   /* Typo */
   --ds-font-sans: Inter, system-ui, sans-serif;
-  --ds-font-serif: "Source Serif 4", Georgia, serif;
+  --ds-font-serif: Inter, "Segoe UI", system-ui, sans-serif;
   --ds-font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 

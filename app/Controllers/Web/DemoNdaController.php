@@ -60,6 +60,9 @@ final class DemoNdaController
             'ttlHours' => $this->gate->ttlHours(),
             'claimExpiresAt' => $claimExpiresAt,
             'error' => is_string($error) ? $error : null,
+            'observedIp' => $ip,
+            'showObservedIp' => filter_var((string) env('APP_DEBUG', false), FILTER_VALIDATE_BOOLEAN)
+                || filter_var((string) env('DEMO_NDA_GATE_SHOW_IP', false), FILTER_VALIDATE_BOOLEAN),
         ]);
     }
 

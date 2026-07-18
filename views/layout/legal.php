@@ -35,37 +35,12 @@ $hideHaloLoader = !empty($hideHaloLoader);
     <?php endif; ?>
 </head>
 <body class="legal-body">
-<?php if (!$hideHaloLoader): ?>
-    <div id="halo-loader" class="halo-loader" role="status" aria-live="polite" aria-busy="true" aria-label="Chargement">
-        <div class="halo-loader__reticle" aria-hidden="true">
-            <div class="halo-loader__ring halo-loader__ring--outer"></div>
-            <div class="halo-loader__ring halo-loader__ring--mid"></div>
-            <div class="halo-loader__ticks" data-halo-ticks></div>
-            <svg class="halo-loader__progress-ring" viewBox="0 0 120 120" aria-hidden="true">
-                <circle class="track" cx="60" cy="60" r="50"></circle>
-                <circle class="value" data-halo-ring-value cx="60" cy="60" r="50"></circle>
-            </svg>
-            <div class="halo-loader__core">
-                <span class="halo-loader__pct"><span data-halo-pct>0</span>%</span>
-            </div>
-        </div>
-        <div class="halo-loader__brand">
-            <p class="halo-loader__brand-name"><?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?></p>
-            <p class="halo-loader__brand-status" data-halo-status>Initialisation</p>
-        </div>
-        <div class="halo-loader__bar-wrap">
-            <div class="halo-loader__bar-meta">
-                <span>Système</span>
-                <span>Documents juridiques</span>
-            </div>
-            <div class="halo-loader__track">
-                <div class="halo-loader__fill" data-halo-fill></div>
-            </div>
-            <p class="halo-loader__hint">Préparation de l’espace documentation…</p>
-        </div>
-    </div>
-    <script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/halo-loader.js"></script>
-<?php endif; ?>
+    <?php if (!$hideHaloLoader): ?>
+    <?php
+        $haloLoaderHint = 'Préparation de l’espace documentation…';
+        require base_path('views/partials/halo_loader.php');
+    ?>
+    <?php endif; ?>
 
     <div class="legal-shell">
         <div class="legal-wrap">
@@ -90,6 +65,7 @@ $hideHaloLoader = !empty($hideHaloLoader);
     </div>
 
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+    <?php require base_path('views/partials/demo_nda_session_widget.php'); ?>
     <?php if (is_file(base_path('public/assets/js/cookie_consent.js'))): ?>
     <script defer src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/cookie_consent.js"></script>
     <?php endif; ?>

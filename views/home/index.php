@@ -41,7 +41,7 @@ $resolveLogo = static function (string $logo) use ($base): string {
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
     <link href="<?= $base ?>/assets/css/home-impact.css" rel="stylesheet">
 </head>
@@ -141,9 +141,9 @@ $resolveLogo = static function (string $logo) use ($base): string {
             </div>
 
             <div class="relative z-10 flex flex-1 flex-col justify-center hi-section">
-                <p class="hi-kicker hi-reveal text-emerald-400/90">Portail MILSIM · Commandement d’unité</p>
-                <h1 class="hi-display hi-hero-brand hi-reveal hi-reveal-delay mt-6 text-white">
-                    Athena<span class="text-emerald-400">.</span>
+                <p class="hi-kicker hi-kicker-glitch hi-reveal text-emerald-400/90">Portail MILSIM · Commandement d’unité</p>
+                <h1 class="hi-display hi-hero-brand hi-glitch hi-reveal mt-6 text-white" data-text="Athena" aria-label="Athena">
+                    <span class="hi-glitch__main" aria-hidden="true">Athena<span class="hi-glitch__dot">.</span></span>
                 </h1>
                 <p class="hi-body hi-reveal hi-reveal-delay mt-8 max-w-xl text-white/70">
                     Une base pour votre communauté Arma — du recrutement au terrain.
@@ -424,38 +424,146 @@ $resolveLogo = static function (string $logo) use ($base): string {
         </section>
 
         <!-- Newsletter -->
-        <section id="newsletter" class="bg-[var(--hi-paper)] text-slate-900">
+        <section id="newsletter" class="hi-newsletter bg-[var(--hi-paper)] text-slate-900" aria-labelledby="newsletter-heading">
             <div class="hi-section mx-auto max-w-[100rem]">
-                <p class="hi-kicker text-slate-400">Veille produit</p>
-                <h2 class="hi-display hi-display-md mt-4 max-w-3xl">Rester<br>informé.</h2>
-                <p class="hi-body mt-6 max-w-lg text-slate-500">Nouveautés Athena et guides MILSIM. Confirmation e-mail requise. Désabonnement à chaque envoi.</p>
-                <?php if ($newsletterStatus !== ''): ?>
-                    <?php
-                    $newsletterMessages = [
-                        'confirm_sent' => ['ok' => true, 'text' => 'Vérifiez votre boîte e-mail pour confirmer votre inscription.'],
-                        'confirmed' => ['ok' => true, 'text' => 'Inscription confirmée. Bienvenue dans la newsletter Athena.'],
-                        'unsubscribed' => ['ok' => true, 'text' => 'Vous êtes désinscrit·e de la newsletter.'],
-                        'invalid_email' => ['ok' => false, 'text' => 'Adresse e-mail invalide.'],
-                        'csrf' => ['ok' => false, 'text' => 'Session expirée, veuillez réessayer.'],
-                        'confirm_invalid' => ['ok' => false, 'text' => 'Lien de confirmation invalide ou expiré.'],
-                        'unsubscribe_invalid' => ['ok' => false, 'text' => 'Lien de désabonnement invalide.'],
-                        'schema_missing' => ['ok' => false, 'text' => 'Module newsletter indisponible pour le moment.'],
-                    ];
-                    $current = $newsletterMessages[$newsletterStatus] ?? null;
-                    ?>
-                    <?php if ($current): ?>
-                        <p class="mt-6 max-w-xl border px-4 py-3 text-sm <?= $current['ok'] ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-rose-200 bg-rose-50 text-rose-900' ?>">
-                            <?= htmlspecialchars($current['text']) ?>
+                <div class="hi-newsletter__grid">
+                    <div class="hi-newsletter__intro">
+                        <p class="hi-kicker text-emerald-700">Communications Athena</p>
+                        <h2 id="newsletter-heading" class="hi-display hi-display-md mt-4 max-w-3xl">Recevez les<br>nouveautés Athena</h2>
+                        <p class="hi-body mt-6 max-w-xl text-slate-600">
+                            Suivez les évolutions de la plateforme, les nouveaux modules tactiques, les guides d’installation Arma&nbsp;3 et les mises à jour dédiées aux communautés MILSIM.
                         </p>
-                    <?php endif; ?>
-                <?php endif; ?>
-                <form method="post" action="<?= url('newsletter/subscribe') ?>" class="mt-8 flex max-w-xl flex-col gap-3 sm:flex-row">
-                    <?= \App\Core\Csrf::field() ?>
-                    <label for="newsletter-email" class="sr-only">Adresse e-mail</label>
-                    <input id="newsletter-email" name="email" type="email" required maxlength="255" placeholder="votre@email.com"
-                           class="w-full border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600">
-                    <button type="submit" class="hi-cta hi-cta-ink shrink-0">S’abonner</button>
-                </form>
+                        <ul class="hi-newsletter__highlights mt-8" aria-label="Ce que vous recevrez">
+                            <li>Annonces de nouvelles fonctions du portail</li>
+                            <li>Guides pratiques pour unités et formateurs</li>
+                            <li>Rappels utiles avant les grandes mises à jour</li>
+                        </ul>
+                    </div>
+
+                    <div class="hi-newsletter__panel">
+                        <?php
+                        $newsletterMessages = [
+                            'confirm_sent' => [
+                                'ok' => true,
+                                'title' => 'Vérifiez votre boîte e-mail',
+                                'text' => 'Un message de confirmation vient de partir. Ouvrez-le et validez votre adresse pour activer l’envoi des communications Athena.',
+                            ],
+                            'confirmed' => [
+                                'ok' => true,
+                                'title' => 'Inscription confirmée',
+                                'text' => 'Votre adresse est enregistrée. Vous recevrez désormais les nouveautés Athena et les guides destinés aux communautés MILSIM.',
+                            ],
+                            'unsubscribed' => [
+                                'ok' => true,
+                                'title' => 'Désinscription effectuée',
+                                'text' => 'Vous ne recevrez plus nos communications. Vous pourrez vous réinscrire à tout moment depuis cette page.',
+                            ],
+                            'invalid_email' => [
+                                'ok' => false,
+                                'title' => 'Adresse e-mail incorrecte',
+                                'text' => 'Saisissez une adresse complète du type nom@exemple.fr, puis réessayez.',
+                            ],
+                            'csrf' => [
+                                'ok' => false,
+                                'title' => 'Session expirée',
+                                'text' => 'Pour des raisons de sécurité, veuillez renseigner à nouveau votre adresse e-mail et valider le formulaire.',
+                            ],
+                            'confirm_invalid' => [
+                                'ok' => false,
+                                'title' => 'Lien de confirmation inutilisable',
+                                'text' => 'Ce lien a déjà été utilisé ou n’est plus valable. Inscrivez-vous de nouveau pour recevoir un nouveau message de confirmation.',
+                            ],
+                            'unsubscribe_invalid' => [
+                                'ok' => false,
+                                'title' => 'Lien de désabonnement inutilisable',
+                                'text' => 'Ce lien n’est plus valable. Si vous recevez encore nos messages, utilisez le lien « Se désabonner » présent en bas de chaque e-mail.',
+                            ],
+                            'schema_missing' => [
+                                'ok' => false,
+                                'title' => 'Inscription temporairement impossible',
+                                'text' => 'Les communications Athena ne peuvent pas être enregistrées pour le moment. Réessayez un peu plus tard.',
+                            ],
+                        ];
+                        $newsletterFeedback = $newsletterMessages[$newsletterStatus] ?? null;
+                        $newsletterFormDisabled = $newsletterStatus === 'schema_missing';
+                        $newsletterShowForm = !in_array($newsletterStatus, ['confirm_sent', 'confirmed'], true);
+                        ?>
+
+                        <?php if ($newsletterFeedback): ?>
+                            <div class="hi-newsletter__status <?= $newsletterFeedback['ok'] ? 'hi-newsletter__status--ok' : 'hi-newsletter__status--error' ?>" role="status" aria-live="polite">
+                                <p class="hi-newsletter__status-title"><?= htmlspecialchars($newsletterFeedback['title']) ?></p>
+                                <p class="hi-newsletter__status-text"><?= htmlspecialchars($newsletterFeedback['text']) ?></p>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($newsletterShowForm): ?>
+                            <form
+                                id="newsletter-form"
+                                method="post"
+                                action="<?= url('newsletter/subscribe') ?>"
+                                class="hi-newsletter__form"
+                                novalidate
+                                data-newsletter-form
+                                <?= $newsletterFormDisabled ? 'aria-disabled="true"' : '' ?>
+                            >
+                                <?= \App\Core\Csrf::field() ?>
+
+                                <div class="hi-newsletter__field">
+                                    <label for="newsletter-email" class="hi-newsletter__label">Adresse e-mail</label>
+                                    <input
+                                        id="newsletter-email"
+                                        name="email"
+                                        type="email"
+                                        required
+                                        maxlength="255"
+                                        autocomplete="email"
+                                        autocapitalize="none"
+                                        spellcheck="false"
+                                        inputmode="email"
+                                        placeholder="vous@exemple.fr"
+                                        class="hi-newsletter__input"
+                                        <?= $newsletterFormDisabled ? 'disabled' : '' ?>
+                                        aria-describedby="newsletter-help newsletter-privacy"
+                                    >
+                                    <p id="newsletter-help" class="hi-newsletter__help">
+                                        Un e-mail de confirmation vous sera envoyé afin de valider votre inscription.
+                                    </p>
+                                    <p id="newsletter-email-error" class="hi-newsletter__field-error" hidden role="alert">
+                                        Indiquez une adresse e-mail valide pour continuer.
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    class="hi-cta hi-cta-ink hi-newsletter__submit"
+                                    <?= $newsletterFormDisabled ? 'disabled' : '' ?>
+                                    data-newsletter-submit
+                                    data-label-idle="S’inscrire aux communications"
+                                    data-label-loading="Envoi en cours…"
+                                >
+                                    <span data-newsletter-submit-label>S’inscrire aux communications</span>
+                                </button>
+
+                                <p id="newsletter-privacy" class="hi-newsletter__privacy">
+                                    Vous pourrez vous désabonner à tout moment depuis chaque message reçu. Aucune adresse n’est partagée avec des tiers.
+                                </p>
+                            </form>
+                        <?php elseif ($newsletterStatus === 'confirm_sent'): ?>
+                            <p class="hi-newsletter__empty-hint">
+                                Vous n’avez pas reçu le message&nbsp;? Vérifiez le dossier indésirables, puis réessayez dans quelques minutes si besoin.
+                            </p>
+                            <p class="mt-4">
+                                <a href="<?= htmlspecialchars(url('/#newsletter'), ENT_QUOTES, 'UTF-8') ?>" class="hi-newsletter__retry" data-newsletter-retry>
+                                    Utiliser une autre adresse
+                                </a>
+                            </p>
+                        <?php else: ?>
+                            <p class="hi-newsletter__empty-hint">
+                                Merci de votre confiance. Les prochaines communications Athena arriveront directement dans votre boîte e-mail.
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -489,6 +597,7 @@ $resolveLogo = static function (string $logo) use ($base): string {
     </footer>
 
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+    <?php require base_path('views/partials/demo_nda_session_widget.php'); ?>
 
     <script>
         function toggleMenu() {
@@ -607,6 +716,55 @@ $resolveLogo = static function (string $logo) use ($base): string {
             if (yes) yes.addEventListener('click', function () { enableImmersive(true); if (dlg) dlg.close(); });
             if (no) no.addEventListener('click', function () { disableImmersive(); if (dlg) dlg.close(); });
             if (btnLater) btnLater.addEventListener('click', function () { enableImmersive(true); });
+        })();
+
+        (function newsletterForm() {
+            var form = document.querySelector('[data-newsletter-form]');
+            if (!form) return;
+
+            var email = form.querySelector('#newsletter-email');
+            var errorEl = document.getElementById('newsletter-email-error');
+            var submit = form.querySelector('[data-newsletter-submit]');
+            var label = form.querySelector('[data-newsletter-submit-label]');
+            var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            function setInvalid(isInvalid) {
+                if (!email) return;
+                email.classList.toggle('is-invalid', isInvalid);
+                email.setAttribute('aria-invalid', isInvalid ? 'true' : 'false');
+                if (errorEl) errorEl.hidden = !isInvalid;
+            }
+
+            function setLoading(isLoading) {
+                if (!submit || !label) return;
+                submit.classList.toggle('is-loading', isLoading);
+                submit.disabled = isLoading;
+                label.textContent = isLoading
+                    ? (submit.getAttribute('data-label-loading') || 'Envoi en cours…')
+                    : (submit.getAttribute('data-label-idle') || 'S’inscrire aux communications');
+            }
+
+            if (email) {
+                email.addEventListener('input', function () {
+                    if (email.value.trim() !== '') setInvalid(false);
+                });
+            }
+
+            form.addEventListener('submit', function (event) {
+                if (submit && submit.disabled && !submit.classList.contains('is-loading')) {
+                    event.preventDefault();
+                    return;
+                }
+                var value = email ? email.value.trim() : '';
+                if (!value || !emailPattern.test(value)) {
+                    event.preventDefault();
+                    setInvalid(true);
+                    if (email) email.focus();
+                    return;
+                }
+                setInvalid(false);
+                setLoading(true);
+            });
         })();
     </script>
 </body>
