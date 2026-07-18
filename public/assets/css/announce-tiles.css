@@ -18,9 +18,39 @@
 }
 
 .org-dash .dash-announce {
-  margin: 0 0 1.75rem;
-  border: 1px solid #1a1a1a;
-  border-bottom-color: #1a1a1a;
+  margin: 0 -1rem 1.75rem;
+  border: none;
+  border-bottom: 1px solid #1a1a1a;
+  border-radius: 0;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .org-dash .dash-announce {
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .org-dash .dash-announce {
+    margin-left: -2rem;
+    margin-right: -2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .org-dash .dash-announce {
+    margin-left: -2.5rem;
+    margin-right: -2.5rem;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
 }
 
 .dash-announce__brief {

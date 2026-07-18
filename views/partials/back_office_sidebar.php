@@ -219,7 +219,8 @@ $tile = static function (
     ?string $badge,
     array $tileLinks,
     string $iconKey = '',
-    bool $active = false
+    bool $active = false,
+    string $keywords = ''
 ): array {
     return [
         'id' => $id,
@@ -230,6 +231,7 @@ $tile = static function (
         'active' => $active,
         'links' => $tileLinks,
         'icon' => $iconKey,
+        'keywords' => $keywords,
     ];
 };
 
@@ -247,14 +249,14 @@ $adminTiles = [];
 
 $coreTiles[] = $tile('overview', 'Vue d’ensemble', 'Accueil de l’administration', 'default', null, $links([
     ['label' => 'Tableau de bord', 'href' => url('back-office'), 'hint' => 'Synthèse et raccourcis', 'active' => $boNavHome],
-]), 'overview', $boNavHome);
+]), 'overview', $boNavHome, 'pilotage centre dashboard synthèse indicateurs kpi home accueil');
 
 $coreTiles[] = $tile('members', 'Membres', 'Comptes et invitations', 'default', null, $links([
     ['label' => 'Utilisateurs', 'href' => url('back-office/users'), 'hint' => 'Comptes de la communauté', 'active' => $boNavUsers],
     $canInv
         ? ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'hint' => 'Codes d’accès', 'active' => $boNavInv]
         : null,
-]), 'users', $boNavUsers || $boNavInv);
+]), 'users', $boNavUsers || $boNavInv, 'utilisateurs comptes membres invitation code accès join');
 
 $coreTiles[] = $tile(
     'recruitment',
@@ -282,7 +284,8 @@ $coreTiles[] = $tile(
             : null,
     ]),
     'recruitment',
-    $boNavRecWorkspaceDash || $boNavRecWorkspaceAnalytics || ($boNavRec && !$boNavRecSettings && !$boNavRecMessages) || $boNavRecSettings || $boNavRecMessages || $boNavRecOffers || $boNavRecOfferNew
+    $boNavRecWorkspaceDash || $boNavRecWorkspaceAnalytics || ($boNavRec && !$boNavRecSettings && !$boNavRecMessages) || $boNavRecSettings || $boNavRecMessages || $boNavRecOffers || $boNavRecOfferNew,
+    'candidature dossier recrutement offre postuler enrôlement rh bureau'
 );
 
 $coreTiles[] = $tile('access', 'Droits & emplois', 'Rôles, accès et missions', 'default', null, $links([
@@ -298,7 +301,7 @@ $coreTiles[] = $tile('access', 'Droits & emplois', 'Rôles, accès et missions',
         : null,
     ['label' => 'Déploiement personnel', 'href' => url('deploiement'), 'hint' => 'Affectations terrain', 'active' => $boNavPersonnelDeployment],
     ['label' => 'Suivi roleplay', 'href' => url('back-office/roleplay-followup'), 'hint' => 'Suivi narratif', 'active' => $boNavRoleplayFollowup],
-]), 'access', $boNavRoles || $boNavAccessMgmt || $boNavRolesPresets || $boNavRolesFx || ($boNavPjr && !$boNavPjrAssignments) || $boNavPjrAssignments || $boNavPersonnelDeployment || $boNavRoleplayFollowup);
+]), 'access', $boNavRoles || $boNavAccessMgmt || $boNavRolesPresets || $boNavRolesFx || ($boNavPjr && !$boNavPjrAssignments) || $boNavPjrAssignments || $boNavPersonnelDeployment || $boNavRoleplayFollowup, 'rôles permissions droits s1 emplois missions affectation grade doctrine');
 
 $coreTiles[] = $tile('organisation', 'Organisation', 'Structure et référentiels', 'default', null, $links([
     ['label' => 'Structure des effectifs', 'href' => url('back-office/organisation-effectifs'), 'hint' => 'Arborescence ORBAT', 'active' => $boNavEff],
@@ -315,7 +318,7 @@ $coreTiles[] = $tile('organisation', 'Organisation', 'Structure et référentiel
     ($canTenantModules || $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support'))
         ? ['label' => 'Ancienneté', 'href' => url('back-office/organisation/anciennete'), 'hint' => 'Fiches et RH', 'active' => $boNavSeniority]
         : null,
-]), 'structure', $boNavEff || $boNavStructureHub || $boNavGroups || $boNavTeams || $boNavCats || $boNavGrades || $boNavPositions || $boNavSeniority);
+]), 'structure', $boNavEff || $boNavStructureHub || $boNavGroups || $boNavTeams || $boNavCats || $boNavGrades || $boNavPositions || $boNavSeniority, 'orbat effectifs structure équipes groupes grades postes ancienneté organigramme');
 
 if ($canCommsSection) {
     $coreTiles[] = $tile('comms', 'Communications', 'Messages et diffusion', 'default', null, $links([
@@ -323,7 +326,7 @@ if ($canCommsSection) {
         ['label' => 'Historique des envois', 'href' => url('back-office/communications/history'), 'hint' => 'Journal des messages', 'active' => $boNavCommsHistory],
         ['label' => 'Modèles d’e-mail', 'href' => url('back-office/communications/templates'), 'hint' => 'Gabarit réutilisables', 'active' => $boNavCommsTemplates],
         ['label' => 'Groupes de diffusion', 'href' => url('back-office/communications/groups'), 'hint' => 'Listes de destinataires', 'active' => $boNavCommsGroups],
-    ]), 'comms', $boNavCommunications || $boNavCommsHistory || $boNavCommsTemplates || $boNavCommsGroups);
+    ]), 'comms', $boNavCommunications || $boNavCommsHistory || $boNavCommsTemplates || $boNavCommsGroups, 'message email mail diffusion newsletter communication modèle template');
 }
 
 $coreTiles[] = $tile('community', 'Communauté', 'Identité et portail', 'default', null, $links([
@@ -340,7 +343,7 @@ $coreTiles[] = $tile('community', 'Communauté', 'Identité et portail', 'defaul
     ['label' => 'Raccourcis du portail', 'href' => url('back-office/dashboard-pins'), 'hint' => 'Épingles tableau de bord', 'active' => $boNavPins],
     ['label' => 'Onboarding membres', 'href' => url('back-office/onboarding-members'), 'hint' => 'Parcours d’accueil', 'active' => $boNavOnbMembers],
     ['label' => 'Aide après inscription', 'href' => url('back-office/onboarding-recovery'), 'hint' => 'Relances et assistance', 'active' => $boNavOnb],
-]), 'community', $boNavInitialSetup || $boNavOrgSettings || $boNavCommPres || $boNavAlerts || $boNavConfig || $boNavInteg || $boNavAnalytics || $boNavAnalyticsConversion || $boNavPins || $boNavOnbMembers || $boNavOnb);
+]), 'community', $boNavInitialSetup || $boNavOrgSettings || $boNavCommPres || $boNavAlerts || $boNavConfig || $boNavInteg || $boNavAnalytics || $boNavAnalyticsConversion || $boNavPins || $boNavOnbMembers || $boNavOnb, 'communauté paramètres branding logo alerte annonce bannière setup configuration onboarding analytics épingles');
 
 $opsTiles[] = $tile('pilotage', 'Pilotage', 'Opérations et conformité', 'default', null, $links([
     $canMurOperationnel
@@ -356,12 +359,12 @@ $opsTiles[] = $tile('pilotage', 'Pilotage', 'Opérations et conformité', 'defau
         ? ['label' => 'Export conformité', 'href' => url('back-office/conformite/export-dossier'), 'hint' => 'Dossier exportable', 'active' => $boNavConformite]
         : null,
     ['label' => 'Journal d’activité', 'href' => url('back-office/audit'), 'hint' => 'Historique des actions', 'active' => $boNavAudit],
-]), 'ops', $boNavPortalOpsBoard || $boNavOpsAdmin || $boNavOpsBoard || $boNavCourrierTrace || $boNavDoctrine || $boNavConformite || $boNavAudit);
+]), 'ops', $boNavPortalOpsBoard || $boNavOpsAdmin || $boNavOpsBoard || $boNavCourrierTrace || $boNavDoctrine || $boNavConformite || $boNavAudit, 'opération mur audit conformité doctrine sop courrier journal logs');
 
 $opsTiles[] = $tile('events', 'Présences', 'Manœuvres et pointage', 'default', null, $links([
     ['label' => 'RSVP & pointage', 'href' => url('back-office/events'), 'hint' => 'Confirmations et présence', 'active' => $boNavEvents],
     ['label' => 'Insights présence', 'href' => url('back-office/events/insights'), 'hint' => 'Analyse des présences', 'active' => $boNavEventInsights],
-]), 'events', $boNavEvents || $boNavEventInsights);
+]), 'events', $boNavEvents || $boNavEventInsights, 'événement manœuvre rsvp présence calendrier pointage');
 
 $moderationLinks = $links([
     $canMemberModeration
@@ -393,7 +396,8 @@ if ($moderationLinks !== []) {
         $boModBadge !== null ? (string) $boModBadge : null,
         $moderationLinks,
         'moderation',
-        $boNavMod || $boNavSecurityIndicators || $boNavForumMod || $boNavContentMod
+        $boNavMod || $boNavSecurityIndicators || $boNavForumMod || $boNavContentMod,
+        'modération sanction ban mute forum signalement sécurité blocage'
     );
 }
 
@@ -408,13 +412,13 @@ if ($canTraining) {
         ['label' => 'Charte RH', 'href' => url($lmsResPath . '/charte-rh'), 'hint' => 'Cadre RH formations', 'active' => $boNavHrCharter],
         ['label' => 'Feedback post-leçon', 'href' => url($lmsResPath . '/feedback'), 'hint' => 'Retours apprenants', 'active' => $boNavLmsFeedback],
         ['label' => 'Studio des parcours', 'href' => url(training_studio_path()), 'hint' => 'Conception des modules', 'active' => $boNavStudioActive],
-    ]), 'training', $boNavLmsRes || $boNavLmsSubPage);
+    ]), 'training', $boNavLmsRes || $boNavLmsSubPage, 'formation lms cours certificat compétence parcours studio leçon');
 }
 
 if ($canDocs) {
     $resourceTiles[] = $tile('documents', 'Documents', 'Bibliothèque documentaire', 'default', null, $links([
         ['label' => 'Bibliothèque documentaire', 'href' => url('documents/gestion'), 'hint' => 'Publication et classement', 'active' => $boNavDocs],
-    ]), 'documents', $boNavDocs);
+    ]), 'documents', $boNavDocs, 'document fichier bibliothèque pdf ordre publication');
 }
 
 if ($canTenantModules) {
@@ -430,7 +434,7 @@ if ($canTenantModules) {
             ? ['label' => 'Annonces coopération', 'href' => url('back-office/cooperation/announcements'), 'hint' => 'Publications', 'active' => $boNavCoopAnnouncements]
             : null,
         ['label' => 'Cartographie & ATAK', 'href' => url('admin/atak-config'), 'hint' => 'Carte tactique', 'active' => $boNavAtak],
-    ]), 'tools', $boNavModpacks || $boNavForumConfig || $boNavForumMissionPriority || $boNavCoop || $boNavAtak);
+    ]), 'tools', $boNavModpacks || $boNavForumConfig || $boNavForumMissionPriority || $boNavCoop || $boNavAtak, 'modpack forum coopération atak carte tacmap mission inter-unité');
 }
 
 if ($gate->allows('admin.system') || $gate->allows('site.support')) {
@@ -441,7 +445,7 @@ if ($gate->allows('admin.system') || $gate->allows('site.support')) {
             'hint' => 'Espace plateforme',
             'active' => $boNavPlatformShell,
         ],
-    ]), 'admin', $boNavPlatformShell);
+    ]), 'admin', $boNavPlatformShell, 'plateforme admin site système newsletter alertes globales');
 }
 
 $renderLinks = static function (array $item) use ($h): void {
@@ -490,8 +494,22 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
     $nestedId = 'bo-rail-nested-' . $id;
     $idxLabel = $num();
     $iconMarkup = $icon((string) ($item['icon'] ?? ''));
+    $searchBits = [
+        $label,
+        (string) ($item['hint'] ?? ''),
+        (string) ($item['keywords'] ?? ''),
+        $id,
+    ];
+    foreach (($item['links'] ?? []) as $link) {
+        if (!is_array($link)) {
+            continue;
+        }
+        $searchBits[] = (string) ($link['label'] ?? '');
+        $searchBits[] = (string) ($link['hint'] ?? '');
+    }
+    $searchBlob = mb_strtolower(trim(preg_replace('/\s+/u', ' ', implode(' ', $searchBits)) ?? ''), 'UTF-8');
     ?>
-    <div class="dash-rail__item" data-dash-rail-item="<?= $h($id) ?>">
+    <div class="dash-rail__item" data-dash-rail-item="<?= $h($id) ?>" data-bo-search="<?= $h($searchBlob) ?>">
         <button
             type="button"
             class="<?= $h(implode(' ', $classes)) ?>"
@@ -548,30 +566,42 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
                     <p class="dash-rail__eyebrow">Athena / État-major</p>
                     <h2 class="dash-rail__title">Back-office</h2>
                     <p class="dash-rail__unit"><?= $h($tenantLabel !== '' ? $tenantLabel : 'Administration de votre espace') ?></p>
+                    <label class="bo-rail__search" for="bo-rail-search">
+                        <span class="sr-only">Rechercher dans le menu</span>
+                        <input
+                            id="bo-rail-search"
+                            type="search"
+                            class="bo-rail__search-input"
+                            placeholder="Rechercher une rubrique…"
+                            autocomplete="off"
+                            spellcheck="false"
+                        >
+                    </label>
+                    <p class="bo-rail__search-empty" id="bo-rail-search-empty" hidden>Aucun résultat pour cette recherche.</p>
                 </div>
 
-                <nav class="dash-rail__nav" aria-label="Rubriques back-office">
-                    <p class="dash-rail__section">Gestion</p>
+                <nav class="dash-rail__nav" aria-label="Rubriques back-office" id="bo-rail-nav">
+                    <p class="dash-rail__section" data-bo-section="gestion">Gestion</p>
                     <?php foreach ($coreTiles as $item): ?>
                         <?php $renderTile($item); ?>
                     <?php endforeach; ?>
 
                     <?php if ($opsTiles !== []): ?>
-                        <p class="dash-rail__section dash-rail__section--ops">Pilotage</p>
+                        <p class="dash-rail__section dash-rail__section--ops" data-bo-section="pilotage">Pilotage</p>
                         <?php foreach ($opsTiles as $item): ?>
                             <?php $renderTile($item); ?>
                         <?php endforeach; ?>
                     <?php endif; ?>
 
                     <?php if ($resourceTiles !== []): ?>
-                        <p class="dash-rail__section dash-rail__section--bo">Ressources</p>
+                        <p class="dash-rail__section dash-rail__section--bo" data-bo-section="ressources">Ressources</p>
                         <?php foreach ($resourceTiles as $item): ?>
                             <?php $renderTile($item); ?>
                         <?php endforeach; ?>
                     <?php endif; ?>
 
                     <?php if ($adminTiles !== []): ?>
-                        <p class="dash-rail__section dash-rail__section--admin">Plateforme</p>
+                        <p class="dash-rail__section dash-rail__section--admin" data-bo-section="plateforme">Plateforme</p>
                         <?php foreach ($adminTiles as $item): ?>
                             <?php $renderTile($item); ?>
                         <?php endforeach; ?>
@@ -630,3 +660,51 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
         </div>
     </div>
 </div>
+<script>
+(function () {
+  var root = document.getElementById('bo-rail');
+  var input = document.getElementById('bo-rail-search');
+  var empty = document.getElementById('bo-rail-search-empty');
+  var nav = document.getElementById('bo-rail-nav');
+  if (!root || !input || !nav) return;
+
+  function normalize(s) {
+    return String(s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function applyFilter() {
+    var q = normalize(input.value);
+    var items = nav.querySelectorAll('.dash-rail__item[data-bo-search]');
+    var visible = 0;
+    items.forEach(function (el) {
+      var hay = normalize(el.getAttribute('data-bo-search') || '');
+      var ok = q === '' || hay.indexOf(q) !== -1 || q.split(' ').every(function (tok) {
+        return tok === '' || hay.indexOf(tok) !== -1;
+      });
+      el.hidden = !ok;
+      if (ok) visible += 1;
+    });
+
+    var sections = nav.querySelectorAll('.dash-rail__section');
+    sections.forEach(function (sec) {
+      var next = sec.nextElementSibling;
+      var any = false;
+      while (next && !next.classList.contains('dash-rail__section')) {
+        if (next.classList.contains('dash-rail__item') && !next.hidden) any = true;
+        next = next.nextElementSibling;
+      }
+      sec.hidden = q !== '' && !any;
+    });
+
+    if (empty) empty.hidden = !(q !== '' && visible === 0);
+  }
+
+  input.addEventListener('input', applyFilter);
+  input.addEventListener('search', applyFilter);
+})();
+</script>

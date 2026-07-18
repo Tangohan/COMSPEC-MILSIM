@@ -71,9 +71,9 @@ $brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
     </header>
 
     <div class="relative z-10 flex flex-1 flex-col justify-center otp-auth-section">
-        <p class="hi-kicker hi-reveal text-emerald-400/90">Double vérification</p>
-        <h1 class="hi-display hi-hero-brand hi-reveal hi-reveal-delay mt-6 text-white">
-            <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?><span class="text-emerald-400">.</span>
+        <p class="hi-kicker hi-kicker-glitch hi-reveal text-emerald-400/90">Double vérification</p>
+        <h1 class="hi-display hi-hero-brand hi-glitch hi-reveal hi-reveal-delay mt-6 text-white" data-text="<?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?>" aria-label="<?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?>">
+            <span class="hi-glitch__main" aria-hidden="true"><?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?><span class="hi-glitch__dot">.</span></span>
         </h1>
         <p class="hi-body hi-reveal hi-reveal-delay mt-8 max-w-xl text-white/70">
             Un code à six chiffres a été envoyé à

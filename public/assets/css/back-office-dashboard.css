@@ -16,8 +16,8 @@
   overflow-x: hidden;
   color: var(--org-ink);
   background:
-    radial-gradient(1100px 400px at 8% -8%, rgba(37, 99, 235, 0.12), transparent 55%),
-    radial-gradient(900px 360px at 92% 0%, rgba(15, 23, 42, 0.07), transparent 50%),
+    radial-gradient(1100px 400px at 8% -8%, rgba(15, 23, 42, 0.08), transparent 55%),
+    radial-gradient(900px 360px at 92% 0%, rgba(15, 23, 42, 0.06), transparent 50%),
     linear-gradient(180deg, #f8fafc 0%, var(--org-bg) 42%, #eef2f7 100%);
 }
 
@@ -46,8 +46,7 @@
   overflow: hidden;
   margin: 0 -1rem 1.75rem;
   padding: 2rem 1rem 0;
-  background:
-    linear-gradient(118deg, rgba(15, 23, 42, 0.97) 0%, rgba(15, 23, 42, 0.9) 46%, rgba(30, 64, 175, 0.92) 100%);
+  background: #050505;
   color: #f8fafc;
   animation: org-dash-hero-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

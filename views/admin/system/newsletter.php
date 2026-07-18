@@ -67,11 +67,11 @@ $queryBase = static function (string $statutKey, string $search, int $pg) use ($
     return $qs !== '' ? $baseListUrl . '?' . $qs : $baseListUrl;
 };
 ?>
-<div class="max-w-6xl mx-auto px-6 py-10">
-    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+<div class="w-full px-4 sm:px-5 lg:px-6 py-4 sm:py-5">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
         <div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Lettre d’information du site</h1>
-            <p class="text-sm text-slate-600 mt-2 max-w-2xl leading-relaxed">
+            <p class="text-sm text-slate-600 mt-2 max-w-3xl leading-relaxed">
                 Liste des personnes qui se sont inscrites depuis la page d’accueil publique. Les adresses sont des données personnelles :
                 limitez la consultation aux besoins légitimes (support, conformité).
             </p>
@@ -85,26 +85,7 @@ $queryBase = static function (string $statutKey, string $search, int $pg) use ($
             <p class="mt-1 text-rose-800/90">La table des inscriptions n’est pas encore créée sur cette base. Appliquez la migration correspondante puis rechargez cette page.</p>
         </div>
     <?php else: ?>
-        <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8" aria-label="Synthèse des inscriptions">
-            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total enregistré</p>
-                <p class="mt-1 text-2xl font-black tabular-nums text-slate-900"><?= (int) ($counts['total'] ?? 0) ?></p>
-            </div>
-            <div class="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-4 shadow-sm">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-amber-900/80">En attente de confirmation</p>
-                <p class="mt-1 text-2xl font-black tabular-nums text-amber-950"><?= (int) ($counts['pending'] ?? 0) ?></p>
-            </div>
-            <div class="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-4 shadow-sm">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-900/80">Confirmées</p>
-                <p class="mt-1 text-2xl font-black tabular-nums text-emerald-950"><?= (int) ($counts['subscribed'] ?? 0) ?></p>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-600">Désinscriptions</p>
-                <p class="mt-1 text-2xl font-black tabular-nums text-slate-900"><?= (int) ($counts['unsubscribed'] ?? 0) ?></p>
-            </div>
-        </section>
-
-        <form method="get" action="<?= htmlspecialchars($baseListUrl, ENT_QUOTES, 'UTF-8') ?>" class="mb-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-end">
+        <form method="get" action="<?= htmlspecialchars($baseListUrl, ENT_QUOTES, 'UTF-8') ?>" class="mb-5 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-end">
             <div class="min-w-0 flex-1 sm:max-w-xs">
                 <label for="nl-statut" class="block text-xs font-semibold text-slate-600 mb-1">État</label>
                 <select id="nl-statut" name="statut" class="bo-select w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800">
@@ -140,7 +121,7 @@ $queryBase = static function (string $statutKey, string $search, int $pg) use ($
             <?php endif; ?>
         </div>
 
-        <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
             <table class="min-w-full text-left text-sm">
                 <thead class="border-b border-slate-200 bg-slate-50/90 text-xs font-bold uppercase tracking-wider text-slate-500">
                     <tr>

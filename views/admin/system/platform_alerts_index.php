@@ -122,6 +122,18 @@ $visibleNow = (int) ($stats['visible_now'] ?? 0);
                 <?php endif; ?>
             </div>
 
+            <div class="border-b border-slate-100 bg-white px-4 sm:px-5 py-3">
+                <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500 mb-2">Emplacements disponibles</p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-700"><span class="h-2 w-2 rounded-full bg-slate-500"></span>Bandeau classique</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 text-[10px] font-bold text-indigo-800"><span class="h-2 w-2 rounded-full bg-indigo-500"></span>Barre Info</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-800"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Barre Succès</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-900"><span class="h-2 w-2 rounded-full bg-amber-500"></span>Barre Attention</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-bold text-rose-800"><span class="h-2 w-2 rounded-full bg-rose-500"></span>Barre Critique</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-md border border-red-300 bg-red-50 px-2 py-1 text-[10px] font-bold text-red-900"><span class="h-2 w-2 rounded-full bg-red-700"></span>Breaking</span>
+                </div>
+            </div>
+
             <?php if ($rows === []): ?>
                 <div class="px-6 py-14 text-center">
                     <p class="text-sm font-semibold text-slate-700">Aucune annonce pour le moment.</p>
@@ -179,8 +191,21 @@ $visibleNow = (int) ($stats['visible_now'] ?? 0);
                                             <?= htmlspecialchars($kind['label'], ENT_QUOTES, 'UTF-8') ?>
                                         </span>
                                     </td>
-                                    <td class="text-xs text-slate-600 max-w-[12rem]">
-                                        <?= htmlspecialchars((string) ($r['_display_style_label'] ?? \App\Support\AlertDisplayStyle::label(isset($r['display_style']) ? (string) $r['display_style'] : 'classic')), ENT_QUOTES, 'UTF-8') ?>
+                                    <td>
+                                        <?php
+                                        $ds = \App\Support\AlertDisplayStyle::sanitizePlatform(isset($r['display_style']) ? (string) $r['display_style'] : null);
+                                        $dsShort = match ($ds) {
+                                            'mini_info' => ['Barre Info', 'bg-indigo-50 text-indigo-900 ring-indigo-200'],
+                                            'mini_success' => ['Barre Succès', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
+                                            'mini_warning' => ['Barre Attention', 'bg-amber-50 text-amber-950 ring-amber-200'],
+                                            'mini_danger' => ['Barre Critique', 'bg-rose-50 text-rose-900 ring-rose-200'],
+                                            'breaking' => ['Breaking', 'bg-red-50 text-red-900 ring-red-200'],
+                                            default => ['Classique', 'bg-slate-100 text-slate-800 ring-slate-200'],
+                                        };
+                                        ?>
+                                        <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($dsShort[1], ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars($dsShort[0], ENT_QUOTES, 'UTF-8') ?>
+                                        </span>
                                     </td>
                                     <td>
                                         <?php if ($isVisibleNow): ?>

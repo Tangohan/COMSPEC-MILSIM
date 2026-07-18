@@ -30,14 +30,14 @@ $err = \App\Core\Session::getFlash('error');
 $ok = \App\Core\Session::getFlash('success');
 ?>
 <div class="min-h-0 flex-1 bg-slate-50">
-<div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 lg:py-12 space-y-8">
+<div class="w-full px-4 sm:px-5 lg:px-6 py-4 sm:py-5 space-y-5">
 
-    <header class="relative overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
-        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/50 via-transparent to-transparent pointer-events-none" aria-hidden="true"></div>
-        <div class="relative px-5 sm:px-8 py-7 lg:py-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+    <header class="relative overflow-hidden rounded-xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
+        <div class="absolute inset-y-0 left-0 w-1 bg-emerald-600" aria-hidden="true"></div>
+        <div class="relative px-4 sm:px-6 py-5 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
             <div class="min-w-0 flex-1">
                 <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800/90">Premiers pas</p>
-                <h1 class="mt-2 text-2xl lg:text-3xl font-black tracking-tight text-slate-900">
+                <h1 class="mt-1.5 text-2xl font-black tracking-tight text-slate-900">
                     <?php if ($completed): ?>
                         Configuration initiale
                     <?php else: ?>
@@ -49,12 +49,12 @@ $ok = \App\Core\Session::getFlash('success');
                     Vous pouvez enregistrer, reporter ou terminer à tout moment.
                 </p>
             </div>
-            <div class="shrink-0 w-full lg:w-56 rounded-xl border border-slate-200/80 bg-white/90 p-4 shadow-sm">
+            <div class="shrink-0 w-full sm:w-52 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Profil renseigné</p>
-                <p class="text-3xl font-black text-slate-900"><?= $percent ?>%</p>
+                <p class="text-3xl font-black text-slate-900 tabular-nums"><?= $percent ?>%</p>
                 <p class="mt-1 text-xs text-slate-600"><?= $done ?>/<?= $total ?> éléments essentiels</p>
                 <div class="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div class="h-full rounded-full bg-emerald-500 transition-all" style="width:<?= $percent ?>%"></div>
+                    <div class="h-full rounded-full bg-emerald-500 transition-all" style="width:<?= max(0, min(100, $percent)) ?>%"></div>
                 </div>
             </div>
         </div>
@@ -63,7 +63,7 @@ $ok = \App\Core\Session::getFlash('success');
     <?php if ($err): ?><div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800"><?= htmlspecialchars((string) $err, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
     <?php if ($ok): ?><div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"><?= htmlspecialchars((string) $ok, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Checklist</p>
         <div class="mt-3 flex flex-wrap gap-2">
             <?php foreach ($items as $label => $isDone): ?>
@@ -79,10 +79,10 @@ $ok = \App\Core\Session::getFlash('success');
         </div>
     </section>
 
-    <form method="post" action="<?= htmlspecialchars(url('back-office/configuration-initiale'), ENT_QUOTES, 'UTF-8') ?>" enctype="multipart/form-data" class="space-y-6" id="initial-setup-form">
+    <form method="post" action="<?= htmlspecialchars(url('back-office/configuration-initiale'), ENT_QUOTES, 'UTF-8') ?>" enctype="multipart/form-data" class="space-y-5" id="initial-setup-form">
         <?= \App\Core\Csrf::field() ?>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-5">
+        <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
             <div>
                 <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Identité visuelle</h2>
                 <p class="mt-1 text-sm text-slate-600">Le logo apparaît sur la page publique et dans le portail.</p>
@@ -109,7 +109,7 @@ $ok = \App\Core\Session::getFlash('success');
             </div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-5">
+        <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
             <div>
                 <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Présentation</h2>
                 <p class="mt-1 text-sm text-slate-600">Texte court visible sur la page publique de votre unité.</p>
@@ -120,7 +120,7 @@ $ok = \App\Core\Session::getFlash('success');
             </div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-5">
+        <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
             <div>
                 <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Contact</h2>
                 <p class="mt-1 text-sm text-slate-600">Coordonnées affichées aux candidats et visiteurs.</p>
@@ -137,7 +137,7 @@ $ok = \App\Core\Session::getFlash('success');
             </div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-5">
+        <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
             <div>
                 <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Inscription &amp; recrutement</h2>
                 <p class="mt-1 text-sm text-slate-600">Comment les candidats rejoignent votre communauté.</p>
@@ -168,7 +168,7 @@ $ok = \App\Core\Session::getFlash('success');
             </div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-5">
+        <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
             <div>
                 <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Modules visibles sur la page publique</h2>
                 <p class="mt-1 text-sm text-slate-600">Choisissez ce que les visiteurs peuvent apercevoir depuis l’extérieur.</p>
@@ -194,7 +194,7 @@ $ok = \App\Core\Session::getFlash('success');
             </div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-5">
+        <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div>
                     <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Rôles</h2>
@@ -242,7 +242,7 @@ $ok = \App\Core\Session::getFlash('success');
         </div>
     </form>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+    <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Pour aller plus loin</h2>
         <p class="mt-1 text-sm text-slate-600 mb-5">Ces étapes ne sont pas obligatoires ici — ouvrez-les quand vous êtes prêt.</p>
         <div class="grid gap-3 sm:grid-cols-3">

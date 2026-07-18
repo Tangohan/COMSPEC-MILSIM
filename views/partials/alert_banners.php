@@ -169,7 +169,7 @@ if ($json === false) {
       metaRow.appendChild(badge);
       if (a.scope === 'platform') {
         var verified = document.createElement('span');
-        verified.className = 'inline-flex items-center gap-1 rounded-full border border-emerald-300/60 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800';
+        verified.className = 'inline-flex items-center gap-1 rounded-full border border-emerald-400/35 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-300';
         verified.title = 'Annonce officielle du site Athena';
         verified.innerHTML = '<svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><span>Site vérifié</span>';
         metaRow.appendChild(verified);
@@ -268,43 +268,43 @@ if ($json === false) {
       '.alert-banner-thumb{background:#f1f5f9}',
       '@media (prefers-reduced-motion:reduce){.alert-banner-item,.alert-banner-item--out{animation:none!important}.alert-banner--discount::after,.alert-banner--info::before,.alert-banner--novelty::before{animation:none!important}}',
 
-      /* Info — fort contraste, bordure accent, halo */
-      '.alert-banner--info{position:relative;overflow:hidden;border-left:4px solid #0284c7;background:linear-gradient(110deg,#e0f2fe 0%,#f8fafc 38%,#ffffff 100%);color:#0f172a;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 10px 40px -18px rgba(2,132,199,0.35)}',
-      '.alert-banner--info .alert-banner-icon{color:#0369a1}',
-      '.alert-banner--info::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,rgba(14,165,233,0.12) 0%,transparent 42%,rgba(56,189,248,0.08) 100%);animation:alertShimmer 5s ease-in-out infinite}',
-      '.alert-banner--info .alert-banner-title{color:#0c4a6e}',
-      '.alert-banner--info .alert-banner-body{color:#334155}',
-      '.alert-banner-badge--info{background:linear-gradient(180deg,#fff,#f0f9ff);color:#0369a1;border:1px solid rgba(14,165,233,0.45);box-shadow:0 1px 2px rgba(2,132,199,0.12)}',
+      /* Info — thème sombre / indigo (aligné mini-banners) */
+      '.alert-banner--info{position:relative;overflow:hidden;border-left:4px solid #6366f1;background:linear-gradient(110deg,#0c0c0e 0%,#121218 55%,#0a0a0c 100%);color:#e4e4e7;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 10px 40px -18px rgba(0,0,0,0.55)}',
+      '.alert-banner--info .alert-banner-icon{color:#818cf8}',
+      '.alert-banner--info::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,rgba(99,102,241,0.12) 0%,transparent 42%,rgba(99,102,241,0.06) 100%)}',
+      '.alert-banner--info .alert-banner-title{color:#f4f4f5}',
+      '.alert-banner--info .alert-banner-body{color:#a1a1aa}',
+      '.alert-banner-badge--info{background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.35);box-shadow:none}',
 
-      /* Promo / discount — chaud + reflet animé */
-      '.alert-banner--discount{position:relative;overflow:hidden;border-left:4px solid #d97706;background:linear-gradient(115deg,#fffbeb 0%,#ffedd5 35%,#fff7ed 100%);color:#431407;box-shadow:inset 0 1px 0 rgba(255,255,255,0.85),0 12px 36px -14px rgba(217,119,6,0.45)}',
-      '.alert-banner--discount::after{content:"";position:absolute;top:-50%;left:0;width:55%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.55),transparent);animation:promoSweep 4.5s ease-in-out infinite;pointer-events:none}',
-      '.alert-banner--discount .alert-banner-icon{color:#b45309}',
-      '.alert-banner--discount .alert-banner-title{color:#7c2d12}',
-      '.alert-banner--discount .alert-banner-body{color:#78350f}',
-      '.alert-banner-badge--discount{background:linear-gradient(180deg,#fef3c7,#fde68a);color:#92400e;border:1px solid rgba(217,119,6,0.5);box-shadow:0 2px 6px rgba(180,83,9,0.2)}',
-      '.alert-banner--discount .alert-banner-code{border-color:rgba(217,119,6,0.45);background:rgba(255,255,255,0.95);color:#92400e}',
-      '.alert-banner--discount .alert-banner-cta{background:linear-gradient(180deg,#ea580c,#c2410c);color:#fff;border:1px solid rgba(124,45,18,0.25)}',
+      /* Promo / discount — ambre sombre */
+      '.alert-banner--discount{position:relative;overflow:hidden;border-left:4px solid #f59e0b;background:linear-gradient(115deg,#1c1408 0%,#0c0c0e 55%,#0a0a0c 100%);color:#ffedd5;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 12px 36px -14px rgba(0,0,0,0.55)}',
+      '.alert-banner--discount::after{content:"";position:absolute;top:-50%;left:0;width:55%;height:200%;background:linear-gradient(90deg,transparent,rgba(245,158,11,0.08),transparent);animation:promoSweep 4.5s ease-in-out infinite;pointer-events:none}',
+      '.alert-banner--discount .alert-banner-icon{color:#fbbf24}',
+      '.alert-banner--discount .alert-banner-title{color:#fef3c7}',
+      '.alert-banner--discount .alert-banner-body{color:#d6d3d1}',
+      '.alert-banner-badge--discount{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.35);box-shadow:none}',
+      '.alert-banner--discount .alert-banner-code{border-color:rgba(245,158,11,0.4);background:rgba(0,0,0,0.35);color:#fde68a}',
+      '.alert-banner--discount .alert-banner-cta{background:linear-gradient(180deg,#d97706,#b45309);color:#fff;border:1px solid rgba(180,83,9,0.35)}',
 
-      /* Nouveauté — émeraude, léger scintillement */
-      '.alert-banner--novelty{position:relative;overflow:hidden;border-left:4px solid #059669;background:linear-gradient(118deg,#ecfdf5 0%,#f0fdf4 40%,#f8fafc 100%);color:#064e3b;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 10px 32px -16px rgba(5,150,105,0.35)}',
-      '.alert-banner--novelty::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 80% 50% at 20% 0%,rgba(16,185,129,0.15),transparent 55%);animation:noveltyGlow 4s ease-in-out infinite}',
-      '.alert-banner--novelty .alert-banner-icon{color:#047857}',
-      '.alert-banner--novelty .alert-banner-title{color:#065f46}',
-      '.alert-banner--novelty .alert-banner-body{color:#166534}',
-      '.alert-banner-badge--novelty{background:linear-gradient(180deg,#d1fae5,#a7f3d0);color:#065f46;border:1px solid rgba(5,150,105,0.4);box-shadow:0 2px 6px rgba(5,150,105,0.15)}',
-      '.alert-banner--novelty .alert-banner-cta{background:linear-gradient(180deg,#059669,#047857);color:#fff}',
+      /* Nouveauté — émeraude sombre */
+      '.alert-banner--novelty{position:relative;overflow:hidden;border-left:4px solid #00a870;background:linear-gradient(118deg,#06140f 0%,#0c0c0e 50%,#0a0a0c 100%);color:#d1fae5;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 10px 32px -16px rgba(0,0,0,0.55)}',
+      '.alert-banner--novelty::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 80% 50% at 20% 0%,rgba(0,168,112,0.14),transparent 55%)}',
+      '.alert-banner--novelty .alert-banner-icon{color:#00c887}',
+      '.alert-banner--novelty .alert-banner-title{color:#ecfdf5}',
+      '.alert-banner--novelty .alert-banner-body{color:#a7f3d0}',
+      '.alert-banner-badge--novelty{background:rgba(0,168,112,0.15);color:#00c887;border:1px solid rgba(0,168,112,0.35);box-shadow:none}',
+      '.alert-banner--novelty .alert-banner-cta{background:linear-gradient(180deg,#00a870,#047857);color:#fff}',
 
       /* Urgent */
-      '.alert-banner--urgent{position:relative;overflow:hidden;border-left:4px solid #e11d48;background:linear-gradient(115deg,#fff1f2 0%,#ffe4e6 45%,#fff 100%);color:#881337;box-shadow:inset 0 1px 0 rgba(255,255,255,0.85),0 12px 40px -12px rgba(225,29,72,0.4)}',
-      '.alert-banner--urgent .alert-banner-icon{color:#be123c}',
-      '.alert-banner--urgent .alert-banner-title{color:#9f1239}',
-      '.alert-banner--urgent .alert-banner-body{color:#9f1239}',
-      '.alert-banner-badge--urgent{background:linear-gradient(180deg,#fecdd3,#fda4af);color:#9f1239;border:1px solid rgba(225,29,72,0.45);box-shadow:0 2px 6px rgba(190,18,60,0.2)}',
-      '.alert-banner--urgent .alert-banner-cta{background:linear-gradient(180deg,#e11d48,#be123c);color:#fff}',
+      '.alert-banner--urgent{position:relative;overflow:hidden;border-left:4px solid #ef4444;background:linear-gradient(115deg,#1a0808 0%,#0c0c0e 50%,#0a0a0c 100%);color:#fecaca;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 12px 40px -12px rgba(0,0,0,0.55)}',
+      '.alert-banner--urgent .alert-banner-icon{color:#f87171}',
+      '.alert-banner--urgent .alert-banner-title{color:#fee2e2}',
+      '.alert-banner--urgent .alert-banner-body{color:#fca5a5}',
+      '.alert-banner-badge--urgent{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.35);box-shadow:none}',
+      '.alert-banner--urgent .alert-banner-cta{background:linear-gradient(180deg,#ef4444,#be123c);color:#fff}',
 
       '.alert-banner-badge{display:inline-flex;align-items:center;font-size:9px;font-weight:900;letter-spacing:0.22em;text-transform:uppercase;padding:0.35rem 0.65rem;border-radius:0.5rem}',
-      '.alert-banner--info .alert-banner-cta{background:linear-gradient(180deg,#0f172a,#1e293b);color:#fff;border:1px solid rgba(15,23,42,0.2)}'
+      '.alert-banner--info .alert-banner-cta{background:linear-gradient(180deg,#4f46e5,#3730a3);color:#fff;border:1px solid rgba(99,102,241,0.35)}'
     ].join('');
     document.head.appendChild(st);
   }

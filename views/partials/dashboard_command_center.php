@@ -429,6 +429,9 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                 <path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/>
                             </svg>
                         </button>
+                        <a href="<?= url('personnel/me') ?>" class="dash-idstrip__text-btn">Ma fiche</a>
+                        <a href="<?= url('documents') ?>" class="dash-idstrip__text-btn">Publier un ordre</a>
+                        <a href="<?= url('evenements') ?>" class="dash-idstrip__text-btn dash-idstrip__text-btn--accent">Nouvelle manœuvre</a>
                     </div>
                 </div>
                 <?php if ($dashCtxCommunity && count($communityMemberships ?? []) > 1): ?>
@@ -456,273 +459,98 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             </div>
         </section>
 
-        <!-- KPIs allégés -->
-        <section class="border-b border-slate-200 bg-[#f8fafc]">
-            <div class="cc-shell space-y-4 py-5 md:py-6">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div class="min-w-0">
-                        <p class="cc-kicker cc-kicker--primary">Situation</p>
-                        <p class="text-sm font-semibold text-slate-700"><?= htmlspecialchars($identityLine, ENT_QUOTES, 'UTF-8') ?></p>
-                    </div>
-                    <div class="cc-toolbar__actions">
-                        <a href="<?= url('personnel/me') ?>" class="cc-btn cc-btn-ghost">Ma fiche</a>
-                        <a href="<?= url('documents') ?>" class="cc-btn cc-btn-ghost">Publier un ordre</a>
-                        <a href="<?= url('evenements') ?>" class="cc-btn cc-btn-primary">Nouvelle manœuvre</a>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-                    <div class="cc-card cc-kpi">
-                        <p class="cc-kpi__label">Manœuvres</p>
-                        <p class="cc-kpi__value"><?= $opsCount > 0 ? (int) $opsCount : '—' ?></p>
-                        <p class="cc-kpi__meta <?= $opsCount === 0 ? 'cc-kpi__meta--muted' : '' ?>">
-                            <?php if ($nextOpDays !== null): ?>J−<?= (int) $nextOpDays ?><?php elseif ($opsCount > 0): ?>À venir<?php else: ?>Aucune planifiée<?php endif; ?>
-                        </p>
-                    </div>
-                    <div class="cc-card cc-kpi">
-                        <p class="cc-kpi__label">Formations</p>
-                        <p class="cc-kpi__value"><?= $trainCount > 0 ? (int) $trainCount : '—' ?></p>
-                        <p class="cc-kpi__meta <?= $trainCount === 0 ? 'cc-kpi__meta--muted' : '' ?>"><?= $trainCount > 0 ? 'En cours' : 'Aucune ouverte' ?></p>
-                    </div>
-                    <div class="cc-card cc-kpi">
-                        <p class="cc-kpi__label">Candidatures</p>
-                        <p class="cc-kpi__value"><?= $showStaff ? ($staffCount > 0 ? (string) (int) $staffCount : '—') : '—' ?></p>
-                        <p class="cc-kpi__meta <?= !$showStaff || $staffCount === 0 ? 'cc-kpi__meta--muted' : 'cc-kpi__meta--warn' ?>">
-                            <?= !$showStaff ? 'Non concerné' : ($staffCount > 0 ? 'À traiter' : 'À jour') ?>
-                        </p>
-                    </div>
-                    <div class="cc-card cc-kpi">
-                        <p class="cc-kpi__label">Mes dossiers</p>
-                        <p class="cc-kpi__value"><?= $myCount > 0 ? (int) $myCount : '—' ?></p>
-                        <p class="cc-kpi__meta <?= $myCount > 0 ? 'cc-kpi__meta--sky' : 'cc-kpi__meta--muted' ?>"><?= $myCount > 0 ? 'En attente' : 'Aucun' ?></p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <?php if ($mbExcerpt !== null && $mbExcerpt !== ''): ?>
         <div class="border-b border-amber-200/80 bg-amber-50">
-            <div class="cc-shell flex flex-wrap items-center justify-between gap-2 py-2.5">
+            <div class="dash-apps-full flex flex-wrap items-center justify-between gap-2 py-2.5 !pb-2.5 !pt-2.5">
                 <p class="text-sm text-amber-950"><span class="font-bold">Consigne ·</span> <?= htmlspecialchars((string) $mbExcerpt, ENT_QUOTES, 'UTF-8') ?></p>
                 <a href="<?= htmlspecialchars((string) $mbPinsA, ENT_QUOTES, 'UTF-8') ?>" class="text-[11px] font-bold uppercase tracking-wider text-amber-900 hover:underline">Voir →</a>
             </div>
         </div>
         <?php endif; ?>
 
-        <div class="cc-shell space-y-10 py-8 md:py-10">
-
-            <!-- 1. VOTRE ACTIVITÉ -->
-            <section aria-labelledby="dash-activity-heading">
-                <p id="dash-activity-heading" class="cc-section-label">Votre activité</p>
-                <div class="cc-card overflow-hidden">
-                    <div class="cc-card__head">
-                        <div>
-                            <p class="cc-kicker cc-kicker--primary">Instruction</p>
-                            <h2 class="cc-card__title">Formations prioritaires</h2>
-                        </div>
-                        <a href="<?= url('formations/mes-formations') ?>" class="cc-card__link">Mes parcours</a>
+        <section class="dash-apps-full" aria-labelledby="dash-activity-heading">
+            <p id="dash-activity-heading" class="cc-section-label dash-apps-full__label">Votre activité</p>
+            <div class="cc-card overflow-hidden">
+                <div class="cc-card__head">
+                    <div>
+                        <p class="cc-kicker cc-kicker--primary">Instruction</p>
+                        <h2 class="cc-card__title">Formations prioritaires</h2>
                     </div>
-                    <?php if ($mbTrain === []): ?>
-                        <div class="cc-empty m-3">
-                            <p>Aucune formation en cours. Parcourez le catalogue pour démarrer un parcours.</p>
-                            <a href="<?= url('formations') ?>" class="cc-btn cc-btn-primary">Ouvrir le catalogue</a>
-                        </div>
-                    <?php else: ?>
-                        <p class="dash-train-hint px-3 pt-2">Faites défiler horizontalement pour voir toutes les colonnes.</p>
-                        <div class="dash-train-sheet">
-                            <table class="dash-train-sheet__table">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Formation</th>
-                                        <th>Priorité</th>
-                                        <th>Avancement</th>
-                                        <th>Échéance</th>
-                                        <th class="text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($mbTrain as $ti => $t): ?>
-                                        <?php
-                                        $pct = isset($t['progress_pct']) ? max(0, min(100, (int) $t['progress_pct'])) : 0;
-                                        $urgent = !empty($t['urgent']);
-                                        $mandatory = !empty($t['mandatory']);
-                                        $expiresLabel = trim((string) ($t['expires_label'] ?? ''));
-                                        $subtitle = trim((string) ($t['subtitle'] ?? ''));
-                                        $prioLabel = $mandatory ? 'Obligatoire' : ($urgent ? 'Prioritaire' : 'Standard');
-                                        $prioClass = ($mandatory || $urgent) ? 'das-badge--rose' : 'das-badge--muted';
-                                        ?>
-                                        <tr>
-                                            <td class="dash-train-sheet__num"><?= (int) ($ti + 1) ?></td>
-                                            <td>
-                                                <span class="dash-train-sheet__title"><?= htmlspecialchars((string) ($t['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                                <?php if ($subtitle !== ''): ?>
-                                                    <span class="dash-train-sheet__meta"><?= htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8') ?></span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td><span class="das-badge <?= $prioClass ?>"><?= htmlspecialchars($prioLabel, ENT_QUOTES, 'UTF-8') ?></span></td>
-                                            <td>
-                                                <div class="dash-train-sheet__pct">
-                                                    <span class="dash-train-sheet__pct-val"><?= $pct ?> %</span>
-                                                    <span class="dash-train-sheet__bar" role="progressbar" aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement <?= $pct ?> pour cent">
-                                                        <span style="width:<?= $pct ?>%"></span>
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td class="dash-train-sheet__muted"><?= $expiresLabel !== '' ? htmlspecialchars($expiresLabel, ENT_QUOTES, 'UTF-8') : '—' ?></td>
-                                            <td class="text-right">
-                                                <a href="<?= htmlspecialchars((string) ($t['href'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="das-btn">Ouvrir</a>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php endif; ?>
+                    <a href="<?= url('formations/mes-formations') ?>" class="cc-card__link">Mes parcours</a>
                 </div>
-            </section>
-
-            <!-- 2. Situation tactique + 3. Calendrier -->
-            <div class="cc-grid cc-grid--main">
-                <section class="cc-c2 p-5" aria-labelledby="dash-tactical-heading">
-                    <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-300">Situation tactique</p>
-                            <h2 id="dash-tactical-heading" class="mt-1.5 text-lg font-black tracking-tight text-white">ATAK &amp; Modpack</h2>
-                        </div>
-                        <?php if ($hasPack): ?>
-                        <span class="cc-badge cc-badge--on-dark">
-                            <span class="cc-badge__dot" aria-hidden="true"></span>
-                            Pack dispo
-                        </span>
-                        <?php endif; ?>
+                <?php if ($mbTrain === []): ?>
+                    <div class="cc-empty m-3">
+                        <p>Aucune formation en cours. Parcourez le catalogue pour démarrer un parcours.</p>
+                        <a href="<?= url('formations') ?>" class="cc-btn cc-btn-primary">Ouvrir le catalogue</a>
                     </div>
-
-                    <?php if (is_array($modpack) && !empty($modpack['id'])): ?>
-                        <p class="mt-3 text-sm font-semibold text-white/90"><?= htmlspecialchars($tactPackTitle, ENT_QUOTES, 'UTF-8') ?></p>
-                        <div class="mt-3 grid grid-cols-2 gap-2">
-                            <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-                                <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Version</p>
-                                <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactPackVersion, ENT_QUOTES, 'UTF-8') ?></p>
-                            </div>
-                            <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-                                <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Taille</p>
-                                <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactSizeFormatted, ENT_QUOTES, 'UTF-8') ?></p>
-                            </div>
-                        </div>
-                        <p class="mt-2.5 text-xs text-white/55">Mise à jour <?= htmlspecialchars($tactUpdatedAt, ENT_QUOTES, 'UTF-8') ?></p>
-                        <div class="mt-4 flex flex-col gap-2">
-                            <a href="<?= htmlspecialchars((string) $tactDownloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-primary w-full">Télécharger le modpack</a>
-                            <button type="button" class="text-center text-[10px] font-bold uppercase tracking-wider text-white/50 hover:text-emerald-300" @click="tacticalOpen = true">Voir le détail</button>
-                        </div>
-                    <?php else: ?>
-                        <p class="mt-4 text-sm leading-relaxed text-white/60">Aucun pack publié pour cette communauté. Ouvrez la carte tactique ou parcourez les packs disponibles.</p>
-                        <button type="button" class="cc-btn cc-btn-ghost--on-dark mt-3" @click="tacticalOpen = true">Ouvrir la situation tactique</button>
-                    <?php endif; ?>
-
-                    <div class="mt-5 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
-                        <a href="<?= url('atak') ?>" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-center transition hover:bg-white/10">
-                            <p class="text-xs font-black uppercase text-white">ATAK</p>
-                            <p class="mt-0.5 text-[10px] text-white/50">Carte tactique</p>
-                        </a>
-                        <?php if ($atakModDownloadUrl): ?>
-                        <a href="<?= htmlspecialchars((string) $atakModDownloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-center transition hover:bg-white/10">
-                            <p class="text-xs font-black uppercase text-white">Mod ATAK</p>
-                            <p class="mt-0.5 text-[10px] text-white/50">Télécharger</p>
-                        </a>
-                        <?php else: ?>
-                        <a href="<?= url('orbat') ?>" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-center transition hover:bg-white/10">
-                            <p class="text-xs font-black uppercase text-white">ORBAT</p>
-                            <p class="mt-0.5 text-[10px] text-white/50">Effectifs</p>
-                        </a>
-                        <?php endif; ?>
-                    </div>
-                </section>
-
-                <section class="cc-card overflow-hidden" aria-labelledby="dash-calendar-heading">
-                    <div class="cc-card__head">
-                        <div>
-                            <p class="cc-kicker cc-kicker--primary">Calendrier</p>
-                            <h2 id="dash-calendar-heading" class="cc-card__title">Prochaines manœuvres</h2>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button type="button" class="cc-card__link" @click="calendarOpen = true">Calendrier</button>
-                            <a href="<?= url('evenements') ?>" class="cc-card__link">Tout voir</a>
-                        </div>
-                    </div>
-                    <?php if ($mbOps === []): ?>
-                        <div class="cc-empty m-3">
-                            <p>Aucune manœuvre planifiée pour le moment.</p>
-                            <button type="button" class="cc-btn cc-btn-primary" @click="calendarOpen = true">Ouvrir le calendrier</button>
-                        </div>
-                    <?php else: ?>
-                        <ul class="cc-rows">
-                            <?php foreach ($mbOps as $op): ?>
-                                <?php
-                                $starts = (string) ($op['starts_at'] ?? '');
-                                $day = '—';
-                                $mon = '';
-                                $time = '';
-                                if ($starts !== '') {
-                                    $ts = strtotime($starts);
-                                    if ($ts !== false) {
-                                        $day = date('d', $ts);
-                                        $mon = $monthsFr[(int) date('n', $ts) - 1] ?? date('M', $ts);
-                                        $time = date('H\hi', $ts);
-                                    }
-                                }
-                                $rsvp = (string) ($op['rsvp_label'] ?? '');
-                                $badgeClass = 'cc-badge--ink';
-                                if ($rsvp === 'Vous participez') {
-                                    $badgeClass = 'cc-badge--live-solid';
-                                } elseif ($rsvp === 'Peut-être') {
-                                    $badgeClass = 'cc-badge--sky-solid';
-                                } elseif ($rsvp === 'Vous ne participez pas') {
-                                    $badgeClass = 'cc-badge--rose';
-                                }
-                                $summary = trim((string) ($op['summary'] ?? ''));
-                                ?>
-                                <li>
-                                    <div class="cc-row">
-                                        <div class="cc-cal">
-                                            <span class="cc-cal__d"><?= htmlspecialchars($day, ENT_QUOTES, 'UTF-8') ?></span>
-                                            <span class="cc-cal__m"><?= htmlspecialchars($mon !== '' ? $mon : '—', ENT_QUOTES, 'UTF-8') ?></span>
-                                        </div>
-                                        <div class="cc-row__body">
-                                            <div class="flex flex-wrap items-start justify-between gap-2">
-                                                <p class="cc-row__title"><?= htmlspecialchars((string) ($op['title'] ?? 'Opération'), ENT_QUOTES, 'UTF-8') ?></p>
-                                                <?php if ($rsvp !== ''): ?>
-                                                    <span class="cc-badge <?= $badgeClass ?>"><?= htmlspecialchars($rsvp, ENT_QUOTES, 'UTF-8') ?></span>
-                                                <?php endif; ?>
+                <?php else: ?>
+                    <p class="dash-train-hint px-3 pt-2">Faites défiler horizontalement pour voir toutes les colonnes.</p>
+                    <div class="dash-train-sheet">
+                        <table class="dash-train-sheet__table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Formation</th>
+                                    <th>Priorité</th>
+                                    <th>Avancement</th>
+                                    <th>Échéance</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($mbTrain as $ti => $t): ?>
+                                    <?php
+                                    $pct = isset($t['progress_pct']) ? max(0, min(100, (int) $t['progress_pct'])) : 0;
+                                    $urgent = !empty($t['urgent']);
+                                    $mandatory = !empty($t['mandatory']);
+                                    $expiresLabel = trim((string) ($t['expires_label'] ?? ''));
+                                    $subtitle = trim((string) ($t['subtitle'] ?? ''));
+                                    $prioLabel = $mandatory ? 'Obligatoire' : ($urgent ? 'Prioritaire' : 'Standard');
+                                    $prioClass = ($mandatory || $urgent) ? 'das-badge--rose' : 'das-badge--muted';
+                                    ?>
+                                    <tr>
+                                        <td class="dash-train-sheet__num"><?= (int) ($ti + 1) ?></td>
+                                        <td>
+                                            <span class="dash-train-sheet__title"><?= htmlspecialchars((string) ($t['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php if ($subtitle !== ''): ?>
+                                                <span class="dash-train-sheet__meta"><?= htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><span class="das-badge <?= $prioClass ?>"><?= htmlspecialchars($prioLabel, ENT_QUOTES, 'UTF-8') ?></span></td>
+                                        <td>
+                                            <div class="dash-train-sheet__pct">
+                                                <span class="dash-train-sheet__pct-val"><?= $pct ?> %</span>
+                                                <span class="dash-train-sheet__bar" role="progressbar" aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement <?= $pct ?> pour cent">
+                                                    <span style="width:<?= $pct ?>%"></span>
+                                                </span>
                                             </div>
-                                            <?php if ($summary !== ''): ?>
-                                                <p class="cc-row__meta line-clamp-2"><?= htmlspecialchars($summary, ENT_QUOTES, 'UTF-8') ?></p>
-                                            <?php endif; ?>
-                                            <?php if ($time !== ''): ?>
-                                                <p class="cc-row__meta mt-1 font-bold"><?= htmlspecialchars($time, ENT_QUOTES, 'UTF-8') ?></p>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                </section>
+                                        </td>
+                                        <td class="dash-train-sheet__muted"><?= $expiresLabel !== '' ? htmlspecialchars($expiresLabel, ENT_QUOTES, 'UTF-8') : '—' ?></td>
+                                        <td class="text-right">
+                                            <a href="<?= htmlspecialchars((string) ($t['href'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="das-btn">Ouvrir</a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
             </div>
+        </section>
 
-            <?php if ($hasEnlistments): ?>
-                <?php require base_path('views/partials/dashboard_enlistments.php'); ?>
-            <?php endif; ?>
-        </div><!-- /cc-shell (bloc principal, largeur 72rem) -->
+        <?php if ($hasEnlistments): ?>
+        <section class="dash-apps-full !pt-0">
+            <?php require base_path('views/partials/dashboard_enlistments.php'); ?>
+        </section>
+        <?php endif; ?>
 
         <?php
-        // 4. Toutes les demandes de candidature — tableau plein page, hors du cc-shell 72rem,
-        // pour utiliser toute la largeur disponible du dashboard (comme les tableaux personnel/évènements).
         $myApplicationsAll = $my_applications_all ?? [];
         $staffApplicationsAll = $staff_applications_all ?? [];
         $hasApplicationsTable = $myApplicationsAll !== [] || ($showStaff && $staffApplicationsAll !== []);
         ?>
         <?php if ($hasApplicationsTable): ?>
-        <section class="dash-apps-full" aria-labelledby="dash-applications-heading">
+        <section class="dash-apps-full !pt-0" aria-labelledby="dash-applications-heading">
             <p id="dash-applications-heading" class="cc-section-label dash-apps-full__label">Candidatures</p>
             <?php require base_path('views/partials/dashboard_applications_table.php'); ?>
         </section>
@@ -966,6 +794,40 @@ if (is_array($modpack) && !empty($modpack['id'])) {
     color: #fff;
 }
 .dash-idstrip__icon-btn:active { transform: scale(0.96); }
+.dash-idstrip__text-btn {
+    display: inline-flex;
+    align-items: center;
+    height: 2.35rem;
+    padding: 0 0.75rem;
+    border-radius: 0.65rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    color: #e2e8f0;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.dash-idstrip__text-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #fff;
+}
+.dash-idstrip__text-btn--accent {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(52, 211, 153, 0.45);
+    color: #a7f3d0;
+}
+.dash-idstrip__text-btn--accent:hover {
+    background: rgba(16, 185, 129, 0.32);
+    color: #fff;
+}
+@media (max-width: 900px) {
+    .dash-idstrip__actions { flex-wrap: wrap; border-left: none; padding-left: 0; margin-left: 0; }
+}
 
 .dash-train-hint {
     margin: 0;

@@ -101,6 +101,44 @@
   color: rgba(255, 255, 255, 0.45);
 }
 
+.bo-rail__search {
+  display: block;
+  margin-top: 0.85rem;
+}
+
+.bo-rail__search-input {
+  width: 100%;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.55rem 0.7rem;
+  outline: none;
+}
+
+.bo-rail__search-input::placeholder {
+  color: rgba(248, 250, 252, 0.35);
+}
+
+.bo-rail__search-input:focus {
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.bo-rail__search-empty {
+  margin: 0.45rem 0 0;
+  font-size: 0.6875rem;
+  color: rgba(248, 250, 252, 0.45);
+}
+
+.bo-rail .dash-rail__item[hidden],
+.bo-rail .dash-rail__section[hidden] {
+  display: none !important;
+}
+
 .bo-rail .dash-rail__section {
   margin: 0.7rem 0 0.35rem;
   font-size: 0.5625rem;

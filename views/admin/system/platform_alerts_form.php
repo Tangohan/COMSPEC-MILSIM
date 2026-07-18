@@ -7,7 +7,35 @@ declare(strict_types=1);
 $row = $platformAlert;
 $isEdit = $row !== null;
 $kindOptions = \App\Support\PlatformAlertPresentation::kindOptions();
-$aud = ['guest' => true, 'authenticated' => true, 'free' => true, 'paid' => true];
+$kindMeta = [
+    'info' => ['hint' => 'Message général pour le portail.', 'color' => '#6366f1'],
+    'novelty' => ['hint' => 'Nouveauté ou changement mis en avant.', 'color' => '#00a870'],
+    'discount' => ['hint' => 'Offre ou avantage temporaire.', 'color' => '#f59e0b'],
+    'urgent' => ['hint' => 'Priorité maximale, à lire immédiatement.', 'color' => '#ef4444'],
+];
+$displayStyleMeta = [
+    'classic' => ['hint' => 'Bandeau classique dans la zone d’annonces.', 'swatch' => '#334155'],
+    'mini_info' => ['hint' => 'Barre compacte sous le menu — ton information.', 'swatch' => '#6366f1'],
+    'mini_success' => ['hint' => 'Barre compacte sous le menu — ton succès.', 'swatch' => '#00a870'],
+    'mini_warning' => ['hint' => 'Barre compacte sous le menu — ton attention.', 'swatch' => '#f59e0b'],
+    'mini_danger' => ['hint' => 'Barre compacte sous le menu — ton critique.', 'swatch' => '#ef4444'],
+    'breaking' => ['hint' => 'Bandeau défilant pour maj / maintenance.', 'swatch' => '#7f1d1d'],
+];
+$iconSvg = [
+    'info' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+    'novelty' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>',
+    'discount' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>',
+    'urgent' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+];
+$currentKind = (string) ($row['kind'] ?? 'info');
+if (!isset($kindOptions[$currentKind])) {
+    $currentKind = 'info';
+}
+$displayStyleOptions = \App\Support\AlertDisplayStyle::platformOptions();
+$currentDisplayStyle = \App\Support\AlertDisplayStyle::sanitizePlatform(
+    isset($row['display_style']) ? (string) $row['display_style'] : null
+);
+$aud = ['guest' => true, 'authenticated' => true, 'free' => true, 'paid' => true';
 if ($row && !empty($row['audience_json'])) {
     $raw = $row['audience_json'];
     if (is_string($raw)) {
@@ -29,6 +57,15 @@ $dt = static function (?string $sqlDt): string {
 };
 $dismissible = $row === null || !isset($row['dismissible']) || (int) $row['dismissible'] === 1;
 ?>
+<style>
+.pa-kind-card:has(input:checked),
+.pa-style-card:has(input:checked) {
+    border-color: #059669 !important;
+    background: #ecfdf5 !important;
+    box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.35);
+}
+.pa-kind-card svg { width: 1.25rem; height: 1.25rem; }
+</style>
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="w-full px-4 sm:px-5 lg:px-6 py-4 sm:py-5 space-y-5">
 
@@ -54,31 +91,50 @@ $dismissible = $row === null || !isset($row['dismissible']) || (int) $row['dismi
         <form method="<?= htmlspecialchars($formMethod, ENT_QUOTES, 'UTF-8') ?>" action="<?= htmlspecialchars($formAction, ENT_QUOTES, 'UTF-8') ?>" class="space-y-5">
             <?= \App\Core\Csrf::field() ?>
 
-            <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
-                <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Contenu</h2>
-                <div>
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-kind">Type</label>
-                    <select id="pa-kind" name="kind" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
-                        <?php foreach ($kindOptions as $v => $lab): ?>
-                            <option value="<?= htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8') ?>" <?= (($row['kind'] ?? 'info') === $v) ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
+            <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-6">
+                <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Type &amp; emplacement</h2>
+
+                <fieldset>
+                    <legend class="mb-3 block text-sm font-semibold text-slate-800">Type d’annonce</legend>
+                    <div class="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Type d’annonce">
+                        <?php foreach ($kindOptions as $v => $lab):
+                            $meta = $kindMeta[$v] ?? ['hint' => '', 'color' => '#64748b'];
+                            ?>
+                            <label class="pa-kind-card flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:border-emerald-300">
+                                <input type="radio" name="kind" value="<?= htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= $currentKind === $v ? 'checked' : '' ?>>
+                                <span class="min-w-0 flex-1">
+                                    <span class="flex items-center gap-2" style="color:<?= htmlspecialchars($meta['color'], ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= $iconSvg[$v] ?? $iconSvg['info'] ?>
+                                        <span class="font-semibold text-slate-900"><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></span>
+                                    </span>
+                                    <span class="mt-0.5 block text-xs leading-relaxed text-slate-500"><?= htmlspecialchars($meta['hint'], ENT_QUOTES, 'UTF-8') ?></span>
+                                </span>
+                            </label>
                         <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-display-style">Emplacement d’affichage</label>
-                    <?php
-                    $displayStyleOptions = \App\Support\AlertDisplayStyle::platformOptions();
-                    $currentDisplayStyle = \App\Support\AlertDisplayStyle::sanitizePlatform(
-                        isset($row['display_style']) ? (string) $row['display_style'] : null
-                    );
-                    ?>
-                    <select id="pa-display-style" name="display_style" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
-                        <?php foreach ($displayStyleOptions as $v => $lab): ?>
-                            <option value="<?= htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8') ?>" <?= $currentDisplayStyle === $v ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend class="mb-3 block text-sm font-semibold text-slate-800">Emplacement d’affichage</legend>
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="Emplacement d’affichage">
+                        <?php foreach ($displayStyleOptions as $v => $lab):
+                            $meta = $displayStyleMeta[$v] ?? ['hint' => '', 'swatch' => '#64748b'];
+                            ?>
+                            <label class="pa-style-card flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:border-emerald-300">
+                                <input type="radio" name="display_style" value="<?= htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= $currentDisplayStyle === $v ? 'checked' : '' ?>>
+                                <span class="min-w-0">
+                                    <span class="flex items-center gap-2">
+                                        <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style="background:<?= htmlspecialchars($meta['swatch'], ENT_QUOTES, 'UTF-8') ?>"></span>
+                                        <span class="font-semibold text-slate-900"><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></span>
+                                    </span>
+                                    <span class="mt-0.5 block text-xs leading-relaxed text-slate-500"><?= htmlspecialchars($meta['hint'], ENT_QUOTES, 'UTF-8') ?></span>
+                                </span>
+                            </label>
                         <?php endforeach; ?>
-                    </select>
-                    <p class="mt-1 text-xs text-slate-500">Les barres sous le menu et le bandeau Breaking s’affichent sur toute la largeur, juste sous la navigation.</p>
-                </div>
+                    </div>
+                    <p class="mt-2 text-xs text-slate-500">Les barres sous le menu et le bandeau Breaking s’affichent sur toute la largeur, juste sous la navigation.</p>
+                </fieldset>
+
                 <div>
                     <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-title">Titre</label>
                     <input id="pa-title" type="text" name="title" required value="<?= htmlspecialchars((string) ($row['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" maxlength="255">
