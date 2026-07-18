@@ -10,6 +10,9 @@ use App\Repositories\TrainingCourseRepository;
 use App\Services\Training\TrainingProgressService;
 use App\Support\TrainingCertificatePdfEngine;
 
+/**
+ * Émission et consultation des attestations de formation.
+ */
 class TrainingCertificateService
 {
     public function __construct(

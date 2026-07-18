@@ -8,24 +8,24 @@ $row = $platformAlert;
 $isEdit = $row !== null;
 $kindOptions = \App\Support\PlatformAlertPresentation::kindOptions();
 $kindMeta = [
-    'info' => ['hint' => 'Message général pour le portail.', 'color' => '#6366f1'],
-    'novelty' => ['hint' => 'Nouveauté ou changement mis en avant.', 'color' => '#00a870'],
-    'discount' => ['hint' => 'Offre ou avantage temporaire.', 'color' => '#f59e0b'],
-    'urgent' => ['hint' => 'Priorité maximale, à lire immédiatement.', 'color' => '#ef4444'],
+    'info' => ['hint' => "Message général pour le portail.", 'color' => '#6366f1'],
+    'novelty' => ['hint' => "Nouveauté ou changement mis en avant.", 'color' => '#00a870'],
+    'discount' => ['hint' => "Offre ou avantage temporaire.", 'color' => '#f59e0b'],
+    'urgent' => ['hint' => "Priorité maximale, à lire immédiatement.", 'color' => '#ef4444'],
 ];
 $displayStyleMeta = [
-    'classic' => ['hint' => 'Bandeau classique dans la zone d’annonces.', 'swatch' => '#334155'],
-    'mini_info' => ['hint' => 'Barre compacte sous le menu — ton information.', 'swatch' => '#6366f1'],
-    'mini_success' => ['hint' => 'Barre compacte sous le menu — ton succès.', 'swatch' => '#00a870'],
-    'mini_warning' => ['hint' => 'Barre compacte sous le menu — ton attention.', 'swatch' => '#f59e0b'],
-    'mini_danger' => ['hint' => 'Barre compacte sous le menu — ton critique.', 'swatch' => '#ef4444'],
-    'breaking' => ['hint' => 'Bandeau défilant pour maj / maintenance.', 'swatch' => '#7f1d1d'],
+    'classic' => ['hint' => "Bandeau classique dans la zone d'annonces.", 'swatch' => '#334155'],
+    'mini_info' => ['hint' => "Barre compacte sous le menu — ton information.", 'swatch' => '#6366f1'],
+    'mini_success' => ['hint' => "Barre compacte sous le menu — ton succès.", 'swatch' => '#00a870'],
+    'mini_warning' => ['hint' => "Barre compacte sous le menu — ton attention.", 'swatch' => '#f59e0b'],
+    'mini_danger' => ['hint' => "Barre compacte sous le menu — ton critique.", 'swatch' => '#ef4444'],
+    'breaking' => ['hint' => "Bandeau défilant pour maj / maintenance.", 'swatch' => '#7f1d1d'],
 ];
 $iconSvg = [
-    'info' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-    'novelty' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>',
-    'discount' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>',
-    'urgent' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+    'info' => "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"/></svg>",
+    'novelty' => "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z\"/></svg>",
+    'discount' => "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z\"/></svg>",
+    'urgent' => "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z\"/></svg>",
 ];
 $currentKind = (string) ($row['kind'] ?? 'info');
 if (!isset($kindOptions[$currentKind])) {
