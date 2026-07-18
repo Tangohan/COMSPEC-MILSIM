@@ -100,10 +100,13 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
             <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Fond de carte</span>
             <select id="overwatch-map-select" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold min-w-[180px]">
               <?php foreach ($overwatchMapsList as $m): ?>
-              <option value="<?= htmlspecialchars($m['slug'] ?? 'world') ?>" <?= ($m['slug'] ?? '') === ($overwatchDefaultMapSlug ?? 'world') ? 'selected' : '' ?>><?= htmlspecialchars($m['label'] ?? 'Carte') ?></option>
+              <option value="<?= htmlspecialchars($m['slug'] ?? 'world') ?>" data-type="<?= htmlspecialchars($m['type'] ?? 'arma') ?>" <?= ($m['slug'] ?? '') === ($overwatchDefaultMapSlug ?? 'world') ? 'selected' : '' ?>><?= htmlspecialchars($m['label'] ?? 'Carte') ?></option>
               <?php endforeach; ?>
             </select>
           </label>
+          <?php if (!empty($overwatchCanCreateCustomMaps)): ?>
+          <button type="button" id="overwatch-custom-map-open" class="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-emerald-950 hover:bg-emerald-100">Nouvelle carte</button>
+          <?php endif; ?>
           <button type="button" id="overwatch-access-request-open" class="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-amber-950 hover:bg-amber-100">Demander l’accès</button>
           <nav class="flex flex-wrap gap-2 text-sm font-semibold">
             <a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 px-3 py-2 text-slate-700 hover:bg-slate-50">ATAK</a>
@@ -232,12 +235,38 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
     </div>
   </div>
 
+  <div id="overwatch-custom-map-modal" class="hidden fixed inset-0 z-[10050] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="overwatch-custom-map-title">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-5 border border-slate-200">
+      <h2 id="overwatch-custom-map-title" class="text-lg font-black tracking-tight text-slate-900 mb-1">Nouvelle carte</h2>
+      <p class="text-sm text-slate-600 mb-4">Donnez un nom et importez une image (plan, croquis, capture). Elle sera visible par toute la communauté.</p>
+      <form id="overwatch-custom-map-form" class="space-y-4">
+        <div>
+          <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1" for="overwatch-custom-map-label">Nom de la carte</label>
+          <input id="overwatch-custom-map-label" name="label" type="text" required minlength="2" maxlength="120" placeholder="ex. Zone d’entraînement"
+                 class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold">
+        </div>
+        <div>
+          <label class="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1" for="overwatch-custom-map-image">Image de fond</label>
+          <input id="overwatch-custom-map-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" required
+                 class="w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-2 file:text-xs file:font-bold file:uppercase file:text-emerald-900">
+          <p class="mt-1.5 text-xs text-slate-500">JPEG, PNG ou WebP — 10 Mo max.</p>
+          <img id="overwatch-custom-map-preview" alt="" class="mt-3 hidden max-h-40 w-full rounded-lg object-contain border border-slate-100 bg-slate-50">
+        </div>
+        <p id="overwatch-custom-map-feedback" class="text-xs min-h-[1.25rem]" role="status"></p>
+        <div class="flex flex-wrap gap-2 justify-end">
+          <button type="button" id="overwatch-custom-map-cancel" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Annuler</button>
+          <button type="submit" id="overwatch-custom-map-submit" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700">Créer la carte</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 <script>
     (function() {
       const overwatchContext = <?= json_encode($overwatchContext) ?>;
       const overwatchMapsList = <?= json_encode($overwatchMapsList) ?>;
-      const overwatchWorkspaces = <?= json_encode($overwatchWorkspaces) ?>;
-      const overwatchMapsConfigs = <?= json_encode($overwatchMapsConfigs) ?>;
+      let overwatchWorkspaces = <?= json_encode($overwatchWorkspaces) ?>;
+      let overwatchMapsConfigs = <?= json_encode($overwatchMapsConfigs) ?>;
       const overwatchDefaultMapId = <?= (int)$overwatchDefaultMapId ?>;
       const overwatchDefaultMapSlug = <?= json_encode($overwatchDefaultMapSlug) ?>;
       const overwatchDefaultWorkspace = <?= json_encode($overwatchDefaultWorkspace) ?>;
@@ -341,6 +370,32 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
         };
       }
 
+      function mapKind(slug) {
+        if (slug === 'world') return 'world';
+        var c = overwatchMapsConfigs[slug];
+        if (c && (c.type === 'image' || c.imageUrl)) return 'image';
+        return 'arma';
+      }
+
+      function buildImageConfig(raw) {
+        if (!raw || !raw.imageUrl) return null;
+        if (typeof ComspecOperationalMap !== 'undefined' && ComspecOperationalMap.buildImageConfig) {
+          return ComspecOperationalMap.buildImageConfig(raw);
+        }
+        var w = parseInt(raw.imageWidth, 10) || 1000;
+        var h = parseInt(raw.imageHeight, 10) || 1000;
+        var bounds = Array.isArray(raw.bounds) && raw.bounds.length === 2 ? raw.bounds : [[0, 0], [h, w]];
+        return {
+          CRS: L.CRS.Simple,
+          imageUrl: raw.imageUrl,
+          minZoom: raw.minZoom != null ? raw.minZoom : -2,
+          maxZoom: raw.maxZoom != null ? raw.maxZoom : 4,
+          defaultZoom: raw.defaultZoom != null ? raw.defaultZoom : 0,
+          center: Array.isArray(raw.center) ? raw.center : [h / 2, w / 2],
+          bounds: bounds
+        };
+      }
+
       function applyBaseLayer(slug, opts) {
         opts = opts || {};
         try {
@@ -349,19 +404,33 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
             return;
           }
           var requested = slug || 'world';
-          var isWorld = requested === 'world';
+          var kind = mapKind(requested);
+          var isWorld = kind === 'world';
+          var isImage = kind === 'image';
           var mapEl = document.getElementById('overwatch-map');
           if (!mapEl) return;
-          setMapStatus(true, 'Chargement de la carte…', isWorld ? 'Fond monde' : ('Carte ' + requested));
+          setMapStatus(true, 'Chargement de la carte…', isWorld ? 'Fond monde' : (isImage ? 'Fond image' : ('Carte ' + requested)));
 
-          if (!isWorld) {
+          if (kind === 'arma') {
             var cfgProbe = overwatchMapsConfigs[requested] ? buildArmaConfig(overwatchMapsConfigs[requested]) : null;
             if (!cfgProbe || !cfgProbe.tilePattern) {
               requested = 'world';
+              kind = 'world';
               isWorld = true;
+              isImage = false;
               var sel = document.getElementById('overwatch-map-select');
               if (sel) sel.value = 'world';
               setMapStatus(true, 'Basculement vers le fond monde', 'La carte mission demandée est indisponible.');
+            }
+          } else if (kind === 'image') {
+            var imgProbe = overwatchMapsConfigs[requested] ? buildImageConfig(overwatchMapsConfigs[requested]) : null;
+            if (!imgProbe || !imgProbe.imageUrl) {
+              requested = 'world';
+              kind = 'world';
+              isWorld = true;
+              isImage = false;
+              var sel2 = document.getElementById('overwatch-map-select');
+              if (sel2) sel2.value = 'world';
             }
           }
 
@@ -370,8 +439,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
               try { map.removeLayer(currentBaseLayer); } catch (e) {}
               currentBaseLayer = null;
             }
-            var needRecreate = (isWorld && window.OverwatchState.currentMapType !== 'world') ||
-              (!isWorld && window.OverwatchState.currentMapType !== 'arma');
+            var needRecreate = window.OverwatchState.currentMapType !== kind;
             if (needRecreate) {
               try { map.remove(); } catch (e) {}
               map = null;
@@ -383,6 +451,18 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
             if (isWorld) {
               map = L.map('overwatch-map', { minZoom: 2, maxZoom: 18, zoomControl: true });
               map.setView([46.6, 2.4], 6);
+            } else if (isImage) {
+              var icfg = buildImageConfig(overwatchMapsConfigs[requested]);
+              if (!icfg) {
+                return applyBaseLayer('world');
+              }
+              map = L.map('overwatch-map', {
+                minZoom: icfg.minZoom,
+                maxZoom: icfg.maxZoom,
+                crs: icfg.CRS,
+                zoomControl: true
+              });
+              map.setView(icfg.center, icfg.defaultZoom);
             } else {
               var cfg = buildArmaConfig(overwatchMapsConfigs[requested]);
               if (!cfg) {
@@ -429,6 +509,17 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
             currentBaseLayer.addTo(map);
             map.setView([46.6, 2.4], 6);
             window.OverwatchState.currentMapType = 'world';
+          } else if (isImage) {
+            var icfg2 = buildImageConfig(overwatchMapsConfigs[requested]);
+            if (!icfg2) {
+              return applyBaseLayer('world');
+            }
+            var ib = L.latLngBounds(L.latLng(icfg2.bounds[0][0], icfg2.bounds[0][1]), L.latLng(icfg2.bounds[1][0], icfg2.bounds[1][1]));
+            currentBaseLayer = L.imageOverlay(icfg2.imageUrl, ib, { opacity: 1, interactive: false });
+            currentBaseLayer.addTo(map);
+            map.fitBounds(ib);
+            map.setMaxBounds(ib.pad(0.05));
+            window.OverwatchState.currentMapType = 'image';
           } else {
             var cfg2 = buildArmaConfig(overwatchMapsConfigs[requested]);
             if (!cfg2) {
@@ -487,7 +578,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           setMapStatus(false);
           var badge = document.getElementById('overwatch-sync-badge');
           if (badge) {
-            badge.textContent = isWorld ? 'Fond monde' : 'Carte mission';
+            badge.textContent = isWorld ? 'Fond monde' : (isImage ? 'Fond image' : 'Carte mission');
             badge.className = 'px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.18em] border-emerald-200 bg-emerald-50 text-emerald-900';
           }
         } catch (err) {
@@ -533,7 +624,7 @@ function setWorkspace(mapId) {
         if (selMap && ws && selMap.value !== ws.slug) {
           selMap.value = ws.slug;
           applyBaseLayer(ws.slug);
-        } else if (window.OverwatchState.currentMapType === 'arma' && ws) {
+        } else if ((window.OverwatchState.currentMapType === 'arma' || window.OverwatchState.currentMapType === 'image') && ws) {
           applyBaseLayer(ws.slug);
         } else {
           refreshOperationalContext();
@@ -893,14 +984,14 @@ function setWorkspace(mapId) {
       window.applyLayerVisibility = applyLayerVisibility;
 
       function getClickMissionCoords(e) {
-        if (window.OverwatchState.currentMapType === 'arma') {
+        if (window.OverwatchState.currentMapType === 'arma' || window.OverwatchState.currentMapType === 'image') {
           return { x: e.latlng.lng, y: e.latlng.lat };
         }
         return { x: e.latlng.lat * WORLD_SCALE, y: e.latlng.lng * WORLD_SCALE };
       }
 
       function syncUnits() {
-        if (window.OverwatchState.currentMapType !== 'arma' || !window.OverwatchState.layers.units) return;
+        if ((window.OverwatchState.currentMapType !== 'arma' && window.OverwatchState.currentMapType !== 'image') || !window.OverwatchState.layers.units) return;
         if (window._overwatchSyncUnitsInProgress) return;
         window._overwatchSyncUnitsInProgress = true;
         window.OverwatchState.syncStatus = 'syncing';
@@ -1378,6 +1469,148 @@ function setWorkspace(mapId) {
               submitBtn.disabled = false;
               feedbackEl.textContent = 'Erreur réseau. Réessayez.';
               feedbackEl.className = 'text-xs mb-2 min-h-[1.25rem] text-red-700';
+            });
+        });
+      })();
+
+      (function setupCustomMapCreate() {
+        var modal = document.getElementById('overwatch-custom-map-modal');
+        var openBtn = document.getElementById('overwatch-custom-map-open');
+        var cancelBtn = document.getElementById('overwatch-custom-map-cancel');
+        var form = document.getElementById('overwatch-custom-map-form');
+        var labelEl = document.getElementById('overwatch-custom-map-label');
+        var imageEl = document.getElementById('overwatch-custom-map-image');
+        var previewEl = document.getElementById('overwatch-custom-map-preview');
+        var feedbackEl = document.getElementById('overwatch-custom-map-feedback');
+        var submitBtn = document.getElementById('overwatch-custom-map-submit');
+        var mapSelect = document.getElementById('overwatch-map-select');
+        var wsSelect = document.getElementById('overwatch-workspace');
+        if (!modal || !openBtn || !form) return;
+
+        function closeModal() {
+          modal.classList.add('hidden');
+          if (feedbackEl) {
+            feedbackEl.textContent = '';
+            feedbackEl.className = 'text-xs min-h-[1.25rem]';
+          }
+        }
+        function openModal() {
+          form.reset();
+          if (previewEl) {
+            previewEl.classList.add('hidden');
+            previewEl.removeAttribute('src');
+          }
+          if (feedbackEl) feedbackEl.textContent = '';
+          modal.classList.remove('hidden');
+          if (labelEl) labelEl.focus();
+        }
+        openBtn.addEventListener('click', openModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', function (e) {
+          if (e.target === modal) closeModal();
+        });
+        if (window.location.hash === '#nouvelle-carte') {
+          setTimeout(openModal, 200);
+        }
+        if (imageEl && previewEl) {
+          imageEl.addEventListener('change', function () {
+            var f = imageEl.files && imageEl.files[0];
+            if (!f) {
+              previewEl.classList.add('hidden');
+              return;
+            }
+            var url = URL.createObjectURL(f);
+            previewEl.src = url;
+            previewEl.classList.remove('hidden');
+          });
+        }
+
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var csrf = overwatchContext.csrfToken || overwatchPageCsrf || '';
+          if (!csrf) {
+            if (feedbackEl) {
+              feedbackEl.textContent = 'Session expirée. Rechargez la page.';
+              feedbackEl.className = 'text-xs min-h-[1.25rem] text-red-700';
+            }
+            return;
+          }
+          var fd = new FormData();
+          fd.append('_csrf_token', csrf);
+          fd.append('label', labelEl ? labelEl.value.trim() : '');
+          if (imageEl && imageEl.files && imageEl.files[0]) {
+            fd.append('image', imageEl.files[0]);
+          }
+          if (submitBtn) submitBtn.disabled = true;
+          if (feedbackEl) {
+            feedbackEl.textContent = 'Création en cours…';
+            feedbackEl.className = 'text-xs min-h-[1.25rem] text-slate-600';
+          }
+          fetch(apiBase + '/custom-maps', {
+            method: 'POST',
+            body: fd,
+            credentials: 'include'
+          })
+            .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, status: r.status, data: data }; }); })
+            .then(function (res) {
+              if (submitBtn) submitBtn.disabled = false;
+              if (!res.ok || !res.data || !res.data.map) {
+                var msg = (res.data && res.data.error) ? res.data.error : 'Création impossible.';
+                if (feedbackEl) {
+                  feedbackEl.textContent = msg;
+                  feedbackEl.className = 'text-xs min-h-[1.25rem] text-red-700';
+                }
+                return;
+              }
+              var m = res.data.map;
+              overwatchMapsConfigs[m.slug] = {
+                mapId: m.mapId,
+                slug: m.slug,
+                label: m.label,
+                type: 'image',
+                imageUrl: m.imageUrl,
+                imageWidth: m.imageWidth,
+                imageHeight: m.imageHeight,
+                center: m.center,
+                bounds: m.bounds,
+                defaultZoom: m.defaultZoom,
+                minZoom: m.minZoom,
+                maxZoom: m.maxZoom
+              };
+              overwatchWorkspaces.push({
+                mapId: m.mapId,
+                label: m.label,
+                slug: m.slug,
+                isDefault: false,
+                type: 'image'
+              });
+              if (mapSelect) {
+                var opt = document.createElement('option');
+                opt.value = m.slug;
+                opt.textContent = m.label;
+                opt.setAttribute('data-type', 'image');
+                mapSelect.appendChild(opt);
+                mapSelect.value = m.slug;
+              }
+              if (wsSelect) {
+                var wopt = document.createElement('option');
+                wopt.value = String(m.mapId);
+                wopt.textContent = m.label;
+                wsSelect.appendChild(wopt);
+                wsSelect.value = String(m.mapId);
+              }
+              window.OverwatchState.currentMapId = m.mapId;
+              window.OverwatchState.currentMissionId = buildMissionId(overwatchContext.tenantId, m.mapId);
+              closeModal();
+              applyBaseLayer(m.slug);
+              updateHeaderLabels();
+            })
+            .catch(function () {
+              if (submitBtn) submitBtn.disabled = false;
+              if (feedbackEl) {
+                feedbackEl.textContent = 'Erreur réseau. Réessayez.';
+                feedbackEl.className = 'text-xs min-h-[1.25rem] text-red-700';
+              }
             });
         });
       })();

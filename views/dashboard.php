@@ -40,6 +40,9 @@ if (!is_string($showcase_json) || $showcase_json === '') {
     <?php if (is_file(base_path('public/assets/css/athena-header.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/athena-header.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/navbar-info-banners.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/navbar-info-banners.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if ($showcase_training_feature && !empty($showcase_items)): ?>
     <script>
         window.__dashboardShowcaseCourses = <?= $showcase_json ?>;
@@ -77,7 +80,8 @@ if (!is_string($showcase_json) || $showcase_json === '') {
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/athena-header.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <?php endif; ?>
 <?php
-// Sur le tableau de bord, les alertes passent par la zone tuiles (pas de bandeau en double).
+// Sur le tableau de bord, les bandeaux classiques passent par les tuiles (pas de doublon).
+// Les barres sous le menu (mini / Breaking / important) sont injectées via header_dashboard.
 $alertBanners = [];
 require base_path('views/partials/alert_banners.php');
 ?>

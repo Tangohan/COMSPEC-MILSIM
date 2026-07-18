@@ -244,7 +244,8 @@ final class TrainingCompetencyRepository
     /** @return list<int> */
     public function autoDetectCandidateUserIds(int $tenantId, array $autoRules): array
     {
-        $roleIds = array_values(array_unique(array_filter(array_map('intval', $autoRules['role_ids_any'] ?? []), static fn (int $v): bool => $v > 0)));
+        $rawRoleIds = $autoRules['role_ids_any'] ?? $autoRules['role_ids'] ?? [];
+        $roleIds = array_values(array_unique(array_filter(array_map('intval', is_array($rawRoleIds) ? $rawRoleIds : []), static fn (int $v): bool => $v > 0)));
         $minCompleted = max(0, (int) ($autoRules['min_completed_courses'] ?? 0));
 
         $where = ['u.tenant_id = ?'];
@@ -268,6 +269,81 @@ final class TrainingCompetencyRepository
         $st->execute($params);
 
         return array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+    }
+
+    /**
+     * Membres déjà placés dans chaque groupe (matrice).
+     *
+     * @param list<int> $matrixIds
+     * @return array<int, list<array{user_id:int,display_name:string,source:string,created_at:?string}>>
+     */
+    public function listAssignmentsByMatrixIds(int $tenantId, array $matrixIds): array
+    {
+        $matrixIds = array_values(array_unique(array_filter(array_map('intval', $matrixIds), static fn (int $v): bool => $v > 0)));
+        if ($matrixIds === [] || !$this->hasTable('training_competency_matrix_assignments')) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($matrixIds), '?'));
+        $sql = "SELECT a.matrix_id, a.user_id, a.source, a.created_at,
+                       COALESCE(NULLIF(TRIM(u.display_name), ''), u.email, 'Membre') AS display_name
+                FROM training_competency_matrix_assignments a
+                INNER JOIN users u ON u.id = a.user_id
+                WHERE a.tenant_id = ? AND a.matrix_id IN ($ph)
+                ORDER BY display_name ASC";
+        $st = $this->pdo->prepare($sql);
+        $st->execute(array_merge([$tenantId], $matrixIds));
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $mid = (int) ($row['matrix_id'] ?? 0);
+            if ($mid < 1) {
+                continue;
+            }
+            $out[$mid][] = [
+                'user_id' => (int) ($row['user_id'] ?? 0),
+                'display_name' => (string) ($row['display_name'] ?? 'Membre'),
+                'source' => (string) ($row['source'] ?? 'manual'),
+                'created_at' => isset($row['created_at']) ? (string) $row['created_at'] : null,
+            ];
+        }
+
+        return $out;
+    }
+
+    public function unassignUserFromMatrix(int $tenantId, int $matrixId, int $userId): bool
+    {
+        if (!$this->hasTable('training_competency_matrix_assignments') || $matrixId < 1 || $userId < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'DELETE FROM training_competency_matrix_assignments WHERE tenant_id = ? AND matrix_id = ? AND user_id = ?'
+        );
+        $st->execute([$tenantId, $matrixId, $userId]);
+
+        return $st->rowCount() > 0;
+    }
+
+    public function deleteMatrix(int $tenantId, int $matrixId): bool
+    {
+        if (!$this->hasTable('training_competency_matrices') || $matrixId < 1) {
+            return false;
+        }
+        $this->pdo->beginTransaction();
+        try {
+            if ($this->hasTable('training_competency_matrix_assignments')) {
+                $this->pdo->prepare(
+                    'DELETE FROM training_competency_matrix_assignments WHERE tenant_id = ? AND matrix_id = ?'
+                )->execute([$tenantId, $matrixId]);
+            }
+            $st = $this->pdo->prepare('DELETE FROM training_competency_matrices WHERE tenant_id = ? AND id = ?');
+            $st->execute([$tenantId, $matrixId]);
+            $ok = $st->rowCount() > 0;
+            $this->pdo->commit();
+
+            return $ok;
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
     }
 
     /** @return list<array<string,mixed>> */

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 $title = $title ?? 'Accès indisponible';
 $brand = email_brand_name();
+$feedbackUrl = url(ltrim(\App\Services\DemoNda\DemoNdaGateService::FEEDBACK_PATH, '/'));
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -67,6 +68,23 @@ $brand = email_brand_name();
             color: var(--muted);
         }
         .dim { color: var(--dim); font-size: 0.875rem; }
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2rem;
+            min-height: 3rem;
+            padding: 0.85rem 1.5rem;
+            background: var(--accent);
+            color: #052e1c;
+            font-size: 0.6875rem;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+        }
+        .cta:hover { background: #6ee7b7; }
     </style>
 </head>
 <body>
@@ -77,7 +95,8 @@ $brand = email_brand_name();
             Cette démonstration n’est plus accessible depuis votre connexion.
             La fenêtre d’entrée ou la durée d’accès autorisée est écoulée.
         </p>
-        <p class="dim">Contactez directement TTRD.FR si besoin.</p>
+        <a class="cta" href="<?= htmlspecialchars($feedbackUrl, ENT_QUOTES, 'UTF-8') ?>">Répondre au questionnaire</a>
+        <p class="dim">Votre avis nous aide à améliorer l’expérience. Contactez TTRD.FR si besoin.</p>
     </main>
 </body>
 </html>

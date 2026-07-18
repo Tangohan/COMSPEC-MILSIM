@@ -219,6 +219,57 @@ a.dash-announce-tile:focus-visible {
   color: var(--announce-accent);
 }
 
+.dash-announce-tile__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  margin-bottom: 0.35rem;
+}
+
+.dash-announce-tile__verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem 0.15rem 0.3rem;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  color: #6ee7b7;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.dash-announce-tile__verified svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+}
+
+.dash-announce-tile__verified-mark {
+  position: absolute;
+  right: 0.55rem;
+  bottom: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: #059669;
+  color: #ecfdf5;
+  box-shadow: 0 0 0 2px rgba(2, 6, 23, 0.65);
+  z-index: 2;
+}
+
+.dash-announce-tile__verified-mark svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
 .dash-announce-tile--urgent .dash-announce-tile__kind { color: #fb7185; }
 .dash-announce-tile--novelty .dash-announce-tile__kind { color: #34d399; }
 .dash-announce-tile--discount .dash-announce-tile__kind { color: #fbbf24; }

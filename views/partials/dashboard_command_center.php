@@ -223,11 +223,34 @@ if ($memberSinceRaw) {
         }
     }
 }
+
+// Données situation tactique (carte + modal)
+$tactSizeFormatted = '—';
+$tactUpdatedAt = '—';
+$tactDetailUrl = url('modpacks');
+$tactDownloadUrl = null;
+$tactPackTitle = 'Modpack communautaire';
+$tactPackVersion = '—';
+if (is_array($modpack) && !empty($modpack['id'])) {
+    if (!empty($modpack['size'])) {
+        $b = (int) $modpack['size'];
+        $tactSizeFormatted = $b >= 1073741824
+            ? number_format($b / 1073741824, 1, ',', ' ') . ' Go'
+            : ($b >= 1048576 ? number_format($b / 1048576, 1, ',', ' ') . ' Mo' : number_format($b / 1024, 1, ',', ' ') . ' Ko');
+    }
+    $tactUpdatedAt = !empty($modpack['updated_at']) ? date('d.m.y', strtotime((string) $modpack['updated_at'])) : '—';
+    $tactDetailUrl = !empty($mbModpack['detail_href'])
+        ? (string) $mbModpack['detail_href']
+        : (!empty($modpack['slug']) ? url('modpacks/' . rawurlencode((string) $modpack['slug'])) : url('modpacks'));
+    $tactDownloadUrl = url('modpacks/' . (int) $modpack['id'] . '/download');
+    $tactPackTitle = !empty($mbModpack['title']) ? (string) $mbModpack['title'] : (string) ($modpack['name'] ?? $modpack['title'] ?? 'Modpack');
+    $tactPackVersion = (string) ($modpack['version'] ?? '—');
+}
 ?>
 <div class="dash-cc dash-cc--rail">
     <?php require base_path('views/partials/dashboard_aside.php'); ?>
 
-    <div class="dash-cc__main">
+    <div class="dash-cc__main" x-data="{ tacticalOpen: false, calendarOpen: false }">
         <?php require base_path('views/partials/header_dashboard.php'); ?>
 
         <!-- Hero sombre (réf. Caverne) — catalogue immédiatement après -->
@@ -393,6 +416,20 @@ if ($memberSinceRaw) {
                         <span class="dash-idstrip__label">Date</span>
                         <span class="dash-idstrip__value"><?= htmlspecialchars($todayLabel, ENT_QUOTES, 'UTF-8') ?></span>
                     </div>
+                    <div class="dash-idstrip__actions" role="group" aria-label="Raccourcis opérationnels">
+                        <button type="button" class="dash-idstrip__icon-btn" @click="tacticalOpen = true" aria-haspopup="dialog" aria-label="Ouvrir la situation tactique">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-4.5 7-11a7 7 0 10-14 0c0 6.5 7 11 7 11z"/>
+                                <circle cx="12" cy="10" r="2.5"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="dash-idstrip__icon-btn" @click="calendarOpen = true" aria-haspopup="dialog" aria-label="Ouvrir le calendrier des manœuvres">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <rect x="3" y="5" width="18" height="16" rx="2"/>
+                                <path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <?php if ($dashCtxCommunity && count($communityMemberships ?? []) > 1): ?>
                 <div class="dash-idstrip__switch">
@@ -490,38 +527,56 @@ if ($memberSinceRaw) {
                             <a href="<?= url('formations') ?>" class="cc-btn cc-btn-primary">Ouvrir le catalogue</a>
                         </div>
                     <?php else: ?>
-                        <ul class="cc-rows">
-                            <?php foreach ($mbTrain as $t): ?>
-                                <?php
-                                $pct = isset($t['progress_pct']) ? max(0, min(100, (int) $t['progress_pct'])) : 0;
-                                $subtitle = trim((string) ($t['subtitle'] ?? ''));
-                                $urgent = !empty($t['urgent']);
-                                ?>
-                                <li>
-                                    <a href="<?= htmlspecialchars((string) ($t['href'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="cc-row">
-                                        <div class="cc-row__body">
-                                            <div class="flex flex-wrap items-center justify-between gap-2">
-                                                <p class="cc-row__title"><?= htmlspecialchars((string) ($t['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                                                <div class="flex items-center gap-2">
-                                                    <?php if ($urgent): ?>
-                                                        <span class="cc-badge cc-badge--urgent">Prioritaire</span>
-                                                    <?php endif; ?>
-                                                    <span class="text-xs font-bold tabular-nums text-emerald-700"><?= $pct ?> %</span>
+                        <p class="dash-train-hint px-3 pt-2">Faites défiler horizontalement pour voir toutes les colonnes.</p>
+                        <div class="dash-train-sheet">
+                            <table class="dash-train-sheet__table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Formation</th>
+                                        <th>Priorité</th>
+                                        <th>Avancement</th>
+                                        <th>Échéance</th>
+                                        <th class="text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($mbTrain as $ti => $t): ?>
+                                        <?php
+                                        $pct = isset($t['progress_pct']) ? max(0, min(100, (int) $t['progress_pct'])) : 0;
+                                        $urgent = !empty($t['urgent']);
+                                        $mandatory = !empty($t['mandatory']);
+                                        $expiresLabel = trim((string) ($t['expires_label'] ?? ''));
+                                        $subtitle = trim((string) ($t['subtitle'] ?? ''));
+                                        $prioLabel = $mandatory ? 'Obligatoire' : ($urgent ? 'Prioritaire' : 'Standard');
+                                        $prioClass = ($mandatory || $urgent) ? 'das-badge--rose' : 'das-badge--muted';
+                                        ?>
+                                        <tr>
+                                            <td class="dash-train-sheet__num"><?= (int) ($ti + 1) ?></td>
+                                            <td>
+                                                <span class="dash-train-sheet__title"><?= htmlspecialchars((string) ($t['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php if ($subtitle !== ''): ?>
+                                                    <span class="dash-train-sheet__meta"><?= htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td><span class="das-badge <?= $prioClass ?>"><?= htmlspecialchars($prioLabel, ENT_QUOTES, 'UTF-8') ?></span></td>
+                                            <td>
+                                                <div class="dash-train-sheet__pct">
+                                                    <span class="dash-train-sheet__pct-val"><?= $pct ?> %</span>
+                                                    <span class="dash-train-sheet__bar" role="progressbar" aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement <?= $pct ?> pour cent">
+                                                        <span style="width:<?= $pct ?>%"></span>
+                                                    </span>
                                                 </div>
-                                            </div>
-                                            <?php if ($subtitle !== ''): ?>
-                                                <p class="cc-row__meta"><?= htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8') ?></p>
-                                            <?php else: ?>
-                                                <p class="cc-row__meta">Avancement : <?= $pct ?> %</p>
-                                            <?php endif; ?>
-                                            <div class="cc-progress mt-2.5" role="progressbar" aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement <?= $pct ?> pour cent">
-                                                <span style="width:<?= $pct ?>%"></span>
-                                            </div>
-                                        </div>
-                                    </a>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
+                                            </td>
+                                            <td class="dash-train-sheet__muted"><?= $expiresLabel !== '' ? htmlspecialchars($expiresLabel, ENT_QUOTES, 'UTF-8') : '—' ?></td>
+                                            <td class="text-right">
+                                                <a href="<?= htmlspecialchars((string) ($t['href'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="das-btn">Ouvrir</a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     <?php endif; ?>
                 </div>
             </section>
@@ -543,40 +598,25 @@ if ($memberSinceRaw) {
                     </div>
 
                     <?php if (is_array($modpack) && !empty($modpack['id'])): ?>
-                        <?php
-                        $sizeFormatted = '—';
-                        if (!empty($modpack['size'])) {
-                            $b = (int) $modpack['size'];
-                            $sizeFormatted = $b >= 1073741824
-                                ? number_format($b / 1073741824, 1, ',', ' ') . ' Go'
-                                : ($b >= 1048576 ? number_format($b / 1048576, 1, ',', ' ') . ' Mo' : number_format($b / 1024, 1, ',', ' ') . ' Ko');
-                        }
-                        $updatedAt = !empty($modpack['updated_at']) ? date('d.m.y', strtotime((string) $modpack['updated_at'])) : '—';
-                        $detailUrl = !empty($mbModpack['detail_href'])
-                            ? (string) $mbModpack['detail_href']
-                            : (!empty($modpack['slug']) ? url('modpacks/' . rawurlencode((string) $modpack['slug'])) : url('modpacks'));
-                        $downloadUrl = url('modpacks/' . (int) $modpack['id'] . '/download');
-                        $packTitle = !empty($mbModpack['title']) ? (string) $mbModpack['title'] : (string) ($modpack['name'] ?? $modpack['title'] ?? 'Modpack');
-                        ?>
-                        <p class="mt-3 text-sm font-semibold text-white/90"><?= htmlspecialchars($packTitle, ENT_QUOTES, 'UTF-8') ?></p>
+                        <p class="mt-3 text-sm font-semibold text-white/90"><?= htmlspecialchars($tactPackTitle, ENT_QUOTES, 'UTF-8') ?></p>
                         <div class="mt-3 grid grid-cols-2 gap-2">
                             <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
                                 <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Version</p>
-                                <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars((string) ($modpack['version'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactPackVersion, ENT_QUOTES, 'UTF-8') ?></p>
                             </div>
                             <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
                                 <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Taille</p>
-                                <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($sizeFormatted, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactSizeFormatted, ENT_QUOTES, 'UTF-8') ?></p>
                             </div>
                         </div>
-                        <p class="mt-2.5 text-xs text-white/55">Mise à jour <?= htmlspecialchars($updatedAt, ENT_QUOTES, 'UTF-8') ?></p>
+                        <p class="mt-2.5 text-xs text-white/55">Mise à jour <?= htmlspecialchars($tactUpdatedAt, ENT_QUOTES, 'UTF-8') ?></p>
                         <div class="mt-4 flex flex-col gap-2">
-                            <a href="<?= htmlspecialchars($downloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-primary w-full">Télécharger le modpack</a>
-                            <a href="<?= htmlspecialchars($detailUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-center text-[10px] font-bold uppercase tracking-wider text-white/50 hover:text-emerald-300">Voir la fiche</a>
+                            <a href="<?= htmlspecialchars((string) $tactDownloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-primary w-full">Télécharger le modpack</a>
+                            <button type="button" class="text-center text-[10px] font-bold uppercase tracking-wider text-white/50 hover:text-emerald-300" @click="tacticalOpen = true">Voir le détail</button>
                         </div>
                     <?php else: ?>
                         <p class="mt-4 text-sm leading-relaxed text-white/60">Aucun pack publié pour cette communauté. Ouvrez la carte tactique ou parcourez les packs disponibles.</p>
-                        <a href="<?= url('modpacks') ?>" class="cc-btn cc-btn-ghost--on-dark mt-3">Parcourir les packs</a>
+                        <button type="button" class="cc-btn cc-btn-ghost--on-dark mt-3" @click="tacticalOpen = true">Ouvrir la situation tactique</button>
                     <?php endif; ?>
 
                     <div class="mt-5 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
@@ -604,12 +644,15 @@ if ($memberSinceRaw) {
                             <p class="cc-kicker cc-kicker--primary">Calendrier</p>
                             <h2 id="dash-calendar-heading" class="cc-card__title">Prochaines manœuvres</h2>
                         </div>
-                        <a href="<?= url('evenements') ?>" class="cc-card__link">Tout voir</a>
+                        <div class="flex items-center gap-3">
+                            <button type="button" class="cc-card__link" @click="calendarOpen = true">Calendrier</button>
+                            <a href="<?= url('evenements') ?>" class="cc-card__link">Tout voir</a>
+                        </div>
                     </div>
                     <?php if ($mbOps === []): ?>
                         <div class="cc-empty m-3">
                             <p>Aucune manœuvre planifiée pour le moment.</p>
-                            <a href="<?= url('evenements') ?>" class="cc-btn cc-btn-primary">Ouvrir le calendrier</a>
+                            <button type="button" class="cc-btn cc-btn-primary" @click="calendarOpen = true">Ouvrir le calendrier</button>
                         </div>
                     <?php else: ?>
                         <ul class="cc-rows">
@@ -729,14 +772,163 @@ if ($memberSinceRaw) {
             </section>
             <?php endif; ?>
         </div>
+
+        <!-- Modal situation tactique -->
+        <div
+            x-show="tacticalOpen"
+            x-cloak
+            class="dash-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dash-tactical-modal-title"
+            @keydown.escape.window="tacticalOpen = false"
+        >
+            <div class="dash-modal__backdrop" @click="tacticalOpen = false"></div>
+            <div class="dash-modal__panel dash-modal__panel--dark">
+                <div class="dash-modal__head">
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-300">Situation tactique</p>
+                        <h2 id="dash-tactical-modal-title" class="mt-1 text-xl font-black text-white">ATAK &amp; Modpack</h2>
+                    </div>
+                    <button type="button" class="dash-modal__close" @click="tacticalOpen = false" aria-label="Fermer">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+                    </button>
+                </div>
+                <div class="dash-modal__body space-y-5">
+                    <?php if (is_array($modpack) && !empty($modpack['id'])): ?>
+                        <div>
+                            <p class="text-sm font-semibold text-white/90"><?= htmlspecialchars($tactPackTitle, ENT_QUOTES, 'UTF-8') ?></p>
+                            <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
+                                    <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Version</p>
+                                    <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactPackVersion, ENT_QUOTES, 'UTF-8') ?></p>
+                                </div>
+                                <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
+                                    <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Taille</p>
+                                    <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactSizeFormatted, ENT_QUOTES, 'UTF-8') ?></p>
+                                </div>
+                                <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
+                                    <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Mise à jour</p>
+                                    <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactUpdatedAt, ENT_QUOTES, 'UTF-8') ?></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2 sm:flex-row">
+                            <?php if ($tactDownloadUrl): ?>
+                            <a href="<?= htmlspecialchars($tactDownloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-primary flex-1 text-center">Télécharger le modpack</a>
+                            <?php endif; ?>
+                            <a href="<?= htmlspecialchars($tactDetailUrl, ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-ghost--on-dark flex-1 text-center">Voir la fiche</a>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-sm leading-relaxed text-white/70">Aucun pack publié pour cette communauté. Parcourez les packs ou ouvrez la carte tactique.</p>
+                        <a href="<?= url('modpacks') ?>" class="cc-btn cc-btn-primary">Parcourir les packs</a>
+                    <?php endif; ?>
+                    <div class="grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
+                        <a href="<?= url('atak') ?>" class="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-center transition hover:bg-white/10">
+                            <p class="text-xs font-black uppercase text-white">ATAK</p>
+                            <p class="mt-0.5 text-[10px] text-white/50">Carte tactique</p>
+                        </a>
+                        <?php if ($atakModDownloadUrl): ?>
+                        <a href="<?= htmlspecialchars((string) $atakModDownloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-center transition hover:bg-white/10">
+                            <p class="text-xs font-black uppercase text-white">Mod ATAK</p>
+                            <p class="mt-0.5 text-[10px] text-white/50">Télécharger</p>
+                        </a>
+                        <?php else: ?>
+                        <a href="<?= url('orbat') ?>" class="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-center transition hover:bg-white/10">
+                            <p class="text-xs font-black uppercase text-white">ORBAT</p>
+                            <p class="mt-0.5 text-[10px] text-white/50">Effectifs</p>
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal calendrier manœuvres -->
+        <div
+            x-show="calendarOpen"
+            x-cloak
+            class="dash-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dash-calendar-modal-title"
+            @keydown.escape.window="calendarOpen = false"
+        >
+            <div class="dash-modal__backdrop" @click="calendarOpen = false"></div>
+            <div class="dash-modal__panel">
+                <div class="dash-modal__head dash-modal__head--light">
+                    <div>
+                        <p class="cc-kicker cc-kicker--primary">Calendrier</p>
+                        <h2 id="dash-calendar-modal-title" class="mt-1 text-xl font-black text-slate-900">Prochaines manœuvres</h2>
+                    </div>
+                    <button type="button" class="dash-modal__close dash-modal__close--light" @click="calendarOpen = false" aria-label="Fermer">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+                    </button>
+                </div>
+                <div class="dash-modal__body">
+                    <?php if ($mbOps === []): ?>
+                        <div class="cc-empty">
+                            <p>Aucune manœuvre planifiée pour le moment.</p>
+                            <a href="<?= url('evenements') ?>" class="cc-btn cc-btn-primary">Ouvrir le calendrier complet</a>
+                        </div>
+                    <?php else: ?>
+                        <ul class="dash-cal-modal__list">
+                            <?php foreach ($mbOps as $op): ?>
+                                <?php
+                                $starts = (string) ($op['starts_at'] ?? '');
+                                $day = '—';
+                                $mon = '';
+                                $time = '';
+                                $dateFull = '';
+                                if ($starts !== '') {
+                                    $ts = strtotime($starts);
+                                    if ($ts !== false) {
+                                        $day = date('d', $ts);
+                                        $mon = $monthsFr[(int) date('n', $ts) - 1] ?? date('M', $ts);
+                                        $time = date('H\hi', $ts);
+                                        $dateFull = date('d/m/Y', $ts);
+                                    }
+                                }
+                                $rsvp = (string) ($op['rsvp_label'] ?? '');
+                                $summary = trim((string) ($op['summary'] ?? ''));
+                                $listHref = trim((string) ($op['list_href'] ?? ''));
+                                if ($listHref === '') {
+                                    $listHref = url('evenements');
+                                }
+                                ?>
+                                <li class="dash-cal-modal__item">
+                                    <div class="cc-cal">
+                                        <span class="cc-cal__d"><?= htmlspecialchars($day, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="cc-cal__m"><?= htmlspecialchars($mon !== '' ? $mon : '—', ENT_QUOTES, 'UTF-8') ?></span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="font-bold text-slate-900"><?= htmlspecialchars((string) ($op['title'] ?? 'Opération'), ENT_QUOTES, 'UTF-8') ?></p>
+                                        <p class="mt-0.5 text-xs text-slate-500">
+                                            <?= $dateFull !== '' ? htmlspecialchars($dateFull, ENT_QUOTES, 'UTF-8') : '' ?>
+                                            <?= $time !== '' ? ' · ' . htmlspecialchars($time, ENT_QUOTES, 'UTF-8') : '' ?>
+                                            <?= $rsvp !== '' ? ' · ' . htmlspecialchars($rsvp, ENT_QUOTES, 'UTF-8') : '' ?>
+                                        </p>
+                                        <?php if ($summary !== ''): ?>
+                                            <p class="mt-1 text-sm text-slate-600 line-clamp-2"><?= htmlspecialchars($summary, ENT_QUOTES, 'UTF-8') ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <a href="<?= htmlspecialchars($listHref, ENT_QUOTES, 'UTF-8') ?>" class="das-btn shrink-0">Ouvrir</a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <div class="mt-4 border-t border-slate-100 pt-4">
+                            <a href="<?= url('evenements') ?>" class="cc-btn cc-btn-primary w-full text-center">Voir tout le calendrier</a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <style>
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Tableau candidatures : plein page dans le flux dashboard (hors cc-shell 72rem), comme les
-   tableaux personnel/évènements — largeur pleine du panneau principal, pas de carte étroite. */
 .dash-apps-full {
     width: 100%;
     padding: 2rem 1.25rem 2.5rem;
@@ -745,4 +937,197 @@ if ($memberSinceRaw) {
 @media (min-width: 768px) {
     .dash-apps-full { padding: 2.25rem 2rem 2.75rem; }
 }
+
+.dash-idstrip__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-left: 0.25rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+    align-self: center;
+}
+.dash-idstrip__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 0.65rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.dash-idstrip__icon-btn:hover {
+    background: rgba(16, 185, 129, 0.18);
+    border-color: rgba(52, 211, 153, 0.55);
+    color: #fff;
+}
+.dash-idstrip__icon-btn:active { transform: scale(0.96); }
+
+.dash-train-hint {
+    margin: 0;
+    font-size: 0.6875rem;
+    color: #64748b;
+}
+.dash-train-sheet {
+    width: 100%;
+    overflow: auto;
+    border-top: 1px solid #f1f5f9;
+}
+.dash-train-sheet__table {
+    width: 100%;
+    min-width: 40rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.8125rem;
+}
+.dash-train-sheet__table th,
+.dash-train-sheet__table td {
+    padding: 0.7rem 0.85rem;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+    text-align: left;
+}
+.dash-train-sheet__table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 0.625rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.dash-train-sheet__table tbody tr:nth-child(even) td { background: #fbfdfc; }
+.dash-train-sheet__table tbody tr:hover td { background: #f0fdf4; }
+.dash-train-sheet__table td.text-right,
+.dash-train-sheet__table th.text-right { text-align: right; }
+.dash-train-sheet__num { color: #94a3b8; font-variant-numeric: tabular-nums; width: 2.5rem; }
+.dash-train-sheet__title { display: block; font-weight: 700; color: #0f172a; }
+.dash-train-sheet__meta { display: block; margin-top: 0.15rem; font-size: 0.7rem; color: #64748b; }
+.dash-train-sheet__muted { color: #475569; white-space: nowrap; }
+.dash-train-sheet__pct { display: flex; flex-direction: column; gap: 0.35rem; min-width: 7rem; }
+.dash-train-sheet__pct-val { font-size: 0.75rem; font-weight: 800; color: #047857; font-variant-numeric: tabular-nums; }
+.dash-train-sheet__bar {
+    display: block;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+.dash-train-sheet__bar > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #059669;
+}
+
+.das-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.das-badge--rose { background: #fff1f2; border-color: #fecdd3; color: #9f1239; }
+.das-badge--muted { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
+.das-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #0f172a;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.das-btn:hover { background: #059669; border-color: #059669; }
+
+.dash-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.dash-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.72);
+    backdrop-filter: blur(4px);
+}
+.dash-modal__panel {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 36rem);
+    max-height: min(88vh, 40rem);
+    overflow: auto;
+    border-radius: 1rem;
+    background: #fff;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+}
+.dash-modal__panel--dark {
+    background: linear-gradient(160deg, #052e1f 0%, #0a0f0d 55%, #050505 100%);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dash-modal__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem 1.25rem 0.85rem;
+}
+.dash-modal__head--light { border-bottom: 1px solid #f1f5f9; }
+.dash-modal__body { padding: 0.5rem 1.25rem 1.35rem; }
+.dash-modal__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.65rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e2e8f0;
+    cursor: pointer;
+}
+.dash-modal__close--light {
+    border-color: #e2e8f0;
+    background: #f8fafc;
+    color: #334155;
+}
+.dash-modal__close:hover { background: rgba(255, 255, 255, 0.12); }
+.dash-modal__close--light:hover { background: #f1f5f9; }
+
+.dash-cal-modal__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.65rem; }
+.dash-cal-modal__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.85rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.85rem;
+    background: #f8fafc;
+}
+
+[x-cloak] { display: none !important; }
 </style>

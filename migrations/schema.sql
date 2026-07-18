@@ -696,6 +696,27 @@ CREATE TABLE IF NOT EXISTS `atak_maps` (
   UNIQUE KEY `slug` (`slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Cartes custom (fond image) par communauté — Overwatch / TACMAP
+CREATE TABLE IF NOT EXISTS `tenant_custom_maps` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `created_by` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL,
+  `label` varchar(120) NOT NULL,
+  `slug` varchar(80) NOT NULL,
+  `image_path` varchar(512) NOT NULL,
+  `image_width` int unsigned NOT NULL,
+  `image_height` int unsigned NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tenant_custom_maps_map_id` (`map_id`),
+  UNIQUE KEY `tenant_custom_maps_tenant_slug` (`tenant_id`,`slug`),
+  KEY `tenant_custom_maps_tenant_active` (`tenant_id`,`is_active`),
+  CONSTRAINT `tenant_custom_maps_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Données ATAK live (parité Node, multi-tenant)
 CREATE TABLE IF NOT EXISTS `atak_layers` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
@@ -1153,6 +1174,9 @@ CREATE TABLE IF NOT EXISTS `platform_alerts` (
   `ends_at` datetime DEFAULT NULL,
   `sort_order` int NOT NULL DEFAULT 0,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `dismissible` tinyint(1) NOT NULL DEFAULT 1,
+  `email_last_sent_at` datetime DEFAULT NULL,
+  `email_last_sent_count` int unsigned NOT NULL DEFAULT 0,
   `audience_json` json DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -1163,12 +1187,16 @@ CREATE TABLE IF NOT EXISTS `platform_alerts` (
 CREATE TABLE IF NOT EXISTS `tenant_alerts` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned NOT NULL,
-  `kind` enum('discount','novelty','info','urgent') NOT NULL DEFAULT 'info',
+  `kind` varchar(32) NOT NULL DEFAULT 'info',
   `title` varchar(255) NOT NULL,
   `body` text,
   `cta_label` varchar(120) DEFAULT NULL,
   `cta_url` varchar(512) DEFAULT NULL,
   `coupon_code` varchar(64) DEFAULT NULL,
+  `accent_color` varchar(7) DEFAULT NULL,
+  `icon_key` varchar(32) DEFAULT NULL,
+  `image_path` varchar(512) DEFAULT NULL,
+  `banner_path` varchar(512) DEFAULT NULL,
   `starts_at` datetime DEFAULT NULL,
   `ends_at` datetime DEFAULT NULL,
   `sort_order` int NOT NULL DEFAULT 0,

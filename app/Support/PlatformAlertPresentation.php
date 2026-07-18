@@ -46,7 +46,7 @@ final class PlatformAlertPresentation
         return match ($kind) {
             'urgent' => ['class' => 'bg-rose-100 text-rose-900 ring-rose-200/80', 'ring' => 'ring-1'],
             'discount' => ['class' => 'bg-amber-100 text-amber-950 ring-amber-200/80', 'ring' => 'ring-1'],
-            'novelty' => ['class' => 'bg-sky-100 text-sky-950 ring-sky-200/80', 'ring' => 'ring-1'],
+            'novelty' => ['class' => 'bg-emerald-50 text-emerald-900 ring-emerald-200/80', 'ring' => 'ring-1'],
             default => ['class' => 'bg-slate-100 text-slate-800 ring-slate-200/80', 'ring' => 'ring-1'],
         };
     }
@@ -192,6 +192,9 @@ final class PlatformAlertPresentation
 
         return array_merge($row, [
             '_kind_label' => self::kindLabel($kind),
+            '_display_style_label' => \App\Support\AlertDisplayStyle::label(
+                isset($row['display_style']) ? (string) $row['display_style'] : \App\Support\AlertDisplayStyle::CLASSIC
+            ),
             '_badge' => self::kindBadgeClasses($kind),
             '_schedule' => self::scheduleSummary(
                 isset($row['starts_at']) ? (string) $row['starts_at'] : null,

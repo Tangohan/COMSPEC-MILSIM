@@ -459,8 +459,15 @@ $profileMenuItems[] = ['label' => 'Couverture', 'desc' => 'Bandeau du menu sessi
                                         <?php if (trim((string) ($a['body'] ?? '')) !== ''): ?>
                                             <p class="athena-header__notif-body"><?= $h((string) $a['body']) ?></p>
                                         <?php endif; ?>
-                                        <?php if (!empty($a['cta_label']) && !empty($a['cta_url'])): ?>
-                                            <a href="<?= $h((string) $a['cta_url']) ?>" class="athena-header__notif-cta"><?= $h((string) $a['cta_label']) ?></a>
+                                        <?php if ((!empty($a['cta_label']) && !empty($a['cta_url'])) || (!empty($a['cta_secondary_label']) && !empty($a['cta_secondary_url']))): ?>
+                                            <div class="athena-header__notif-actions">
+                                                <?php if (!empty($a['cta_label']) && !empty($a['cta_url'])): ?>
+                                                    <a href="<?= $h((string) $a['cta_url']) ?>" class="athena-header__notif-cta"><?= $h((string) $a['cta_label']) ?></a>
+                                                <?php endif; ?>
+                                                <?php if (!empty($a['cta_secondary_label']) && !empty($a['cta_secondary_url'])): ?>
+                                                    <a href="<?= $h((string) $a['cta_secondary_url']) ?>" class="athena-header__notif-cta athena-header__notif-cta--secondary"><?= $h((string) $a['cta_secondary_label']) ?></a>
+                                                <?php endif; ?>
+                                            </div>
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>

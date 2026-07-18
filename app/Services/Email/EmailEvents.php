@@ -101,6 +101,9 @@ final class EmailEvents
     /** Annonce maintenance plateforme — diffusion aux comptes actifs (message libre depuis la règle). */
     public const MAINTENANCE_MEMBER_BROADCAST = 'MAINTENANCE_MEMBER_BROADCAST';
 
+    /** Annonce plateforme diffusée par e-mail aux membres. */
+    public const PLATFORM_ALERT_BROADCAST = 'PLATFORM_ALERT_BROADCAST';
+
 
     /** Notification envoyée quand un membre est marqué comme déployé. */
     public const PERSONNEL_DEPLOYMENT_ASSIGNED = 'PERSONNEL_DEPLOYMENT_ASSIGNED';
@@ -109,6 +112,9 @@ final class EmailEvents
 
     /** Mise à jour du suivi roleplay / tutorat (membre ou tuteur). */
     public const ROLEPLAY_FOLLOWUP_UPDATED = 'ROLEPLAY_FOLLOWUP_UPDATED';
+
+    /** Retour questionnaire après (ou pendant) une démonstration NDA. */
+    public const DEMO_NDA_FEEDBACK = 'DEMO_NDA_FEEDBACK';
 
     /** @var list<string> */
     public const EMAIL_EVENTS = [
@@ -162,8 +168,10 @@ final class EmailEvents
         self::TENANT_EMAIL_ACTIVITY,
         self::TENANT_EMAIL_CUSTOM,
         self::MAINTENANCE_MEMBER_BROADCAST,
+        self::PLATFORM_ALERT_BROADCAST,
         self::PERSONNEL_DEPLOYMENT_ASSIGNED,
         self::PERSONNEL_DEPLOYMENT_CHECKUP_VALIDATED,
         self::ROLEPLAY_FOLLOWUP_UPDATED,
+        self::DEMO_NDA_FEEDBACK,
     ];
 }

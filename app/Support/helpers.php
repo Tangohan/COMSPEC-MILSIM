@@ -293,6 +293,24 @@ if (!function_exists('privacy_request_inbox_email')) {
     }
 }
 
+if (!function_exists('demo_feedback_inbox_email')) {
+    /**
+     * Adresse qui reçoit le questionnaire de retour après une démonstration.
+     * Priorité : DEMO_NDA_FEEDBACK_EMAIL, APP_PUBLISHER_CONTACT_EMAIL, PRIVACY_REQUEST_EMAIL.
+     */
+    function demo_feedback_inbox_email(): ?string
+    {
+        foreach (['DEMO_NDA_FEEDBACK_EMAIL', 'APP_PUBLISHER_CONTACT_EMAIL', 'PRIVACY_REQUEST_EMAIL'] as $key) {
+            $e = trim((string) env($key, ''));
+            if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+                return $e;
+            }
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('legal_public_contact_email')) {
     /**
      * Adresse de contact affichée au public (liens mailto, mentions).

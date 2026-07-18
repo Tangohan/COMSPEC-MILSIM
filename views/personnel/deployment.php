@@ -101,25 +101,25 @@ foreach ($rows as $r) {
 }
 ?>
 <style>
-.dep-sheet { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.8125rem; }
+.dep-sheet { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.75rem; }
 .dep-sheet thead th {
     position: sticky; top: 0; z-index: 2;
     background: #0f172a; color: #e2e8f0;
     border-bottom: 1px solid #1e293b;
-    padding: 0.7rem 0.75rem;
+    padding: 0.55rem 0.5rem;
     text-align: left;
-    font-size: 0.625rem;
+    font-size: 0.5625rem;
     font-weight: 900;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     white-space: nowrap;
 }
 .dep-sheet thead th.num { text-align: right; }
 .dep-sheet tbody td {
-    padding: 0.65rem 0.75rem;
+    padding: 0.5rem 0.5rem;
     border-bottom: 1px solid #e2e8f0;
     border-right: 1px solid #f1f5f9;
-    vertical-align: top;
+    vertical-align: middle;
     color: #0f172a;
     background: #fff;
 }
@@ -139,66 +139,123 @@ foreach ($rows as $r) {
 }
 .dep-sheet-toolbar {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem;
-    padding: 0.85rem 1rem;
+    padding: 0.75rem 1rem;
     border: 1px solid #cbd5e1; border-bottom: none;
     border-radius: 0.75rem 0.75rem 0 0;
     background: linear-gradient(180deg, #f8fafc, #fff);
 }
-.dep-pill {
-    display: inline-flex; align-items: center; gap: 0.35rem;
-    border-radius: 999px; padding: 0.2rem 0.55rem;
-    font-size: 0.65rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+.dep-kpi {
+    width: 100%;
+    max-width: 18rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
+.dep-kpi th {
+    background: #0f172a; color: #94a3b8;
+    font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+    text-align: left; padding: 0.4rem 0.65rem;
+}
+.dep-kpi th.num, .dep-kpi td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.dep-kpi td {
+    padding: 0.4rem 0.65rem;
+    border-top: 1px solid #e2e8f0;
+    background: #fff;
+    color: #0f172a;
+}
+.dep-kpi tr.is-active td { background: #ecfdf5; color: #065f46; font-weight: 700; }
+.dep-kpi tr[role="button"]:hover td { background: #f1f5f9; }
+.dep-kpi tr.is-active:hover td { background: #d1fae5; }
+.dep-avatar {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.75rem; height: 1.75rem; border-radius: 0.45rem;
+    background: #0f172a; color: #f8fafc;
+    font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.02em;
+    flex-shrink: 0;
+}
+.dep-status {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.6875rem; font-weight: 700; white-space: nowrap;
+}
+.dep-status svg { width: 0.95rem; height: 0.95rem; flex-shrink: 0; }
+.dep-status--ready { color: #0369a1; }
+.dep-status--blocked { color: #b45309; }
+.dep-status--deployed { color: #4338ca; }
+.dep-status--validated { color: #047857; }
+.dep-miss {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.35rem; height: 1.35rem; border-radius: 0.35rem;
+    background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa;
+}
+.dep-miss svg { width: 0.8rem; height: 0.8rem; }
 .dep-act {
-    display: inline-flex; align-items: center; gap: 0.25rem;
-    border-radius: 0.5rem; border: 1px solid #cbd5e1; background: #fff;
-    padding: 0.35rem 0.55rem; font-size: 0.7rem; font-weight: 700; color: #0f172a;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.2rem;
+    border-radius: 0.4rem; border: 1px solid #cbd5e1; background: #fff;
+    padding: 0.3rem 0.4rem; font-size: 0.65rem; font-weight: 700; color: #0f172a;
     text-decoration: none; white-space: nowrap;
 }
+.dep-act svg { width: 0.85rem; height: 0.85rem; }
 .dep-act:hover { border-color: #059669; background: #ecfdf5; color: #065f46; }
 .dep-act--fix { border-color: #fcd34d; background: #fffbeb; color: #92400e; }
 .dep-act--fix:hover { border-color: #f59e0b; background: #fef3c7; }
 .dep-act--go { border-color: #059669; background: #059669; color: #fff; }
 .dep-act--go:hover { background: #047857; color: #fff; }
 .dep-act--ghost { color: #475569; }
+.dep-truncate { max-width: 9.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 [x-cloak] { display: none !important; }
 </style>
 
 <section
-    class="mx-auto w-full max-w-[1600px] space-y-5 px-1 sm:px-0"
+    class="mx-auto w-full max-w-5xl space-y-4 px-3 sm:px-4 py-4 sm:py-6"
     x-data="{ filter: 'all', openId: null }"
 >
-    <header class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div class="min-w-0">
-                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-700">Opérations RH</p>
-                <h1 class="mt-1 text-2xl font-black tracking-tight text-slate-900">Déploiement du personnel</h1>
-                <p class="mt-1.5 max-w-3xl text-sm text-slate-600 leading-relaxed">
-                    Tableur opérationnel : corrigez les dossiers incomplets via les actions de la ligne, déployez les profils prêts, puis validez le check-up.
+    <header class="relative overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/50 via-transparent to-transparent pointer-events-none" aria-hidden="true"></div>
+        <div class="relative px-5 sm:px-6 py-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div class="min-w-0 flex-1">
+                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800/90">Opérations RH</p>
+                <h1 class="mt-1.5 text-xl sm:text-2xl font-black tracking-tight text-slate-900">Déploiement du personnel</h1>
+                <p class="mt-1.5 text-sm text-slate-600 leading-relaxed max-w-xl">
+                    Corrigez les dossiers incomplets, déployez les profils prêts, validez le check-up.
                 </p>
             </div>
-            <div class="grid grid-cols-2 gap-2 sm:grid-cols-5 w-full lg:w-auto">
-                <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                    <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Total</p>
-                    <p class="text-xl font-black tabular-nums text-slate-900"><?= $totalRows ?></p>
-                </div>
-                <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
-                    <p class="text-[10px] font-black uppercase tracking-wider text-amber-800">À corriger</p>
-                    <p class="text-xl font-black tabular-nums text-amber-950"><?= $blockedRows ?></p>
-                </div>
-                <div class="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5">
-                    <p class="text-[10px] font-black uppercase tracking-wider text-sky-800">Prêts</p>
-                    <p class="text-xl font-black tabular-nums text-sky-950"><?= $readyRows ?></p>
-                </div>
-                <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2.5">
-                    <p class="text-[10px] font-black uppercase tracking-wider text-indigo-800">Déployés</p>
-                    <p class="text-xl font-black tabular-nums text-indigo-950"><?= $deployedRows ?></p>
-                </div>
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 col-span-2 sm:col-span-1">
-                    <p class="text-[10px] font-black uppercase tracking-wider text-emerald-800">Validés</p>
-                    <p class="text-xl font-black tabular-nums text-emerald-950"><?= $validatedRows ?></p>
-                </div>
-            </div>
+            <table class="dep-kpi shrink-0" role="group" aria-label="Synthèse des effectifs">
+                <thead>
+                    <tr>
+                        <th>État</th>
+                        <th class="num">Nb</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $kpiRows = [
+                        ['key' => 'all', 'label' => 'Tout', 'n' => $totalRows],
+                        ['key' => 'blocked', 'label' => 'À corriger', 'n' => $blockedRows],
+                        ['key' => 'ready', 'label' => 'Prêts', 'n' => $readyRows],
+                        ['key' => 'deployed', 'label' => 'Déployés', 'n' => $deployedRows],
+                        ['key' => 'validated', 'label' => 'Validés', 'n' => $validatedRows],
+                    ];
+                    foreach ($kpiRows as $kpi):
+                    ?>
+                    <tr
+                        role="button"
+                        tabindex="0"
+                        class="cursor-pointer"
+                        @click="filter = '<?= htmlspecialchars($kpi['key'], ENT_QUOTES, 'UTF-8') ?>'"
+                        @keydown.enter="filter = '<?= htmlspecialchars($kpi['key'], ENT_QUOTES, 'UTF-8') ?>'"
+                        :class="{ 'is-active': filter === '<?= htmlspecialchars($kpi['key'], ENT_QUOTES, 'UTF-8') ?>' }"
+                    >
+                        <td><?= htmlspecialchars($kpi['label'], ENT_QUOTES, 'UTF-8') ?></td>
+                        <td class="num font-bold"><?= (int) $kpi['n'] ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
     </header>
 
@@ -240,41 +297,22 @@ foreach ($rows as $r) {
         <div class="dep-sheet-toolbar">
             <div>
                 <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Effectifs</h2>
-                <p class="mt-0.5 text-xs text-slate-500">Cliquez une action manquante pour ouvrir directement le champ à corriger.</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-1.5">
-                <?php
-                $filters = [
-                    'all' => 'Tout (' . $totalRows . ')',
-                    'blocked' => 'À corriger (' . $blockedRows . ')',
-                    'ready' => 'Prêts (' . $readyRows . ')',
-                    'deployed' => 'Déployés (' . $deployedRows . ')',
-                    'validated' => 'Validés (' . $validatedRows . ')',
-                ];
-                foreach ($filters as $fkey => $flabel):
-                ?>
-                <button
-                    type="button"
-                    @click="filter = '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>'"
-                    :class="filter === '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'"
-                    class="rounded-lg border px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
-                ><?= htmlspecialchars($flabel, ENT_QUOTES, 'UTF-8') ?></button>
-                <?php endforeach; ?>
+                <p class="mt-0.5 text-xs text-slate-500">Filtrez via le tableau de synthèse. Cliquez une action pour corriger un dossier.</p>
             </div>
         </div>
 
         <div class="dep-sheet-wrap">
-            <table class="dep-sheet min-w-[72rem]">
+            <table class="dep-sheet min-w-[42rem]">
                 <thead>
                     <tr>
-                        <th style="width:2.25rem">#</th>
-                        <th>Personnel</th>
+                        <th style="width:2rem">#</th>
+                        <th>Pers.</th>
                         <th>Unité</th>
                         <th>Rôle</th>
-                        <th>Matricule</th>
-                        <th>Groupe sanguin</th>
+                        <th>Mat.</th>
+                        <th title="Groupe sanguin">GS</th>
                         <th>Statut</th>
-                        <th>Campagne / événement</th>
+                        <th>Campagne</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -298,10 +336,15 @@ foreach ($rows as $r) {
                         $bloodShow = trim((string) (($r['profile_blood_type'] ?? '') ?: ($r['blood_type'] ?? '')));
                         $unitShow = trim((string) ($r['unit_name'] ?? ''));
                         $roleShow = trim((string) ($r['primary_role'] ?? ''));
+                        $displayName = trim((string) ($r['display_name'] ?? ''));
+                        $callsign = trim((string) ($r['callsign'] ?? ''));
+                        $initialSrc = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : '?');
+                        $initial = mb_strtoupper(mb_substr($initialSrc, 0, 1));
                         $ficheUrl = url('personnel/' . $uid);
                         $editUrl = url('personnel/' . $uid . '/edit');
                         $canBeAssigned = $canManage && !$isDeployed && $gaps === [];
                         $anomalies = is_array($r['anomalies'] ?? null) ? $r['anomalies'] : [];
+                        $missSvg = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>';
                         ?>
                         <tr
                             class="<?= $bucket === 'blocked' ? 'is-blocked' : '' ?>"
@@ -310,77 +353,102 @@ foreach ($rows as $r) {
                         >
                             <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
                             <td>
-                                <a href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>" class="font-bold text-slate-900 hover:text-emerald-800 hover:underline"><?= htmlspecialchars((string) ($r['display_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></a>
-                                <p class="mt-0.5 text-[11px] text-slate-500"><?= htmlspecialchars((string) ($r['callsign'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                <a href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-2 min-w-0" title="<?= htmlspecialchars($displayName !== '' ? $displayName : $callsign, ENT_QUOTES, 'UTF-8') ?>">
+                                    <span class="dep-avatar" aria-hidden="true"><?= htmlspecialchars($initial, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="min-w-0">
+                                        <span class="block font-bold text-slate-900 leading-tight dep-truncate"><?= htmlspecialchars($displayName !== '' ? $displayName : '—', ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php if ($callsign !== '' && mb_strtolower($callsign) !== mb_strtolower($displayName)): ?>
+                                            <span class="block text-[10px] text-slate-500 leading-tight"><?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
+                                    </span>
+                                </a>
                             </td>
                             <td>
                                 <?php if ($unitShow !== ''): ?>
-                                    <span class="font-medium"><?= htmlspecialchars($unitShow, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="dep-truncate inline-block font-medium" title="<?= htmlspecialchars($unitShow, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($unitShow, ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php else: ?>
-                                    <span class="dep-pill bg-amber-100 text-amber-900">Manquant</span>
+                                    <span class="dep-miss" title="Unité manquante"><?= $missSvg ?></span>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if ($roleShow !== ''): ?>
-                                    <span class="font-medium"><?= htmlspecialchars($roleShow, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="dep-truncate inline-block font-medium" title="<?= htmlspecialchars($roleShow, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($roleShow, ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php else: ?>
-                                    <span class="dep-pill bg-amber-100 text-amber-900">Manquant</span>
+                                    <span class="dep-miss" title="Rôle manquant"><?= $missSvg ?></span>
                                 <?php endif; ?>
                             </td>
-                            <td class="font-mono text-xs"><?= $matriculeShow !== '' ? htmlspecialchars($matriculeShow, ENT_QUOTES, 'UTF-8') : '<span class="dep-pill bg-amber-100 text-amber-900">Manquant</span>' ?></td>
-                            <td><?= $bloodShow !== '' ? htmlspecialchars($bloodShow, ENT_QUOTES, 'UTF-8') : '<span class="dep-pill bg-amber-100 text-amber-900">Manquant</span>' ?></td>
+                            <td class="font-mono text-[11px]">
+                                <?php if ($matriculeShow !== ''): ?>
+                                    <?= htmlspecialchars($matriculeShow, ENT_QUOTES, 'UTF-8') ?>
+                                <?php else: ?>
+                                    <span class="dep-miss" title="Matricule manquant"><?= $missSvg ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ($bloodShow !== ''): ?>
+                                    <span class="font-semibold"><?= htmlspecialchars($bloodShow, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php else: ?>
+                                    <span class="dep-miss" title="Groupe sanguin manquant"><?= $missSvg ?></span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <?php if ($isValidated): ?>
-                                    <span class="dep-pill bg-emerald-100 text-emerald-900">Check-up validé</span>
+                                    <span class="dep-status dep-status--validated" title="Check-up validé">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        Validé
+                                    </span>
                                 <?php elseif ($status === 'deployed'): ?>
-                                    <span class="dep-pill bg-indigo-100 text-indigo-900">Déployé</span>
+                                    <span class="dep-status dep-status--deployed" title="Déployé">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                        Déployé
+                                    </span>
                                 <?php elseif ($gaps !== []): ?>
-                                    <span class="dep-pill bg-amber-100 text-amber-950"><?= count($gaps) ?> à corriger</span>
+                                    <span class="dep-status dep-status--blocked" title="<?= count($gaps) ?> point(s) à corriger">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                                        <?= count($gaps) ?>
+                                    </span>
                                 <?php else: ?>
-                                    <span class="dep-pill bg-sky-100 text-sky-900">Prêt</span>
+                                    <span class="dep-status dep-status--ready" title="Prêt au déploiement">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        Prêt
+                                    </span>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if ($currentCampaign !== '' || (string) ($r['event_title'] ?? '') !== ''): ?>
                                     <?php if ($currentCampaign !== ''): ?>
-                                        <p class="font-semibold text-indigo-900"><?= htmlspecialchars($currentCampaign, ENT_QUOTES, 'UTF-8') ?></p>
+                                        <p class="font-semibold text-indigo-900 dep-truncate" title="<?= htmlspecialchars($currentCampaign, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($currentCampaign, ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>
                                     <?php if ((string) ($r['event_title'] ?? '') !== ''): ?>
-                                        <p class="text-[11px] text-slate-600"><?= htmlspecialchars((string) $r['event_title'], ENT_QUOTES, 'UTF-8') ?></p>
-                                        <?php if (!empty($r['event_rsvp_status'])): ?>
-                                            <?php
-                                            $rsvpRaw = strtolower(trim((string) $r['event_rsvp_status']));
-                                            $rsvpFr = match ($rsvpRaw) {
-                                                'yes', 'oui' => 'Présent',
-                                                'no', 'non' => 'Absent',
-                                                'maybe', 'peut-être', 'peut-etre' => 'Incertain',
-                                                default => 'En attente',
-                                            };
-                                            ?>
-                                            <p class="text-[10px] uppercase tracking-wide text-slate-400">Présence : <?= htmlspecialchars($rsvpFr, ENT_QUOTES, 'UTF-8') ?></p>
-                                        <?php endif; ?>
+                                        <p class="text-[10px] text-slate-600 dep-truncate" title="<?= htmlspecialchars((string) $r['event_title'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $r['event_title'], ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <span class="text-slate-400">—</span>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <div class="flex flex-col items-stretch gap-1.5 min-w-[11rem]">
+                                <div class="flex flex-wrap items-center gap-1">
                                     <?php if ($gaps !== []): ?>
                                         <?php foreach ($gaps as $gap): ?>
-                                            <a class="dep-act dep-act--fix" href="<?= htmlspecialchars((string) $gap['href'], ENT_QUOTES, 'UTF-8') ?>">
-                                                <?= htmlspecialchars((string) $gap['cta'], ENT_QUOTES, 'UTF-8') ?> →
-                                            </a>
+                                        <a class="dep-act dep-act--fix" href="<?= htmlspecialchars((string) $gap['href'], ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars((string) $gap['cta'], ENT_QUOTES, 'UTF-8') ?>">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        </a>
                                         <?php endforeach; ?>
                                     <?php elseif ($canBeAssigned): ?>
-                                        <button type="button" class="dep-act dep-act--go" @click="openId = openId === <?= $uid ?> ? null : <?= $uid ?>">Déployer →</button>
+                                        <button type="button" class="dep-act dep-act--go" @click="openId = openId === <?= $uid ?> ? null : <?= $uid ?>" title="Déployer">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                        </button>
                                     <?php elseif ($isDeployed): ?>
-                                        <button type="button" class="dep-act dep-act--go" @click="openId = openId === <?= $uid ?> ? null : <?= $uid ?>">
-                                            <?= $isValidated ? 'Voir / mettre à jour' : 'Ouvrir le check-up' ?> →
+                                        <button type="button" class="dep-act dep-act--go" @click="openId = openId === <?= $uid ?> ? null : <?= $uid ?>" title="<?= $isValidated ? 'Voir / mettre à jour' : 'Ouvrir le check-up' ?>">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                                         </button>
                                     <?php endif; ?>
-                                    <a class="dep-act dep-act--ghost" href="<?= htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8') ?>">Dossier complet</a>
-                                    <a class="dep-act dep-act--ghost" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>">Fiche</a>
+                                    <a class="dep-act dep-act--ghost" href="<?= htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8') ?>" title="Dossier complet">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                                    </a>
+                                    <a class="dep-act dep-act--ghost" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>" title="Fiche">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                    </a>
                                 </div>
                             </td>
                         </tr>

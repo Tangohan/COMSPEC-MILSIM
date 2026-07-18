@@ -22,7 +22,7 @@ final class ProbationOverdueAlertsBuilder
     ) {}
 
     /**
-     * @return list<array{scope: string, id: int, kind: string, title: string, body: string, cta_label: ?string, cta_url: ?string, coupon_code: ?string}>
+     * @return list<array{scope: string, id: int, kind: string, title: string, body: string, cta_label: ?string, cta_url: ?string, cta_secondary_label: ?string, cta_secondary_url: ?string, coupon_code: ?string}>
      */
     public function build(int $userId, int $tenantId): array
     {
@@ -41,13 +41,18 @@ final class ProbationOverdueAlertsBuilder
         $age = (int) ($first['age_days'] ?? self::DAYS_THRESHOLD);
 
         if ($total === 1) {
+            $userIdTarget = (int) $first['user_id'];
             $body = 'Le dossier de ' . $name . ' est en période d’essai depuis ' . $age . ' jours (au-delà des ' . self::DAYS_THRESHOLD . ' jours de référence). Faites le point pour titulariser ou prolonger l’intégration.';
-            $ctaLabel = 'Ouvrir le dossier';
-            $ctaUrl = url('personnel/' . (int) $first['user_id'] . '?tab=bilans#bilans');
+            $ctaLabel = 'Faire le bilan de fin d’essai';
+            $ctaUrl = url('personnel/' . $userIdTarget . '?tab=bilans&bilan_stage=' . rawurlencode('Fin de période d’essai') . '#bilan-create');
+            $ctaSecondaryLabel = 'Modifier le rôle';
+            $ctaSecondaryUrl = url('personnel/' . $userIdTarget . '/edit');
         } else {
             $body = $total . ' membres sont en période d’essai depuis plus de ' . self::DAYS_THRESHOLD . ' jours, dont ' . $name . ' (' . $age . ' jours). Faites le point sur ces dossiers pour titulariser ou prolonger l’intégration.';
             $ctaLabel = 'Voir les membres concernés';
             $ctaUrl = $this->overdueListUrl($tenantId);
+            $ctaSecondaryLabel = null;
+            $ctaSecondaryUrl = null;
         }
 
         return [[
@@ -58,6 +63,8 @@ final class ProbationOverdueAlertsBuilder
             'body' => $body,
             'cta_label' => $ctaLabel,
             'cta_url' => $ctaUrl,
+            'cta_secondary_label' => $ctaSecondaryLabel,
+            'cta_secondary_url' => $ctaSecondaryUrl,
             'coupon_code' => null,
         ]];
     }

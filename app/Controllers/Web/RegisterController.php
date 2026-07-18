@@ -56,10 +56,18 @@ final class RegisterController
             Session::set('pending_referrer_code', $ref);
         }
 
+        $registerOld = Session::getFlash('register_old');
+        $registerStep = Session::getFlash('register_step');
+        $queryCode = trim((string) $request->query('community_code'));
+
         return Response::view('auth.register', [
             'title' => 'Créer un compte',
-            'prefill_community_code' => trim((string) $request->query('community_code')),
+            'prefill_community_code' => $queryCode !== ''
+                ? $queryCode
+                : (is_array($registerOld) ? trim((string) ($registerOld['community_code'] ?? '')) : ''),
             'prefill_tenant_slug' => trim((string) $request->query('tenant_slug')),
+            'register_old' => is_array($registerOld) ? $registerOld : [],
+            'register_step' => is_numeric($registerStep) ? (int) $registerStep : 1,
         ]);
     }
 
@@ -95,6 +103,26 @@ final class RegisterController
         }
         $acceptTerms = (string) $request->input('accept_terms') === '1';
         $acceptIdentitySplit = (string) $request->input('accept_identity_split') === '1';
+        $communityCodeInput = trim((string) $request->input('community_code'));
+
+        $oldPayload = [
+            'email' => $email,
+            'display_name' => $displayName,
+            'steam_profile' => $steamProfile,
+            'legal_first_name' => $legalFirstName,
+            'legal_last_name' => $legalLastName,
+            'legal_birth_date' => (string) $request->input('legal_birth_date'),
+            'legal_country' => $legalCountry,
+            'discord_handle' => $discordHandle,
+            'community_code' => $communityCodeInput,
+            'accept_terms' => $acceptTerms ? '1' : '',
+            'accept_identity_split' => $acceptIdentitySplit ? '1' : '',
+        ];
+        $flashBack = static function (string $message, int $step = 1) use ($oldPayload): void {
+            Session::flash('error', $message);
+            Session::flash('register_old', $oldPayload);
+            Session::flash('register_step', $step);
+        };
 
         $v = new Validator(
             [
@@ -122,11 +150,26 @@ final class RegisterController
                 'discord_handle' => 'max:120',
             ]
         );
-        if (!$v->validate() || $password !== $confirm || !$acceptTerms || !$acceptIdentitySplit) {
-            Session::flash(
-                'error',
-                'Vérifiez les champs : identité légale (prénom + nom, date et pays si renseignés), email valide, mot de passe 8+ caractères, confirmation identique, nom affiché sur la plateforme et validations obligatoires.'
-            );
+        if (!$v->validate()) {
+            $step = 1;
+            if ($legalFirstName === '' || strlen($legalFirstName) < 2 || $legalLastName === '' || strlen($legalLastName) < 2) {
+                $step = 1;
+            } elseif ($email === '' || $displayName === '' || strlen($password) < 8) {
+                $step = 2;
+            } else {
+                $step = 2;
+            }
+            $flashBack('Vérifiez les informations saisies (champs obligatoires et formats).', $step);
+
+            return Response::redirect(url('register'));
+        }
+        if ($password !== $confirm) {
+            $flashBack('Les deux mots de passe ne sont pas identiques.', 2);
+
+            return Response::redirect(url('register'));
+        }
+        if (!$acceptIdentitySplit || !$acceptTerms) {
+            $flashBack('Merci de cocher les deux confirmations pour terminer l’inscription.', 3);
 
             return Response::redirect(url('register'));
         }
@@ -134,44 +177,43 @@ final class RegisterController
         if ($steamProfile !== '') {
             $resolvedSteamId = $this->steamWebApiService->resolveSteamIdFromUserInput($steamProfile);
             if ($resolvedSteamId === null) {
-                Session::flash(
-                    'error',
-                    'Profil Steam invalide : utilisez un SteamID 64 (17 chiffres), un lien « /profiles/... » ou « /id/... ».'
+                $flashBack(
+                    'Profil Steam non reconnu. Indiquez le lien de votre profil ou votre identifiant à 17 chiffres, ou laissez le champ vide.',
+                    2
                 );
 
                 return Response::redirect(url('register'));
             }
         }
 
-        $communityCodeInput = trim((string) $request->input('community_code'));
         $tenant = $this->tenantRepository->getDefaultTenant();
         if ($communityCodeInput !== '') {
             $resolved = $this->tenantRepository->findByCommunityCode($communityCodeInput);
             if (!$resolved) {
-                Session::flash('error', 'Code communauté invalide.');
+                $flashBack('Ce code d’invitation n’est pas reconnu. Vérifiez-le ou laissez le champ vide.', 2);
 
                 return Response::redirect(url('register'));
             }
             $tenant = $resolved;
         }
         if (!$tenant) {
-            Session::flash('error', 'Aucune organisation de base configurée.');
+            $flashBack('Aucune communauté de base n’est disponible pour le moment. Réessayez plus tard.', 2);
 
             return Response::redirect(url('register'));
         }
         $tenantId = (int) $tenant['id'];
         if (strcasecmp($email, UserRepository::SYSTEM_MODERATOR_EMAIL) === 0) {
-            Session::flash('error', 'Cet email est réservé au système.');
+            $flashBack('Cette adresse e-mail ne peut pas être utilisée.', 2);
 
             return Response::redirect(url('register'));
         }
         if ($this->userRepository->emailExistsInTenant($tenantId, $email)) {
-            Session::flash('error', 'Cet email est déjà utilisé.');
+            $flashBack('Cette adresse e-mail est déjà utilisée. Connectez-vous ou choisissez une autre adresse.', 2);
 
             return Response::redirect(url('register'));
         }
         if ($this->indicatorBlocklist->isEmailBlockedForTenant($tenantId, $email)) {
-            Session::flash('error', 'Cette adresse ne peut pas être utilisée pour rejoindre cette communauté pour le moment.');
+            $flashBack('Cette adresse ne peut pas être utilisée pour rejoindre cette communauté pour le moment.', 2);
 
             return Response::redirect(url('register'));
         }

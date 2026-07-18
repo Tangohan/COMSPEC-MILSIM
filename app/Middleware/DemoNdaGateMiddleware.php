@@ -38,6 +38,11 @@ final class DemoNdaGateMiddleware
             return $next($request);
         }
 
+        // Questionnaire de retour : accessible même après expiration, sans démarrer la visite démo
+        if ($path === DemoNdaGateService::FEEDBACK_PATH) {
+            return $next($request);
+        }
+
         $ip = $this->gate->clientIp();
         if ($this->gate->isBypassIp($ip)) {
             return $next($request);

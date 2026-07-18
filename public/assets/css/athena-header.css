@@ -619,9 +619,17 @@ body.layout-light .athena-header,
   color: rgba(255, 255, 255, 0.55);
 }
 
+.athena-header__notif-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  margin-top: 0.5rem;
+}
+
 .athena-header__notif-cta {
   display: inline-flex;
-  margin-top: 0.5rem;
+  margin-top: 0;
   font-size: 11px;
   font-weight: 800;
   color: var(--athena-header-mint);
@@ -630,6 +638,15 @@ body.layout-light .athena-header,
 
 .athena-header__notif-cta:hover {
   text-decoration: underline;
+}
+
+.athena-header__notif-cta--secondary {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.athena-header__notif-cta--secondary:hover {
+  color: #fff;
 }
 
 .athena-header__profile-trigger {

@@ -729,9 +729,14 @@ class TrainingApiController
             return Response::json(['error' => 'Le document n’est pas encore disponible. Réessayez dans un instant.'], 404);
         }
         $pdfPath = $pdfAbs;
+        $certNum = preg_replace('/[^A-Za-z0-9\-]+/', '-', (string) ($cert['certificate_number'] ?? ''));
+        $certNum = trim((string) $certNum, '-');
+        $downloadName = $certNum !== ''
+            ? 'attestation-' . $certNum . '.pdf'
+            : 'attestation-' . (int) $cert['id'] . '.pdf';
         $response = new Response();
         $response->header('Content-Type', 'application/pdf');
-        $response->header('Content-Disposition', 'attachment; filename="attestation-' . (int) $cert['id'] . '.pdf"');
+        $response->header('Content-Disposition', 'attachment; filename="' . $downloadName . '"');
         $response->setBodyStream(static function () use ($pdfPath) {
             readfile($pdfPath);
         });

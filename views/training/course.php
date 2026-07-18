@@ -176,53 +176,90 @@ $lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : []
                     <div class="lms-course-hero__veil" aria-hidden="true"></div>
                 </div>
 
-                <header class="lms-panel relative overflow-hidden rounded-[2rem] p-6 md:p-8">
-                    <div class="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-emerald-500/75 via-emerald-500/20 to-transparent" aria-hidden="true"></div>
-                    <div class="w-full min-w-0 <?= $courseHeaderAsideVisible ? 'grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-x-10 lg:gap-y-8' : 'flex flex-col gap-8' ?>">
-                        <div class="min-w-0 <?= $courseHeaderAsideVisible ? '' : 'flex-1' ?>">
-                            <div class="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-                                <p class="text-[9px] font-black uppercase tracking-[0.35em] text-slate-400">Fiche formation</p>
-                                <span class="inline-flex items-center rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-2.5 py-0.5 font-mono text-[11px] font-bold tracking-tight text-emerald-800" title="Référence du parcours"><?= htmlspecialchars($code) ?></span>
+                <header class="lms-fiche" aria-labelledby="lms-course-page-title">
+                    <div class="lms-fiche__grid <?= $courseHeaderAsideVisible ? 'lms-fiche__grid--with-aside' : '' ?>">
+                        <div class="lms-fiche__main">
+                            <div class="lms-fiche__eyebrow">
+                                <span class="lms-fiche__kicker">Fiche formation</span>
+                                <span class="lms-fiche__code" title="Référence du parcours"><?= htmlspecialchars($code) ?></span>
                             </div>
-                            <h1 id="lms-course-page-title" class="text-balance break-words text-2xl font-black leading-[1.15] tracking-tight text-slate-900 md:text-4xl"><?= htmlspecialchars((string) $course['title']) ?></h1>
+                            <h1 id="lms-course-page-title" class="lms-fiche__title"><?= htmlspecialchars((string) $course['title']) ?></h1>
                             <?php if ($courseMetaChips !== []): ?>
-                            <ul class="mt-4 flex flex-wrap gap-2" aria-label="Caractéristiques du parcours">
+                            <ul class="lms-fiche__chips" aria-label="Caractéristiques du parcours">
                                 <?php foreach ($courseMetaChips as $chip): ?>
                                 <li>
-                                    <span class="inline-flex items-center rounded-full border border-slate-200/90 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm" title="<?= htmlspecialchars((string) $chip['hint'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $chip['text']) ?></span>
+                                    <span class="lms-fiche__chip" title="<?= htmlspecialchars((string) $chip['hint'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $chip['text']) ?></span>
                                 </li>
                                 <?php endforeach; ?>
                             </ul>
                             <?php endif; ?>
                             <?php if (!empty($course['short_description'])): ?>
-                            <p class="mt-4 max-w-3xl text-pretty text-sm leading-relaxed text-slate-600 md:text-base"><?= htmlspecialchars((string) $course['short_description']) ?></p>
+                            <p class="lms-fiche__lead"><?= htmlspecialchars((string) $course['short_description']) ?></p>
+                            <?php endif; ?>
+
+                            <?php if ($enrollment && $canAccessLearning): ?>
+                            <div class="lms-fiche__status">
+                                <div class="lms-fiche__status-top">
+                                    <div>
+                                        <p class="lms-fiche__status-label">Avancement du parcours</p>
+                                        <p class="lms-fiche__status-value"><?= (int) $progressPercent ?> %</p>
+                                    </div>
+                                    <div class="lms-fiche__status-actions">
+                                        <?php if ($continueLesson && (int) $progressPercent < 100): ?>
+                                        <a href="<?= url('formations/lesson/' . (int) $continueLesson['id'] . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="lms-fiche__cta">
+                                            <?= $hasCompletedAnyLesson ? 'Continuer' : 'Commencer' ?> →
+                                        </a>
+                                        <?php elseif ((int) $progressPercent >= 100 && $certificate): ?>
+                                        <a href="<?= url('formations/certificate/' . (int) $certificate['id']) ?>" class="lms-fiche__cta">Voir l’attestation →</a>
+                                        <?php elseif ((int) $progressPercent >= 100): ?>
+                                        <span class="lms-fiche__cta lms-fiche__cta--done">Parcours terminé</span>
+                                        <?php elseif ($firstLesson): ?>
+                                        <a href="<?= url('formations/lesson/' . (int) $firstLesson['id'] . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="lms-fiche__cta">Ouvrir la 1ʳᵉ leçon →</a>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="lms-fiche__bar" role="progressbar" aria-valuenow="<?= (int) $progressPercent ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Progression du parcours">
+                                    <span style="width: <?= (int) $progressPercent ?>%"></span>
+                                </div>
+                                <?php if ($continueLesson && (int) $progressPercent < 100): ?>
+                                <p class="lms-fiche__next">Prochaine étape : <strong><?= htmlspecialchars((string) ($continueLesson['title'] ?? 'Leçon'), ENT_QUOTES, 'UTF-8') ?></strong></p>
+                                <?php endif; ?>
+                            </div>
+                            <?php elseif (!$viewerLoggedIn): ?>
+                            <div class="lms-fiche__status lms-fiche__status--guest">
+                                <p class="lms-fiche__status-label">Inscription</p>
+                                <p class="lms-fiche__guest-text">Connectez-vous pour suivre ce parcours et enregistrer votre progression.</p>
+                                <a href="#lms-inscription" class="lms-fiche__cta">Voir l’inscription →</a>
+                            </div>
                             <?php endif; ?>
                         </div>
+
                         <?php if ($courseHeaderAsideVisible): ?>
-                        <aside class="flex w-full min-w-0 max-w-full flex-col gap-4 sm:max-lg:flex-row sm:max-lg:flex-wrap lg:max-w-[20rem] lg:justify-self-stretch" aria-label="Actions et suivi">
+                        <aside class="lms-fiche__aside" aria-label="Actions et suivi">
                             <?php if ($viewerLoggedIn): ?>
-                            <div class="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3 shadow-sm sm:max-lg:flex-1 sm:max-lg:min-w-[12rem]">
-                                <p class="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Réactions</p>
-                                <div class="flex flex-col gap-2 sm:flex-row lg:flex-col">
+                            <div class="lms-fiche__block">
+                                <p class="lms-fiche__block-label">Réactions</p>
+                                <div class="lms-fiche__reacts">
                                     <form method="post" action="<?= url('formations/favorite') ?>" class="min-w-0 flex-1">
                                         <?= \App\Core\Csrf::field() ?>
                                         <input type="hidden" name="course_id" value="<?= $courseId ?>">
                                         <input type="hidden" name="course_slug" value="<?= htmlspecialchars($slugForForms) ?>">
                                         <input type="hidden" name="favorite" value="<?= $isFavorite ? '0' : '1' ?>">
-                                        <button type="submit" class="flex w-full min-h-[2.5rem] items-center justify-center rounded-xl border px-3 py-2 text-center text-xs font-black uppercase tracking-wider transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 <?= $isFavorite ? 'border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50' ?>"><?= $isFavorite ? '★ Favori' : '☆ Favori' ?></button>
+                                        <button type="submit" class="lms-fiche__react <?= $isFavorite ? 'is-on is-fav' : '' ?>"><?= $isFavorite ? '★ Favori' : '☆ Favori' ?></button>
                                     </form>
                                     <form method="post" action="<?= url('formations/like') ?>" class="min-w-0 flex-1">
                                         <?= \App\Core\Csrf::field() ?>
                                         <input type="hidden" name="course_id" value="<?= $courseId ?>">
                                         <input type="hidden" name="course_slug" value="<?= htmlspecialchars($slugForForms) ?>">
                                         <input type="hidden" name="like" value="<?= $isLiked ? '0' : '1' ?>">
-                                        <button type="submit" class="flex w-full min-h-[2.5rem] items-center justify-center rounded-xl border px-3 py-2 text-center text-xs font-black uppercase tracking-wider transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 <?= $isLiked ? 'border-rose-400 bg-rose-50 text-rose-900 hover:bg-rose-100' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50' ?>"><?= $isLiked ? '♥ J’aime' : '♡ J’aime' ?></button>
+                                        <button type="submit" class="lms-fiche__react <?= $isLiked ? 'is-on is-like' : '' ?>"><?= $isLiked ? '♥ J’aime' : '♡ J’aime' ?></button>
                                     </form>
                                 </div>
                             </div>
                             <?php endif; ?>
+
                             <?php if ($canPublishOperationalBoard): ?>
-                            <div class="rounded-2xl border border-emerald-200/70 bg-emerald-50/40 p-3 sm:max-lg:flex-1 sm:max-lg:min-w-[14rem]">
+                            <div class="lms-fiche__block lms-fiche__block--ops">
                                 <?php
                                 $opBoardPublishSourceType = 'formation';
                                 $opBoardPublishSourceId = $courseId;
@@ -231,31 +268,17 @@ $lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : []
                                 ?>
                             </div>
                             <?php endif; ?>
+
                             <?php if ($enrollment && $canAccessLearning): ?>
-                            <div class="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50/90 px-4 py-4 text-center shadow-sm sm:max-lg:flex-1 sm:max-lg:min-w-[10rem] sm:text-left lg:text-right">
-                                <p class="font-mono text-3xl font-black tabular-nums leading-none tracking-tight text-slate-900"><?= (int) $progressPercent ?><span class="text-lg font-black text-slate-500">%</span></p>
-                                <p class="mt-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Progression</p>
-                            </div>
                             <?php if ($certificate): ?>
-                            <a href="<?= url('formations/certificate/' . (int) $certificate['id']) ?>" class="inline-flex min-h-[2.75rem] w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">Attestation</a>
+                            <a href="<?= url('formations/certificate/' . (int) $certificate['id']) ?>" class="lms-fiche__attest">Attestation</a>
                             <?php elseif (($enrollment['status'] ?? '') === 'completed'): ?>
-                            <p class="rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-3 py-2 text-center text-xs font-bold text-emerald-800 sm:text-left lg:text-right">Formation validée</p>
+                            <p class="lms-fiche__validated">Formation validée</p>
                             <?php endif; ?>
                             <?php endif; ?>
                         </aside>
                         <?php endif; ?>
                     </div>
-                    <?php if ($enrollment && $canAccessLearning && (int) $progressPercent < 100): ?>
-                    <div class="mt-8 border-t border-slate-200/80 pt-6">
-                        <div class="mb-2 flex flex-wrap items-end justify-between gap-2">
-                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Avancement du parcours</span>
-                            <span class="text-xs font-black tabular-nums text-slate-800"><?= (int) $progressPercent ?> %</span>
-                        </div>
-                        <div class="lms-progress-bar h-2.5 overflow-hidden rounded-full bg-slate-200/90" role="progressbar" aria-valuenow="<?= (int) $progressPercent ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Progression du parcours">
-                            <span style="width: <?= (int) $progressPercent ?>%"></span>
-                        </div>
-                    </div>
-                    <?php endif; ?>
                 </header>
 
                 <?php if ($enrollment && $canAccessLearning && $firstLesson): ?>

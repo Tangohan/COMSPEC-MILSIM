@@ -54,16 +54,34 @@ $dropdownId = isset($portal_alerts_dropdown_id) && is_string($portal_alerts_drop
                         'info' => 'Info',
                         default => $aKind !== '' ? $aKind : 'Info',
                     };
+                    $isPlatformAlert = $aScope === 'platform';
                     ?>
-                    <p class="text-[10px] font-black uppercase tracking-wider text-slate-400"><?= htmlspecialchars($aScope !== '' ? $aScope . ' · ' . $aKindLabel : $aKindLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <p class="text-[10px] font-black uppercase tracking-wider text-slate-400"><?= htmlspecialchars($aKindLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php if ($isPlatformAlert): ?>
+                        <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-800" title="Annonce officielle du site Athena">
+                            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                            Site vérifié
+                        </span>
+                        <?php endif; ?>
+                    </div>
                     <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($a['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                     <?php if (trim((string) ($a['body'] ?? '')) !== ''): ?>
                         <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= htmlspecialchars((string) $a['body'], ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endif; ?>
-                    <?php if (!empty($a['cta_label']) && !empty($a['cta_url'])): ?>
-                        <a href="<?= htmlspecialchars((string) $a['cta_url'], ENT_QUOTES, 'UTF-8') ?>" class="mt-2 inline-flex text-xs font-bold text-emerald-700 hover:underline">
-                            <?= htmlspecialchars((string) $a['cta_label'], ENT_QUOTES, 'UTF-8') ?>
-                        </a>
+                    <?php if ((!empty($a['cta_label']) && !empty($a['cta_url'])) || (!empty($a['cta_secondary_label']) && !empty($a['cta_secondary_url']))): ?>
+                        <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <?php if (!empty($a['cta_label']) && !empty($a['cta_url'])): ?>
+                                <a href="<?= htmlspecialchars((string) $a['cta_url'], ENT_QUOTES, 'UTF-8') ?>" class="inline-flex text-xs font-bold text-emerald-700 hover:underline">
+                                    <?= htmlspecialchars((string) $a['cta_label'], ENT_QUOTES, 'UTF-8') ?>
+                                </a>
+                            <?php endif; ?>
+                            <?php if (!empty($a['cta_secondary_label']) && !empty($a['cta_secondary_url'])): ?>
+                                <a href="<?= htmlspecialchars((string) $a['cta_secondary_url'], ENT_QUOTES, 'UTF-8') ?>" class="inline-flex text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline">
+                                    <?= htmlspecialchars((string) $a['cta_secondary_label'], ENT_QUOTES, 'UTF-8') ?>
+                                </a>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>

@@ -31,6 +31,36 @@
     };
   }
 
+  function buildImageConfig(raw) {
+    if (!raw || !raw.imageUrl) return null;
+    var w = parseInt(raw.imageWidth, 10) || 1000;
+    var h = parseInt(raw.imageHeight, 10) || 1000;
+    var bounds = Array.isArray(raw.bounds) && raw.bounds.length === 2
+      ? raw.bounds
+      : [[0, 0], [h, w]];
+    var center = Array.isArray(raw.center) ? raw.center : [h / 2, w / 2];
+    return {
+      CRS: L.CRS.Simple,
+      imageUrl: raw.imageUrl,
+      minZoom: raw.minZoom != null ? raw.minZoom : -2,
+      maxZoom: raw.maxZoom != null ? raw.maxZoom : 4,
+      defaultZoom: raw.defaultZoom != null ? raw.defaultZoom : 0,
+      attribution: raw.attribution || 'Fond personnalisé',
+      center: center,
+      bounds: bounds,
+      mapId: raw.mapId,
+      slug: raw.slug,
+      label: raw.label,
+    };
+  }
+
+  function mapKindFromSlug(slug, mapsConfigs) {
+    if (slug === 'world') return 'world';
+    var c = mapsConfigs && mapsConfigs[slug];
+    if (c && (c.type === 'image' || c.imageUrl)) return 'image';
+    return 'arma';
+  }
+
   function affiliationColor(aff) {
     var a = (aff || '').toUpperCase();
     if (a === 'ENEMY' || a === 'HOSTILE') return '#dc2626';
@@ -316,7 +346,7 @@
     }
 
     function loadDangerZones() {
-      if (!layerGroups.dangerZones || state.currentMapType !== 'arma') return;
+      if (!layerGroups.dangerZones || (state.currentMapType !== 'arma' && state.currentMapType !== 'image')) return;
       fetch(apiBase + '/danger-zones?missionId=' + encodeURIComponent(getMissionId()), { credentials: 'include' })
         .then(function (r) { return r.json(); })
         .then(function (zones) {
@@ -338,7 +368,7 @@
     }
 
     function refreshSecondaryLayers() {
-      if (state.currentMapType !== 'arma') return;
+      if (state.currentMapType !== 'arma' && state.currentMapType !== 'image') return;
       var isWorld = false;
       if (state.layers.drawings) {
         renderMapShapes({
@@ -417,9 +447,9 @@
 
     function updateUnitCountEl() {
       var el = getEl(els.unitCount);
-      if (el) el.textContent = state.currentMapType === 'arma' ? String(state.unitsCount) : '—';
+      if (el) el.textContent = (state.currentMapType === 'arma' || state.currentMapType === 'image') ? String(state.unitsCount) : '—';
       el = getEl(els.syncMeta);
-      if (el && state.lastSyncAt && state.currentMapType === 'arma') {
+      if (el && state.lastSyncAt && (state.currentMapType === 'arma' || state.currentMapType === 'image')) {
         el.textContent = new Date(state.lastSyncAt).toLocaleTimeString('fr-FR', { hour12: false }) + ' · ' + state.unitsCount + ' position(s)';
       } else if (el) el.textContent = state.currentMapType === 'world' ? 'Vue d’ensemble' : '—';
     }
@@ -437,7 +467,7 @@
       var gridRef = (u.grid_ref || '').trim().split(/\s+/);
       var x = parseFloat(gridRef[0]);
       var y = parseFloat(gridRef[1]);
-      if (!isNaN(x) && !isNaN(y) && map && state.currentMapType === 'arma') {
+      if (!isNaN(x) && !isNaN(y) && map && (state.currentMapType === 'arma' || state.currentMapType === 'image')) {
         map.setView([y, x], Math.max(map.getZoom(), 4));
       }
     }
@@ -578,7 +608,7 @@
     }
 
     function syncUnits() {
-      if (state.currentMapType !== 'arma' || !state.layers.units) return;
+      if ((state.currentMapType !== 'arma' && state.currentMapType !== 'image') || !state.layers.units) return;
       if (syncLock) return;
       syncLock = true;
       state.syncStatus = 'syncing';
@@ -605,14 +635,16 @@
     function applyBaseLayer(slug) {
       var container = getEl(cfg.containerId);
       if (!container) return;
-      var isWorld = slug === 'world';
+      var kind = mapKindFromSlug(slug, mapsConfigs);
+      var isWorld = kind === 'world';
+      var isImage = kind === 'image';
 
       if (map) {
         if (currentBaseLayer) {
           map.removeLayer(currentBaseLayer);
           currentBaseLayer = null;
         }
-        var needRecreate = (isWorld && state.currentMapType !== 'world') || (!isWorld && state.currentMapType !== 'arma');
+        var needRecreate = state.currentMapType !== kind;
         if (needRecreate) {
           mapIntervals.forEach(function (id) { clearInterval(id); });
           mapIntervals = [];
@@ -625,6 +657,14 @@
       if (!map) {
         if (isWorld) {
           map = L.map(container, { minZoom: 2, maxZoom: 18 }).setView([0.5, 0.5], 4);
+        } else if (isImage) {
+          var ic0 = mapsConfigs[slug] ? buildImageConfig(mapsConfigs[slug]) : null;
+          if (!ic0) return;
+          map = L.map(container, { minZoom: ic0.minZoom, maxZoom: ic0.maxZoom, crs: ic0.CRS });
+          map.setView(ic0.center, ic0.defaultZoom);
+          if (ic0.bounds && ic0.bounds.length === 2) {
+            map.setMaxBounds(L.latLngBounds(L.latLng(ic0.bounds[0][0], ic0.bounds[0][1]), L.latLng(ic0.bounds[1][0], ic0.bounds[1][1])));
+          }
         } else {
           var ac = mapsConfigs[slug] ? buildArmaConfig(mapsConfigs[slug]) : null;
           if (!ac) return;
@@ -650,6 +690,14 @@
         currentBaseLayer.addTo(map);
         map.setView([0.5, 0.5], 4);
         state.currentMapType = 'world';
+      } else if (isImage) {
+        var ic = mapsConfigs[slug] ? buildImageConfig(mapsConfigs[slug]) : null;
+        if (!ic) return;
+        var ibounds = L.latLngBounds(L.latLng(ic.bounds[0][0], ic.bounds[0][1]), L.latLng(ic.bounds[1][0], ic.bounds[1][1]));
+        currentBaseLayer = L.imageOverlay(ic.imageUrl, ibounds, { opacity: 1, interactive: false });
+        currentBaseLayer.addTo(map);
+        map.fitBounds(ibounds);
+        state.currentMapType = 'image';
       } else {
         var cfgM = mapsConfigs[slug] ? buildArmaConfig(mapsConfigs[slug]) : null;
         if (!cfgM) return;
@@ -691,7 +739,7 @@
       if (selMap && ws && selMap.value !== ws.slug) {
         selMap.value = ws.slug;
         applyBaseLayer(ws.slug);
-        } else if (state.currentMapType === 'arma' && ws) {
+        } else if ((state.currentMapType === 'arma' || state.currentMapType === 'image') && ws) {
           applyBaseLayer(ws.slug);
         } else {
           if (ws) state.currentMapSlug = ws.slug;
@@ -715,7 +763,7 @@
           if (selWs && selWs.value !== String(ws.mapId)) selWs.value = ws.mapId;
         }
         state.currentMissionId = getMissionId();
-        state.currentMapType = 'arma';
+        state.currentMapType = mapKindFromSlug(slug, mapsConfigs);
         applyBaseLayer(slug);
       }
       updateTheatreLabel();
@@ -728,7 +776,7 @@
       el.addEventListener('change', function () {
         state.layers[key] = el.checked;
         applyLayerVisibility();
-        if (state.currentMapType === 'arma') {
+        if (state.currentMapType === 'arma' || state.currentMapType === 'image') {
           if (key === 'units') syncUnits();
           else refreshSecondaryLayers();
         }
@@ -796,6 +844,8 @@
   global.ComspecOperationalMap = {
     WORLD_SCALE: WORLD_SCALE,
     buildArmaConfig: buildArmaConfig,
+    buildImageConfig: buildImageConfig,
+    mapKindFromSlug: mapKindFromSlug,
     renderMapShapes: renderMapShapes,
     renderAtakMarkers: renderAtakMarkers,
     initTacmap: initTacmap,

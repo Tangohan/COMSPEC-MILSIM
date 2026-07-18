@@ -141,6 +141,7 @@ use App\Controllers\Admin\Organization\OrganizationSecurityIndicatorsController;
 use App\Controllers\Admin\Organization\OrganizationAnalyticsController;
 use App\Controllers\Admin\Organization\OrganizationCommunityController;
 use App\Controllers\Admin\Organization\OrganizationSettingsController;
+use App\Controllers\Admin\Organization\TenantInitialSetupController;
 use App\Controllers\Admin\Organization\OrganizationSeniorityAdminController;
 use App\Controllers\Admin\Organization\RoleplayFollowupAdminController;
 use App\Controllers\Admin\Organization\CommunityEventsAdminController;
@@ -212,6 +213,8 @@ return function (Router $router) {
 
     $router->get('/acces-demonstration', [DemoNdaController::class, 'show']);
     $router->post('/acces-demonstration', [DemoNdaController::class, 'submit']);
+    $router->get('/retour-demonstration', [DemoNdaController::class, 'feedbackForm']);
+    $router->post('/retour-demonstration', [DemoNdaController::class, 'feedbackSubmit']);
     // Communautés multi-tenant (slug) + Stripe (sans auth)
     $router->get('/c/{slug}/avis/{avis}', [CommunityController::class, 'recruitmentOpeningShow']);
     $router->get('/c/{slug}', [CommunityController::class, 'show']);
@@ -474,6 +477,7 @@ return function (Router $router) {
     $router->get('/admin/system/alerts/{id}/edit', [SystemPlatformAlertsController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/alerts/{id}/update', [SystemPlatformAlertsController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/alerts/{id}/delete', [SystemPlatformAlertsController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/alerts/{id}/send-email', [SystemPlatformAlertsController::class, 'sendEmail'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/alerts', [SystemPlatformAlertsController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     $router->get('/admin/system/cooperation/catalog', [SystemCooperationCatalogController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cooperation/catalog/create', [SystemCooperationCatalogController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -546,6 +550,10 @@ return function (Router $router) {
     $router->post('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/community', [OrganizationSettingsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community', [OrganizationSettingsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/configuration-initiale', [TenantInitialSetupController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/configuration-initiale', [TenantInitialSetupController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/configuration-initiale/dismiss', [TenantInitialSetupController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/configuration-initiale/complete', [TenantInitialSetupController::class, 'complete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentationUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/onboarding-recovery', [OrganizationCommunityController::class, 'onboardingRecovery'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -602,6 +610,8 @@ return function (Router $router) {
     $router->post('/back-office/events/{id}/cancel', [CommunityEventsAdminController::class, 'cancel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/courrier/traceabilite', [CourrierDashboardController::class, 'traceability'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/roles-functions/referentiel', [RolesFunctionsAdminController::class, 'referentiel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/roles-functions/catalogue', [RolesFunctionsAdminController::class, 'catalogue'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/graph.json', [RolesFunctionsAdminController::class, 'graphJson'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/definitions/store', [RolesFunctionsAdminController::class, 'storeDefinition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/relations/store', [RolesFunctionsAdminController::class, 'storeRoleRelation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1076,6 +1086,11 @@ return function (Router $router) {
     $router->patch('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/tenant/access-request', [TenantAccessRequestApiController::class, 'store'], [AuthMiddleware::class]);
+
+    $router->get('/api/custom-maps', [\App\Controllers\Api\CustomMapsApiController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/api/custom-maps', [\App\Controllers\Api\CustomMapsApiController::class, 'store'], [AuthMiddleware::class]);
+    $router->post('/api/custom-maps/{id}/update', [\App\Controllers\Api\CustomMapsApiController::class, 'update'], [AuthMiddleware::class]);
+    $router->post('/api/custom-maps/{id}/delete', [\App\Controllers\Api\CustomMapsApiController::class, 'destroy'], [AuthMiddleware::class]);
 
     // API Training (LMS)
     $router->get('/api/training/catalogue', [TrainingApiController::class, 'catalogue'], $mwTraining);

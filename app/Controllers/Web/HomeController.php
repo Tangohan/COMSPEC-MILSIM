@@ -310,12 +310,19 @@ class HomeController
                     $alertRows = \App\Core\Container::get(\App\Services\Alerts\AlertPresentationService::class)
                         ->forCurrentRequest();
                     foreach ($alertRows as $alert) {
+                        $style = (string) ($alert['display_style'] ?? 'classic');
+                        if (\App\Support\AlertDisplayStyle::isNavbarStyle($style)) {
+                            continue;
+                        }
                         $dashboardAnnounceItems[] = [
+                            'scope' => (string) ($alert['scope'] ?? 'tenant'),
                             'kind' => (string) ($alert['kind'] ?? 'info'),
                             'title' => (string) ($alert['title'] ?? ''),
                             'body' => (string) ($alert['body'] ?? ''),
                             'cta_label' => $alert['cta_label'] ?? null,
                             'cta_url' => $alert['cta_url'] ?? null,
+                            'accent_color' => $alert['accent_color'] ?? null,
+                            'image_url' => $alert['image_url'] ?? null,
                         ];
                     }
                 } catch (\Throwable) {
@@ -835,6 +842,16 @@ class HomeController
             ];
         }
 
+        $customMaps = [];
+        if ($tenantId > 0) {
+            try {
+                $customRepo = \App\Core\Container::get(\App\Repositories\TenantCustomMapRepository::class);
+                $customMaps = $customRepo->listActiveForTenant($tenantId);
+            } catch (\Throwable) {
+                $customMaps = [];
+            }
+        }
+
         $overwatchWorkspaces = [];
         foreach ($atakMapsList as $m) {
             $overwatchWorkspaces[] = [
@@ -842,10 +859,8 @@ class HomeController
                 'label' => $m['label'] ?? $m['slug'],
                 'slug' => $m['slug'],
                 'isDefault' => ($m['slug'] ?? '') === $defaultMapSlug,
+                'type' => 'arma',
             ];
-        }
-        if (empty($overwatchWorkspaces)) {
-            $overwatchWorkspaces[] = ['mapId' => $defaultMapId, 'label' => $defaultMapLabel, 'slug' => $defaultMapSlug === 'world' ? 'altis' : $defaultMapSlug, 'isDefault' => true];
         }
 
         $baseUrl = rtrim(url(''), '/');
@@ -863,6 +878,7 @@ class HomeController
                 'mapId' => (int) $m['id'],
                 'slug' => $m['slug'],
                 'label' => $m['label'] ?? $m['slug'],
+                'type' => 'arma',
                 'tilePattern' => $pattern,
                 'center' => $c['center'] ?? [15000, 15000],
                 'defaultZoom' => (int) ($c['defaultZoom'] ?? 3),
@@ -874,6 +890,57 @@ class HomeController
             ];
         }
 
+        $userId = (int) Session::get('user_id');
+        $gate = \App\Core\Gate::getInstance();
+        $canAdminMaps = $gate->allows('admin.organization') || $gate->allows('admin.access');
+
+        foreach ($customMaps as $cm) {
+            $w = (int) ($cm['image_width'] ?? 0);
+            $h = (int) ($cm['image_height'] ?? 0);
+            $slug = (string) ($cm['slug'] ?? '');
+            $mapId = (int) ($cm['map_id'] ?? 0);
+            $path = (string) ($cm['image_path'] ?? '');
+            if ($slug === '' || $mapId <= 0 || $path === '' || $w < 1 || $h < 1) {
+                continue;
+            }
+            $imageUrl = \App\Services\Maps\TenantCustomMapStorage::publicUrl($path);
+            $label = (string) ($cm['label'] ?? 'Carte');
+            $createdBy = (int) ($cm['created_by'] ?? 0);
+            $overwatchMapsList[] = [
+                'id' => (int) ($cm['id'] ?? 0),
+                'mapId' => $mapId,
+                'slug' => $slug,
+                'label' => $label,
+                'type' => 'image',
+                'canManage' => $createdBy === $userId || $canAdminMaps,
+            ];
+            $overwatchWorkspaces[] = [
+                'mapId' => $mapId,
+                'label' => $label,
+                'slug' => $slug,
+                'isDefault' => $slug === $defaultMapSlug,
+                'type' => 'image',
+            ];
+            $overwatchMapsConfigs[$slug] = [
+                'mapId' => $mapId,
+                'slug' => $slug,
+                'label' => $label,
+                'type' => 'image',
+                'imageUrl' => $imageUrl,
+                'imageWidth' => $w,
+                'imageHeight' => $h,
+                'center' => [$h / 2, $w / 2],
+                'bounds' => [[0, 0], [$h, $w]],
+                'defaultZoom' => 0,
+                'minZoom' => -2,
+                'maxZoom' => 4,
+            ];
+        }
+
+        if (empty($overwatchWorkspaces)) {
+            $overwatchWorkspaces[] = ['mapId' => $defaultMapId, 'label' => $defaultMapLabel, 'slug' => $defaultMapSlug === 'world' ? 'altis' : $defaultMapSlug, 'isDefault' => true, 'type' => 'arma'];
+        }
+
         $overwatchContext = [
             'tenantId' => $tenantId,
             'defaultMapId' => $defaultMapId,
@@ -882,6 +949,7 @@ class HomeController
             'apiBase' => $baseUrl . '/api',
             'syncIntervalMs' => 8000,
             'assetBase' => $baseUrl,
+            'csrfToken' => \App\Core\Csrf::token(),
         ];
 
         return [
@@ -896,6 +964,7 @@ class HomeController
                 'slug' => $defaultMapSlug,
             ],
             'overwatchContext' => $overwatchContext,
+            'overwatchCanCreateCustomMaps' => $tenantId > 0 && $userId > 0,
         ];
     }
 }

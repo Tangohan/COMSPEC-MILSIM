@@ -685,6 +685,12 @@ body { font-family: 'Inter', sans-serif; }
     margin: 0 auto 1.25rem;
     filter: grayscale(100%) contrast(1.05);
     opacity: 0.9;
+    transition: filter 0.35s ease, opacity 0.35s ease;
+}
+
+.who-item:hover img {
+    filter: none;
+    opacity: 1;
 }
 
 .who-item h4 {

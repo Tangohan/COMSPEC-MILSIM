@@ -166,12 +166,35 @@ $modActionLabelFr = static function (string $t): string {
     .bo-sheet-panel { border-radius: 0.75rem; }
     .bo-sheet-panel .bo-sheet-wrap { border-radius: 0 0 0.75rem 0.75rem; }
 </style>
+<?php
+$setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : null;
+?>
 <div
     class="org-dash"
     x-data="{ tab: 'overview' }"
     x-init="if (location.hash === '#rh') { tab = 'rh'; } else if (location.hash === '#watch') { tab = 'watch'; }"
 >
     <div class="org-dash__frame">
+
+        <?php if ($setupBanner !== null): ?>
+        <div class="mb-5 rounded-2xl border border-emerald-300/80 bg-gradient-to-br from-emerald-50 via-white to-slate-50 px-5 py-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="min-w-0">
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-800/90">Configuration initiale</p>
+                <p class="mt-1 text-sm font-semibold text-slate-900">
+                    Finalisez les réglages essentiels de votre communauté
+                    <span class="tabular-nums text-emerald-800">(<?= (int) ($setupBanner['percent'] ?? 0) ?> %)</span>
+                </p>
+                <p class="mt-0.5 text-xs text-slate-600">Logo, contact, inscription, modules publics — vous pouvez reporter à tout moment.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <a href="<?= htmlspecialchars(url('back-office/configuration-initiale'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800">Continuer</a>
+                <form method="post" action="<?= htmlspecialchars(url('back-office/configuration-initiale/dismiss'), ENT_QUOTES, 'UTF-8') ?>" class="inline">
+                    <?= \App\Core\Csrf::field() ?>
+                    <button type="submit" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Plus tard</button>
+                </form>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <header class="org-dash__hero">
             <div class="org-dash__hero-inner">

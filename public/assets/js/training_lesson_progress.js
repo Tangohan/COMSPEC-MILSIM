@@ -29,9 +29,34 @@
     });
   }
 
+  function feedbackSkipKey() {
+    var c = cfg();
+    var modal = document.getElementById('lms-feedback-modal');
+    var enr = (c && c.enrollmentId) || (modal && modal.getAttribute('data-lms-feedback-enrollment')) || '0';
+    var les = (c && c.lessonId) || (modal && modal.getAttribute('data-lms-feedback-lesson')) || '0';
+    return 'lms_feedback_skip_' + enr + '_' + les;
+  }
+
+  function isFeedbackSkipped() {
+    try {
+      return localStorage.getItem(feedbackSkipKey()) === '1';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function persistFeedbackSkip() {
+    try {
+      localStorage.setItem(feedbackSkipKey(), '1');
+    } catch (e) {}
+  }
+
   function openFeedbackModal() {
     var modal = document.getElementById('lms-feedback-modal');
     if (!modal) {
+      return;
+    }
+    if (modal.getAttribute('data-lms-feedback-done') === '1' || isFeedbackSkipped()) {
       return;
     }
     modal.classList.remove('hidden');
@@ -59,9 +84,13 @@
     }
     if (done) {
       done.classList.remove('hidden');
-      var title = done.querySelector('p');
+      var title = done.querySelector('.lms-fb-done__title') || done.querySelector('p');
       if (title) {
         title.textContent = message || 'Merci : votre retour a bien été enregistré.';
+      }
+      var meta = done.querySelector('.lms-fb-done__meta');
+      if (meta && message && message.indexOf('plus tard') !== -1) {
+        meta.classList.add('hidden');
       }
     }
     if (modal) {
@@ -70,6 +99,15 @@
     var c = cfg();
     if (c) {
       c.hasFeedback = true;
+    }
+  }
+
+  function skipFeedback() {
+    persistFeedbackSkip();
+    markFeedbackDone('Étape passée — vous pourrez donner votre avis plus tard si besoin.');
+    closeFeedbackModal();
+    if (typeof window.lmsTrainingToastShow === 'function') {
+      window.lmsTrainingToastShow('Avis passé pour cette leçon.', 'info');
     }
   }
 
@@ -96,7 +134,7 @@
     if (c) {
       c.alreadyCompleted = true;
     }
-    if (!c || !c.hasFeedback) {
+    if ((!c || !c.hasFeedback) && !isFeedbackSkipped()) {
       openFeedbackModal();
     }
   }
@@ -282,10 +320,25 @@
   };
 
   document.addEventListener('DOMContentLoaded', function () {
+    var cBoot = cfg();
+    if (cBoot && !cBoot.hasFeedback && isFeedbackSkipped()) {
+      cBoot.hasFeedback = true;
+      var modalBoot = document.getElementById('lms-feedback-modal');
+      if (modalBoot) {
+        modalBoot.setAttribute('data-lms-feedback-done', '1');
+      }
+    }
+
     var feedbackModal = document.getElementById('lms-feedback-modal');
     if (feedbackModal) {
       feedbackModal.querySelectorAll('[data-lms-feedback-close]').forEach(function (el) {
         el.addEventListener('click', closeFeedbackModal);
+      });
+      feedbackModal.querySelectorAll('[data-lms-feedback-skip]').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+          e.preventDefault();
+          skipFeedback();
+        });
       });
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && !feedbackModal.classList.contains('hidden')) {
@@ -304,7 +357,7 @@
         if (!api) {
           if (feedbackStatus) {
             feedbackStatus.textContent = 'Enregistrement indisponible pour le moment.';
-            feedbackStatus.className = 'text-xs text-rose-600';
+            feedbackStatus.className = 'lms-fb-status text-rose-600';
           }
           return;
         }
@@ -312,7 +365,7 @@
         fd.set('_csrf_token', window.__LMS_CSRF__ || '');
         if (feedbackStatus) {
           feedbackStatus.textContent = 'Enregistrement…';
-          feedbackStatus.className = 'text-xs text-slate-600';
+          feedbackStatus.className = 'lms-fb-status text-slate-600';
         }
         fetch(api, {
           method: 'POST',
@@ -333,6 +386,7 @@
           })
           .then(function (payload) {
             markFeedbackDone((payload && payload.message) || 'Merci : votre retour a bien été enregistré.');
+            closeFeedbackModal();
             if (typeof window.lmsTrainingToastShow === 'function') {
               window.lmsTrainingToastShow('Avis enregistré.', 'success');
             }
@@ -340,7 +394,7 @@
           .catch(function (err) {
             if (feedbackStatus) {
               feedbackStatus.textContent = (err && err.message) || 'Impossible d’enregistrer votre avis.';
-              feedbackStatus.className = 'text-xs text-rose-600';
+              feedbackStatus.className = 'lms-fb-status text-rose-600';
             }
             if (typeof window.lmsTrainingToastShow === 'function') {
               window.lmsTrainingToastShow('Impossible d’enregistrer votre avis.', 'error');

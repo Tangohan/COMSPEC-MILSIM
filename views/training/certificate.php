@@ -21,6 +21,7 @@ $pdfFull = '';
 if ($pdfRel !== '') {
     $pdfFull = (!str_starts_with($pdfRel, '/') && !preg_match('#^[A-Za-z]:#', $pdfRel)) ? base_path($pdfRel) : $pdfRel;
 }
+$pdfReadyOnDisk = $pdfFull !== '' && is_file($pdfFull);
 
 $statusRaw = (string) ($certificate['status'] ?? 'valid');
 $statusFr = match ($statusRaw) {
@@ -30,6 +31,13 @@ $statusFr = match ($statusRaw) {
     default => $statusRaw,
 };
 $isCelebration = $statusRaw === 'valid';
+$certificateId = (int) ($certificate['id'] ?? 0);
+$downloadUrl = $certificateId > 0
+    ? url('api/training/certificates/' . $certificateId . '/download')
+    : '';
+// Toujours proposer le téléchargement au titulaire si l’attestation est valide :
+// l’API régénère le document à la demande si le fichier manque encore.
+$canDownloadDocument = !$publicConsultationView && $downloadUrl !== '' && ($statusRaw === 'valid' || $pdfReadyOnDisk);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -177,10 +185,16 @@ $isCelebration = $statusRaw === 'valid';
             </div>
             <?php endif; ?>
 
-            <?php if (!$publicConsultationView && $pdfFull !== '' && is_file($pdfFull)): ?>
-            <a href="<?= url('api/training/certificates/' . (int)$certificate['id'] . '/download') ?>" class="inline-block mt-8 px-8 py-4 bg-slate-900 text-white font-bold uppercase text-sm rounded-xl hover:bg-emerald-600 transition-colors shadow-lg">Télécharger le PDF</a>
+            <?php if ($canDownloadDocument): ?>
+            <div class="mt-8 flex flex-col items-center gap-3">
+                <a href="<?= htmlspecialchars($downloadUrl) ?>" class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-8 py-4 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-emerald-600/25 transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2" download>
+                    <svg class="h-5 w-5 shrink-0 opacity-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Télécharger mon document
+                </a>
+                <p class="text-xs text-slate-500">Fichier à conserver (format PDF).</p>
+            </div>
             <?php elseif ($publicConsultationView): ?>
-            <p class="mt-8 text-sm text-slate-500">Le téléchargement du fichier est disponible depuis votre espace connecté.</p>
+            <p class="mt-8 text-sm text-slate-500">Le téléchargement du document est disponible depuis l’espace connecté du titulaire.</p>
             <?php endif; ?>
 
             <?php if (!$publicConsultationView && $consultationApiUrl !== '' && $statusRaw === 'valid'): ?>
@@ -253,6 +267,12 @@ $isCelebration = $statusRaw === 'valid';
                     Attestation générée par <span class="font-semibold text-slate-600"><?= htmlspecialchars($appDisplayName) ?></span>.
                     Conservez votre référence pour toute vérification auprès de votre organisation.
                 </p>
+                <?php if ($canDownloadDocument): ?>
+                <a href="<?= htmlspecialchars($downloadUrl) ?>" class="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-emerald-700 hover:text-emerald-800 transition-colors" download>
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Enregistrer le document
+                </a>
+                <?php endif; ?>
             </div>
         </div>
         <?php if (!$publicConsultationView): ?>

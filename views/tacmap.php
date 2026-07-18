@@ -26,6 +26,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-map-crs.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/comspec-operational-map.js"></script>
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet">
   <style>
     body {
       background:
@@ -37,6 +38,11 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   </style>
 </head>
 <body class="text-slate-900 antialiased">
+  <?php
+  $baseUrl = $base;
+  $haloLoaderHint = 'Préparation de la carte tactique…';
+  require base_path('views/partials/halo_loader.php');
+  ?>
   <div class="min-h-screen p-4 md:p-6">
     <div class="max-w-[1920px] mx-auto space-y-5">
       <header class="rounded-[2rem] border border-slate-200 bg-white/95 backdrop-blur-xl shadow-sm overflow-hidden">
@@ -95,6 +101,9 @@ $pageTitle = $title ?? 'TACMAP — Athena';
               <?php endforeach; ?>
             </select>
           </label>
+          <?php if (!empty($overwatchCanCreateCustomMaps)): ?>
+          <a href="<?= htmlspecialchars(url('overwatch'), ENT_QUOTES, 'UTF-8') ?>#nouvelle-carte" class="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-emerald-950 hover:bg-emerald-100">Nouvelle carte image</a>
+          <?php endif; ?>
           <p class="text-xs text-slate-500 flex-1 min-w-[200px]" id="tacmap-sync-meta">—</p>
         </div>
       </header>

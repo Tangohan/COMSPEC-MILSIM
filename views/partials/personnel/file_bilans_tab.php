@@ -55,6 +55,14 @@ $ratingLabels = [
 $hasAnyBilan = $personnelStageBilans !== [] || $personnelRecruitmentBilans !== []
     || ($adminNotes !== '' && !empty($canViewCommandNotes))
     || $rpStage !== '' || $rpNotes !== '';
+
+$bilanStagePrefill = trim((string) ($_GET['bilan_stage'] ?? ''));
+if ($bilanStagePrefill !== '' && $bilanStageOptions !== [] && !in_array($bilanStagePrefill, $bilanStageOptions, true)) {
+    $bilanStagePrefill = '';
+}
+if ($bilanStagePrefill === '') {
+    $bilanStagePrefill = (string) ($bilanStageOptions[0] ?? 'Autre');
+}
 ?>
 <div class="space-y-6" x-show="tab === 'bilans'" x-cloak id="bilans">
     <section class="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-white p-5 shadow-sm sm:p-6">
@@ -176,7 +184,7 @@ $hasAnyBilan = $personnelStageBilans !== [] || $personnelRecruitmentBilans !== [
     <?php endif; ?>
 
     <?php if ($canCreateBilans): ?>
-    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" x-data="{ stage: '<?= htmlspecialchars((string) ($bilanStageOptions[0] ?? 'Autre'), ENT_QUOTES, 'UTF-8') ?>' }">
+    <section id="bilan-create" class="scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" x-data="{ stage: <?= json_encode($bilanStagePrefill, JSON_UNESCAPED_UNICODE) ?> }">
         <h3 class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-800 mb-1">Créer un bilan d’étape</h3>
         <p class="mb-5 text-xs text-slate-500 leading-relaxed">Choisissez le type de bilan, l’étape concernée, puis rédigez l’appréciation. Le formulaire est réservé aux référents habilités.</p>
         <?php if (!$personnelStageBilansSchemaReady): ?>

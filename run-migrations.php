@@ -1807,6 +1807,34 @@ $forumModerationBotMigrate($pdo);
 $alertsMigrate = require $root . '/bootstrap/alerts_migration.php';
 $alertsMigrate($pdo);
 
+$tenantAlertsVisualMigrate = require $root . '/bootstrap/tenant_alerts_visual_migration.php';
+try {
+    $tenantAlertsVisualMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_alerts_visual : ' . $e->getMessage() . "\n";
+}
+
+$platformAlertsFeaturesMigrate = require $root . '/bootstrap/platform_alerts_features_migration.php';
+try {
+    $platformAlertsFeaturesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] platform_alerts_features : ' . $e->getMessage() . "\n";
+}
+
+$alertDisplayStyleMigrate = require $root . '/bootstrap/alert_display_style_migration.php';
+try {
+    $alertDisplayStyleMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] alert_display_style : ' . $e->getMessage() . "\n";
+}
+
+$tenantCustomMapsMigrate = require $root . '/bootstrap/tenant_custom_maps_migration.php';
+try {
+    $tenantCustomMapsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_custom_maps : ' . $e->getMessage() . "\n";
+}
+
 $moderationContentMigrate = require $root . '/bootstrap/moderation_content_migration.php';
 $moderationContentMigrate($pdo);
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Zone compacte alertes & annonces — tuiles sombres (split visuel / panneau).
  *
- * @var list<array{kind?:string,category?:string,title?:string,body?:string,cta_label?:?string,cta_url?:?string}> $announce_items
+ * @var list<array{scope?:string,kind?:string,category?:string,title?:string,body?:string,cta_label?:?string,cta_url?:?string}> $announce_items
  * @var string|null $announce_manage_url
  * @var string $announce_heading
  * @var string $announce_kicker
@@ -72,18 +72,32 @@ $statusLine = $count === 0
                 $ctaUrl = isset($item['cta_url']) && is_string($item['cta_url']) && $item['cta_url'] !== ''
                     ? (string) $item['cta_url']
                     : null;
+                $isPlatform = strtolower(trim((string) ($item['scope'] ?? ''))) === 'platform';
                 if ($title === '') {
                     continue;
                 }
                 $tag = ($ctaUrl !== null) ? 'a' : 'article';
                 $hrefAttr = $ctaUrl !== null ? ' href="' . htmlspecialchars($ctaUrl, ENT_QUOTES, 'UTF-8') . '"' : '';
                 ?>
-                <<?= $tag ?> class="dash-announce-tile dash-announce-tile--<?= htmlspecialchars($kind, ENT_QUOTES, 'UTF-8') ?>"<?= $hrefAttr ?>>
+                <<?= $tag ?> class="dash-announce-tile dash-announce-tile--<?= htmlspecialchars($kind, ENT_QUOTES, 'UTF-8') ?><?= $isPlatform ? ' dash-announce-tile--verified' : '' ?>"<?= $hrefAttr ?>>
                     <div class="dash-announce-tile__visual" aria-hidden="true">
                         <span class="dash-announce-tile__glyph"></span>
+                        <?php if ($isPlatform): ?>
+                        <span class="dash-announce-tile__verified-mark" title="Annonce officielle du site">
+                            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                        </span>
+                        <?php endif; ?>
                     </div>
                     <div class="dash-announce-tile__panel">
-                        <p class="dash-announce-tile__kind"><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></p>
+                        <div class="dash-announce-tile__meta">
+                            <p class="dash-announce-tile__kind"><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php if ($isPlatform): ?>
+                            <span class="dash-announce-tile__verified" title="Annonce officielle du site Athena">
+                                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <span>Site vérifié</span>
+                            </span>
+                            <?php endif; ?>
+                        </div>
                         <p class="dash-announce-tile__title"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></p>
                         <?php if ($body !== ''): ?>
                             <p class="dash-announce-tile__body"><?= htmlspecialchars($body, ENT_QUOTES, 'UTF-8') ?></p>

@@ -44,18 +44,7 @@ class RolesFunctionsAdminController
         }
 
         $pdo = Database::getPdo();
-        $roleDefinitions = [];
-        $defRel = [];
-        try {
-            $roleDefinitions = $pdo->query('SELECT id, slug, name_fr, name_us, family, description, sort_order FROM role_definitions ORDER BY sort_order ASC, name_fr ASC')->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            $defRel = $pdo->query(
-                'SELECT rdr.relation_type, fd.slug AS from_slug, td.slug AS to_slug
-                 FROM role_definition_relations rdr
-                 INNER JOIN role_definitions fd ON fd.id = rdr.from_definition_id
-                 INNER JOIN role_definitions td ON td.id = rdr.to_definition_id'
-            )->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } catch (\Throwable) {
-        }
+        [$roleDefinitions, $defRel] = $this->loadDefinitionCatalog();
 
         $tenantRoles = $this->roleRepository->forTenantOrganization($tenantId);
         $roleRelations = [];
@@ -122,6 +111,73 @@ class RolesFunctionsAdminController
                 return $json !== false ? $json : '{}';
             })($assignRolesByDefinition),
         ]);
+    }
+
+    public function referentiel(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $forbidden = $this->guardBackOfficeAccess();
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        [$roleDefinitions, $definitionRelations] = $this->loadDefinitionCatalog();
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.roles_functions_referentiel',
+            'title' => 'Référentiel des fonctions',
+            'hideAdminSidebar' => true,
+            'roleDefinitions' => $roleDefinitions,
+            'definitionRelations' => $definitionRelations,
+        ]);
+    }
+
+    public function catalogue(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $forbidden = $this->guardBackOfficeAccess();
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        [$roleDefinitions] = $this->loadDefinitionCatalog();
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.roles_functions_catalogue',
+            'title' => 'Catalogue des fonctions',
+            'hideAdminSidebar' => true,
+            'roleDefinitions' => $roleDefinitions,
+        ]);
+    }
+
+    /**
+     * @return array{0: list<array<string, mixed>>, 1: list<array<string, mixed>>}
+     */
+    private function loadDefinitionCatalog(): array
+    {
+        $pdo = Database::getPdo();
+        $roleDefinitions = [];
+        $defRel = [];
+        try {
+            $roleDefinitions = $pdo->query(
+                'SELECT id, slug, name_fr, name_us, family, description, sort_order FROM role_definitions ORDER BY sort_order ASC, name_fr ASC'
+            )->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $defRel = $pdo->query(
+                'SELECT rdr.relation_type, fd.slug AS from_slug, td.slug AS to_slug
+                 FROM role_definition_relations rdr
+                 INNER JOIN role_definitions fd ON fd.id = rdr.from_definition_id
+                 INNER JOIN role_definitions td ON td.id = rdr.to_definition_id'
+            )->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+        }
+
+        return [$roleDefinitions, $defRel];
     }
 
     public function saveRequiredDefinitions(Request $request, array $params = []): Response

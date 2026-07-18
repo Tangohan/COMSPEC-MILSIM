@@ -8,3 +8,4 @@ declare(strict_types=1);
 $athena_header_section = $athena_header_section ?? 'Tableau de bord';
 $athena_header_current = $athena_header_current ?? 'dashboard';
 require base_path('views/partials/athena_caverne_header.php');
+require base_path('views/partials/navbar_info_banners.php');

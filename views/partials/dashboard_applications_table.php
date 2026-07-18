@@ -44,10 +44,10 @@ $statusMeta = static function (string $st): array {
     };
 };
 
-$stepLabel = static function (string $st, bool $hasReviewer): string {
+$stepLabel = static function (string $st, bool $hasReviewer, bool $memberLinked): string {
     return match ($st) {
         'submitted' => $hasReviewer ? 'Instruction en cours' : 'Réception du dossier',
-        'reviewed' => 'Adhésion en cours',
+        'reviewed' => $memberLinked ? 'Terminé et validé' : 'Adhésion en cours',
         'rejected', 'blocked' => 'Dossier clos',
         default => '—',
     };
@@ -240,7 +240,8 @@ $renderTable = static function (
                             $st = (string) ($row['status'] ?? '');
                             $meta = $statusMeta($st);
                             $hasReviewer = (int) ($row['reviewed_by'] ?? 0) > 0;
-                            $step = $stepLabel($st, $hasReviewer);
+                            $memberLinked = (int) ($row['submitter_user_id'] ?? 0) > 0;
+                            $step = $stepLabel($st, $hasReviewer, $memberLinked);
                             $community = $crossTenant
                                 ? trim((string) ($row['tenant_name'] ?? '')) ?: 'Communauté'
                                 : $unitLabel;

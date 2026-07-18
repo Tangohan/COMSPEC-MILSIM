@@ -8,7 +8,7 @@ $row = $platformAlert;
 $isEdit = $row !== null;
 $kindOptions = \App\Support\PlatformAlertPresentation::kindOptions();
 $aud = ['guest' => true, 'authenticated' => true, 'free' => true, 'paid' => true];
-if ($row && ! empty($row['audience_json'])) {
+if ($row && !empty($row['audience_json'])) {
     $raw = $row['audience_json'];
     if (is_string($raw)) {
         $d = json_decode($raw, true);
@@ -27,117 +27,158 @@ $dt = static function (?string $sqlDt): string {
 
     return $t ? date('Y-m-d\TH:i', $t) : '';
 };
+$dismissible = $row === null || !isset($row['dismissible']) || (int) $row['dismissible'] === 1;
 ?>
-<div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:py-12">
-    <div class="mb-8">
-        <a href="<?= url('admin/system/alerts') ?>" class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-900">
-            <span aria-hidden="true">←</span> Retour à la liste
-        </a>
-        <h1 class="mt-4 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl"><?= $isEdit ? 'Modifier l’alerte' : 'Nouvelle alerte plateforme' ?></h1>
-        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">
-            Rédigez un message court. Il pourra apparaître en bandeau sur le portail et dans les annonces du bandeau supérieur pour les personnes concernées.
-        </p>
-    </div>
+<div class="min-h-0 flex-1 bg-slate-50">
+    <div class="w-full px-4 sm:px-5 lg:px-6 py-4 sm:py-5 space-y-5">
 
-    <div class="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-5 text-sm text-emerald-950 shadow-sm">
-        <p class="font-bold text-emerald-900">Avant de publier</p>
-        <ul class="mt-2 list-inside list-disc space-y-1.5 text-emerald-900/90">
-            <li><strong>Période</strong> : laissez les dates vides pour une diffusion sans limite de temps (sous réserve que la publication soit activée).</li>
-            <li><strong>Audience</strong> : cochez qui doit voir le message (visiteurs, membres connectés, type de communauté).</li>
-            <li><strong>Ordre d’affichage</strong> : les valeurs les plus basses sont affichées en premier lorsque plusieurs alertes coexistent.</li>
-        </ul>
-    </div>
+        <header class="relative overflow-hidden rounded-xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
+            <div class="absolute inset-y-0 left-0 w-1 bg-emerald-600" aria-hidden="true"></div>
+            <div class="relative px-4 sm:px-6 py-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800/90">Administration · Plateforme</p>
+                    <h1 class="mt-1.5 text-2xl font-black tracking-tight text-slate-900"><?= $isEdit ? 'Modifier l’annonce' : 'Nouvelle annonce' ?></h1>
+                    <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
+                        Message court sur le portail : bandeau classique, barre sous le menu, ou bandeau Breaking pour les mises à jour majeures et maintenances.
+                    </p>
+                </div>
+                <a href="<?= url('admin/system/alerts') ?>" class="inline-flex shrink-0 items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Retour à la liste</a>
+            </div>
+        </header>
 
-    <form method="<?= htmlspecialchars($formMethod, ENT_QUOTES, 'UTF-8') ?>" action="<?= htmlspecialchars($formAction, ENT_QUOTES, 'UTF-8') ?>" class="space-y-8">
-        <?= \App\Core\Csrf::field() ?>
+        <?php $e = \App\Core\Session::getFlash('error'); ?>
+        <?php if ($e): ?>
+            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800" role="alert"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <h2 class="text-lg font-black text-slate-900">Contenu</h2>
-            <div class="mt-6 space-y-5">
+        <form method="<?= htmlspecialchars($formMethod, ENT_QUOTES, 'UTF-8') ?>" action="<?= htmlspecialchars($formAction, ENT_QUOTES, 'UTF-8') ?>" class="space-y-5">
+            <?= \App\Core\Csrf::field() ?>
+
+            <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
+                <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Contenu</h2>
                 <div>
-                    <label class="mb-1 block text-sm font-semibold text-slate-700">Type</label>
-                    <select name="kind" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-kind">Type</label>
+                    <select id="pa-kind" name="kind" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
                         <?php foreach ($kindOptions as $v => $lab): ?>
                             <option value="<?= htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8') ?>" <?= (($row['kind'] ?? 'info') === $v) ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-
                 <div>
-                    <label class="mb-1 block text-sm font-semibold text-slate-700">Titre</label>
-                    <input type="text" name="title" required value="<?= htmlspecialchars((string) ($row['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" maxlength="255">
+                    <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-display-style">Emplacement d’affichage</label>
+                    <?php
+                    $displayStyleOptions = \App\Support\AlertDisplayStyle::platformOptions();
+                    $currentDisplayStyle = \App\Support\AlertDisplayStyle::sanitizePlatform(
+                        isset($row['display_style']) ? (string) $row['display_style'] : null
+                    );
+                    ?>
+                    <select id="pa-display-style" name="display_style" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
+                        <?php foreach ($displayStyleOptions as $v => $lab): ?>
+                            <option value="<?= htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8') ?>" <?= $currentDisplayStyle === $v ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="mt-1 text-xs text-slate-500">Les barres sous le menu et le bandeau Breaking s’affichent sur toute la largeur, juste sous la navigation.</p>
                 </div>
-
                 <div>
-                    <label class="mb-1 block text-sm font-semibold text-slate-700">Texte (optionnel)</label>
-                    <textarea name="body" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($row['body'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-title">Titre</label>
+                    <input id="pa-title" type="text" name="title" required value="<?= htmlspecialchars((string) ($row['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" maxlength="255">
                 </div>
-
+                <div>
+                    <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-body">Texte (optionnel)</label>
+                    <textarea id="pa-body" name="body" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"><?= htmlspecialchars((string) ($row['body'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <label class="mb-1 block text-sm font-semibold text-slate-700">Libellé du lien</label>
-                        <input type="text" name="cta_label" value="<?= htmlspecialchars((string) ($row['cta_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Voir les offres">
+                        <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-cta-label">Libellé du lien</label>
+                        <input id="pa-cta-label" type="text" name="cta_label" value="<?= htmlspecialchars((string) ($row['cta_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" placeholder="Voir les détails">
                     </div>
                     <div>
-                        <label class="mb-1 block text-sm font-semibold text-slate-700">Lien cible</label>
-                        <input type="text" name="cta_url" value="<?= htmlspecialchars((string) ($row['cta_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. page des tarifs ou adresse en https://…">
-                        <p class="mt-1 text-xs text-slate-500">Adresse complète en https ou chemin interne commençant par /.</p>
+                        <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-cta-url">Lien cible</label>
+                        <input id="pa-cta-url" type="text" name="cta_url" value="<?= htmlspecialchars((string) ($row['cta_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" placeholder="https://… ou /chemin-interne">
+                        <p class="mt-1 text-xs text-slate-500">Adresse complète en https, ou chemin interne commençant par /.</p>
                     </div>
                 </div>
-
                 <div>
-                    <label class="mb-1 block text-sm font-semibold text-slate-700">Code promo (optionnel)</label>
-                    <input type="text" name="coupon_code" value="<?= htmlspecialchars((string) ($row['coupon_code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono" maxlength="64">
+                    <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-coupon">Code promo (optionnel)</label>
+                    <input id="pa-coupon" type="text" name="coupon_code" value="<?= htmlspecialchars((string) ($row['coupon_code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-mono" maxlength="64">
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <h2 class="text-lg font-black text-slate-900">Période et ordre</h2>
-            <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
+                <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Période et ordre</h2>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-starts">Début (optionnel)</label>
+                        <input id="pa-starts" type="datetime-local" name="starts_at" value="<?= htmlspecialchars($dt(isset($row['starts_at']) ? (string) $row['starts_at'] : null), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-ends">Fin (optionnel)</label>
+                        <input id="pa-ends" type="datetime-local" name="ends_at" value="<?= htmlspecialchars($dt(isset($row['ends_at']) ? (string) $row['ends_at'] : null), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
+                    </div>
+                </div>
                 <div>
-                    <label class="mb-1 block text-sm font-semibold text-slate-700">Début (optionnel)</label>
-                    <input type="datetime-local" name="starts_at" value="<?= htmlspecialchars($dt(isset($row['starts_at']) ? (string) $row['starts_at'] : null), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <label class="mb-1.5 block text-sm font-semibold text-slate-700" for="pa-order">Ordre d’affichage</label>
+                    <input id="pa-order" type="number" name="sort_order" value="<?= (int) ($row['sort_order'] ?? 0) ?>" class="w-32 rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
+                    <p class="mt-1 text-xs text-slate-500">Les valeurs les plus basses apparaissent en premier.</p>
                 </div>
-                <div>
-                    <label class="mb-1 block text-sm font-semibold text-slate-700">Fin (optionnel)</label>
-                    <input type="datetime-local" name="ends_at" value="<?= htmlspecialchars($dt(isset($row['ends_at']) ? (string) $row['ends_at'] : null), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            </section>
+
+            <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-4">
+                <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Audience</h2>
+                <p class="text-sm text-slate-600">Indiquez qui peut voir cette annonce sur le portail.</p>
+                <div class="space-y-2.5">
+                    <label class="flex items-start gap-2.5 text-sm text-slate-700 cursor-pointer">
+                        <input type="checkbox" name="aud_guest" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= !empty($aud['guest']) ? 'checked' : '' ?>>
+                        <span>Visiteurs non connectés</span>
+                    </label>
+                    <label class="flex items-start gap-2.5 text-sm text-slate-700 cursor-pointer">
+                        <input type="checkbox" name="aud_auth" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= !empty($aud['authenticated']) ? 'checked' : '' ?>>
+                        <span>Utilisateurs connectés</span>
+                    </label>
+                    <label class="flex items-start gap-2.5 text-sm text-slate-700 cursor-pointer">
+                        <input type="checkbox" name="aud_free" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= !empty($aud['free']) ? 'checked' : '' ?>>
+                        <span>Communautés sans abonnement payant actif</span>
+                    </label>
+                    <label class="flex items-start gap-2.5 text-sm text-slate-700 cursor-pointer">
+                        <input type="checkbox" name="aud_paid" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= !empty($aud['paid']) ? 'checked' : '' ?>>
+                        <span>Communautés avec abonnement payant actif ou période d’essai</span>
+                    </label>
                 </div>
-            </div>
-            <div class="mt-5">
-                <label class="mb-1 block text-sm font-semibold text-slate-700">Ordre d’affichage</label>
-                <input type="number" name="sort_order" value="<?= (int) ($row['sort_order'] ?? 0) ?>" class="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            </div>
-        </section>
+            </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
-            <h2 class="text-lg font-black text-slate-900">Audience</h2>
-            <p class="mt-1 text-sm text-slate-600">Indiquez qui peut voir cette alerte sur le portail.</p>
-            <div class="mt-4 space-y-2">
-                <label class="flex items-center gap-2 text-sm text-slate-700">
-                    <input type="checkbox" name="aud_guest" value="1" <?= ! empty($aud['guest']) ? 'checked' : '' ?>> Visiteurs non connectés
+            <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-4">
+                <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Publication et options</h2>
+                <label class="flex items-start gap-2.5 text-sm text-slate-700 cursor-pointer">
+                    <input type="hidden" name="is_active" value="0">
+                    <input type="checkbox" name="is_active" value="1" id="pa-active" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= ($row === null || !empty($row['is_active'])) ? 'checked' : '' ?>>
+                    <span>
+                        <span class="font-semibold text-slate-900">Publication activée</span>
+                        <span class="mt-0.5 block text-xs text-slate-500">Si la case est décochée, l’annonce reste enregistrée mais n’apparaît pas sur le portail.</span>
+                    </span>
                 </label>
-                <label class="flex items-center gap-2 text-sm text-slate-700">
-                    <input type="checkbox" name="aud_auth" value="1" <?= ! empty($aud['authenticated']) ? 'checked' : '' ?>> Utilisateurs connectés
+                <label class="flex items-start gap-2.5 text-sm text-slate-700 cursor-pointer">
+                    <input type="hidden" name="dismissible" value="0">
+                    <input type="checkbox" name="dismissible" value="1" id="pa-dismiss" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= $dismissible ? 'checked' : '' ?>>
+                    <span>
+                        <span class="font-semibold text-slate-900">Autoriser le masquage</span>
+                        <span class="mt-0.5 block text-xs text-slate-500">Décoché : les membres ne peuvent pas fermer le bandeau (annonce obligatoire jusqu’à la fin de période).</span>
+                    </span>
                 </label>
-                <label class="flex items-center gap-2 text-sm text-slate-700">
-                    <input type="checkbox" name="aud_free" value="1" <?= ! empty($aud['free']) ? 'checked' : '' ?>> Communautés sans abonnement payant actif
+                <?php if (!$isEdit): ?>
+                <label class="flex items-start gap-2.5 text-sm text-slate-700 cursor-pointer rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-3">
+                    <input type="checkbox" name="send_email_now" value="1" id="pa-mail" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                    <span>
+                        <span class="font-semibold text-emerald-950">Envoyer aussi par e-mail aux comptes actifs</span>
+                        <span class="mt-0.5 block text-xs text-emerald-900/80">Diffusion immédiate après création (tous les comptes actifs du portail). Les visiteurs non connectés ne sont pas contactés.</span>
+                    </span>
                 </label>
-                <label class="flex items-center gap-2 text-sm text-slate-700">
-                    <input type="checkbox" name="aud_paid" value="1" <?= ! empty($aud['paid']) ? 'checked' : '' ?>> Communautés avec abonnement payant actif ou période d’essai
-                </label>
-            </div>
-        </section>
+                <?php endif; ?>
+            </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <div class="flex items-center gap-2">
-                <input type="hidden" name="is_active" value="0">
-                <input type="checkbox" name="is_active" value="1" id="is_active" <?= ($row === null || ! empty($row['is_active'])) ? 'checked' : '' ?>>
-                <label for="is_active" class="text-sm font-semibold text-slate-700">Publication activée</label>
+            <div class="flex flex-wrap items-center gap-3">
+                <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700"><?= $isEdit ? 'Enregistrer' : 'Créer l’annonce' ?></button>
+                <a href="<?= url('admin/system/alerts') ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Annuler</a>
             </div>
-            <p class="mt-2 text-xs text-slate-500">Si la case est décochée, l’alerte reste enregistrée mais ne s’affiche pas sur le portail.</p>
-        </section>
-
-        <button type="submit" class="inline-flex items-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-black uppercase tracking-wide text-white transition hover:bg-emerald-600"><?= $isEdit ? 'Enregistrer' : 'Créer' ?></button>
-    </form>
+        </form>
+    </div>
 </div>

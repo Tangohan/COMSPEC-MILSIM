@@ -14,6 +14,9 @@ final class DemoNdaGateService
 {
     public const GATE_PATH = '/acces-demonstration';
 
+    /** Questionnaire de retour après (ou pendant) la démo — accessible hors session. */
+    public const FEEDBACK_PATH = '/retour-demonstration';
+
     private const SETTING_ACCESS_CODE = 'demo_nda.access_code';
     private const SETTING_BYPASS_IPS = 'demo_nda.bypass_ips';
     private const SESSION_TOKEN = 'demo_nda_access_token';
@@ -98,7 +101,7 @@ final class DemoNdaGateService
 
     public function isExemptPath(string $path): bool
     {
-        if ($this->isPublicAssetPath($path) || $path === self::GATE_PATH) {
+        if ($this->isPublicAssetPath($path) || $path === self::GATE_PATH || $path === self::FEEDBACK_PATH) {
             return true;
         }
         $exact = [

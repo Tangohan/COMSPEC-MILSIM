@@ -694,16 +694,16 @@ class CommunityController
                 trim((string) ($u['display_name'] ?? 'Responsable')),
                 trim((string) ($tenant['name'] ?? 'Communauté')),
                 url('dashboard'),
-                url('back-office/community'),
+                url('back-office/configuration-initiale'),
                 $tenantId
             );
         }
         $this->pendingCommunityRepository->deleteById((int) $pending['id']);
         Session::forget('pending_referrer_code');
-        Session::flash('success', 'Paiement confirmé. Votre communauté est prête.');
+        Session::flash('success', 'Paiement confirmé. Votre communauté est prête. Finalisez les derniers réglages.');
         $slug = (string) ($tenant['slug'] ?? '');
 
-        return Response::redirect(url('dashboard'));
+        return Response::redirect(url('back-office/configuration-initiale'));
     }
 
     /**
@@ -726,17 +726,17 @@ class CommunityController
                     trim((string) ($u['display_name'] ?? 'Responsable')),
                     trim((string) (($t['name'] ?? $name))),
                     url('dashboard'),
-                    url('back-office/community'),
+                    url('back-office/configuration-initiale'),
                     $tenantId
                 );
             }
         }
         $audit = \App\Core\Container::get(AuditService::class);
         $audit->log(AuditAction::TENANT_CREATED, $tenantId, $newUserId, 'tenant', $tenantId, null, (string) $name);
-        Session::flash('success', 'Communauté créée et configurée.');
+        Session::flash('success', 'Communauté créée. Finalisez les derniers réglages essentiels.');
         $newSlug = $t['slug'] ?? $slugInput;
 
-        return Response::redirect(url('dashboard'));
+        return Response::redirect(url('back-office/configuration-initiale'));
     }
 
     private function resolveReferrerUserId(int $currentUserId): ?int

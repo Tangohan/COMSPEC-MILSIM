@@ -294,6 +294,8 @@ class PersonnelController
             'results' => $results,
             'rolesByUserId' => $rolesByUserId,
             'badgesByUserId' => $badgesByUserId,
+            'canEditPersonnel' => $this->canStaffEditPersonnel(),
+            'currentUserId' => (int) ($user['id'] ?? 0),
         ]);
     }
 
@@ -493,7 +495,14 @@ class PersonnelController
         $viewerPrivilegedForPersonal = $isSelf || $canStaffView || $canStaffEdit || $isForumMod;
         $redactPersonalPresentation = $hidePersonalInfo && !$viewerPrivilegedForPersonal;
         $canViewCivilSection = $canViewCivil && !$redactPersonalPresentation;
-        $showEmailInContact = !$redactPersonalPresentation && $privatePersonnelIdentity;
+        $gateInst = Gate::getInstance();
+        /** E-mail : titulaire, RH sensible, ou admin organisation — pas la lecture d’annuaire ni la seule édition de fiche. */
+        $canViewMemberEmail = !$redactPersonalPresentation && (
+            $isSelf
+            || $canSensitive
+            || $gateInst->allows('admin.organization')
+        );
+        $showEmailInContact = $canViewMemberEmail;
         $showMatriculePublic = $isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_matricule_to_others'] ?? 1) === 1;
         if (!$privatePersonnelIdentity) {
             $adminPanels = array_values(array_filter($adminPanels, static function (array $p): bool {
@@ -511,7 +520,6 @@ class PersonnelController
         if (($isSelf || $canStaffView) && $this->planningEntryRepository->isOperationalBoardSchemaReady()) {
             $personnelPlanningEntries = $this->planningEntryRepository->listActiveEntriesForAssignedUser((int) $tenantId, $uid, 15);
         }
-        $gateInst = Gate::getInstance();
         $canViewOperationalBoardLink = $gateInst->allows('admin.organization')
             || $gateInst->allows('admin.access')
             || $gateInst->allows('site.support');

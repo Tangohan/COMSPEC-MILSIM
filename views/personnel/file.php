@@ -37,7 +37,7 @@ $privatePersonnelIdentity = !empty($privatePersonnelIdentity ?? false);
 $redactPersonalPresentation = $redactPersonalPresentation ?? false;
 $canViewCommandNotes = $canViewCommandNotes ?? true;
 $displaySettings = $displaySettings ?? [];
-$showEmailInContact = $showEmailInContact ?? true;
+$showEmailInContact = $showEmailInContact ?? false;
 $showMatriculePublic = $showMatriculePublic ?? true;
 $civilIdentity = $civilIdentity ?? ['first_name' => '', 'last_name' => '', 'source' => null];
 $civilSourceLabel = $civilSourceLabel ?? '';
@@ -204,7 +204,11 @@ if ($rpCharacterName !== '') {
 } elseif (!empty($redactPersonalPresentation)) {
     $dn = trim((string) ($targetUser['display_name'] ?? ''));
     if ($privatePersonnelIdentity) {
-        $displayName = $dn !== '' ? $dn : (string) ($targetUser['email'] ?? '—');
+        $cs = trim((string) ($callsign ?? ''));
+        $displayName = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Membre');
+        if ($displayName === 'Membre' && !empty($showEmailInContact)) {
+            $displayName = (string) ($targetUser['email'] ?? 'Membre');
+        }
     } else {
         $cs = trim((string) ($callsign ?? ''));
         $displayName = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Membre');
@@ -215,7 +219,19 @@ if ($rpCharacterName !== '') {
     $displayName = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Membre');
 } else {
     $civilFull = trim(($civilIdentity['first_name'] ?? '') . ' ' . ($civilIdentity['last_name'] ?? ''));
-    $displayName = $civilFull !== '' ? $civilFull : ($targetUser['display_name'] ?: $targetUser['email']);
+    if ($civilFull !== '') {
+        $displayName = $civilFull;
+    } else {
+        $dn = trim((string) ($targetUser['display_name'] ?? ''));
+        if ($dn !== '') {
+            $displayName = $dn;
+        } elseif (!empty($showEmailInContact)) {
+            $displayName = (string) ($targetUser['email'] ?? 'Membre');
+        } else {
+            $cs = trim((string) ($callsign ?? ''));
+            $displayName = $cs !== '' ? $cs : 'Membre';
+        }
+    }
 }
 $rScore = (int) ($personnelProfile['readiness_score'] ?? 0);
 $rExtra = (int) ($personnelExtras['readiness_percent'] ?? 0);
@@ -996,7 +1012,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                             <?php if ($enrCall !== ''): ?>
                             <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Indicatif indiqué</p><p class="text-sm text-slate-800"><?= htmlspecialchars($enrCall) ?></p></div>
                             <?php endif; ?>
-                            <?php if ($enrMail !== ''): ?>
+                            <?php if ($enrMail !== '' && !empty($showEmailInContact)): ?>
                             <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">E-mail de contact (dossier)</p><p class="text-sm text-slate-800 break-all"><?= htmlspecialchars($enrMail) ?></p></div>
                             <?php endif; ?>
                             <?php if (!empty(trim((string) ($latestEnlistment['country'] ?? '')))): ?>
@@ -1661,7 +1677,11 @@ if (!function_exists('personnel_file_render_admin_value')) {
                     <div class="grid md:grid-cols-2 gap-6">
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($civilIdentity['first_name'] !== '' ? $civilIdentity['first_name'] : '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($civilIdentity['last_name'] !== '' ? $civilIdentity['last_name'] : '—') ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-bold text-slate-900"><?= htmlspecialchars($targetUser['email']) ?></p></div>
+                        <?php if (!empty($showEmailInContact)): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($targetUser['email'] ?? '')) ?></p></div>
+                        <?php else: ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm text-slate-500">Masqué — réservé à l’administration</p></div>
+                        <?php endif; ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut compte</p><p class="text-sm font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?>"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
                         <?php if (!empty($userProfile['birth_date'])):
                             $birthRaw = trim((string) $userProfile['birth_date']);
@@ -1701,7 +1721,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                             <?php if (!empty($showEmailInContact)): ?>
                             <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars((string) ($targetUser['email'] ?? '')) ?></p></div>
                             <?php else: ?>
-                            <p class="text-xs text-slate-600">L’adresse e-mail est masquée selon les préférences du titulaire.</p>
+                            <p class="text-xs text-slate-600">L’adresse e-mail est réservée à l’administration.</p>
                             <?php endif; ?>
                             <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut du compte</p><p class="text-sm font-semibold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-600' ?>"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
                         </div>
@@ -1714,7 +1734,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                         <?php if (!empty($showEmailInContact)): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars((string) ($targetUser['email'] ?? '')) ?></p></div>
                         <?php else: ?>
-                        <p class="text-xs text-slate-600">L’adresse e-mail n’est pas affichée sur cette fiche.</p>
+                        <p class="text-xs text-slate-600">L’adresse e-mail est réservée à l’administration.</p>
                         <?php endif; ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut du compte</p><p class="text-sm font-semibold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-600' ?>"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
                     </div>

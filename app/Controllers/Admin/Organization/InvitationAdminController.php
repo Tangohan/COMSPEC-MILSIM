@@ -40,7 +40,12 @@ final class InvitationAdminController
         $tenantId = (int) Session::get('tenant_id');
         $this->invitations->expireStale();
         $statusFilter = trim((string) $request->query('status', ''));
+        $allowedFilters = ['pending', 'accepted', 'revoked', 'expired'];
+        if ($statusFilter !== '' && !in_array($statusFilter, $allowedFilters, true)) {
+            $statusFilter = '';
+        }
         $rows = $this->invitations->listForTenant($tenantId, $statusFilter !== '' ? $statusFilter : null);
+        $inviteStatusCounts = $this->invitations->countByStatus($tenantId);
         $rolesOrganization = $this->roleRepository->forTenantOrganization($tenantId);
         $units = $this->unitRepository->allForTenant($tenantId);
         $settings = $this->tenantRepository->getSettings($tenantId);
@@ -61,6 +66,7 @@ final class InvitationAdminController
             'organizationRoleLabelMode' => $organizationRoleLabelMode,
             'canAdd' => $this->featureGate->canAddMember($tenantId),
             'inviteFilterStatus' => $statusFilter,
+            'inviteStatusCounts' => $inviteStatusCounts,
         ]);
     }
 

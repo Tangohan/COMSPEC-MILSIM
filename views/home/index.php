@@ -121,8 +121,8 @@ $resolveLogo = static function (string $logo) use ($base): string {
     </header>
 
     <main>
-        <!-- Vidéo / diaporama immersif (plein écran) -->
-        <section class="relative flex min-h-[100svh] flex-col justify-end overflow-hidden bg-black pt-14" id="hero-immersive" aria-label="Introduction visuelle">
+        <!-- Un seul hero : fond immersif + marque Athena + accès -->
+        <section class="relative flex min-h-[100svh] flex-col justify-end overflow-hidden bg-black pt-14" id="hero" aria-labelledby="hero-title">
             <div class="pointer-events-none absolute inset-0" id="heroSlider">
                 <div class="slide absolute inset-0 opacity-100 transition-opacity duration-1000 ease-in-out">
                     <img id="hero-poster" src="<?= $base ?>/assets/images/fog-team.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async" fetchpriority="high">
@@ -140,16 +140,26 @@ $resolveLogo = static function (string $logo) use ($base): string {
                     <source data-src="<?= $base ?>/assets/video/hero-athena.webm" type="video/webm">
                     <source data-src="<?= $base ?>/assets/video/hero-athena.mp4" type="video/mp4">
                 </video>
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/25"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/30"></div>
             </div>
 
-            <div class="relative z-10 mx-auto flex w-full max-w-[100rem] flex-col items-start gap-4 px-5 pb-10 pt-24 md:px-8 md:pb-12">
-                <p class="hi-kicker text-emerald-400/90">Athena Compsec</p>
-                <p class="max-w-md text-sm font-medium leading-relaxed text-white/70 md:text-base">
-                    Introduction visuelle du portail — le détail et les accès sont juste en dessous.
+            <div class="relative z-10 mx-auto flex w-full max-w-[100rem] flex-col items-start px-5 pb-10 pt-20 md:px-8 md:pb-14">
+                <p class="hi-kicker hi-kicker-glitch hi-reveal text-emerald-400/90">Portail MILSIM · Commandement d’unité</p>
+                <h1 id="hero-title" class="hi-display hi-hero-brand hi-glitch hi-reveal mt-4 text-white" data-text="Athena" aria-label="Athena">
+                    <span class="hi-glitch__main" aria-hidden="true">Athena<span class="hi-glitch__dot">.</span></span>
+                </h1>
+                <p class="hi-body hi-reveal hi-reveal-delay mt-6 max-w-xl text-white/70">
+                    Une base pour votre communauté Arma — du recrutement au terrain.
+                    Organisation, présence, doctrine et C2 au même endroit.
                 </p>
-                <div class="flex flex-wrap items-center gap-3">
-                    <a href="#hero-classic" class="hi-cta hi-cta-solid">Voir Athena</a>
+                <div class="hi-reveal hi-reveal-delay mt-8 flex flex-wrap items-center gap-3">
+                    <?php if (!$loggedIn): ?>
+                        <a href="<?= url('register') ?>" class="hi-cta hi-cta-solid">Créer ma communauté</a>
+                        <a href="<?= url('join') ?>" class="hi-cta hi-cta-ghost">J’ai un code</a>
+                    <?php else: ?>
+                        <a href="<?= url('hub') ?>" class="hi-cta hi-cta-solid">Centre de commandement</a>
+                        <a href="<?= url('dashboard') ?>" class="hi-cta hi-cta-ghost">Briefing personnel</a>
+                    <?php endif; ?>
                     <button type="button" id="btn-enable-immersive" class="hi-body-sm hidden text-left text-emerald-400/80 underline decoration-emerald-500/30 underline-offset-4 hover:text-emerald-300">
                         Activer l’expérience immersive
                     </button>
@@ -185,30 +195,23 @@ $resolveLogo = static function (string $logo) use ($base): string {
                             </span>
                             <span id="timestamp" class="tabular-nums text-white/55">--:--:--</span>
                         </div>
+                        <div class="hi-av" id="hero-av" role="group" aria-label="Contrôles vidéo">
+                            <button type="button" id="hero-av-toggle" class="hi-av__btn" aria-label="Lancer la vidéo" data-state="stopped">
+                                <svg class="hi-av__icon hi-av__icon--play" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
+                                <svg class="hi-av__icon hi-av__icon--stop" viewBox="0 0 24 24" aria-hidden="true" hidden><rect x="6" y="6" width="12" height="12" fill="currentColor" rx="1"/></svg>
+                            </button>
+                            <div class="hi-av__audio">
+                                <button type="button" id="hero-av-mute" class="hi-av__btn hi-av__btn--mute" aria-label="Couper le son" aria-pressed="true">
+                                    <svg class="hi-av__icon hi-av__icon--speaker" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1-3.29-2.5-4.03v8.05c1.5-.74 2.5-2.26 2.5-4.02z"/></svg>
+                                    <svg class="hi-av__icon hi-av__icon--muted" viewBox="0 0 24 24" aria-hidden="true" hidden><path fill="currentColor" d="M16.5 12c0-1.77-1-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                                </button>
+                                <label class="hi-av__vol-wrap" for="hero-av-volume">
+                                    <span class="sr-only">Volume</span>
+                                    <input type="range" id="hero-av-volume" class="hi-av__vol" min="0" max="1" step="0.05" value="0" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Hero classique Athena (après la vidéo) -->
-        <section id="hero-classic" class="hi-hero-classic scroll-mt-14 border-b border-slate-200 bg-[var(--hi-paper)] text-slate-900" aria-labelledby="hero-classic-title">
-            <div class="hi-section mx-auto max-w-[100rem]">
-                <p class="hi-kicker text-emerald-700">Portail MILSIM · Commandement d’unité</p>
-                <h1 id="hero-classic-title" class="hi-display hi-hero-brand mt-6 text-slate-900">
-                    Athena<span class="text-emerald-600">.</span>
-                </h1>
-                <p class="hi-body mt-8 max-w-xl text-slate-600">
-                    Une base pour votre communauté Arma — du recrutement au terrain.
-                    Organisation, présence, doctrine et C2 au même endroit.
-                </p>
-                <div class="mt-10 flex flex-wrap gap-3">
-                    <?php if (!$loggedIn): ?>
-                        <a href="<?= url('register') ?>" class="hi-cta hi-cta-ink">Créer ma communauté</a>
-                        <a href="<?= url('join') ?>" class="hi-cta hi-cta-ghost-ink">J’ai un code</a>
-                    <?php else: ?>
-                        <a href="<?= url('hub') ?>" class="hi-cta hi-cta-ink">Centre de commandement</a>
-                        <a href="<?= url('dashboard') ?>" class="hi-cta hi-cta-ghost-ink">Briefing personnel</a>
-                    <?php endif; ?>
                 </div>
             </div>
         </section>
@@ -248,36 +251,62 @@ $resolveLogo = static function (string $logo) use ($base): string {
         </section>
         <?php endif; ?>
 
-        <!-- Site / Roleplay (restauré) -->
-        <section class="relative overflow-hidden border-y border-slate-200 bg-gradient-to-b from-white to-slate-50/70 text-slate-900">
+        <!-- Athena = plateforme · Roleplay = expérience opérateur -->
+        <section class="relative overflow-hidden border-y border-slate-200 bg-slate-50 text-slate-900" aria-labelledby="athena-rp-heading">
             <div class="relative mx-auto max-w-6xl px-6 py-16 md:py-20">
-                <div class="max-w-3xl">
-                    <p class="mb-3 hi-kicker text-emerald-700">Athena en deux couches</p>
-                    <h2 class="hi-display hi-display-md text-slate-900">Différencier le site et le roleplay</h2>
-                    <p class="hi-body mt-4 text-slate-600">
-                        Le <strong>site Athena</strong> reste votre couche de pilotage. La couche <strong>roleplay</strong> structure l’immersion.
+                <div class="mx-auto max-w-3xl text-center">
+                    <p class="hi-kicker text-emerald-700">Deux mondes distincts</p>
+                    <h2 id="athena-rp-heading" class="hi-display hi-display-md mt-3 text-slate-950">
+                        Athena &amp; Roleplay
+                    </h2>
+                    <p class="mt-4 text-lg font-semibold tracking-tight text-slate-800 md:text-xl">
+                        Deux couches. Une seule communauté.
+                    </p>
+                    <p class="hi-body mx-auto mt-4 max-w-2xl text-slate-600">
+                        <strong class="text-slate-900">Athena</strong> administre votre unité.
+                        Le <strong class="text-emerald-800">Roleplay</strong> donne vie à vos opérateurs.
                     </p>
                 </div>
-                <div class="mt-10 grid gap-6 lg:grid-cols-2">
-                    <article class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-                        <p class="hi-kicker text-slate-500">Couche plateforme</p>
-                        <h3 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Site Athena</h3>
-                        <p class="hi-body-sm mt-3 text-slate-600">Pour le staff et la logistique : coordonner, tracer, former et recruter.</p>
-                        <ul class="mt-5 space-y-2 hi-body-sm text-slate-600">
-                            <li><span class="font-bold text-slate-900">• Gouvernance :</span> rôles, accès, workflows.</li>
-                            <li><span class="font-bold text-slate-900">• Pilotage :</span> événements, présences, communication.</li>
-                            <li><span class="font-bold text-slate-900">• Capitalisation :</span> docs, formation, archives.</li>
+
+                <div class="mt-12 grid gap-5 lg:grid-cols-2 lg:gap-6">
+                    <article class="flex flex-col border border-slate-800/80 bg-[#050505] p-7 text-white shadow-xl md:p-8">
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-400/90">Plateforme</p>
+                        <h3 class="mt-3 hi-display text-4xl tracking-tight text-white md:text-5xl">Athena</h3>
+                        <p class="mt-2 text-sm font-bold uppercase tracking-[0.14em] text-white/50">Plateforme de commandement</p>
+                        <p class="mt-5 text-sm leading-relaxed text-white/65">
+                            L’ensemble des outils nécessaires au fonctionnement de la communauté.
+                        </p>
+                        <ul class="mt-6 flex-1 space-y-2.5 text-sm text-white/75">
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400" aria-hidden="true"></span>Gestion des membres et des accès</li>
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400" aria-hidden="true"></span>Recrutement et candidatures</li>
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400" aria-hidden="true"></span>Formations et certifications</li>
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400" aria-hidden="true"></span>Événements et planification</li>
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400" aria-hidden="true"></span>Documents, procédures et archives</li>
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400" aria-hidden="true"></span>Tableau de bord et statistiques</li>
                         </ul>
+                        <p class="mt-8 border-t border-white/10 pt-5 text-xs font-bold uppercase tracking-[0.16em] text-emerald-400/90">
+                            Objectif : administrer efficacement votre organisation.
+                        </p>
                     </article>
-                    <article class="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-7 shadow-sm">
-                        <p class="hi-kicker text-emerald-700">Couche immersion</p>
-                        <h3 class="mt-2 text-2xl font-black tracking-tight text-emerald-900">Roleplay de l’unité</h3>
-                        <p class="hi-body-sm mt-3 text-emerald-900/80">Pour le personnage et la fiction tactique : identité, progression, accréditation.</p>
-                        <ul class="mt-5 space-y-2 hi-body-sm text-emerald-900/80">
-                            <li><span class="font-bold text-emerald-900">• Identité RP :</span> nom opérateur, callsign, profil.</li>
-                            <li><span class="font-bold text-emerald-900">• Parcours RP :</span> dossier opérateur, jalons.</li>
-                            <li><span class="font-bold text-emerald-900">• Cohérence :</span> compte civil / personnage séparés.</li>
+
+                    <article class="flex flex-col border border-emerald-300/80 bg-gradient-to-br from-emerald-50 to-white p-7 text-slate-900 shadow-xl md:p-8">
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-800">Immersion</p>
+                        <h3 class="mt-3 hi-display text-4xl tracking-tight text-emerald-950 md:text-5xl">Roleplay</h3>
+                        <p class="mt-2 text-sm font-bold uppercase tracking-[0.14em] text-emerald-800/70">Immersion opérationnelle</p>
+                        <p class="mt-5 text-sm leading-relaxed text-slate-600">
+                            Chaque membre possède une identité opérationnelle indépendante de son compte.
+                        </p>
+                        <ul class="mt-6 flex-1 space-y-2.5 text-sm text-slate-700">
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-700" aria-hidden="true"></span>Callsign et identité RP</li>
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-700" aria-hidden="true"></span>Carrière et progression</li>
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-700" aria-hidden="true"></span>Qualifications et spécialisations</li>
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-700" aria-hidden="true"></span>Dossier opérateur</li>
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-700" aria-hidden="true"></span>Récompenses et décorations</li>
+                            <li class="flex gap-2"><span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-700" aria-hidden="true"></span>Historique des opérations</li>
                         </ul>
+                        <p class="mt-8 border-t border-emerald-200 pt-5 text-xs font-bold uppercase tracking-[0.16em] text-emerald-900">
+                            Objectif : faire évoluer un personnage crédible au sein de l’unité.
+                        </p>
                     </article>
                 </div>
             </div>
@@ -674,12 +703,24 @@ $resolveLogo = static function (string $logo) use ($base): string {
 
         (function immersiveExperience() {
             var KEY = 'athena_immersive_v1';
+            var VOL_KEY = 'athena_immersive_vol';
             var dlg = document.getElementById('immersive-consent');
             var video = document.getElementById('hero-video');
-            var poster = document.getElementById('hero-poster');
             var btnLater = document.getElementById('btn-enable-immersive');
+            var toggleBtn = document.getElementById('hero-av-toggle');
+            var muteBtn = document.getElementById('hero-av-mute');
+            var volInput = document.getElementById('hero-av-volume');
+            var iconPlay = toggleBtn ? toggleBtn.querySelector('.hi-av__icon--play') : null;
+            var iconStop = toggleBtn ? toggleBtn.querySelector('.hi-av__icon--stop') : null;
+            var iconSpeaker = muteBtn ? muteBtn.querySelector('.hi-av__icon--speaker') : null;
+            var iconMuted = muteBtn ? muteBtn.querySelector('.hi-av__icon--muted') : null;
+            var lastVol = 0.55;
             var saved = null;
             try { saved = localStorage.getItem(KEY); } catch (e) {}
+            try {
+                var storedVol = localStorage.getItem(VOL_KEY);
+                if (storedVol !== null) lastVol = Math.min(1, Math.max(0, parseFloat(storedVol) || 0));
+            } catch (e) {}
 
             function loadSources() {
                 if (!video) return;
@@ -690,6 +731,53 @@ $resolveLogo = static function (string $logo) use ($base): string {
                 video.load();
             }
 
+            function isVideoActive() {
+                return !!(video && !video.classList.contains('hidden') && !video.paused);
+            }
+
+            function syncAvUi() {
+                var playing = isVideoActive();
+                if (toggleBtn) {
+                    toggleBtn.setAttribute('data-state', playing ? 'playing' : 'stopped');
+                    toggleBtn.setAttribute('aria-label', playing ? 'Arrêter la vidéo' : 'Lancer la vidéo');
+                    if (iconPlay) iconPlay.hidden = playing;
+                    if (iconStop) iconStop.hidden = !playing;
+                }
+                if (!video) return;
+                var muted = video.muted || video.volume === 0;
+                var vol = muted ? 0 : video.volume;
+                if (volInput) {
+                    volInput.value = String(vol);
+                    volInput.style.setProperty('--hi-av-pct', Math.round(vol * 100) + '%');
+                    volInput.setAttribute('aria-valuenow', String(Math.round(vol * 100)));
+                }
+                if (muteBtn) {
+                    muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+                    muteBtn.setAttribute('aria-label', muted ? 'Activer le son' : 'Couper le son');
+                    if (iconSpeaker) iconSpeaker.hidden = muted;
+                    if (iconMuted) iconMuted.hidden = !muted;
+                }
+            }
+
+            function persistVol(vol) {
+                try { localStorage.setItem(VOL_KEY, String(vol)); } catch (e) {}
+            }
+
+            function applyVolume(vol, unmute) {
+                if (!video) return;
+                vol = Math.min(1, Math.max(0, vol));
+                if (vol > 0) lastVol = vol;
+                video.volume = vol;
+                if (unmute) video.muted = vol === 0;
+                else if (vol > 0) video.muted = false;
+                else video.muted = true;
+                persistVol(vol > 0 ? vol : lastVol);
+                try {
+                    localStorage.setItem(KEY, video.muted || vol === 0 ? 'silent' : 'full');
+                } catch (e) {}
+                syncAvUi();
+            }
+
             function enableImmersive(withSound) {
                 try { localStorage.setItem(KEY, withSound ? 'full' : 'silent'); } catch (e) {}
                 stopSlider();
@@ -697,13 +785,22 @@ $resolveLogo = static function (string $logo) use ($base): string {
                 loadSources();
                 video.classList.remove('hidden');
                 slides.forEach(function (s) { s.classList.add('opacity-0'); s.classList.remove('opacity-100'); });
-                video.muted = !withSound;
+                if (withSound) {
+                    video.muted = false;
+                    video.volume = lastVol > 0 ? lastVol : 0.55;
+                } else {
+                    video.muted = true;
+                    video.volume = 0;
+                }
                 var playPromise = video.play();
                 if (playPromise && playPromise.catch) playPromise.catch(function () {
                     video.muted = true;
+                    video.volume = 0;
                     video.play().catch(function () {});
+                    syncAvUi();
                 });
                 if (btnLater) btnLater.classList.add('hidden');
+                syncAvUi();
             }
 
             function disableImmersive() {
@@ -717,6 +814,30 @@ $resolveLogo = static function (string $logo) use ($base): string {
                     startSlider();
                 }
                 if (btnLater) btnLater.classList.remove('hidden');
+                syncAvUi();
+            }
+
+            function stopVideoKeepLayer() {
+                if (!video) return;
+                video.pause();
+                video.currentTime = 0;
+                syncAvUi();
+            }
+
+            function togglePlayback() {
+                if (!video) return;
+                if (video.classList.contains('hidden')) {
+                    enableImmersive(lastVol > 0);
+                    return;
+                }
+                if (video.paused) {
+                    var playPromise = video.play();
+                    if (playPromise && playPromise.catch) playPromise.catch(function () {});
+                    stopSlider();
+                    syncAvUi();
+                    return;
+                }
+                stopVideoKeepLayer();
             }
 
             if (saved === 'full') enableImmersive(true);
@@ -732,6 +853,32 @@ $resolveLogo = static function (string $logo) use ($base): string {
             if (yes) yes.addEventListener('click', function () { enableImmersive(true); if (dlg) dlg.close(); });
             if (no) no.addEventListener('click', function () { disableImmersive(); if (dlg) dlg.close(); });
             if (btnLater) btnLater.addEventListener('click', function () { enableImmersive(true); });
+
+            if (toggleBtn) toggleBtn.addEventListener('click', togglePlayback);
+            if (muteBtn) muteBtn.addEventListener('click', function () {
+                if (!video) return;
+                if (video.classList.contains('hidden')) {
+                    enableImmersive(true);
+                    return;
+                }
+                if (video.muted || video.volume === 0) applyVolume(lastVol > 0 ? lastVol : 0.55, true);
+                else applyVolume(0, true);
+            });
+            if (volInput) {
+                volInput.addEventListener('input', function () {
+                    var v = parseFloat(volInput.value) || 0;
+                    if (video && video.classList.contains('hidden') && v > 0) {
+                        enableImmersive(true);
+                    }
+                    applyVolume(v, true);
+                });
+            }
+            if (video) {
+                video.addEventListener('play', syncAvUi);
+                video.addEventListener('pause', syncAvUi);
+                video.addEventListener('volumechange', syncAvUi);
+            }
+            syncAvUi();
         })();
 
         (function newsletterForm() {

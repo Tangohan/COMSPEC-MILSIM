@@ -50,6 +50,14 @@ function portal_header_context(): array
     $alerts = [];
     try {
         $alerts = Container::get(AlertPresentationService::class)->forCurrentRequest();
+        $alerts = array_values(array_filter(
+            $alerts,
+            static function (array $a): bool {
+                $style = (string) ($a['display_style'] ?? 'classic');
+
+                return \App\Support\AlertDisplayStyle::isClassicStyle($style);
+            }
+        ));
     } catch (\Throwable) {
         $alerts = [];
     }

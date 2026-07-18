@@ -100,10 +100,11 @@ $boNavCats = str_starts_with($p, 'back-office/categories');
 $boNavGrades = str_starts_with($p, 'back-office/referentiels/grades');
 $boNavSeniority = str_starts_with($p, 'back-office/organisation/anciennete');
 $boNavOrgSettings = str_starts_with($p, 'back-office/organisation/parametres') || $p === 'back-office/community';
+$boNavInitialSetup = $p === 'back-office/configuration-initiale' || str_starts_with($p, 'back-office/configuration-initiale/');
 $boNavCommPres = str_starts_with($p, 'back-office/community/presentation');
 $boNavInteg = str_starts_with($p, 'back-office/integrations');
 $boNavAlerts = str_starts_with($p, 'back-office/alerts');
-$boNavConfig = str_starts_with($p, 'back-office/configuration');
+$boNavConfig = $p === 'back-office/configuration' || str_starts_with($p, 'back-office/configuration/');
 $boNavAnalytics = $p === 'back-office/analytics';
 $boNavAnalyticsConversion = str_starts_with($p, 'back-office/analytics/conversion');
 $boNavPins = str_starts_with($p, 'back-office/dashboard-pins');
@@ -326,6 +327,7 @@ if ($canCommsSection) {
 }
 
 $coreTiles[] = $tile('community', 'Communauté', 'Identité et portail', 'default', null, $links([
+    ['label' => 'Configuration initiale', 'href' => url('back-office/configuration-initiale'), 'hint' => 'Assistant de démarrage', 'active' => $boNavInitialSetup],
     ['label' => 'Paramètres de la communauté', 'href' => url('back-office/community'), 'hint' => 'Identité et options', 'active' => $boNavOrgSettings],
     ['label' => 'Page d’accueil publique', 'href' => url('back-office/community/presentation'), 'hint' => 'Vitrine publique', 'active' => $boNavCommPres],
     ['label' => 'Annonces & alertes', 'href' => url('back-office/alerts'), 'hint' => 'Messages portail', 'active' => $boNavAlerts],
@@ -338,7 +340,7 @@ $coreTiles[] = $tile('community', 'Communauté', 'Identité et portail', 'defaul
     ['label' => 'Raccourcis du portail', 'href' => url('back-office/dashboard-pins'), 'hint' => 'Épingles tableau de bord', 'active' => $boNavPins],
     ['label' => 'Onboarding membres', 'href' => url('back-office/onboarding-members'), 'hint' => 'Parcours d’accueil', 'active' => $boNavOnbMembers],
     ['label' => 'Aide après inscription', 'href' => url('back-office/onboarding-recovery'), 'hint' => 'Relances et assistance', 'active' => $boNavOnb],
-]), 'community', $boNavOrgSettings || $boNavCommPres || $boNavAlerts || $boNavConfig || $boNavInteg || $boNavAnalytics || $boNavAnalyticsConversion || $boNavPins || $boNavOnbMembers || $boNavOnb);
+]), 'community', $boNavInitialSetup || $boNavOrgSettings || $boNavCommPres || $boNavAlerts || $boNavConfig || $boNavInteg || $boNavAnalytics || $boNavAnalyticsConversion || $boNavPins || $boNavOnbMembers || $boNavOnb);
 
 $opsTiles[] = $tile('pilotage', 'Pilotage', 'Opérations et conformité', 'default', null, $links([
     $canMurOperationnel

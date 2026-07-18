@@ -134,11 +134,14 @@ class OrganizationDashboardController
         try {
             foreach ($this->tenantAlertRepository->listActiveForTenantDisplay($tenantId) as $alert) {
                 $orgAnnounceItems[] = [
+                    'scope' => 'tenant',
                     'kind' => (string) ($alert['kind'] ?? 'info'),
                     'title' => (string) ($alert['title'] ?? ''),
                     'body' => trim((string) ($alert['body'] ?? '')),
                     'cta_label' => isset($alert['cta_label']) && $alert['cta_label'] !== '' ? (string) $alert['cta_label'] : null,
                     'cta_url' => isset($alert['cta_url']) && $alert['cta_url'] !== '' ? (string) $alert['cta_url'] : null,
+                    'accent_color' => isset($alert['accent_color']) ? (string) $alert['accent_color'] : null,
+                    'image_url' => \App\Support\TenantAlertVisuals::publicUrl(isset($alert['image_path']) ? (string) $alert['image_path'] : null),
                 ];
             }
         } catch (\Throwable) {
@@ -168,6 +171,20 @@ class OrganizationDashboardController
             // Les consignes épinglées restent optionnelles.
         }
 
+        $initialSetupBanner = null;
+        try {
+            $setupAnalysis = (new \App\Services\Community\TenantInitialSetupService())->analyze($tenantId);
+            if (!empty($setupAnalysis['show_banner'])) {
+                $initialSetupBanner = [
+                    'percent' => (int) ($setupAnalysis['percent'] ?? 0),
+                    'done' => (int) ($setupAnalysis['done'] ?? 0),
+                    'total' => (int) ($setupAnalysis['total'] ?? 0),
+                ];
+            }
+        } catch (\Throwable) {
+            $initialSetupBanner = null;
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.dashboard',
             'title' => 'Administration organisationnelle',
@@ -190,6 +207,7 @@ class OrganizationDashboardController
             'orgIntegrationsPlanAllowed' => $orgIntegrationsPlanAllowed,
             'orgAnnounceItems' => $orgAnnounceItems,
             'tenantName' => $tenantName,
+            'initialSetupBanner' => $initialSetupBanner,
         ]);
     }
 

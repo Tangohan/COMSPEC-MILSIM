@@ -56,13 +56,13 @@ final class TrainingCompetencyController
             $matricesReady = $this->trainingCompetencyRepository->competencyMatricesSchemaAvailable();
             if ($action === 'create_matrix') {
                 if (!$matricesReady) {
-                    Session::flash('error', 'Le pilotage par matrices n’est pas disponible tant que les migrations n’ont pas été exécutées.');
+                    Session::flash('error', 'Les groupes de suivi ne sont pas encore disponibles. Demandez à un administrateur technique de finaliser la mise en place.');
                 } else {
                     $roleIds = array_map('intval', (array) $request->input('auto_role_ids', []));
                     $minCompleted = max(0, (int) $request->input('auto_min_completed', 0));
                     $name = trim((string) $request->input('matrix_name', ''));
                     if ($name === '') {
-                        Session::flash('error', 'Nom de matrice requis.');
+                        Session::flash('error', 'Indiquez un nom pour ce groupe de suivi.');
                     } else {
                         $matrixId = $this->trainingCompetencyRepository->saveMatrix(
                             $tenantId,
@@ -75,34 +75,72 @@ final class TrainingCompetencyController
                             ]
                         );
                         if ($matrixId < 1) {
-                            Session::flash('error', 'Création de matrice impossible pour le moment.');
+                            Session::flash('error', 'Impossible de créer ce groupe pour le moment. Réessayez un peu plus tard.');
                         } else {
-                            Session::flash('success', 'Matrice créée (#' . $matrixId . ').');
+                            Session::flash('success', 'Groupe de suivi créé. Vous pouvez maintenant y placer des membres.');
                         }
                     }
                 }
             } elseif ($action === 'assign_matrix') {
                 if (!$matricesReady) {
-                    Session::flash('error', 'Assignation impossible : tables de pilotage absentes. Lancez les migrations puis réessayez.');
+                    Session::flash('error', 'Placement impossible pour le moment. La fonctionnalité de suivi n’est pas encore prête.');
                 } else {
                     $matrixId = (int) $request->input('matrix_id', 0);
                     $userIds = array_map('intval', (array) $request->input('user_ids', []));
+                    $single = (int) $request->input('user_id', 0);
+                    if ($single > 0) {
+                        $userIds[] = $single;
+                    }
                     $count = $this->trainingCompetencyRepository->assignMatrixToUsers($tenantId, $matrixId, $actorUserId, $userIds, 'manual');
-                    Session::flash('success', $count . ' assignation(s) matrice ajoutée(s).');
+                    Session::flash(
+                        'success',
+                        $count > 0
+                            ? ($count === 1 ? 'Membre ajouté au groupe.' : sprintf('%d membres ajoutés au groupe.', $count))
+                            : 'Aucun nouveau membre ajouté (déjà présent ou sélection vide).'
+                    );
+                }
+            } elseif ($action === 'unassign_matrix') {
+                if (!$matricesReady) {
+                    Session::flash('error', 'Retrait impossible pour le moment.');
+                } else {
+                    $matrixId = (int) $request->input('matrix_id', 0);
+                    $userId = (int) $request->input('user_id', 0);
+                    $ok = $this->trainingCompetencyRepository->unassignUserFromMatrix($tenantId, $matrixId, $userId);
+                    Session::flash(
+                        $ok ? 'success' : 'error',
+                        $ok ? 'Membre retiré du groupe.' : 'Impossible de retirer ce membre du groupe.'
+                    );
+                }
+            } elseif ($action === 'delete_matrix') {
+                if (!$matricesReady) {
+                    Session::flash('error', 'Suppression impossible pour le moment.');
+                } else {
+                    $matrixId = (int) $request->input('matrix_id', 0);
+                    $ok = $this->trainingCompetencyRepository->deleteMatrix($tenantId, $matrixId);
+                    Session::flash(
+                        $ok ? 'success' : 'error',
+                        $ok ? 'Groupe de suivi supprimé.' : 'Groupe introuvable ou déjà supprimé.'
+                    );
                 }
             } elseif ($action === 'auto_detect') {
                 if (!$matricesReady) {
-                    Session::flash('error', 'Détection automatique indisponible tant que les migrations n’ont pas été exécutées.');
+                    Session::flash('error', 'Le remplissage automatique n’est pas disponible pour le moment.');
                 } else {
                     $matrixId = (int) $request->input('matrix_id', 0);
                     $matrix = $this->trainingCompetencyRepository->findMatrix($tenantId, $matrixId);
                     if ($matrix === null) {
-                        Session::flash('error', 'Matrice introuvable.');
+                        Session::flash('error', 'Ce groupe de suivi est introuvable.');
                     } else {
                         $rules = json_decode((string) ($matrix['auto_detect_rules_json'] ?? '{}'), true);
                         $candidateIds = $this->trainingCompetencyRepository->autoDetectCandidateUserIds($tenantId, is_array($rules) ? $rules : []);
                         $count = $this->trainingCompetencyRepository->assignMatrixToUsers($tenantId, $matrixId, $actorUserId, $candidateIds, 'auto_detect');
-                        Session::flash('success', sprintf('Détection automatique exécutée (%d candidat(s), %d nouvelle(s) assignation(s)).', count($candidateIds), $count));
+                        if (count($candidateIds) === 0) {
+                            Session::flash('success', 'Aucun membre ne correspond actuellement aux critères de ce groupe.');
+                        } elseif ($count === 0) {
+                            Session::flash('success', sprintf('%d membre(s) correspondent déjà aux critères — tous étaient déjà dans le groupe.', count($candidateIds)));
+                        } else {
+                            Session::flash('success', sprintf('%d membre(s) ajouté(s) automatiquement selon les critères.', $count));
+                        }
                     }
                 }
             } elseif ($action === 'quick_chain_referent') {
@@ -151,24 +189,24 @@ final class TrainingCompetencyController
                 }
             } elseif ($action === 'seed_preset_matrices') {
                 if (!$matricesReady) {
-                    Session::flash('error', 'Les matrices suggérées ne peuvent pas être créées tant que les migrations n’ont pas été exécutées.');
+                    Session::flash('error', 'Les groupes suggérés ne peuvent pas être créés pour le moment.');
                 } else {
                     $presets = [
                         [
                             'name' => 'Encadrement — cadres et coordination',
-                            'description' => 'Profils à responsabilité de direction et de coordination.',
+                            'description' => 'Suivi des profils à responsabilité de direction et de coordination. N’accorde aucun droit supplémentaire.',
                             'slugs' => ['officer', 'tenant_admin'],
                             'min' => 0,
                         ],
                         [
                             'name' => 'Animation et pédagogie',
-                            'description' => 'Membres orientés formation, animation ou conception de parcours.',
+                            'description' => 'Suivi des membres orientés formation, animation ou conception de parcours. N’accorde aucun droit supplémentaire.',
                             'slugs' => ['instructor', 'trainer', 'hr'],
                             'min' => 0,
                         ],
                         [
                             'name' => 'Parcours confirmé',
-                            'description' => 'Membres ayant déjà validé au moins trois formations.',
+                            'description' => 'Suivi des membres ayant déjà validé au moins trois formations. N’ouvre pas l’accès à de nouveaux modules.',
                             'slugs' => [],
                             'min' => 3,
                         ],
@@ -203,8 +241,8 @@ final class TrainingCompetencyController
                     Session::flash(
                         'success',
                         $created > 0
-                            ? sprintf('%d matrice(s) suggérée(s) ont été ajoutée(s).', $created)
-                            : 'Les matrices suggérées existaient déjà ; aucune nouvelle création.'
+                            ? sprintf('%d groupe(s) de suivi suggéré(s) ont été ajouté(s).', $created)
+                            : 'Les groupes suggérés existaient déjà ; aucune nouvelle création.'
                     );
                 }
             } elseif ($action === 'ensure_org_sections') {
@@ -219,6 +257,26 @@ final class TrainingCompetencyController
         $matrices = $this->trainingCompetencyRepository->listMatrices($tenantId);
         $users = $this->trainingCompetencyRepository->listTenantUsers($tenantId);
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
+        $roleNameById = [];
+        foreach ($roles as $roleRow) {
+            $rid = (int) ($roleRow['id'] ?? 0);
+            if ($rid > 0) {
+                $roleNameById[$rid] = (string) ($roleRow['name'] ?? 'Rôle');
+            }
+        }
+        $matrixIds = array_map(static fn (array $m): int => (int) ($m['id'] ?? 0), $matrices);
+        $assignmentsByMatrix = $this->trainingCompetencyRepository->listAssignmentsByMatrixIds($tenantId, $matrixIds);
+        $candidateCountByMatrix = [];
+        foreach ($matrices as $m) {
+            $mid = (int) ($m['id'] ?? 0);
+            if ($mid < 1) {
+                continue;
+            }
+            $rules = json_decode((string) ($m['auto_detect_rules_json'] ?? '{}'), true);
+            $candidateCountByMatrix[$mid] = count(
+                $this->trainingCompetencyRepository->autoDetectCandidateUserIds($tenantId, is_array($rules) ? $rules : [])
+            );
+        }
 
         return Response::view('layout.training_lms_staff_shell', [
             'title' => 'Commandement — Compétences',
@@ -228,6 +286,9 @@ final class TrainingCompetencyController
             'competencyMatrices' => $matrices,
             'competencyUsers' => $users,
             'competencyRoles' => $roles,
+            'competencyRoleNameById' => $roleNameById,
+            'competencyAssignmentsByMatrix' => $assignmentsByMatrix,
+            'competencyCandidateCountByMatrix' => $candidateCountByMatrix,
             'competencySchemaAvailable' => $this->trainingCompetencyRepository->competencySchemaAvailable(),
             'competencyMatricesSchemaReady' => $this->trainingCompetencyRepository->competencyMatricesSchemaAvailable(),
             'competencyTrainerSchemaReady' => $this->trainingCompetencyRepository->competencyTrainerRolesSchemaAvailable(),

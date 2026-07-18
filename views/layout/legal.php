@@ -7,7 +7,6 @@ $baseUrl = url('');
 $brand = email_brand_name();
 $legalActivePage = $legalActivePage ?? 'site';
 $legalActiveSection = $legalActiveSection ?? '';
-$hideHaloLoader = !empty($hideHaloLoader);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -30,17 +29,8 @@ $hideHaloLoader = !empty($hideHaloLoader);
     require base_path('views/partials/tailwind_cdn_or_build.php');
 ?>
     <link href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/css/legal-docs.css" rel="stylesheet">
-    <?php if (!$hideHaloLoader): ?>
-    <link href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet">
-    <?php endif; ?>
 </head>
 <body class="legal-body">
-    <?php if (!$hideHaloLoader): ?>
-    <?php
-        $haloLoaderHint = 'Préparation de l’espace documentation…';
-        require base_path('views/partials/halo_loader.php');
-    ?>
-    <?php endif; ?>
 
     <div class="legal-shell">
         <div class="legal-wrap">

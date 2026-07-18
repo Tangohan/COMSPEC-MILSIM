@@ -137,6 +137,19 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\TenantBrandingRepository::class),
             ),
+            \App\Services\Community\TenantInitialSetupService::class => new \App\Services\Community\TenantInitialSetupService(
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\TenantBrandingRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+            ),
+            \App\Controllers\Admin\Organization\TenantInitialSetupController::class => new \App\Controllers\Admin\Organization\TenantInitialSetupController(
+                self::get(AuthService::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\TenantBrandingRepository::class),
+                self::get(\App\Services\Community\TenantInitialSetupService::class),
+                self::get(\App\Services\Admin\RolePermissionService::class),
+                self::get(\App\Services\Audit\AuditService::class),
+            ),
             \App\Repositories\TenantMessageRepository::class => new \App\Repositories\TenantMessageRepository(),
             \App\Services\Community\TenantInternalMessageNotificationService::class => new \App\Services\Community\TenantInternalMessageNotificationService(
                 self::get(\App\Services\EmailService::class),
@@ -1328,6 +1341,13 @@ class Container
             ),
             \App\Repositories\PlatformAlertRepository::class => new \App\Repositories\PlatformAlertRepository(),
             \App\Repositories\TenantAlertRepository::class => new \App\Repositories\TenantAlertRepository(),
+            \App\Repositories\TenantCustomMapRepository::class => new \App\Repositories\TenantCustomMapRepository(),
+            \App\Services\Maps\TenantCustomMapStorage::class => new \App\Services\Maps\TenantCustomMapStorage(),
+            \App\Controllers\Api\CustomMapsApiController::class => new \App\Controllers\Api\CustomMapsApiController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\TenantCustomMapRepository::class),
+                self::get(\App\Services\Maps\TenantCustomMapStorage::class),
+            ),
             \App\Repositories\UserAlertDismissalRepository::class => new \App\Repositories\UserAlertDismissalRepository(),
             \App\Services\Alerts\AccountProfileAlertsBuilder::class => new \App\Services\Alerts\AccountProfileAlertsBuilder(
                 self::get(UserRepository::class),
@@ -1352,6 +1372,8 @@ class Container
             ),
             \App\Controllers\Admin\System\SystemPlatformAlertsController::class => new \App\Controllers\Admin\System\SystemPlatformAlertsController(
                 self::get(\App\Repositories\PlatformAlertRepository::class),
+                self::get(\App\Repositories\UserRepository::class),
+                self::get(\App\Services\EmailService::class),
             ),
             \App\Controllers\Admin\System\SystemAnalyticsController::class => new \App\Controllers\Admin\System\SystemAnalyticsController(
                 self::get(\App\Repositories\TenantAnalyticsRepository::class),
@@ -1368,6 +1390,7 @@ class Container
             ),
             \App\Controllers\Api\AlertDismissController::class => new \App\Controllers\Api\AlertDismissController(
                 self::get(\App\Repositories\UserAlertDismissalRepository::class),
+                self::get(\App\Repositories\PlatformAlertRepository::class),
             ),
             \App\Repositories\ForumBannedWordRepository::class => new \App\Repositories\ForumBannedWordRepository(),
             \App\Repositories\ForumBlacklistedDomainRepository::class => new \App\Repositories\ForumBlacklistedDomainRepository(),

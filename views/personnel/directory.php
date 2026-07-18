@@ -8,12 +8,16 @@ declare(strict_types=1);
  * @var list<array<string,mixed>> $results
  * @var array<int, list<array<string,mixed>>> $rolesByUserId
  * @var array<int, list<array{name: string, description: ?string, icon_url: ?string, granted_at: ?string}>> $badgesByUserId
+ * @var bool $canEditPersonnel
+ * @var int $currentUserId
  */
 
 $query = trim((string) ($query ?? ''));
 $results = is_array($results ?? null) ? $results : [];
 $rolesByUserId = is_array($rolesByUserId ?? null) ? $rolesByUserId : [];
 $badgesByUserId = is_array($badgesByUserId ?? null) ? $badgesByUserId : [];
+$canEditPersonnel = !empty($canEditPersonnel);
+$currentUserId = (int) ($currentUserId ?? 0);
 
 $statusLabel = static function (string $raw): string {
     return match ($raw) {
@@ -300,7 +304,15 @@ $totalResults = count($results);
                         </td>
 
                         <td class="px-4 py-3 text-right">
-                            <a href="<?= htmlspecialchars(url('personnel/' . rawurlencode($target)), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900 hover:bg-emerald-100">Ouvrir le profil</a>
+                            <?php
+                            $canEditThisRow = $canEditPersonnel || ($currentUserId > 0 && $currentUserId === $uid);
+                            ?>
+                            <div class="inline-flex flex-wrap items-center justify-end gap-2">
+                                <a href="<?= htmlspecialchars(url('personnel/' . rawurlencode($target)), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900 hover:bg-emerald-100">Ouvrir le profil</a>
+                                <?php if ($canEditThisRow): ?>
+                                <a href="<?= htmlspecialchars(url('personnel/' . $uid . '/edit'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900">Modifier le dossier</a>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>

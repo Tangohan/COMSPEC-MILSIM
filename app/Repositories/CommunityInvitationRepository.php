@@ -115,8 +115,11 @@ class CommunityInvitationRepository
     /** @return list<array<string, mixed>> */
     public function listForTenant(int $tenantId, ?string $status = null): array
     {
-        $sql = 'SELECT ci.*, u.email AS inviter_email FROM community_invitations ci
+        $sql = 'SELECT ci.*, u.email AS inviter_email,
+                r.name AS role_name, r.label_en AS role_label_en
+             FROM community_invitations ci
              INNER JOIN users u ON u.id = ci.invited_by_user_id
+             LEFT JOIN roles r ON r.id = ci.role_id AND r.tenant_id = ci.tenant_id
              WHERE ci.tenant_id = ?';
         $params = [$tenantId];
         if ($status !== null && $status !== '') {
@@ -128,6 +131,36 @@ class CommunityInvitationRepository
         $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Compteurs par état pour le tableau de bord invitations.
+     *
+     * @return array{pending: int, accepted: int, revoked: int, expired: int, total: int}
+     */
+    public function countByStatus(int $tenantId): array
+    {
+        $out = [
+            'pending' => 0,
+            'accepted' => 0,
+            'revoked' => 0,
+            'expired' => 0,
+            'total' => 0,
+        ];
+        $stmt = $this->pdo->prepare(
+            'SELECT status, COUNT(*) AS c FROM community_invitations WHERE tenant_id = ? GROUP BY status'
+        );
+        $stmt->execute([$tenantId]);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $st = (string) ($row['status'] ?? '');
+            $c = (int) ($row['c'] ?? 0);
+            $out['total'] += $c;
+            if (isset($out[$st])) {
+                $out[$st] = $c;
+            }
+        }
+
+        return $out;
     }
 
     public function expireStale(): int

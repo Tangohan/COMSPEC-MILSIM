@@ -21,7 +21,9 @@ if (!empty($showMatriculePublic)) {
     $pushRow($sheetRows, 'Identité', 'Matricule', $matricule ? (string) $matricule : 'Non attribué');
 }
 $pushRow($sheetRows, 'Identité', 'Indicatif radio', $callsign ? (string) $callsign : '—');
-$pushRow($sheetRows, 'Identité', 'Identifiant Athena', $athenaIdentifier !== '' ? $athenaIdentifier : '—');
+if (!empty($showEmailInContact) && $athenaIdentifier !== '') {
+    $pushRow($sheetRows, 'Identité', 'Identifiant Athena', $athenaIdentifier);
+}
 if (!empty($rpCharacterNameDisplay)) {
     $pushRow($sheetRows, 'Identité', 'Nom de personnage', (string) $rpCharacterNameDisplay);
 }
@@ -30,8 +32,19 @@ if (!empty($canViewCivilSection)) {
     $pushRow($sheetRows, 'Identité civile', 'Nom', (string) (($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : '—'));
     if (!empty($showEmailInContact)) {
         $pushRow($sheetRows, 'Identité civile', 'E-mail', (string) ($targetUser['email'] ?? '—'));
+    } else {
+        $pushRow($sheetRows, 'Identité civile', 'E-mail', 'Masqué — réservé à l’administration');
     }
 }
+
+$looksLikeEmail = static function (string $value): bool {
+    return (bool) preg_match('/^[^\s@]+@[^\s@]+\.[^\s@]+$/', trim($value));
+};
+$fieldLooksEmail = static function (string $key): bool {
+    $k = mb_strtolower($key);
+
+    return str_contains($k, 'email') || str_contains($k, 'e-mail') || str_contains($k, 'mail');
+};
 
 $pushRow($sheetRows, 'Affectation', 'Grade / rang', $effectiveRankDisplay !== '' ? (string) $effectiveRankDisplay : '—');
 $pushRow($sheetRows, 'Affectation', 'Unité principale', $unitName ? (string) $unitName : '—');
@@ -133,8 +146,12 @@ foreach ($adminPanels as $panel) {
         if ($value === null || $value === '') {
             continue;
         }
+        $fieldLabel = is_string($key) ? $key : 'Information';
         $valStr = is_scalar($value) ? (string) $value : (is_array($value) ? implode(', ', array_map('strval', $value)) : json_encode($value, JSON_UNESCAPED_UNICODE));
-        $pushRow($sheetRows, $panelName, is_string($key) ? $key : 'Information', $valStr);
+        if (empty($showEmailInContact) && ($fieldLooksEmail($fieldLabel) || $looksLikeEmail($valStr))) {
+            $valStr = 'Masqué — réservé à l’administration';
+        }
+        $pushRow($sheetRows, $panelName, $fieldLabel, $valStr);
     }
 }
 

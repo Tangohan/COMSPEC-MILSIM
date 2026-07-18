@@ -25,7 +25,7 @@ final class AlertPresentationService
     /**
      * Bandeaux à afficher (plateforme puis communauté), après filtrage audience et dismissals serveur.
      *
-     * @return list<array{scope: string, id: int, kind: string, title: string, body: string, cta_label: ?string, cta_url: ?string, coupon_code: ?string}>
+     * @return list<array{scope: string, id: int, kind: string, title: string, body: string, cta_label: ?string, cta_url: ?string, coupon_code: ?string, accent_color: ?string, icon_key: ?string, image_url: ?string, banner_url: ?string}>
      */
     public function forCurrentRequest(): array
     {
@@ -60,7 +60,8 @@ final class AlertPresentationService
         $out = [];
         foreach ($platformRows as $r) {
             $id = (int) $r['id'];
-            if (isset($dismissed['platform'][$id])) {
+            $dismissible = !isset($r['dismissible']) || (int) $r['dismissible'] === 1;
+            if ($dismissible && isset($dismissed['platform'][$id])) {
                 continue;
             }
             $out[] = $this->normalizeRow('platform', $r);
@@ -81,15 +82,35 @@ final class AlertPresentationService
     /** @param array<string, mixed> $row */
     private function normalizeRow(string $scope, array $row): array
     {
+        $kind = (string) ($row['kind'] ?? 'info');
+        $accent = \App\Support\TenantAlertVisuals::sanitizeHexColor(
+            isset($row['accent_color']) ? (string) $row['accent_color'] : null
+        );
+        if ($accent === null) {
+            $accent = \App\Support\TenantAlertVisuals::defaultColorForKind($kind);
+        }
+        $iconKey = trim((string) ($row['icon_key'] ?? ''));
+        if ($iconKey === '') {
+            $iconKey = $kind;
+        }
+
         return [
             'scope' => $scope,
             'id' => (int) $row['id'],
-            'kind' => (string) ($row['kind'] ?? 'info'),
+            'kind' => $kind,
+            'display_style' => $scope === 'platform'
+                ? \App\Support\AlertDisplayStyle::sanitizePlatform(isset($row['display_style']) ? (string) $row['display_style'] : null)
+                : \App\Support\AlertDisplayStyle::sanitizeTenant(isset($row['display_style']) ? (string) $row['display_style'] : null),
             'title' => (string) ($row['title'] ?? ''),
             'body' => trim((string) ($row['body'] ?? '')),
             'cta_label' => isset($row['cta_label']) && $row['cta_label'] !== '' ? (string) $row['cta_label'] : null,
             'cta_url' => isset($row['cta_url']) && $row['cta_url'] !== '' ? (string) $row['cta_url'] : null,
             'coupon_code' => isset($row['coupon_code']) && $row['coupon_code'] !== '' ? (string) $row['coupon_code'] : null,
+            'accent_color' => $accent,
+            'icon_key' => $iconKey,
+            'image_url' => \App\Support\TenantAlertVisuals::publicUrl(isset($row['image_path']) ? (string) $row['image_path'] : null),
+            'banner_url' => \App\Support\TenantAlertVisuals::publicUrl(isset($row['banner_path']) ? (string) $row['banner_path'] : null),
+            'dismissible' => $scope !== 'platform' || !isset($row['dismissible']) || (int) $row['dismissible'] === 1,
         ];
     }
 

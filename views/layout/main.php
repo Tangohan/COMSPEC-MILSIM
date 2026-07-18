@@ -7,7 +7,8 @@ $communityRecruitmentOpeningPage = !empty($communityRecruitmentOpeningPage);
 $isFormationWorkspace = function_exists('is_formation_workspace_request') && is_formation_workspace_request();
 $isBackOfficeShell = function_exists('is_back_office_request') && is_back_office_request();
 $isPlatformAdminShell = function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request();
-$usesAdminSidebarShell = !empty($isBackOfficeShell) || !empty($isPlatformAdminShell) || !empty($isFormationWorkspace);
+$hideAdminSidebar = !empty($hideAdminSidebar);
+$usesAdminSidebarShell = (!$hideAdminSidebar) && (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell) || !empty($isFormationWorkspace));
 $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     ? 'Administration communauté'
     : (!empty($isPlatformAdminShell)
@@ -86,6 +87,9 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <?php if (is_file(base_path('public/assets/css/portal-nav.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/portal-nav.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/navbar-info-banners.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/navbar-info-banners.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/athena-header.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/athena-header.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
@@ -144,6 +148,7 @@ if ($showBottomNav) {
     <?php if ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/js/dashboard-rail.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/dashboard-rail.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
+    <?php require base_path('views/partials/navbar_info_banners.php'); ?>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <main class="<?= !empty($usesAdminSidebarShell) ? 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]' : 'min-h-[80vh]' ?>">
@@ -208,15 +213,25 @@ if ($showBottomNav) {
             </aside>
 
             <div class="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col bg-slate-50">
+                <div class="flex min-h-0 flex-1 flex-col">
                 <?php
                 $contentPath = str_replace('.', '/', $content);
                 $innerPath = base_path('views/' . $contentPath . '.php');
                 if (is_file($innerPath)) {
                     require $innerPath;
                 } else {
-                    echo '<div class="max-w-5xl mx-auto px-6 py-12"><p>Vue non trouvée.</p></div>';
+                    echo '<div class="w-full px-4 py-5"><p>Vue non trouvée.</p></div>';
                 }
                 ?>
+                </div>
+                <footer class="mt-auto shrink-0 border-t border-emerald-700/40 bg-[#020617] text-slate-300">
+                    <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-5 lg:px-6">
+                        <p class="text-[11px] font-semibold tracking-wide text-slate-400">
+                            <span class="text-emerald-400">Athena</span> · Espace d’administration
+                        </p>
+                        <p class="text-[10px] text-slate-500">© <?= (int) date('Y') ?> Compsec</p>
+                    </div>
+                </footer>
             </div>
         </div>
         <?php else: ?>

@@ -1,0 +1,318 @@
+/* Barres d’info pleine largeur sous la navbar (plateforme + annonces importantes communauté) */
+
+.navbar-info-banners {
+  position: relative;
+  z-index: 94;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.navbar-info-banners .mini-banner,
+.navbar-info-banners .nib-breaking,
+.navbar-info-banners .nib-important {
+  width: 100%;
+  border-radius: 0;
+  max-width: none;
+  margin: 0;
+}
+
+/* --- Mini banner --- */
+.mini-banner {
+  display: flex;
+  align-items: center;
+  background-color: #0c0c0e;
+  border: none;
+  border-bottom: 1px solid #1a1a1e;
+  padding: 8px 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.mini-banner::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+}
+
+.banner-tag {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-right: 14px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-grow: 1;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.banner-title {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.banner-desc {
+  color: #8a8a93;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.banner-cta {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #e4e4e7;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.banner-cta:hover {
+  color: #ffffff;
+}
+
+.banner-close {
+  background: none;
+  border: none;
+  color: #52525b;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 10px;
+  transition: color 0.2s ease;
+  line-height: 1;
+}
+
+.banner-close:hover {
+  color: #ffffff;
+}
+
+.mini-banner.info::before { background-color: #6366f1; }
+.mini-banner.info .banner-tag {
+  background-color: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.mini-banner.success::before { background-color: #00a870; }
+.mini-banner.success .banner-tag {
+  background-color: rgba(0, 168, 112, 0.15);
+  color: #00c887;
+  border: 1px solid rgba(0, 168, 112, 0.3);
+}
+
+.mini-banner.warning::before { background-color: #f59e0b; }
+.mini-banner.warning .banner-tag {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.mini-banner.danger::before { background-color: #ef4444; }
+.mini-banner.danger .banner-tag {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* --- Breaking ticker --- */
+.nib-breaking {
+  display: flex;
+  align-items: stretch;
+  min-height: 42px;
+  background: linear-gradient(90deg, #0a0a0c 0%, #121218 50%, #0a0a0c 100%);
+  border-bottom: 1px solid #2a1515;
+  overflow: hidden;
+}
+
+.nib-breaking-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 0 16px;
+  background: #7f1d1d;
+  color: #fecaca;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.nib-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f87171;
+  box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.7);
+  animation: nib-pulse 1.4s ease-out infinite;
+}
+
+@keyframes nib-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.65); }
+  70% { box-shadow: 0 0 0 8px rgba(248, 113, 113, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+}
+
+.nib-breaking-ticker {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+}
+
+.nib-ticker-track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+  animation: nib-ticker 40s linear infinite;
+  will-change: transform;
+}
+
+.nib-ticker-track span {
+  color: #e4e4e7;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 4px;
+}
+
+.nib-ticker-sep {
+  color: #7f1d1d;
+  padding: 0 14px !important;
+  font-size: 10px !important;
+}
+
+@keyframes nib-ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.nib-breaking:hover .nib-ticker-track {
+  animation-play-state: paused;
+}
+
+/* --- Important (tenant yellow) --- */
+.nib-important {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 16px;
+  background: linear-gradient(90deg, #422006 0%, #78350f 40%, #451a03 100%);
+  border-bottom: 1px solid #b45309;
+  color: #ffedd5;
+}
+
+.nib-important-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+  color: #fbbf24;
+}
+
+.nib-important-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.nib-important-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.nib-important-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fffbeb;
+  letter-spacing: 0.02em;
+}
+
+.nib-important-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: rgba(251, 191, 36, 0.2);
+  color: #fde68a;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+}
+
+.nib-important-desc {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #fcd34d;
+}
+
+.nib-important-cta {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fffbeb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.nib-important .banner-close {
+  color: #d97706;
+  margin-left: auto;
+}
+
+.nib-important .banner-close:hover {
+  color: #fffbeb;
+}
+
+.nib-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6ee7b7;
+}
+
+@media (max-width: 480px) {
+  .banner-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .banner-desc { font-size: 11px; }
+  .nib-breaking-pill { padding: 0 10px; letter-spacing: 0.1em; }
+  .nib-important { padding: 10px 12px; }
+}

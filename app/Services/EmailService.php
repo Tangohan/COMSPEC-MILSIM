@@ -1333,4 +1333,28 @@ final class EmailService
             ['purpose' => 'tenant_internal_message', 'thread_id' => $threadId]
         );
     }
+
+    /**
+     * @param array<string, string> $answers Libellés de questions => réponses lisibles
+     */
+    public function sendDemoNdaFeedback(
+        string $to,
+        string $brand,
+        array $answers,
+        ?string $replyTo = null
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::DEMO_NDA_FEEDBACK,
+            'demo_nda_feedback',
+            $to,
+            '[' . $brand . '] Retour questionnaire — démonstration',
+            [
+                'brand' => $brand,
+                'answers' => $answers,
+            ],
+            null,
+            $replyTo,
+            ['purpose' => 'demo_nda_feedback']
+        );
+    }
 }

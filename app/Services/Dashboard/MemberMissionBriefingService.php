@@ -117,12 +117,22 @@ final class MemberMissionBriefingService
                         $parts[] = 'Échéance : ' . date('d/m/Y', $ts);
                     }
                 }
+                $expiresLabel = null;
+                if ($exp !== '') {
+                    $expTs = strtotime($exp);
+                    if ($expTs !== false) {
+                        $expiresLabel = date('d/m/Y', $expTs);
+                    }
+                }
                 $trainings[] = [
                     'title' => $title,
                     'href' => $href,
                     'subtitle' => implode(' · ', $parts),
                     'urgent' => $urgent,
+                    'mandatory' => $mandatory,
                     'progress_pct' => max(0, min(100, $pct)),
+                    'expires_at' => $exp !== '' ? $exp : null,
+                    'expires_label' => $expiresLabel,
                 ];
             }
         }
