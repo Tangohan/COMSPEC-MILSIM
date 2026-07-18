@@ -81,9 +81,17 @@ class TrainingCertificateAssetStorageService
             throw new \RuntimeException('Impossible de préparer l’espace de stockage.');
         }
 
-        $safe = $prefix . '-' . bin2hex(random_bytes(8)) . '.' . $ext;
+        // TCPDF (moteur principal des attestations) ne sait lire que JPEG/PNG/GIF : un gabarit
+        // WebP serait accepté ici mais disparaîtrait silencieusement du PDF généré. On convertit
+        // donc systématiquement le WebP en PNG dès l’upload pour que le format annoncé fonctionne
+        // réellement dans le document produit.
+        $storedExt = $ext === 'webp' ? 'png' : $ext;
+        $safe = $prefix . '-' . bin2hex(random_bytes(8)) . '.' . $storedExt;
         $destAbs = $dir . DIRECTORY_SEPARATOR . $safe;
-        if (!move_uploaded_file($tmpName, $destAbs)) {
+
+        if ($ext === 'webp') {
+            $this->convertWebpToPng($tmpName, $destAbs);
+        } elseif (!move_uploaded_file($tmpName, $destAbs)) {
             throw new \RuntimeException('Impossible d’enregistrer le fichier sur le serveur (droits d’écriture ou quota).');
         }
         if (!is_file($destAbs)) {
@@ -91,6 +99,26 @@ class TrainingCertificateAssetStorageService
         }
 
         return $this->relativeDirForTenant($tenantId) . '/' . $safe;
+    }
+
+    private function convertWebpToPng(string $tmpName, string $destAbs): void
+    {
+        if (!function_exists('imagecreatefromwebp') || !function_exists('imagepng')) {
+            throw new \InvalidArgumentException(
+                'Le format WebP n’est pas pris en charge par ce serveur pour la génération des attestations.'
+                . ' Utilisez une image JPEG ou PNG.'
+            );
+        }
+        $img = @imagecreatefromwebp($tmpName);
+        if ($img === false) {
+            throw new \InvalidArgumentException('Le fichier WebP n’a pas pu être lu. Choisissez une image JPEG ou PNG.');
+        }
+        imagesavealpha($img, true);
+        $ok = @imagepng($img, $destAbs);
+        imagedestroy($img);
+        if (!$ok) {
+            throw new \RuntimeException('Impossible de convertir l’image WebP en PNG sur le serveur.');
+        }
     }
 
     public function deleteRelative(?string $relative): void
